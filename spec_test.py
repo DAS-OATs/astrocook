@@ -1,33 +1,73 @@
 from astrocook import Spec
 from astropy import units as u
 from astropy.io import fits
+import matplotlib.pyplot as plt
 from numpy import testing as nput
 from unittest import TestCase, TestLoader, TextTestRunner
 import sys
     
 class SpecTest(TestCase):
-    """Class for tests on spectra"""
+    """Class for tests on spectra
     
-    file = 'RSPEC.fits'
-
-    def test___init___empty(self):
-        spec = Spec()
-
-    def test___init___from_fits(self):
-        spec = Spec(file = self.file)
-
-    def test_to_redshift(self):
+    All tests on spec.py should be defined as method of this class.
+    """
     
-        z = 3.1
+    file = 'RSPEC_1.fits'
 
-        # Spectrum
-        spec = Spec(file = self.file)
-        data = fits.open(self.file)[1].data
-        check_bin = data.field('WAVEL') * (1.0 + z)
-        check_size = data.field('PIXSIZE') * (1.0 + z)
-        spec.to_redshift(z)
-        nput.assert_array_equal(spec['bin'], check_bin * u.nm)
-        nput.assert_array_equal(spec['size'], check_size * u.nm)
+    def test___init___(self):
+        """Test of Spec.__init___
+        
+        A spectrum is initialized from a FITS file and plotted.
+        """
+
+        spec = Spec(file = 'RSPEC_1.fits')
+        x = spec['bin']
+        y = spec['flux']
+        plt.figure(1)
+        plt.xlabel(x.unit)
+        plt.ylabel(y.unit)
+        plt.plot(x, y)
+        plt.show()
+        
+    def test_nexp(self):
+        """Test of Spec.nexp
+        
+        A spectrum is initialized from a FITS file. The number of exposures is 
+        checked.
+        """
+        
+        spec = Spec(file = 'RSPEC_1.fits')
+        self.assertEqual(spec.nexp, 1)        
+        
+    def test_exptime(self):
+        """Test of Spec.exptime
+        
+        A spectrum is initialized from a FITS file. The exposure times are 
+        checked, updated and checked again.
+        """
+        
+        spec = Spec(file = 'RSPEC_1.fits')
+        self.assertEqual(spec.exptime, [])        
+        spec.exptime = [900.0 * u.s]
+        self.assertEqual(spec.exptime, [900.0 * u.s])        
+        spec.exptime = [900.0 * u.s, 600.0 * u.s]
+        self.assertEqual(spec.exptime, [900.0 * u.s])        
+        
+    def test_misc(self):
+        """Test of Spec.misc
+        
+        A spectrum is initialized from a FITS file. The miscellaneous 
+        information is updated with new entries and checked. 
+        """
+        
+        spec = Spec(file = 'RSPEC_1.fits')
+        self.assertEqual(spec.misc, {})        
+        spec.misc.update({'a': 1.})
+        self.assertEqual(spec.misc, {'a': 1.})        
+        spec.misc['b'] = 2
+        self.assertEqual(spec.misc, {'a': 1., 'b': 2})        
+        spec.misc.update(b = 3.)
+        self.assertEqual(spec.misc, {'a': 1., 'b': 3.})        
         
 if __name__ == '__main__':
     """Run the tests"""

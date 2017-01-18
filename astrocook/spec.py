@@ -2,160 +2,163 @@ from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits
 from astropy.table import Column, QTable, Table
+import copy
 import numpy as np
 import sys
     
 class Spec(QTable):
-    """Class for generic spectra"""
+    """Class for generic spectra
     
-    ux = u.nm
-    uy = u.erg / u.cm ** 2 / u.s / u.nm
-    ux_uv_eq = [(u.nm, u.km / u.s, lambda x: np.log(x) *\
-        c.to(u.km / u.s).value, lambda x: np.exp(x / c.to(u.km / u.s).value))]
+    A generic spectrum is a QTable with the following columns: 
+        -# @exp: exposure;
+        -# @ord: spectral order;
+        -# @bin: channel;
+        -# @size: size of the channel; 
+        -# @qual: quality of the channel;
+        -# @resol: spectral resolution in the channel; 
+        -# @resol_e: error on @resol; 
+        -# @flux: flux density in the channel;
+        -# @flux_e: error on @flux.
         
-    def __init__(self, data = None, masked = None, file = None, bin = None, 
-        size = None, flux = None, flux_e = None, ux = None, uy = None):
-        """Initialize the spectrum"""
+    The following metadata are also expected:
+        -# @nexp: number of exposures;
+        -# @exptime: integration time of all exposures;
+        -# @misc: miscellaneous information (TBD).        
+    """
+    
+    def __init__(self, 
+                 data = None, 
+                 masked = None, 
+                 file = None, 
+                 exptime = None,
+                 misc = None,
+                 ux = None, 
+                 uy = None):
+        """Initialize the spectrum
+        
+        The spectrum can be initialized either from @data (default) or from 
+        @file. In the latter case, a FITS spectrum is expected in input, either
+        from astrocook or from the ESPRESSO DAS. 
+        Units are initialized either from @data/@file or from defaults.
+        Metadata are defined as properties (see methods below).
+        
+        TBD: 
+            1. A method should be written to cope with different formats.
+            2. The units setup could be rewritten in a more clever way.
+            3. The number of spectral orders for all exposures should be 
+               computed.
+        """
         
         if data is not None:
+            
             QTable.__init__(self, data)
         else:
+            
+            # From astrocook
             try:
                 data = fits.open(file)[1].data
+                exp = data.field('exp')
+                ord = data.field('ord')
                 bin = data.field('bin')
                 size = data.field('size')
+                qual = data.field('qual')
+                resol = data.field('resol')
+                resol_e = data.field('resol_e')
                 flux = data.field('flux')            
                 flux_e = data.field('flux_e')
             except:
+                
+                # From the ESPRESSO DAS
                 try:
                     data = fits.open(file)[1].data
+                    exp = [1] * len(data)
+                    ord = [0] * len(data)
                     bin = data.field('WAVEL')
                     size = data.field('PIXSIZE')
+                    qual = [1] * len(data)
+                    resol = [60000.] * len(data)
+                    resol_e = [1000.] * len(data)
                     flux = data.field('FLUX')            
                     flux_e = data.field('FLUXERR')
                 except:
-                    pass            
-                pass            
+                    sys.exit("FITS file not recognized not recognized.")
             
+            # Units setup
             try:
                 bin_unit = bin.unit
             except:
-                bin_unit = self.ux
+                bin_unit = u.nm
             try:
                 size_unit = size.unit
             except:
-                size_unit = self.ux
+                size_unit = u.nm
             try:
                 flux_unit = flux.unit
             except:
-                flux_unit = self.uy
+                flux_unit = u.erg / u.cm ** 2 / u.s / u.nm
             try:
                 flux_e_unit = flux_e.unit
             except:
-                flux_e_unit = self.uy
+                flux_e_unit = u.erg / u.cm ** 2 / u.s / u.nm
             
+            # Column creation
+            exp_col = Column(exp, name = 'exp')
+            ord_col = Column(ord, name = 'ord')
             bin_col = Column(bin, name = 'bin', unit = bin_unit)
             size_col = Column(size, name = 'size', unit = size_unit)
+            qual_col = Column(qual, name = 'qual')
+            resol_col = Column(resol, name = 'resol')
+            resol_e_col = Column(resol_e, name = 'resol_e')
             flux_col = Column(flux, name = 'flux', unit = flux_unit)
             flux_e_col = Column(flux_e, name = 'flux_e', unit = flux_e_unit)
             
-            QTable.__init__(self, data = (bin_col, size_col, flux_col,
-                flux_e_col))
-        
-    def bin_to_vel(self, cen = 0.0, unit = u.km / u.s, only_size = False):
-        """Convert wavelength bins into velocity bins
-        
-        WRITE TEST!""" 
-            
-        # Use Table because QTable doesn't accept conversion.
-        new = Table(self)
-        old_unit = self['bin'].unit
-        new['bin'] = new['bin'].to(unit, equivalencies = self.ux_uv_eq)
-        new['bin'].unit = unit
-        try:
-            new['size'].unit = unit
-            new['size'][:] = new['bin'][:]
-            new['size'][1: len(new) - 1] = 0.5 * (new['size'][2: len(new)] -\
-                 new['bin'][0: len(new) - 2])
-            new['size'][0] = 1.0 * (new['bin'][1] - new['bin'][0])
-            new['size'][len(new) - 1] = 1.0 * (new['bin'][len(new) - 1] -\
-                 new['bin'][len(new) - 2])
-        except:
-            pass
-        if only_size is False:
-            new['bin'] = new['bin'] - cen.to(unit, equivalencies = 
-                self.ux_uv_eq)
-        else:
-            print(old_unit, self.ux)
-            new['bin'] = new['bin'].to(old_unit, equivalencies = 
-                self.ux_uv_eq)
-            new['bin'].unit = old_unit
-        return Spec(new)                
-            
-    def bin_to_wave(self, cen = None, unit = u.nm, only_size = False):
-        """Convert velocity bins into wavelength bins
-        
-        WRITE TEST!""" 
-        
-        new = Table(self)
-        old_unit = self['bin'].unit
-        if only_size is False:
-            new['bin'] = new['bin'] + cen.to(old_unit, equivalencies =
-                self.ux_uv_eq)
-            new['bin'] = new['bin'].to(unit, equivalencies = self.ux_uv_eq)
-            new['bin'].unit = unit
-        new['size'].unit = unit
-        new['size'][:] = new['bin'][:]
-        new['size'][1: len(new) - 1] = 0.5 * (new['size'][2: len(new)] -\
-             new['bin'][0: len(new) - 2])
-        new['size'][0] = 1.0 * (new['bin'][1] - new['bin'][0])
-        new['size'][len(new) - 1] = 1.0 * (new['bin'][len(new) - 1] -\
-             new['bin'][len(new) - 2])
-        return Spec(new)
+            # Table creation
+            QTable.__init__(self, data = (exp_col, ord_col, bin_col, size_col, 
+                    qual_col, resol_col, resol_e_col, flux_col, flux_e_col))
 
-    def conv_prof(self, prof, mode = 'full'):
-        """Convolve a spectrum with a profile
+        # Metadata
+        self._nexp = np.max(self['exp'])
+        if exptime == None:
+            exptime = []
+        elif (len(exptime) != self._nexp):
+            print("Exposure time array has a wrong size and will be "
+                  "neglected.")
+            exptime = []
+        self._exptime = copy.deepcopy(exptime)        
+        if misc == None:
+            misc = {}
+        self._misc = copy.deepcopy(misc)
+
+    @property
+    def nexp(self):
+        """Property: number of exposures"""
+
+        return self._nexp
+
+    @property
+    def exptime(self):
+        """Property: integration time of all exposures"""
+
+        return self._exptime
         
-        WRITE TEST!"""
-    
-        if self['bin'][0].si.unit != prof['bin'][0].si.unit:
-            print("Units of pixels do not match.")
-            sys.exit()
-        bin = self['bin'][:] 
-        size = self['size'][:]
-        flux = np.convolve(self['flux'][:], prof['flux'][:], mode)
-        flux_e = np.convolve(self['flux_e'][:], prof['flux'][:], mode)
-        shift = int((prof.nrow - 1) * 0.5)
-        if len(flux) > len(self): 
-            flux = flux[shift: -shift]
-            flux_e = flux_e[shift: -shift]
-        else: 
-            bin = bin[shift: -shift]
-            size = size[shift: -shift]
-        new = Spec(bin = bin, size = size, flux = flux, flux_e = flux_e,
-            ux = self['bin'])
-        new.shift = shift
-        return new
+    @exptime.setter
+    def exptime(self, value):
+        """@exptime setter"""
+
+        if value and len(value) == self._nexp:
+            self._exptime = value
+        else:
+            print("Wrong number of exposure times: neglected.") 
+
+    @property
+    def misc(self):
+        """Property: miscellaneous information"""
         
-    def save(self, file):
-        """
-        print(self.columns)
-        fits_cols = []
-        for col in self.columns:
-            print(col, self[col].unit, self[col].value)
-            fits_cols.append(fits.Column(name = col, format = 'float32', 
-                unit = self[col].unit, array = self[col].value))
-        hdu = fits.BinTableHDU.from_columns(fits_cols)
-        #hdu.writeto('file')
-        """
-        new = Table(self)
-        new.write(file, overwrite = True)
-    
-    def to_redshift(self, z = 0):
-        """Shift the spectrum to a given redshift"""
+        return self._misc
         
-        self['bin'][:] = self['bin'][:] * (1.0 + z)
-        try:
-            self['size'][:] = self['size'][:] * (1.0 + z)
-        except:
-            pass
+    @misc.setter
+    def misc(self, value):
+        """@misc setter"""
+
+        self._misc = self._misc.update({value})
+        
