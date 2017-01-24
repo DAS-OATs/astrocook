@@ -9,7 +9,7 @@ import sys
 class LineTest(TestCase):
     """Class for tests on line lists
     
-    All tests on line.py should be defined as method of this class.
+    All tests on Line should be defined as method of this class.
     """
     
     def test___init___(self):

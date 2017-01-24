@@ -21,9 +21,7 @@ class Line(QTable):
                  data = None, 
                  masked = None, 
                  file = None, 
-                 misc = None, 
-                 ux = None, 
-                 uy = None):
+                 misc = None):
         """Initialize the line list
         
         The spectrum can be initialized either from @data (default) or from 

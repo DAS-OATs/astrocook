@@ -1,7 +1,7 @@
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits
-from astropy.table import Column, QTable, Table
+from astropy.table import Column, QTable
 import copy
 import numpy as np
 import sys
@@ -31,9 +31,7 @@ class Spec(QTable):
                  masked = None, 
                  file = None, 
                  exptime = None,
-                 misc = None,
-                 ux = None, 
-                 uy = None):
+                 misc = None):
         """Initialize the spectrum
         
         The spectrum can be initialized either from @data (default) or from 
