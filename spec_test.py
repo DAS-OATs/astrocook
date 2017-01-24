@@ -12,8 +12,6 @@ class SpecTest(TestCase):
     All tests on spec.py should be defined as method of this class.
     """
     
-    file = 'RSPEC_1.fits'
-
     def test___init___(self):
         """Test of Spec.__init___
         
