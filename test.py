@@ -1,4 +1,3 @@
-
 #Import libraries
 from astrocook import spec1d
 from astrocook import spec1dreader
@@ -8,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
-#prova
+
 
 #Enable automatic unit display
 from astropy.visualization import quantity_support
@@ -18,35 +17,34 @@ quantity_support()
 a = [1,2,3]
 
 #Create a spec1d object providing x, y, dy and units informations
-s = spec1d(a, a, a, xUnit=u.Angstrom, yUnit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
+s = spec1d(a, a, dy=a, xUnit=u.Angstrom, yUnit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
 
 #Test unit conversion capabilities
 print()
 print("Wavelength conversions:")
-print(s.x * s.xUnit)
+print(s.x)
 s.convert(xUnit=u.Hz)
-print(s.x * s.xUnit)
+print(s.x)
 s.convert(xUnit=u.Angstrom)
-print(s.x * s.xUnit)
+print(s.x)
 
 print()
 print("Flux density conversions:")
-print(s.y * s.yUnit)
+print(s.y)
 s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Hz)
-print(s.y * s.yUnit)
+print(s.y)
 s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
-print(s.y * s.yUnit)
+print(s.y)
 
-print(s.y * s.yUnit)
+print(s.y)
 s.convert(yUnit=u.watt / u.cm**2 / u.Angstrom)
-print(s.y * s.yUnit)
+print(s.y)
 s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
-print(s.y * s.yUnit)
-
+print(s.y)
 
 
 #Plot the spec1d data
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
+plt.plot(s.x, s.y)
 plt.show()
 
 
@@ -58,7 +56,7 @@ r = spec1dreader()
 s = r.sdss_dr10('spec-0752-52251-0323.fits')
 
 #Plot the spec1d data
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
+plt.plot(s.x, s.y)
 plt.title("MJD="+str(s.meta['MJD']) + ", plate="+str(s.meta['PLATEID']) + ", fiber="+str(s.meta['FIBERID']))
 plt.show()
 
@@ -66,7 +64,7 @@ plt.show()
 #Plot only the "good" spectral channels
 s.useGood = True
 
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
+plt.plot(s.x, s.y)
 plt.title("MJD="+str(s.meta['MJD']) + ", plate="+str(s.meta['PLATEID']) + ", fiber="+str(s.meta['FIBERID']))
 plt.show()
 
@@ -75,19 +73,19 @@ plt.show()
 guess_pl = models.PowerLaw1D(amplitude=10, x_0=s.x.mean(), alpha=0.5)
 
 #Plot data and model 
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
-plt.plot(s.x * s.xUnit, guess_pl(s.x) * s.yUnit)
+plt.plot(s.x, s.y)
+plt.plot(s.x, guess_pl(s.x).value * s.yUnit)
 plt.show()
 
 #Fit data
 fit_t = fitting.LevMarLSQFitter()
-fit_pl = fit_t(guess_pl, s.x, s.y)
+fit_pl = fit_t(guess_pl, s.x.value, s.y.value)
 print("Fit results:")
 print(fit_pl)
 
 #Plot data and model 
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
-plt.plot(s.x * s.xUnit, fit_pl(s.x) * s.yUnit)
+plt.plot(s.x, s.y)
+plt.plot(s.x, fit_pl(s.x.value) * s.yUnit)
 plt.show()
 
 
