@@ -9,11 +9,9 @@ import sys
 class SpecTest(TestCase):
     """Class for tests on spectra
     
-    All tests on spec.py should be defined as method of this class.
+    All tests on Spec should be defined as method of this class.
     """
     
-    file = 'RSPEC_1.fits'
-
     def test___init___(self):
         """Test of Spec.__init___
         
