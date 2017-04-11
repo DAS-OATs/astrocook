@@ -65,8 +65,11 @@ class spec1dreader:
             print("spec1reader.uves: reading from " + filename)
             hdulist.info()
 
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
 
-        data = fits.open(file)[1].data
+        data = fits.open(filename)[1].data
         x = data.field('WAVEL')
         dx = data.field('PIXSIZE')
         y = data.field('FLUX')            
@@ -76,21 +79,20 @@ class spec1dreader:
 
 
 
-        x  = 10.**hdulist[1].data['loglam']
-        y  = hdulist[1].data['flux']
-        dy = np.repeat(float('nan'), len(x))
+        #x  = 10.**hdulist[1].data['loglam']
+        #y  = hdulist[1].data['flux']
+        #dy = np.repeat(float('nan'), len(x))
+        #
+        #c1 = np.argwhere(hdulist[1].data['and_mask'] == 0)
+        #c2 = np.argwhere(hdulist[1].data['ivar'] > 0)
+        #c3 = np.argwhere(hdulist[1].data['flux'] > 0)
+        #igood = np.intersect1d(c1, c2)
+        #igood = np.intersect1d(igood, c3)
+        #
+        #tmp = hdulist[1].data['ivar']
+        #dy[igood] = 1. / np.sqrt(tmp[igood])
 
-        c1 = np.argwhere(hdulist[1].data['and_mask'] == 0)
-        c2 = np.argwhere(hdulist[1].data['ivar'] > 0)
-        c3 = np.argwhere(hdulist[1].data['flux'] > 0)
-        igood = np.intersect1d(c1, c2)
-        igood = np.intersect1d(igood, c3)
-
-        tmp = hdulist[1].data['ivar']
-        dy[igood] = 1. / np.sqrt(tmp[igood])
-
-        good = np.repeat(-1, len(x))
-        good[igood] = 1
+        good = np.repeat(1, len(x))
 
         s = spec1d(x, y, dy=dy, 
                    xUnit=u.Angstrom, 
