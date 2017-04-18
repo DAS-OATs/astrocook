@@ -1,12 +1,15 @@
-import numpy as np
-from astropy.io import fits as fits
+from . import List
+from .utils import many_gauss, savitzky_golay
 from astropy import units as u
+from astropy.constants import c
+from astropy.io import fits as fits
 from astropy.table import Column, QTable, Table
-from specutils import extinction
 import copy
+import numpy as np
+from scipy.signal import argrelmin, argrelmax, fftconvolve
+from specutils import extinction
 
-
-class spec1d():
+class Spec1D():
     """Class for generic spectra
     
     A generic spectrum is a QTable with the following columns: 
@@ -16,7 +19,7 @@ class spec1d():
         -# @xmin: lower limit for each channel; 
         -# @xmax: upper limit for each channel; 
         -# @y: flux density in the channel;
-        -# @dy: error on @flux.
+        -# @dy: error on @y.
         -# @group: quality/grouping of the channel;
         -# @resol: spectral resolution in the channel; 
         
@@ -39,7 +42,7 @@ class spec1d():
                  order=-1,
                  meta=None,
                  dtype=float):
-        ''' Constructor for the spec1d class. '''
+        ''' Constructor for the Spec1D class. '''
 
         col_x  = Column(np.asarray(copy.deepcopy(x) , dtype=float), name='X')
         col_y  = Column(np.asarray(copy.deepcopy(y) , dtype=float), name='Y')
@@ -54,12 +57,12 @@ class spec1d():
                 dx[-1] = dx[-2]
             xmin = x - dx
             xmax = x + dx
-        col_xmin = Column(np.asarray(copy.deepcopy(xmin), dtype=float), name='XMIN')
-        col_xmax = Column(np.asarray(copy.deepcopy(xmax), dtype=float), name='XMAX')
+        col_xmin = Column(np.asarray(copy.deepcopy(xmin), dtype=dtype), name='XMIN')
+        col_xmax = Column(np.asarray(copy.deepcopy(xmax), dtype=dtype), name='XMAX')
 
         if (dy is None):
             dy = np.repeat(float('nan'), len(col_x))
-        col_dy = Column(np.asarray(copy.deepcopy(dy), dtype=float), name='DY')
+        col_dy = Column(np.asarray(copy.deepcopy(dy), dtype=dtype), name='DY')
         
         if (group is None):
             group = np.ones(len(col_x))
@@ -67,7 +70,7 @@ class spec1d():
         
         if (resol is None):
             resol = np.repeat(float('nan'), len(col_x))
-        col_r = Column(np.asarray(copy.deepcopy(resol), dtype=float), name='RESOL')
+        col_r = Column(np.asarray(copy.deepcopy(resol), dtype=dtype), name='RESOL')
         
         # Auxiliary data and meta
         self._exptime = float(exptime)
@@ -76,7 +79,9 @@ class spec1d():
             meta = {}
 
         # Table creation
-        self._t = Table(data=(col_xmin, col_xmax, col_x, col_y, col_dy, col_g, col_r), masked=True, meta=meta)
+        self._t = Table(
+            data=(col_xmin, col_xmax, col_x, col_y, col_dy, col_g, col_r), 
+            masked=True, meta=meta)
         self._t['XMIN'].unit = xUnit
         self._t['XMAX'].unit = xUnit
         self._t['X'].unit    = xUnit
@@ -248,6 +253,17 @@ class spec1d():
     def convert(self, xUnit=None, yUnit=None):
         """Convert x and/or y values into equivalent quantities."""
         if not (xUnit is None):
+            #TODO: check following code
+            #if xUnit.is_equivalent(u.m / u.s) \
+            #    or self.xUnit.is_equivalent(u.m / u.s):
+            ##if self.xUnit in (u.km/u.s).compose() or \
+            ##    xUnit in (u.km/u.s).compose():
+            #        equiv = [(u.nm, u.km / u.s, lambda x: np.log(x) \
+            #             * c.to(u.km / u.s).value, 
+            #             lambda x: np.exp(x / c.to(u.km / u.s).value))]
+            #else:
+            #    equiv = u.spectral()
+
             mask = self._t['X'].mask
             q = self._t['X']
             p = q.to(xUnit, equivalencies=u.spectral())
@@ -280,7 +296,147 @@ class spec1d():
             self._t['DY'].mask = mask
 
 
+    def convolve(self, col='y', prof=None, gauss_sigma=20):
+        """Convolve a spectrum with a profile using FFT transform
+        
+        The profile must have the same length of the column X of the spectrum.
+        If no profile @a prof is provided, a normalized Gaussian profile with 
+        @a gauss_sigma is applied."""
+
+        conv = copy.deepcopy(self)
+        conv_col = getattr(conv, col)
+        conv.convert(xUnit=u.km/u.s)        
+        if prof is None:
+            par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
+            par = np.ndarray.flatten(par, order='F')
+            prof = many_gauss(conv.x.value, *par)
+            prof = prof / np.sum(prof)
+        conv.y = fftconvolve(conv_col, prof, 'same')
+        conv.convert(xUnit=self.x.unit)
+        return conv
+        
     def deredden(self, A_v, model='od94'):
         extFactor = extinction.reddening(self._t['X'], A_v, model=model)
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
+    
+    def find_extrema(self):
+        """Find the extrema in a spectrum and save them as a spectrum"""
+    
+        min_idx = np.hstack(argrelmin(self.y))
+        max_idx = np.hstack(argrelmax(self.y))
+        extr_idx = np.sort(np.append(min_idx, max_idx))
+        minima = self.from_table(self.t[min_idx])
+        maxima = self.from_table(self.t[max_idx])
+        extrema = self.from_table(self.t[extr_idx])
+        return minima, maxima, extrema
+        
+    def find_lines(self, mode='abs', diff='max', kappa=3.0, hwidth=2):
+        """Find the lines in a spectrum and save them as a line list"""
+        
+        # Find the extrema
+        minima, maxima, extr = self.find_extrema()
+        
+        # Compute the difference between each extremum and its neighbours
+        # N.B. Negative fluxes give wrong results! To be fixed 
+        diff_y_left = (extr.y[:-2] - extr.y[1:-1]) / extr.y[1:-1]
+        diff_y_right = (extr.y[2:] - extr.y[1:-1]) / extr.y[1:-1]
+        if mode is 'em':
+            diff_y_left = -diff_y_left
+            diff_y_right = -diff_y_right
+        
+        # Check if the difference is above threshold
+        diff_y_min = np.minimum(diff_y_left, diff_y_right)
+        diff_y_max = np.maximum(diff_y_left, diff_y_right)
+        thres = extr.dy[1:-1] / extr.y[1:-1] * kappa
+        if diff is 'min':
+            line_pos = np.greater(diff_y_min, thres)
+        else:
+            line_pos = np.greater(diff_y_max, thres)
+        line_x = extr.x[1:-1][line_pos]
+        line_y = extr.y[1:-1][line_pos]
+
+        if len(line_x) > 0: 
+
+            # Compute the boundaries for line fitting    
+            window = extr.rolling_window(hwidth * 2 + 1)
+            bound = np.full(hwidth + 1, np.amin(self.x))
+            if mode is 'em':
+                bound = np.append(bound, 
+                    window.x[np.arange(len(window.x)), np.argmin(window.y, 1)])
+            else:
+                bound = np.append(bound,
+                    window.x[np.arange(len(window.x)), np.argmax(window.y, 1)])
+            bound = np.append(bound, np.full(hwidth + 1, np.amax(self.x)))
+            line_xmin = bound[:-hwidth * 2][line_pos]
+            line_xmax = bound[hwidth * 2:][line_pos]
+            
+            # Create the linelist
+            list = List(line_x, line_y, xmin=line_xmin, xmax=line_xmax)
+            return list
+
+    def from_table(self, table, meta = {}):
+        """Read a spectrum from a (spectrum-like) table"""
+        
+        xmin = table['XMIN']
+        xmax = table['XMAX']
+        x = table['X']
+        y = table['Y']            
+        dy = table['DY']
+        group = table['GROUP']
+        resol = table['RESOL']
+        dx = 0.5 * (xmax - xmin)
+        
+        c1 = np.argwhere(y > 0)
+        c2 = np.argwhere(dy > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xUnit=x.unit, 
+                      yUnit=y.unit, group=good, resol=resol, meta=meta)
+        return spec
+        
+    def rolling_window(self, width):
+        """Convert a spectrum in rolling-window format
+    
+        Rolling-window format means that each column entry is an array of size
+        @p width, obtained by rolling a window through each column. The size
+        of the spectrum is 
+        
+        Code adapted from 
+        http://www.rigtorp.se/2011/01/01/rolling-statistics-numpy.html"""
+
+        shape = self.x.shape[:-1] + (self.x.shape[-1] - width + 1, width)
+        strides = self.x.strides + (self.x.strides[-1],)
+        window_xmin = np.lib.stride_tricks.as_strided(
+            self.xmin, shape=shape, strides=strides)
+        window_xmax = np.lib.stride_tricks.as_strided(
+            self.xmax, shape=shape, strides=strides)
+        window_x = np.lib.stride_tricks.as_strided(
+            self.x, shape=shape, strides=strides)
+        window_y = np.lib.stride_tricks.as_strided(
+            self.y, shape=shape, strides=strides)
+        window_dy = np.lib.stride_tricks.as_strided(
+            self.dy, shape=shape, strides=strides)
+        window_group = np.lib.stride_tricks.as_strided(
+            self.group, shape=shape, strides=strides)
+        window_resol = np.lib.stride_tricks.as_strided(
+            self.resol, shape=shape, strides=strides)
+        window = Spec1D(
+            window_x, window_y, xmin=window_xmin, xmax=window_xmax,
+            dy=window_dy, group=window_group, resol=window_resol)
+        #window = Spec1DReader().table(window_t)
+        return window
+        
+    def save(self, filename):
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='XMIN', format='E', array=self.xmin),
+             fits.Column(name='XMAX', format='E', array=self.xmax),
+             fits.Column(name='X', format='E', array=self.x),
+             fits.Column(name='Y', format='E', array=self.y),
+             fits.Column(name='DY', format='E', array=self.dy),
+             fits.Column(name='GROUP', format='I', array=self.group),
+             fits.Column(name='RESOL', format='E', array=self.resol)])
+        hdu.writeto(filename, overwrite=True)
