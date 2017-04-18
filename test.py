@@ -1,6 +1,6 @@
 #Import libraries
-from astrocook import spec1d
-from astrocook import spec1dreader
+from astrocook import Spec1D
+from astrocook import Spec1DReader
 from astropy import units as u
 from astropy.modeling import models, fitting
 import numpy as np
@@ -16,8 +16,8 @@ quantity_support()
 #Create some fake data
 a = [1,2,3]
 
-#Create a spec1d object providing x, y, dy and units informations
-s = spec1d(a, a, dy=a, xUnit=u.Angstrom, yUnit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
+#Create a Spec1D object providing x, y, dy and units informations
+s = Spec1D(a, a, dy=a, xUnit=u.Angstrom, yUnit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
 
 #Test unit conversion capabilities
 print()
@@ -43,19 +43,19 @@ s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
 print(s.y)
 
 
-#Plot the spec1d data
+#Plot the Spec1D data
 plt.plot(s.x, s.y)
 plt.show()
 
 
 
-#Create a spec1dreader object
-r = spec1dreader()
+#Create a Spec1DReader object
+r = Spec1DReader()
 
 #Read data from a FITS file
 s = r.sdss_dr10('spec-0752-52251-0323.fits')
 
-#Plot the spec1d data
+#Plot the Spec1D data
 plt.plot(s.x, s.y)
 plt.title("MJD="+str(s.meta['MJD']) + ", plate="+str(s.meta['PLATEID']) + ", fiber="+str(s.meta['FIBERID']))
 plt.show()

@@ -4,17 +4,18 @@ if (len(sys.argv) < 2):
     sys.exit()
 
 #Import libraries
-from astrocook import spec1dreader
-from astrocook import spec1dContinuum
+from astrocook import Spec1D
+from astrocook import Spec1DReader
+from astrocook import Spec1DCont
 import matplotlib.pyplot as plt
 import time
 
 f = sys.argv[1]
 
-r = spec1dreader()
+r = Spec1DReader()
 s = r.uves(f)
 
-c = spec1dContinuum()
+c = Spec1DCont(s)
 start = time.time()
 cont = c.findStretchable(s)
 #cont = c.findStretchable(s, stiff=0.8)
