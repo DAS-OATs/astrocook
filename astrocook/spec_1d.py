@@ -253,17 +253,6 @@ class Spec1D():
     def convert(self, xUnit=None, yUnit=None):
         """Convert x and/or y values into equivalent quantities."""
         if not (xUnit is None):
-            #TODO: check following code
-            #if xUnit.is_equivalent(u.m / u.s) \
-            #    or self.xUnit.is_equivalent(u.m / u.s):
-            ##if self.xUnit in (u.km/u.s).compose() or \
-            ##    xUnit in (u.km/u.s).compose():
-            #        equiv = [(u.nm, u.km / u.s, lambda x: np.log(x) \
-            #             * c.to(u.km / u.s).value, 
-            #             lambda x: np.exp(x / c.to(u.km / u.s).value))]
-            #else:
-            #    equiv = u.spectral()
-
             mask = self._t['X'].mask
             q = self._t['X']
             p = q.to(xUnit, equivalencies=u.spectral())
@@ -296,6 +285,37 @@ class Spec1D():
             self._t['DY'].mask = mask
 
 
+    def todo_convert_logx(self, xUnit=None, yUnit=None):
+        """Convert x and/or y values into equivalent quantities."""
+        if not (xUnit is None):
+            #TODO: check following code
+            if xUnit.is_equivalent(u.m / u.s) \
+                or self.xUnit.is_equivalent(u.m / u.s):
+                    equiv = [(u.nm, u.km / u.s, 
+                              lambda x: np.log(x) * c.to(u.km / u.s).value, 
+                              lambda x: np.exp(x / c.to(u.km / u.s).value)   \
+                          )]
+
+            mask = self._t['X'].mask
+            q = self._t['X']
+            p = q.to(xUnit, equivalencies=equiv)
+            self._t['X'] = p
+            self._t['X'].mask = mask
+
+            mask = self._t['XMIN'].mask
+            q = self._t['XMIN']
+            p = q.to(xUnit, equivalencies=equiv)
+            self._t['XMIN'] = p
+            self._t['XMIN'].mask = mask
+
+            mask = self._t['XMAX'].mask
+            q = self._t['XMAX']
+            p = q.to(xUnit, equivalencies=equiv)
+            self._t['XMAX'] = p
+            self._t['XMAX'].mask = mask
+
+
+
     def convolve(self, col='y', prof=None, gauss_sigma=20):
         """Convolve a spectrum with a profile using FFT transform
         
@@ -305,14 +325,14 @@ class Spec1D():
 
         conv = copy.deepcopy(self)
         conv_col = getattr(conv, col)
-        conv.convert(xUnit=u.km/u.s)        
+        conv.todo_convert_logx(xUnit=u.km/u.s)        
         if prof is None:
             par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
         conv.y = fftconvolve(conv_col, prof, 'same')
-        conv.convert(xUnit=self.x.unit)
+        conv.todo_convert_logx(xUnit=self.x.unit)
         return conv
         
     def deredden(self, A_v, model='od94'):

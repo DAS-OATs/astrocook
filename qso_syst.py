@@ -55,7 +55,7 @@ def main():
     print("Normalized spectrum loaded.")
 
     print("Shifting spectrum...")
-    norm.convert(xUnit=u.km/u.s)
+    norm.todo_convert_logx(xUnit=u.km/u.s)
     shift_l = copy.deepcopy(norm)
     shift_r = copy.deepcopy(norm)
     trans_name = 'CIV'
@@ -66,7 +66,7 @@ def main():
     shift_r.y = np.interp(norm.x, shift_r.x, shift_r.y)
     shift_l.x = norm.x
     shift_r.x = norm.x
-    norm.convert(xUnit=u.nm)
+    norm.todo_convert_logx(xUnit=u.nm)
 
     print("Smoothing shifted spectra...")
     # Higher values of gauss_sigma decrease the number of false positives
@@ -79,11 +79,9 @@ def main():
     corr_r = copy.deepcopy(conv)
     corr_l.y = 1 - np.sqrt((1 - conv.y.value) * (1 - conv_l.y.value))
     corr_r.y = 1 - np.sqrt((1 - conv.y.value) * (1 - conv_r.y.value))
-    conv.convert(xUnit=u.nm)
-    conv_l.convert(xUnit=u.nm)
-    conv_r.convert(xUnit=u.nm)
-    corr_l.convert(xUnit=u.nm)
-    corr_r.convert(xUnit=u.nm)
+
+    conv_l.todo_convert_logx(xUnit=u.nm)
+    conv_r.todo_convert_logx(xUnit=u.nm)
 
     print("Finding " + trans_name + " candidates...")
 

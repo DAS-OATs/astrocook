@@ -81,14 +81,14 @@ def main():
     # Compute the smoothing windows
     # N.B. The input spectrum should have a fixed velocity bin
     smooth = 500 * u.km / u.s
-    spec.convert(xUnit=u.km/u.s)
+    spec.todo_convert_logx(xUnit=u.km/u.s)
     narrow = int(smooth / np.mean(spec.xmax - spec.xmin))
     medium = narrow * 2
     wide = narrow * 4
     narrow = narrow + 1 if narrow % 2 == 0 else narrow
     medium = medium + 1 if medium % 2 == 0 else medium
     wide = wide + 1 if wide % 2 == 0 else wide
-    spec.convert(xUnit=u.nm)    
+    spec.todo_convert_logx(xUnit=u.nm)    
     print("Savitzky-Golay smoothing windows: ")
     print(" wide (absorption-clean continuum): %i pixels" % (wide))
     print(" narrow (emission continuum): %i pixels" % (narrow))
@@ -121,7 +121,8 @@ def main():
             except:
                 print(" Extracting absorption lines...")
                 list_abs, conv_abs = find_lines(spec, kappa=10.0)
-                list_abs.save(name + '_list_abs.fits')
+                if (list_abs is not None):
+                    list_abs.save(name + '_list_abs.fits')
 
             print(" Grouping absorption lines...")
             list_abs.group()
@@ -268,8 +269,6 @@ def main():
     plt.plot(spec_cont.x, spec_cont.abs_fit) #green 
     plt.plot(spec_cont.x, spec_cont.abs_rem) #cyan
     #ax_4.plot(spec_res.x, spec_res.abs_rem) #black
-    plt.set_ylabel("Y / CONT")
-    plt.set_xlabel("X (" + "{}".format(spec.x.unit) + ")")
     plt.show()
 
     """
