@@ -7,12 +7,8 @@ import copy
 import numpy as np
 import signal
 from scipy.optimize import curve_fit
-<<<<<<< HEAD
-import statsmodels.api as sm
-=======
 #TODO: uncomment this import statsmodels.api as sm
 #import matplotlib.pyplot as plt
->>>>>>> f78c5b36c1d239c084fb35467ce4af5adead4cc3
 
 # From http://stackoverflow.com/questions/25027122/break-the-function-after-certain-time
 class TimeoutException(Exception):   # Custom exception class
