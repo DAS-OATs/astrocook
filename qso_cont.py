@@ -52,7 +52,6 @@ def main():
     zem = float(sys.argv[2])
     
     # Set up plotting window
-    #"""
     fig = plt.figure(figsize = (12, 8))
     fig.canvas.set_window_title('Continuum')
     fig.suptitle(name)
@@ -69,7 +68,6 @@ def main():
     ax_4.set_prop_cycle(cycler('color', ['blue', 'red', 'green', 'cyan', 'black']))
     ax_3.set_ylim([0.9, 1.1])   
     gs.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
-    #"""
     spec_read = Spec1DReader()
     list_read = ListReader()
 
@@ -82,15 +80,15 @@ def main():
         
     # Compute the smoothing windows
     # N.B. The input spectrum should have a fixed velocity bin
-    smooth = 50 * u.km / u.s
-    spec.convert(xUnit=u.km/u.s)
+    smooth = 500 * u.km / u.s
+    spec.todo_convert_logx(xUnit=u.km/u.s)
     narrow = int(smooth / np.mean(spec.xmax - spec.xmin))
-    medium = narrow * 5
-    wide = narrow * 25
+    medium = narrow * 2
+    wide = narrow * 4
     narrow = narrow + 1 if narrow % 2 == 0 else narrow
     medium = medium + 1 if medium % 2 == 0 else medium
     wide = wide + 1 if wide % 2 == 0 else wide
-    spec.convert(xUnit=u.nm)    
+    spec.todo_convert_logx(xUnit=u.nm)    
     print("Savitzky-Golay smoothing windows: ")
     print(" wide (absorption-clean continuum): %i pixels" % (wide))
     print(" narrow (emission continuum): %i pixels" % (narrow))
@@ -123,7 +121,7 @@ def main():
             except:
                 print(" Extracting absorption lines...")
                 list_abs, conv_abs = find_lines(spec, kappa=10.0)
-                if list_abs is not None:
+                if (list_abs is not None):
                     list_abs.save(name + '_list_abs.fits')
 
             print(" Grouping absorption lines...")
@@ -133,12 +131,10 @@ def main():
             spec_abs = copy.deepcopy(spec)
             spec_abs = Spec1DCont(spec)
             spec_abs.rem_lines(list_abs, size=narrow, timer=0.1)
-
             print("Fitting a Savitzky-Golay continuum to the spectrum...")
             spec_abs.sg(spec_abs.abs_rem, wide, 3)
             spec_abs.save(name + '_spec_abs.fits')
             
-                    
         print("Clean spectrum from emission lines:")
         try:
             list_em = list_read.gen(name + '_list_em.fits')

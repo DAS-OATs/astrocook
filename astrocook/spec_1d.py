@@ -248,19 +248,51 @@ class Spec1D():
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
 
-
     def convert(self, xUnit=None, yUnit=None):
         """Convert x and/or y values into equivalent quantities."""
         if not (xUnit is None):
+            mask = self._t['X'].mask
+            q = self._t['X']
+            p = q.to(xUnit, equivalencies=u.spectral())
+            self._t['X'] = p
+            self._t['X'].mask = mask
+
+            mask = self._t['XMIN'].mask
+            q = self._t['XMIN']
+            p = q.to(xUnit, equivalencies=u.spectral())
+            self._t['XMIN'] = p
+            self._t['XMIN'].mask = mask
+
+            mask = self._t['XMAX'].mask
+            q = self._t['XMAX']
+            p = q.to(xUnit, equivalencies=u.spectral())
+            self._t['XMAX'] = p
+            self._t['XMAX'].mask = mask
+
+        if not (yUnit is None):
+            mask = self._t['Y'].mask
+            q = self._t['Y']
+            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            self._t['Y'] = p
+            self._t['Y'].mask = mask
+
+            mask = self._t['DY']
+            q = self._t['DY']
+            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            self._t['DY'] = p
+            self._t['DY'].mask = mask
+
+
+    def todo_convert_logx(self, xUnit=None, yUnit=None):
+        """Convert x and/or y values into equivalent quantities."""
+        if not (xUnit is None):
+            #TODO: check following code
             if xUnit.is_equivalent(u.m / u.s) \
                 or self.xUnit.is_equivalent(u.m / u.s):
-            #if self.xUnit in (u.km/u.s).compose() or \
-            #    xUnit in (u.km/u.s).compose():
-                    equiv = [(u.nm, u.km / u.s, lambda x: np.log(x) \
-                         * c.to(u.km / u.s).value, 
-                         lambda x: np.exp(x / c.to(u.km / u.s).value))]
-            else:
-                equiv = u.spectral()
+                    equiv = [(u.nm, u.km / u.s, 
+                              lambda x: np.log(x) * c.to(u.km / u.s).value, 
+                              lambda x: np.exp(x / c.to(u.km / u.s).value)   \
+                          )]
 
             mask = self._t['X'].mask
             q = self._t['X']
@@ -280,18 +312,6 @@ class Spec1D():
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
-        if not (yUnit is None):
-            mask = self._t['Y'].mask
-            q = self._t['Y']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
-            self._t['Y'] = p
-            self._t['Y'].mask = mask
-
-            mask = self._t['DY']
-            q = self._t['DY']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
-            self._t['DY'] = p
-            self._t['DY'].mask = mask
 
 
     def convolve(self, col='y', prof=None, gauss_sigma=20):
@@ -303,14 +323,14 @@ class Spec1D():
 
         conv = copy.deepcopy(self)
         conv_col = getattr(conv, col)
-        conv.convert(xUnit=u.km/u.s)        
+        conv.todo_convert_logx(xUnit=u.km/u.s)        
         if prof is None:
             par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
         conv.y = fftconvolve(conv_col, prof, 'same')
-        conv.convert(xUnit=self.x.unit)
+        conv.todo_convert_logx(xUnit=self.x.unit)
         return conv
         
     def deredden(self, A_v, model='od94'):
