@@ -27,7 +27,7 @@ def many_gauss(x, *p, mode='abs', cont = 1):
 def many_voigt(x, *p, constr_list=None, trans_list=None, transf='yes'):
 
     """
-    Return the voigtoigt line shape at x with Lorentzian component HWHM gamma
+    Return the voigt line shape at x with Lorentzian component HWHM gamma
     and Gaussian component HWHM alpha.
 
     """

@@ -79,11 +79,8 @@ def main():
     corr_r = copy.deepcopy(conv)
     corr_l.y = 1 - np.sqrt((1 - conv.y.value) * (1 - conv_l.y.value))
     corr_r.y = 1 - np.sqrt((1 - conv.y.value) * (1 - conv_r.y.value))
-    conv.convert(xUnit=u.nm)
     conv_l.convert(xUnit=u.nm)
     conv_r.convert(xUnit=u.nm)
-    corr_l.convert(xUnit=u.nm)
-    corr_r.convert(xUnit=u.nm)
 
     print("Finding " + trans_name + " candidates...")
 

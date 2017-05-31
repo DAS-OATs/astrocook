@@ -1,3 +1,4 @@
+from .fit import Fit
 from .list import List
 from .list_reader import ListReader
 from .list_syst import ListSyst

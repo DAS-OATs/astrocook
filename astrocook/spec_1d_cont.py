@@ -139,8 +139,92 @@ class Spec1DCont(Spec1D):
             self._t['CONT'] = np.asarray(value, dtype='float')
         self._t['CONT'].unit = self._t['CONT'].unit
 
-    def fit_lines(self, list, mode='abs', col='y', method='trials', 
-                  sg_size=101, sg_order=3, timer=5):
+    def fit_lines_2(self, list, zem='0.0', col='y', timer=5):
+        """Fit lines in a spectrum with Voigt profiles"""
+    
+        self_col = getattr(self, col)        
+        y_fit = np.zeros(len(self_col)) * self_col.unit
+        y_fit.fill(np.nan)
+        y_rem = copy.deepcopy(self_col)
+        
+        rchisq = 10
+        rchisq_thres = 5
+        i = 0
+        i_thres = 30
+#        while rchisq > rchisq_thres:
+        lyaf_where = self.t['X'] < (1 + zem) * 121.567 * self.x.unit 
+        lyaf_spec = self.from_table(self.t[lyaf_where])
+        fail = 0
+        while i < i_thres:
+        
+            # Find the position of the maximum residual
+            #res_idx = np.argmax(np.abs(1 - lyaf_spec.y / lyaf_spec.cont))
+            res_idx = np.argmax(1 - lyaf_spec.y / lyaf_spec.cont)
+            res_x = lyaf_spec.x[res_idx]
+            print(res_x)
+            # Find the line group where the maximum residual is located
+            list_idx = (np.abs(list.x - res_x)).argmin()
+            #list_where = list.t['GROUP'] == list.t['GROUP'][list_idx]
+            list_where = list.t['X'] == list.t['X'][list_idx]
+            group_list = list.from_table(list.t[list_where])
+            group_xmin = np.amin(group_list.xmin)
+            group_xmax = np.amax(group_list.xmax)
+            spec_where = np.logical_and(self.x >= group_xmin, 
+                                         self.x <= group_xmax)
+            spec_sel = lyaf_spec.from_table(lyaf_spec.t[spec_where])
+            spec_sel_col = getattr(spec_sel, col)
+            #print(res_x, group_xmin, group_xmax)
+            
+            # Define the guess Voigt parameters for the residual
+            mean = res_x.value
+            log_N = 14.0
+            b = 20.0
+            p0_voigt = np.stack([mean, log_N, b])
+            p0_voigt = np.ndarray.flatten(p0_voigt, order='F')
+            #p0_voigt = np.tan(p0_voigt / 3600 - 0.0)
+            #print(p0_voigt)
+            
+            try:
+
+            
+                # Fit a Voigt profile to the residual
+                coeff, var_matrix = curve_fit(many_voigt, spec_sel.x.value, 
+                                              spec_sel.y/spec_sel.cont, 
+                                              p0=p0_voigt)
+                #coeff = p0_voigt
+                #print(coeff)
+                #print(*coeff)
+                prof = many_voigt(spec_sel.x.value, *coeff)
+                #print(spec_sel.x.value)
+                #print(prof)
+                y_fit[spec_where] = spec_sel.cont.value * prof * self_col.unit                              
+                y_rem[spec_where] = spec_sel_col + spec_sel.cont.value \
+                                        * (1 - prof) * self_col.unit
+                lyaf_spec.t['Y'][spec_where] = y_rem[spec_where]
+                rchisq = np.sum(
+                    (spec_sel.y - y_fit[spec_where]) ** 2 \
+                    / spec_sel.dy ** 2) \
+                    / (len(spec_sel.x) - len(group_list.x) * 3)
+
+            except (RuntimeError, Exception):
+                    
+                # Use the guess local continuum
+                print("!")
+                y_fit[spec_where] = spec_sel_col                           
+                y_rem[spec_where] = spec_sel.cont.value * self_col.unit                           
+                lyaf_spec.t['Y'][spec_where] = y_rem[spec_where]
+                fail = fail + 1
+            finally:
+                signal.alarm(0)
+
+
+            i += 1
+
+        self._t['ABS_FIT'] = y_fit
+        self._t['ABS_REM'] = y_rem
+    
+
+    def fit_lines(self, list, col='y', timer=5):
         """Fit lines in a spectrum"""
         
         self_col = getattr(self, col)
@@ -149,31 +233,15 @@ class Spec1DCont(Spec1D):
         y_fit.fill(np.nan)
         y_rem = copy.deepcopy(self_col)
 
-        #signal.signal(signal.SIGALRM, timeout_handler)
-
         if list is not None:
 
-            # Create a list of line groups
             groups = np.unique(list.t['GROUP'])
-            #groups = [0]
+            #groups = np.array([2])
             
             end=""
             end="\n   "
-            if method is 'trials':
-                print("  %i line groups (g = Gaussian fit, v = Voigt fit, " \
-                    "sg = Savitzky-Golay fit, X = failure): " \
-                    % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
-            elif method is 'sg':
-                print("  %i line groups (sg = Savitzky-Golay fit, " \
-                    "X = failure): " \
-                    % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
-            elif method is 'v':
-                print("  %i line groups (v = Voigt fit, " \
-                    "X = failure): " \
-                    % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
-            
-
-            # Loop over groups
+            print("  %i line groups (v = Voigt fit, X = failure): " \
+                  % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
             fail = 0
             for group in groups:
 
@@ -192,20 +260,11 @@ class Spec1DCont(Spec1D):
 
                 fact = 3600
 
-                # Compute the guess means of the gaussians
+                # Compute the guess means of the profiles
                 mean = group_list.x.value
                 mean_min = group_list.x.value * (1 - 20000 / c.value)
                 mean_max = group_list.x.value * (1 + 20000 / c.value)
-                """
-                mean_min = group_list.xmin.value 
-                mean_max = group_list.xmax.value
-                """
                 mean_norm = [500 * fact] * len(group_list.y)
-                
-                # Compute the standard deviation as 2.355 times the FWHM (taken
-                # as half of the [XMIN-XMAX] range)
-                std = 0.5 * (group_list.xmax.value - group_list.xmin.value) \
-                      / 2.355 
 
                 # Compute the guess local continuum by interpolating across the 
                 # contiguous maxima
@@ -217,15 +276,10 @@ class Spec1DCont(Spec1D):
                 cont = group_spec.cont.value
                 if np.any(np.isnan(cont)):
                     cont = y_i + (group_spec.x.value - x_i) * (y_f - y_i) / (x_f - x_i)
-                
+            
                 group_list_cont = np.interp(group_list.x.value,
                                             group_spec.x.value, cont)
                 
-                # Compute the guess amplitudes as the logarithm of the
-                # difference between the maximum flux in the region and the peak 
-                # of the line
-                ampl = cont[0] - group_list.y.value
-
                 # Compute the guess column densities 
                 #log_N = [13.0] * len(group_list.y)
                 #print(group_list.guess_logN(group_list_cont))
@@ -239,9 +293,16 @@ class Spec1DCont(Spec1D):
                 b_min = [2.0] * len(group_list.y)
                 b_max = [100.0] * len(group_list.y)
                 b_norm = [20.0 * fact] * len(group_list.y)
+
+                # Sort the parameters by descending column density
+                """
+                argsort = np.fliplr([np.argsort(log_N)])[0]
+                mean = mean[argsort]
+                mean_min = mean_min[argsort]
+                mean_max = mean_max[argsort]
+                log_N = log_N[argsort]
+                """
                                 
-                p0_gauss = np.stack([mean, std, ampl])
-                p0_gauss = np.ndarray.flatten(p0_gauss, order='F')
                 p0_voigt = np.stack([mean, log_N, b])
                 p0_voigt = np.ndarray.flatten(p0_voigt, order='F')
                 min_voigt = np.stack([mean_min, log_N_min, b_min])
@@ -251,229 +312,110 @@ class Spec1DCont(Spec1D):
                 norm_voigt = np.stack([mean_norm, log_N_norm, b_norm])
                 norm_voigt = np.ndarray.flatten(norm_voigt, order='F')
 
-
                 # Transform Voigt parameters
-                #print(p0_voigt)
-                #print(min_voigt)
-                #print(max_voigt)
-                #print(norm_voigt)
                 p0_voigt = np.tan(p0_voigt / norm_voigt - 0.0)
                 min_voigt = np.tan(min_voigt / norm_voigt - 0.0) 
                 max_voigt = np.tan(max_voigt / norm_voigt - 0.0) 
-                #p0_voigt = p0_voigt / norm_voigt 
-                #min_voigt = min_voigt / norm_voigt
-                #max_voigt = max_voigt / norm_voigt
-                #print(p0_voigt)
-                #print(min_voigt)
-                #print(max_voigt)
 
                 bounds_voigt = (min_voigt, max_voigt)
 
                 norm = group_spec_col.value / cont
                 dnorm = group_spec.dy.value / cont
-
-                if method is 'trials':
-                    
-                    # Start a timer
-                    #signal.alarm(timer)
-                    signal.signal(signal.SIGALRM, handler)
-                    #signal.alarm(timer)
-                    signal.setitimer(signal.ITIMER_REAL, timer)
-                    try:
-                        
-                        # Fit a sum of gaussian profiles
-                        coeff, var_matrix = curve_fit(
-                                                many_gauss, group_spec.x.value, 
-                                                cont - group_spec_col.value, 
-                                                p0=p0_gauss)
-                        prof = many_gauss(group_spec.x.value, *coeff)
-                        y_fit[where_spec] = cont * self_col.unit \
-                            - prof * self_col.unit                              
-                        y_rem[where_spec] = group_spec_col + prof * self_col.unit                           
-                        if end == "":
-                            print("g ", end=end, flush=True)
-                        else:
-                            print("[%f-%f]: g " % (xmin.value, xmax.value), 
-                                  end=end, flush=True)
-
-                    except (RuntimeError, Exception):
-                    #except (TimeoutException):
-                    
-                        #signal.alarm(timer)
-                        signal.setitimer(signal.ITIMER_REAL, timer)
-                        try:
-                        
-                            # Fit a sum of Voigt profiles
-                            coeff, var_matrix = curve_fit(
-                                                    many_voigt, group_spec.x.value, 
-                                                    group_spec_col.value / cont, 
-                                                    p0=p0_voigt)
-                            prof = many_voigt(group_spec.x.value, *coeff)
-                            y_fit[where_spec] = cont * prof * self_col.unit                              
-                            y_rem[where_spec] = group_spec_col + cont \
-                                                * (1 - prof) * self_col.unit
-                            if end == "":
-                                print("v ", end=end, flush=True)
-                            else:
-                                print("[%f-%f]: v " % (xmin.value, xmax.value), 
-                                      end=end, flush=True)
-
-
-                        except (RuntimeError, Exception):
-                        #except (TimeoutException):
-                    
-                            #signal.alarm(timer)
-                            signal.setitimer(signal.ITIMER_REAL, timer)
-                            try:
-
-                                # Fit a Savitzky-Golay profile
-                                group_spec.sg(cont * self_col.unit \
-                                              - group_spec_col, sg_size, 
-                                              sg_order)
-                                prof = group_spec.cont.value
-                                y_fit[where_spec] = cont * self_col.unit \
-                                                    - prof * self_col.unit                              
-                                y_rem[where_spec] = group_spec_col \
-                                                    + prof * self_col.unit  
-                                if end == "":
-                                    print("sg ", end=end, flush=True)
-                                else:
-                                    print("[%f-%f]: sg " 
-                                          % (xmin.value, xmax.value), 
-                                          end=end, flush=True)
-
-                            except (RuntimeError, Exception):
-                                
-                                # Use the guess local continuum
-                                y_fit[where_spec] = group_spec_col                           
-                                y_rem[where_spec] = cont * self_col.unit                           
-
-                                fail = fail + 1
-                                if end == "":
-                                    print("X ", end=end, flush=True)
-                                else:
-                                    print("[%f-%f]:  X"    
-                                          % (xmin.value, xmax.value), 
-                                          end=end, flush=True)
-
-                            finally:
-                                signal.alarm(0)
-                        finally:
-                            signal.alarm(0)
-                    finally:
-                        signal.alarm(0)
-
-                elif method is 'sg':
-
-                    signal.signal(signal.SIGALRM, handler)
-                    #signal.alarm(timer)
-                    signal.setitimer(signal.ITIMER_REAL, timer)
-                    try:
-
-                        # Fit a Savitzky-Golay profile
-                        group_spec.sg(cont * self_col.unit - group_spec_col, 
-                                      sg_size, sg_order)
-                        prof = group_spec.cont.value
-                        y_fit[where_spec] = cont * self_col.unit \
-                                            - prof * self_col.unit                              
-                        y_rem[where_spec] = group_spec_col \
-                                            + prof * self_col.unit  
-                        if end == "":
-                            print("sg ", end=end, flush=True)
-                        else:
-                            print("[%f-%f]: sg " % (xmin.value, xmax.value), 
-                                  end=end, flush=True)
-
-                    except:
-                        
-                        # Use the guess local continuum
-                        y_fit[where_spec] = group_spec_col                           
-                        y_rem[where_spec] = cont * self_col.unit                           
-
-                        fail = fail + 1
-                        if end == "":
-                            print("X ", end=end, flush=True)
-                        else:
-                            print("[%f-%f]:  X" % (xmin.value, xmax.value), 
-                                  end=end, flush=True)
-                        
-                    finally:
-                        signal.alarm(0)
-
-                elif method is 'v':
                 
-                    signal.signal(signal.SIGALRM, handler)
-                    #signal.alarm(timer)
-                    signal.setitimer(signal.ITIMER_REAL, timer)
+                signal.signal(signal.SIGALRM, handler)
+                signal.setitimer(signal.ITIMER_REAL, timer)
 
-                    try:
+
+                norm_add = np.array([500 * fact, 14 * fact, 20.0 * fact])
+
+
+                try:
+
+                    coeff = []
+                    
+                    rchisq = 10
+                    i = 0
+                    
+                    while rchisq > 5:
+                    #for i in range(3, len(p0_voigt) + 1, 3):
+                    
+                        i = i + 1
+
+                        #p0_ran = range(i - 3, i)
+                        #p0_sel = np.append(coeff, p0_voigt[p0_ran])
+                        #print(i, p0_voigt, p0_sel)
+                        #bounds_ran = range(0, i)
+                        #bounds_voigt = (min_voigt, max_voigt)
+                        #bounds_sel = (bounds_voigt[0][bounds_ran], 
+                        #              bounds_voigt[1][bounds_ran])
 
                         # Fit a sum of Voigt profiles
+                        #print(i, p0_voigt)
                         coeff, var_matrix = curve_fit(
                                                 many_voigt, group_spec.x.value, 
                                                 norm, 
                                                 p0=p0_voigt, sigma=dnorm, 
+                                                #bounds=bounds_sel,
                                                 bounds=bounds_voigt,
                                                 method='trf')
+                        #print(i, *coeff)
                         prof = many_voigt(group_spec.x.value, *coeff)
                         y_fit[where_spec] = cont * prof * self_col.unit                              
                         y_rem[where_spec] = group_spec_col + cont \
-                                            * (1 - prof) * self_col.unit
+                                                * (1 - prof) * self_col.unit
                         rchisq = np.sum(
                             (group_spec.y - y_fit[where_spec]) ** 2 \
                             / group_spec.dy ** 2) \
                             / (len(group_spec.x) - len(group_list.x) * 3)
-                        
-                        if end == "":
-                            print("v ", end=end, flush=True)
-                        else:
-                            print("[%f-%f]: v (%f) " 
-                                  % (xmin.value, xmax.value, rchisq), 
-                                  end=end, flush=True)
-                            #print(p0_voigt, coeff)
-                            #print(p0_voigt)
-                            #print(coeff)
+                        #print(i, rchisq)
+                            
+                        """
+                        max_res = np.argmax(group_spec_col + cont \
+                                            * (1 - prof) * self_col.unit)
+                        p0_add = np.array([group_spec.x[max_res].value, 12, 20.0])
+                        #min_add = np.stack([group_spec.x[max_res].value * (1 - 20000 / c.value), 10.0, 20.0])
+                        #max_add = np.stack([group_spec.x[max_res].value * (1 + 20000 / c.value), 10.0, 20.0])
 
-                    except (RuntimeError, Exception):
-                        
-                        # Use the guess local continuum
-                        y_fit[where_spec] = group_spec_col                           
-                        y_rem[where_spec] = cont * self_col.unit                           
+                        p0_add = np.tan(p0_add / norm_add)
+                        #min_add = np.tan(min_add / norm_add - 0.0) 
+                        #max_add = np.tan(max_add / norm_add - 0.0) 
+                        p0_voigt = np.append(p0_voigt, p0_add)
+                        #min_voigt = np.append(min_voigt, min_add)
+                        #max_voigt = np.append(max_voigt, max_add)
                         """
-                        # Use the guess Voigt parameters
-                        prof = many_voigt(group_spec.x.value, *p0_voigt)
-                        y_fit[where_spec] = cont * prof * self_col.unit                              
-                        y_rem[where_spec] = group_spec_col + cont \
-                                            * (1 - prof) * self_col.unit
-                        """
-                        fail = fail + 1
-                        if end == "":
-                            print("X ", end=end, flush=True)
-                        else:
-                            print("[%f-%f]:  X" % (xmin.value, xmax.value), 
-                                  end=end, flush=True)
-                    finally:
-                        signal.alarm(0)
-                #prof = many_gauss(group_spec.x.value, *coeff)
-                #y_fit[where_spec] = cont * self_col.unit - prof * self_col.unit                              
-                #y_rem[where_spec] = group_spec_col + prof * self_col.unit                           
+                    if end == "":
+                        print("v ", end=end, flush=True)
+                    else:
+                        print("[%f-%f]: v (%f) " 
+                              % (xmin.value, xmax.value, rchisq), 
+                              end=end, flush=True)
+
+                #"""
+                except (RuntimeError, Exception):
+                    
+                    # Use the guess local continuum
+                    y_fit[where_spec] = group_spec_col                           
+                    y_rem[where_spec] = cont * self_col.unit                           
+                    fail = fail + 1
+                    if end == "":
+                        print("X ", end=end, flush=True)
+                    else:
+                        print("[%f-%f]:  X" % (xmin.value, xmax.value), 
+                              end=end, flush=True)
+                finally:
+                    signal.alarm(0)
+                #"""
+
             if end == "":
                 print(" ")
             print("  Failure rate: %.2f%%" % (fail / len(groups) * 100))
+            
         
         # Updating the properties em_fit, em_rem, etc. instead of the columns
         # has the effect of erasing the unit from the columns
-        if mode is 'em':
-            self._t['EM_FIT'] = y_fit
-            self._t['EM_REM'] = y_rem
-        else:
-            self._t['ABS_FIT'] = y_fit
-            self._t['ABS_REM'] = y_rem
-        #self.y_fit = y_fit
-        #self.y_rem = y_rem
+        self._t['ABS_FIT'] = y_fit
+        self._t['ABS_REM'] = y_rem
         
-        #return prof, where_spec
-    
     def from_table(self, table, meta = {}):
         """Read a spectrum from a (spectrum-like) table"""
         
@@ -513,7 +455,108 @@ class Spec1DCont(Spec1D):
             self.em_rem = y_rem
         else:
             self.abs_rem = y_rem
-        self.y_rem = y_rem
+        self.y_rem = y_rem        
+
+    def rem_lines(self, list, mode='abs', col='y', size=101, order=3, timer=5):
+        """Remove lines from a spectrum with Savitzky-Golay profiles"""
+        
+        self_col = getattr(self, col)
+        y_fit = np.zeros(len(self_col)) * self_col.unit
+        y_fit.fill(np.nan)
+        y_rem = copy.deepcopy(self_col)
+
+        if list is not None:
+
+            groups = np.unique(list.t['GROUP'])
+            #groups = [0]
+            
+            end=""
+            #end="\n   "
+            print("  %i line groups (sg = Savitzky-Golay fit, " \
+                  "X = failure): " \
+                  % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
+
+            # Loop over groups
+            fail = 0
+            for group in groups:
+
+                # Extract the lines of the group
+                where_list = list.t['GROUP'] == group
+                group_list = list.from_table(list.t[where_list])
+
+                # Extract the spectral region of the group
+                xmin = np.amin(group_list.xmin)
+                xmax = np.amax(group_list.xmax)
+                where_spec = np.logical_and(
+                    self.x.value >= xmin.value, 
+                    self.x.value <= xmax.value)
+                group_spec = self.from_table(self.t[where_spec])
+                group_spec_col = getattr(group_spec, col)
+
+                # Compute the guess local continuum by interpolating across the 
+                # contiguous maxima
+                x_i = group_spec.x[0].value
+                x_f = group_spec.x[len(group_spec.x) - 1].value
+                y_i = group_spec_col[0].value
+                y_f = group_spec_col[len(group_spec_col) - 1].value
+                cont = group_spec.cont.value
+                if np.any(np.isnan(cont)):
+                    cont = y_i + (group_spec.x.value - x_i) \
+                           * (y_f - y_i) / (x_f - x_i)
+                
+                group_list_cont = np.interp(group_list.x.value,
+                                            group_spec.x.value, cont)
+                # Set timer
+                signal.signal(signal.SIGALRM, handler)
+                signal.setitimer(signal.ITIMER_REAL, timer)
+
+                try:
+
+                    # Fit a Savitzky-Golay profile
+                    group_spec.sg(cont * self_col.unit - group_spec_col, 
+                                  size, order)
+                    prof = group_spec.cont.value
+                    y_fit[where_spec] = cont * self_col.unit \
+                                        - prof * self_col.unit                              
+                    y_rem[where_spec] = group_spec_col \
+                                        + prof * self_col.unit  
+                    if end == "":
+                        print("sg ", end=end, flush=True)
+                    else:
+                        print("[%f-%f]: sg " % (xmin.value, xmax.value), 
+                              end=end, flush=True)
+
+                except:
+                    
+                    # Use the guess local continuum
+                    y_fit[where_spec] = group_spec_col                           
+                    y_rem[where_spec] = cont * self_col.unit                           
+
+                    fail = fail + 1
+                    if end == "":
+                        print("X ", end=end, flush=True)
+                    else:
+                        print("[%f-%f]:  X" % (xmin.value, xmax.value), 
+                              end=end, flush=True)
+                    
+                finally:
+                    signal.alarm(0)
+            if end == "":
+                print(" ")
+
+            if end == "":
+                print(" ")
+            print("  Failure rate: %.2f%%" % (fail / len(groups) * 100))
+
+        # Updating the properties em_fit, em_rem, etc. instead of the columns
+        # has the effect of erasing the unit from the columns
+        if mode is 'em':
+            self._t['EM_FIT'] = y_fit
+            self._t['EM_REM'] = y_rem
+        else:
+            self._t['ABS_FIT'] = y_fit
+            self._t['ABS_REM'] = y_rem
+
 
     def save(self, filename):
         x_unit = "{0}".format(self.x.unit)
