@@ -80,10 +80,10 @@ class List():
         self._t['Y'].mask = np.isnan(self._t['Y'].quantity.value)
         self._t['DY'].mask = np.isnan(self._t['DY'].quantity.value)
 
-        self._useGood = False
+        self._use_good = False
 
     def _getWithMask(self,colName):
-        if self._useGood:
+        if self._use_good:
             ret = self._t[colName].quantity[self._igood]
         else:
             ret = self._t[colName].quantity
@@ -93,19 +93,19 @@ class List():
         return ret
 
     @property
-    def useGood(self):
+    def use_good(self):
         """Tells whether x, y, etc. getters return only data from channels flagged as good."""
-        return self._useGood
+        return self._use_good
 
-    @useGood.setter
-    def useGood(self, value):
-        self._useGood = value
-        if self._useGood:
+    @use_good.setter
+    def use_good(self, value):
+        self._use_good = value
+        if self._use_good:
             self._igood = np.argwhere(self._t['GROUP'] >= 0)
 
     @property
     def t(self):
-        if self._useGood:
+        if self._use_good:
             return self._t[self._igood]
         else:
             return self._t
@@ -122,7 +122,7 @@ class List():
 
     @x.setter
     def x(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['X'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['X'] = np.asarray(value, dtype='float')
@@ -135,7 +135,7 @@ class List():
 
     @y.setter
     def y(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['Y'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['Y'] = np.asarray(value, dtype='float')
@@ -148,7 +148,7 @@ class List():
 
     @xmin.setter
     def xmin(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['XMIN'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMIN'] = np.asarray(value, dtype='float')
@@ -161,7 +161,7 @@ class List():
 
     @xmax.setter
     def xmax(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['XMAX'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMAX'] = np.asarray(value, dtype='float')
@@ -180,7 +180,7 @@ class List():
 
     @dy.setter
     def dy(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['DY'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['DY'] = np.asarray(value, dtype='float')
@@ -189,14 +189,14 @@ class List():
     @property
     def group(self):
         """Return group flag for each spectrum channel."""
-        if self._useGood:
+        if self._use_good:
             return self._t['GROUP'].quantity.value[self._igood]
         else:
             return self._t['GROUP'].quantity.value
         
     @group.setter
     def group(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['GROUP'][self._iGood] = np.asarray(value, dtype='int')
         else:
             self._t['GROUP'] = np.asarray(value, dtype='int')

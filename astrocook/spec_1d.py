@@ -357,8 +357,8 @@ class Spec1D():
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (extr.y[:-2] - extr.y[1:-1]) / extr.y[1:-1]
-        diff_y_right = (extr.y[2:] - extr.y[1:-1]) / extr.y[1:-1]
+        diff_y_left = (extr.y[:-2] - extr.y[1:-1]) 
+        diff_y_right = (extr.y[2:] - extr.y[1:-1]) 
         if mode is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
@@ -366,7 +366,7 @@ class Spec1D():
         # Check if the difference is above threshold
         diff_y_min = np.minimum(diff_y_left, diff_y_right)
         diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = extr.dy[1:-1] / extr.y[1:-1] * kappa
+        thres = extr.dy[1:-1] * kappa
         if diff is 'min':
             line_pos = np.greater(diff_y_min, thres)
         else:

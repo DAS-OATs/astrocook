@@ -46,7 +46,7 @@ class ListSyst(List):
         self._t = copy.deepcopy(list.t)
         self._t.add_columns([col_syst, col_name, col_z])
 
-        self._useGood = False
+        self._use_good = False
         
     @property
     def syst(self):
@@ -55,7 +55,7 @@ class ListSyst(List):
 
     @syst.setter
     def syst(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['SYST'][self._iGood] = np.asarray(value, dtype='int')
         else:
             self._t['SYST'] = np.asarray(value, dtype='int')
@@ -68,7 +68,7 @@ class ListSyst(List):
 
     @name.setter
     def name(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['NAME'][self._iGood] = np.asarray(value, dtype='string')
         else:
             self._t['NAME'] = np.asarray(value, dtype='str')
@@ -81,7 +81,7 @@ class ListSyst(List):
 
     @z.setter
     def z(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['Z'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['Z'] = np.asarray(value, dtype='float')

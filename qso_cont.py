@@ -80,7 +80,7 @@ def main():
         
     # Compute the smoothing windows
     # N.B. The input spectrum should have a fixed velocity bin
-    smooth = 500 * u.km / u.s
+    smooth = 50 * u.km / u.s
     spec.todo_convert_logx(xUnit=u.km/u.s)
     narrow = int(smooth / np.mean(spec.xmax - spec.xmin))
     medium = narrow * 2
