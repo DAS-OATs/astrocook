@@ -314,7 +314,7 @@ class Spec1D():
 
 
 
-    def convolve(self, col='y', prof=None, gauss_sigma=20):
+    def convolve(self, col='y', prof=None, gauss_sigma=20, mode='same'):
         """Convolve a spectrum with a profile using FFT transform
         
         The profile must have the same length of the column X of the spectrum.
@@ -329,7 +329,7 @@ class Spec1D():
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
-        conv.y = fftconvolve(conv_col, prof, 'same')
+        conv.y = fftconvolve(conv_col, prof, mode=mode)
         conv.todo_convert_logx(xUnit=self.x.unit)
         return conv
         
