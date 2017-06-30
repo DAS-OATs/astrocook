@@ -12,6 +12,7 @@ def main():
     # Input parameters
     #name = '../astrocook_data/B2126-15'
     name = 'B2126-15_part'
+    #name = 'J0940_part'
     zem = 3.268
 
     # Read the 1D spectrum
@@ -22,7 +23,7 @@ def main():
     conv = spec.convolve(gauss_sigma=sigma)
 
     # Find the lines in the 1D spectrum
-    kappa = 4.0
+    kappa = 5.0
     lines = conv.find_lines(mode='abs', kappa=kappa, diff='max')
 
     # Create a "voigt" object with the spectrum and the lines
@@ -31,10 +32,12 @@ def main():
     fig.canvas.set_window_title('Lines')
     fig.suptitle(name)
 
+    #gs = gridspec.GridSpec(2, 3)
     gs = gridspec.GridSpec(2, 2) 
     ax_0 = fig.add_subplot(gs[0, :])
-    ax_10 = fig.add_subplot(gs[1, 0])
-    ax_11 = fig.add_subplot(gs[1, 1])    
+    ax_10 = fig.add_subplot(gs[1, :])
+    #ax_11 = fig.add_subplot(gs[1, 1])    
+    #ax_12 = fig.add_subplot(gs[1, 2])
     gs.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
 
     ax_0.plot(spec.x, spec.y, c='b')
@@ -44,47 +47,54 @@ def main():
     #plt.show()
    
     start_all = time.time()
-    voigt = Voigt(spec, lines)
     #for l in range(len(lines.x)):
-    for z in voigt._z:
-    #for z in [voigt._z[0]]:
+
+    for l in range(len(lines.x)):
+    #for l in [0]:
         start_line = time.time()
-        l = np.argmin(np.absolute(z - voigt._t['Z']))
 
-        ax_0.scatter(voigt._t['X'][l], voigt._t['Y'][l], s=100, color='g')
-        #plt.draw()
-        #plt.pause(0.001)
+        ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
 
-        #voigt.prep(2)
-        #cont, cont_param = voigt.model_cont(2)
-        #line, line_param = voigt.model_line(2)    
+        voigt = Voigt(spec, lines)
+        voigt._redchi = float('inf')
+        #voigt.prep(l)
+        #voigt.model_cont(l)
+        #trasm_model = voigt.model_trasm(l)
         out = voigt.fit_auto(l)
+
         print("Time to fit the line: %.0f seconds." \
               % (time.time() - start_line))
 
+        ax_0.plot(voigt._x_ran, voigt._y_cont0, c='y', linestyle=":")
         ax_0.plot(voigt._x_ran, voigt._y_cont, c='y')
-        ax_0.plot(voigt._x_ran, voigt._y_fit, c='g')
+        ax_0.plot(voigt._x_ran, voigt._y_fit * voigt._y_slope, c='g')
 
         ax_10.cla()
-        ax_10.plot(voigt._x_ran, voigt._y_ran, c='b')
-        ax_10.plot(voigt._x_ran, voigt._dy_ran, c='b', linestyle=':')        
-        ax_10.plot(voigt._x_ran, -voigt._dy_ran, c='b', linestyle=':')
-        ax_10.plot(voigt._x_ran, voigt._y_cont, c='y')
-        ax_10.plot(voigt._x_ran, voigt._y_line, c='r', linestyle=':')
+        comp = voigt.group(l)
+        for x in comp['X']:
+            ax_10.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
+        ax_10.plot(voigt._x_ran, voigt._y_rect, c='b')
+        ax_10.plot(voigt._x_ran, voigt._dy_rect, c='b', linestyle=':')        
+        ax_10.plot(voigt._x_ran, -voigt._dy_rect, c='b', linestyle=':')
+        ax_10.plot(voigt._x_ran, voigt._y_trasm, c='r', linestyle=':')
+        ax_10.plot(voigt._x_ran, voigt._y_norm0, c='y', linestyle=':')
         ax_10.plot(voigt._x_ran, voigt._y_fit, c='g')
+        ax_10.plot(voigt._x_ran, voigt._y_norm, c='y')
         ax_10.plot(voigt._x_ran, voigt._y_resid, c='g', linestyle='--')
-        #ax_10.plot(voigt._x_ran, voigt._y_conv, c='y', linestyle='--')
-        ax_10.scatter(voigt.group(l)['X'], voigt.group(l)['Y'], s=100,
-                      color='g') 
-        #ax_10.plot(voigt._x_ran, voigt._y_contfit)        
+        #ax_10.scatter(voigt.group(l)['X'], voigt.group(l)['Y'], s=100,
+        #              color='g') 
+        #ax_10.scatter(lines.x[l], lines.y[l], s=100,
+        #              color='g') 
+
         
+        """
         ax_11.cla()
-        ax_11.plot(voigt._x_ran, voigt._tau_ran, c='b')
-        ax_11.plot(voigt._x_ran, voigt._dtau_ran, c='b', linestyle=':')
-        ax_11.plot(voigt._x_ran, -voigt._dtau_ran, c='b', linestyle=':')
-        ax_11.plot(voigt._x_ran, voigt._tau_line, c='r', linestyle=':')        
+        ax_11.plot(voigt._x_ran, voigt._tau_rect, c='b')
+        ax_11.plot(voigt._x_ran, voigt._tau_trasm, c='r', linestyle=':')
+        ax_11.plot(voigt._x_ran, voigt._tau_norm0, c='y', linestyle=':')        
         ax_11.plot(voigt._x_ran, voigt._tau_fit, c='g')
-        ax_11.plot(voigt._x_ran, voigt._tau_resid, c='g', linestyle='--')
+        ax_11.plot(voigt._x_ran, voigt._tau_norm, c='y')        
+        """
         
         plt.draw()
         plt.pause(0.001)
