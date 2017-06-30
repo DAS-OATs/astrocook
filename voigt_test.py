@@ -11,8 +11,8 @@ def main():
 
     # Input parameters
     #name = '../astrocook_data/B2126-15'
-    name = 'B2126-15_part'
-    #name = 'J0940_part'
+    name = 'B2126-15_part2'
+    #name = 'J0940_part2'
     zem = 3.268
 
     # Read the 1D spectrum
@@ -23,7 +23,7 @@ def main():
     conv = spec.convolve(gauss_sigma=sigma)
 
     # Find the lines in the 1D spectrum
-    kappa = 5.0
+    kappa = 15.0
     lines = conv.find_lines(mode='abs', kappa=kappa, diff='max')
 
     # Create a "voigt" object with the spectrum and the lines
@@ -49,19 +49,20 @@ def main():
     start_all = time.time()
     #for l in range(len(lines.x)):
 
-    for l in range(len(lines.x)):
-    #for l in [0]:
+    #for l in range(len(lines.x)):
+    for l in [5]:
+    #for l in [len(lines.x) - 10]:
         start_line = time.time()
 
         ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
 
-        voigt = Voigt(spec, lines)
+        voigt = Voigt(spec, lines, chosen=l)
         voigt._redchi = float('inf')
         #voigt.prep(l)
         #voigt.model_cont(l)
         #trasm_model = voigt.model_trasm(l)
-        out = voigt.fit_auto(l)
-
+        out = voigt.fit_gen(l)
+        
         print("Time to fit the line: %.0f seconds." \
               % (time.time() - start_line))
 

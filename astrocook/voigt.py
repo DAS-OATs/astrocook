@@ -7,17 +7,21 @@ import numpy as np
 import random
 from scipy.signal import fftconvolve
 from scipy.special import wofz
+from scipy.stats import linregress
 
-lya_x = 121.567
-
+wave = 121.567
+f = 0.416
+Gamma = 6.265e8
     
+def func_lin(x, y_norm, y_slope):
+    print(y_norm)
+    print(np.array(y_norm + (x - np.mean(x)) * y_slope)[0])
+    return y_norm + (x - np.mean(x)) * y_slope
+
 def func_norm(x, y_norm):
     return y_norm
 
 def func_voigt(x, z, logN, b, btur):
-    wave = 121.567
-    f = 0.416
-    Gamma = 6.265e8
     #Why sqrt(2)? Apparently it works
     amplitude = np.sqrt(2) * np.pi * f * e.esu.value ** 2 \
                 / (m_e.value * c.value) * 1e-18 * np.power(10, logN)
@@ -30,9 +34,6 @@ def func_voigt(x, z, logN, b, btur):
         (sigma * np.sqrt(2 * np.pi)))
 
 def func_voigt2(x, z, N, b, btur, data=None, eps=None):
-    wave = 121.567
-    f = 0.416
-    Gamma = 6.265e8
     #Why sqrt(2)? Apparently it works
     amplitude = np.sqrt(2) * np.pi * f * e.esu.value ** 2 \
                 / (m_e.value * c.value) * 1e-18 * N
@@ -54,6 +55,7 @@ def func_voigt2(x, z, N, b, btur, data=None, eps=None):
 class Voigt():
 
     def __init__(self, spec, lines,
+                 chosen=-1,
                  id=None,
                  z=None,
                  logN=None,
@@ -66,6 +68,8 @@ class Voigt():
         self._y = copy.deepcopy(lines.y)
         self._t = copy.deepcopy(lines.t)
         self._spec = copy.deepcopy(spec.t)
+        self._lines = copy.deepcopy(lines)
+        self._chosen = chosen
 
         # Array with line IDs
         if (id == None):
@@ -78,7 +82,7 @@ class Voigt():
 
         # Array with redshift
         if (z == None):
-            lya_z = self._x / lya_x - 1.
+            lya_z = self._x / wave - 1.
             self._z = np.full(len(self._x), lya_z, dtype=float)
         elif (len(z) == len(self._x)):
             self._id = np.array(z, dtype=object)
@@ -139,11 +143,19 @@ class Voigt():
 
     @property
     def lines(self):
-        if self._use_good:
-            return self._t[self._igood]
+        if self._chosen == -1:
+            if self._use_good:
+                ret = self._t[self._igood]
+            else:
+                ret = self._t
         else:
-            return self._t
-        
+            line = self._lines.from_table(self._t[self._chosen: self._chosen+1])
+            if self._use_good:
+                ret = line._t[self._igood]
+            else:
+                ret = line._t
+        return ret
+                
     @property
     def spec(self):
         if self._use_good:
@@ -225,7 +237,7 @@ class Voigt():
 
 
     def line_add(self, xmin, xmax, x, y):
-        z = x / 121.567 - 1
+        z = x / wave - 1
         if np.isclose(self._t['Z'], z, atol=1e-7).any() == False or 1 == 1:
             self.t.add_row([xmin, xmax , x, y, None, 1, 'Ly_a', z, 14.0, 20.0,
                             0.0])
@@ -235,25 +247,29 @@ class Voigt():
         return ret
         
     def fit(self, line, iter=0, prev=None):
-        self.prep(line)
-
+        self.prep(line, prev)
+        
         #cont_model, cont_param =
         self.model_cont(line, prev)        
         #trasm_model, trasm_param = self.model_trasm(line)
         trasm_model = self.model_trasm(line)
 
-        ftol = 1e-7 # max(pow(10, -iter), 1e-7)
         out = trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
                               fit_kws={
-                                  #'ftol': ftol,
-                                  'maxfev': 1000
+                                  'ftol': 1e-7,
+                                  'maxfev': 500
                               },
                               weights=1/self._dy_rect)
 
         self._y_fit = out.best_fit
         self._y_resid = self._y_rect - self._y_fit
         self._y_norm = np.full(len(self._x_ran), out.params['y_norm'].value)
-        self._y_cont = self._y_slope0 * out.params['y_norm'].value #self._y_norm
+        self._y_cont = self._y_slope0 * out.params['y_norm'].value
+        """
+        self._y_cont = self._y_slope0 * (out.params['y_norm'].value \
+                       + (self._x_ran - np.mean(self._x_ran)) \
+                       * out.params['y_slope'].value)
+        """
         self._param = out.params
         self._out_redchi = np.sum(
                 ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) / out.nfree
@@ -268,6 +284,7 @@ class Voigt():
         out = self.fit(line)
 
         stop = self._out_redchi >= self._redchi
+        #stop = self._out_redchi <= 1
         i = 0
         while stop == False: 
             i += 1
@@ -292,6 +309,7 @@ class Voigt():
             out = self.fit(line, iter=i, prev=out)
 
             stop = (add == False or self._out_redchi >= self._redchi)
+            #stop = (add == False or self._out_redchi < 1)
             if stop == True:
                 self._y_fit = ret.best_fit
                 self._y_resid = self._y_rect - self._y_fit
@@ -301,18 +319,50 @@ class Voigt():
                 self._param = ret.params
                 self._out_redchi = self._redchi
             self._redchi = self._out_redchi
-            """
-            print(out.redchi)
-            print(np.sum(out.residual ** 2) / out.nfree)
-            print(np.sum(((self._y_rect - self._y_fit) / self._dy_rect) ** 2) / out.nfree)
-            print(np.array(out.residual[0:6]))
-            print(np.array((self._y_rect - self._y_fit) / self._dy_rect)[0:6])
-            print(np.array(self._dy_rect[0:6]))
-            """
-            #out = self.fit(line, iter=i, prev=out)
+
         return ret
         
+    def fit_gen(self, line):
+        add = True
+        out = self.fit(line)
+        stop = self._out_redchi >= self._redchi
+        self._redchi = self._out_redchi
+        i = 0
+        while stop == False:
+            i += 1
+            print("[Iteration %2i] %4i function calls, " \
+                  "reduced chi-squared: %f, AIC: %f" \
+                  % (i, out.nfev, self._redchi, out.aic))
+            z_min = np.min(self._x_ran) / wave - 1.0
+            z_max = np.max(self._x_ran) / wave - 1.0            
+            dz = 2e-4
+            self._z_iter = np.arange(z_min, z_max, dz)
+            x_min = np.min(self.group(line)['XMIN'])
+            x_max = np.max(self.group(line)['XMAX'])        
 
+            line_temp = copy.deepcopy
+
+            self._best_redchi = float('inf')
+            for z in self._z_iter:
+                temp = copy.deepcopy(self.t)
+                x = wave * (z + 1.0)
+                y = np.interp(x, self._x_ran, self._y_ran)
+                add = self.line_add(x_min, x_max, x, y)
+                out = self.fit(line, iter=i, prev=out)
+                print(len(self.t), x, self._out_redchi)
+                if self._out_redchi < self._best_redchi:
+                    ret = out
+                    self._best_redchi = self._out_redchi
+                    x_best = x
+                    y_best = y
+                self.t = copy.deepcopy(temp)
+            self._redchi = self._best_redchi
+            add = self.line_add(x_min, x_max, x_best, y_best)
+            stop = i > 5
+            #print(ret.fit_report())
+            
+        return ret
+        
     def fit_save(self, line):
         param_copy = [value for (key,value) in sorted(self._param.items())]
         g = 0
@@ -355,32 +405,44 @@ class Voigt():
         #return model, param
 
     def model_trasm(self, line):
-        wave = 121.567
-        f = 0.416
-        Gamma = 6.265e8
-
         group = self.group(line)
+
+        #"""
         norm_model = Model(func_norm)
         param = norm_model.make_params()
         y_norm = self._y_norm[0]
-        y_norm0 = self._y_norm0[0]        
-        y_span = 1 + np.max(self._dy_rect) / np.max(self._y_rect)
+        y_span = 1 + 2 * np.max(self._dy_rect) / np.max(self._y_rect)
         y_min = np.max(self._y_rect) / y_span
         y_max = np.max(self._y_rect) * y_span        
         param['y_norm'].set(y_norm, #vary=False,
                             min=y_min, max=y_max)
+        model = norm_model
+        """
+        lin_model = Model(func_lin)
+        param = lin_model.make_params()
+        y_norm = self._y_norm[0]
+        y_slope = 1.0        
+        y_span = 1 + 2 * np.max(self._dy_rect) / np.max(self._y_rect)
+        print(y_span)
+        y_min = np.max(self._y_rect) / y_span
+        y_max = np.max(self._y_rect) * y_span        
+        param['y_norm'].set(y_norm, #vary=False,
+                            min=y_min, max=y_max)
+        param['y_slope'].set(y_slope, vary=False,
+                             min=y_slope / y_span, max=y_slope * y_span)
+        model = lin_model
+        """
 
-        
         z_diff = 1e-4
         logN_min = 10
-        logN_max = 22
+        logN_max = 20
         N_min = 1e10
-        N_max = 1e22
+        N_max = 1e20
         b_min = 1
         b_max = 100
         btur_min = 0
         btur_max = 100
-        model = norm_model
+
         pref_list = []
         for g in range(len(group)):
             pref = 'z' + str(group['Z'][g]).replace('.', '') + '_'
@@ -411,7 +473,9 @@ class Voigt():
             else:
                 logN = group['LOGN'][g]
             N = np.power(10, logN)
-            b = group['B'][g]
+            #N = 1e12
+            b = group['B'][g] #* 0.8
+            #b = 10
             btur = group['BTUR'][g]
             param[pref + 'z'].set(z, min=z-z_diff, max=z+z_diff)
             param[pref + 'N'].set(N, min=N_min, max=N_max)
@@ -443,14 +507,25 @@ class Voigt():
             param.add(pref + 'btur', value=self._btur[l])
         return param
     """
-    def prep(self, line=-1):
-        ran = self.range(line)
-        self._x_ran = ran['X']
-        self._y_ran = ran['Y']
-        self._dy_ran = ran['DY']
-        self._x_extr = np.array([ran['X'][0], ran['X'][len(ran) - 1]]) 
-        self._y_extr = np.array([ran['Y'][0], ran['Y'][len(ran) - 1]]) 
-        
+    def prep(self, line, prev=None):
+        if prev == None:
+            ran = self.range(line)
+            self._x_ran = ran['X']
+            self._y_ran = ran['Y']
+            self._dy_ran = ran['DY']
+            self._x_extr = np.array([ran['X'][0], ran['X'][len(ran) - 1]]) 
+            #self._y_extr = np.array([ran['Y'][0], ran['Y'][len(ran) - 1]])
+            x_max = np.array(
+                np.append(self.group(line)['XMIN'], self.group(line)['XMAX']))
+            y_max = np.array(np.interp(x_max, self._x_ran, self._y_ran))
+            if (len(x_max) > 3): 
+                x_top = np.extract(y_max > np.mean(y_max), x_max)
+                y_top = np.array(np.interp(x_top, self._x_ran, self._y_ran))
+            else:
+                x_top = x_max
+                y_top = y_max
+            m, q, r, p, e = linregress(x_top, y_top)
+            self._y_extr = m * self._x_extr + q
         
     def range(self, line=-1):
         """ Extract the spectral range for each line in the list, taking into
