@@ -2,7 +2,10 @@ from astrocook import *
 from lmfit import Parameters
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
+from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev, interp2d
+from scipy.special import wofz
 import time
 
 def main():
@@ -19,11 +22,11 @@ def main():
     spec = Spec1DReader().uves(name + '_spec.fits')
 
     # Convolve the 1D spectrum with a gaussian filter
-    sigma = 5.0
+    sigma = 4.0
     conv = spec.convolve(gauss_sigma=sigma)
 
     # Find the lines in the 1D spectrum
-    kappa = 15.0
+    kappa = 5.0
     lines = conv.find_lines(mode='abs', kappa=kappa, diff='max')
 
     # Create a "voigt" object with the spectrum and the lines
@@ -32,10 +35,11 @@ def main():
     fig.canvas.set_window_title('Lines')
     fig.suptitle(name)
 
-    #gs = gridspec.GridSpec(2, 3)
-    gs = gridspec.GridSpec(2, 2) 
+    gs = gridspec.GridSpec(2, 3)
     ax_0 = fig.add_subplot(gs[0, :])
     ax_10 = fig.add_subplot(gs[1, :])
+    #ax_10 = fig.add_subplot(gs[1, 0])
+    #ax_11 = fig.add_subplot(gs[1, 1], projection='3d')
     #ax_11 = fig.add_subplot(gs[1, 1])    
     #ax_12 = fig.add_subplot(gs[1, 2])
     gs.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
@@ -52,7 +56,7 @@ def main():
     #for l in range(len(lines.x)):
     for l in [5]:
     #for l in [len(lines.x) - 10]:
-        start_line = time.time()
+
 
         ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
 
@@ -61,8 +65,10 @@ def main():
         #voigt.prep(l)
         #voigt.model_cont(l)
         #trasm_model = voigt.model_trasm(l)
-        out = voigt.fit_gen(l)
-        
+        voigt.tabulate()
+        start_line = time.time()
+        out = voigt.fit_auto(l)
+
         print("Time to fit the line: %.0f seconds." \
               % (time.time() - start_line))
 
@@ -87,7 +93,11 @@ def main():
         #ax_10.scatter(lines.x[l], lines.y[l], s=100,
         #              color='g') 
 
-        
+        #X, Y = np.meshgrid(voigt.pos_range, voigt.sigma_range)
+        #Z = voigt.splrep(voigt.pos_range, voigt.sigma_range)
+        #Z1 = voigt.tab
+        #ax_11.plot_surface(X, Y, Z)
+        #ax_11.plot_surface(X, Y, Z1)        
         """
         ax_11.cla()
         ax_11.plot(voigt._x_ran, voigt._tau_rect, c='b')

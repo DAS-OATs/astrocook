@@ -5,6 +5,7 @@ from lmfit import Model, Parameters
 from lmfit.models import ConstantModel, LinearModel, VoigtModel, ExpressionModel
 import numpy as np
 import random
+from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev, interp2d
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 from scipy.stats import linregress
@@ -12,7 +13,13 @@ from scipy.stats import linregress
 wave = 121.567
 f = 0.416
 Gamma = 6.265e8
-    
+
+def func_faddeeva(pos, sigma, gamma):
+    return np.real(wofz(
+        (pos + 1j * gamma) /\
+        (sigma * np.sqrt(2)))) /\
+        (sigma * np.sqrt(2 * np.pi))
+
 def func_lin(x, y_norm, y_slope):
     print(y_norm)
     print(np.array(y_norm + (x - np.mean(x)) * y_slope)[0])
@@ -33,17 +40,24 @@ def func_voigt(x, z, logN, b, btur):
         (sigma * np.sqrt(2)))) /\
         (sigma * np.sqrt(2 * np.pi)))
 
-def func_voigt2(x, z, N, b, btur, data=None, eps=None):
+def func_voigt2(x, z, N, b, btur, data=None, eps=None, tab=None):
     #Why sqrt(2)? Apparently it works
     amplitude = np.sqrt(2) * np.pi * f * e.esu.value ** 2 \
                 / (m_e.value * c.value) * 1e-18 * N
     center = wave * (1 + z)
     sigma = np.sqrt(b ** 2 + btur ** 2) * 1e-1 / (np.sqrt(2) * wave)
     gamma = Gamma * 1e-10 / (4 * np.pi)
-    model = np.exp(-amplitude * np.real(wofz(
-        (x - center + 1j * gamma) /\
-        (sigma * np.sqrt(2)))) /\
-        (sigma * np.sqrt(2 * np.pi)))
+    #print(np.array(x - center))
+    #print(sigma)
+    if tab == None:
+        model = np.exp(-amplitude * func_faddeeva(x - center, sigma, gamma))
+    else:
+        model = np.exp(-amplitude * tab(x - center, sigma))
+        #model = np.exp(-amplitude * tab.ev(x - center, sigma))
+        #np.real(wofz(
+        #(x - center + 1j * gamma) /\
+        #(sigma * np.sqrt(2)))) /\
+        #(sigma * np.sqrt(2 * np.pi)))
     #print(np.array(model))
     #print(np.array(data))
     if data is None:
@@ -51,6 +65,9 @@ def func_voigt2(x, z, N, b, btur, data=None, eps=None):
     if eps is None:
         return (model - data)
     return (model - data)/eps
+
+#def interp_faddeeva(tab, pos, sigma, gamma):
+    
 
 class Voigt():
 
@@ -256,7 +273,7 @@ class Voigt():
 
         out = trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
                               fit_kws={
-                                  'ftol': 1e-7,
+                                  'ftol': 1e-4,
                                   'maxfev': 500
                               },
                               weights=1/self._dy_rect)
@@ -309,6 +326,7 @@ class Voigt():
             out = self.fit(line, iter=i, prev=out)
 
             stop = (add == False or self._out_redchi >= self._redchi)
+            #stop = i > 5
             #stop = (add == False or self._out_redchi < 1)
             if stop == True:
                 self._y_fit = ret.best_fit
@@ -411,9 +429,11 @@ class Voigt():
         norm_model = Model(func_norm)
         param = norm_model.make_params()
         y_norm = self._y_norm[0]
-        y_span = 1 + 2 * np.max(self._dy_rect) / np.max(self._y_rect)
-        y_min = np.max(self._y_rect) / y_span
-        y_max = np.max(self._y_rect) * y_span        
+        y_span = 1 + 1 * np.max(self._dy_rect) / np.max(self._y_rect)
+        #y_min = np.max(self._y_rect) / y_span
+        #y_max = np.max(self._y_rect) * y_span
+        y_min = y_norm / y_span
+        y_max = y_norm * y_span
         param['y_norm'].set(y_norm, #vary=False,
                             min=y_min, max=y_max)
         model = norm_model
@@ -449,7 +469,7 @@ class Voigt():
             if pref in pref_list:
                 pref += str(g) + '_'
             pref_list.append(pref)
-            voigt_model = Model(func_voigt2, prefix=pref)#, data=self._y_rect)#, eps=self._dy_rect)
+            voigt_model = Model(func_voigt2, prefix=pref, tab=self.splrep)#, data=self._y_rect)#, eps=self._dy_rect)
             param.update(voigt_model.make_params())            
 
             z = group['Z'][g]
@@ -465,7 +485,7 @@ class Voigt():
                                              self._y_ran / self._y_cont)
                     """
                     y_interp = np.interp(group['X'][g], self._x_ran,
-                                         self._y_ran / self._y_cont)
+                                         1 - self._y_resid / self._y_cont)
                 except:
                     y_interp = np.interp(group['X'][g], self._x_ran,
                                          self._y_ran / self._y_cont)
@@ -474,7 +494,7 @@ class Voigt():
                 logN = group['LOGN'][g]
             N = np.power(10, logN)
             #N = 1e12
-            b = group['B'][g] #* 0.8
+            b = group['B'][g] * 0.8
             #b = 10
             btur = group['BTUR'][g]
             param[pref + 'z'].set(z, min=z-z_diff, max=z+z_diff)
@@ -543,3 +563,25 @@ class Voigt():
             self._spec['X'] > min(self._t[self.group_sel(line)]['XMIN']),
             self._spec['X'] < max(self._t[self.group_sel(line)]['XMAX']))
 
+    def tabulate(self, pos_min=-0.5, pos_max=0.5, dpos=0.001,
+                 sigma_min=0.001, sigma_max=0.1, dsigma=0.001):
+        pos_range = np.arange(pos_min, pos_max, dpos)
+        sigma_range = np.arange(sigma_min, sigma_max, dsigma)        
+        #ret = np.empty([len(pos_range), len(sigma_range)])
+        ret = np.empty([len(sigma_range), len(pos_range)])
+        gamma = Gamma * 1e-10 / (4 * np.pi)
+        p_i = -1
+        for p in pos_range:
+            p_i += 1
+            s_i = -1
+            for s in sigma_range:
+                s_i += 1
+                #ret[p_i, s_i] = func_faddeeva(p, s, gamma)
+                ret[s_i, p_i] = func_faddeeva(p, s, gamma)                
+        self.tab = ret
+        #self.splrep = bisplrep(pos_range, sigma_range, ret)
+        #self.splrep = RectBivariateSpline(pos_range, sigma_range, ret)
+        self.splrep = interp2d(pos_range, sigma_range, ret)
+        #self.pos_range = pos_range
+        #self.sigma_range = sigma_range
+        #return ret
