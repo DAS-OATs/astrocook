@@ -1,24 +1,40 @@
 from astropy.constants import c, e, m_e
 from astropy.table import Column, Table
 import copy
-from lmfit import Model, Parameters
+from lmfit import CompositeModel, Model, Parameters
 from lmfit.models import ConstantModel, LinearModel, VoigtModel, ExpressionModel
+from lmfit.lineshapes import gaussian
+import matplotlib.pyplot as plt
 import numpy as np
+import os
 import random
 from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev, interp2d
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 from scipy.stats import linregress
+#import sys
+import sys
 
 wave = 121.567
 f = 0.416
 Gamma = 6.265e8
 
-def func_faddeeva(pos, sigma, gamma):
-    return np.real(wofz(
-        (pos + 1j * gamma) /\
-        (sigma * np.sqrt(2)))) /\
-        (sigma * np.sqrt(2 * np.pi))
+resol = 4.5e4
+def pause():
+    programPause = input("Press the <ENTER> key to continue...")
+    
+def convolve(arr, kernel):
+    """ Convolve an array with a kernel """
+    npts = min(len(arr), len(kernel))
+    pad  = np.ones(npts)
+    tmp  = np.concatenate((pad*arr[0], arr, pad*arr[-1]))
+    out  = np.convolve(tmp, kernel, mode='valid')
+    noff = int((len(out) - npts)/2)
+    return out[noff:noff+npts] / np.sum(kernel)
+
+def func_fadd(a, u):
+    """ Compute the real part of the Faddeeva function """
+    return np.real(wofz(u + 1j * a))
 
 def func_lin(x, y_norm, y_slope):
     print(y_norm)
@@ -28,47 +44,23 @@ def func_lin(x, y_norm, y_slope):
 def func_norm(x, y_norm):
     return y_norm
 
-def func_voigt(x, z, logN, b, btur):
-    #Why sqrt(2)? Apparently it works
-    amplitude = np.sqrt(2) * np.pi * f * e.esu.value ** 2 \
-                / (m_e.value * c.value) * 1e-18 * np.power(10, logN)
-    center = wave * (1 + z)
-    sigma = np.sqrt(b ** 2 + btur ** 2) * 1e-1 / (np.sqrt(2) * wave)
-    gamma = Gamma * 1e-10 / (4 * np.pi)
-    return np.exp(-amplitude * np.real(wofz(
-        (x - center + 1j * gamma) /\
-        (sigma * np.sqrt(2)))) /\
-        (sigma * np.sqrt(2 * np.pi)))
-
-def func_voigt2(x, z, N, b, btur, data=None, eps=None, tab=None):
-    #Why sqrt(2)? Apparently it works
-    amplitude = np.sqrt(2) * np.pi * f * e.esu.value ** 2 \
-                / (m_e.value * c.value) * 1e-18 * N
-    center = wave * (1 + z)
-    sigma = np.sqrt(b ** 2 + btur ** 2) * 1e-1 / (np.sqrt(2) * wave)
-    gamma = Gamma * 1e-10 / (4 * np.pi)
-    #print(np.array(x - center))
-    #print(sigma)
+def func_voigt(x, z, N, b, btur, tab=None):
+    """ Compute the Voigt function """
+    wave_si = wave * 1e-9
+    x_si = x * 1e-9
+    N_si = N * 1e4
+    b_si = np.sqrt(b**2 + btur**2) * 1e3
+    tau0 = N_si * np.sqrt(np.pi) * f * e.esu.value**2 / (m_e.value * c.value) \
+           * 1e-9 \
+           * wave_si / b_si
+    a = 0.25 * Gamma * wave_si / (np.pi * b_si)
+    u = c.value / b_si * (x_si / (wave_si * (1 + z)) - 1)
     if tab == None:
-        model = np.exp(-amplitude * func_faddeeva(x - center, sigma, gamma))
+        model = np.exp(-tau0 * func_fadd(a, u))
     else:
-        model = np.exp(-amplitude * tab(x - center, sigma))
-        #model = np.exp(-amplitude * tab.ev(x - center, sigma))
-        #np.real(wofz(
-        #(x - center + 1j * gamma) /\
-        #(sigma * np.sqrt(2)))) /\
-        #(sigma * np.sqrt(2 * np.pi)))
-    #print(np.array(model))
-    #print(np.array(data))
-    if data is None:
-        return model
-    if eps is None:
-        return (model - data)
-    return (model - data)/eps
-
-#def interp_faddeeva(tab, pos, sigma, gamma):
-    
-
+        model = np.exp(-tau0 * tab(a, u).flatten())
+    return model
+        
 class Voigt():
 
     def __init__(self, spec, lines,
@@ -193,7 +185,7 @@ class Voigt():
 
     @property
     def x(self):
-        """Quantities associated to spectrum channels (e.g. wavelength, frequency, energies, etc.)."""
+        """Quantities associated to spectrum channels"""
         return self._mask_col('X')
 
     @x.setter
@@ -235,6 +227,156 @@ class Voigt():
         return np.array([np.logical_and(groups[l] == groups[line],
                                         l != line) for l in iter])
 
+    def fit(self, line, iter=0, maxfev=200, prev=None, ax=None):
+        """ Fit a composite continuum + Voigt model to a system """
+
+        # Create the model
+        self.prep(line, prev)
+        self.model_cont(line, prev)        
+        trasm_model = self.model_trasm(line)
+
+        # Fit the model
+        out = trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
+                              fit_kws={'maxfev': maxfev},
+                              weights=1/self._dy_rect)
+
+        # Save the results
+        self._y_fit = out.best_fit
+        self._y_resid = self._y_rect - self._y_fit
+        self._y_resid = -out.residual * self._dy_rect
+        self._y_norm = np.full(len(self._x_ran), out.params['y_norm'].value)
+        self._y_cont = self._y_slope0 * out.params['y_norm'].value
+        self._param = out.params
+        self._out_redchi = np.sum(
+                ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) / out.nfree
+        self.fit_save(line)
+
+        # Plot the results
+        if ax != None:
+            ax.cla()
+            comp = self.group(line)
+            for x in comp['X']:
+                ax.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
+            ax.plot(self._x_ran, self._y_rect, c='b')
+            ax.plot(self._x_ran, self._dy_rect, c='b', linestyle=':')
+            ax.plot(self._x_ran, -self._dy_rect, c='b', linestyle=':')
+            ax.plot(self._x_ran, self._y_trasm, c='r', linestyle=':')
+            ax.plot(self._x_ran, self._y_norm0, c='y', linestyle=':')
+            ax.plot(self._x_ran, self._y_fit, c='g')
+            ax.plot(self._x_ran, self._y_norm, c='y')
+            ax.plot(self._x_ran, self._y_resid, c='g', linestyle='--')
+            
+        return out        
+
+    def fit_auto(self, line, ax=None):
+        """ Incrementally fit a system by adding components for residuals """
+
+        add = True
+        out = self.fit(line, ax=ax)
+        plt.draw()
+        plt.pause(0.1)
+
+        stop = self._out_redchi < 1
+        i = 0
+        while stop == False: 
+            i += 1
+            print("[Iteration %2i] %3i components, %4i function calls, " \
+                  "reduced chi-squared: %f, AIC: %f" \
+                  % (i, len(self.group(line)), out.nfev, self._out_redchi,
+                     out.aic))
+
+            xmin = np.min(self.group(line)['XMIN'])
+            xmax = np.max(self.group(line)['XMAX'])        
+
+            par = np.stack([[np.mean(self._x_ran)], [0.2], [1]])
+
+            prof = np.exp(-(self._x_ran-np.mean(self._x_ran))**2/(2.*0.01**2))
+            prof = prof / np.sum(prof)
+            self._y_conv = fftconvolve(self._y_resid, prof, mode='same')
+            
+            x = self._x_ran[np.argmin(self._y_resid)]
+            y = np.interp(x, self._x_ran, self._y_resid)
+
+            add = self.line_add(xmin, xmax, x, y)
+            if add == True:
+                ax.scatter(x, y)
+
+            delete = self.line_delete(self._t['LOGN'] < 10)
+                
+            plt.draw()
+            plt.pause(0.1)
+
+            stop = (add == False or self._out_redchi < 1 or i > 29)
+            ret = out
+            out = self.fit(line, iter=i, prev=out, ax=ax)
+
+            if stop == True:
+                self._y_fit = ret.best_fit
+                self._y_resid = self._y_rect - self._y_fit
+                self._y_norm = np.full(len(self._x_ran),
+                                       ret.params['y_norm'].value)
+                self._y_cont = self._y_slope0 * ret.params['y_norm'].value 
+                self._param = ret.params
+                self._out_redchi = self._redchi
+            self._redchi = self._out_redchi
+
+        return ret
+        
+    def fit_gen(self, line, ax=None):
+        add = True
+        out = self.fit(line, ax=ax)
+        plt.draw()
+        plt.pause(0.1)
+        stop = self._out_redchi >= self._redchi
+        self._redchi = self._out_redchi
+        i = 0
+        while stop == False:
+            i += 1
+            print("[Iteration %2i] %4i function calls, " \
+                  "reduced chi-squared: %f, AIC: %f" \
+                  % (i, out.nfev, self._redchi, out.aic))
+            z_min = np.min(self._x_ran) / wave - 1.0
+            z_max = np.max(self._x_ran) / wave - 1.0            
+            dz = 1e-3
+            self._z_iter = np.arange(z_min, z_max, dz)
+            x_min = np.min(self.group(line)['XMIN'])
+            x_max = np.max(self.group(line)['XMAX'])        
+
+            line_temp = copy.deepcopy
+            plt.draw()
+            plt.pause(0.1)
+            self._best_redchi = float('inf')
+            for z in self._z_iter:
+                temp = copy.deepcopy(self.t)
+                x = wave * (z + 1.0)
+                y = np.interp(x, self._x_ran, self._y_ran)
+                add = self.line_add(x_min, x_max, x, y)
+                out = self.fit(line, iter=i, prev=out, ax=ax)
+                print(len(self.t), x, self._out_redchi)
+                if self._out_redchi < self._best_redchi:
+                    ret = out
+                    self._best_redchi = self._out_redchi
+                    x_best = x
+                    y_best = y
+                self.t = copy.deepcopy(temp)
+            self._redchi = self._best_redchi
+            add = self.line_add(x_min, x_max, x_best, y_best)
+            stop = i > 19
+            
+        return ret
+        
+    def fit_save(self, line):
+        param_copy = [value for (key,value) in sorted(self._param.items())]
+        g = 0
+        s = 4  # To skip over continuum and PSF parameters
+        for l in np.where(self.group_sel(line) == True)[0]: 
+            self._t['X'][l] = wave * (param_copy[g + s + 3] + 1)
+            self._t['Z'][l] = param_copy[g + s + 3]
+            self._t['LOGN'][l] = np.log10(param_copy[g + s]) 
+            self._t['B'][l] = param_copy[g + s + 1] 
+            self._t['BTUR'][l] = param_copy[g + s + 2]         
+            g += 4
+                
     def group(self, line=-1):
         """ Create a group of line for each line in the list """
         iter = range(len(self._t))
@@ -253,145 +395,6 @@ class Voigt():
         return np.array([groups[l] == groups[line] for l in iter])
 
 
-    def line_add(self, xmin, xmax, x, y):
-        z = x / wave - 1
-        if np.isclose(self._t['Z'], z, atol=1e-7).any() == False or 1 == 1:
-            self.t.add_row([xmin, xmax , x, y, None, 1, 'Ly_a', z, 14.0, 20.0,
-                            0.0])
-            ret = True
-        else:
-            ret = False
-        return ret
-        
-    def fit(self, line, iter=0, prev=None):
-        self.prep(line, prev)
-        
-        #cont_model, cont_param =
-        self.model_cont(line, prev)        
-        #trasm_model, trasm_param = self.model_trasm(line)
-        trasm_model = self.model_trasm(line)
-
-        out = trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
-                              fit_kws={
-                                  'ftol': 1e-4,
-                                  'maxfev': 500
-                              },
-                              weights=1/self._dy_rect)
-
-        self._y_fit = out.best_fit
-        self._y_resid = self._y_rect - self._y_fit
-        self._y_norm = np.full(len(self._x_ran), out.params['y_norm'].value)
-        self._y_cont = self._y_slope0 * out.params['y_norm'].value
-        """
-        self._y_cont = self._y_slope0 * (out.params['y_norm'].value \
-                       + (self._x_ran - np.mean(self._x_ran)) \
-                       * out.params['y_slope'].value)
-        """
-        self._param = out.params
-        self._out_redchi = np.sum(
-                ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) / out.nfree
-
-        self.fit_save(line)
-        return out        
-
-    def fit_auto(self, line):
-        add = True
-
-
-        out = self.fit(line)
-
-        stop = self._out_redchi >= self._redchi
-        #stop = self._out_redchi <= 1
-        i = 0
-        while stop == False: 
-            i += 1
-            print("[Iteration %2i] %4i function calls, " \
-                  "reduced chi-squared: %f, AIC: %f" \
-                  % (i, out.nfev, self._out_redchi, out.aic))
-
-            xmin = np.min(self.group(line)['XMIN'])
-            xmax = np.max(self.group(line)['XMAX'])        
-
-            par = np.stack([[np.mean(self._x_ran)], [0.2], [1]])
-
-            prof = np.exp(-(self._x_ran-np.mean(self._x_ran))**2/(2.*0.01**2))
-            prof = prof / np.sum(prof)
-            self._y_conv = fftconvolve(self._y_resid, prof, mode='same')
-            
-            x = self._x_ran[np.argmin(self._y_conv)]
-            y = np.interp(x, self._x_ran, self._y_ran)
-
-            add = self.line_add(xmin, xmax, x, y)
-            ret = out
-            out = self.fit(line, iter=i, prev=out)
-
-            stop = (add == False or self._out_redchi >= self._redchi)
-            #stop = i > 5
-            #stop = (add == False or self._out_redchi < 1)
-            if stop == True:
-                self._y_fit = ret.best_fit
-                self._y_resid = self._y_rect - self._y_fit
-                self._y_norm = np.full(len(self._x_ran),
-                                       ret.params['y_norm'].value)
-                self._y_cont = self._y_slope0 * ret.params['y_norm'].value 
-                self._param = ret.params
-                self._out_redchi = self._redchi
-            self._redchi = self._out_redchi
-
-        return ret
-        
-    def fit_gen(self, line):
-        add = True
-        out = self.fit(line)
-        stop = self._out_redchi >= self._redchi
-        self._redchi = self._out_redchi
-        i = 0
-        while stop == False:
-            i += 1
-            print("[Iteration %2i] %4i function calls, " \
-                  "reduced chi-squared: %f, AIC: %f" \
-                  % (i, out.nfev, self._redchi, out.aic))
-            z_min = np.min(self._x_ran) / wave - 1.0
-            z_max = np.max(self._x_ran) / wave - 1.0            
-            dz = 2e-4
-            self._z_iter = np.arange(z_min, z_max, dz)
-            x_min = np.min(self.group(line)['XMIN'])
-            x_max = np.max(self.group(line)['XMAX'])        
-
-            line_temp = copy.deepcopy
-
-            self._best_redchi = float('inf')
-            for z in self._z_iter:
-                temp = copy.deepcopy(self.t)
-                x = wave * (z + 1.0)
-                y = np.interp(x, self._x_ran, self._y_ran)
-                add = self.line_add(x_min, x_max, x, y)
-                out = self.fit(line, iter=i, prev=out)
-                print(len(self.t), x, self._out_redchi)
-                if self._out_redchi < self._best_redchi:
-                    ret = out
-                    self._best_redchi = self._out_redchi
-                    x_best = x
-                    y_best = y
-                self.t = copy.deepcopy(temp)
-            self._redchi = self._best_redchi
-            add = self.line_add(x_min, x_max, x_best, y_best)
-            stop = i > 5
-            #print(ret.fit_report())
-            
-        return ret
-        
-    def fit_save(self, line):
-        param_copy = [value for (key,value) in sorted(self._param.items())]
-        g = 0
-        for l in range(len(self.t)):
-            if self.group_sel(line)[l] == True:
-                self.t['Z'][l] = param_copy[g + 4]
-                self.t['LOGN'][l] = np.log10(param_copy[g + 1]) 
-                self.t['B'][l] = param_copy[g + 2] 
-                self.t['BTUR'][l] = param_copy[g + 3]         
-                g += 4
-                
     def guess(self, y_norm):
         a_0 =  14.096;
         a_1 = - 4.6251;
@@ -403,6 +406,24 @@ class Voigt():
                + a_3 * pow(y_norm, 3) + a_4 * pow(y_norm, 4) \
                + a_5 * pow(y_norm, 5);
     
+    def line_add(self, xmin, xmax, x, y):
+        """ Add a line to a line list """
+        z = x / wave - 1
+        if np.isclose(self._t['Z'], z, atol=1e-7).any() == False or 1 == 1:
+            self.t.add_row([xmin, xmax , x, y, None, 1, 'Ly_a', z, 14.0, 20.0,
+                            0.0])
+            ret = True
+        else:
+            ret = False
+        return ret
+
+    def line_delete(self, cond):
+        """ Delete a line from a line list """
+        where = np.where(cond)[0]
+        for w in where:
+            self.t.remove_row(w)
+        return len(where)
+        
     def model_cont(self, line, prev=None):
         y_thres = 1e-3
         if prev == None:
@@ -423,118 +444,98 @@ class Voigt():
         #return model, param
 
     def model_trasm(self, line):
+        """ Create the composite continuum + Voigt model for a system """
+        
         group = self.group(line)
 
-        #"""
+        # Continuum model
         norm_model = Model(func_norm)
         param = norm_model.make_params()
         y_norm = self._y_norm[0]
-        y_span = 1 + 1 * np.max(self._dy_rect) / np.max(self._y_rect)
-        #y_min = np.max(self._y_rect) / y_span
-        #y_max = np.max(self._y_rect) * y_span
-        y_min = y_norm / y_span
-        y_max = y_norm * y_span
-        param['y_norm'].set(y_norm, #vary=False,
-                            min=y_min, max=y_max)
+        param['y_norm'].set(y_norm)
         model = norm_model
-        """
-        lin_model = Model(func_lin)
-        param = lin_model.make_params()
-        y_norm = self._y_norm[0]
-        y_slope = 1.0        
-        y_span = 1 + 2 * np.max(self._dy_rect) / np.max(self._y_rect)
-        print(y_span)
-        y_min = np.max(self._y_rect) / y_span
-        y_max = np.max(self._y_rect) * y_span        
-        param['y_norm'].set(y_norm, #vary=False,
-                            min=y_min, max=y_max)
-        param['y_slope'].set(y_slope, vary=False,
-                             min=y_slope / y_span, max=y_slope * y_span)
-        model = lin_model
-        """
 
         z_diff = 1e-4
-        logN_min = 10
+        logN_min = 0
         logN_max = 20
-        N_min = 1e10
+        N_min = 1
         N_max = 1e20
         b_min = 1
         b_max = 100
         btur_min = 0
         btur_max = 100
-
         pref_list = []
+        y_interp = []
+
+        # First loop to identify newly added lines
+        for g in range(len(group)):
+            if group['LOGN'][g] == 14.0:
+                g_interp = g
+                try:
+                    y_interp.append(np.interp(group['X'][g], self._x_ran,
+                                              1 + self._y_resid / self._y_cont))
+                except:
+                    y_interp.append(np.interp(group['X'][g], self._x_ran,
+                                              self._y_ran / self._y_cont))
+
+        # Second loop to initialize parameters
         for g in range(len(group)):
             pref = 'z' + str(group['Z'][g]).replace('.', '') + '_'
             if pref in pref_list:
                 pref += str(g) + '_'
             pref_list.append(pref)
-            voigt_model = Model(func_voigt2, prefix=pref, tab=self.splrep)#, data=self._y_rect)#, eps=self._dy_rect)
+            voigt_model = Model(func_voigt, prefix=pref, tab=self.splrep)
             param.update(voigt_model.make_params())            
 
             z = group['Z'][g]
-            #if self._improve == False or group['LOGN'][g] == 14.0:
-            if group['LOGN'][g] == 14.0:
-                try:
-                    """
-                    if self._improve == True:
-                        y_interp = np.interp(group['X'][g], self._x_ran,
-                                             1 - self._y_resid / self._y_cont)
-                    else:
-                        y_interp = np.interp(group['X'][g], self._x_ran,
-                                             self._y_ran / self._y_cont)
-                    """
-                    y_interp = np.interp(group['X'][g], self._x_ran,
-                                         1 - self._y_resid / self._y_cont)
-                except:
-                    y_interp = np.interp(group['X'][g], self._x_ran,
-                                         self._y_ran / self._y_cont)
-                logN = self.guess(y_interp)
+            if len(y_interp) > 1:
+                N = np.power(10, self.guess(y_interp[g]))
             else:
-                logN = group['LOGN'][g]
-            N = np.power(10, logN)
-            #N = 1e12
-            b = group['B'][g] * 0.8
-            #b = 10
+
+                # Newly added lines: guess values of N 
+                if g == g_interp:
+                    N = np.power(10, self.guess(y_interp[0]))
+
+                # Lines adjacent to newly added lines: N is decreased
+                elif g == g_interp - 1 or g == g_interp + 1:
+                    N = max(np.power(10, group['LOGN'][g]) \
+                            - np.power(10, self.guess(y_interp[0])) * 0.5, 1e10)
+
+                # Other lines: previous value
+                else:
+                    N = np.power(10, group['LOGN'][g])
+
+            b = group['B'][g] #* 0.8
             btur = group['BTUR'][g]
             param[pref + 'z'].set(z, min=z-z_diff, max=z+z_diff)
             param[pref + 'N'].set(N, min=N_min, max=N_max)
             param[pref + 'b'].set(b, min=b_min, max=b_max)
-            param[pref + 'btur'].set(btur, vary=False, min=btur_min,
-                                     max=btur_max)
+            param[pref + 'btur'].set(btur, vary=False)
             model *= voigt_model
 
-        self._y_trasm = model.eval(param, x=self._x_ran)
-        #self._y_trasm = (self._y_rect + model.eval(param, x=self._x_ran)) \
-        #                * self._dy_rect
-        #self._y_norm = np.full(len(self._x_ran), param['y_norm'].value)
+        # Convolve PSF
+        psf = Model(gaussian)
+        conv_model = CompositeModel(model, psf, convolve)
+        center = np.mean(self._x_ran)
+        sigma = 1/3 * center / resol
+        param.update(psf.make_params())
+        param['amplitude'].set(1, vary=False)
+        param['center'].set(center, vary=False)
+        param['sigma'].set(sigma, vary=False)        
+
+        # Save results
+        self._y_trasm = conv_model.eval(param, x=self._x_ran)
         self._param = param
-        return model #, param
-    
-    """
-    def param(self, line):
-        # Fit parameters
-        param = Parameters()
-        if line == -1:
-            list = range(len(self._x))
-        else:
-            list = range(line, line + 1)
-        for l in list:
-            pref = 'z' + str(self._z[l]).replace('.', '') + '_'
-            param.add(pref + 'z', value=self._z[l])
-            param.add(pref + 'logN', value=self._logN[l])
-            param.add(pref + 'b', value=self._b[l])
-            param.add(pref + 'btur', value=self._btur[l])
-        return param
-    """
+        return conv_model
+
     def prep(self, line, prev=None):
+        """ Prepare data structure for modeling and fitting """
         if prev == None:
             ran = self.range(line)
             self._x_ran = ran['X']
             self._y_ran = ran['Y']
-            self._dy_ran = ran['DY']
+            self._dy_ran = ran['DY'] * 1.5  # Errors are underestimated
             self._x_extr = np.array([ran['X'][0], ran['X'][len(ran) - 1]]) 
-            #self._y_extr = np.array([ran['Y'][0], ran['Y'][len(ran) - 1]])
             x_max = np.array(
                 np.append(self.group(line)['XMIN'], self.group(line)['XMAX']))
             y_max = np.array(np.interp(x_max, self._x_ran, self._y_ran))
@@ -563,25 +564,23 @@ class Voigt():
             self._spec['X'] > min(self._t[self.group_sel(line)]['XMIN']),
             self._spec['X'] < max(self._t[self.group_sel(line)]['XMAX']))
 
-    def tabulate(self, pos_min=-0.5, pos_max=0.5, dpos=0.001,
-                 sigma_min=0.001, sigma_max=0.1, dsigma=0.001):
-        pos_range = np.arange(pos_min, pos_max, dpos)
-        sigma_range = np.arange(sigma_min, sigma_max, dsigma)        
-        #ret = np.empty([len(pos_range), len(sigma_range)])
-        ret = np.empty([len(sigma_range), len(pos_range)])
+    def tabulate(self, a_min=1e-6, a_max=1e-2, da=1e-3,
+                 u_min=-1e3, u_max=1e3, du=0.01, pref=None):
+        """ Tabulate the Voigt function for faster fitting """
+        a_range = np.arange(a_min, a_max, da)
+        u_range = np.arange(u_min, u_max, du)        
+        ret = np.empty([len(u_range), len(a_range)])
         gamma = Gamma * 1e-10 / (4 * np.pi)
-        p_i = -1
-        for p in pos_range:
-            p_i += 1
-            s_i = -1
-            for s in sigma_range:
-                s_i += 1
-                #ret[p_i, s_i] = func_faddeeva(p, s, gamma)
-                ret[s_i, p_i] = func_faddeeva(p, s, gamma)                
+        a_i = -1
+        for a in a_range:
+            a_i += 1
+            u_i = -1
+            for u in u_range:
+                u_i += 1
+                ret[u_i, a_i] = func_fadd(a, u)                
         self.tab = ret
-        #self.splrep = bisplrep(pos_range, sigma_range, ret)
-        #self.splrep = RectBivariateSpline(pos_range, sigma_range, ret)
-        self.splrep = interp2d(pos_range, sigma_range, ret)
-        #self.pos_range = pos_range
-        #self.sigma_range = sigma_range
-        #return ret
+        self.splrep = interp2d(a_range, u_range, ret)
+        if pref != None:
+            np.savetxt(pref + 'tab.dat', self.tab)
+            np.savetxt(pref + 'a_range.dat', a_range)            
+            np.savetxt(pref + 'u_range.dat', u_range)

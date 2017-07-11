@@ -1,4 +1,5 @@
 from astrocook import *
+import copy
 from lmfit import Parameters
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -14,7 +15,8 @@ def main():
 
     # Input parameters
     #name = '../astrocook_data/B2126-15'
-    name = 'B2126-15_part2'
+    #name = 'B2126-15_part2'
+    name = 'B2126-15_part3'    
     #name = 'J0940_part2'
     zem = 3.268
 
@@ -22,7 +24,7 @@ def main():
     spec = Spec1DReader().uves(name + '_spec.fits')
 
     # Convolve the 1D spectrum with a gaussian filter
-    sigma = 4.0
+    sigma = 10.0
     conv = spec.convolve(gauss_sigma=sigma)
 
     # Find the lines in the 1D spectrum
@@ -53,9 +55,18 @@ def main():
     start_all = time.time()
     #for l in range(len(lines.x)):
 
+    try:
+        a_range = np.loadtxt('voigt_a_range.dat')
+        u_range = np.loadtxt('voigt_u_range.dat')                
+    except:
+        all = Voigt(spec, lines)
+        all.tabulate(pref='voigt_')
+        a_range = np.loadtxt('voigt_a_range.dat')
+        u_range = np.loadtxt('voigt_u_range.dat')                
+
     #for l in range(len(lines.x)):
-    for l in [5]:
-    #for l in [len(lines.x) - 10]:
+    #for l in [0]:
+    for l in [len(lines.x) - 1]:
 
 
         ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
@@ -65,9 +76,12 @@ def main():
         #voigt.prep(l)
         #voigt.model_cont(l)
         #trasm_model = voigt.model_trasm(l)
-        voigt.tabulate()
+        #voigt.tab = copy.deepcopy(all.tab)
+        #voigt.splrep = copy.deepcopy(all.splrep)
+        voigt.tab = np.loadtxt('voigt_tab.dat')
+        voigt.splrep = interp2d(a_range, u_range, voigt.tab)
         start_line = time.time()
-        out = voigt.fit_auto(l)
+        out = voigt.fit_auto(l, ax=ax_10)
 
         print("Time to fit the line: %.0f seconds." \
               % (time.time() - start_line))
@@ -107,8 +121,6 @@ def main():
         ax_11.plot(voigt._x_ran, voigt._tau_norm, c='y')        
         """
         
-        plt.draw()
-        plt.pause(0.001)
 
     print("Time to fit all the lines: %.0f seconds." \
           % (time.time() - start_all))
