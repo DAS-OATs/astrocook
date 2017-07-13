@@ -18,8 +18,9 @@ import sys
 wave = 121.567
 f = 0.416
 Gamma = 6.265e8
+redchi_thr = 0.9
 
-resol = 4.5e4
+resol = 6.0e4
 def pause():
     programPause = input("Press the <ENTER> key to continue...")
     
@@ -37,7 +38,6 @@ def func_fadd(a, u):
     return np.real(wofz(u + 1j * a))
 
 def func_lin(x, y_norm, y_slope):
-    print(y_norm)
     print(np.array(y_norm + (x - np.mean(x)) * y_slope)[0])
     return y_norm + (x - np.mean(x)) * y_slope
 
@@ -128,8 +128,13 @@ class Voigt():
         
         col_add = Table(data=(col_id, col_z, col_logN, col_b, col_btur),
                         masked=True)
-        self._t.add_columns(col_add.columns.values())
         
+        # To handle table with preexisting Voigt columns
+        try:
+            self._t.add_columns(col_add.columns.values())
+        except:
+            pass
+            
         self._use_good = lines.use_good
 
     def _mask(self, prop):
@@ -227,101 +232,136 @@ class Voigt():
         return np.array([np.logical_and(groups[l] == groups[line],
                                         l != line) for l in iter])
 
-    def fit(self, line, iter=0, maxfev=200, prev=None, ax=None):
+    def fit(self, line, iter=0, maxfev=200, ax=None):
         """ Fit a composite continuum + Voigt model to a system """
 
-        # Create the model
-        self.prep(line, prev)
-        self.model_cont(line, prev)        
-        trasm_model = self.model_trasm(line)
-
         # Fit the model
-        out = trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
+        out = self._trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
                               fit_kws={'maxfev': maxfev},
                               weights=1/self._dy_rect)
-
+        self._fit = out
+        
         # Save the results
-        self._y_fit = out.best_fit
-        self._y_resid = self._y_rect - self._y_fit
-        self._y_resid = -out.residual * self._dy_rect
-        self._y_norm = np.full(len(self._x_ran), out.params['y_norm'].value)
-        self._y_cont = self._y_slope0 * out.params['y_norm'].value
-        self._param = out.params
-        self._out_redchi = np.sum(
-                ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) / out.nfree
-        self.fit_save(line)
 
         # Plot the results
-        if ax != None:
-            ax.cla()
-            comp = self.group(line)
-            for x in comp['X']:
-                ax.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
-            ax.plot(self._x_ran, self._y_rect, c='b')
-            ax.plot(self._x_ran, self._dy_rect, c='b', linestyle=':')
-            ax.plot(self._x_ran, -self._dy_rect, c='b', linestyle=':')
-            ax.plot(self._x_ran, self._y_trasm, c='r', linestyle=':')
-            ax.plot(self._x_ran, self._y_norm0, c='y', linestyle=':')
-            ax.plot(self._x_ran, self._y_fit, c='g')
-            ax.plot(self._x_ran, self._y_norm, c='y')
-            ax.plot(self._x_ran, self._y_resid, c='g', linestyle='--')
             
-        return out        
+        #return out        
 
-    def fit_auto(self, line, ax=None):
+    def fit_auto(self, line, cont=None, redchi=float('inf'), aic=float('inf'),
+                 ax=None):
         """ Incrementally fit a system by adding components for residuals """
 
+        """
         add = True
+        try:
+            old_aic = self._out_aic
+        except:
+            old_aic = float('inf')
+        print(old_aic)
         out = self.fit(line, ax=ax)
+        print(self._out_aic)
         plt.draw()
         plt.pause(0.1)
-
-        stop = self._out_redchi < 1
+        """
+        
+        #stop = self._out_redchi < 1 or self._out_aic > old_aic
+        #print(stop)
         i = 0
+        self._out_redchi = redchi
+        self._out_aic = aic
+        stop = False #self._out_redchi < 1
+        prev = None
+        add = True
+        old_t = copy.deepcopy(self._t)
         while stop == False: 
             i += 1
-            print("[Iteration %2i] %3i components, %4i function calls, " \
-                  "reduced chi-squared: %f, AIC: %f" \
-                  % (i, len(self.group(line)), out.nfev, self._out_redchi,
-                     out.aic))
+            old_redchi = self._out_redchi
+            old_aic = self._out_aic
 
-            xmin = np.min(self.group(line)['XMIN'])
-            xmax = np.max(self.group(line)['XMAX'])        
+            self.prep(line, prev)
+            self.model_cont(line, prev, cont)
+            self._trasm_model = self.model_trasm(line)
 
-            par = np.stack([[np.mean(self._x_ran)], [0.2], [1]])
-
-            prof = np.exp(-(self._x_ran-np.mean(self._x_ran))**2/(2.*0.01**2))
-            prof = prof / np.sum(prof)
-            self._y_conv = fftconvolve(self._y_resid, prof, mode='same')
+            # Plot fit
+            if ax != None:
+                comp = self.group(line)
+                for x in comp['X']:
+                    ax.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
+                ax.plot(self._x_ran, self._y_rect, c='b')
+                ax.plot(self._x_ran, self._dy_rect, c='b', linestyle=':')
+                ax.plot(self._x_ran, -self._dy_rect, c='b', linestyle=':')
+                ax.plot(self._x_ran, self._y_trasm, c='r', linestyle=':')
+                ax.plot(self._x_ran, self._y_norm0, c='y', linestyle=':')
+                try:
+                    ax.plot(self._x_ran, self._y_fit, c='g')
+                    ax.plot(self._x_ran, self._y_norm, c='y')
+                    ax.plot(self._x_ran, self._y_resid, c='g', linestyle='--')
+                except:
+                    pass
+                plt.draw()
+                plt.pause(0.1)
             
-            x = self._x_ran[np.argmin(self._y_resid)]
-            y = np.interp(x, self._x_ran, self._y_resid)
+            self.fit(line, ax=ax)
+            stop = (add == False or self._fit.redchi < redchi_thr \
+                    or self._fit.aic > old_aic) #i > 29)
 
-            add = self.line_add(xmin, xmax, x, y)
-            if add == True:
-                ax.scatter(x, y)
+            #print(add, self._fit.redchi, self._fit.aic, old_aic)
+            if stop == False:
 
-            delete = self.line_delete(self._t['LOGN'] < 10)
+                prev = self._fit
+                norm = self._y_norm
+
+                print("[Iteration %2i] %3i components, %4i function calls, " \
+                  "reduced chi-squared: %f, AIC: %f" \
+                      % (i, len(self.group(line)), self._fit.nfev,
+                         self._fit.redchi, self._fit.aic))
+
+                # Save fit
+                self.fit_save(line)
+                old_aic = self._out_aic
+
                 
-            plt.draw()
-            plt.pause(0.1)
+            
 
-            stop = (add == False or self._out_redchi < 1 or i > 29)
-            ret = out
-            out = self.fit(line, iter=i, prev=out, ax=ax)
+                # Add line where the minimum residual is located
+                xmin = np.min(self.group(line)['XMIN'])
+                xmax = np.max(self.group(line)['XMAX'])        
+                x_add = self._x_ran[np.argmin(self._y_resid / self._dy_ran)]
+                y_add = np.interp(x_add, self._x_ran, self._y_ran)
+                y_resid_add = np.interp(x_add, self._x_ran, self._y_resid)
+                old_t = copy.deepcopy(self._t)
+                add = self.line_add(xmin, xmax, x_add, y_add)
 
-            if stop == True:
-                self._y_fit = ret.best_fit
+                if ax != None:# and add == True:
+                    ax.cla()
+                    ax.scatter(x_add, y_resid_add)
+
+                # Delete weak lines
+                delete = self.line_delete(self._t['LOGN'] < 10)
+
+
+            else:
+                #self._out_aic = old_aic
+                self._t = copy.deepcopy(old_t)
+                """
+                self._y_fit = prev.best_fit
                 self._y_resid = self._y_rect - self._y_fit
                 self._y_norm = np.full(len(self._x_ran),
-                                       ret.params['y_norm'].value)
-                self._y_cont = self._y_slope0 * ret.params['y_norm'].value 
-                self._param = ret.params
-                self._out_redchi = self._redchi
-            self._redchi = self._out_redchi
+                                       prev.params['y_norm'].value)
+                self._y_cont = self._y_slope0 \
+                               * prev.params['y_norm'].value 
+                self._param = prev.params
+                """
+                #self._out_redchi = self._redchi
 
-        return ret
-        
+            
+        if stop == True and i == 0:
+            self.prep(line, prev)
+            self.model_cont(line, prev, cont)        
+            trasm_model = self.model_trasm(line)
+
+            
+    """
     def fit_gen(self, line, ax=None):
         add = True
         out = self.fit(line, ax=ax)
@@ -364,8 +404,21 @@ class Voigt():
             stop = i > 19
             
         return ret
-        
+    """
+    
     def fit_save(self, line):
+
+        self._y_fit = self._fit.best_fit
+        self._y_resid = self._y_rect - self._y_fit
+        self._y_norm = np.full(len(self._x_ran),
+                               self._fit.params['y_norm'].value)
+        self._y_cont = self._y_slope0 * self._fit.params['y_norm'].value
+        self._param = self._fit.params
+        self._out_redchi = np.sum(
+                ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) \
+                / self._fit.nfree
+        self._out_aic = self._fit.aic
+
         param_copy = [value for (key,value) in sorted(self._param.items())]
         g = 0
         s = 4  # To skip over continuum and PSF parameters
@@ -424,12 +477,14 @@ class Voigt():
             self.t.remove_row(w)
         return len(where)
         
-    def model_cont(self, line, prev=None):
+    def model_cont(self, line, prev=None, cont=None):
         y_thres = 1e-3
         if prev == None:
-            cont = self._y_extr[0] + (self._x_ran - self._x_extr[0]) \
-                   * (self._y_extr[1] - self._y_extr[0]) \
-                   / (self._x_extr[1] - self._x_extr[0])
+            if cont == None:
+                cont = self._y_extr[0] + (self._x_ran - self._x_extr[0]) \
+                       * (self._y_extr[1] - self._y_extr[0]) \
+                       / (self._x_extr[1] - self._x_extr[0])
+            
             self._y_cont = cont
             self._y_norm = np.full(len(self._x_ran), np.mean(self._y_cont))
 
@@ -468,6 +523,7 @@ class Voigt():
         y_interp = []
 
         # First loop to identify newly added lines
+        g_interp = len(group)
         for g in range(len(group)):
             if group['LOGN'][g] == 14.0:
                 g_interp = g
@@ -492,8 +548,11 @@ class Voigt():
                 N = np.power(10, self.guess(y_interp[g]))
             else:
 
-                # Newly added lines: guess values of N 
-                if g == g_interp:
+                if g_interp == len(group):
+                    N = np.power(10, group['LOGN'][g])
+                                        
+                # Newly added lines: guess values of N
+                elif g == g_interp:
                     N = np.power(10, self.guess(y_interp[0]))
 
                 # Lines adjacent to newly added lines: N is decreased
@@ -534,7 +593,7 @@ class Voigt():
             ran = self.range(line)
             self._x_ran = ran['X']
             self._y_ran = ran['Y']
-            self._dy_ran = ran['DY'] * 1.5  # Errors are underestimated
+            self._dy_ran = ran['DY'] #* 1.5  # Errors may be underestimated
             self._x_extr = np.array([ran['X'][0], ran['X'][len(ran) - 1]]) 
             x_max = np.array(
                 np.append(self.group(line)['XMIN'], self.group(line)['XMAX']))
