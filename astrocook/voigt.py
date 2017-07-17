@@ -540,7 +540,7 @@ class Voigt():
             if pref in pref_list:
                 pref += str(g) + '_'
             pref_list.append(pref)
-            voigt_model = Model(func_voigt, prefix=pref, tab=self.splrep)
+            voigt_model = Model(func_voigt, prefix=pref)#, tab=self.splrep)
             param.update(voigt_model.make_params())            
 
             z = group['Z'][g]
@@ -563,6 +563,7 @@ class Voigt():
                 # Other lines: previous value
                 else:
                     N = np.power(10, group['LOGN'][g])
+                #N = 1e10
 
             b = group['B'][g] #* 0.8
             btur = group['BTUR'][g]

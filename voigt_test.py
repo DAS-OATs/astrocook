@@ -15,25 +15,32 @@ def main():
 
     # Input parameters
     #name = '../astrocook_data/B2126-15'
-    #name = 'B2126-15_part2'
+    name = 'B2126-15_part2'
     #name = 'B2126-15_part3'    
-    name = 'J0940_part2'
+    #name = 'J0940_part2'
     zem = 3.268
 
     # Read the 1D spectrum
     spec = Spec1DReader().uves(name + '_spec.fits')
 
     # Convolve the 1D spectrum with a gaussian filter
-    sigma = 10.0
+    sigma = 4.0
     conv = spec.convolve(gauss_sigma=sigma)
 
     # Find the lines in the 1D spectrum
-    kappa = 10.0
+    kappa = 5.0
     lines = conv.find_lines(mode='abs', kappa=kappa, diff='max')
+
+    # Find the continuum
+    spec = Spec1DCont(spec)
+    list = copy.deepcopy(lines)
+    list.group()
+    spec.rem_lines(list, size=5)
+    #print(cont._t)
 
     # Create a "voigt" object with the spectrum and the lines
     # Plot results
-    fig = plt.figure(figsize = (10, 10))
+    fig = plt.figure(figsize = (10, 7))
     fig.canvas.set_window_title('Lines')
     fig.suptitle(name)
 
@@ -44,6 +51,7 @@ def main():
 
     ax_0.plot(spec.x, spec.y, c='b')
     ax_0.plot(conv.x, conv.y, c='r')
+    ax_0.plot(spec.x, spec.abs_rem, c='r', linestyle=':')
     ax_0.scatter(lines.x, lines.y)
     plt.ion()
     #plt.show()
@@ -66,6 +74,13 @@ def main():
     l = 0
     while l < len(lines.x):
 
+    
+        ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
+
+        voigt = Voigt(spec, lines, chosen=l)        
+        voigt.tab = np.loadtxt('voigt_tab.dat')
+        voigt.splrep = interp2d(a_range, u_range, voigt.tab)
+        
         try:
             if np.min(voigt.group(l)['XMIN']) \
                == np.min(voigt.group(l - 1)['XMIN']):
@@ -73,25 +88,21 @@ def main():
                 redchi = voigt._out_redchi
                 aic = voigt._out_aic
             else:
-                cont = None
+                cont = voigt.range(l)['ABS_REM']
                 redchi = float('inf')
                 aic = float('inf')
         except:
-            cont = None
+            cont = voigt.range(l)['ABS_REM']
             redchi = float('inf')
             aic = float('inf')
 
-        ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
-
-        voigt = Voigt(spec, lines, chosen=l)        
-        voigt.tab = np.loadtxt('voigt_tab.dat')
-        voigt.splrep = interp2d(a_range, u_range, voigt.tab)
+        
         start_line = time.time()
         #print(cont)
         voigt.fit_auto(l, cont, redchi, aic, ax=ax_10)
         #print(voigt.group(l))
-        print("Time to process line %2i: %.0f seconds." \
-              % (l + 1, time.time() - start_line))
+        print("Time to process line %2i of %3i (at least): %.0f seconds." \
+              % (l + 1, len(lines.x), time.time() - start_line))
 
         ax_0.plot(voigt._x_ran, voigt._y_cont0, c='y', linestyle=":")
         ax_0.plot(voigt._x_ran, voigt._y_cont, c='y')
