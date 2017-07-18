@@ -14,9 +14,8 @@ def main():
 
 
     # Input parameters
-    #name = '../astrocook_data/B2126-15'
-    name = 'B2126-15_part2'
-    #name = 'B2126-15_part3'    
+    #name = 'B2126-15_part2'
+    name = 'B2126-15_part3'    
     #name = 'J0940_part2'
     zem = 3.268
 
@@ -36,7 +35,8 @@ def main():
     list = copy.deepcopy(lines)
     list.group()
     spec.rem_lines(list, size=5)
-    #print(cont._t)
+    spec.sg(spec.abs_rem, 101, 3)
+    #print(spec._t)
 
     # Create a "voigt" object with the spectrum and the lines
     # Plot results
@@ -51,13 +51,11 @@ def main():
 
     ax_0.plot(spec.x, spec.y, c='b')
     ax_0.plot(conv.x, conv.y, c='r')
-    ax_0.plot(spec.x, spec.abs_rem, c='r', linestyle=':')
+    ax_0.plot(spec.x, spec.cont, c='r', linestyle=':')
     ax_0.scatter(lines.x, lines.y)
     plt.ion()
-    #plt.show()
    
     start_all = time.time()
-    #for l in range(len(lines.x)):
 
     try:
         a_range = np.loadtxt('voigt_a_range.dat')
@@ -68,46 +66,43 @@ def main():
         a_range = np.loadtxt('voigt_a_range.dat')
         u_range = np.loadtxt('voigt_u_range.dat')                
 
-    #for l in range(len(lines.x)):
-    #for l in [0]:
-    #for l in [len(lines.x) - 1]:
-    l = 0
+    l = 0 #len(lines.x) - 2
     while l < len(lines.x):
 
     
         ax_0.scatter(lines.x[l], lines.y[l], s=100, color='g')
 
+        try:
+            cont = voigt._y_cont
+            redchi = voigt._out_redchi
+            aic = voigt._out_aic            
+        except:
+            cont = None
+            redchi = float('inf')
+            aic = float('inf')
         voigt = Voigt(spec, lines, chosen=l)        
         voigt.tab = np.loadtxt('voigt_tab.dat')
         voigt.splrep = interp2d(a_range, u_range, voigt.tab)
-        
+
         try:
             if np.min(voigt.group(l)['XMIN']) \
-               == np.min(voigt.group(l - 1)['XMIN']):
-                cont = voigt._y_cont
-                redchi = voigt._out_redchi
-                aic = voigt._out_aic
-            else:
-                cont = voigt.range(l)['ABS_REM']
+               != np.min(voigt.group(l - 1)['XMIN']):
+                cont = voigt.range(l)['CONT']
                 redchi = float('inf')
                 aic = float('inf')
         except:
-            cont = voigt.range(l)['ABS_REM']
-            redchi = float('inf')
-            aic = float('inf')
-
+            if cont is None:
+                cont = voigt.range(l)['CONT']
+                
         
         start_line = time.time()
-        #print(cont)
         voigt.fit_auto(l, cont, redchi, aic, ax=ax_10)
         #print(voigt.group(l))
-        print("Time to process line %2i of %3i (at least): %.0f seconds." \
-              % (l + 1, len(lines.x), time.time() - start_line))
-
+        
         ax_0.plot(voigt._x_ran, voigt._y_cont0, c='y', linestyle=":")
         ax_0.plot(voigt._x_ran, voigt._y_cont, c='y')
         try:
-            ax_0.plot(voigt._x_ran, voigt._y_fit * voigt._y_slope, c='g')
+            ax_0.plot(voigt._x_ran, voigt._y_fit, c='g')
         except:
             pass
 
@@ -115,15 +110,20 @@ def main():
         comp = voigt.group(l)
         for x in comp['X']:
             ax_10.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
-        ax_10.plot(voigt._x_ran, voigt._y_rect, c='b')
-        ax_10.plot(voigt._x_ran, voigt._dy_rect, c='b', linestyle=':')        
-        ax_10.plot(voigt._x_ran, -voigt._dy_rect, c='b', linestyle=':')
-        ax_10.plot(voigt._x_ran, voigt._y_trasm, c='r', linestyle=':')
-        ax_10.plot(voigt._x_ran, voigt._y_norm0, c='y', linestyle=':')
+        ax_10.plot(voigt._x_ran, voigt._y_ran / voigt._y_cont, c='b')
+        ax_10.plot(voigt._x_ran, voigt._dy_ran / voigt._y_cont, c='b',
+                   linestyle=':')        
+        ax_10.plot(voigt._x_ran, -voigt._dy_ran / voigt._y_cont, c='b',
+                   linestyle=':')
+        ax_10.plot(voigt._x_ran, voigt._y_trasm / voigt._y_cont, c='r',
+                   linestyle=':')
+        ax_10.plot(voigt._x_ran, voigt._y_cont0 / voigt._y_cont, c='y',
+                   linestyle=':')
         try:
-            ax_10.plot(voigt._x_ran, voigt._y_fit, c='g')
-            ax_10.plot(voigt._x_ran, voigt._y_norm, c='y')
-            ax_10.plot(voigt._x_ran, voigt._y_resid, c='g', linestyle='--')
+            ax_10.plot(voigt._x_ran, voigt._y_fit / voigt._y_cont, c='g')
+            ax_10.plot(voigt._x_ran, voigt._y_cont / voigt._y_cont, c='y')
+            ax_10.plot(voigt._x_ran, voigt._y_resid / voigt._y_cont, c='g',
+                       linestyle='--')
         except:
             pass
         plt.draw()
@@ -131,7 +131,10 @@ def main():
         
         lines._t = copy.deepcopy(voigt._t)
         l += 1       
+        print("Time to process line %2i of (at least) %3i: %.0f seconds." \
+              % (l + 1, len(lines.x), time.time() - start_line))
 
+        
     print("Time to process the spectrum: %.0f seconds." \
           % (time.time() - start_all))
     plt.ioff()

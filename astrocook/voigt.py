@@ -38,7 +38,7 @@ def func_fadd(a, u):
     return np.real(wofz(u + 1j * a))
 
 def func_lin(x, y_norm, y_slope):
-    print(np.array(y_norm + (x - np.mean(x)) * y_slope)[0])
+    #print(np.array(y_norm + (x - np.mean(x)) * y_slope)[0])
     return y_norm + (x - np.mean(x)) * y_slope
 
 def func_norm(x, y_norm):
@@ -232,14 +232,17 @@ class Voigt():
         return np.array([np.logical_and(groups[l] == groups[line],
                                         l != line) for l in iter])
 
-    def fit(self, line, iter=0, maxfev=200, ax=None):
+    def fit(self, line, iter=0, maxfev=1000, ax=None):
         """ Fit a composite continuum + Voigt model to a system """
 
         # Fit the model
-        out = self._trasm_model.fit(self._y_rect, self._param, x=self._x_ran,
-                              fit_kws={'maxfev': maxfev},
-                              weights=1/self._dy_rect)
+        out = self._trasm_model.fit(self._y_ran, self._param, x=self._x_ran,
+                                    fit_kws={'maxfev': maxfev},
+                                    weights=1/self._dy_ran)
+        #self._param.pretty_print()
         self._fit = out
+        #self._param.pretty_print()        
+        #out.params.pretty_print()
         
         # Save the results
 
@@ -251,21 +254,6 @@ class Voigt():
                  ax=None):
         """ Incrementally fit a system by adding components for residuals """
 
-        """
-        add = True
-        try:
-            old_aic = self._out_aic
-        except:
-            old_aic = float('inf')
-        print(old_aic)
-        out = self.fit(line, ax=ax)
-        print(self._out_aic)
-        plt.draw()
-        plt.pause(0.1)
-        """
-        
-        #stop = self._out_redchi < 1 or self._out_aic > old_aic
-        #print(stop)
         i = 0
         self._out_redchi = redchi
         self._out_aic = aic
@@ -277,7 +265,6 @@ class Voigt():
             i += 1
             old_redchi = self._out_redchi
             old_aic = self._out_aic
-
             self.prep(line, prev)
             self.model_cont(line, prev, cont)
             self._trasm_model = self.model_trasm(line)
@@ -287,29 +274,34 @@ class Voigt():
                 comp = self.group(line)
                 for x in comp['X']:
                     ax.axvline(x=x, ymin=0.75, ymax=0.95, color='lightgray')
-                ax.plot(self._x_ran, self._y_rect, c='b')
-                ax.plot(self._x_ran, self._dy_rect, c='b', linestyle=':')
-                ax.plot(self._x_ran, -self._dy_rect, c='b', linestyle=':')
-                ax.plot(self._x_ran, self._y_trasm, c='r', linestyle=':')
-                ax.plot(self._x_ran, self._y_norm0, c='y', linestyle=':')
+                ax.plot(self._x_ran, self._y_ran / self._y_cont, c='b')
+                ax.plot(self._x_ran, self._dy_ran / self._y_cont, c='b',
+                        linestyle=':')
+                ax.plot(self._x_ran, -self._dy_ran / self._y_cont, c='b',
+                        linestyle=':')
+                ax.plot(self._x_ran, self._y_trasm / self._y_cont, c='r',
+                        linestyle=':')
+                ax.plot(self._x_ran, self._y_cont0 / self._y_cont, c='y',
+                        linestyle=':')
                 try:
-                    ax.plot(self._x_ran, self._y_fit, c='g')
-                    ax.plot(self._x_ran, self._y_norm, c='y')
-                    ax.plot(self._x_ran, self._y_resid, c='g', linestyle='--')
+                    ax.plot(self._x_ran, self._y_fit / self._y_cont, c='g')
+                    ax.plot(self._x_ran, self._y_cont / self._y_cont, c='y')
+                    ax.plot(self._x_ran, self._y_resid / self._y_cont, c='g',
+                            linestyle='--')
                 except:
                     pass
                 plt.draw()
                 plt.pause(0.1)
-            
+                
             self.fit(line, ax=ax)
-            stop = (add == False or self._fit.redchi < redchi_thr \
-                    or self._fit.aic > old_aic) #i > 29)
 
-            #print(add, self._fit.redchi, self._fit.aic, old_aic)
+            stop = (add == False or self._fit.redchi < redchi_thr \
+                    or (self._fit.aic > old_aic))
+            
             if stop == False:
 
                 prev = self._fit
-                norm = self._y_norm
+                norm = self._y_cont
 
                 print("[Iteration %2i] %3i components, %4i function calls, " \
                   "reduced chi-squared: %f, AIC: %f" \
@@ -317,10 +309,11 @@ class Voigt():
                          self._fit.redchi, self._fit.aic))
 
                 # Save fit
-                self.fit_save(line)
-                old_aic = self._out_aic
+                if self._fit.redchi < old_redchi:
+                    self.fit_save(line)
+                    old_redchi = self._out_redchi
+                    old_aic = self._out_aic
 
-                
             
 
                 # Add line where the minimum residual is located
@@ -328,9 +321,14 @@ class Voigt():
                 xmax = np.max(self.group(line)['XMAX'])        
                 x_add = self._x_ran[np.argmin(self._y_resid / self._dy_ran)]
                 y_add = np.interp(x_add, self._x_ran, self._y_ran)
-                y_resid_add = np.interp(x_add, self._x_ran, self._y_resid)
+                y_resid_add = np.interp(x_add, self._x_ran,
+                                        self._y_resid / self._y_cont)
                 old_t = copy.deepcopy(self._t)
                 add = self.line_add(xmin, xmax, x_add, y_add)
+                #print(x_add)
+
+                tol = 1 / 3 * np.mean(self._x_ran) / resol
+                self.line_merge(tol=tol)
 
                 if ax != None:# and add == True:
                     ax.cla()
@@ -341,87 +339,30 @@ class Voigt():
 
 
             else:
-                #self._out_aic = old_aic
                 self._t = copy.deepcopy(old_t)
-                """
-                self._y_fit = prev.best_fit
-                self._y_resid = self._y_rect - self._y_fit
-                self._y_norm = np.full(len(self._x_ran),
-                                       prev.params['y_norm'].value)
-                self._y_cont = self._y_slope0 \
-                               * prev.params['y_norm'].value 
-                self._param = prev.params
-                """
-                #self._out_redchi = self._redchi
-
             
         if stop == True and i == 0:
             self.prep(line, prev)
             self.model_cont(line, prev, cont)        
             trasm_model = self.model_trasm(line)
 
-            
-    """
-    def fit_gen(self, line, ax=None):
-        add = True
-        out = self.fit(line, ax=ax)
-        plt.draw()
-        plt.pause(0.1)
-        stop = self._out_redchi >= self._redchi
-        self._redchi = self._out_redchi
-        i = 0
-        while stop == False:
-            i += 1
-            print("[Iteration %2i] %4i function calls, " \
-                  "reduced chi-squared: %f, AIC: %f" \
-                  % (i, out.nfev, self._redchi, out.aic))
-            z_min = np.min(self._x_ran) / wave - 1.0
-            z_max = np.max(self._x_ran) / wave - 1.0            
-            dz = 1e-3
-            self._z_iter = np.arange(z_min, z_max, dz)
-            x_min = np.min(self.group(line)['XMIN'])
-            x_max = np.max(self.group(line)['XMAX'])        
-
-            line_temp = copy.deepcopy
-            plt.draw()
-            plt.pause(0.1)
-            self._best_redchi = float('inf')
-            for z in self._z_iter:
-                temp = copy.deepcopy(self.t)
-                x = wave * (z + 1.0)
-                y = np.interp(x, self._x_ran, self._y_ran)
-                add = self.line_add(x_min, x_max, x, y)
-                out = self.fit(line, iter=i, prev=out, ax=ax)
-                print(len(self.t), x, self._out_redchi)
-                if self._out_redchi < self._best_redchi:
-                    ret = out
-                    self._best_redchi = self._out_redchi
-                    x_best = x
-                    y_best = y
-                self.t = copy.deepcopy(temp)
-            self._redchi = self._best_redchi
-            add = self.line_add(x_min, x_max, x_best, y_best)
-            stop = i > 19
-            
-        return ret
-    """
-    
     def fit_save(self, line):
 
         self._y_fit = self._fit.best_fit
-        self._y_resid = self._y_rect - self._y_fit
-        self._y_norm = np.full(len(self._x_ran),
-                               self._fit.params['y_norm'].value)
-        self._y_cont = self._y_slope0 * self._fit.params['y_norm'].value
+        self._y_resid = self._y_ran - self._y_fit
+        self._y_cont = np.full(len(self._x_ran),
+                               self._fit.params['y_norm'].value) \
+                               + (self._x_ran - np.mean(self._x_ran)) \
+                               * self._fit.params['y_slope'].value
         self._param = self._fit.params
         self._out_redchi = np.sum(
-                ((self._y_rect - self._y_fit) / self._dy_rect) ** 2) \
+                ((self._y_ran - self._y_fit) / self._dy_ran) ** 2) \
                 / self._fit.nfree
         self._out_aic = self._fit.aic
 
         param_copy = [value for (key,value) in sorted(self._param.items())]
         g = 0
-        s = 4  # To skip over continuum and PSF parameters
+        s = 5  # To skip over continuum and PSF parameters
         for l in np.where(self.group_sel(line) == True)[0]: 
             self._t['X'][l] = wave * (param_copy[g + s + 3] + 1)
             self._t['Z'][l] = param_copy[g + s + 3]
@@ -429,7 +370,7 @@ class Voigt():
             self._t['B'][l] = param_copy[g + s + 1] 
             self._t['BTUR'][l] = param_copy[g + s + 2]         
             g += 4
-                
+        
     def group(self, line=-1):
         """ Create a group of line for each line in the list """
         iter = range(len(self._t))
@@ -476,9 +417,23 @@ class Voigt():
         for w in where:
             self.t.remove_row(w)
         return len(where)
-        
+
+    def line_merge(self, tol):
+        """ Merge close lines """
+        x = self.t['X'][:-1]
+        x_shift = self.t['X'][1:]
+        where = np.isclose(x, x_shift, atol=tol)
+        l = 0
+        for w in where:
+            if w == True:
+                #print(l, w)
+                self.t['LOGN'][l] = np.log(np.power(10, self.t['LOGN'][l]) \
+                                    + np.power(10, self.t['LOGN'][l + 1]))
+                self.t['B'][l] = max(self.t['B'][l], self.t['B'][l + 1])
+                self.t.remove_row(l + 1)    
+            l += 1
+            
     def model_cont(self, line, prev=None, cont=None):
-        y_thres = 1e-3
         if prev == None:
             if cont == None:
                 cont = self._y_extr[0] + (self._x_ran - self._x_extr[0]) \
@@ -486,28 +441,22 @@ class Voigt():
                        / (self._x_extr[1] - self._x_extr[0])
             
             self._y_cont = cont
-            self._y_norm = np.full(len(self._x_ran), np.mean(self._y_cont))
-
             self._y_cont0 = self._y_cont
-            self._y_norm0 = self._y_norm
-            self._y_slope0 = self._y_cont0 / self._y_norm0
 
-        self._y_slope = self._y_cont / self._y_norm
-        self._y_rect = self._y_ran / self._y_slope
-        self._dy_rect = self._dy_ran / self._y_slope        
-
-        #return model, param
-
+            
     def model_trasm(self, line):
         """ Create the composite continuum + Voigt model for a system """
         
         group = self.group(line)
 
         # Continuum model
-        norm_model = Model(func_norm)
+        norm_model = Model(func_lin)
         param = norm_model.make_params()
-        y_norm = self._y_norm[0]
+        y_norm = np.mean(self._y_cont)
+        y_slope = (self._y_cont[len(self._y_cont) - 1] - self._y_cont[0]) \
+                  / (self._x_ran[len(self._x_ran) - 1] - self._x_ran[0])
         param['y_norm'].set(y_norm)
+        param['y_slope'].set(y_slope)#, vary=False) 
         model = norm_model
 
         z_diff = 1e-4
@@ -540,7 +489,7 @@ class Voigt():
             if pref in pref_list:
                 pref += str(g) + '_'
             pref_list.append(pref)
-            voigt_model = Model(func_voigt, prefix=pref)#, tab=self.splrep)
+            voigt_model = Model(func_voigt, prefix=pref)
             param.update(voigt_model.make_params())            
 
             z = group['Z'][g]
