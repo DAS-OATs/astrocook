@@ -32,7 +32,7 @@ def main():
     # Find the lines in the 1D spectrum
     kappa = 5.0
     lines = conv.find_lines(mode='abs', kappa=kappa, diff='max')
-
+    
     # Find the continuum
     spec = Spec1DCont(spec)
     list = copy.deepcopy(lines)
@@ -41,7 +41,12 @@ def main():
     spec.sg(spec.abs_rem, 101, 3)
     #print(spec._t)
 
-    # Create a "voigt" object with the spectrum and the lines
+    # Create a "Syst" object from the lines
+    syst = Syst(lines)
+    print(syst._lines.t)
+    sys.exit()
+    
+    # Create a "Voigt" object with the spectrum and the lines
     # Plot results
     spec_fig = plt.figure(figsize = (10, 2))
     spec_fig.canvas.set_window_title('Spectrum')
