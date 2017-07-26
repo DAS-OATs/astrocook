@@ -1,5 +1,6 @@
 from astropy.constants import c, e, m_e
 from astropy.table import Column, Table
+from collections import OrderedDict
 import copy
 from lmfit import CompositeModel, Model, Parameters
 from lmfit.models import ConstantModel, LinearModel, VoigtModel, ExpressionModel
@@ -12,15 +13,18 @@ from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev, interp2d
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 from scipy.stats import linregress
-#import sys
 import sys
 
-wave = 121.567
-f = 0.416
-Gamma = 6.265e8
+#wave = 121.567
+#f = 0.416
+#Gamma = 6.265e8
 redchi_thr = 0.9
 
-resol = 6.0e4
+ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
+            'CIV_1548': [154.8204, 0.1899, 2.643e8],
+            'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
+
+resol = 3.0e4
 def pause():
     programPause = input("Press the <ENTER> key to continue...")
     
@@ -44,17 +48,19 @@ def func_lin(x, y_norm, y_slope):
 def func_norm(x, y_norm):
     return y_norm
 
-def func_voigt(x, z, N, b, btur, tab=None):
+def func_voigt(x, z, N, b, btur, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
-    wave_si = wave * 1e-9
+    wave = ion_dict[ion][0] * 1e-9
+    f = ion_dict[ion][1]
+    Gamma = ion_dict[ion][2]
     x_si = x * 1e-9
     N_si = N * 1e4
     b_si = np.sqrt(b**2 + btur**2) * 1e3
     tau0 = N_si * np.sqrt(np.pi) * f * e.esu.value**2 / (m_e.value * c.value) \
            * 1e-9 \
-           * wave_si / b_si
-    a = 0.25 * Gamma * wave_si / (np.pi * b_si)
-    u = c.value / b_si * (x_si / (wave_si * (1 + z)) - 1)
+           * wave / b_si
+    a = 0.25 * Gamma * wave / (np.pi * b_si)
+    u = c.value / b_si * (x_si / (wave * (1 + z)) - 1)
     if tab == None:
         model = np.exp(-tau0 * func_fadd(a, u))
     else:
@@ -65,8 +71,7 @@ class Voigt():
 
     def __init__(self, spec, lines,
                  chosen=-1,
-                 id=None,
-                 z=None,
+                 syst=None,
                  logN=None,
                  b=None,
                  btur=None):
@@ -80,23 +85,20 @@ class Voigt():
         self._lines = copy.deepcopy(lines)
         self._chosen = chosen
 
-        # Array with line IDs
-        if (id == None):
-            self._id = np.full(len(self._x), 'Ly_a', dtype=object)
-        elif (len(id) == len(self._x)):
-            self._id = np.array(id, dtype=object)
-        else:
-            print("IDs not recognized!")
-        col_id = Column(self._id, name='ID')
-
-        # Array with redshift
-        if (z == None):
-            lya_z = self._x / wave - 1.
+        # Arrays with system IDs and redshifts
+        if (syst == None):
+            lya_z = self._x / ion_dict['Ly_a'][0] - 1.
+            self._syst = np.full((len(self._x), 1), 'Ly_a', dtype=object)
             self._z = np.full(len(self._x), lya_z, dtype=float)
-        elif (len(z) == len(self._x)):
-            self._id = np.array(z, dtype=object)
+        elif (len(syst) == len(self._x)):
+            self._syst = np.array(syst, dtype=object)
+            wave = []
+            for syst in self._syst:
+                wave.append(ion_dict[syst[0]][0])
+            self._z = np.array(self._x / wave - 1., dtype=float)
         else:
-            print("Redshifts not recognized!")
+            print("System IDs not recognized!")
+        col_syst = Column(self._syst, name='SYST')
         col_z = Column(self._z, name='Z')
         
         # Array with column densities
@@ -126,7 +128,7 @@ class Voigt():
             print("Column densities not recognized!")
         col_btur = Column(self._btur, name='BTUR')
         
-        col_add = Table(data=(col_id, col_z, col_logN, col_b, col_btur),
+        col_add = Table(data=(col_syst, col_z, col_logN, col_b, col_btur),
                         masked=True)
         
         # To handle table with preexisting Voigt columns
@@ -232,7 +234,7 @@ class Voigt():
         return np.array([np.logical_and(groups[l] == groups[line],
                                         l != line) for l in iter])
 
-    def fit(self, line, iter=0, maxfev=1000, ax=None):
+    def fit(self, line, iter=0, maxfev=500, ax=None):
         """ Fit a composite continuum + Voigt model to a system """
 
         # Fit the model
@@ -241,7 +243,6 @@ class Voigt():
                                     weights=1/self._dy_ran)
         #self._param.pretty_print()
         self._fit = out
-        #self._param.pretty_print()        
         #out.params.pretty_print()
         
         # Save the results
@@ -261,14 +262,13 @@ class Voigt():
         prev = None
         add = True
         old_t = copy.deepcopy(self._t)
-        while stop == False: 
+        while stop == False:
             i += 1
             old_redchi = self._out_redchi
             old_aic = self._out_aic
             self.prep(line, prev)
             self.model_cont(line, prev, cont)
             self._trasm_model = self.model_trasm(line)
-
             # Plot fit
             if ax != None:
                 comp = self.group(line)
@@ -292,10 +292,11 @@ class Voigt():
                     pass
                 plt.draw()
                 plt.pause(0.1)
-                
-            self.fit(line, ax=ax)
 
-            stop = (add == False or self._fit.redchi < redchi_thr \
+            self.fit(line, ax=ax)
+            
+
+            stop = (add == False or (self._fit.redchi < redchi_thr and i > 1) \
                     or (self._fit.aic > old_aic))
             
             if stop == False:
@@ -309,26 +310,32 @@ class Voigt():
                          self._fit.redchi, self._fit.aic))
 
                 # Save fit
-                if self._fit.redchi < old_redchi:
+                if self._fit.redchi < old_redchi: #or 1 == 1:
                     self.fit_save(line)
                     old_redchi = self._out_redchi
                     old_aic = self._out_aic
 
-            
-
                 # Add line where the minimum residual is located
-                xmin = np.min(self.group(line)['XMIN'])
-                xmax = np.max(self.group(line)['XMAX'])        
                 x_add = self._x_ran[np.argmin(self._y_resid / self._dy_ran)]
                 y_add = np.interp(x_add, self._x_ran, self._y_ran)
                 y_resid_add = np.interp(x_add, self._x_ran,
                                         self._y_resid / self._y_cont)
                 old_t = copy.deepcopy(self._t)
-                add = self.line_add(xmin, xmax, x_add, y_add)
-                #print(x_add)
+                syst_add = self._t['SYST'][line]  # Check this, because it
+                                                  # happens that the largest
+                                                  # residual is the other member
+                """
+                xmin = np.min(self.group(line)['XMIN'])
+                xmax = np.max(self.group(line)['XMAX'])        
+                """
+                x_where= np.where(self.group(line)['SYST'] == syst_add)[0]
+                xmin = np.min(self.group(line)['XMIN'][x_where])
+                xmax = np.max(self.group(line)['XMAX'][x_where])        
+                add = self.line_add(xmin, xmax, x_add, y_add, syst=syst_add)
 
+                # Merge close lines (not so stable)
                 tol = 1 / 3 * np.mean(self._x_ran) / resol
-                self.line_merge(tol=tol)
+                #self.line_merge(tol=tol)
 
                 if ax != None:# and add == True:
                     ax.cla()
@@ -339,13 +346,15 @@ class Voigt():
 
 
             else:
+                self._fit = prev
                 self._t = copy.deepcopy(old_t)
-            
+                
         if stop == True and i == 0:
             self.prep(line, prev)
             self.model_cont(line, prev, cont)        
             trasm_model = self.model_trasm(line)
 
+            
     def fit_save(self, line):
 
         self._y_fit = self._fit.best_fit
@@ -360,24 +369,58 @@ class Voigt():
                 / self._fit.nfree
         self._out_aic = self._fit.aic
 
-        param_copy = [value for (key,value) in sorted(self._param.items())]
+        #print(self._param.items())
+        #print([value for value in self._param.valuesdict().values()])
+        sorted_keys = sorted(self._param.valuesdict().keys())
+        param_sort = OrderedDict((key, self._param.valuesdict()[key]) \
+                                 for key in sorted_keys)
+        param_copy = [value for value in param_sort.values()]
         g = 0
-        s = 5  # To skip over continuum and PSF parameters
+        #s = 5  # To skip over continuum and PSF parameters
+        s = 2  # To skip over continuum parameters
+        n = len(self.group(line)['SYST'][line])  # Number of ions in the system
         for l in np.where(self.group_sel(line) == True)[0]: 
-            self._t['X'][l] = wave * (param_copy[g + s + 3] + 1)
-            self._t['Z'][l] = param_copy[g + s + 3]
-            self._t['LOGN'][l] = np.log10(param_copy[g + s]) 
-            self._t['B'][l] = param_copy[g + s + 1] 
-            self._t['BTUR'][l] = param_copy[g + s + 2]         
-            g += 4
+            self._t['X'][l] = ion_dict[self._t['SYST'][l][0]][0] \
+                              * (param_copy[s + g + 3] + 1)
+            self._t['Z'][l] = param_copy[s + g + 3]
+            self._t['LOGN'][l] = np.log10(param_copy[s + g]) 
+            self._t['B'][l] = param_copy[s + g + 1] 
+            self._t['BTUR'][l] = param_copy[s + g + 2]
+            g += 4 * n
         
     def group(self, line=-1):
         """ Create a group of line for each line in the list """
         iter = range(len(self._t))
+        #self._t.sort('X')
         if line == -1:
-            ret = np.array([self._t[self.group_sel(l)] for l in iter])
+            sel = np.array([self._t[self.group_sel(l)] for l in iter])
         else:
-            ret = self._t[self.group_sel(line)]
+            sel = self._t[self.group_sel(line)]
+        ret = copy.deepcopy(sel)
+        for row in sel:
+            if (len(row['SYST']) > 1):
+                ref = row['SYST'][0]
+                for i in range(1, len(row['SYST'])):
+                    ion = row['SYST'][i]
+                    xfact = ion_dict[ion][0] / ion_dict[ref][0]
+                    yfact = ion_dict[ion][1] / ion_dict[ref][1]
+                    xmin = row['XMIN'] * xfact 
+                    xmax = row['XMAX'] * xfact
+                    x = row['X'] * xfact
+                    try:
+                        y = np.interp(x, self._x_ran, self._y_ran)
+                    except:
+                        try:
+                            y = self._cont - (self._cont - row['Y']) * yfact
+                        except:
+                            y = row['Y']
+                    syst = np.append(ion, np.delete(row['SYST'][:].data, i))
+                    z = row['Z']
+                    logN = row['LOGN']
+                    b = row['B']
+                    btur = row['BTUR']
+                    ret.add_row([xmin, xmax, x, y, None, 1, syst, z, logN, b,
+                                 btur])
         return ret
     
     def group_sel(self, line):
@@ -400,15 +443,16 @@ class Voigt():
                + a_3 * pow(y_norm, 3) + a_4 * pow(y_norm, 4) \
                + a_5 * pow(y_norm, 5);
     
-    def line_add(self, xmin, xmax, x, y):
+    def line_add(self, xmin, xmax, x, y, syst=['Ly_a']):
         """ Add a line to a line list """
-        z = x / wave - 1
-        if np.isclose(self._t['Z'], z, atol=1e-7).any() == False or 1 == 1:
-            self.t.add_row([xmin, xmax , x, y, None, 1, 'Ly_a', z, 14.0, 20.0,
-                            0.0])
-            ret = True
-        else:
-            ret = False
+        z = x / ion_dict[syst[0]][0] - 1
+        #print(self._t['Z'], z)
+        #if np.isclose(self._t['Z'], z, atol=1e-7).any() == False or 1 == 1:
+        self.t.add_row([xmin, xmax , x, y, None, 1, syst, z, 14.0, 20.0,
+                        0.0])
+        ret = True
+        #else:
+        #    ret = False
         return ret
 
     def line_delete(self, cond):
@@ -453,13 +497,25 @@ class Voigt():
         norm_model = Model(func_lin)
         param = norm_model.make_params()
         y_norm = np.mean(self._y_cont)
+        y_norm_fact = 1.02
+        y_norm_max = np.mean(self._y_cont0) * y_norm_fact
+        y_norm_min = np.mean(self._y_cont0) / y_norm_fact        
         y_slope = (self._y_cont[len(self._y_cont) - 1] - self._y_cont[0]) \
                   / (self._x_ran[len(self._x_ran) - 1] - self._x_ran[0])
-        param['y_norm'].set(y_norm)
-        param['y_slope'].set(y_slope)#, vary=False) 
+        y_slope_add = 0.5
+        y_slope_max = (self._y_cont0[len(self._y_cont0) - 1]
+                       - self._y_cont0[0]) \
+                       / (self._x_ran[len(self._x_ran) - 1] - self._x_ran[0]) \
+                       * (1 + y_slope_add)
+        y_slope_min = (self._y_cont0[len(self._y_cont0) - 1]
+                       - self._y_cont0[0]) \
+                       / (self._x_ran[len(self._x_ran) - 1] - self._x_ran[0]) \
+                       * (1 - y_slope_add)
+        param['y_norm'].set(y_norm, max=y_norm_max, min=y_norm_min)
+        param['y_slope'].set(y_slope, max=y_slope_max, min=y_slope_min)
         model = norm_model
 
-        z_diff = 1e-4
+        z_diff = 5e-4
         logN_min = 0
         logN_max = 20
         N_min = 1
@@ -468,8 +524,9 @@ class Voigt():
         b_max = 100
         btur_min = 0
         btur_max = 100
+        ztag_list = []
         pref_list = []
-        y_interp = []
+        y_interp = np.ones(len(group))
 
         # First loop to identify newly added lines
         g_interp = len(group)
@@ -477,37 +534,44 @@ class Voigt():
             if group['LOGN'][g] == 14.0:
                 g_interp = g
                 try:
-                    y_interp.append(np.interp(group['X'][g], self._x_ran,
-                                              1 + self._y_resid / self._y_cont))
+                    y_interp[g] = np.interp(group['X'][g], self._x_ran,
+                                            1 + self._y_resid / self._y_cont)
                 except:
-                    y_interp.append(np.interp(group['X'][g], self._x_ran,
-                                              self._y_ran / self._y_cont))
-
+                    y_interp[g] = np.interp(group['X'][g], self._x_ran,
+                                            self._y_ran / self._y_cont)
+                    
         # Second loop to initialize parameters
         for g in range(len(group)):
-            pref = 'z' + str(group['Z'][g]).replace('.', '') + '_'
+            ion = group['SYST'][g][0]
+            ref = group['SYST'][g][1]
+            ztag = 'z' + str(group['Z'][g]).replace('.', '')
+            pref = ztag + '_' + ion + '_'
             if pref in pref_list:
                 pref += str(g) + '_'
             pref_list.append(pref)
-            voigt_model = Model(func_voigt, prefix=pref)
+            voigt_model = Model(func_voigt, prefix=pref, ion=ion,
+                                tab=self.splrep)
             param.update(voigt_model.make_params())            
 
             z = group['Z'][g]
-            if len(y_interp) > 1:
+            #print(y_interp, g)
+            #if len(y_interp) > 1:
+            if g_interp == len(group) - 1:
                 N = np.power(10, self.guess(y_interp[g]))
             else:
 
-                if g_interp == len(group):
-                    N = np.power(10, group['LOGN'][g])
+                #if g_interp == len(group):
+                #    N = np.power(10, group['LOGN'][g])
                                         
                 # Newly added lines: guess values of N
-                elif g == g_interp:
-                    N = np.power(10, self.guess(y_interp[0]))
+                if (y_interp[g] != 1):
+                #elif g == g_interp:
+                    N = np.power(10, self.guess(y_interp[g]))
 
                 # Lines adjacent to newly added lines: N is decreased
-                elif g == g_interp - 1 or g == g_interp + 1:
-                    N = max(np.power(10, group['LOGN'][g]) \
-                            - np.power(10, self.guess(y_interp[0])) * 0.5, 1e10)
+                #elif g == g_interp - 1 or g == g_interp + 1:
+                    #N = max(np.power(10, group['LOGN'][g]) \
+                     #       - np.power(10, self.guess(y_interp[0])) * 0.5, 1e10)
 
                 # Other lines: previous value
                 else:
@@ -516,13 +580,30 @@ class Voigt():
 
             b = group['B'][g] #* 0.8
             btur = group['BTUR'][g]
-            param[pref + 'z'].set(z, min=z-z_diff, max=z+z_diff)
-            param[pref + 'N'].set(N, min=N_min, max=N_max)
-            param[pref + 'b'].set(b, min=b_min, max=b_max)
-            param[pref + 'btur'].set(btur, vary=False)
+
+            # Set constraints among parameter
+            z_expr = ''
+            N_expr = ''
+            b_expr = ''
+            btur_expr = ''
+            if ztag in ztag_list:
+                z_expr = ztag + '_' + ref + '_z'
+                N_expr = ztag + '_' + ref + '_N'
+                b_expr = ztag + '_' + ref + '_b'
+                btur_expr = ztag + '_' + ref + '_btur'                
+            
+            ztag_list.append(ztag)
+
+            param[pref + 'z'].set(z, min=z-z_diff, max=z+z_diff, expr=z_expr)
+            param[pref + 'N'].set(N, min=N_min, max=N_max, expr=N_expr)
+            param[pref + 'b'].set(b, min=b_min, max=b_max, expr=b_expr)
+            param[pref + 'btur'].set(btur, vary=False, expr=btur_expr)
             model *= voigt_model
 
+        #param.pretty_print()
+            
         # Convolve PSF
+        """
         psf = Model(gaussian)
         conv_model = CompositeModel(model, psf, convolve)
         center = np.mean(self._x_ran)
@@ -531,7 +612,9 @@ class Voigt():
         param['amplitude'].set(1, vary=False)
         param['center'].set(center, vary=False)
         param['sigma'].set(sigma, vary=False)        
-
+        """
+        conv_model = model
+        
         # Save results
         self._y_trasm = conv_model.eval(param, x=self._x_ran)
         self._param = param
@@ -569,9 +652,18 @@ class Voigt():
             
     def range_sel(self, line):
         """ Define the selection indexes for spectral ranges """
+        """
         return np.logical_and(
-            self._spec['X'] > min(self._t[self.group_sel(line)]['XMIN']),
-            self._spec['X'] < max(self._t[self.group_sel(line)]['XMAX']))
+                self._spec['X'] > min(self._t[self.group_sel(line)]['XMIN']),
+                self._spec['X'] < max(self._t[self.group_sel(line)]['XMAX']))
+        """
+        ret = self._spec['X'] < 0.0
+        for row in self.group(line):
+            ret = np.logical_or(ret,
+                                np.logical_and(
+                                    self._spec['X'] > row['XMIN'],
+                                    self._spec['X'] < row['XMAX']))
+        return ret
 
     def tabulate(self, a_min=1e-6, a_max=1e-2, da=1e-3,
                  u_min=-1e3, u_max=1e3, du=0.01, pref=None):
@@ -579,7 +671,7 @@ class Voigt():
         a_range = np.arange(a_min, a_max, da)
         u_range = np.arange(u_min, u_max, du)        
         ret = np.empty([len(u_range), len(a_range)])
-        gamma = Gamma * 1e-10 / (4 * np.pi)
+        #gamma = Gamma * 1e-10 / (4 * np.pi)
         a_i = -1
         for a in a_range:
             a_i += 1
