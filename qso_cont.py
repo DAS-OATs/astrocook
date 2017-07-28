@@ -81,14 +81,14 @@ def main():
     # Compute the smoothing windows
     # N.B. The input spectrum should have a fixed velocity bin
     smooth = 50 * u.km / u.s
-    spec.todo_convert_logx(xUnit=u.km/u.s)
+    spec.todo_convert_logx(xunit=u.km/u.s)
     narrow = int(smooth / np.mean(spec.xmax - spec.xmin))
     medium = narrow * 2
     wide = narrow * 4
     narrow = narrow + 1 if narrow % 2 == 0 else narrow
     medium = medium + 1 if medium % 2 == 0 else medium
     wide = wide + 1 if wide % 2 == 0 else wide
-    spec.todo_convert_logx(xUnit=u.nm)    
+    spec.todo_convert_logx(xunit=u.nm)    
     print("Savitzky-Golay smoothing windows: ")
     print(" wide (absorption-clean continuum): %i pixels" % (wide))
     print(" narrow (emission continuum): %i pixels" % (narrow))

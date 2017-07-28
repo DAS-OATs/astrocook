@@ -49,8 +49,8 @@ class ListReader:
         gen = List(x, y, dy=dy, 
                  xmin=xmin,
                  xmax=xmax,
-                 xUnit=u.nm, 
-                 yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
+                 xunit=u.nm, 
+                 yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
                  group=good)
         hdulist.close()
 

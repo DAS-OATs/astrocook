@@ -13,10 +13,15 @@ def main():
     # Read the 1D spectrum
     spec = Spec1DReader().uves(name + '_spec.fits')
 
-    # Create a "line" object from the spectrum
+    # Create a Line object from the spectrum
     line = Line(spec)
+
+    # Find lines in the spectrum
     line.find(kappa=5.0)
+
+    # Plot lines
     line.plot()
-    
+
+
 if __name__ == '__main__':
     main()

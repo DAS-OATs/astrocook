@@ -24,8 +24,8 @@ class List():
                  dx=None,
                  dy=None,
                  group=None,
-                 xUnit=u.dimensionless_unscaled, 
-                 yUnit=u.dimensionless_unscaled, 
+                 xunit=u.dimensionless_unscaled, 
+                 yunit=u.dimensionless_unscaled, 
                  meta=None,
                  dtype=float):
         """ Constructor for the LineList class.
@@ -68,11 +68,11 @@ class List():
             data=(col_xmin, col_xmax, col_x, col_y, col_dy, col_group), 
             masked=True, meta=meta)
 
-        self._t['X'].unit = xUnit
-        self._t['XMIN'].unit = xUnit
-        self._t['XMAX'].unit = xUnit
-        self._t['Y'].unit = yUnit
-        self._t['DY'].unit = yUnit
+        self._t['X'].unit = xunit
+        self._t['XMIN'].unit = xunit
+        self._t['XMAX'].unit = xunit
+        self._t['Y'].unit = yunit
+        self._t['DY'].unit = yunit
 
         self._t['XMIN'].mask = np.isnan(self._t['XMIN'].quantity.value)
         self._t['XMAX'].mask = np.isnan(self._t['XMAX'].quantity.value)
@@ -202,46 +202,46 @@ class List():
             self._t['GROUP'] = np.asarray(value, dtype='int')
 
     @property
-    def xUnit(self):
+    def xunit(self):
         """Physical unit for the x property, to be expressed as an astropy unit."""
         return self._t['X'].unit
 
     @property
-    def yUnit(self):
+    def yunit(self):
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
 
-    def convert(self, xUnit=None, yUnit=None):
+    def convert(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
-        if not (xUnit is None):
+        if not (xunit is None):
             mask = self._t['X'].mask
             q = self._t['X']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['X'] = p
             self._t['X'].mask = mask
 
             mask = self._t['XMIN'].mask
             q = self._t['XMIN']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['XMIN'] = p
             self._t['XMIN'].mask = mask
 
             mask = self._t['XMAX'].mask
             q = self._t['XMAX']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
-        if not (yUnit is None):
+        if not (yunit is None):
             mask = self._t['Y'].mask
             q = self._t['Y']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            p = q.to(yunit, equivalencies=u.spectral_density(self._t['X']))
             self._t['Y'] = p
             self._t['Y'].mask = mask
 
             mask = self._t['DY']
             q = self._t['DY']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            p = q.to(yunit, equivalencies=u.spectral_density(self._t['X']))
             self._t['DY'] = p
             self._t['DY'].mask = mask
             
@@ -259,7 +259,7 @@ class List():
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        list = List(x, y, xmin=xmin, xmax=xmax, xUnit=x.unit, yUnit=y.unit, 
+        list = List(x, y, xmin=xmin, xmax=xmax, xunit=x.unit, yunit=y.unit, 
                     group=good, meta=meta)
         return list
 

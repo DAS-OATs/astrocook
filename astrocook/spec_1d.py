@@ -1,5 +1,5 @@
 from . import List
-from .utils import many_gauss, savitzky_golay
+from .utils import many_gauss, savitzky_golay, dict_wave
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
@@ -34,8 +34,8 @@ class Spec1D():
                  dy=None,
                  group=None,
                  resol=None,
-                 xUnit=u.dimensionless_unscaled, 
-                 yUnit=u.dimensionless_unscaled, 
+                 xunit=None, #u.dimensionless_unscaled, 
+                 yunit=None, #u.dimensionless_unscaled, 
                  exptime=float('nan'), 
                  order=-1,
                  meta=None,
@@ -80,11 +80,11 @@ class Spec1D():
         self._t = Table(
             data=(col_xmin, col_xmax, col_x, col_y, col_dy, col_g, col_r), 
             masked=True, meta=meta)
-        self._t['XMIN'].unit = xUnit
-        self._t['XMAX'].unit = xUnit
-        self._t['X'].unit    = xUnit
-        self._t['Y'].unit    = yUnit
-        self._t['DY'].unit   = yUnit
+        self._t['XMIN'].unit = xunit
+        self._t['XMAX'].unit = xunit
+        self._t['X'].unit    = xunit
+        self._t['Y'].unit    = yunit
+        self._t['DY'].unit   = yunit
 
         self._t['XMIN'].mask  = np.isnan(self._t['XMIN'].quantity.value)
         self._t['XMAX'].mask  = np.isnan(self._t['XMAX'].quantity.value)
@@ -157,7 +157,7 @@ class Spec1D():
             self._t['X'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['X'] = np.asarray(value, dtype='float')
-        self._t['X'].unit = self._t['XMIN'].unit
+        #self._t['X'].unit = self._t['XMIN'].unit
 
     @property
     def xmin(self):
@@ -170,7 +170,7 @@ class Spec1D():
             self._t['XMIN'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMIN'] = np.asarray(value, dtype='float')
-        self._t['XMIN'].unit = self._t['X'].unit
+        #self._t['XMIN'].unit = self._t['X'].unit
 
     @property
     def xmax(self):
@@ -183,7 +183,7 @@ class Spec1D():
             self._t['XMAX'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMAX'] = np.asarray(value, dtype='float')
-        self._t['XMAX'].unit = self._t['X'].unit
+        #self._t['XMAX'].unit = self._t['X'].unit
 
     @property
     def dx(self):
@@ -203,7 +203,7 @@ class Spec1D():
             self._t['Y'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['Y'] = np.asarray(value, dtype='float')
-        self._t['Y'].unit = self._t['DY'].unit
+        #self._t['Y'].unit = self._t['DY'].unit
 
     @property
     def dy(self):
@@ -216,7 +216,7 @@ class Spec1D():
             self._t['DY'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['DY'] = np.asarray(value, dtype='float')
-        self._t['DY'].unit = self._t['Y'].unit
+        #self._t['DY'].unit = self._t['Y'].unit
 
     @property
     def group(self):
@@ -239,56 +239,56 @@ class Spec1D():
         return self._getWithMask('RESOL')
 
     @property
-    def xUnit(self):
+    def xunit(self):
         """Physical unit for the x property, to be expressed as an astropy unit."""
         return self._t['X'].unit
 
     @property
-    def yUnit(self):
+    def yunit(self):
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
 
-    def convert(self, xUnit=None, yUnit=None):
+    def convert(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
-        if not (xUnit is None):
+        if not (xunit is None):
             mask = self._t['X'].mask
             q = self._t['X']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['X'] = p
             self._t['X'].mask = mask
 
             mask = self._t['XMIN'].mask
             q = self._t['XMIN']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['XMIN'] = p
             self._t['XMIN'].mask = mask
 
             mask = self._t['XMAX'].mask
             q = self._t['XMAX']
-            p = q.to(xUnit, equivalencies=u.spectral())
+            p = q.to(xunit, equivalencies=u.spectral())
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
-        if not (yUnit is None):
+        if not (yunit is None):
             mask = self._t['Y'].mask
             q = self._t['Y']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            p = q.to(yunit, equivalencies=u.spectral_density(self._t['X']))
             self._t['Y'] = p
             self._t['Y'].mask = mask
 
             mask = self._t['DY']
             q = self._t['DY']
-            p = q.to(yUnit, equivalencies=u.spectral_density(self._t['X']))
+            p = q.to(yunit, equivalencies=u.spectral_density(self._t['X']))
             self._t['DY'] = p
             self._t['DY'].mask = mask
 
 
-    def todo_convert_logx(self, xUnit=None, yUnit=None):
+    def todo_convert_logx(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
-        if not (xUnit is None):
+        if not (xunit is None):
             #TODO: check following code
-            if xUnit.is_equivalent(u.m / u.s) \
-                or self.xUnit.is_equivalent(u.m / u.s):
+            if xunit.is_equivalent(u.m / u.s) \
+                or self.xunit.is_equivalent(u.m / u.s):
                     equiv = [(u.nm, u.km / u.s, 
                               lambda x: np.log(x) * c.to(u.km / u.s).value, 
                               lambda x: np.exp(x / c.to(u.km / u.s).value)   \
@@ -296,19 +296,19 @@ class Spec1D():
 
             mask = self._t['X'].mask
             q = self._t['X']
-            p = q.to(xUnit, equivalencies=equiv)
+            p = q.to(xunit, equivalencies=equiv)
             self._t['X'] = p
             self._t['X'].mask = mask
 
             mask = self._t['XMIN'].mask
             q = self._t['XMIN']
-            p = q.to(xUnit, equivalencies=equiv)
+            p = q.to(xunit, equivalencies=equiv)
             self._t['XMIN'] = p
             self._t['XMIN'].mask = mask
 
             mask = self._t['XMAX'].mask
             q = self._t['XMAX']
-            p = q.to(xUnit, equivalencies=equiv)
+            p = q.to(xunit, equivalencies=equiv)
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
@@ -323,14 +323,14 @@ class Spec1D():
 
         conv = copy.deepcopy(self)
         conv_col = getattr(conv, col)
-        conv.todo_convert_logx(xUnit=u.km/u.s)        
+        conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
             par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
         conv.y = fftconvolve(conv_col, prof, mode=mode)
-        conv.todo_convert_logx(xUnit=self.x.unit)
+        conv.todo_convert_logx(xunit=self.x.unit)
         return conv
         
     def deredden(self, A_v, model='od94'):
@@ -412,8 +412,8 @@ class Spec1D():
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xUnit=x.unit, 
-                      yUnit=y.unit, group=good, resol=resol, meta=meta)
+        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x.unit, 
+                      yunit=y.unit, group=good, resol=resol, meta=meta)
         return spec
         
     def rolling_window(self, width):
@@ -448,6 +448,52 @@ class Spec1D():
         #window = Spec1DReader().table(window_t)
         return window
         
+    def to_wave(self, ion):
+        """ Convert line redshifts to wavelengths using a reference """
+
+        if (len(ion) == 1):
+            ion = np.full(len(self.t), ion[0])
+        
+        if ((len(ion) > 1) and (len(ion) != len(self.t))):
+            raise Exception("Ion list and line list must have the same length.")
+            
+        ion = np.asarray(ion)
+        ion_ravel = np.ravel(ion, 'F')
+        ion_wave = np.asarray([dict_wave[i].value for i in ion_ravel]) \
+                   * dict_wave['Ly_a'].unit
+        z = np.ravel(self.x.value, 'F')
+        zmin = np.ravel(self.xmin.value, 'F') 
+        zmax = np.ravel(self.xmax.value, 'F')
+        x = (z + 1) * ion_wave
+        xmin = (zmin + 1) * ion_wave
+        xmax = (zmax + 1) * ion_wave
+        self.x = np.unique(x)
+        self.xmin = np.unique(xmin)
+        self.xmax = np.unique(xmax)
+
+    def to_z(self, ion):
+        """ Convert line wavelengths to redshifts using a reference """
+
+        if (len(ion) == 1):
+            ion = np.full(len(self.t), ion[0])
+
+        if ((len(ion) > 1) and (len(ion) != len(self.t))):
+            raise Exception("Ion list and line list must have the same length.")
+            
+        ion = np.asarray(ion)
+        ion_ravel = np.ravel(ion, 'F')
+        ion_wave = np.asarray([dict_wave[i].value for i in ion_ravel]) \
+                   * dict_wave['Ly_a'].unit
+        x = np.resize(self.x.value, ion_ravel.shape) * self.x.unit
+        xmin = np.resize(self.xmin.value, ion_ravel.shape) * self.xmin.unit
+        xmax = np.resize(self.xmax.value, ion_ravel.shape) * self.xmax.unit
+        z = x / ion_wave - 1
+        zmin = xmin / ion_wave - 1
+        zmax = xmax / ion_wave - 1
+        self.x = np.reshape(z, ion.shape, 'F')
+        self.xmin = np.reshape(zmin, ion.shape, 'F')
+        self.xmax = np.reshape(zmax, ion.shape, 'F')
+
     def save(self, filename):
         hdu = fits.BinTableHDU.from_columns(
             [fits.Column(name='XMIN', format='E', array=self.xmin),

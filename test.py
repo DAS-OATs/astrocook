@@ -17,29 +17,29 @@ quantity_support()
 a = [1,2,3]
 
 #Create a Spec1D object providing x, y, dy and units informations
-s = Spec1D(a, a, dy=a, xUnit=u.Angstrom, yUnit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
+s = Spec1D(a, a, dy=a, xunit=u.Angstrom, yunit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
 
 #Test unit conversion capabilities
 print()
 print("Wavelength conversions:")
 print(s.x)
-s.convert(xUnit=u.Hz)
+s.convert(xunit=u.Hz)
 print(s.x)
-s.convert(xUnit=u.Angstrom)
+s.convert(xunit=u.Angstrom)
 print(s.x)
 
 print()
 print("Flux density conversions:")
 print(s.y)
-s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Hz)
+s.convert(yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Hz)
 print(s.y)
-s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
+s.convert(yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
 print(s.y)
 
 print(s.y)
-s.convert(yUnit=u.watt / u.cm**2 / u.Angstrom)
+s.convert(yunit=u.watt / u.cm**2 / u.Angstrom)
 print(s.y)
-s.convert(yUnit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
+s.convert(yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom)
 print(s.y)
 
 
@@ -74,7 +74,7 @@ guess_pl = models.PowerLaw1D(amplitude=10, x_0=s.x.mean(), alpha=0.5)
 
 #Plot data and model 
 plt.plot(s.x, s.y)
-plt.plot(s.x, guess_pl(s.x).value * s.yUnit)
+plt.plot(s.x, guess_pl(s.x).value * s.yunit)
 plt.show()
 
 #Fit data
@@ -85,7 +85,7 @@ print(fit_pl)
 
 #Plot data and model 
 plt.plot(s.x, s.y)
-plt.plot(s.x, fit_pl(s.x.value) * s.yUnit)
+plt.plot(s.x, fit_pl(s.x.value) * s.yunit)
 plt.show()
 
 
@@ -93,6 +93,6 @@ plt.show()
 dered = copy.deepcopy(s)
 dered.deredden(3.1 * 0.06846)
 
-plt.plot(s.x * s.xUnit, s.y * s.yUnit)
-plt.plot(dered.x * dered.xUnit, dered.y * dered.yUnit)
+plt.plot(s.x * s.xunit, s.y * s.yunit)
+plt.plot(dered.x * dered.xunit, dered.y * dered.yunit)
 plt.show()

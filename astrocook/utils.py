@@ -1,7 +1,18 @@
 import numpy as np
 from math import factorial
+from astropy import units as u
 from astropy.constants import c
 from scipy.special import wofz
+
+ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
+            'CIV_1548': [154.8204, 0.1899, 2.643e8],
+            'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
+
+# All wavelength must have the same unit!
+dict_wave = {'Ly_a': 121.567 * u.nm,
+             'CIV_1548': 154.8204 * u.nm,
+             'CIV_1550': 155.0781 * u.nm}
+
 
 def many_gauss(x, *p, mode='abs', cont = 1):
     """Sum of gaussian profiles

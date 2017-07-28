@@ -441,8 +441,8 @@ class Spec1DCont(Spec1D):
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        gen = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xUnit=x.unit, 
-                     yUnit=y.unit, group=good, resol=resol, meta=meta)
+        gen = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x.unit, 
+                     yunit=y.unit, group=good, resol=resol, meta=meta)
         cont = Spec1DCont(gen, abs_fit=abs_fit, em_fit=em_fit, abs_rem=abs_rem, 
                           em_rem=em_rem, cont=cont)
         return cont
