@@ -448,6 +448,17 @@ class Spec1D():
         #window = Spec1DReader().table(window_t)
         return window
         
+    def save(self, filename):
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='XMIN', format='E', array=self.xmin),
+             fits.Column(name='XMAX', format='E', array=self.xmax),
+             fits.Column(name='X', format='E', array=self.x),
+             fits.Column(name='Y', format='E', array=self.y),
+             fits.Column(name='DY', format='E', array=self.dy),
+             fits.Column(name='GROUP', format='I', array=self.group),
+             fits.Column(name='RESOL', format='E', array=self.resol)])
+        hdu.writeto(filename, overwrite=True)
+
     def to_wave(self, ion):
         """ Convert line redshifts to wavelengths using a reference """
 
@@ -494,13 +505,3 @@ class Spec1D():
         self.xmin = np.reshape(zmin, ion.shape, 'F')
         self.xmax = np.reshape(zmax, ion.shape, 'F')
 
-    def save(self, filename):
-        hdu = fits.BinTableHDU.from_columns(
-            [fits.Column(name='XMIN', format='E', array=self.xmin),
-             fits.Column(name='XMAX', format='E', array=self.xmax),
-             fits.Column(name='X', format='E', array=self.x),
-             fits.Column(name='Y', format='E', array=self.y),
-             fits.Column(name='DY', format='E', array=self.dy),
-             fits.Column(name='GROUP', format='I', array=self.group),
-             fits.Column(name='RESOL', format='E', array=self.resol)])
-        hdu.writeto(filename, overwrite=True)

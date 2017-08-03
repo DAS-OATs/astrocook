@@ -6,6 +6,7 @@ from lmfit import CompositeModel, Model, Parameters
 from lmfit.models import ConstantModel, LinearModel, VoigtModel, ExpressionModel
 from lmfit.lineshapes import gaussian
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import random
 from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev, interp2d

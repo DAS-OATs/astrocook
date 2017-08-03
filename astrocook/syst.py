@@ -1,4 +1,6 @@
-from . import Line
+from . import Line, Model
+from .utils import voigt_def
+from astropy import units as u
 from astropy.table import Column, Table
 from copy import deepcopy as dc
 from matplotlib.gridspec import GridSpec as gs
@@ -41,12 +43,6 @@ class Syst(Line):
         if ((spec is None) and (line is None) and (x is [])):
             warnings.warn("No spectrum, line list, or data provided.")
 
-        if ((line is not None) and (ion is [])):
-            ion = np.full(len(line._t), 'Ly_a')           
-
-        if ((x != []) and (ion is [])):
-            ion = np.full(len(x), 'Ly_a')           
-
         # Line list
         self._line = None
         if (line is not None):
@@ -57,16 +53,20 @@ class Syst(Line):
         if (spec is not None):
             self._spec = dc(spec)
             
-        # Redshift list
-        self._redsh = None
-        if ((ion is not []) and (line is not None) \
-            and (len(ion) == len(line.t))):
-            self._redsh = dc(line)
-            self._redsh.to_z(ion)
-            self._redsh.t.add_column(Column(np.asarray(dc(ion)), name='ION'))
+        # Ion list
+        if (line is not None):
+            len_ion = len(line._t)
+        if (x != []):
+            len_ion = len(x)
 
+        if ((ion is []) or (ion is 'Ly_a')):
+            ion = np.full(len_ion, 'Ly_a')           
+        if (ion is 'CIV'):
+            ion = np.stack((np.full(len_ion, 'CIV_1548'),                    
+                            np.full(len_ion, 'CIV_1550'))).T
+        self._ion = ion
+            
         # System list
-        
         data = ()
         if (x != []):
             col_x = Column(np.asarray(dc(x), dtype=dtype), name='X')
@@ -82,7 +82,7 @@ class Syst(Line):
             col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
             data += (col_xmin, col_xmax)
         if (dy != []):
-            col_dy = Column(np.asarray(dc(dy), dtype=dtype), name='DY')
+            col_dy = Column(np.asarray(dc(dy)), name='DY')
             data += (col_dy,)
         if ((x != []) and (ion != [])):
             col_ion = Column(np.asarray(dc(ion)), name='ION')
@@ -100,12 +100,6 @@ class Syst(Line):
             self._t['DY'].unit = yunit
 
         self._use_good = False
-
-        if (self._redsh is not None):
-            if self._use_good:
-                self._redsh.ion = np.asarray(self._redsh.t['ION'][self._igood])
-            else:
-                self._redsh.ion = np.asarray(self._redsh.t['ION'])
 
                 
 # Properties
@@ -137,96 +131,74 @@ class Syst(Line):
             raise Exception("Line list has a wrong format.")
     
     @property
-    def redsh(self):
-        return self._redsh
+    def z(self):
+        return self._z
 
-    @redsh.setter
-    def redsh(self, value):
+    @z.setter
+    def z(self, value):
         if isinstance(value, Syst):
-            self._redsh = value
+            self._z = value
         else:
             raise Exception("Redshift list has a wrong format.")
 
 
 # Methods
 
-    def plot(self, figsize=(6,6), split=False, block=True, **kwargs):
-        ion = np.unique(self.ion)
+    def chunk(self, x=None, line=None):  # Chunk must be shifted to the system z
+        if ((x is None) and (line is None)):
+            raise Exception("Either x or line must be provided.")
+        if (x is not None):
+            if (line is not None):
+                warnings.warn("x will be used; line will be disregarded.")
+            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
+        if ((x is None) and (line >= len(self._t))):
+            raise Exception("Line number is too large.")
+        try:  # When ION has different sizes in different rows
+            ion = np.unique(np.asarray(np.sum(self.ion)))
+        except:
+            ion = np.unique(self.ion)
         n = len(ion)
-        z = self.x
-        zmin = np.min(self.xmin)
-        zmax = np.max(self.xmax)
-        fig = plt.figure(figsize=figsize)
-        if split == True:
-            r = min(n,4)
-            c = int(np.ceil(n/4))
-            figsize = (n*2, c*4)
-            grid = gs(r,c)            
-            for p in range(n):
-                ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
-                ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
-                spec = dc(self._spec)
-                line = dc(self._line)
-                spec.to_z([ion[p]])
-                line.to_z([ion[p]])
-                chunk = spec.t[np.logical_and(spec.x > zmin, spec.x < zmax)]
-                memb = line.t[np.logical_and(line.x > zmin, line.x < zmax)]
-                ax.set_xlim(zmin, zmax)
-                ax.plot(chunk['X'], chunk['Y'])
-                ax.scatter(memb['X'], memb['Y'])
-                for comp in z:
-                    ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='lightgray')
-                if (p+1) % r != 0:
-                    ax.set_xticks([], [])
-                else:
-                    ax.set_xlabel("Redshift")
-                ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
-                        verticalalignment="center", transform=ax.transAxes,
-                        fontsize=12)
-        else:
-            grid = gs(1,1)
-            ax = fig.add_subplot(grid[:,:])
-            ax.set_xlabel("Redshift")
-            ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
-            for p in range(n):
-                spec = dc(self._spec)
-                line = dc(self._line)
-                spec.to_z([ion[p]])
-                line.to_z([ion[p]])
-                chunk = spec.t[np.logical_and(spec.x > zmin, spec.x < zmax)]
-                memb = line.t[np.logical_and(line.x > zmin, line.x < zmax)]
-                ax.set_xlim(zmin, zmax)
-                ax.plot(chunk['X'], chunk['Y'])
-                ax.scatter(memb['X'], memb['Y'])
-            text = ', '.join(str(p) for p in ion)
-            for comp in z:
-                ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='lightgray')
+        iter = range(len(self._t))
+        ret = (line,)
+        for p in range(n):
+            sel = self._spec.t['X'] < 0.0
+            spec = dc(self._spec)
+            spec.to_z([ion[p]])
+            for row in self.t[self.group(line=line)[1]]:
+                sel = np.logical_or(sel, np.logical_and(
+                    spec.t['X'] > row['XMIN'],
+                    spec.t['X'] < row['XMAX']))
+            ret += (sel,)
+        return ret
 
-            ax.text(0.5, 0.92, text, horizontalalignment="center",
-                    verticalalignment="center", transform=ax.transAxes,
-                    fontsize=12)
-           
-                    
-        grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
-        grid.update(hspace=0.0)
-        if block is False:
-            plt.ion()
-            plt.draw()
-        else:
-            plt.show()
+    def create_z(self):
 
-    def zmatch(self, ztol=1e-5):
+        # Redshift list
+        self._z = dc(self._line)
+        self._z.to_z(self._ion)
+        self._z.t.add_column(Column(np.asarray(dc(self._ion)), name='ION'))
+
+        if self._use_good:
+            self._z.ion = np.asarray(self._z.t['ION'][self._igood])
+        else:
+            self._z.ion = np.asarray(self._z.t['ION'])
+            
+    def match_z(self, ztol=1e-4):
         """ Match redshifts in a list, to define systems """
 
+        if (hasattr(self, '_z') == False):
+            raise Exception("Redshift table must be created before matching.")
+        
+        
         # Flatten arrays
         # N.B. Y and DY don't need flattening, as they have only one entry
         # per row. They will be repeated to have the shape of the other arrays.
-        z = np.ravel(self._redsh.x)
-        y = np.repeat(self._redsh.y, self._redsh.x.shape[1])        
-        zmin = np.ravel(self._redsh.xmin)
-        zmax = np.ravel(self._redsh.xmax)
-        dy = np.repeat(self._redsh.dy, self._redsh.x.shape[1])
-        ion = np.ravel(self._redsh.ion)
+        z = np.ravel(self._z.x)
+        y = np.repeat(self._z.y, self._z.x.shape[1])        
+        zmin = np.ravel(self._z.xmin)
+        zmax = np.ravel(self._z.xmax)
+        dy = np.repeat(self._z.dy, self._z.x.shape[1])
+        ion = np.ravel(self._z.ion)
 
         # Sort arrays
         argsort = np.argsort(z, kind='mergesort')
@@ -279,3 +251,170 @@ class Syst(Line):
                     ion=ion_coinc, yunit=y.unit)
         self.__dict__.update(syst.__dict__)
 
+    def fit(self, group, chunk, unabs_guess, voigt_guess):
+
+
+        for c in range(1, len(chunk)):
+            if (c == 1):
+                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                param = unabs_guess[2*c-1]
+                chunk_sum = chunk[c]
+            else:
+                model += unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                param.update(unabs_guess[2*c-1])
+                chunk_sum += chunk[c]
+            param.update(voigt_guess[2*c-1])
+        expr_dict = voigt_guess[-1]
+        for k in expr_dict:
+            param[k].set(expr=expr_dict[k])
+
+        if (hasattr(self, '_fit') == False):
+            self._fit = dc(self._spec)
+
+        fit = model.fit(self._spec.y[chunk_sum].value, param,
+                        x=self._spec.x[chunk_sum].value,
+                        weights=1/self._spec.dy[chunk_sum].value)
+
+        self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
+
+        return fit    
+
+    def flatten_z(self):
+        """ Create a flattened version of the system, with different entries
+        for each ion """
+
+        yunit = self._z.dy.unit
+        first = True
+        for r in self.t:
+            for i in range(len(r['Y'])):
+                if (first == True):
+                    self._flat = Syst(x=[r['X']], y=[r['Y'][i]],
+                                      xmin=[r['XMIN']], xmax=[r['XMAX']],
+                                      dy=[r['DY'][i]], ion=[r['ION'][i]],
+                                      yunit=yunit)
+                    first = False
+                else:
+                    self._flat.t.add_row([r['X'], r['Y'][i], r['XMIN'],
+                                          r['XMAX'], r['DY'][i], r['ION'][i]])
+                    
+    def plot(self, group=None, chunk=None, figsize=(6,6), split=False,
+             block=True, **kwargs):
+        ion = np.unique(self._flat.ion)
+        n = len(ion)
+        z = self.x
+        if (chunk is not None):
+            zmin = np.min(self.xmin[group[1]])
+            zmax = np.max(self.xmax[group[1]])
+        else:
+            zmin = np.min(self.xmin)
+            zmax = np.max(self.xmax)
+        fig = plt.figure(figsize=figsize)
+        if split == True:
+            row = min(n,4)
+            col = int(np.ceil(n/4))
+            figsize = (n*2, col*4)
+            grid = gs(row,col)            
+            for p in range(n):
+                ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
+                ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
+                spec = dc(self._spec)
+                line = dc(self._line)
+                spec.to_z([ion[p]])
+                line.to_z([ion[p]])
+                ax.plot(spec.x, spec.y, c='b')
+                if (hasattr(self, '_unabs')):
+                    unabs = dc(self._unabs)
+                    unabs.to_z([ion[p]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(unabs.x[chunk[c]], unabs.y[chunk[c]], c='y',
+                                linestyle=':')
+                if (hasattr(self, '_voigt')):
+                    voigt = dc(self._voigt)
+                    voigt.to_z([ion[p]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
+                                linestyle=':')
+                if (hasattr(self, '_fit')):
+                    fit = dc(self._fit)
+                    fit.to_z([ion[p]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
+                ax.scatter(line.x, line.y, c='b')
+                for comp in z:
+                    ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
+                if ((p+1) % row != 0):
+                    ax.set_xticks([], [])
+                else:
+                    ax.set_xlabel("Redshift")
+                ax.set_xlim(zmin, zmax)
+                ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
+                        verticalalignment="center", transform=ax.transAxes,
+                        fontsize=12)
+        else:
+            grid = gs(1,1)
+            ax = fig.add_subplot(grid[:,:])
+            ax.set_xlabel("Redshift")
+            ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
+            for p in range(n):
+                spec = dc(self._spec)
+                line = dc(self._line)
+                spec.to_z([ion[p]])
+                line.to_z([ion[p]])
+                ax.set_xlim(zmin, zmax)
+                ax.plot(spec.x, spec.y)
+                ax.scatter(line.x, line.y)
+            text = ', '.join(str(p) for p in ion)
+            for comp in z:
+                ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
+
+            ax.text(0.5, 0.92, text, horizontalalignment="center",
+                    verticalalignment="center", transform=ax.transAxes,
+                    fontsize=12)
+           
+        grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
+        grid.update(hspace=0.0)
+        if block is False:
+            plt.ion()
+            plt.draw()
+        else:
+            plt.show()
+
+    def unabs(self, group, chunk):
+        """ Remove lines """
+
+        model = Model(self._spec, syst=self, group=group, chunk=chunk) 
+        unabs = model.unabs()
+        if (hasattr(self, '_unabs') == False):
+            self._unabs = dc(self._spec)
+        for c in range(1, len(chunk)):
+            self._unabs.y[chunk[c]] = unabs[2*(c-1)].eval(
+                unabs[2*c-1], x=self._unabs.x[chunk[c]].value) \
+                * self._unabs.y[chunk[c]].unit
+    
+        return unabs
+
+    def voigt(self, group, chunk, z=[], N=[], b=[], btur=[]):
+
+        sumlen = len(z) + len(N) + len(b) + len(btur)
+        if ((z != []) and (sumlen % len(z) != 0)):
+            raise Exception("Parameter arrays must have the same length.")
+        
+        model = Model(self._spec, syst=self, group=group, chunk=chunk)
+        if (z == []):
+            z = self.x[group[1]]
+            N = model.N_guess(self._unabs, ion=self._flat.ion)
+            b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
+            btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
+                   * u.km / u.s
+
+        if (hasattr(self, '_voigt') == False):
+            self._voigt = dc(self._spec)
+
+        ion = np.unique(self._flat.ion)
+        voigt = model.voigt(z, N, b, btur, ion)
+        for c in range(1, len(chunk)):
+            self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
+                voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
+                * self._unabs.y[chunk[c]]
+        return voigt
+   

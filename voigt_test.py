@@ -12,8 +12,6 @@ import sys
 
 def main():
 
-
-
     # Input parameters
     #name = 'B2126-15_part2'
     #name = 'B2126-15_part3'    
@@ -42,9 +40,9 @@ def main():
     #print(spec._t)
 
     # Create a "Syst" object from the lines
-    syst = Syst(lines)
-    print(syst._lines.t)
-    sys.exit()
+    #syst = Syst(lines)
+    #print(syst._lines.t)
+    #sys.exit()
     
     # Create a "Voigt" object with the spectrum and the lines
     # Plot results

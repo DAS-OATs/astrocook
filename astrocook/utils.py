@@ -13,6 +13,19 @@ dict_wave = {'Ly_a': 121.567 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
              'CIV_1550': 155.0781 * u.nm}
 
+dict_f = {'Ly_a': 0.416,
+          'CIV_1548': 0.1899,
+          'CIV_1550': 0.09475} 
+
+dict_gamma = {'Ly_a': 6.265e8,
+              'CIV_1548': 2.643e8,
+              'CIV_1550': 2.628e8} 
+
+unabs_fact = {'slope': 1 + 1e-1, 'norm': 1 + 1e-1}
+z_fact = 1 + 1e-4
+voigt_def = {'N': 1e14, 'b': 15.0, 'btur': 0.0}
+voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
+voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 
 def many_gauss(x, *p, mode='abs', cont = 1):
     """Sum of gaussian profiles
