@@ -274,9 +274,10 @@ class Syst(Line):
         fit = model.fit(self._spec.y[chunk_sum].value, param,
                         x=self._spec.x[chunk_sum].value,
                         weights=1/self._spec.dy[chunk_sum].value)
-
+        
         self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
-
+        self._redchi = fit.redchi
+        
         return fit    
 
     def flatten_z(self):
@@ -308,11 +309,12 @@ class Syst(Line):
         else:
             zmin = np.min(self.xmin)
             zmax = np.max(self.xmax)
-        fig = plt.figure(figsize=figsize)
         if split == True:
             row = min(n,4)
             col = int(np.ceil(n/4))
-            figsize = (n*2, col*4)
+            figsize = (col*6, n*3.5)
+            fig = plt.figure(figsize=figsize)
+            fig.canvas.set_window_title("System")
             grid = gs(row,col)            
             for p in range(n):
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
@@ -350,8 +352,13 @@ class Syst(Line):
                 ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
                         verticalalignment="center", transform=ax.transAxes,
                         fontsize=12)
+            if (hasattr(self, '_fit')):
+                fig.suptitle("Reduced chi-squared: %3.2f" % (self._redchi),
+                             fontsize=10)
         else:
             grid = gs(1,1)
+            fig = plt.figure(figsize=figsize)
+            fig.canvas.set_window_title("System")
             ax = fig.add_subplot(grid[:,:])
             ax.set_xlabel("Redshift")
             ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
@@ -398,7 +405,7 @@ class Syst(Line):
         sumlen = len(z) + len(N) + len(b) + len(btur)
         if ((z != []) and (sumlen % len(z) != 0)):
             raise Exception("Parameter arrays must have the same length.")
-        
+
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
             z = self.x[group[1]]

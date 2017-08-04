@@ -8,8 +8,10 @@ yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 def main():
 
     # Input data
-    name = 'J0940_CIV'  # The CIV doublet will be blindly fitted as Ly_a
-    #name = 'J0940_part'
+    name = 'J0940_Lya'  # Single Lya line complex
+    #name = 'J0940_CIV_1'  # The CIV doublet will be blindly fitted as Ly_a
+    #name = 'J0940_Lya_forest_1'  # Whole chunk of Lya forest (time consuming)
+    #name = 'J0940_Lya_forest_1'  # Another chunk of Lya forest (time consuming)
     
     # Read the 1D spectrum
     spec = Spec1DReader().uves(name + '_spec.fits')
