@@ -277,6 +277,7 @@ class Syst(Line):
         
         self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
         self._redchi = fit.redchi
+        self._aic = fit.aic
         
         return fit    
 

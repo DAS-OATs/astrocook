@@ -33,7 +33,8 @@ def main():
     
     ltot = len(syst.t)
     for l in range(ltot):
-        print("Line %i of %i..." % (l + 1, ltot), end=" ", flush=True)
+        print("Line %i of %i (%3.2f)..." % (l + 1, ltot, syst.x[l].value),
+              end=" ", flush=True)
         
         # Define the line group around a given redshift
         group = syst.group(line=l)
@@ -47,9 +48,13 @@ def main():
         # Guess the Voigt profile
         voigt_guess = syst.voigt(group, chunk)
 
-        # Fit the unabsorbed continuum and the voigt profile
+        # Fit the model 
         fit = syst.fit(group, chunk, unabs_guess, voigt_guess)
 
+        # Fit the model, incrementally adding components
+        # NOT WORKING YET!
+        #group, chunk = syst.auto(line=l)
+    
         # Plot lines and system
         print("close graph to continue.")
         #syst.plot(group, chunk)  # To visually match components
@@ -57,4 +62,3 @@ def main():
     
 if __name__ == '__main__':
     main()
-    def fit(self, group, chunk, unabs_guess, voigt_guess):

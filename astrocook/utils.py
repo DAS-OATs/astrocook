@@ -27,6 +27,8 @@ voigt_def = {'N': 1e14, 'b': 15.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
 voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 
+redchi_thr = 1.0
+
 def many_gauss(x, *p, mode='abs', cont = 1):
     """Sum of gaussian profiles
     

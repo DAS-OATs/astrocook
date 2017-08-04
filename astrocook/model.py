@@ -130,6 +130,7 @@ class Model():
         z_list = []
         pref_list = []
         expr_dict = {}
+        i = 0
         for c in range(1, len(self._chunk)):
             for l in range(len(self._syst.t[self._group[1]])):
                 pref = 'c' + str(c) + '_z' + str(z[l]).replace('.', '') + '_'
@@ -137,6 +138,8 @@ class Model():
                 if (z[l] in z_list):
                     expr = np.asarray(pref_list)[
                         np.where(np.asarray(z_list)==z[l])][0]
+                    i += 1
+                    pref = pref + str(i) + '_'
                     z_expr = expr + 'z'
                     N_expr = expr + 'N'
                     b_expr = expr + 'b'
