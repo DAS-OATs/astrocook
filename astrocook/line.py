@@ -198,7 +198,7 @@ class Line(Spec1D):
         
 # Methods
 
-    def auto(self, group, chunk, unabs_guess, voigt_guess):
+    #def auto(self, group, chunk, unabs_guess, voigt_guess):
 
     def chunk(self, x=None, line=None):
         if ((x is None) and (line is None)):
