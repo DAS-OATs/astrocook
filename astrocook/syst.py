@@ -1,8 +1,9 @@
 from . import Line, Model
-from .utils import voigt_def
+from .utils import convolve, dict_wave, voigt_def
 from astropy import units as u
 from astropy.table import Column, Table
 from copy import deepcopy as dc
+from lmfit import CompositeModel as lmc
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,9 +27,6 @@ class Syst(Line):
         """ Constructor for the Syst class """ 
         
         # Exceptions
-        #if ((ion is not []) and (line is not None) \
-        #    and (len(ion) != len(line.t))):
-        #    raise Exception("Ion list and line list must have the same length.")
         if ((x is []) != (y is [])):
             raise Exception("X and Y must be provided together.")
         if ((xmin is []) != (xmax is [])):
@@ -144,13 +142,43 @@ class Syst(Line):
 
 # Methods
 
+    def add_min_resid(self, group):
+        """ Add a new line at the minimum residual """
+
+        xmin = np.min(self.xmin[group[1]])
+        xmax = np.max(self.xmax[group[1]])
+        where = self._chunk_sum
+        resid_norm = self._resid.y.value * 0.0
+        resid_norm[where] = self._resid.y[where]/self._resid.dy[where]
+        x = self._resid.x[np.argmin(resid_norm)]
+        ion_arr = np.unique(self._flat.ion)
+        n = len(ion_arr)
+        z_arr = np.empty(n)        
+        for p in range(n):
+            z_arr[p] = x / dict_wave[ion_arr[p]] - 1.0
+        where = abs(z_arr-np.mean([xmin, xmax])) \
+                == abs(z_arr-np.mean([xmin, xmax])).min()
+        z = z_arr[where][0]
+        where = abs(z-self.x.value) == abs(z-self.x.value).min()
+        ion = self.ion[where][0]
+        y = np.empty(len(ion))
+        dy = np.empty(len(ion))        
+        for i in range(len(ion)):
+            spec = dc(self._spec)
+            spec.to_z([ion[i]])
+            y[i] = np.interp(z, spec.x, spec.y)
+            dy[i] = np.interp(z, spec.x, spec.dy)
+        self._t.add_row([z, y, xmin, xmax, dy, ion])
+        self.t.sort('X')  # This gives an annoying warning
+        
     def chunk(self, x=None, line=None):  # Chunk must be shifted to the system z
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
             if (line is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
+            line = np.where(abs(self.x-x.value) \
+                            == abs(self.x-x.value).min())[0][0]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("Line number is too large.")
         try:  # When ION has different sizes in different rows
@@ -166,8 +194,11 @@ class Syst(Line):
             spec.to_z([ion[p]])
             for row in self.t[self.group(line=line)[1]]:
                 sel = np.logical_or(sel, np.logical_and(
-                    spec.t['X'] > row['XMIN'],
-                    spec.t['X'] < row['XMAX']))
+                    spec.t['X'] >= row['XMIN'],
+                    spec.t['X'] <= row['XMAX']))
+            if (np.sum(sel) % 2 == 0):
+                sel[np.argmax(sel)] = 0
+
             ret += (sel,)
         return ret
 
@@ -183,6 +214,73 @@ class Syst(Line):
         else:
             self._z.ion = np.asarray(self._z.t['ION'])
             
+    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=300):
+
+        for c in range(1, len(chunk)):
+            if (c == 1):
+                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                conv_model = lmc(model, psf[2*(c-1)], convolve)
+                param = unabs_guess[2*c-1]
+                param.update(voigt_guess[2*c-1])
+                param.update(psf[2*c-1])
+                chunk_sum = dc(chunk[c])
+            else:
+                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                conv_model += lmc(model, psf[2*(c-1)], convolve)
+                param.update(unabs_guess[2*c-1])
+                param.update(voigt_guess[2*c-1])
+                param.update(psf[2*c-1])
+                chunk_sum += chunk[c]        
+        expr_dict = voigt_guess[-1]
+        for k in expr_dict:
+            param[k].set(expr=expr_dict[k])
+
+        if (hasattr(self, '_cont') == False):
+            self._cont = dc(self._spec)            
+        if (hasattr(self, '_fit') == False):
+            self._fit = dc(self._spec)
+        if (len(self._spec.x[chunk_sum]) < len(param)):
+            warnings.warn("Too few data points; skipping.")
+            fit = None
+        else:
+            fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
+                                 x=self._spec.x[chunk_sum].value,
+                                 #fit_kws={'maxfev': maxfev},
+                                 weights=1/self._spec.dy[chunk_sum].value)
+
+            cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
+            for c in range(1, len(chunk)):
+                if (c == 1):
+                    self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
+                                              * self._cont.y[chunk_sum].unit
+                else:
+                    self._cont.y[chunk_sum] += cont['cont' + str(c) + '_'] \
+                                               * self._cont.y[chunk_sum].unit
+            self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
+            self._redchi = fit.redchi
+            self._aic = fit.aic
+            self._chunk_sum = chunk_sum
+        
+        return fit    
+
+    def flatten_z(self):
+        """ Create a flattened version of the system, with different entries
+        for each ion """
+
+        yunit = self._z.dy.unit
+        first = True
+        for r in self.t:
+            for i in range(len(r['Y'])):
+                if (first == True):
+                    self._flat = Syst(x=[r['X']], y=[r['Y'][i]],
+                                      xmin=[r['XMIN']], xmax=[r['XMAX']],
+                                      dy=[r['DY'][i]], ion=[r['ION'][i]],
+                                      yunit=yunit)
+                    first = False
+                else:
+                    self._flat.t.add_row([r['X'], r['Y'][i], r['XMIN'],
+                                          r['XMAX'], r['DY'][i], r['ION'][i]])
+                    
     def match_z(self, ztol=1e-4):
         """ Match redshifts in a list, to define systems """
 
@@ -251,54 +349,6 @@ class Syst(Line):
                     ion=ion_coinc, yunit=y.unit)
         self.__dict__.update(syst.__dict__)
 
-    def fit(self, group, chunk, unabs_guess, voigt_guess):
-
-
-        for c in range(1, len(chunk)):
-            if (c == 1):
-                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
-                param = unabs_guess[2*c-1]
-                chunk_sum = chunk[c]
-            else:
-                model += unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
-                param.update(unabs_guess[2*c-1])
-                chunk_sum += chunk[c]
-            param.update(voigt_guess[2*c-1])
-        expr_dict = voigt_guess[-1]
-        for k in expr_dict:
-            param[k].set(expr=expr_dict[k])
-
-        if (hasattr(self, '_fit') == False):
-            self._fit = dc(self._spec)
-
-        fit = model.fit(self._spec.y[chunk_sum].value, param,
-                        x=self._spec.x[chunk_sum].value,
-                        weights=1/self._spec.dy[chunk_sum].value)
-        
-        self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
-        self._redchi = fit.redchi
-        self._aic = fit.aic
-        
-        return fit    
-
-    def flatten_z(self):
-        """ Create a flattened version of the system, with different entries
-        for each ion """
-
-        yunit = self._z.dy.unit
-        first = True
-        for r in self.t:
-            for i in range(len(r['Y'])):
-                if (first == True):
-                    self._flat = Syst(x=[r['X']], y=[r['Y'][i]],
-                                      xmin=[r['XMIN']], xmax=[r['XMAX']],
-                                      dy=[r['DY'][i]], ion=[r['ION'][i]],
-                                      yunit=yunit)
-                    first = False
-                else:
-                    self._flat.t.add_row([r['X'], r['Y'][i], r['XMIN'],
-                                          r['XMAX'], r['DY'][i], r['ION'][i]])
-                    
     def plot(self, group=None, chunk=None, figsize=(6,6), split=False,
              block=True, **kwargs):
         ion = np.unique(self._flat.ion)
@@ -318,6 +368,7 @@ class Syst(Line):
             fig.canvas.set_window_title("System")
             grid = gs(row,col)            
             for p in range(n):
+
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
                 ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
                 spec = dc(self._spec)
@@ -337,11 +388,18 @@ class Syst(Line):
                     for c in range(1, len(chunk)):
                         ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
                                 linestyle=':')
+                if (hasattr(self, '_cont')):
+                    cont = dc(self._cont)
+                    cont.to_z([ion[p]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
+
                 if (hasattr(self, '_fit')):
                     fit = dc(self._fit)
                     fit.to_z([ion[p]])
                     for c in range(1, len(chunk)):
                         ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
+                    ax.plot(fit.x, fit.y, c='g')
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
@@ -387,6 +445,14 @@ class Syst(Line):
         else:
             plt.show()
 
+    def psf(self, group, chunk, resol):
+        """ Model the instrumental PSF """
+        
+        model = Model(self._spec, line=self, group=group, chunk=chunk)
+        psf = model.psf(resol)
+
+        return psf   
+
     def unabs(self, group, chunk):
         """ Remove lines """
 
@@ -425,4 +491,3 @@ class Syst(Line):
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
                 * self._unabs.y[chunk[c]]
         return voigt
-   

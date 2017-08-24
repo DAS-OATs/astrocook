@@ -3,6 +3,7 @@ from astropy import units as u
 from astropy.constants import c, e, m_e
 from lmfit import Model as lmm
 from lmfit import Parameters as lmp
+from lmfit.lineshapes import gaussian
 import numpy as np
 from scipy.special import wofz
 
@@ -20,7 +21,8 @@ def linear_step_func(x, xmin, xmax, slope, norm):
     ret = x * 0.0
     ret[where] = norm + (x[where] - np.mean(x[where])) * slope
     return ret
-    
+
+
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
     wave = dict_wave[ion].value * 1e-9
@@ -63,39 +65,6 @@ class Model():
         
 # Methods
 
-    def unabs(self):
-        """ Create a model of the unabsorbed continuum level for a line """
-        
-        if (self._chunk is None):
-            raise Exception("Chunk must be provided.")
-
-        for c in range(1, len(self._chunk)):
-            pref = 'c' + str(c) + '_'
-            model = lmm(linear_step_func, prefix=pref)
-            param = model.make_params()
-            xmin = np.min(self._spec.x[self._chunk[c]].value)
-            xmax = np.max(self._spec.x[self._chunk[c]].value)
-            xi = self._spec.x[self._chunk[c]][0].value
-            xf = self._spec.x[self._chunk[c]][-1].value
-            xm = np.mean(self._spec.x[self._chunk[c]].value)
-            yi = self._spec.y[self._chunk[c]][0].value
-            yf = self._spec.y[self._chunk[c]][-1].value
-            slope = (yf - yi) / (xf - xi)
-            norm = yi + (xm - xi) * slope
-            param[pref+'xmin'].set(xmin, vary=False)
-            param[pref+'xmax'].set(xmax, vary=False)
-            param[pref+'slope'].set(slope, vary=False)
-                                    # min=slope/unabs_fact['slope'],
-                                    #max=slope*unabs_fact['slope'])
-            param[pref+'norm'].set(norm)#, min=norm/unabs_fact['norm'],
-                                   #max=norm*unabs_fact['norm'])
-            if (c == 1):
-                ret = (model, param)
-            else:
-                ret += (model, param)
-
-        return ret
-
     def N_guess(self, unabs, ion='Ly_a'):
         """ Guess the column density, given the line peak """
         
@@ -123,7 +92,67 @@ class Model():
                 logN = np.append(logN, np.interp(norm, voigt_arr, logN_arr))
 
         return np.power(10, logN) / u.cm**2
-            
+
+    def psf(self, resol): #, center, sigma):
+
+        if (self._chunk is None):
+            raise Exception("Chunk must be provided.")
+
+        for c in range(1, len(self._chunk)):
+            pref = 'psf' + str(c) + '_'
+            model = lmm(gaussian, prefix=pref)
+            param = model.make_params()
+            #print(np.sum(self._chunk[c]))
+            mean = np.mean(self._spec.x[self._chunk[c]].value)
+            center = mean
+            sigma = mean / resol * 4.246609001e-1  # Factor to convert FWHM into
+                                                   # standard deviation
+            param[pref+'amplitude'].set(1.0, vary=False)
+            #print("center", center)
+            param[pref+'center'].set(center, vary=False)
+            param[pref+'sigma'].set(sigma, vary=False)        
+        
+            if (c == 1):
+                ret = (model, param)
+            else:
+                ret += (model, param)
+
+        return ret
+
+    def unabs(self):
+        """ Create a model of the unabsorbed continuum level for a line """
+        
+        if (self._chunk is None):
+            raise Exception("Chunk must be provided.")
+
+        for c in range(1, len(self._chunk)):
+            pref = 'cont' + str(c) + '_'
+            model = lmm(linear_step_func, prefix=pref)
+            param = model.make_params()
+            xmin = np.min(self._spec.x[self._chunk[c]].value)
+            xmax = np.max(self._spec.x[self._chunk[c]].value)
+            xi = self._spec.x[self._chunk[c]][0].value
+            xf = self._spec.x[self._chunk[c]][-1].value
+            xm = np.mean(self._spec.x[self._chunk[c]].value)
+            yi = self._spec.y[self._chunk[c]][0].value
+            yf = self._spec.y[self._chunk[c]][-1].value
+            slope = (yf - yi) / (xf - xi)
+            norm = yi + (xm - xi) * slope
+            param[pref+'xmin'].set(xmin, vary=False)
+            param[pref+'xmax'].set(xmax, vary=False)
+            param[pref+'slope'].set(slope) #, vary=False)
+                                    # min=slope/unabs_fact['slope'],
+                                    #max=slope*unabs_fact['slope'])
+            param[pref+'norm'].set(norm) #, vary=False)
+                                   #min=norm/unabs_fact['norm'],
+                                   #max=norm*unabs_fact['norm'])
+            if (c == 1):
+                ret = (model, param)
+            else:
+                ret += (model, param)
+
+        return ret
+
     def voigt(self, z, N, b, btur, ion):
         """ Create a Voigt model for a line """
 
@@ -133,8 +162,8 @@ class Model():
         i = 0
         for c in range(1, len(self._chunk)):
             for l in range(len(self._syst.t[self._group[1]])):
-                pref = 'c' + str(c) + '_z' + str(z[l]).replace('.', '') + '_'
-                #"""
+                pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
+                       + '_'
                 if (z[l] in z_list):
                     expr = np.asarray(pref_list)[
                         np.where(np.asarray(z_list)==z[l])][0]
@@ -155,7 +184,7 @@ class Model():
                 expr_dict[pref+'N'] = N_expr 
                 expr_dict[pref+'b'] = b_expr 
                 expr_dict[pref+'btur'] = btur_expr 
-                #"""
+
                 if (type(ion) is str):
                     model_l = lmm(voigt_func, prefix=pref, ion=ion)
                 else:

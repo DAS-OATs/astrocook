@@ -2,6 +2,7 @@ import numpy as np
 from math import factorial
 from astropy import units as u
 from astropy.constants import c
+from scipy.signal import fftconvolve
 from scipy.special import wofz
 
 ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
@@ -21,7 +22,7 @@ dict_gamma = {'Ly_a': 6.265e8,
               'CIV_1548': 2.643e8,
               'CIV_1550': 2.628e8} 
 
-unabs_fact = {'slope': 1 + 1e-1, 'norm': 1 + 1e-1}
+unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4
 voigt_def = {'N': 1e14, 'b': 15.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
@@ -29,6 +30,27 @@ voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 
 redchi_thr = 1.0
 
+def convolve(arr, ker):
+    """ Convolve an array with a kernel """
+
+    where = np.where(arr!=0.0)
+    ret = arr * 0.0
+    if (np.sum(where) != 0):
+        arr = arr[where]
+        ker = ker[where]
+        if (np.sum(ker) != 0):
+            npts = min(len(arr), len(ker))
+            pad  = np.ones(npts)
+            tmp  = np.concatenate((pad*arr[0], arr, pad*arr[-1]))
+            out  = np.convolve(tmp, ker, mode='valid')
+            if (npts % 2 == 0):
+                noff = int((len(out) - npts)/2)
+            else:
+                noff = int((len(out) - npts)/2)       
+            ret[where] = out[noff:noff+npts] / np.sum(ker)
+
+    return ret
+    
 def many_gauss(x, *p, mode='abs', cont = 1):
     """Sum of gaussian profiles
     
