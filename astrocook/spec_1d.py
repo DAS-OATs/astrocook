@@ -344,9 +344,9 @@ class Spec1D():
         min_idx = np.hstack(argrelmin(self.y))
         max_idx = np.hstack(argrelmax(self.y))
         extr_idx = np.sort(np.append(min_idx, max_idx))
-        minima = self.from_table(self.t[min_idx])
-        maxima = self.from_table(self.t[max_idx])
-        extrema = self.from_table(self.t[extr_idx])
+        minima = self.from_table(self._t[min_idx])
+        maxima = self.from_table(self._t[max_idx])
+        extrema = self.from_table(self._t[extr_idx])
         return minima, maxima, extrema
         
     def find_lines(self, mode='abs', diff='max', kappa=3.0, hwidth=2):

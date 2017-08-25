@@ -22,6 +22,11 @@ def linear_step_func(x, xmin, xmax, slope, norm):
     ret[where] = norm + (x[where] - np.mean(x[where])) * slope
     return ret
 
+def norm_step_func(x, xmin, xmax, norm):
+    where = np.where(np.logical_and(x>=xmin, x<=xmax))[0]
+    ret = x * 0.0
+    ret[where] = norm
+    return ret
 
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
@@ -60,6 +65,9 @@ class Model():
             self._syst = line
         else:
             self._syst = syst
+        if (hasattr(self._syst, '_cont')):
+            self._precont = self._syst.cont
+            self._cont = self._syst._cont
         self._group = group
         self._chunk = chunk
         
@@ -86,13 +94,45 @@ class Model():
                                    np.power(10, logN_arr),
                                    voigt_def['b'],
                                    voigt_def['btur'], ion=ion)
+            logN_interp = np.interp(norm, voigt_arr, logN_arr)
+            if (logN_interp > 14.5):
+                logN_interp = 14.5
             if logN == []:
-                logN = np.array([np.interp(norm, voigt_arr, logN_arr)])
+                logN = np.array([logN_interp])
             else:
-                logN = np.append(logN, np.interp(norm, voigt_arr, logN_arr))
+                logN = np.append(logN, logN_interp)
 
         return np.power(10, logN) / u.cm**2
 
+    def norm(self):
+
+        if (self._chunk is None):
+            raise Exception("Chunk must be provided.")
+
+        if (self._cont is None):
+            raise Exception("Continuum be provided.")
+
+        for c in range(1, len(self._chunk)):
+            pref = 'cont' + str(c) + '_'
+            model = lmm(norm_step_func, prefix=pref)
+            param = model.make_params()
+            xmin = np.min(self._spec.x[self._chunk[c]].value)
+            xmax = np.max(self._spec.x[self._chunk[c]].value)
+            cont = self._cont.y.value 
+            norm = 1.0 #np.mean(cont)
+            
+            param[pref+'xmin'].set(xmin, vary=False)
+            param[pref+'xmax'].set(xmax, vary=False)
+            param[pref+'norm'].set(norm, max=1.05, min=0.95, vary=False)
+
+            if (c == 1):
+                ret = (model, param)
+            else:
+                ret += (model, param)
+
+        return ret
+            
+    
     def psf(self, resol): #, center, sigma):
 
         if (self._chunk is None):
@@ -131,19 +171,56 @@ class Model():
             param = model.make_params()
             xmin = np.min(self._spec.x[self._chunk[c]].value)
             xmax = np.max(self._spec.x[self._chunk[c]].value)
-            xi = self._spec.x[self._chunk[c]][0].value
-            xf = self._spec.x[self._chunk[c]][-1].value
+
+            where = np.where(np.logical_and(
+                self._syst._maxima.x.value >= xmin - 1e-7,
+                self._syst._maxima.x.value <= xmax + 1e-7))
+            maxima = self._syst._maxima._t[where]
+            argsort = np.argsort(maxima['Y'])
+            if (len(maxima) > 1):
+                x_2best = maxima['X'][argsort][-2:]
+                y_2best = maxima['Y'][argsort][-2:]
+            elif (len(maxima) == 1):
+                x_2best = np.full(2, maxima['X'][argsort][-1])
+                y_2best = np.full(2, maxima['Y'][argsort][-1])
+            else:
+                x_2best = np.array([self._syst.xmin[self._group[c]][0].value,
+                                    self._syst.xmax[self._group[c]][-1].value])
+                y_2best = np.array([np.interp(x_2best[0], self._spec.x.value,
+                                              self._spec.y.value),
+                                    np.interp(x_2best[1], self._spec.x.value,
+                                              self._spec.y.value)])
+            bestsort = np.argsort(x_2best)
+            x_2sort = x_2best[bestsort]
+            y_2sort = y_2best[bestsort]
+            #print(maxima)
+            #print(x_2sort, y_2sort)
+            
+            #xi = self._spec.x[self._chunk[c]][0].value
+            #xf = self._spec.x[self._chunk[c]][-1].value
+            xi = self._syst.xmin[self._group[c]][0].value
+            xf = self._syst.xmax[self._group[c]][-1].value            
             xm = np.mean(self._spec.x[self._chunk[c]].value)
-            yi = self._spec.y[self._chunk[c]][0].value
-            yf = self._spec.y[self._chunk[c]][-1].value
+            #yi = self._spec.y[self._chunk[c]][0].value
+            #yf = self._spec.y[self._chunk[c]][-1].value
+            xi = self._syst.xmin[self._group[c]][0].value
+            xf = self._syst.xmax[self._group[c]][-1].value            
+            yi = np.interp(xi, self._spec.x.value,
+                           self._spec.y.value)
+            yf = np.interp(xf, self._spec.x.value,
+                           self._spec.y.value)
+
             slope = (yf - yi) / (xf - xi)
             norm = yi + (xm - xi) * slope
+
+            #slope = (y_2sort[1] - y_2sort[0]) / (x_2sort[1] - x_2sort[0])
+            #norm = y_2sort[0] + (xm - x_2sort[0]) * slope
             param[pref+'xmin'].set(xmin, vary=False)
             param[pref+'xmax'].set(xmax, vary=False)
-            param[pref+'slope'].set(slope) #, vary=False)
+            param[pref+'slope'].set(slope, vary=False)
                                     # min=slope/unabs_fact['slope'],
                                     #max=slope*unabs_fact['slope'])
-            param[pref+'norm'].set(norm) #, vary=False)
+            param[pref+'norm'].set(norm)#, vary=False)
                                    #min=norm/unabs_fact['norm'],
                                    #max=norm*unabs_fact['norm'])
             if (c == 1):

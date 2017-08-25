@@ -1,5 +1,5 @@
 from . import Spec1D, Model
-from .utils import convolve, dict_wave, redchi_thr, voigt_def
+from .utils import convolve, dict_wave, redchi_thr, savitzky_golay, voigt_def
 from astropy.table import Column, Table
 from astropy import units as u
 from copy import deepcopy as dc
@@ -9,6 +9,10 @@ from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
+from scipy.stats import sigmaclip
+from statsmodels.nonparametric.kernel_regression import KernelReg
+import statsmodels.api as sm
+import sys
 import warnings
 
 yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
@@ -225,37 +229,37 @@ class Line(Spec1D):
         stop = False
         aic_old = float('inf')
         redchi_old = float('inf')        
-        redchi_min = float('inf')
+        redchi_best = float('inf')
         i = 0
+        i_best = 1
         print("")
         print(" Chi-squared:", end=" ", flush=True)
         while (stop == False):
             i += 1
             group = self.group(line=line)            
             chunk = self.chunk(line=line)
-            unabs_guess = self.unabs(group, chunk)
+            norm_guess = self.norm(group, chunk)
             voigt_guess = self.voigt(group, chunk)
             psf = self.psf(group, chunk, self._resol)
-            fit = self.fit(group, chunk, unabs_guess, voigt_guess, psf)
+            #fit = self.fit(group, chunk, unabs_guess, voigt_guess, psf)
+            fit = self.fit(group, chunk, norm_guess, voigt_guess, psf)
             self._resid = dc(self._spec)
             self._resid.y = self._spec.y - self._fit.y
             
-            print("(%i) %3.2f, %3.2f;" % (i, self._redchi, self._aic), end=" ",
-                  flush=True)
+            print("(%i,%i) %3.2f, %3.2f;" \
+                  % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (self._redchi>1e4) \
                    or (i==10)
 
             aic_old = self._aic
             redchi_old = self._redchi            
-            if (self._redchi < redchi_min):
-                redchi_min = self._redchi
+            if (self._redchi < redchi_best):
+                redchi_best = self._redchi
+                aic_best = self._aic                
                 group_best = group
                 chunk_best = chunk
-                unabs_best = unabs_guess
-                voigt_best = voigt_guess
-                psf = psf
+                fit_best = dc(fit)
                 i_best = i
                 t_best = dc(self._t)
             if (stop == False):
@@ -263,8 +267,8 @@ class Line(Spec1D):
                 
             
         self._t = dc(t_best)       
-        fit = self.fit(group_best, chunk_best, unabs_best, voigt_best, psf)
-        print("best: (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
+        fit = fit_best
+        print("best: (%i) %3.2f, %3.2f;" % (i_best, redchi_best, aic_best),
               end=" ", flush=True)
         
         return group_best, chunk_best
@@ -289,17 +293,57 @@ class Line(Spec1D):
             sel[np.argmax(sel)] = 0
         return (line, sel)
 
-    def find(self, mode='abs', diff='max', kappa=3.0, hwidth=2):
+    def cont(self, wind=5.0, low=4.0, fact=0.0):
+        self._precont = dc(self._spec)
+        maxima_x = self._maxima.x
+        maxima_y = self._maxima.y
+        #maxima_x = self._bound_x
+        #maxima_y = self._bound_y
+
+        #for g in range(1, len(self._bound_x)):
+        #    xmin = self._bound_x[g-1]
+        #    xmax = self._bound_x[g]
+        xmin = np.min(self._spec.x)
+        xmax = 0
+        filt_y = np.array([])
+        while (xmax < np.max(self._spec.x)):
+            xmax = xmin + wind * self._spec.x.unit
+            where = np.where(np.logical_and(maxima_x.value >= xmin.value,
+                                            maxima_x.value < xmax.value))
+            sel = maxima_y[where]
+            clip = sigmaclip(sel, low=low, high=10.0)[0]
+            filt_y = np.append(filt_y, clip)
+            xmin = xmax
+        filt_x = maxima_x[np.in1d(maxima_y, filt_y)]
+            
+        maxima_x = filt_x
+        maxima_y = filt_y
+        
+        self._precont.y = np.interp(self._precont.x, maxima_x, maxima_y)
+
+        self._cont = dc(self._precont)        
+
+        # Boxy
+        le = sm.nonparametric.lowess(filt_y, filt_x,
+                                     frac=min(1, fact/len(filt_x)))
+        self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
+        
+    def find(self, mode='abs', diff='max', kappa=3.0, sigma=10.0, hwidth=2):
         """ Find lines in a spectrum """
 
         if (self._spec is None):
             raise Exception("Spectrum not provided.")
         
-        spec = self._spec
+        spec = dc(self._spec)
+
+        # Convolve the 1D spectrum with a gaussian filter
+        conv = spec.convolve(gauss_sigma=sigma)
         
         # Find extrema
-        minima, maxima, extr = spec.find_extrema()
-
+        minima, maxima, extr = conv.find_extrema()
+        self._minima = minima
+        self._maxima = maxima
+        
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
         diff_y_left = (extr.y[:-2] - extr.y[1:-1]) 
@@ -323,23 +367,46 @@ class Line(Spec1D):
         xmax = []        
         if len(x) > 0: 
 
+            """ Buggy
             # Compute the boundaries for line fitting    
             window = extr.rolling_window(hwidth * 2 + 1)
-            bound = np.full(hwidth + 1, np.amin(spec.x))
+            #bound = np.full(hwidth + 1, np.amin(spec.x))
+
             if mode is 'em':
+                bound = np.full(hwidth * 2, np.amin(minima.x))
                 app = window.x[np.arange(len(window.x)),
                                np.argmin(window.y, 1)]
+                bound = np.append(bound, app)
+                bound = np.append(bound, np.full(hwidth * 2, np.amax(minima.x)))
             else:
+                bound = np.full(hwidth * 2, np.amin(maxima.x))
+                #print(len(bound))
                 app = window.x[np.arange(len(window.x)),
                                np.argmax(window.y, 1)]
-            bound = np.append(bound, app)
-            bound = np.append(bound, np.full(hwidth + 1, np.amax(spec.x)))
-            
+                #print(len(app))
+                bound = np.append(bound, app)
+                #print(len(bound))
+                bound = np.append(bound, np.full(hwidth * 2, np.amax(maxima.x)))
+                #print(len(bound))
+                #bound = np.append(bound, np.full(hwidth + 1, np.amax(spec.x)))
+
+            #print(len(bound), len(bound[:-hwidth * 2]), len(pos))
             xmin = np.asarray(bound[:-hwidth * 2][pos]) * x.unit 
             xmax = np.asarray(bound[hwidth * 2:][pos]) * x.unit
+            """
+            xmin = np.asarray(extr.x[:-2][pos]) * x.unit
+            xmax = np.asarray(extr.x[2:][pos]) * x.unit
 
+        self._bound_x = np.setxor1d(xmin, xmax)
+        self._bound_y = np.interp(self._bound_x, spec.x, spec.y)
+        #print(xmin, xmax)
+        #print(self._bound_x, self._bound_y)
+        #print(extr.y)
+        #print(maxima.x, bound)
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
+        #print(self._t)
+        #sys.exit()
 
     def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=300):
 
@@ -356,14 +423,32 @@ class Line(Spec1D):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            fit = conv_model.fit(self._spec.y[chunk[1]].value, param,
-                                 x=self._spec.x[chunk[1]].value,
-                                 fit_kws={'maxfev': maxfev},
-                                 weights=1/self._spec.dy[chunk[1]].value)
-            cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
-            self._cont.y[chunk[1]] = cont['cont1_'] \
-                                     * self._cont.y[chunk[1]].unit
-            self._fit.y[chunk[1]] = fit.best_fit * self._fit.y[chunk[1]].unit
+            #param.pretty_print()
+            if (hasattr(self, '_norm')):
+                #print("cont")
+                y = self._spec.y[chunk[1]] / self._cont.y[chunk[1]]
+                dy = self._spec.dy[chunk[1]].value / self._cont.y[chunk[1]].value
+                fit = conv_model.fit(y.value, param,
+                                     x=self._spec.x[chunk[1]].value,
+                                     #fit_kws={'maxfev': maxfev},
+                                     weights=1/dy)
+                cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
+                self._fit.y[chunk[1]] = fit.best_fit * self._cont.y[chunk[1]] \
+                                        * self._fit.y[chunk[1]].unit
+                self._cont.y[chunk[1]] = cont['cont1_'] \
+                                         * self._cont.y[chunk[1]].value
+            else:
+                fit = conv_model.fit(self._spec.y[chunk[1]].value, param,
+                                     x=self._spec.x[chunk[1]].value,
+                                     #fit_kws={'maxfev': maxfev},
+                                     weights=1/self._spec.dy[chunk[1]].value)
+                cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
+                self._cont.y[chunk[1]] = cont['cont1_'] \
+                                         * self._cont.y[chunk[1]].unit
+                self._fit.y[chunk[1]] = fit.best_fit * self._fit.y[chunk[1]].unit
+            #print(self._cont.t)
+            #print(self._fit.t)            
+            
             self._redchi = fit.redchi
             self._aic = fit.aic
 
@@ -408,12 +493,21 @@ class Line(Spec1D):
         ax = fig.add_subplot(grid[:, :])
         grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
         ax.plot(spec.x, spec.y, c='b')
+        if (hasattr(self, '_precont')):
+            ax.plot(self._precont.x, self._precont.y, c='r',
+                    linestyle=':')        
+        if (hasattr(self, '_cont')):
+            ax.plot(self._cont.x, self._cont.y, c='g')        
+        if (hasattr(self, '_unabs')):
+            where = np.where(self._spec.y != self._unabs.y)
+            ax.plot(self._unabs.x[where], self._unabs.y[where], c='y',
+                    linestyle=':')
+        if (hasattr(self, '_norm')):
+            where = np.where(self._spec.y != self._norm.y)
+            ax.plot(self._norm.x[where], self._norm.y[where], c='y',
+                    linestyle=':')
         if (chunk is not None):
             ax.plot(spec.x[chunk[1]], spec.y[chunk[1]], c='r')
-            if (hasattr(self, '_unabs')):
-                where = np.where(self._spec.y != self._unabs.y)
-                ax.plot(self._unabs.x[where], self._unabs.y[where], c='y',
-                        linestyle=':')
             if (hasattr(self, '_voigt')):
                 where = np.where(self._spec.y != self._voigt.y)
                 ax.plot(self._voigt.x[where], self._voigt.y[where], c='g',
@@ -441,6 +535,19 @@ class Line(Spec1D):
         else:
             plt.show()
 
+    def norm(self, group, chunk):
+        """ Normalize continuum """
+
+        model = Model(self._spec, line=self, group=group, chunk=chunk) 
+        norm = model.norm()
+        if (hasattr(self, '_norm') == False):
+            self._norm = dc(self._spec)
+        self._norm.y[chunk[1]] = norm[0].eval(
+            norm[1], x=self._norm.x[chunk[1]].value) \
+            * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
+
+        return norm 
+    
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
         
@@ -471,7 +578,10 @@ class Line(Spec1D):
         model = Model(self._spec, line=self, group=group, chunk=chunk)
         if (z == []):
             z = self.x[group[1]] / dict_wave['Ly_a'] - 1
-            N = model.N_guess(self._unabs)
+            if (hasattr(self, '_norm')):
+                N = model.N_guess(self._norm)
+            else:
+                N = model.N_guess(self._unabs)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s
@@ -479,7 +589,12 @@ class Line(Spec1D):
             self._voigt = dc(self._spec)
         voigt = model.voigt(z, N, b, btur, 'Ly_a')
         self._voigt.y[chunk[1]] = voigt[0].eval(
-            voigt[1], x=self._voigt.x[chunk[1]].value) \
-            * self._unabs.y[chunk[1]]
-
+            voigt[1], x=self._voigt.x[chunk[1]].value) * self._voigt.y.unit
+        if (hasattr(self, '_norm')):
+            self._voigt.y[chunk[1]] = self._voigt.y[chunk[1]] \
+                                      * self._norm.y[chunk[1]].value
+        else:
+            self._voigt.y[chunk[1]] = self._voigt.y[chunk[1]] \
+                                      * self._unabs.y[chunk[1]].value
+        
         return voigt
