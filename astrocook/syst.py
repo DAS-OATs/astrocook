@@ -45,6 +45,8 @@ class Syst(Line):
         self._line = None
         if (line is not None):
             self._line = dc(line)
+            self._minima = dc(line._minima)
+            self._maxima = dc(line._maxima)            
 
         # Spectrum
         self._spec = None
@@ -476,7 +478,14 @@ class Syst(Line):
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
             z = self.x[group[1]]
-            N = model.N_guess(self._unabs, ion=self._flat.ion)
+            if (hasattr(self, '_unabs')):
+                cont = self._unabs
+            elif (hasattr(self, '_norm')):
+                cont = self._norm
+            else:
+                raise Exception("Continuum not found.")
+            N = model.N_guess(cont, ion=self._flat.ion)
+            print(N)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s
@@ -489,5 +498,5 @@ class Syst(Line):
         for c in range(1, len(chunk)):
             self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
-                * self._unabs.y[chunk[c]]
+                * cont.y[chunk[c]]
         return voigt

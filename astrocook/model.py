@@ -196,15 +196,15 @@ class Model():
             #print(maxima)
             #print(x_2sort, y_2sort)
             
-            #xi = self._spec.x[self._chunk[c]][0].value
-            #xf = self._spec.x[self._chunk[c]][-1].value
-            xi = self._syst.xmin[self._group[c]][0].value
-            xf = self._syst.xmax[self._group[c]][-1].value            
+            xi = self._spec.x[self._chunk[c]][0].value
+            xf = self._spec.x[self._chunk[c]][-1].value
+            #xi = self._syst.xmin[self._group[c]][0].value
+            #xf = self._syst.xmax[self._group[c]][-1].value            
             xm = np.mean(self._spec.x[self._chunk[c]].value)
-            #yi = self._spec.y[self._chunk[c]][0].value
-            #yf = self._spec.y[self._chunk[c]][-1].value
-            xi = self._syst.xmin[self._group[c]][0].value
-            xf = self._syst.xmax[self._group[c]][-1].value            
+            yi = self._spec.y[self._chunk[c]][0].value
+            yf = self._spec.y[self._chunk[c]][-1].value
+            #xi = self._syst.xmin[self._group[c]][0].value
+            #xf = self._syst.xmax[self._group[c]][-1].value            
             yi = np.interp(xi, self._spec.x.value,
                            self._spec.y.value)
             yf = np.interp(xf, self._spec.x.value,

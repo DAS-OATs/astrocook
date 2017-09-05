@@ -299,33 +299,33 @@ class Line(Spec1D):
         maxima_y = self._maxima.y
         #maxima_x = self._bound_x
         #maxima_y = self._bound_y
+        #maxima_x = self._spec.x
+        #maxima_y = self._spec.y
+        print(len(maxima_x), len(maxima_y))
 
-        #for g in range(1, len(self._bound_x)):
-        #    xmin = self._bound_x[g-1]
-        #    xmax = self._bound_x[g]
         xmin = np.min(self._spec.x)
         xmax = 0
         filt_y = np.array([])
-        while (xmax < np.max(self._spec.x)):
-            xmax = xmin + wind * self._spec.x.unit
-            where = np.where(np.logical_and(maxima_x.value >= xmin.value,
-                                            maxima_x.value < xmax.value))
-            sel = maxima_y[where]
-            clip = sigmaclip(sel, low=low, high=10.0)[0]
-            filt_y = np.append(filt_y, clip)
-            xmin = xmax
+        for wind in np.arange(1.0, 100.0, 1.0):
+            while (xmax < np.max(self._spec.x)):
+                xmax = xmin + wind * self._spec.x.unit
+                where = np.where(np.logical_and(maxima_x.value >= xmin.value,
+                                                maxima_x.value < xmax.value))
+                sel = maxima_y[where]
+                clip = sigmaclip(sel, low=low, high=10.0)[0]
+                filt_y = np.append(filt_y, clip)
+                xmin = xmax
         filt_x = maxima_x[np.in1d(maxima_y, filt_y)]
-            
-        maxima_x = filt_x
-        maxima_y = filt_y
-        
+
         self._precont.y = np.interp(self._precont.x, maxima_x, maxima_y)
 
         self._cont = dc(self._precont)        
 
         # Boxy
-        le = sm.nonparametric.lowess(filt_y, filt_x,
-                                     frac=min(1, fact/len(filt_x)))
+        frac = min(1, fact/len(filt_x))
+        print(frac)
+        
+        le = sm.nonparametric.lowess(filt_y, filt_x, frac=frac)
         self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
         
     def find(self, mode='abs', diff='max', kappa=3.0, sigma=10.0, hwidth=2):
@@ -484,6 +484,19 @@ class Line(Spec1D):
             ret[null] = float('nan')
         return ret
 
+    def norm(self, group, chunk):
+        """ Normalize continuum """
+
+        model = Model(self._spec, line=self, group=group, chunk=chunk) 
+        norm = model.norm()
+        if (hasattr(self, '_norm') == False):
+            self._norm = dc(self._spec)
+        self._norm.y[chunk[1]] = norm[0].eval(
+            norm[1], x=self._norm.x[chunk[1]].value) \
+            * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
+
+        return norm 
+    
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
         spec = self._spec
@@ -535,19 +548,6 @@ class Line(Spec1D):
         else:
             plt.show()
 
-    def norm(self, group, chunk):
-        """ Normalize continuum """
-
-        model = Model(self._spec, line=self, group=group, chunk=chunk) 
-        norm = model.norm()
-        if (hasattr(self, '_norm') == False):
-            self._norm = dc(self._spec)
-        self._norm.y[chunk[1]] = norm[0].eval(
-            norm[1], x=self._norm.x[chunk[1]].value) \
-            * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
-
-        return norm 
-    
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
         

@@ -24,6 +24,9 @@ def main():
     syst = Syst(line, spec, ion='CIV')
     syst._resol = 60000
     
+    # Estimate the continuum
+    syst.cont(wind=10.0, low=1.5, fact=20)
+
     # Create redshift table
     syst.create_z()
     
@@ -37,7 +40,7 @@ def main():
     syst_i = dc(syst)
     x_arr = syst_i.x
     group_check = 0
-    for l in range(ltot):
+    for l in range(1):#ltot):
         print("Redshift %i of %i (%3.4f)..." % (l + 1, ltot, x_arr[l].value),
               end=" ", flush=True)
 
@@ -47,29 +50,33 @@ def main():
         else:
             group_check = syst_i.group(x=x_arr[l])[1]
             
-            """ This part is commented because it is run automatically later
+            #""" This part is commented because it is run automatically later
             # Define the line group around a given redshift
             group = syst.group(x=x_arr[l])
             
             # Define the spectral chunk around a given redshift
             chunk = syst.chunk(x=x_arr[l])
 
-            # Guess the unabsorbed continuum
-            unabs_guess = syst.unabs(group, chunk)
-    
-            # Guess the Voigt profile
-            voigt_guess = syst.voigt(group, chunk)
-
             # Model the instrumental PSF
             psf = line.psf(group, chunk, syst._resol)
 
+            # First way: estimate continuum from scratch
+            #unabs_guess = syst.unabs(group, chunk)
+            #voigt_guess = syst.voigt(group, chunk)
+            #cont_guess = unabs_guess
+
+            # Second way: use existing continuum
+            norm_guess = syst.norm(group, chunk)
+            voigt_guess = syst.voigt(group, chunk)
+            cont_guess = norm_guess
+            
             # Fit the model 
-            fit = syst.fit(group, chunk, unabs_guess, voigt_guess, psf)
-            """
+            #fit = syst.fit(group, chunk, cont_guess, voigt_guess, psf)
+            #"""
 
             """ This runs all the part above automatically """
             # Fit the model, incrementally adding components
-            group, chunk = syst.auto(x=x_arr[l])
+            #group, chunk = syst.auto(x=x_arr[l])
     
             # Plot lines and system
             print("close graph to continue.")

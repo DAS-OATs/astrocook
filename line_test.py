@@ -15,7 +15,7 @@ def main():
     #name = 'J0940_CIV_1'    # CIV system blindly fitted as Ly_a
     name = 'J0940_Lya_f_2'    # Whole chunk of Lya forest (time consuming)
     name = 'B2126-15_Lya_f' # Another whole chunk of Lya forest
-    name = 'B1937_all' # A whole spectrum    
+    #name = 'B1937_all' # A whole spectrum    
     
     # Read the 1D spectrum
     spec = Spec1DReader().uves(name + '_spec.fits')
@@ -25,10 +25,10 @@ def main():
     line._resol = 60000
     
     # Find absorption lines in the spectrum
-    line.find(kappa=5.0, sigma=10.0)
+    line.find(kappa=5.0, sigma=20.0)
 
     # Estimate the continuum
-    line.cont(wind=20.0, low=2.0, fact=10)
+    line.cont(wind=10.0, low=1.5, fact=20)
     
     ltot = len(line.t)
     line_i = dc(line)
@@ -73,13 +73,13 @@ def main():
 
             #""" This runs the second way automatically
             # Fit the model, incrementally adding components
-            #group, chunk = line.auto(x=x_arr[l])
+            group, chunk = line.auto(x=x_arr[l])
     
             # Plot lines
             print("close graph to continue.")
-            #line.plot(group, chunk)
+            line.plot(group, chunk)
 
-    line.plot()
+    #line.plot()
 
 
 if __name__ == '__main__':
