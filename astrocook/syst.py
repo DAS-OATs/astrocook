@@ -47,6 +47,8 @@ class Syst(Line):
             self._line = dc(line)
             self._precont = dc(line._precont)
             self._cont = dc(line._cont)            
+            self._minima = dc(line._minima)
+            self._maxima = dc(line._maxima)            
 
         # Spectrum
         self._spec = None
@@ -144,15 +146,15 @@ class Syst(Line):
 
 # Methods
 
-    def add_min_resid(self, group):
+    def corr_resid(self, group, cont_corr):
         """ Add a new line at the minimum residual """
 
         xmin = np.min(self.xmin[group[1]])
         xmax = np.max(self.xmax[group[1]])
         where = self._chunk_sum
-        resid_norm = self._resid.y.value * 0.0
-        resid_norm[where] = self._resid.y[where]/self._resid.dy[where]
-        x = self._resid.x[np.argmin(resid_norm)]
+        resid_norm = self._resid_fit.y.value * 0.0
+        resid_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
+        x = self._resid_fit.x[np.argmin(resid_norm)]
         ion_arr = np.unique(self._flat.ion)
         n = len(ion_arr)
         z_arr = np.empty(n)        
@@ -172,6 +174,8 @@ class Syst(Line):
             dy[i] = np.interp(z, spec.x, spec.dy)
         self._t.add_row([z, y, xmin, xmax, dy, ion])
         self.t.sort('X')  # This gives an annoying warning
+
+        return cont_corr
         
     def chunk(self, x=None, line=None):  # Chunk must be shifted to the system z
         if ((x is None) and (line is None)):
@@ -508,6 +512,14 @@ class Syst(Line):
                 N = model.N_guess(self._norm, ion=self._flat.ion)
             else:
                 N = model.N_guess(self._unabs, ion=self._flat.ion)
+            if (hasattr(self, '_unabs')):
+                cont = self._unabs
+            elif (hasattr(self, '_norm')):
+                cont = self._norm
+            else:
+                raise Exception("Continuum not found.")
+            N = model.N_guess(cont, ion=self._flat.ion)
+            print(N)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s

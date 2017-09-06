@@ -27,6 +27,9 @@ def main():
     syst = Syst(line, spec, ion='CIV')
     syst._resol = 45000
     
+    # Estimate the continuum
+    syst.cont()
+
     # Create redshift table
     syst.create_z()
     
@@ -40,7 +43,7 @@ def main():
     syst_i = dc(syst)
     x_arr = syst_i.x
     group_check = 0
-    for l in range(ltot):
+    for l in range(1):#ltot):
         print("Redshift %i of %i (%3.4f)..." % (l + 1, ltot, x_arr[l].value),
               end=" ", flush=True)
 
@@ -70,6 +73,16 @@ def main():
             voigt_guess = syst.voigt(group, chunk)
             cont_guess = norm_guess
 
+            # First way: estimate continuum from scratch
+            #unabs_guess = syst.unabs(group, chunk)
+            #voigt_guess = syst.voigt(group, chunk)
+            #cont_guess = unabs_guess
+
+            # Second way: use existing continuum
+            norm_guess = syst.norm(group, chunk)
+            voigt_guess = syst.voigt(group, chunk)
+            cont_guess = norm_guess
+            
             # Fit the model 
             fit = syst.fit(group, chunk, cont_guess, voigt_guess, psf)
             """
