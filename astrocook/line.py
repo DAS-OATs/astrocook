@@ -202,19 +202,31 @@ class Line(Spec1D):
         
 # Methods
 
-    def add_min_resid(self, group):
-        """ Add a new line at the minimum residual """
+    def corr_resid(self, group, cont_corr):
 
         xmin = np.min(self.xmin[group[1]])
         xmax = np.max(self.xmax[group[1]])
-        where = np.where(np.logical_and(self._resid.x >= xmin,
-                                        self._resid.x <= xmax))
-        resid_norm = self._resid.y.value * 0.0
-        resid_norm[where] = self._resid.y[where]/self._resid.dy[where]
-        x = self._resid.x[np.argmin(resid_norm)]
-        y = np.interp(x.value, self._spec.x, self._spec.y) 
-        dy = np.interp(x.value, self._spec.x, self._spec.dy)
-        self._t.add_row([x, y, xmin, xmax, dy])
+        where = np.where(np.logical_and(self._resid_fit.x >= xmin,
+                                        self._resid_fit.x <= xmax))
+        fit_norm = self._resid_fit.y.value * 0.0
+        fit_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
+        cont_norm = self._resid_cont.y.value * 0.0
+        cont_norm[where] = self._resid_cont.y[where]/self._resid_cont.dy[where]
+        x_lo = self._resid_fit.x[np.argmin(fit_norm)]
+        x_hi = self._resid_cont.x[np.argmax(cont_norm)]
+        y_lo = self._resid_fit.y[np.argmin(fit_norm)]
+        y_hi = self._resid_cont.y[np.argmax(cont_norm)]
+        print(np.absolute(y_lo), np.absolute(y_hi))
+        if (np.absolute(y_lo) > np.absolute(y_hi)):
+            y = np.interp(x_lo.value, self._spec.x, self._spec.y) 
+            dy = np.interp(x_lo.value, self._spec.x, self._spec.dy)
+            self._t.add_row([x_lo, y, xmin, xmax, dy])
+            cont_corr = 1.0
+        else:
+            cont_corr = 1.1
+        print(cont_corr)
+        return cont_corr
+            
 
     def auto(self, x=None, line=None):
         if ((x is None) and (line is None)):
@@ -234,23 +246,27 @@ class Line(Spec1D):
         i_best = 1
         print("")
         print(" Chi-squared:", end=" ", flush=True)
+        cont_corr = 1.0
         while (stop == False):
             i += 1
             group = self.group(line=line)            
             chunk = self.chunk(line=line)
-            norm_guess = self.norm(group, chunk)
+            norm_guess = self.norm(group, chunk, cont_corr)
             voigt_guess = self.voigt(group, chunk)
             psf = self.psf(group, chunk, self._resol)
             #fit = self.fit(group, chunk, unabs_guess, voigt_guess, psf)
             fit = self.fit(group, chunk, norm_guess, voigt_guess, psf)
-            self._resid = dc(self._spec)
-            self._resid.y = self._spec.y - self._fit.y
+            self._resid_fit = dc(self._spec)
+            self._resid_fit.y = self._spec.y - self._fit.y
+            self._resid_cont = dc(self._spec)
+            self._resid_cont.y = self._spec.y - self._norm.y
             
             print("(%i,%i) %3.2f, %3.2f;" \
                   % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
                    or (i==10)
+            
 
             aic_old = self._aic
             redchi_old = self._redchi            
@@ -263,7 +279,7 @@ class Line(Spec1D):
                 i_best = i
                 t_best = dc(self._t)
             if (stop == False):
-                self.add_min_resid(group)
+                cont_corr = self.corr_resid(group, cont_corr)
                 
             
         self._t = dc(t_best)       
@@ -484,11 +500,11 @@ class Line(Spec1D):
             ret[null] = float('nan')
         return ret
 
-    def norm(self, group, chunk):
+    def norm(self, group, chunk, value=1.0):
         """ Normalize continuum """
 
         model = Model(self._spec, line=self, group=group, chunk=chunk) 
-        norm = model.norm()
+        norm = model.norm(value)
         if (hasattr(self, '_norm') == False):
             self._norm = dc(self._spec)
         self._norm.y[chunk[1]] = norm[0].eval(

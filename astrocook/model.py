@@ -104,7 +104,7 @@ class Model():
 
         return np.power(10, logN) / u.cm**2
 
-    def norm(self):
+    def norm(self, value):
 
         if (self._chunk is None):
             raise Exception("Chunk must be provided.")
@@ -119,11 +119,11 @@ class Model():
             xmin = np.min(self._spec.x[self._chunk[c]].value)
             xmax = np.max(self._spec.x[self._chunk[c]].value)
             cont = self._cont.y.value 
-            norm = 1.0 #np.mean(cont)
+            norm = value #np.mean(cont)
             
             param[pref+'xmin'].set(xmin, vary=False)
             param[pref+'xmax'].set(xmax, vary=False)
-            param[pref+'norm'].set(norm, max=1.05, min=0.95, vary=False)
+            param[pref+'norm'].set(norm, max=1.05, min=0.95)#, vary=False)
 
             if (c == 1):
                 ret = (model, param)
