@@ -45,6 +45,8 @@ class Syst(Line):
         self._line = None
         if (line is not None):
             self._line = dc(line)
+            self._precont = dc(line._precont)
+            self._cont = dc(line._cont)            
 
         # Spectrum
         self._spec = None
@@ -214,7 +216,7 @@ class Syst(Line):
         else:
             self._z.ion = np.asarray(self._z.t['ION'])
             
-    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=300):
+    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=1000):
 
         for c in range(1, len(chunk)):
             if (c == 1):
@@ -230,7 +232,7 @@ class Syst(Line):
                 param.update(unabs_guess[2*c-1])
                 param.update(voigt_guess[2*c-1])
                 param.update(psf[2*c-1])
-                chunk_sum += chunk[c]        
+                chunk_sum += chunk[c]
         expr_dict = voigt_guess[-1]
         for k in expr_dict:
             param[k].set(expr=expr_dict[k])
@@ -243,20 +245,46 @@ class Syst(Line):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
-                                 x=self._spec.x[chunk_sum].value,
-                                 #fit_kws={'maxfev': maxfev},
-                                 weights=1/self._spec.dy[chunk_sum].value)
+            if (hasattr(self, '_norm')):
+                #print("cont")
+                y = self._spec.y[chunk_sum] / self._cont.y[chunk_sum]
+                dy = self._spec.dy[chunk_sum].value \
+                     / self._cont.y[chunk_sum].value
+                fit = conv_model.fit(y.value, param,
+                                     x=self._spec.x[chunk_sum].value,
+                                     fit_kws={'maxfev': maxfev},
+                                     weights=1/dy)
+                cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
+                self._fit.y[chunk_sum] = fit.best_fit \
+                                         * self._cont.y[chunk_sum] \
+                                         * self._fit.y[chunk_sum].unit
+                #self._cont.y[chunk_sum] = cont['cont1_'] \
+                #                          * self._cont.y[chunk_sum].value
+                cont_temp = dc(self._cont)
+                for c in range(1, len(chunk)):
+                    if (c == 1):
+                        cont_temp.y[chunk_sum] = cont['cont' + str(c) + '_'] \
+                                                * self._cont.y[chunk_sum].value
+                    else:
+                        cont_temp.y[chunk_sum] += cont['cont' + str(c) + '_'] \
+                                                * self._cont.y[chunk_sum].value
+                self._cont = cont_temp
+            else:
+                fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
+                                     x=self._spec.x[chunk_sum].value,
+                                     fit_kws={'maxfev': maxfev},
+                                     weights=1/self._spec.dy[chunk_sum].value)
 
-            cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
-            for c in range(1, len(chunk)):
-                if (c == 1):
-                    self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
-                                              * self._cont.y[chunk_sum].unit
-                else:
-                    self._cont.y[chunk_sum] += cont['cont' + str(c) + '_'] \
-                                               * self._cont.y[chunk_sum].unit
-            self._fit.y[chunk_sum] = fit.best_fit * self._fit.y[chunk_sum].unit
+                cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
+                for c in range(1, len(chunk)):
+                    if (c == 1):
+                        self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
+                                                  * self._cont.y[chunk_sum].unit
+                    else:
+                        self._cont.y[chunk_sum] += cont['cont' + str(c) + '_'] \
+                                                * self._cont.y[chunk_sum].unit
+                self._fit.y[chunk_sum] = fit.best_fit \
+                                         * self._fit.y[chunk_sum].unit
             self._redchi = fit.redchi
             self._aic = fit.aic
             self._chunk_sum = chunk_sum
@@ -476,7 +504,10 @@ class Syst(Line):
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
             z = self.x[group[1]]
-            N = model.N_guess(self._unabs, ion=self._flat.ion)
+            if (hasattr(self, '_norm')):
+                N = model.N_guess(self._norm, ion=self._flat.ion)
+            else:
+                N = model.N_guess(self._unabs, ion=self._flat.ion)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s
@@ -489,5 +520,11 @@ class Syst(Line):
         for c in range(1, len(chunk)):
             self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
-                * self._unabs.y[chunk[c]]
+                * self._voigt.y.unit
+            if (hasattr(self, '_norm')):
+                self._voigt.y[chunk[c]] = self._voigt.y[chunk[c]] \
+                                          * self._norm.y[chunk[c]].value
+            else:
+                self._voigt.y[chunk[c]] = self._voigt.y[chunk[c]] \
+                                          * self._unabs.y[chunk[c]].value
         return voigt

@@ -285,6 +285,8 @@ class Spec1D():
 
     def todo_convert_logx(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
+        ### WORKS ONLY ON LOGARITHMICALLY SPACED SPECTRA!
+        
         if not (xunit is None):
             #TODO: check following code
             if xunit.is_equivalent(u.m / u.s) \
@@ -293,7 +295,6 @@ class Spec1D():
                               lambda x: np.log(x) * c.to(u.km / u.s).value, 
                               lambda x: np.exp(x / c.to(u.km / u.s).value)   \
                           )]
-
             mask = self._t['X'].mask
             q = self._t['X']
             p = q.to(xunit, equivalencies=equiv)
@@ -314,7 +315,8 @@ class Spec1D():
 
 
 
-    def convolve(self, col='y', prof=None, gauss_sigma=20, mode='same'):
+    def convolve(self, col='y', prof=None, gauss_sigma=20, convert=True,
+                 mode='same'):
         """Convolve a spectrum with a profile using FFT transform
         
         The profile must have the same length of the column X of the spectrum.
@@ -323,14 +325,16 @@ class Spec1D():
 
         conv = copy.deepcopy(self)
         conv_col = getattr(conv, col)
-        conv.todo_convert_logx(xunit=u.km/u.s)        
+        if convert == True:
+            conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
             par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
         conv.y = fftconvolve(conv_col, prof, mode=mode)
-        conv.todo_convert_logx(xunit=self.x.unit)
+        if convert == True:
+            conv.todo_convert_logx(xunit=self.x.unit)
         return conv
         
     def deredden(self, A_v, model='od94'):

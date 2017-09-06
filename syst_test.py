@@ -10,7 +10,7 @@ def main():
 
     # Input data
     name = 'J0940_CIV_1'  # Single CIV system 
-    #name = 'J0940_CIV_2'  # Another single CIV system
+    name = 'J0940_CIV_2'  # Another single CIV system
     #name = 'J0940_CIV_f'  # Whole chunk of CIV forest (time consuming)
 
     # Read the 1D spectrum
@@ -20,9 +20,12 @@ def main():
     line = Line(spec)
     line.find(kappa=5.0)
     
+    # Estimate the continuum
+    line.cont()
+    
     # Create a Syst object from the lines
     syst = Syst(line, spec, ion='CIV')
-    syst._resol = 60000
+    syst._resol = 45000
     
     # Create redshift table
     syst.create_z()
@@ -54,17 +57,21 @@ def main():
             # Define the spectral chunk around a given redshift
             chunk = syst.chunk(x=x_arr[l])
 
-            # Guess the unabsorbed continuum
-            unabs_guess = syst.unabs(group, chunk)
-    
-            # Guess the Voigt profile
-            voigt_guess = syst.voigt(group, chunk)
-
             # Model the instrumental PSF
-            psf = line.psf(group, chunk, syst._resol)
+            psf = syst.psf(group, chunk, syst._resol)
+
+            # First way: estimate continuum from scratch
+            #unabs_guess = syst.unabs(group, chunk)
+            #voigt_guess = syst.voigt(group, chunk)
+            #cont_guess = unabs_guess
+            
+            # Second way: use existing continuum
+            norm_guess = syst.norm(group, chunk)
+            voigt_guess = syst.voigt(group, chunk)
+            cont_guess = norm_guess
 
             # Fit the model 
-            fit = syst.fit(group, chunk, unabs_guess, voigt_guess, psf)
+            fit = syst.fit(group, chunk, cont_guess, voigt_guess, psf)
             """
 
             """ This runs all the part above automatically """
