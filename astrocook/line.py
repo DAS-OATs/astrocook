@@ -565,11 +565,11 @@ class Line(Spec1D):
                                         * self._fit.y[chunk[1]].unit
                 self._cont.y[chunk[1]] = cont['cont1_'] \
                                          * self._cont.y[chunk[1]].value
-                rem = self._cont.y[chunk[1]] * self._spec.y[chunk[1]] \
-                      / self._fit.y[chunk[1]] * self._fit.y[chunk[1]].unit
-                rem[self._fit.y[chunk[1]] < 0.1 * self._cont.y[chunk[1]]] = \
-                      self._cont.y[chunk[1]] * self._fit.y[chunk[1]].unit
-                self._rem.y[chunk[1]] = rem
+                rem = self._cont.y * self._spec.y \
+                      / self._fit.y * self._fit.y.unit
+                where = self._fit.y.value < 0.1 * self._cont.y.value
+                rem[where] = self._cont.y[where] * self._fit.y[where].unit
+                self._rem.y[chunk[1]] = rem[chunk[1]]
             else:
                 fit = conv_model.fit(self._spec.y[chunk[1]].value, param,
                                      x=self._spec.x[chunk[1]].value,
@@ -610,7 +610,6 @@ class Line(Spec1D):
         den = 1
         z = self._spec.x / dict_wave['Ly_a'] - 1 
         ret = np.exp(tau_norm * pow(1+z, tau_index) * num/den)
-        print(ret)
         return ret
         
     def group(self, x=None, line=None):

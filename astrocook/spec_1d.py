@@ -257,7 +257,6 @@ class Spec1D():
         self._precont = dc(self)
         range_x = np.max(self.x) - np.min(self.x)
         x = self.x
-        print(flux_corr)
         y = self.y * flux_corr
         self._cont = dc(self._precont)        
         clip_x = x
