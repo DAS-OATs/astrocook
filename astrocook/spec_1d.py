@@ -5,9 +5,14 @@ from astropy.constants import c
 from astropy.io import fits as fits
 from astropy.table import Column, Table
 import copy
+from copy import deepcopy as dc
+from matplotlib.gridspec import GridSpec as gs
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
+from scipy.stats import sigmaclip
 from specutils import extinction
+import statsmodels.api as sm
 
 class Spec1D():
     """Class for generic spectra
@@ -248,6 +253,42 @@ class Spec1D():
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
 
+    def cont(self, smooth=20.0, flux_corr=1.0):
+        self._precont = dc(self)
+        range_x = np.max(self.x) - np.min(self.x)
+        x = self.x
+        print(flux_corr)
+        y = self.y * flux_corr
+        self._cont = dc(self._precont)        
+        clip_x = x
+        clip_y = y
+        stop = False
+        i = 0
+        frac = smooth*u.nm/range_x
+        le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
+                                     delta=0.0, is_sorted=True)
+        """
+        while (stop == False):
+            frac = smooth*u.nm/range_x 
+            le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
+                                         delta=0.0, is_sorted=True)
+            cont_y = np.interp(clip_x, le[:, 0], le[:, 1])
+            norm_y = clip_y / cont_y
+            clip_y = sigmaclip(norm_y, low=3.0, high=3.0)[0]
+            #clip_y = sigmaclip(norm_y, low=3.0, high=100.0)[0]            
+            clip_x = clip_x[np.isin(norm_y, clip_y)]
+            cont_y = cont_y[np.isin(norm_y, clip_y)]
+            clip_y = clip_y * cont_y
+            stop = (len(clip_y) == len(norm_y)) #or i > 1
+        """
+
+        self._clip_x = clip_x
+        self._clip_y = clip_y
+        self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
+        #self._cont.y = np.interp(self._cont.x, clip_x, cont_y)
+        #self._cont.y = spl(self._cont.x)
+        
+    
     def convert(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
         if not (xunit is None):
@@ -419,6 +460,27 @@ class Spec1D():
         spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x.unit, 
                       yunit=y.unit, group=good, resol=resol, meta=meta)
         return spec
+        
+    def plot(self, figsize=(10,4), block=True, **kwargs):
+        spec = self
+        fig = plt.figure(figsize=figsize)
+        fig.canvas.set_window_title("Lines")
+        grid = gs(1, 1)
+        ax = fig.add_subplot(grid[:, :])
+        grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+        ax.set_xlabel("Wavelength [" + str(spec.x.unit) + "]")
+        ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
+        ax.plot(spec.x, spec.y, c='black', lw=1.0)
+        ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+        if (hasattr(self, '_cont')):
+            where = np.where(self.y != self._cont.y)
+            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+
+        #if block is False:
+        #    plt.ion()
+        #    plt.draw()
+        if block is True:
+            plt.show()
         
     def rolling_window(self, width):
         """Convert a spectrum in rolling-window format

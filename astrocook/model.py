@@ -1,6 +1,7 @@
 from .utils import *
 from astropy import units as u
 from astropy.constants import c, e, m_e
+from copy import deepcopy as dc
 from lmfit import Model as lmm
 from lmfit import Parameters as lmp
 from lmfit.lineshapes import gaussian
@@ -79,7 +80,11 @@ class Model():
         logN_arr = np.arange(20.0, 10.0, -0.1)
 
         logN = []
-        for r in self._syst.t[self._group[1]]:
+        syst = self._syst.t
+        if (self._group is not None):
+            syst = self._syst.t[self._group[1]]
+        
+        for r in syst: #self._syst.t[self._group[1]]:
             if (hasattr(self._syst, '_ion')):
                 try:
                     ion = r['ION'][0]
@@ -102,9 +107,11 @@ class Model():
             else:
                 logN = np.append(logN, logN_interp)
 
-        return np.power(10, logN) / u.cm**2
+        ret = np.power(10, logN) / u.cm**2
+                
+        return ret
 
-    def norm(self, value):
+    def norm(self, value=1.0, vary=False):
 
         if (self._chunk is None):
             raise Exception("Chunk must be provided.")
@@ -118,12 +125,15 @@ class Model():
             param = model.make_params()
             xmin = np.min(self._spec.x[self._chunk[c]].value)
             xmax = np.max(self._spec.x[self._chunk[c]].value)
-            cont = self._cont.y.value 
+            cont = self._cont.y.value
             norm = value #np.mean(cont)
             
             param[pref+'xmin'].set(xmin, vary=False)
             param[pref+'xmax'].set(xmax, vary=False)
-            param[pref+'norm'].set(norm, max=1.05, min=0.95)#, vary=False)
+            if (vary == False):
+                param[pref+'norm'].set(norm, vary=False)
+            else:
+                param[pref+'norm'].set(norm, min=0.95)#, max=1.05, min=0.95)
 
             if (c == 1):
                 ret = (model, param)
@@ -233,6 +243,11 @@ class Model():
     def voigt(self, z, N, b, btur, ion):
         """ Create a Voigt model for a line """
 
+        self._z = dc(z)
+        self._N = dc(N)
+        self._b = dc(b)
+        self._btur = dc(btur)        
+        
         z_list = []
         pref_list = []
         expr_dict = {}

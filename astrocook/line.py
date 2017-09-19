@@ -205,32 +205,6 @@ class Line(Spec1D):
         
 # Methods
 
-    def corr_resid(self, group, cont_corr):
-
-        xmin = np.min(self.xmin[group[1]])
-        xmax = np.max(self.xmax[group[1]])
-        where = np.where(np.logical_and(self._resid_fit.x >= xmin,
-                                        self._resid_fit.x <= xmax))
-        fit_norm = self._resid_fit.y.value * 0.0
-        fit_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
-        cont_norm = self._resid_cont.y.value * 0.0
-        cont_norm[where] = self._resid_cont.y[where]/self._resid_cont.dy[where]
-        x_lo = self._resid_fit.x[np.argmin(fit_norm)]
-        x_hi = self._resid_cont.x[np.argmax(cont_norm)]
-        y_lo = self._resid_fit.y[np.argmin(fit_norm)]
-        y_hi = self._resid_cont.y[np.argmax(cont_norm)]
-        print(np.absolute(y_lo), np.absolute(y_hi))
-        if (np.absolute(y_lo) > np.absolute(y_hi)):
-            y = np.interp(x_lo.value, self._spec.x, self._spec.y) 
-            dy = np.interp(x_lo.value, self._spec.x, self._spec.dy)
-            self._t.add_row([x_lo, y, xmin, xmax, dy])
-            cont_corr = 1.0
-        else:
-            cont_corr = 1.1
-        print(cont_corr)
-        return cont_corr
-            
-
     def auto(self, x=None, line=None):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -248,13 +222,21 @@ class Line(Spec1D):
         i = 0
         i_best = 1
         print("")
-        print(" Chi-squared:", end=" ", flush=True)
+        #print(" Chi-squared:", end=" ", flush=True)
         cont_corr = 1.0
+        vary = True
         while (stop == False):
             i += 1
             group = self.group(line=line)            
             chunk = self.chunk(line=line)
-            norm_guess = self.norm(group, chunk, cont_corr)
+
+            # Let the continuum vary only after a given iteration
+            if (i <= 0):
+                vary = False
+            else:
+                vary = True
+                
+            norm_guess = self.norm(group, chunk, vary=vary)
             voigt_guess = self.voigt(group, chunk)
             psf = self.psf(group, chunk, self._resol)
             #fit = self.fit(group, chunk, unabs_guess, voigt_guess, psf)
@@ -262,13 +244,13 @@ class Line(Spec1D):
             self._resid_fit = dc(self._spec)
             self._resid_fit.y = self._spec.y - self._fit.y
             self._resid_cont = dc(self._spec)
-            self._resid_cont.y = self._spec.y - self._norm.y
+            self._resid_cont.y = self._spec.y - self._cont.y * self._spec.y.unit
             
-            print("(%i,%i) %3.2f, %3.2f;" \
-                  % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
+            #print("(%i,%i) %3.2f, %3.2f;" \
+            #      % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (i==30)
+                   or (i==10)
 
             aic_old = self._aic
             redchi_old = self._redchi            
@@ -278,21 +260,29 @@ class Line(Spec1D):
                 fitobj_best = dc(fit)
                 i_best = i
                 t_best = dc(self._t)
+                norm_best = dc(self._norm)
+                voigt_best = dc(self._voigt)
                 cont_best = dc(self._cont)
                 fit_best = dc(self._fit) 
                 redchi_best = self._redchi
                 aic_best = self._aic
+
             if (stop == False):
+
+            # When you first let the continuum vary, do not add lines
+            #if ((stop == False) and (i != 10)):
                 cont_corr = self.corr_resid(group, cont_corr)
                 
             
         self._t = dc(t_best)
+        self._norm = dc(norm_best)
+        self._voigt = dc(voigt_best)
         self._cont = dc(cont_best)
         self._fit = dc(fit_best)
         self._redchi = redchi_best
         self._aic = aic_best
         fit = fitobj_best
-        print("best: (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
+        print("best chi-squared (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
               end=" ", flush=True)
         
         return group_best, chunk_best
@@ -331,7 +321,7 @@ class Line(Spec1D):
         i = 0
         while (stop == False):
             i += 1
-            print(len(clip_y))
+            #print(len(clip_y))
             frac = 3*u.nm/range_x * len(x)/len(clip_x)
             le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
                                          delta=0.0, is_sorted=True)
@@ -351,7 +341,7 @@ class Line(Spec1D):
         self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
         
     
-    def cont(self, smooth=50.0):
+    def cont(self, smooth=3.0):
         self._precont = dc(self._spec)
         range_x = np.max(self._spec.x) - np.min(self._spec.x)
         x = self._maxima.x
@@ -364,15 +354,16 @@ class Line(Spec1D):
         stop = False
         i = 0
         while (stop == False):
-            #frac = min(1, smooth/len(x)) 
+            #frac = min(1, smooth * 10/len(x)) 
             #le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac)
-            frac = 3*u.nm/range_x * len(x)/len(clip_x)
+            frac = smooth*u.nm/range_x #* len(x)/len(clip_x)
             le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
                                          delta=0.0, is_sorted=True)
             cont_y = np.interp(clip_x, le[:, 0], le[:, 1])
             norm_y = clip_y / cont_y
-            clip_y = sigmaclip(norm_y, low=2.0, high=100.0)[0]
-            #clip_y = sigmaclip(norm_y, low=3.0, high=10.0)[0]
+            #clip_y = sigmaclip(norm_y, low=2.0, high=100.0)[0]
+            clip_y = sigmaclip(norm_y, low=3.0, high=3.0)[0]
+            clip_y = sigmaclip(norm_y, low=3.0, high=100.0)[0]            
             clip_x = clip_x[np.isin(norm_y, clip_y)]
             cont_y = cont_y[np.isin(norm_y, clip_y)]
             clip_y = clip_y * cont_y
@@ -393,7 +384,7 @@ class Line(Spec1D):
         #maxima_y = self._bound_y
         #maxima_x = self._spec.x
         #maxima_y = self._spec.y
-        print(len(maxima_x), len(maxima_y))
+        #print(len(maxima_x), len(maxima_y))
 
         xmin = np.min(self._spec.x)
         xmax = 0
@@ -415,11 +406,49 @@ class Line(Spec1D):
 
         # Boxy
         frac = min(1, fact/len(filt_x))
-        print(frac)
+        #print(frac)
         
         le = sm.nonparametric.lowess(filt_y, filt_x, frac=frac)
         self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
         
+    def corr_resid(self, group, cont_corr):
+
+        xmin = np.min(self.xmin[group[1]])
+        xmax = np.max(self.xmax[group[1]])
+        fit_where = np.where(np.logical_and(self._resid_fit.x >= xmin,
+                                            self._resid_fit.x <= xmax))
+        cont_where = np.where(np.logical_and(self._resid_cont.x >= xmin,
+                                             self._resid_cont.x <= xmax))
+        fit_norm = self._resid_fit.y.value * 0.0
+        fit_norm[fit_where] = self._resid_fit.y[fit_where] /\
+                              self._resid_fit.dy[fit_where]
+        cont_norm = self._resid_cont.y.value * 0.0
+        cont_norm[cont_where] = self._resid_cont.y[cont_where] /\
+                                self._resid_cont.dy[cont_where]
+        cont_pos = self._resid_cont.y.value * 0.0
+        cont_pos[cont_where] = self._resid_cont.y[cont_where]
+        cont_pos = cont_pos[cont_pos > 0]
+        cont_rms = 0.0
+        if (len(cont_pos) > 0):
+            cont_rms = np.sqrt(np.mean(cont_pos**2))
+        
+        x_lo = self._resid_fit.x[np.argmin(fit_norm)]
+        x_hi = self._resid_cont.x[np.argmax(cont_norm)]
+        y_lo = np.min(fit_norm)
+        y_hi = np.max(cont_norm)
+        #print(np.absolute(x_lo), np.absolute(x_hi))
+        #print(np.absolute(y_lo), np.absolute(y_hi))
+        if (np.absolute(y_lo) > np.absolute(y_hi)):
+            y = np.interp(x_lo.value, self._spec.x, self._spec.y) 
+            dy = np.interp(x_lo.value, self._spec.x, self._spec.dy)
+            self._t.add_row([x_lo, y, xmin, xmax, dy])
+            cont_corr = 1.0
+        if (cont_rms > 3*np.mean(self._resid_cont.dy.value)):
+        #else:
+            cont_corr = 1 + cont_rms / np.mean(self._cont.y.value)
+        #print(cont_corr)
+        return cont_corr
+            
     def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0,
              hwidth=2):
         """ Find lines in a spectrum """
@@ -511,10 +540,12 @@ class Line(Spec1D):
         conv_model = lmc(model, psf[0], convolve)
         param.update(voigt_guess[1])
         param.update(psf[1])
-        if (hasattr(self, '_fit') == False):
-            self._fit = dc(self._spec)
         if (hasattr(self, '_cont') == False):
             self._cont = dc(self._spec)
+        if (hasattr(self, '_fit') == False):
+            self._fit = dc(self._spec)
+        if (hasattr(self, '_rem') == False):
+            self._rem = dc(self._spec)
         if (len(self._spec.x[chunk[1]]) < len(param)):
             warnings.warn("Too few data points; skipping.")
             fit = None
@@ -528,11 +559,17 @@ class Line(Spec1D):
                                      x=self._spec.x[chunk[1]].value,
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/dy)
+                #print(fit.fit_report())
                 cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
                 self._fit.y[chunk[1]] = fit.best_fit * self._cont.y[chunk[1]] \
                                         * self._fit.y[chunk[1]].unit
                 self._cont.y[chunk[1]] = cont['cont1_'] \
                                          * self._cont.y[chunk[1]].value
+                rem = self._cont.y[chunk[1]] * self._spec.y[chunk[1]] \
+                      / self._fit.y[chunk[1]] * self._fit.y[chunk[1]].unit
+                rem[self._fit.y[chunk[1]] < 0.1 * self._cont.y[chunk[1]]] = \
+                      self._cont.y[chunk[1]] * self._fit.y[chunk[1]].unit
+                self._rem.y[chunk[1]] = rem
             else:
                 fit = conv_model.fit(self._spec.y[chunk[1]].value, param,
                                      x=self._spec.x[chunk[1]].value,
@@ -541,14 +578,40 @@ class Line(Spec1D):
                 cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
                 self._cont.y[chunk[1]] = cont['cont1_'] \
                                          * self._cont.y[chunk[1]].unit
-                self._fit.y[chunk[1]] = fit.best_fit * self._fit.y[chunk[1]].unit
-            #print(self._cont.t)
-            #print(self._fit.t)            
-            
+                self._fit.y[chunk[1]] = fit.best_fit \
+                                        * self._fit.y[chunk[1]].unit
+                self._rem.y[chunk[1]] = self._cont.y[chunk[1]] \
+                                        * self.y[chunk[1]] \
+                                        / self._fit.y[chunk[1]]
+
+            z_tags = [z for z in fit.best_values if z.endswith('_z')]
+            N_tags = [N for N in fit.best_values if N.endswith('_N')]
+            b_tags = [b for b in fit.best_values if b.endswith('_b')]
+            btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
+
+            self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
+            self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
+                          * self._N.unit
+            self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
+                          * self._b.unit
+            self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
+                             * self._btur.unit
+
             self._redchi = fit.redchi
             self._aic = fit.aic
 
         return fit
+
+    def flux_corr(self, N_fit=None):
+
+        tau_norm = 0.0028
+        tau_index = 3.45
+        num = 1
+        den = 1
+        z = self._spec.x / dict_wave['Ly_a'] - 1 
+        ret = np.exp(tau_norm * pow(1+z, tau_index) * num/den)
+        print(ret)
+        return ret
         
     def group(self, x=None, line=None):
         if ((x is None) and (line is None)):
@@ -580,11 +643,11 @@ class Line(Spec1D):
             ret[null] = float('nan')
         return ret
 
-    def norm(self, group, chunk, value=1.0):
+    def norm(self, group, chunk, value=1.0, vary=False):
         """ Normalize continuum """
 
         model = Model(self._spec, line=self, group=group, chunk=chunk) 
-        norm = model.norm(value)
+        norm = model.norm(value, vary)
         if (hasattr(self, '_norm') == False):
             self._norm = dc(self._spec)
         self._norm.y[chunk[1]] = norm[0].eval(
@@ -593,6 +656,57 @@ class Line(Spec1D):
 
         return norm 
     
+    def plot2(self, group=None, chunk=None, figsize=(10,4), block=True,
+              **kwargs):
+        spec = self._spec
+        fig = plt.figure(figsize=figsize)
+        fig.canvas.set_window_title("Lines")
+        grid = gs(1, 1)
+        ax = fig.add_subplot(grid[:, :])
+        grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+        ax.plot(spec.x, spec.y, c='black', lw=1.0)
+        ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+        ax.set_xlabel("Wavelength [" + str(spec.x.unit) + "]")
+        ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
+        #ax.set_xlim([380,500])
+        #ax.set_ylim([-20,360])
+        #if (hasattr(self, '_conv')):
+        #    ax.plot(self._conv.x, self._conv.y, c='black', lw=1.0,
+        #            linestyle=':')
+        ax.scatter(self.x, self.y, c='r', marker='+')
+        if (hasattr(self, '_cont')):
+            ax.plot(self._cont.x, self._cont.y, c='b', lw=1.0, linestyle=':')
+        if (group is not None):
+            ax.scatter(self.x[group[1]], self.y[group[1]], c='r', marker='+',
+                       s=100)
+        if (chunk is not None):
+            ax.plot(spec.x[chunk[1]], spec.y[chunk[1]], c='black', lw=2.0)
+            if (hasattr(self, '_norm')):
+                where = np.where(self._spec.y != self._norm.y)
+                ax.plot(self._norm.x[where], self._norm.y[where], c='y', lw=1.0,
+                        linestyle=':')
+            if (hasattr(self, '_voigt')):
+                where = np.where(self._spec.y != self._voigt.y)
+                ax.plot(self._voigt.x[where], self._voigt.y[where], c='g',
+                        lw=1.0, linestyle=':')
+        if (hasattr(self, '_cont')):
+            where = np.where(self._spec.y != self._cont.y)
+            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+        if (hasattr(self, '_fit')):
+            where = np.where(self._spec.y != self._fit.y)
+            ax.plot(self._fit.x[where], self._fit.y[where], c='g')
+
+        if (hasattr(self, '_cont')):
+            cont_sg = savitzky_golay(self._cont.y, window_size=301, order=4)
+            ax.plot(self._cont.x, cont_sg, c='b', lw=1.0)
+        
+        if block is False:
+            plt.ion()
+            plt.draw()
+        else:
+            plt.show()
+
+        
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
         spec = self._spec
@@ -601,54 +715,73 @@ class Line(Spec1D):
         grid = gs(1, 1)
         ax = fig.add_subplot(grid[:, :])
         grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
-        ax.plot(spec.x, spec.y, c='b')
+        ax.plot(spec.x, spec.y, c='black', lw=1.0)
+        ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+        ax.set_xlabel("Wavelength [" + str(spec.x.unit) + "]")
+        ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
+        ax.scatter(self.x, self.y, c='r', marker='+')
         #if (hasattr(self, '_conv')):
         #    ax.plot(self._conv.x, self._conv.y, c='r')        
         #if (hasattr(self, '_precont')):
         #    ax.plot(self._precont.x, self._precont.y, c='r',
         #            linestyle=':')        
         if (hasattr(self, '_cont')):
-            ax.plot(self._cont.x, self._cont.y, c='g')        
+            ax.plot(self._cont.x, self._cont.y, c='b', lw=1.0, linestyle=':')
         if (hasattr(self, '_unabs')):
             where = np.where(self._spec.y != self._unabs.y)
-            ax.plot(self._unabs.x[where], self._unabs.y[where], c='y',
+            ax.plot(self._unabs.x[where], self._unabs.y[where], c='y', lw=1.0,
                     linestyle=':')
         if (hasattr(self, '_norm')):
             where = np.where(self._spec.y != self._norm.y)
-            ax.plot(self._norm.x[where], self._norm.y[where], c='y',
+            ax.plot(self._norm.x[where], self._norm.y[where], c='y', lw=1.0,
                     linestyle=':')
         if (chunk is not None):
-            ax.plot(spec.x[chunk[1]], spec.y[chunk[1]], c='r')
+            ax.plot(spec.x[chunk[1]], spec.y[chunk[1]], c='black', lw=2.0)
             if (hasattr(self, '_voigt')):
                 where = np.where(self._spec.y != self._voigt.y)
                 ax.plot(self._voigt.x[where], self._voigt.y[where], c='g',
-                        linestyle=':')
-            if (hasattr(self, '_cont')):
-                where = np.where(self._spec.y != self._cont.y)
-                ax.plot(self._cont.x[where], self._cont.y[where], c='y')
-            if (hasattr(self, '_fit')):
-                where = np.where(self._spec.y != self._fit.y)
-                ax.plot(self._fit.x[where], self._fit.y[where], c='g')
-        ax.scatter(self.x, self.y, c='b')
+                        lw=1.0, linestyle=':')
         if (hasattr(self, '_cont')):
+            where = np.where(self._spec.y != self._cont.y)
+            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+        if (hasattr(self, '_fit')):
+            where = np.where(self._spec.y != self._fit.y)
+            ax.plot(self._fit.x[where], self._fit.y[where], c='g')
+        #if (hasattr(self, '_rem')):
+        #    where = np.where(self._spec.y != self._rem.y)
+        #    ax.plot(self._rem.x[where], self._rem.y[where], c='black',
+        #            linestyle=':')
+        #if (hasattr(self, '_cont')):
             #ax.scatter(self._extr.x, self._extr.y, c='g')
-            ax.scatter(self._clip_x, self._clip_y, c='r')        
+            #ax.scatter(self._clip_x, self._clip_y, c='r', marker='+')        
         if (group is not None):
-            ax.scatter(self.x[group[0]], self.y[group[0]], c='r')        
-            ax.scatter(self.x[group[1]], self.y[group[1]], c='g')        
+            #ax.scatter(self.x[group[0]], self.y[group[0]], c='g', marker='+',
+            #           s=100)        
+            ax.scatter(self.x[group[1]], self.y[group[1]], c='r', marker='+',
+                       s=100)        
         if (hasattr(self, '_fit')):
             fig.suptitle("Reduced chi-squared: %3.2f" % (self._redchi),
                          fontsize=10)
-        ax.set_xlabel("Wavelength [" + str(self._spec.x.unit) + "]")
-        ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
-
         
-        if block is False:
-            plt.ion()
-            plt.draw()
-        else:
+        #if block is False:
+        #    plt.ion()
+        #    plt.draw()
+        if block is True:
             plt.show()
 
+    def plot_N(self, N_fit=None, figsize=(4,4), block=True):
+        fig = plt.figure(figsize=figsize)
+        fig.canvas.set_window_title("Column densities")
+        grid = gs(1, 1)
+        ax = fig.add_subplot(grid[:, :])
+        grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.97])
+
+        if (N_fit is None):
+            N_fit = self._N_fit
+        n, bins, patches = ax.hist(np.log10(N_fit.value), 20)
+        if block is True:
+            plt.show()
+        
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
         
@@ -677,6 +810,7 @@ class Line(Spec1D):
             raise Exception("Parameter arrays must have the same length.")
         
         model = Model(self._spec, line=self, group=group, chunk=chunk)
+
         if (z == []):
             z = self.x[group[1]] / dict_wave['Ly_a'] - 1
             if (hasattr(self, '_norm')):
@@ -697,5 +831,10 @@ class Line(Spec1D):
         else:
             self._voigt.y[chunk[1]] = self._voigt.y[chunk[1]] \
                                       * self._unabs.y[chunk[1]].value
-        
+
+        self._z = dc(model._z)
+        self._N = dc(model._N)
+        self._b = dc(model._b)
+        self._btur = dc(model._btur)
+
         return voigt

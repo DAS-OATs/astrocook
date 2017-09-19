@@ -10,7 +10,7 @@ def main():
 
     # Input data
     name = 'J0940_CIV_1'  # Single CIV system 
-    name = 'J0940_CIV_2'  # Another single CIV system
+    #name = 'J0940_CIV_2'  # Another single CIV system
     #name = 'J0940_CIV_f'  # Whole chunk of CIV forest (time consuming)
 
     # Read the 1D spectrum

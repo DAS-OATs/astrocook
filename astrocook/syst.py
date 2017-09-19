@@ -519,7 +519,7 @@ class Syst(Line):
             else:
                 raise Exception("Continuum not found.")
             N = model.N_guess(cont, ion=self._flat.ion)
-            print(N)
+            #print(N)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s

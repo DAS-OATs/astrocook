@@ -13,8 +13,8 @@ def main():
     #name = 'J0940_Lya_1'    # Single Lya line complex
     #name = 'J0940_Lya_2'    # Another single Lya line complex
     #name = 'J0940_CIV_1'    # CIV system blindly fitted as Ly_a
-    name = 'J0940_Lya_f'    # Whole chunk of Lya forest (time consuming)
-    #name = 'B2126-15_Lya_f' # Another whole chunk of Lya forest
+    name = 'J0940_Lya_f_2'    # Whole chunk of Lya forest (time consuming)
+    name = 'B2126-15_Lya_f_7' # Another whole chunk of Lya forest
     #name = 'B1937_all' # A whole spectrum    
     
     # Read the 1D spectrum
@@ -34,7 +34,8 @@ def main():
     line_i = dc(line)
     x_arr = line_i.x
     group_check = 0
-    for l in range(6,7): #ltot):
+    #for l in range(0):
+    for l in range(ltot):
         
         print("Line %i of %i (%3.2f %s)..." \
               % (l + 1, ltot, x_arr[l].value, x_arr[l].unit),
@@ -76,7 +77,7 @@ def main():
             group, chunk = line.auto(x=x_arr[l])
     
             # Plot lines
-            print("close graph to continue.")
+            print("Close graph to continue.")
             line.plot(group, chunk)
 
     line.plot()
