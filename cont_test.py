@@ -1,4 +1,5 @@
 from astrocook import *
+from astropy import units as u
 from copy import deepcopy as dc
 import numpy as np
 
@@ -31,9 +32,9 @@ def main():
     #for l in range(ltot):
     N_fit = np.array([])
 
-    flux_corr = line.flux_corr()
+    flux_corr = line.corr_tau(N_thres=1e30 / u.cm**2)
     spec_rem = dc(spec)
-    for i in range(0,3):
+    for i in range(3):#ltot):
 
         N_argsel = N_argsort[-i-2:-1]
         pl = 's'                
@@ -58,7 +59,9 @@ def main():
             N_fit = np.append(N_fit, line_i._N_fit)
 
         spec_rem.y = line_i._rem.y
-        flux_corr = line_i.flux_corr()
+        N_thres = np.median(N_fit)
+        flux_corr = line_i.corr_tau(N_thres)
+        print(N_thres, flux_corr)
                    
         if (plot == True):
             print("Close graphs to continue.")

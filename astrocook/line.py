@@ -448,7 +448,68 @@ class Line(Spec1D):
             cont_corr = 1 + cont_rms / np.mean(self._cont.y.value)
         #print(cont_corr)
         return cont_corr
-            
+
+    def corr_tau(self, N_thres=None):
+
+        tau_norm = 0.0028
+        tau_index = 3.45
+        logN_1 = 12.0
+        logN_2 = 14.0
+        logN_3 = 18.0
+        logN_4 = 19.0
+        logN_index = -1.65
+        logN_thres = np.log(N_thres.value)
+        fact_0 = 1.0
+        fact_1 = 1e14 / np.log(1e14)
+        fact_2 = np.log(1e18) / np.log(1e14) * 1e5
+        if (logN_thres <= logN_1):
+            num = 0
+        elif ((logN_thres > logN_1) and (logN_thres <= logN_2)):
+            num = (pow(10, logN_thres * (2.0 + logN_index)) \
+                   - pow(10, logN_1 * (2.0 + logN_index))) / (2.0 + logN_index)
+        elif ((logN_thres > logN_2) and (logN_thres <= logN_3)): 
+            num = (pow(10, logN_2 * (2.0 + logN_index)) \
+                   - pow(10, logN_1 * (2.0 + logN_index))) / (2.0 + logN_index) 
+            num = num + fact_1 \
+                  * (pow(10, logN_thres * (1.0 + logN_index))) \
+                  /(1.0 + logN_index) \
+                  * (np.log(pow(10, logN_thres)) - 1.0 / (1.0 + logN_index))
+            num = num - fact_1 \
+                  * (pow(10, logN_2 * (1.0 + logN_index))) \
+                  / (1.0 + logN_index) \
+                  * (np.log(pow(10, logN_2)) - 1.0 / (1.0 + logN_index))
+        elif ((logN_thres > logN_3) and (logN_thres <= logN_4)): 
+            num = (pow(10, logN_2 * (2.0 + logN_index)) \
+                   - pow(10, logN_1 * (2.0 + logN_index))) / (2.0 + logN_index)
+            num = num + fact_1 \
+                  * (pow(10, logN_3 * (1.0 + logN_index))) \
+                  / (1.0 + logN_index) \
+                  * (np.log(pow(10, logN_3)) - 1.0 / (1.0 + logN_index))
+            num = num - fact_1 \
+                  * (pow(10, logN_2 * (1.0 + logN_index))) \
+                  / (1.0 + logN_index) \
+                  * (np.log(pow(10, logN_2)) - 1.0 / (1.0 + logN_index))
+            num = num + fact_2 \
+                  * (pow(10, logN_thres * (1.5 + logN_index)) \
+                  - pow(10, logN_3   * (1.5 + logN_index))) / (1.5 + logN_index)
+        
+        if (logN_thres > logN_4): 
+            num = 1
+        
+        den = (pow(10, logN_2 * (2.0 + logN_index)) \
+               - pow(10, logN_1 * (2.0 + logN_index))) / (2.0 + logN_index)
+        den = den + fact_1 \
+              * (pow(10, logN_3 * (1.0 + logN_index))) / (1.0 + logN_index) \
+              * (np.log(pow(10, logN_3)) - 1.0 / (1.0 + logN_index))
+        den = den - fact_1 \
+              * (pow(10, logN_2 * (1.0 + logN_index))) / (1.0 + logN_index) \
+              * (np.log(pow(10, logN_2)) - 1.0 / (1.0 + logN_index))
+
+        z = self._spec.x / dict_wave['Ly_a'] - 1 
+        flux_corr = np.exp(tau_norm * pow(1+z, tau_index) * num/den)
+        return flux_corr
+        
+
     def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0,
              hwidth=2):
         """ Find lines in a spectrum """
@@ -602,16 +663,6 @@ class Line(Spec1D):
 
         return fit
 
-    def flux_corr(self, N_fit=None):
-
-        tau_norm = 0.0028
-        tau_index = 3.45
-        num = 1
-        den = 1
-        z = self._spec.x / dict_wave['Ly_a'] - 1 
-        ret = np.exp(tau_norm * pow(1+z, tau_index) * num/den)
-        return ret
-        
     def group(self, x=None, line=None):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
