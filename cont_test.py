@@ -59,7 +59,7 @@ def main():
             N_fit = np.append(N_fit, line_i._N_fit)
 
         spec_rem.y = line_i._rem.y
-        N_thres = np.median(N_fit)
+        N_thres = np.median(N_fit) * N_fit.unit
         flux_corr = line_i.corr_tau(N_thres)
         print(N_thres, flux_corr)
                    
