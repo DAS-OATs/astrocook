@@ -12,19 +12,22 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
 # All wavelength must have the same unit!
 dict_wave = {'Ly_a': 121.567 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
-             'CIV_1550': 155.0781 * u.nm}
+             'CIV_1550': 155.0781 * u.nm,
+             'neb': 1.0 * u.nm}
 
 dict_f = {'Ly_a': 0.416,
           'CIV_1548': 0.1899,
-          'CIV_1550': 0.09475} 
+          'CIV_1550': 0.09475,
+          'neb': 0.1} 
 
 dict_gamma = {'Ly_a': 6.265e8,
               'CIV_1548': 2.643e8,
-              'CIV_1550': 2.628e8} 
+              'CIV_1550': 2.628e8,
+              'neb': 5e8} 
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4
-voigt_def = {'N': 1e14, 'b': 15.0, 'btur': 0.0}
+voigt_def = {'N': 1e14, 'b': 5.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
 voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 

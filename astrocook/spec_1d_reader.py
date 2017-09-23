@@ -117,15 +117,31 @@ class Spec1DReader:
             meta[key] = val
 
         data = hdulist[1].data
-        x = data.field('WAVEL')
-        dx = data.field('PIXSIZE')
-        y = data.field('FLUX')            
-        dy = data.field('FLUXERR')
+        try:
+            x = data.field('WAVEL')
+        except:
+            x = data.field('wave') * 0.1
+        try:
+            dx = data.field('PIXSIZE')
+        except:
+            dx = data.field('wpix') * 0.1
+        try:
+            y = data.field('FLUX')
+            y_name = 'FLUX'
+        except:
+            y = data.field('flux')
+            y_name = 'flux'
+        try:
+            dy = data.field('FLUXERR')
+            dy_name = 'FLUXERR'
+        except:
+            dy = data.field('sigma')
+            dy_name = 'sigma'
         resol = [60000.] * len(data)
         resol_e = [1000.] * len(data)
 
-        c1 = np.argwhere(hdulist[1].data['FLUX'] > 0)
-        c2 = np.argwhere(hdulist[1].data['FLUXERR'] > 0)
+        c1 = np.argwhere(hdulist[1].data[y_name] > 0)
+        c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
         igood = np.intersect1d(c1, c2)
 
         good = np.repeat(-1, len(x))

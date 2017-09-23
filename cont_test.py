@@ -6,7 +6,7 @@ import numpy as np
 def main():
 
     plot = True
-    name = 'J0940_Lya_f_2'
+    name = 'J0940_Lya_f'
     #name = 'B2126-15_Lya_f_2' 
     
     # Read the 1D spectrum

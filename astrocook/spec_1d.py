@@ -252,7 +252,7 @@ class Spec1D():
     def yunit(self):
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
-
+    
     def cont(self, smooth=20.0, flux_corr=1.0):
         self._precont = dc(self)
         range_x = np.max(self.x) - np.min(self.x)
@@ -382,6 +382,32 @@ class Spec1D():
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
     
+    def extract(self, xmin=None, xmax=None, forest=[], zem=[], prox_vel=[]):
+        """ Extract a region of a spectrum """
+        if ((forest == []) != (zem == [])):
+            raise Exception("Forest name and emission redshift must be "
+                            "provided together.")
+
+        if ((forest != []) and (prox_vel == [])):  
+            prox_vel = 7e3 * (u.km/u.s)
+        if (forest == 'CIV'):
+            xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
+            xmax = dict_wave['CIV_1550'] * (1 + zem - prox_vel / c)
+
+        reg = dc(self)
+
+        lt_xmin = []
+        gt_xmax = []        
+        if (xmin is not None):
+            lt_xmin = np.where(reg.x < xmin)[0]
+        if (xmax is not None):
+            gt_xmax = np.where(reg.x > xmax)[0]
+
+        where = np.hstack((lt_xmin, gt_xmax))
+        reg._t.remove_rows(where)
+
+        return reg
+
     def find_extrema(self):
         """Find the extrema in a spectrum and save them as a spectrum"""
     
@@ -473,7 +499,10 @@ class Spec1D():
         ax.plot(spec.x, spec.dy, c='r', lw=1.0)
         if (hasattr(self, '_cont')):
             where = np.where(self.y != self._cont.y)
+            print(self.y, self._cont.y)
+            print(where)
             ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+            ax.plot(self._cont.x, self._cont.y, c='y')
 
         #if block is False:
         #    plt.ion()

@@ -26,7 +26,7 @@ def main():
     # Create a Syst object from the lines
     syst = Syst(line, spec, ion='CIV')
     syst._resol = 45000
-    
+
     # Estimate the continuum
     syst.cont()
 
@@ -38,7 +38,6 @@ def main():
 
     # Flatten redshifts
     syst.flatten_z()
-    
     ltot = len(syst.t)
     syst_i = dc(syst)
     x_arr = syst_i.x

@@ -37,9 +37,9 @@ class Line(Spec1D):
         """ Constructor for the Line class """
         
         # Exceptions
-        if ((x is []) != (y is [])):
+        if ((x == []) != (y == [])):
             raise Exception("X and Y must be provided together.")
-        if ((xmin is []) != (xmax is [])):
+        if ((xmin == []) != (xmax == [])):
             raise Exception("XMIN and XMAX must be provided together.")
         sumlen = len(x) + len(y) + len(xmin) + len(xmax) + len(dy)
         if ((x != []) and (sumlen % len(x) != 0)):
@@ -50,11 +50,14 @@ class Line(Spec1D):
         # Warnings
         if ((spec is None) and (x is [])):
             warnings.warn("No spectrum or data provided.")
-        
+
         # Spectrum
         self._spec = None
         if (spec is not None):
             self._spec = dc(spec)
+            if (hasattr(spec, '_cont')):
+                self._precont = dc(spec._precont)
+                self._cont = dc(spec._cont)            
         
         # Line list
         data = ()
@@ -224,17 +227,16 @@ class Line(Spec1D):
         print("")
         #print(" Chi-squared:", end=" ", flush=True)
         cont_corr = 1.0
-        vary = True
+        vary = False
         while (stop == False):
             i += 1
             group = self.group(line=line)            
             chunk = self.chunk(line=line)
-
             # Let the continuum vary only after a given iteration
-            if (i <= 0):
-                vary = False
-            else:
-                vary = True
+            #if (i <= 0):
+            #    vary = False
+            #else:
+            #    vary = True
                 
             norm_guess = self.norm(group, chunk, vary=vary)
             voigt_guess = self.voigt(group, chunk)
@@ -246,15 +248,16 @@ class Line(Spec1D):
             self._resid_cont = dc(self._spec)
             self._resid_cont.y = self._spec.y - self._cont.y * self._spec.y.unit
             
-            #print("(%i,%i) %3.2f, %3.2f;" \
-            #      % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
+            print("(%i,%i) %3.2f, %3.2f;" \
+                  % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
                    or (i==10)
+            #print(self._redchi, redchi_thr, self._aic, aic_old, stop)
 
             aic_old = self._aic
             redchi_old = self._redchi            
-            if (self._redchi < redchi_best):
+            if (self._redchi < redchi_best or 1==1):
                 group_best = group
                 chunk_best = chunk
                 fitobj_best = dc(fit)
@@ -271,9 +274,11 @@ class Line(Spec1D):
 
             # When you first let the continuum vary, do not add lines
             #if ((stop == False) and (i != 10)):
+                #print(self._t)
                 cont_corr = self.corr_resid(group, cont_corr)
+                #print(self._t)
+                #print(self._flat.t)
                 
-            
         self._t = dc(t_best)
         self._norm = dc(norm_best)
         self._voigt = dc(voigt_best)
@@ -282,6 +287,7 @@ class Line(Spec1D):
         self._redchi = redchi_best
         self._aic = aic_best
         fit = fitobj_best
+        print(fit.fit_report())
         print("best chi-squared (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
               end=" ", flush=True)
         
@@ -704,6 +710,7 @@ class Line(Spec1D):
             norm[1], x=self._norm.x[chunk[1]].value) \
             * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
 
+        #print(np.mean(self._norm.y[chunk[1]]))
         return norm 
     
     def plot2(self, group=None, chunk=None, figsize=(10,4), block=True,
@@ -776,7 +783,7 @@ class Line(Spec1D):
         #    ax.plot(self._precont.x, self._precont.y, c='r',
         #            linestyle=':')        
         if (hasattr(self, '_cont')):
-            ax.plot(self._cont.x, self._cont.y, c='b', lw=1.0, linestyle=':')
+            ax.plot(self._cont.x, self._cont.y, c='r', lw=1.0, linestyle=':')
         if (hasattr(self, '_unabs')):
             where = np.where(self._spec.y != self._unabs.y)
             ax.plot(self._unabs.x[where], self._unabs.y[where], c='y', lw=1.0,
