@@ -83,23 +83,32 @@ class Model():
         syst = self._syst.t
         if (self._group is not None):
             syst = self._syst.t[self._group[1]]
-        
+
         for r in syst: #self._syst.t[self._group[1]]:
             if (hasattr(self._syst, '_ion')):
                 try:
                     ion = r['ION'][0]
                 except:
-                    ion = r['ION']                    
+                    ion = r['ION'] 
+                    y = r['Y']                   
+                x = r['X']
             else:
                 ion = 'Ly_a'
-            norm = np.mean(np.asarray(r['Y']) \
-                           / np.interp(r['X'], self._spec.x, unabs.y))
-            #norm = norm * 
+            try:
+                y = r['Y'][0]
+            except:
+                y = r['Y']                   
+            x = r['X']
+
+            cont = dc(unabs)
+            cont.to_z([ion])
+            norm = np.mean(y / np.interp(x, cont.x, cont.y))
             voigt_arr = voigt_func(dict_wave[ion].value, 0,
                                    np.power(10, logN_arr),
                                    voigt_def['b'],
                                    voigt_def['btur'], ion=ion)
             logN_interp = np.interp(norm, voigt_arr, logN_arr)
+            #print(norm, logN_arr, voigt_arr, logN_interp)
             if (logN_interp > 14.5):
                 logN_interp = 14.5
             if logN == []:
@@ -295,11 +304,12 @@ class Model():
                                     max=voigt_max['b'])#, expr=b_expr)
                 param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
                                        max=voigt_max['btur'])#, expr=btur_expr)
-
             if (c == 1):
                 ret = (model, param)
             else:
                 ret += (model, param)
+
+        #ret = (model, param)
 
         if (hasattr(self._syst, 'ion')):
             ret += (ret, expr_dict)

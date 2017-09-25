@@ -339,7 +339,6 @@ class Syst(Line):
                                      x=self._spec.x[chunk_sum].value,
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/dy)
-                #print(fit.fit_report())
                 #print('tot', np.sum(chunk_sum))
                 cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
                 self._fit.y[chunk_sum] = fit.best_fit \
@@ -500,6 +499,20 @@ class Syst(Line):
                     ion=ion_coinc, yunit=y.unit)
         self.__dict__.update(syst.__dict__)
 
+    def norm(self, group, chunk, value=1.0, vary=False):
+        """ Normalize continuum """
+
+        model = Model(self._spec, line=self, group=group, chunk=chunk) 
+        norm = model.norm(value, vary)
+        if (hasattr(self, '_norm') == False):
+            self._norm = dc(self._spec)
+        for c in range(1, len(chunk)):
+            self._norm.y[chunk[c]] = norm[2*(c-1)].eval(
+                norm[2*c-1], x=self._norm.x[chunk[c]].value) \
+                * self._cont.y[chunk[c]] * self._norm.y[chunk[c]].unit 
+
+        #print(np.mean(self._norm.y[chunk[1]]))
+        return norm 
     def plot(self, group=None, chunk=None, figsize=(10,4), split=False,
              block=True, **kwargs):
         ion = np.unique(self._flat.ion)
@@ -535,12 +548,12 @@ class Syst(Line):
                 line.to_z([ion[p]])
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
                 ax.plot(spec.x, spec.dy, c='r', lw=1.0)
-                if (hasattr(self, '_unabs')):
-                    unabs = dc(self._unabs)
-                    unabs.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(unabs.x[chunk[c]], unabs.y[chunk[c]], c='y',
-                                lw=1.0, linestyle=':')
+                #if (hasattr(self, '_unabs')):
+                #    unabs = dc(self._unabs)
+                #    unabs.to_z([ion[p]])
+                #    for c in range(1, len(chunk)):
+                #        ax.plot(unabs.x[chunk[c]], unabs.y[chunk[c]], c='y',
+                #                lw=1.0, linestyle=':')
                 if (hasattr(self, '_norm')):
                     norm = dc(self._norm)
                     norm.to_z([ion[p]])
@@ -661,7 +674,11 @@ class Syst(Line):
 
         ion = np.unique(self._flat.ion)
         voigt = model.voigt(z, N, b, btur, ion)
+        #print(voigt)
         for c in range(1, len(chunk)):
+            #print(len(voigt))
+            #print(c, voigt[2*(c-1)])
+            #voigt[2*c-1].pretty_print()
             self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
                 * self._voigt.y.unit
@@ -671,4 +688,5 @@ class Syst(Line):
             else:
                 self._voigt.y[chunk[c]] = self._voigt.y[chunk[c]] \
                                           * self._unabs.y[chunk[c]].value
+            self._voigt2= dc(self._voigt)
         return voigt

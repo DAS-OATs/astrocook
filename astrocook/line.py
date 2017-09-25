@@ -287,7 +287,6 @@ class Line(Spec1D):
         self._redchi = redchi_best
         self._aic = aic_best
         fit = fitobj_best
-        print(fit.fit_report())
         print("best chi-squared (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
               end=" ", flush=True)
         
