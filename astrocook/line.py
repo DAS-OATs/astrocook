@@ -276,8 +276,8 @@ class Line(Spec1D):
             #if ((stop == False) and (i != 10)):
                 #print(self._t)
                 cont_corr = self.corr_resid(group, cont_corr)
+                #print(self._t[group[1]])
                 #print(self._t)
-                #print(self._flat.t)
                 
         self._t = dc(t_best)
         self._norm = dc(norm_best)

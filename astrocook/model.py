@@ -23,6 +23,10 @@ def linear_step_func(x, xmin, xmax, slope, norm):
     ret[where] = norm + (x[where] - np.mean(x[where])) * slope
     return ret
 
+def norm_func(x, norm):
+    ret = norm
+    return ret
+
 def norm_step_func(x, xmin, xmax, norm):
     where = np.where(np.logical_and(x>=xmin, x<=xmax))[0]
     ret = x * 0.0
@@ -122,12 +126,15 @@ class Model():
 
     def norm(self, value=1.0, vary=False):
 
-        if (self._chunk is None):
-            raise Exception("Chunk must be provided.")
+        #if (self._chunk is None):
+        #    raise Exception("Chunk must be provided.")
 
         if (self._cont is None):
             raise Exception("Continuum be provided.")
 
+
+    
+        """
         for c in range(1, len(self._chunk)):
             pref = 'cont' + str(c) + '_'
             model = lmm(norm_step_func, prefix=pref)
@@ -148,6 +155,21 @@ class Model():
                 ret = (model, param)
             else:
                 ret += (model, param)
+        """
+
+        pref = 'cont_'
+        model = lmm(norm_func, prefix=pref)
+        param = model.make_params()
+        cont = self._cont.y.value
+        norm = value #np.mean(cont)
+            
+        #param[pref+'chunk_sum'].set(chunk_sum, vary=False)
+        if (vary == False):
+            param[pref+'norm'].set(norm, vary=False)
+        else:
+            param[pref+'norm'].set(norm, min=0.95)#, max=1.05, min=0.95)
+
+        ret = (model, param)
 
         return ret
             
@@ -158,6 +180,7 @@ class Model():
             raise Exception("Chunk must be provided.")
 
         for c in range(1, len(self._chunk)):
+            """
             pref = 'psf' + str(c) + '_'
             model = lmm(gaussian, prefix=pref)
             param = model.make_params()
@@ -175,7 +198,24 @@ class Model():
                 ret = (model, param)
             else:
                 ret += (model, param)
-
+            """
+            if (c == 1):
+                chunk_sum = dc(self._chunk[c])
+            else: 
+                chunk_sum += self._chunk[c]    
+                   
+        pref = 'psf_'
+        model = lmm(gaussian, prefix=pref)
+        param = model.make_params()
+        mean = np.mean(self._spec.x[chunk_sum].value)
+        center = mean
+        sigma = mean / resol * 4.246609001e-1  # Factor to convert FWHM into
+                                                   # standard deviation
+        param[pref+'amplitude'].set(1.0, vary=False)
+        param[pref+'center'].set(center, vary=False)
+        param[pref+'sigma'].set(sigma, vary=False)        
+        
+        ret = (model, param)    
         return ret
 
     def unabs(self):
@@ -261,10 +301,13 @@ class Model():
         pref_list = []
         expr_dict = {}
         i = 0
+        
+        #"""
         for c in range(1, len(self._chunk)):
             for l in range(len(self._syst.t[self._group[1]])):
                 pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
                        + '_'
+                #print(c, l, pref, self._syst.t[self._group[1]][l])
                 if (z[l] in z_list):
                     expr = np.asarray(pref_list)[
                         np.where(np.asarray(z_list)==z[l])][0]
@@ -310,8 +353,70 @@ class Model():
                 ret += (model, param)
 
         #ret = (model, param)
+        #"""
+        z_list = []
+        pref_list = []
+        expr_dict = {}
+        mult_old = ''
+        i = 0
+        for l in range(len(self._syst.t[self._group[1]])):
+            ion = np.sort(self._syst.ion[self._group[1]][l])
+            for c in range(len(ion)):
+                mult = ion[c].split('_')[0]
+                pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
+                       + '_'
+                #print(l, c)
+                #print(c, l, pref, self._syst.t[self._group[1]][l])
+                if (z[l] in z_list):
+                    expr = np.asarray(pref_list)[
+                        np.where(np.asarray(z_list)==z[l])][0]
+                    i += 1
+                    pref = pref + str(i) + '_'
+                    z_expr = expr + 'z'
+                    N_expr = expr + 'N'
+                    b_expr = expr + 'b'
+                    btur_expr = expr + 'btur'
+                else:
+                    z_list.append(z[l])
+                    pref_list.append(pref)                    
+                    z_expr = ''
+                    N_expr = ''
+                    b_expr = ''
+                    btur_expr = ''
+                expr_dict[pref+'z'] = z_expr 
+                expr_dict[pref+'N'] = N_expr 
+                expr_dict[pref+'b'] = b_expr 
+                expr_dict[pref+'btur'] = btur_expr 
+                if (type(ion) is str):
+                    model_l = lmm(voigt_func, prefix=pref, ion=ion)
+                else:
+                    model_l = lmm(voigt_func, prefix=pref, ion=ion[c-1])
+                if ((l == 0) and (c == 0)):
+                    model = model_l
+                    param = model_l.make_params()
+                else:
+                    model *= model_l
+                    param.update(model_l.make_params())
+                param[pref+'z'].set(z[l].value, min=z[l].value/z_fact,
+                                    max=z[l].value*z_fact)#, expr=str(z_expr))
+                param[pref+'N'].set(N[l].value, min=voigt_min['N'],
+                                    max=voigt_max['N'])#, expr=N_expr)
+                param[pref+'b'].set(b[l].value, min=voigt_min['b'],
+                                    max=voigt_max['b'])#, expr=b_expr)
+                param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
+                                       max=voigt_max['btur'])#, expr=btur_expr)
+                
+                if (mult == mult_old):
+                    for k in expr_dict:
+                        param[k].set(expr=expr_dict[k])    
+                #param.pretty_print()
+                mult_old = mult
+
+        ret2 = (model, param)
+
 
         if (hasattr(self._syst, 'ion')):
             ret += (ret, expr_dict)
 
-        return ret
+
+        return ret2

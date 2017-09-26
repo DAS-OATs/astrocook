@@ -174,6 +174,9 @@ class Syst(Line):
         z_neb = x / dict_wave[neb] - 1.0
         zmin_neb = xmin_ion / dict_wave[neb] - 1.0
         zmax_neb = xmax_ion / dict_wave[neb] - 1.0
+        print(xmin_ion, xmax_ion)
+        print(zmin_ion, zmax_ion)
+        
         where = abs(z_ion-self.x.value) == abs(z_ion-self.x.value).min()
         ion = self.ion[where][0]
         y_ion = np.empty(len(ion))
@@ -189,11 +192,13 @@ class Syst(Line):
         dy_neb = np.interp(z_neb, spec.x, spec.dy)
         xmin_neb = x
 
-        self._t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, ion])
-        #self.flatten_z()
-        #self._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, neb])
+        #self._t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, ion])
+        self.flatten_z()
+        #print(z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, neb)
+        self._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, neb])
         #print(self._flat.t)
-        #self.deflatten_z()
+        self.deflatten_z()
+        print(self._t)
         #sys.exit()
         
         self.t.sort('X')  # This gives an annoying warning
@@ -284,17 +289,21 @@ class Syst(Line):
                 dy = (self._flat.dy[l].value,)                
                 ion = (self._flat.ion[l],)
             else:
+                z = self._flat.x[l]
                 y = y + (self._flat.y[l].value,)
                 dy = dy + (self._flat.dy[l].value,)
                 ion = ion + (self._flat.ion[l],)
-                end_row = True
             z = self._flat.x[l]
+            end_row = True
+            #print(self._flat.x[l])
+            #print(z_deflat)
         z_deflat.append(z)
         y_deflat.append(y)
         zmin_deflat.append(zmin)
         zmax_deflat.append(zmax)
         dy_deflat.append(dy)
         ion_deflat.append(ion)
+        
         syst = Syst(self.line, self.spec, x=z_deflat, y=y_deflat,
                     xmin=zmin_deflat, xmax=zmax_deflat, dy=dy_deflat,
                     ion=ion_deflat, yunit=yunit)
@@ -302,25 +311,46 @@ class Syst(Line):
     
     def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=1000):
 
+        """
         for c in range(1, len(chunk)):
             #print(np.sum(chunk[c]))
             if (c == 1):
-                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                #model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                model = model * voigt_guess[2*(c-1)]
                 conv_model = lmc(model, psf[2*(c-1)], convolve)
-                param = unabs_guess[2*c-1]
+                #param = unabs_guess[2*c-1]
                 param.update(voigt_guess[2*c-1])
+                #param = voigt_guess[2*c-1]
                 param.update(psf[2*c-1])
                 chunk_sum = dc(chunk[c])
             else:
-                model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
-                conv_model += lmc(model, psf[2*(c-1)], convolve)
-                param.update(unabs_guess[2*c-1])
+                #model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
+                model = voigt_guess[2*(c-1)]
+                #conv_model += lmc(model, psf[2*(c-1)], convolve)
+                conv_model *= lmc(model, psf[2*(c-1)], convolve)
+                #param.update(unabs_guess[2*c-1])
                 param.update(voigt_guess[2*c-1])
                 param.update(psf[2*c-1])
                 chunk_sum += chunk[c]
-        expr_dict = voigt_guess[-1]
-        for k in expr_dict:
-            param[k].set(expr=expr_dict[k])
+        """
+        model = unabs_guess[0] * voigt_guess[0]
+        param = unabs_guess[1]
+        param.update(voigt_guess[1])
+        for c in range(1, len(chunk)):
+        #    model *= voigt_guess[2*(c-1)]
+        #    param.update(voigt_guess[2*c-1]) 
+        #    #param.pretty_print()
+            if (c == 1):
+                chunk_sum = dc(chunk[c])
+            else:
+                chunk_sum += chunk[c]
+        #conv_model = lmc(model, psf[0], convolve)
+        #param.update(psf[1])
+        conv_model = model
+         
+        #expr_dict = voigt_guess[-1]
+        #for k in expr_dict:
+        #    param[k].set(expr=expr_dict[k])
 
         if (hasattr(self, '_cont') == False):
             self._cont = dc(self._spec)            
@@ -335,27 +365,35 @@ class Syst(Line):
                 y = self._spec.y[chunk_sum] / self._cont.y[chunk_sum]
                 dy = self._spec.dy[chunk_sum].value \
                      / self._cont.y[chunk_sum].value
+                param.pretty_print()
                 fit = conv_model.fit(y.value, param,
                                      x=self._spec.x[chunk_sum].value,
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/dy)
+                print(fit.fit_report())
                 #print('tot', np.sum(chunk_sum))
-                cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
+                comp = fit.eval_components(x=self._spec.x[chunk_sum].value)
                 self._fit.y[chunk_sum] = fit.best_fit \
                                          * self._cont.y[chunk_sum] \
                                          * self._fit.y[chunk_sum].unit
-                #self._cont.y[chunk_sum] = cont['cont1_'] \
+                #self._cont.y[chunk_sum] = comp['cont1_'] \
                 #                          * self._cont.y[chunk_sum].value
                 cont_temp = dc(self._cont)
                 for c in range(1, len(chunk)):
-                    #print(cont['cont' + str(c) + '_'])
+                    #print(comp['cont' + str(c) + '_'])
+                    """
                     if (c == 1):
-                        cont_temp.y[chunk_sum] = cont['cont' + str(c) + '_'] \
-                                                * self._cont.y[chunk_sum].value
+                        #cont_temp.y[chunk_sum] = comp['cont' + str(c) + '_']
+                        cont_temp.y[chunk_sum] = comp['cont_'] \
+                                                 * self._cont.y[chunk_sum].value
                     else:
-                        cont_temp.y[chunk_sum] += cont['cont' + str(c) + '_'] \
-                                                * self._cont.y[chunk_sum].value
+                        #cont_temp.y[chunk_sum] += comp['cont' + str(c) + '_'] 
+                        cont_temp.y[chunk_sum] += comp['cont_'] \
+                                                 * self._cont.y[chunk_sum].value
+                    """
                     #print(c, np.mean(cont_temp.y[chunk_sum]))
+                cont_temp.y[chunk_sum] = comp['cont_'] \
+                                         * self._cont.y[chunk_sum].value
                 self._cont = cont_temp
                 
             else:
@@ -365,6 +403,7 @@ class Syst(Line):
                                      weights=1/self._spec.dy[chunk_sum].value)
 
                 cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
+                """
                 for c in range(1, len(chunk)):
                     if (c == 1):
                         self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
@@ -372,6 +411,9 @@ class Syst(Line):
                     else:
                         self._cont.y[chunk_sum] += cont['cont' + str(c) + '_'] \
                                                 * self._cont.y[chunk_sum].unit
+                """
+                self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
+                                          * self._cont.y[chunk_sum].unit
                 self._fit.y[chunk_sum] = fit.best_fit \
                                          * self._fit.y[chunk_sum].unit
             self._redchi = fit.redchi
@@ -507,9 +549,16 @@ class Syst(Line):
         if (hasattr(self, '_norm') == False):
             self._norm = dc(self._spec)
         for c in range(1, len(chunk)):
-            self._norm.y[chunk[c]] = norm[2*(c-1)].eval(
-                norm[2*c-1], x=self._norm.x[chunk[c]].value) \
-                * self._cont.y[chunk[c]] * self._norm.y[chunk[c]].unit 
+            #self._norm.y[chunk[c]] = norm[2*(c-1)].eval(
+            #    norm[2*c-1], x=self._norm.x[chunk[c]].value) \
+            #    * self._cont.y[chunk[c]] * self._norm.y[chunk[c]].unit 
+            if (c == 1):
+                chunk_sum = dc(chunk[c])
+            else: 
+                chunk_sum += chunk[c]
+        self._norm.y[chunk_sum] = norm[0].eval(
+            norm[1], x=self._norm.x[chunk_sum].value) \
+            * self._cont.y[chunk_sum] * self._norm.y[chunk_sum].unit 
 
         #print(np.mean(self._norm.y[chunk[1]]))
         return norm 
@@ -526,10 +575,10 @@ class Syst(Line):
             zmin = np.min(self.xmin)
             zmax = np.max(self.xmax)
         if split == True:
-            figsize = (7,6)
+            #figsize = (7,6)
             row = min(n,4)
             col = int(np.ceil(n/4))
-            figsize = (col*6, n*3.5)
+            figsize = (col*6, n*2.5)
             fig = plt.figure(figsize=figsize)
             fig.canvas.set_window_title("System")
             grid = gs(row,col)
@@ -679,6 +728,7 @@ class Syst(Line):
             #print(len(voigt))
             #print(c, voigt[2*(c-1)])
             #voigt[2*c-1].pretty_print()
+            """
             self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
                 * self._voigt.y.unit
@@ -688,5 +738,17 @@ class Syst(Line):
             else:
                 self._voigt.y[chunk[c]] = self._voigt.y[chunk[c]] \
                                           * self._unabs.y[chunk[c]].value
-            self._voigt2= dc(self._voigt)
+            """
+            if (c == 1):
+                chunk_sum = dc(chunk[c])
+            else: 
+                chunk_sum += chunk[c]
+        self._voigt.y[chunk_sum] = voigt[0].eval(voigt[1], 
+            x=self._voigt.x[chunk_sum].value) * self._voigt.y.unit
+        if (hasattr(self, '_norm')):
+            self._voigt.y[chunk_sum] = self._voigt.y[chunk_sum] \
+                                       * self._norm.y[chunk_sum].value
+        else:
+            self._voigt.y[chunk_sum] = self._voigt.y[chunk_sum] \
+                                       * self._unabs.y[chunk_sum].value    
         return voigt
