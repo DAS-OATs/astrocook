@@ -152,33 +152,33 @@ class Syst(Line):
 
         neb = 'neb'
         
-        zmin_ion = np.min(self.xmin[group[1]])
-        zmax_ion = np.max(self.xmax[group[1]])
         where = self._chunk_sum
         resid_norm = self._resid_fit.y.value * 0.0
         resid_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
         x = self._resid_fit.x[np.argmin(resid_norm)]
+        y = np.interp(x.value, self._spec.x, self._spec.y) * self._spec.yunit
+        dy = np.interp(x.value, self._spec.x, self._spec.dy) * self._spec.yunit
+        
         ion_arr = np.unique(self._flat.ion)
         n = len(ion_arr)
         z_arr = np.empty(n)        
-        xmin_ion = float('inf') * u.nm
-        xmax_ion = 0 * u.nm
+        z_cen = np.empty(n)        
+
+        #xmin_ion = float('inf') * u.nm
+        #xmax_ion = 0 * u.nm
+        
         for p in range(n):
             z_arr[p] = x / dict_wave[ion_arr[p]] - 1.0
-            xmin_ion = min(xmin_ion, (1 + zmin_ion) * dict_wave[ion_arr[p]])
-            xmax_ion = max(xmax_ion, (1 + zmax_ion) * dict_wave[ion_arr[p]])
-        #print(xmin_ion, xmax_ion)
-        where = abs(z_arr-np.mean([zmin_ion, zmax_ion])) \
-                == abs(z_arr-np.mean([zmin_ion, zmax_ion])).min()
+            tab = Table(self.t[group[1]][ion_arr[p] in 'ION'])
+            z_cen[p] = tab['X']
+
+        where = (abs(z_arr-z_cen) == abs(z_arr-z_cen).min())
         z_ion = z_arr[where][0]
-        z_neb = x / dict_wave[neb] - 1.0
-        zmin_neb = xmin_ion / dict_wave[neb] - 1.0
-        zmax_neb = xmax_ion / dict_wave[neb] - 1.0
-        print(xmin_ion, xmax_ion)
-        print(zmin_ion, zmax_ion)
         
-        where = abs(z_ion-self.x.value) == abs(z_ion-self.x.value).min()
-        ion = self.ion[where][0]
+        ion_where = (abs(z_ion-self.x) == abs(z_ion-self.x).min())
+        ion = self.ion[ion_where][0]
+        zmin_ion = self.xmin[ion_where] 
+        zmax_ion = self.xmax[ion_where]
         y_ion = np.empty(len(ion))
         dy_ion = np.empty(len(ion))        
         for i in range(len(ion)):
@@ -186,21 +186,33 @@ class Syst(Line):
             spec.to_z([ion[i]])
             y_ion[i] = np.interp(z_ion, spec.x, spec.y)
             dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
+
+
+        z_neb = x / dict_wave[neb] - 1.0
+        line = dc(self._line)
+        line.to_z([neb])
+        neb_where = abs(z_neb-line.x) == abs(z_neb-line.x).min()
+        zmin_neb = line.xmin[neb_where] 
+        zmax_neb = line.xmax[neb_where]
         spec = dc(self._spec)
         spec.to_z([neb])
-        y_neb = np.interp(z_neb, spec.x, spec.y)
-        dy_neb = np.interp(z_neb, spec.x, spec.dy)
-        xmin_neb = x
+        y_neb = np.interp(x.value, self._spec.x, self._spec.y) \
+                * self._spec.yunit
+        dy_neb = np.interp(x.value, self._spec.x, self._spec.dy) \
+                 * self._spec.yunit
 
-        #self._t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, ion])
-        self.flatten_z()
-        #print(z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, neb)
-        self._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, neb])
-        #print(self._flat.t)
-        self.deflatten_z()
-        print(self._t)
-        #sys.exit()
-        
+        self._noneb = dc(self)
+        self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
+                               ion])
+
+        self._neb = dc(self)
+        #self._neb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
+        #                     ion])
+        self._neb.flatten_z()
+        self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, 
+                                   neb])
+        self._neb.deflatten_z()
+                
         self.t.sort('X')  # This gives an annoying warning
 
         return cont_corr
@@ -222,23 +234,18 @@ class Syst(Line):
         n = len(ion)
         iter = range(len(self._t))
         ret = (line,)
-        #print(self.t)
         for p in range(n):
             sel = self._spec.t['X'] < 0.0
             spec = dc(self._spec)
             spec.to_z([ion[p]])
-            #print(self.t[self.group(line=line)[1]])
             for row in self.t[self.group(line=line)[1]]:
-                #print(row['XMIN'], row['XMAX'])
                 sel = np.logical_or(sel, np.logical_and(
                     spec.t['X'] >= row['XMIN'],
                     spec.t['X'] <= row['XMAX']))
             if (np.sum(sel) % 2 == 0):
                 sel[np.argmax(sel)] = 0
-
-            #print(ion[p], np.sum(sel))
-                
             ret += (sel,)
+
         return ret
 
     def create_z(self):
@@ -295,8 +302,6 @@ class Syst(Line):
                 ion = ion + (self._flat.ion[l],)
             z = self._flat.x[l]
             end_row = True
-            #print(self._flat.x[l])
-            #print(z_deflat)
         z_deflat.append(z)
         y_deflat.append(y)
         zmin_deflat.append(zmin)
@@ -336,17 +341,23 @@ class Syst(Line):
         model = unabs_guess[0] * voigt_guess[0]
         param = unabs_guess[1]
         param.update(voigt_guess[1])
+        conv_model = lmc(model, psf[0], convolve)
+        param.update(psf[1])
+        conv_model = model
+
+        
         for c in range(1, len(chunk)):
+            """
+            conv_model = lmc(model, psf[2*(c-1)], convolve)
+            param.update(psf[2*c-1])    
         #    model *= voigt_guess[2*(c-1)]
         #    param.update(voigt_guess[2*c-1]) 
         #    #param.pretty_print()
+            """
             if (c == 1):
                 chunk_sum = dc(chunk[c])
             else:
                 chunk_sum += chunk[c]
-        #conv_model = lmc(model, psf[0], convolve)
-        #param.update(psf[1])
-        conv_model = model
          
         #expr_dict = voigt_guess[-1]
         #for k in expr_dict:
@@ -361,17 +372,15 @@ class Syst(Line):
             fit = None
         else:
             if (hasattr(self, '_norm')):
-                #print("cont")
                 y = self._spec.y[chunk_sum] / self._cont.y[chunk_sum]
                 dy = self._spec.dy[chunk_sum].value \
                      / self._cont.y[chunk_sum].value
-                param.pretty_print()
+                #param.pretty_print()
                 fit = conv_model.fit(y.value, param,
                                      x=self._spec.x[chunk_sum].value,
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/dy)
-                print(fit.fit_report())
-                #print('tot', np.sum(chunk_sum))
+                #print(fit.fit_report())
                 comp = fit.eval_components(x=self._spec.x[chunk_sum].value)
                 self._fit.y[chunk_sum] = fit.best_fit \
                                          * self._cont.y[chunk_sum] \
@@ -380,7 +389,6 @@ class Syst(Line):
                 #                          * self._cont.y[chunk_sum].value
                 cont_temp = dc(self._cont)
                 for c in range(1, len(chunk)):
-                    #print(comp['cont' + str(c) + '_'])
                     """
                     if (c == 1):
                         #cont_temp.y[chunk_sum] = comp['cont' + str(c) + '_']
@@ -391,7 +399,6 @@ class Syst(Line):
                         cont_temp.y[chunk_sum] += comp['cont_'] \
                                                  * self._cont.y[chunk_sum].value
                     """
-                    #print(c, np.mean(cont_temp.y[chunk_sum]))
                 cont_temp.y[chunk_sum] = comp['cont_'] \
                                          * self._cont.y[chunk_sum].value
                 self._cont = cont_temp
@@ -416,6 +423,21 @@ class Syst(Line):
                                           * self._cont.y[chunk_sum].unit
                 self._fit.y[chunk_sum] = fit.best_fit \
                                          * self._fit.y[chunk_sum].unit
+
+            z_tags = [z for z in fit.best_values if z.endswith('_z')]
+            N_tags = [N for N in fit.best_values if N.endswith('_N')]
+            b_tags = [b for b in fit.best_values if b.endswith('_b')]
+            btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
+
+            self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
+            self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
+                          * self._N_arr.unit
+            self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
+                          * self._b_arr.unit
+            self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
+                             * self._btur_arr.unit
+
+
             self._redchi = fit.redchi
             self._aic = fit.aic
             self._chunk_sum = chunk_sum
@@ -560,14 +582,18 @@ class Syst(Line):
             norm[1], x=self._norm.x[chunk_sum].value) \
             * self._cont.y[chunk_sum] * self._norm.y[chunk_sum].unit 
 
-        #print(np.mean(self._norm.y[chunk[1]]))
         return norm 
+
     def plot(self, group=None, chunk=None, figsize=(10,4), split=False,
              block=True, **kwargs):
         ion = np.unique(self._flat.ion)
         #ion = ion[ion != 'neb'] 
         n = len(ion)
-        z = self.x
+        try:
+            z = self._z_fit
+        except:
+            z = self.x
+        
         if (chunk is not None):
             zmin = np.min(self.xmin[group[1]])
             zmax = np.max(self.xmax[group[1]])
@@ -584,7 +610,6 @@ class Syst(Line):
             grid = gs(row,col)
             for p in range(n):
                 t = Table(self._t[group[1]])
-                #print(ion[p], t['ION'])
                 for l in range(len(t)):
                     if (ion[p] in t['ION'][l]):
                         zmin = t['XMIN'][l]
@@ -619,7 +644,6 @@ class Syst(Line):
                     cont = dc(self._cont)
                     cont.to_z([ion[p]])
                     for c in range(1, len(chunk)):
-                        #print(c, np.mean(cont.y[chunk[c]]))
                         ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
                 if (hasattr(self, '_fit')):
                     fit = dc(self._fit)
@@ -713,7 +737,6 @@ class Syst(Line):
             else:
                 raise Exception("Continuum not found.")
             N = model.N_guess(cont, ion=self._flat.ion)
-            #print(N)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s
@@ -723,11 +746,7 @@ class Syst(Line):
 
         ion = np.unique(self._flat.ion)
         voigt = model.voigt(z, N, b, btur, ion)
-        #print(voigt)
         for c in range(1, len(chunk)):
-            #print(len(voigt))
-            #print(c, voigt[2*(c-1)])
-            #voigt[2*c-1].pretty_print()
             """
             self._voigt.y[chunk[c]] = voigt[2*(c-1)].eval(
                 voigt[2*c-1], x=self._voigt.x[chunk[c]].value) \
@@ -751,4 +770,10 @@ class Syst(Line):
         else:
             self._voigt.y[chunk_sum] = self._voigt.y[chunk_sum] \
                                        * self._unabs.y[chunk_sum].value    
+
+        self._z_arr = dc(model._z)
+        self._N_arr = dc(model._N)
+        self._b_arr = dc(model._b)
+        self._btur_arr = dc(model._btur)
+
         return voigt

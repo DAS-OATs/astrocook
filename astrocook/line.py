@@ -228,21 +228,45 @@ class Line(Spec1D):
         #print(" Chi-squared:", end=" ", flush=True)
         cont_corr = 1.0
         vary = False
+        self._noneb = dc(self)
+        self._neb = dc(self)
         while (stop == False):
             i += 1
-            group = self.group(line=line)            
-            chunk = self.chunk(line=line)
             # Let the continuum vary only after a given iteration
             #if (i <= 0):
             #    vary = False
             #else:
             #    vary = True
-                
-            norm_guess = self.norm(group, chunk, vary=vary)
-            voigt_guess = self.voigt(group, chunk)
-            psf = self.psf(group, chunk, self._resol)
-            #fit = self.fit(group, chunk, unabs_guess, voigt_guess, psf)
-            fit = self.fit(group, chunk, norm_guess, voigt_guess, psf)
+
+            noneb = dc(self._noneb)
+            group_noneb, chunk_noneb, norm_guess_noneb, voigt_guess_noneb, \
+                psf_noneb, fit_noneb = noneb.auto_fit(line, vary)
+
+            neb = dc(self._neb)
+            group_neb, chunk_neb, norm_guess_neb, voigt_guess_neb, psf_neb, \
+                fit_neb = neb.auto_fit(line, vary)
+
+            if (noneb._redchi <= neb._redchi):
+                #print("noneb")
+                self_temp = dc(noneb)
+                group = group_noneb
+                chunk = chunk_noneb
+                norm_guess = norm_guess_noneb
+                voigt_guess = voigt_guess_noneb
+                psf = psf_noneb
+                fit = fit_noneb
+            else:
+                #print("neb")
+                self_temp = dc(neb)
+                group = group_neb
+                chunk = chunk_neb
+                norm_guess = norm_guess_neb
+                voigt_guess = voigt_guess_neb
+                psf = psf_neb
+                fit = fit_neb
+
+            self.__dict__.update(self_temp.__dict__)
+
             self._resid_fit = dc(self._spec)
             self._resid_fit.y = self._spec.y - self._fit.y
             self._resid_cont = dc(self._spec)
@@ -257,7 +281,7 @@ class Line(Spec1D):
 
             aic_old = self._aic
             redchi_old = self._redchi            
-            if (self._redchi < redchi_best or 1==1):
+            if (self._redchi < redchi_best): #or 1==1):
                 group_best = group
                 chunk_best = chunk
                 fitobj_best = dc(fit)
@@ -271,13 +295,7 @@ class Line(Spec1D):
                 aic_best = self._aic
 
             if (stop == False):
-
-            # When you first let the continuum vary, do not add lines
-            #if ((stop == False) and (i != 10)):
-                #print(self._t)
                 cont_corr = self.corr_resid(group, cont_corr)
-                #print(self._t[group[1]])
-                #print(self._t)
                 
         self._t = dc(t_best)
         self._norm = dc(norm_best)
@@ -291,6 +309,15 @@ class Line(Spec1D):
               end=" ", flush=True)
         
         return group_best, chunk_best
+    
+    def auto_fit(self, line, vary):
+        group = self.group(line=line)            
+        chunk = self.chunk(line=line)            
+        norm_guess = self.norm(group, chunk, vary=vary)
+        voigt_guess = self.voigt(group, chunk)
+        psf = self.psf(group, chunk, self._resol)
+        fit = self.fit(group, chunk, norm_guess, voigt_guess, psf)
+        return group, chunk, norm_guess, voigt_guess, psf, fit
 
     def chunk(self, x=None, line=None):
         if ((x is None) and (line is None)):

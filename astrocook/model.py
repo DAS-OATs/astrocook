@@ -112,7 +112,7 @@ class Model():
                                    voigt_def['b'],
                                    voigt_def['btur'], ion=ion)
             logN_interp = np.interp(norm, voigt_arr, logN_arr)
-            #print(norm, logN_arr, voigt_arr, logN_interp)
+
             if (logN_interp > 14.5):
                 logN_interp = 14.5
             if logN == []:
@@ -179,8 +179,8 @@ class Model():
         if (self._chunk is None):
             raise Exception("Chunk must be provided.")
 
+        """
         for c in range(1, len(self._chunk)):
-            """
             pref = 'psf' + str(c) + '_'
             model = lmm(gaussian, prefix=pref)
             param = model.make_params()
@@ -198,7 +198,8 @@ class Model():
                 ret = (model, param)
             else:
                 ret += (model, param)
-            """
+        """
+        for c in range(1, len(self._chunk)):
             if (c == 1):
                 chunk_sum = dc(self._chunk[c])
             else: 
@@ -207,15 +208,18 @@ class Model():
         pref = 'psf_'
         model = lmm(gaussian, prefix=pref)
         param = model.make_params()
-        mean = np.mean(self._spec.x[chunk_sum].value)
-        center = mean
-        sigma = mean / resol * 4.246609001e-1  # Factor to convert FWHM into
+
+        # Check this: it only works if the center of the gaussian is inside
+        # the chunk of interest
+        center = np.median(self._spec.x[chunk_sum].value)
+        sigma = center / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
         param[pref+'amplitude'].set(1.0, vary=False)
         param[pref+'center'].set(center, vary=False)
         param[pref+'sigma'].set(sigma, vary=False)        
         
         ret = (model, param)    
+        #"""
         return ret
 
     def unabs(self):
@@ -252,8 +256,6 @@ class Model():
             bestsort = np.argsort(x_2best)
             x_2sort = x_2best[bestsort]
             y_2sort = y_2best[bestsort]
-            #print(maxima)
-            #print(x_2sort, y_2sort)
             
             xi = self._spec.x[self._chunk[c]][0].value
             xf = self._spec.x[self._chunk[c]][-1].value
@@ -302,7 +304,7 @@ class Model():
         expr_dict = {}
         i = 0
         
-        #"""
+        """
         for c in range(1, len(self._chunk)):
             for l in range(len(self._syst.t[self._group[1]])):
                 pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
@@ -353,7 +355,7 @@ class Model():
                 ret += (model, param)
 
         #ret = (model, param)
-        #"""
+        """
         z_list = []
         pref_list = []
         expr_dict = {}
@@ -365,8 +367,6 @@ class Model():
                 mult = ion[c].split('_')[0]
                 pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
                        + '_'
-                #print(l, c)
-                #print(c, l, pref, self._syst.t[self._group[1]][l])
                 if (z[l] in z_list):
                     expr = np.asarray(pref_list)[
                         np.where(np.asarray(z_list)==z[l])][0]
@@ -415,8 +415,8 @@ class Model():
         ret2 = (model, param)
 
 
-        if (hasattr(self._syst, 'ion')):
-            ret += (ret, expr_dict)
+        #if (hasattr(self._syst, 'ion')):
+        #    ret += (ret, expr_dict)
 
 
         return ret2
