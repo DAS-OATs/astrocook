@@ -208,14 +208,15 @@ class Line(Spec1D):
         
 # Methods
 
-    def auto(self, x=None, line=None):
+    def auto(self, x=None, line=None, i_max=10):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
-        if (x is not None):
-            if (line is not None):
+        if (line is not None):
+            if (x is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            line = np.where(abs(self.x.value-x.value) \
-                            == abs(self.x.value-x.value).min())[0][0]
+            #line = np.where(abs(self.x.value-x.value) \
+            #                == abs(self.x.value-x.value).min())[0][0]
+            x = self.x[line]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("Line number is too large.")
         stop = False
@@ -239,13 +240,14 @@ class Line(Spec1D):
 
             noneb = dc(self._noneb)
             group_noneb, chunk_noneb, norm_guess_noneb, voigt_guess_noneb, \
-                psf_noneb, fit_noneb = noneb.auto_fit(line, vary)
+                psf_noneb, fit_noneb = noneb.auto_fit(x, vary)
 
             neb = dc(self._neb)
             group_neb, chunk_neb, norm_guess_neb, voigt_guess_neb, psf_neb, \
-                fit_neb = neb.auto_fit(line, vary)
+                fit_neb = neb.auto_fit(x, vary)
 
             if (noneb._redchi <= neb._redchi):
+                #print("noneb")
                 self_temp = dc(noneb)
                 group = group_noneb
                 chunk = chunk_noneb
@@ -254,6 +256,7 @@ class Line(Spec1D):
                 psf = psf_noneb
                 fit = fit_noneb
             else:
+                #print("neb")                
                 self_temp = dc(neb)
                 group = group_neb
                 chunk = chunk_neb
@@ -273,7 +276,7 @@ class Line(Spec1D):
                   % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (i==5)
+                   or (i==i_max)
 
             aic_old = self._aic
             redchi_old = self._redchi            
@@ -301,14 +304,15 @@ class Line(Spec1D):
         self._redchi = redchi_best
         self._aic = aic_best
         fit = fitobj_best
+        #print(fit.fit_report())
         print("best chi-squared (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
               end=" ", flush=True)
         
         return group_best, chunk_best
     
-    def auto_fit(self, line, vary):
-        group = self.group(line=line)            
-        chunk = self.chunk(line=line)            
+    def auto_fit(self, x, vary):
+        group = self.group(x)            
+        chunk = self.chunk(x)            
         norm_guess = self.norm(group, chunk, vary=vary)
         voigt_guess = self.voigt(group, chunk)
         psf = self.psf(group, chunk, self._resol)

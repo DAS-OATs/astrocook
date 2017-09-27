@@ -187,6 +187,7 @@ class Model():
             #print(np.sum(self._chunk[c]))
             mean = np.mean(self._spec.x[self._chunk[c]].value)
             center = mean
+            print(center)
             sigma = mean / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
             param[pref+'amplitude'].set(1.0, vary=False)
@@ -211,7 +212,10 @@ class Model():
 
         # Check this: it only works if the center of the gaussian is inside
         # the chunk of interest
-        center = np.median(self._spec.x[chunk_sum].value)
+        x = self._spec.x[chunk_sum]
+        if (len(x) % 2 == 0):
+            x = x[:-1]
+        center = np.median(x.value)
         sigma = center / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
         param[pref+'amplitude'].set(1.0, vary=False)
@@ -404,7 +408,8 @@ class Model():
                 param[pref+'b'].set(b[l].value, min=voigt_min['b'],
                                     max=voigt_max['b'])#, expr=b_expr)
                 param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
-                                       max=voigt_max['btur'])#, expr=btur_expr)
+                                       max=voigt_max['btur'], vary=False)
+                #, expr=btur_expr)
                 
                 if (mult == mult_old):
                     for k in expr_dict:

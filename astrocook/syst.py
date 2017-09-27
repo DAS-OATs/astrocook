@@ -155,9 +155,9 @@ class Syst(Line):
         where = self._chunk_sum
         resid_norm = np.full(len(self._resid_fit.y.value), 
                              np.max(self._resid_fit.y[where]\
-                             /self._resid_fit.dy[where]))
+                                    /self._resid_fit.dy[where]) * 10)
         resid_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
-        x = self._resid_fit.x[np.argmin(resid_norm)]
+        x = self._resid_fit.x[where][np.argmin(resid_norm[where])]
         y = np.interp(x.value, self._spec.x, self._spec.y) * self._spec.yunit
         dy = np.interp(x.value, self._spec.x, self._spec.dy) * self._spec.yunit
         
@@ -179,8 +179,8 @@ class Syst(Line):
         
         ion_where = (abs(z_ion-self.x) == abs(z_ion-self.x).min())
         ion = self.ion[ion_where][0]
-        zmin_ion = self.xmin[ion_where] 
-        zmax_ion = self.xmax[ion_where]
+        zmin_ion = self.xmin[ion_where][0] 
+        zmax_ion = self.xmax[ion_where][0]
         y_ion = np.empty(len(ion))
         dy_ion = np.empty(len(ion))        
         for i in range(len(ion)):
@@ -189,13 +189,13 @@ class Syst(Line):
             y_ion[i] = np.interp(z_ion, spec.x, spec.y)
             dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
 
-
+        
         z_neb = x / dict_wave[neb] - 1.0
         line = dc(self._line)
         line.to_z([neb])
         neb_where = abs(z_neb-line.x) == abs(z_neb-line.x).min()
-        zmin_neb = line.xmin[neb_where] 
-        zmax_neb = line.xmax[neb_where]
+        zmin_neb = line.xmin[neb_where][0] 
+        zmax_neb = line.xmax[neb_where][0]
         spec = dc(self._spec)
         spec.to_z([neb])
         y_neb = np.interp(x.value, self._spec.x, self._spec.y) \
@@ -203,7 +203,10 @@ class Syst(Line):
         dy_neb = np.interp(x.value, self._spec.x, self._spec.dy) \
                  * self._spec.yunit
 
+        
         self._noneb = dc(self)
+        #print(self._t)
+        #print(zmin_ion)
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                                ion])
 
@@ -338,7 +341,7 @@ class Syst(Line):
                 param.update(voigt_guess[2*c-1])
                 param.update(psf[2*c-1])
                 chunk_sum += chunk[c]
-        """
+        #"""
         model = unabs_guess[0] * voigt_guess[0]
         param = unabs_guess[1]
         param.update(voigt_guess[1])
@@ -346,8 +349,9 @@ class Syst(Line):
         param.update(psf[1])
         #conv_model = model
 
-        
         for c in range(1, len(chunk)):
+            #print(np.min(self._spec.x[chunk[c]]),np.max(self._spec.x[chunk[c]]))
+
             """
             conv_model = lmc(model, psf[2*(c-1)], convolve)
             param.update(psf[2*c-1])    
@@ -400,9 +404,9 @@ class Syst(Line):
                         cont_temp.y[chunk_sum] += comp['cont_'] \
                                                  * self._cont.y[chunk_sum].value
                     """
-                cont_temp.y[chunk_sum] = comp['cont_'] \
-                                         * self._cont.y[chunk_sum].value
-                self._cont = cont_temp
+                    cont_temp.y[chunk_sum] = comp['cont_'] \
+                                             * self._cont.y[chunk_sum].value
+                self._cont = cont_temp 
                 
             else:
                 fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
@@ -595,8 +599,11 @@ class Syst(Line):
         except:
             z = self.x
 
-        z_neb = np.asarray([z for k in range(len(z)) if z[k] > 300.0])  # Change this (hardcoded)
-        x_neb = (1.0 + z_neb[0]) * dict_wave['neb'] 
+        z_neb = np.asarray([z for k in range(len(z)) if z[k] > 30.0])  # Change this (hardcoded)
+        if (len(z_neb) > 0):
+            x_neb = (1.0 + z_neb[0]) * dict_wave['neb']
+        else:
+            x_neb = np.asarray([])
         
         if (chunk is not None):
             zmin = np.min(self.xmin[group[1]])
@@ -626,6 +633,7 @@ class Syst(Line):
                 line.to_z([ion[p]])
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
                 ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+                ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
                 #if (hasattr(self, '_unabs')):
                 #    unabs = dc(self._unabs)
                 #    unabs.to_z([ion[p]])
@@ -655,11 +663,18 @@ class Syst(Line):
                     for c in range(1, len(chunk)):
                         ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
                     ax.plot(fit.x, fit.y, c='g')
+                if (hasattr(self, '_resid_fit')):
+                    resid_fit = dc(self._resid_fit)
+                    resid_fit.to_z([ion[p]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(resid_fit.x[chunk[c]], resid_fit.y[chunk[c]],
+                                c='g', lw=1.0)
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
-                for comp_neb in x_neb/dict_wave[ion[p]] - 1.0:
-                    ax.axvline(x=comp_neb, ymin=0.65, ymax=0.85, color='r')
+                if (len(x_neb) > 0):
+                    for comp_neb in x_neb/dict_wave[ion[p]] - 1.0:
+                        ax.axvline(x=comp_neb, ymin=0.65, ymax=0.85, color='r')
                 if ((p+1) % row != 0):
                     pass
                     #ax.set_xticks([], [])

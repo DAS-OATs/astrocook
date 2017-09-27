@@ -13,7 +13,7 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
 dict_wave = {'Ly_a': 121.567 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
              'CIV_1550': 155.0781 * u.nm,
-             'neb': 1.0 * u.nm}
+             'neb': 10.0 * u.nm}
 
 dict_f = {'Ly_a': 0.416,
           'CIV_1548': 0.1899,
@@ -31,7 +31,7 @@ voigt_def = {'N': 1e14, 'b': 5.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
 voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 
-redchi_thr = 1.0
+redchi_thr = 0.9
 
 def convolve(arr, ker):
     """ Convolve an array with a kernel """
