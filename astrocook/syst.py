@@ -153,7 +153,9 @@ class Syst(Line):
         neb = 'neb'
         
         where = self._chunk_sum
-        resid_norm = self._resid_fit.y.value * 0.0
+        resid_norm = np.full(len(self._resid_fit.y.value), 
+                             np.max(self._resid_fit.y[where]\
+                             /self._resid_fit.dy[where]))
         resid_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
         x = self._resid_fit.x[np.argmin(resid_norm)]
         y = np.interp(x.value, self._spec.x, self._spec.y) * self._spec.yunit
@@ -212,7 +214,6 @@ class Syst(Line):
         self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, 
                                    neb])
         self._neb.deflatten_z()
-                
         self.t.sort('X')  # This gives an annoying warning
 
         return cont_corr
@@ -343,7 +344,7 @@ class Syst(Line):
         param.update(voigt_guess[1])
         conv_model = lmc(model, psf[0], convolve)
         param.update(psf[1])
-        conv_model = model
+        #conv_model = model
 
         
         for c in range(1, len(chunk)):
@@ -587,12 +588,15 @@ class Syst(Line):
     def plot(self, group=None, chunk=None, figsize=(10,4), split=False,
              block=True, **kwargs):
         ion = np.unique(self._flat.ion)
-        #ion = ion[ion != 'neb'] 
+        ion = ion[ion != 'neb'] 
         n = len(ion)
         try:
             z = self._z_fit
         except:
             z = self.x
+
+        z_neb = np.asarray([z for k in range(len(z)) if z[k] > 300.0])  # Change this (hardcoded)
+        x_neb = (1.0 + z_neb[0]) * dict_wave['neb'] 
         
         if (chunk is not None):
             zmin = np.min(self.xmin[group[1]])
@@ -604,7 +608,7 @@ class Syst(Line):
             #figsize = (7,6)
             row = min(n,4)
             col = int(np.ceil(n/4))
-            figsize = (col*6, n*2.5)
+            figsize = (col*6, n*3.5)
             fig = plt.figure(figsize=figsize)
             fig.canvas.set_window_title("System")
             grid = gs(row,col)
@@ -654,6 +658,8 @@ class Syst(Line):
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
+                for comp_neb in x_neb/dict_wave[ion[p]] - 1.0:
+                    ax.axvline(x=comp_neb, ymin=0.65, ymax=0.85, color='r')
                 if ((p+1) % row != 0):
                     pass
                     #ax.set_xticks([], [])

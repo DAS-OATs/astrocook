@@ -225,7 +225,6 @@ class Line(Spec1D):
         i = 0
         i_best = 1
         print("")
-        #print(" Chi-squared:", end=" ", flush=True)
         cont_corr = 1.0
         vary = False
         self._noneb = dc(self)
@@ -247,7 +246,6 @@ class Line(Spec1D):
                 fit_neb = neb.auto_fit(line, vary)
 
             if (noneb._redchi <= neb._redchi):
-                #print("noneb")
                 self_temp = dc(noneb)
                 group = group_noneb
                 chunk = chunk_noneb
@@ -256,7 +254,6 @@ class Line(Spec1D):
                 psf = psf_noneb
                 fit = fit_noneb
             else:
-                #print("neb")
                 self_temp = dc(neb)
                 group = group_neb
                 chunk = chunk_neb
@@ -276,8 +273,7 @@ class Line(Spec1D):
                   % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (i==10)
-            #print(self._redchi, redchi_thr, self._aic, aic_old, stop)
+                   or (i==5)
 
             aic_old = self._aic
             redchi_old = self._redchi            
@@ -353,7 +349,6 @@ class Line(Spec1D):
         i = 0
         while (stop == False):
             i += 1
-            #print(len(clip_y))
             frac = 3*u.nm/range_x * len(x)/len(clip_x)
             le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
                                          delta=0.0, is_sorted=True)
@@ -362,7 +357,6 @@ class Line(Spec1D):
             max_y = cont_y + kappa * cont_dy
             min_y = cont_y - kappa * cont_dy
             where = np.logical_and(clip_y > min_y, clip_y < max_y) 
-            #print(where)
             stop = (len(clip_y) == np.sum(where)) #or i > 1
             clip_x = clip_x[where]
             clip_y = clip_y[where]
@@ -416,7 +410,6 @@ class Line(Spec1D):
         #maxima_y = self._bound_y
         #maxima_x = self._spec.x
         #maxima_y = self._spec.y
-        #print(len(maxima_x), len(maxima_y))
 
         xmin = np.min(self._spec.x)
         xmax = 0
@@ -438,7 +431,6 @@ class Line(Spec1D):
 
         # Boxy
         frac = min(1, fact/len(filt_x))
-        #print(frac)
         
         le = sm.nonparametric.lowess(filt_y, filt_x, frac=frac)
         self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
@@ -468,8 +460,6 @@ class Line(Spec1D):
         x_hi = self._resid_cont.x[np.argmax(cont_norm)]
         y_lo = np.min(fit_norm)
         y_hi = np.max(cont_norm)
-        #print(np.absolute(x_lo), np.absolute(x_hi))
-        #print(np.absolute(y_lo), np.absolute(y_hi))
         if (np.absolute(y_lo) > np.absolute(y_hi)):
             y = np.interp(x_lo.value, self._spec.x, self._spec.y) 
             dy = np.interp(x_lo.value, self._spec.x, self._spec.dy)
@@ -478,7 +468,6 @@ class Line(Spec1D):
         if (cont_rms > 3*np.mean(self._resid_cont.dy.value)):
         #else:
             cont_corr = 1 + cont_rms / np.mean(self._cont.y.value)
-        #print(cont_corr)
         return cont_corr
 
     def corr_tau(self, N_thres=None):
@@ -585,46 +574,13 @@ class Line(Spec1D):
         xmax = []        
         if len(x) > 0: 
 
-            """ Buggy
-            # Compute the boundaries for line fitting    
-            window = extr.rolling_window(hwidth * 2 + 1)
-            #bound = np.full(hwidth + 1, np.amin(spec.x))
-
-            if mode is 'em':
-                bound = np.full(hwidth * 2, np.amin(minima.x))
-                app = window.x[np.arange(len(window.x)),
-                               np.argmin(window.y, 1)]
-                bound = np.append(bound, app)
-                bound = np.append(bound, np.full(hwidth * 2, np.amax(minima.x)))
-            else:
-                bound = np.full(hwidth * 2, np.amin(maxima.x))
-                #print(len(bound))
-                app = window.x[np.arange(len(window.x)),
-                               np.argmax(window.y, 1)]
-                #print(len(app))
-                bound = np.append(bound, app)
-                #print(len(bound))
-                bound = np.append(bound, np.full(hwidth * 2, np.amax(maxima.x)))
-                #print(len(bound))
-                #bound = np.append(bound, np.full(hwidth + 1, np.amax(spec.x)))
-
-            #print(len(bound), len(bound[:-hwidth * 2]), len(pos))
-            xmin = np.asarray(bound[:-hwidth * 2][pos]) * x.unit 
-            xmax = np.asarray(bound[hwidth * 2:][pos]) * x.unit
-            """
             xmin = np.asarray(extr.x[:-2][pos]) * x.unit
             xmax = np.asarray(extr.x[2:][pos]) * x.unit
 
         self._bound_x = np.setxor1d(xmin, xmax)
         self._bound_y = np.interp(self._bound_x, spec.x, spec.y)
-        #print(xmin, xmax)
-        #print(self._bound_x, self._bound_y)
-        #print(extr.y)
-        #print(maxima.x, bound)
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
-        #print(self._t)
-        #sys.exit()
 
     def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=500):
 
@@ -643,16 +599,13 @@ class Line(Spec1D):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            #param.pretty_print()
             if (hasattr(self, '_norm')):
-                #print("cont")
                 y = self._spec.y[chunk[1]] / self._cont.y[chunk[1]]
                 dy = self._spec.dy[chunk[1]].value / self._cont.y[chunk[1]].value
                 fit = conv_model.fit(y.value, param,
                                      x=self._spec.x[chunk[1]].value,
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/dy)
-                #print(fit.fit_report())
                 cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
                 self._fit.y[chunk[1]] = fit.best_fit * self._cont.y[chunk[1]] \
                                         * self._fit.y[chunk[1]].unit
@@ -736,7 +689,6 @@ class Line(Spec1D):
             norm[1], x=self._norm.x[chunk[1]].value) \
             * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
 
-        #print(np.mean(self._norm.y[chunk[1]]))
         return norm 
     
     def plot2(self, group=None, chunk=None, figsize=(10,4), block=True,
