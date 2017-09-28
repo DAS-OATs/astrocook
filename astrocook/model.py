@@ -309,7 +309,7 @@ class Model():
 
         return ret
 
-    def voigt(self, z, N, b, btur, ion):
+    def voigt(self, z, N, b, btur, ion='Ly_a'):
         """ Create a Voigt model for a line """
 
         self._z = dc(z)
@@ -320,67 +320,13 @@ class Model():
         z_list = []
         pref_list = []
         expr_dict = {}
-        i = 0
-        
-        """
-        for c in range(1, len(self._chunk)):
-            for l in range(len(self._syst.t[self._group[1]])):
-                pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
-                       + '_'
-                #print(c, l, pref, self._syst.t[self._group[1]][l])
-                if (z[l] in z_list):
-                    expr = np.asarray(pref_list)[
-                        np.where(np.asarray(z_list)==z[l])][0]
-                    i += 1
-                    pref = pref + str(i) + '_'
-                    z_expr = expr + 'z'
-                    N_expr = expr + 'N'
-                    b_expr = expr + 'b'
-                    btur_expr = expr + 'btur'
-                else:
-                    z_list.append(z[l])
-                    pref_list.append(pref)                    
-                    z_expr = ''
-                    N_expr = ''
-                    b_expr = ''
-                    btur_expr = ''
-                expr_dict[pref+'z'] = z_expr 
-                expr_dict[pref+'N'] = N_expr 
-                expr_dict[pref+'b'] = b_expr 
-                expr_dict[pref+'btur'] = btur_expr 
-
-                if (type(ion) is str):
-                    model_l = lmm(voigt_func, prefix=pref, ion=ion)
-                else:
-                    model_l = lmm(voigt_func, prefix=pref, ion=ion[c-1])
-                if (l == 0):
-                    model = model_l
-                    param = model_l.make_params()
-                else:
-                    model *= model_l
-                    param.update(model_l.make_params())
-                param[pref+'z'].set(z[l].value, min=z[l].value/z_fact,
-                                    max=z[l].value*z_fact)#, expr=str(z_expr))
-                param[pref+'N'].set(N[l].value, min=voigt_min['N'],
-                                    max=voigt_max['N'])#, expr=N_expr)
-                param[pref+'b'].set(b[l].value, min=voigt_min['b'],
-                                    max=voigt_max['b'])#, expr=b_expr)
-                param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
-                                       max=voigt_max['btur'])#, expr=btur_expr)
-            if (c == 1):
-                ret = (model, param)
-            else:
-                ret += (model, param)
-
-        #ret = (model, param)
-        """
-        z_list = []
-        pref_list = []
-        expr_dict = {}
         mult_old = ''
         i = 0
         for l in range(len(self._syst.t[self._group[1]])):
-            ion = np.sort(self._syst.ion[self._group[1]][l])
+            try:
+                ion = np.sort(self._syst.ion[self._group[1]][l])
+            except:
+                pass
             for c in range(len(ion)):
                 mult = ion[c].split('_')[0]
                 pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \

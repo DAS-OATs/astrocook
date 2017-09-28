@@ -489,7 +489,7 @@ class Spec1D():
     def plot(self, figsize=(10,4), block=True, **kwargs):
         spec = self
         fig = plt.figure(figsize=figsize)
-        fig.canvas.set_window_title("Lines")
+        fig.canvas.set_window_title("Spectrum")
         grid = gs(1, 1)
         ax = fig.add_subplot(grid[:, :])
         grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
@@ -572,9 +572,9 @@ class Spec1D():
         x = (z + 1) * ion_wave
         xmin = (zmin + 1) * ion_wave
         xmax = (zmax + 1) * ion_wave
-        self.x = np.unique(x)
-        self.xmin = np.unique(xmin)
-        self.xmax = np.unique(xmax)
+        self.x = np.unique(x.value) * x.unit
+        self.xmin = np.unique(xmin) * x.unit
+        self.xmax = np.unique(xmax) * x.unit
 
     def to_z(self, ion):
         """ Convert line wavelengths to redshifts using a reference """
@@ -583,7 +583,7 @@ class Spec1D():
             ion = np.full(len(self.t), ion[0])
 
         if ((len(ion) > 1) and (len(ion) != len(self.t))):
-            raise Exception("Ion list and line list must have the same length.")
+            raise Exception("Ion list and table must have the same length.")
             
         ion = np.asarray(ion)
         ion_ravel = np.ravel(ion, 'F')

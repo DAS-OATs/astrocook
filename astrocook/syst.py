@@ -1,5 +1,5 @@
 from . import Line, Model
-from .utils import convolve, convolve2, dict_wave, voigt_def
+from .utils import convolve, convolve2, dict_doub, dict_wave, voigt_def
 from astropy import units as u
 from astropy.table import Column, Table
 from copy import deepcopy as dc
@@ -21,6 +21,7 @@ class Syst(Line):
                  xmax=[],
                  dy=[],
                  ion=[],
+                 doub=[],
                  yunit=None,
                  meta=None,
                  dtype=float):
@@ -62,11 +63,13 @@ class Syst(Line):
         if (x != []):
             len_ion = len(x)
 
+        if ((ion == []) and (doub != [])):
+            ion = np.stack((np.full(len_ion, dict_doub[doub][0]),
+                            np.full(len_ion, dict_doub[doub][1]))).T
+                           
         if ((ion is []) or (ion is 'Ly_a')):
             ion = np.full(len_ion, 'Ly_a')           
-        if (ion is 'CIV'):
-            ion = np.stack((np.full(len_ion, 'CIV_1548'),                    
-                            np.full(len_ion, 'CIV_1550'))).T
+
         self._ion = ion
             
         # System list
@@ -205,14 +208,10 @@ class Syst(Line):
 
         
         self._noneb = dc(self)
-        #print(self._t)
-        #print(zmin_ion)
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                                ion])
 
         self._neb = dc(self)
-        #self._neb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
-        #                     ion])
         self._neb.flatten_z()
         self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, 
                                    neb])
@@ -227,10 +226,12 @@ class Syst(Line):
         if (x is not None):
             if (line is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            line = np.where(abs(self.x-x.value) \
-                            == abs(self.x-x.value).min())[0][0]
+            #line = np.where(abs(self.x-x.value) \
+            #                == abs(self.x-x.value).min())[0][0]
+            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("Line number is too large.")
+
         try:  # When ION has different sizes in different rows
             ion = np.unique(np.asarray(np.sum(self.ion)))
         except:
@@ -318,65 +319,31 @@ class Syst(Line):
                     ion=ion_deflat, yunit=yunit)
         self.__dict__.update(syst.__dict__)
     
-    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, psf2,
+    def fit(self, group, chunk, norm_guess, prof_guess, psf, psf2,
             maxfev=1000):
 
-        """
-        for c in range(1, len(chunk)):
-            #print(np.sum(chunk[c]))
-            if (c == 1):
-                #model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
-                model = model * voigt_guess[2*(c-1)]
-                conv_model = lmc(model, psf[2*(c-1)], convolve)
-                #param = unabs_guess[2*c-1]
-                param.update(voigt_guess[2*c-1])
-                #param = voigt_guess[2*c-1]
-                param.update(psf[2*c-1])
-                chunk_sum = dc(chunk[c])
-            else:
-                #model = unabs_guess[2*(c-1)] * voigt_guess[2*(c-1)]
-                model = voigt_guess[2*(c-1)]
-                #conv_model += lmc(model, psf[2*(c-1)], convolve)
-                conv_model *= lmc(model, psf[2*(c-1)], convolve)
-                #param.update(unabs_guess[2*c-1])
-                param.update(voigt_guess[2*c-1])
-                param.update(psf[2*c-1])
-                chunk_sum += chunk[c]
-        #"""
-        model = unabs_guess[0] * voigt_guess[0]
-        param = unabs_guess[1]
-        param.update(voigt_guess[1])
+        model = norm_guess[0] * prof_guess[0]
+        param = norm_guess[1]
+        param.update(prof_guess[1])
         conv_model = lmc(model, psf[0], convolve)
         param.update(psf[1])
-        #conv_model = model
 
         #conv_model = lmc(model, psf2[0], convolve2)
         #param.update(psf2[1])
         
         
         for c in range(1, len(chunk)):
-            #print(np.min(self._spec.x[chunk[c]]),np.max(self._spec.x[chunk[c]]))
-
-            """
-            conv_model = lmc(model, psf[2*(c-1)], convolve)
-            param.update(psf[2*c-1])    
-        #    model *= voigt_guess[2*(c-1)]
-        #    param.update(voigt_guess[2*c-1]) 
-        #    #param.pretty_print()
-            """
             if (c == 1):
                 chunk_sum = dc(chunk[c])
             else:
                 chunk_sum += chunk[c]
          
-        #expr_dict = voigt_guess[-1]
-        #for k in expr_dict:
-        #    param[k].set(expr=expr_dict[k])
-
         if (hasattr(self, '_cont') == False):
             self._cont = dc(self._spec)            
         if (hasattr(self, '_fit') == False):
             self._fit = dc(self._spec)
+        if (hasattr(self, '_rem') == False):
+            self._rem = dc(self._spec)
         if (len(self._spec.x[chunk_sum]) < len(param)):
             warnings.warn("Too few data points; skipping.")
             fit = None
@@ -395,23 +362,14 @@ class Syst(Line):
                 self._fit.y[chunk_sum] = fit.best_fit \
                                          * self._cont.y[chunk_sum] \
                                          * self._fit.y[chunk_sum].unit
-                #self._cont.y[chunk_sum] = comp['cont1_'] \
-                #                          * self._cont.y[chunk_sum].value
                 cont_temp = dc(self._cont)
                 for c in range(1, len(chunk)):
-                    """
-                    if (c == 1):
-                        #cont_temp.y[chunk_sum] = comp['cont' + str(c) + '_']
-                        cont_temp.y[chunk_sum] = comp['cont_'] \
-                                                 * self._cont.y[chunk_sum].value
-                    else:
-                        #cont_temp.y[chunk_sum] += comp['cont' + str(c) + '_'] 
-                        cont_temp.y[chunk_sum] += comp['cont_'] \
-                                                 * self._cont.y[chunk_sum].value
-                    """
                     cont_temp.y[chunk_sum] = comp['cont_'] \
                                              * self._cont.y[chunk_sum].value
-                self._cont = cont_temp 
+                self._cont = cont_temp
+                self._rem.y[chunk_sum] = self._rem.y[chunk_sum] \
+                                         + self._cont.y[chunk_sum] * self._rem.y[chunk_sum].unit \
+                                         - self._fit.y[chunk_sum]
                 
             else:
                 fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
@@ -420,15 +378,6 @@ class Syst(Line):
                                      weights=1/self._spec.dy[chunk_sum].value)
 
                 cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
-                """
-                for c in range(1, len(chunk)):
-                    if (c == 1):
-                        self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
-                                                  * self._cont.y[chunk_sum].unit
-                    else:
-                        self._cont.y[chunk_sum] += cont['cont' + str(c) + '_'] \
-                                                * self._cont.y[chunk_sum].unit
-                """
                 self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
                                           * self._cont.y[chunk_sum].unit
                 self._fit.y[chunk_sum] = fit.best_fit \
@@ -441,11 +390,11 @@ class Syst(Line):
 
             self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
             self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
-                          * self._N_arr.unit
+                          * self._N_arr[0].unit
             self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
-                          * self._b_arr.unit
+                          * self._b_arr[0].unit
             self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
-                             * self._btur_arr.unit
+                             * self._btur_arr[0].unit
 
 
             self._redchi = fit.redchi
@@ -478,8 +427,9 @@ class Syst(Line):
         if (x is not None):
             if (line is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            line = np.where(abs(self.x.value-x.value) \
-                            == abs(self.x.value-x.value).min())[0][0]
+            #line = np.where(abs(self.x.value-x.value) \
+            #                == abs(self.x.value-x.value).min())[0][0]
+            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("line is too large.")
         iter = range(len(self._t))
@@ -594,7 +544,7 @@ class Syst(Line):
 
         return norm 
 
-    def plot(self, group=None, chunk=None, figsize=(10,4), split=False,
+    def plot(self, group=None, chunk=None, figsize=(10,4), mode='simple',
              block=True, **kwargs):
         ion = np.unique(self._flat.ion)
         ion = ion[ion != 'neb'] 
@@ -611,7 +561,7 @@ class Syst(Line):
         else:
             x_neb = np.asarray([])
         
-        if split == True:
+        if mode == 'split':
             #figsize = (7,6)
             row = min(n,4)
             col = int(np.ceil(n/4))
@@ -620,13 +570,17 @@ class Syst(Line):
             fig.canvas.set_window_title("System")
             grid = gs(row,col)
             for p in range(n):
-                t = Table(self._t[group[1]])
                 zmin = float('inf')
                 zmax = 0
-                for l in range(len(t)):
-                    if (ion[p] in t['ION'][l]):
-                        zmin = min(zmin, t['XMIN'][l])
-                        zmax = max(zmax, t['XMAX'][l])
+                if (group is not None):
+                    t = Table(self._t[group[1]])
+                    for l in range(len(t)):
+                        if (ion[p] in t['ION'][l]):
+                            zmin = min(zmin, t['XMIN'][l])
+                            zmax = max(zmax, t['XMAX'][l])
+                else:
+                    zmin = np.min(self.xmin)
+                    zmax = np.max(self.xmax)
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
                 ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
                 spec = dc(self._spec)
@@ -636,40 +590,35 @@ class Syst(Line):
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
                 ax.plot(spec.x, spec.dy, c='r', lw=1.0)
                 ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
-                #if (hasattr(self, '_unabs')):
-                #    unabs = dc(self._unabs)
-                #    unabs.to_z([ion[p]])
-                #    for c in range(1, len(chunk)):
-                #        ax.plot(unabs.x[chunk[c]], unabs.y[chunk[c]], c='y',
-                #                lw=1.0, linestyle=':')
-                if (hasattr(self, '_norm')):
-                    norm = dc(self._norm)
-                    norm.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
-                                lw=1.0, linestyle=':')
-                if (hasattr(self, '_voigt')):
-                    voigt = dc(self._voigt)
-                    voigt.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
-                                lw=1.0, linestyle=':')
-                if (hasattr(self, '_cont')):
-                    cont = dc(self._cont)
-                    cont.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
-                if (hasattr(self, '_fit')):
-                    fit = dc(self._fit)
-                    fit.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
-                if (hasattr(self, '_resid_fit')):
-                    resid_fit = dc(self._resid_fit)
-                    resid_fit.to_z([ion[p]])
-                    for c in range(1, len(chunk)):
-                        ax.plot(resid_fit.x[chunk[c]], resid_fit.y[chunk[c]],
-                                c='g', lw=1.0)
+                if (chunk is not None):
+                    if (hasattr(self, '_norm')):
+                        norm = dc(self._norm)
+                        norm.to_z([ion[p]])
+                        for c in range(1, len(chunk)):
+                            ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
+                                    lw=1.0, linestyle=':')
+                    if (hasattr(self, '_voigt')):
+                        voigt = dc(self._voigt)
+                        voigt.to_z([ion[p]])
+                        for c in range(1, len(chunk)):
+                            ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
+                                    lw=1.0, linestyle=':')
+                    if (hasattr(self, '_cont')):
+                        cont = dc(self._cont)
+                        cont.to_z([ion[p]])
+                        for c in range(1, len(chunk)):
+                            ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
+                    if (hasattr(self, '_fit')):
+                        fit = dc(self._fit)
+                        fit.to_z([ion[p]])
+                        for c in range(1, len(chunk)):
+                            ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
+                    if (hasattr(self, '_resid_fit')):
+                        resid_fit = dc(self._resid_fit)
+                        resid_fit.to_z([ion[p]])
+                        for c in range(1, len(chunk)):
+                            ax.plot(resid_fit.x[chunk[c]],
+                                    resid_fit.y[chunk[c]], c='b', lw=1.0)
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
@@ -688,7 +637,7 @@ class Syst(Line):
             if (hasattr(self, '_fit')):
                 fig.suptitle("Reduced chi-squared: %3.2f" % (self._redchi),
                              fontsize=10)
-        else:
+        elif mode == 'compare':
             if (chunk is not None):
                 zmin = np.min(self.xmin[group[1]])
                 zmax = np.max(self.xmax[group[1]])
@@ -713,6 +662,56 @@ class Syst(Line):
             for comp in z:
                 ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black', lw=3.0,
                            linestyle='--')
+
+            ax.text(0.5, 0.92, text, horizontalalignment="center",
+                    verticalalignment="center", transform=ax.transAxes,
+                    fontsize=12)
+        elif mode == 'simple':
+            zmin = np.min(self.xmin)
+            zmax = np.max(self.xmax)
+            grid = gs(1,1)
+            fig = plt.figure(figsize=figsize)
+            fig.canvas.set_window_title("System")
+            ax = fig.add_subplot(grid[:,:])
+            ax.set_xlabel("Redshift")
+            ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
+            spec = dc(self._spec)
+            line = dc(self._line)
+            spec.to_z([ion[0]])
+            line.to_z([ion[0]])
+            ax.set_xlim(zmin, zmax)
+            ax.plot(spec.x, spec.y, c='black', lw=1.0)
+            ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+            if (chunk is not None):
+                if (hasattr(self, '_norm')):
+                    norm = dc(self._norm)
+                    norm.to_z([ion[0]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
+                                lw=1.0, linestyle=':')
+                if (hasattr(self, '_voigt')):
+                    voigt = dc(self._voigt)
+                    voigt.to_z([ion[0]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
+                                lw=1.0, linestyle=':')
+                if (hasattr(self, '_cont')):
+                    cont = dc(self._cont)
+                    cont.to_z([ion[0]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
+                if (hasattr(self, '_fit')):
+                    fit = dc(self._fit)
+                    fit.to_z([ion[0]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
+                if (hasattr(self, '_rem')):
+                    rem = dc(self._rem)
+                    rem.to_z([ion[0]])
+                    for c in range(1, len(chunk)):
+                        ax.plot(rem.x[chunk[c]], rem.y[chunk[c]], c='b', lw=1.0)
+            ax.scatter(line.x, line.y, marker='+')
+            text = ion[0] + 'redshifts'
 
             ax.text(0.5, 0.92, text, horizontalalignment="center",
                     verticalalignment="center", transform=ax.transAxes,
@@ -758,7 +757,7 @@ class Syst(Line):
     
         return unabs
 
-    def voigt(self, group, chunk, z=[], N=[], b=[], btur=[]):
+    def voigt(self, group=None, chunk=None, z=[], N=[], b=[], btur=[]):
 
         sumlen = len(z) + len(N) + len(b) + len(btur)
         if ((z != []) and (sumlen % len(z) != 0)):

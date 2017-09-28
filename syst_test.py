@@ -93,7 +93,7 @@ def main():
             # Plot lines and system
             print("close graph to continue.")
             #syst.plot(group, chunk)  # To visually match components
-            syst.plot(group, chunk, split=True)  # To inspect the fit
+            syst.plot(group, chunk, mode='split')  # To inspect the fit
 
             
 

@@ -312,7 +312,7 @@ class Line(Spec1D):
         
         return group_best, chunk_best
     
-    def auto_fit(self, x, vary):
+    def auto_fit(self, x, vary=False):
         group = self.group(x)            
         chunk = self.chunk(x)            
         norm_guess = self.norm(group, chunk, vary=vary)
@@ -589,12 +589,12 @@ class Line(Spec1D):
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
 
-    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=500):
+    def fit(self, group, chunk, norm_guess, prof_guess, psf, maxfev=500):
 
-        model = unabs_guess[0] * voigt_guess[0]
-        param = unabs_guess[1]
+        model = norm_guess[0] * prof_guess[0]
+        param = norm_guess[1]
         conv_model = lmc(model, psf[0], convolve)
-        param.update(voigt_guess[1])
+        param.update(prof_guess[1])
         param.update(psf[1])
         if (hasattr(self, '_cont') == False):
             self._cont = dc(self._spec)
@@ -616,7 +616,7 @@ class Line(Spec1D):
                 cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
                 self._fit.y[chunk[1]] = fit.best_fit * self._cont.y[chunk[1]] \
                                         * self._fit.y[chunk[1]].unit
-                self._cont.y[chunk[1]] = cont['cont1_'] \
+                self._cont.y[chunk[1]] = cont['cont_'] \
                                          * self._cont.y[chunk[1]].value
                 rem = self._cont.y * self._spec.y \
                       / self._fit.y * self._fit.y.unit
@@ -629,7 +629,7 @@ class Line(Spec1D):
                                      fit_kws={'maxfev': maxfev},
                                      weights=1/self._spec.dy[chunk[1]].value)
                 cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
-                self._cont.y[chunk[1]] = cont['cont1_'] \
+                self._cont.y[chunk[1]] = cont['cont_'] \
                                          * self._cont.y[chunk[1]].unit
                 self._fit.y[chunk[1]] = fit.best_fit \
                                         * self._fit.y[chunk[1]].unit
@@ -653,8 +653,8 @@ class Line(Spec1D):
             self._redchi = fit.redchi
             self._aic = fit.aic
 
-        return fit
-
+        return fit        
+    
     def group(self, x=None, line=None):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -684,6 +684,20 @@ class Line(Spec1D):
         if null.size > 0:
             ret[null] = float('nan')
         return ret
+
+    def model(self, prof=True, psf=True):
+        model = self._norm_guess[0]
+        param = self._norm_guess[1]
+        
+        if (prof == True):
+            model = model * self._prof_guess[0]
+            param.update(self._prof_guess[1])
+
+        if (psf == True):
+            model = lmc(model, self._psf[0], convolve)
+            param.update(self._psf[1])
+
+        return (model, param)
 
     def norm(self, group, chunk, value=1.0, vary=False):
         """ Normalize continuum """
@@ -824,6 +838,34 @@ class Line(Spec1D):
         if block is True:
             plt.show()
         
+    def prep(self, x, prof='voigt', vary=False, **kwargs):
+        self._group = self.group(x)            
+        self._chunk = self.chunk(x)            
+        self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
+        if (prof == 'voigt'):
+            try:
+                z = kwargs['z']
+            except:
+                z = []
+            try:
+                N = kwargs['N']
+            except:
+                N = []
+            try:
+                b = kwargs['b']
+            except:
+                b = []
+            try:
+                btur = kwargs['btur']
+            except:
+                btur = []
+            print(z, N)
+            self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
+                                          b=b, btur=btur)
+        else:
+            raise Exception("Only Voigt profile is supported.")
+        self._psf = self.psf(self._group, self._chunk, self._resol)
+    
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
         
@@ -832,6 +874,18 @@ class Line(Spec1D):
 
         return psf   
 
+    def redchi(self, model_param):
+        model = model_param[0]
+        param = model_param[1]
+        x = self._spec.x[self._chunk[1]]
+        y = self._spec.y[self._chunk[1]]        
+        dy = self._spec.dy[self._chunk[1]]
+        ndata = len(x)
+        nvarys = 3  # Find a way to not have this hardcoded
+        mod = model.eval(param, x=x.value)
+        ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
+        return ret
+        
     def unabs(self, group, chunk):
         """ Remove lines """
 
