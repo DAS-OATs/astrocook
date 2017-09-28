@@ -53,7 +53,17 @@ def convolve(arr, ker):
             ret[where] = out[noff:noff+npts] / np.sum(ker)
 
     return ret
-    
+
+def convolve2(arr, ker_mat):
+    """ Convolve an array with a kernel """
+
+    ret = arr * 0.0
+    print(ker_mat)
+    for c in range(ker_mat.shape[1]):
+        conv = convolve(arr, ker_mat[:, c])
+        ret[c] = conv[c]
+    return ret
+
 def many_gauss(x, *p, mode='abs', cont = 1):
     """Sum of gaussian profiles
     

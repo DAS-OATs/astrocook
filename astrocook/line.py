@@ -240,11 +240,11 @@ class Line(Spec1D):
 
             noneb = dc(self._noneb)
             group_noneb, chunk_noneb, norm_guess_noneb, voigt_guess_noneb, \
-                psf_noneb, fit_noneb = noneb.auto_fit(x, vary)
+                psf_noneb, fit_noneb, psf2_noneb = noneb.auto_fit(x, vary)
 
             neb = dc(self._neb)
             group_neb, chunk_neb, norm_guess_neb, voigt_guess_neb, psf_neb, \
-                fit_neb = neb.auto_fit(x, vary)
+                fit_neb, psf2_neb = neb.auto_fit(x, vary)
 
             if (noneb._redchi <= neb._redchi):
                 #print("noneb")
@@ -255,6 +255,7 @@ class Line(Spec1D):
                 voigt_guess = voigt_guess_noneb
                 psf = psf_noneb
                 fit = fit_noneb
+                psf2 = psf2_noneb
             else:
                 #print("neb")                
                 self_temp = dc(neb)
@@ -264,6 +265,7 @@ class Line(Spec1D):
                 voigt_guess = voigt_guess_neb
                 psf = psf_neb
                 fit = fit_neb
+                psf2 = psf2_neb
 
             self.__dict__.update(self_temp.__dict__)
 
@@ -316,8 +318,9 @@ class Line(Spec1D):
         norm_guess = self.norm(group, chunk, vary=vary)
         voigt_guess = self.voigt(group, chunk)
         psf = self.psf(group, chunk, self._resol)
-        fit = self.fit(group, chunk, norm_guess, voigt_guess, psf)
-        return group, chunk, norm_guess, voigt_guess, psf, fit
+        psf2 = self.psf2(group, chunk, self._resol)
+        fit = self.fit(group, chunk, norm_guess, voigt_guess, psf, psf2)
+        return group, chunk, norm_guess, voigt_guess, psf, fit, psf2
 
     def chunk(self, x=None, line=None):
         if ((x is None) and (line is None)):

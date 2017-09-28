@@ -33,6 +33,14 @@ def norm_step_func(x, xmin, xmax, norm):
     ret[where] = norm
     return ret
 
+def psf_func(x):
+    resol = 45000
+    ret = np.ones([10, len(x)-10])
+    for i in range(len(x)-10):
+        ret[:,i] = np.exp( -((x[i:i+10]/x[i+5]-1.0) * resol/4.246609001e-1)**2)
+    print(ret)
+    return ret
+
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
     wave = dict_wave[ion].value * 1e-9
@@ -176,9 +184,6 @@ class Model():
     
     def psf(self, resol): #, center, sigma):
 
-        if (self._chunk is None):
-            raise Exception("Chunk must be provided.")
-
         """
         for c in range(1, len(self._chunk)):
             pref = 'psf' + str(c) + '_'
@@ -224,6 +229,15 @@ class Model():
         
         ret = (model, param)    
         #"""
+        return ret
+
+    def psf2(self, resol):
+        pref = 'psf_'
+        model = lmm(psf_func, prefix=pref)
+        param = model.make_params() 
+        #param[pref+'resol'].set(resol, vary=False)        
+        ret = (model, param)    
+
         return ret
 
     def unabs(self):

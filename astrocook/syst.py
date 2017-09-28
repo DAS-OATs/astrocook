@@ -1,5 +1,5 @@
 from . import Line, Model
-from .utils import convolve, dict_wave, voigt_def
+from .utils import convolve, convolve2, dict_wave, voigt_def
 from astropy import units as u
 from astropy.table import Column, Table
 from copy import deepcopy as dc
@@ -318,7 +318,8 @@ class Syst(Line):
                     ion=ion_deflat, yunit=yunit)
         self.__dict__.update(syst.__dict__)
     
-    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, maxfev=1000):
+    def fit(self, group, chunk, unabs_guess, voigt_guess, psf, psf2,
+            maxfev=1000):
 
         """
         for c in range(1, len(chunk)):
@@ -349,6 +350,10 @@ class Syst(Line):
         param.update(psf[1])
         #conv_model = model
 
+        #conv_model = lmc(model, psf2[0], convolve2)
+        #param.update(psf2[1])
+        
+        
         for c in range(1, len(chunk)):
             #print(np.min(self._spec.x[chunk[c]]),np.max(self._spec.x[chunk[c]]))
 
@@ -599,18 +604,13 @@ class Syst(Line):
         except:
             z = self.x
 
-        z_neb = np.asarray([z for k in range(len(z)) if z[k] > 30.0])  # Change this (hardcoded)
+        z_neb = np.asarray([z for k in range(len(z)) if z[k] > 30.0])
+        # Change this (hardcoded)
         if (len(z_neb) > 0):
             x_neb = (1.0 + z_neb[0]) * dict_wave['neb']
         else:
             x_neb = np.asarray([])
         
-        if (chunk is not None):
-            zmin = np.min(self.xmin[group[1]])
-            zmax = np.max(self.xmax[group[1]])
-        else:
-            zmin = np.min(self.xmin)
-            zmax = np.max(self.xmax)
         if split == True:
             #figsize = (7,6)
             row = min(n,4)
@@ -621,10 +621,12 @@ class Syst(Line):
             grid = gs(row,col)
             for p in range(n):
                 t = Table(self._t[group[1]])
+                zmin = float('inf')
+                zmax = 0
                 for l in range(len(t)):
                     if (ion[p] in t['ION'][l]):
-                        zmin = t['XMIN'][l]
-                        zmax = t['XMAX'][l]
+                        zmin = min(zmin, t['XMIN'][l])
+                        zmax = max(zmax, t['XMAX'][l])
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
                 ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
                 spec = dc(self._spec)
@@ -662,7 +664,6 @@ class Syst(Line):
                     fit.to_z([ion[p]])
                     for c in range(1, len(chunk)):
                         ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
-                    ax.plot(fit.x, fit.y, c='g')
                 if (hasattr(self, '_resid_fit')):
                     resid_fit = dc(self._resid_fit)
                     resid_fit.to_z([ion[p]])
@@ -688,6 +689,12 @@ class Syst(Line):
                 fig.suptitle("Reduced chi-squared: %3.2f" % (self._redchi),
                              fontsize=10)
         else:
+            if (chunk is not None):
+                zmin = np.min(self.xmin[group[1]])
+                zmax = np.max(self.xmax[group[1]])
+            else:
+                zmin = np.min(self.xmin)
+                zmax = np.max(self.xmax)
             grid = gs(1,1)
             fig = plt.figure(figsize=figsize)
             fig.canvas.set_window_title("System")
@@ -724,6 +731,19 @@ class Syst(Line):
 
         return psf   
 
+    def psf2(self, group, chunk, resol):
+        """ Model the instrumental PSF """
+        
+        for c in range(1, len(chunk)):
+            if (c == 1):
+                chunk_sum = dc(chunk[c])
+            else:
+                chunk_sum += chunk[c]
+        resol_arr = np.ones(np.sum(chunk_sum)) * resol
+        model = Model(self._spec, line=self, group=group, chunk=chunk)
+        psf = model.psf2(resol_arr)
+        return psf   
+    
     def unabs(self, group, chunk):
         """ Remove lines """
 
