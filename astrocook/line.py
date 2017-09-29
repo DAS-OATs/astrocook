@@ -322,7 +322,7 @@ class Line(Spec1D):
         fit = self.fit(group, chunk, norm_guess, voigt_guess, psf, psf2)
         return group, chunk, norm_guess, voigt_guess, psf, fit, psf2
 
-    def chunk(self, x=None, line=None):
+    def chunk(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
@@ -334,13 +334,15 @@ class Line(Spec1D):
             raise Exception("Line number is too large.")
         iter = range(len(self._t))
         sel = self._spec.t['X'] < 0.0
-        for row in self.t[self.group(line=line)[1]]:
+        for row in self.t[self.group(line=line, single=single)[1]]:
             sel = np.logical_or(sel, np.logical_and(
                 self._spec.t['X'] >= row['XMIN'],
                 self._spec.t['X'] <= row['XMAX']))
         if (np.sum(sel) % 2 == 0):
             sel[np.argmax(sel)] = 0
-        return (line, sel)
+        ret = (line, sel)
+        self._chunk = ret
+        return ret
 
     def cont_new(self, kappa=3.0):
         self._precont = dc(self._spec)
@@ -655,7 +657,7 @@ class Line(Spec1D):
 
         return fit        
     
-    def group(self, x=None, line=None):
+    def group(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
@@ -665,13 +667,20 @@ class Line(Spec1D):
                             == abs(self.x.value-x.value).min())[0][0]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("line is too large.")
-        iter = range(len(self._t))
-        self._t.sort('X')  # This gives a warning on a masked table
-        #self._t.group_by('X')
-        groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
-                                          self._t['XMIN'][1:])) 
-        sel = np.array([groups[l] == groups[line] for l in iter])
-        return (line, sel)
+        if (single == True):
+            sel = np.full(len(self._t), False)
+            sel[line] = True
+        else:
+            iter = range(len(self._t))
+            self._t.sort('X')  # This gives a warning on a masked table
+            #self._t.group_by('X')
+            groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
+                                                self._t['XMIN'][1:])) 
+            sel = np.array([groups[l] == groups[line] for l in iter])
+        
+        ret = (line, sel)
+        self._group = ret
+        return ret
         
     def mask_col(self, col):
         """ Mask columns """
@@ -711,58 +720,7 @@ class Line(Spec1D):
             * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
 
         return norm 
-    
-    def plot2(self, group=None, chunk=None, figsize=(10,4), block=True,
-              **kwargs):
-        spec = self._spec
-        fig = plt.figure(figsize=figsize)
-        fig.canvas.set_window_title("Lines")
-        grid = gs(1, 1)
-        ax = fig.add_subplot(grid[:, :])
-        grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
-        ax.plot(spec.x, spec.y, c='black', lw=1.0)
-        ax.plot(spec.x, spec.dy, c='r', lw=1.0)
-        ax.set_xlabel("Wavelength [" + str(spec.x.unit) + "]")
-        ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
-        #ax.set_xlim([380,500])
-        #ax.set_ylim([-20,360])
-        #if (hasattr(self, '_conv')):
-        #    ax.plot(self._conv.x, self._conv.y, c='black', lw=1.0,
-        #            linestyle=':')
-        ax.scatter(self.x, self.y, c='r', marker='+')
-        if (hasattr(self, '_cont')):
-            ax.plot(self._cont.x, self._cont.y, c='b', lw=1.0, linestyle=':')
-        if (group is not None):
-            ax.scatter(self.x[group[1]], self.y[group[1]], c='r', marker='+',
-                       s=100)
-        if (chunk is not None):
-            ax.plot(spec.x[chunk[1]], spec.y[chunk[1]], c='black', lw=2.0)
-            if (hasattr(self, '_norm')):
-                where = np.where(self._spec.y != self._norm.y)
-                ax.plot(self._norm.x[where], self._norm.y[where], c='y', lw=1.0,
-                        linestyle=':')
-            if (hasattr(self, '_voigt')):
-                where = np.where(self._spec.y != self._voigt.y)
-                ax.plot(self._voigt.x[where], self._voigt.y[where], c='g',
-                        lw=1.0, linestyle=':')
-        if (hasattr(self, '_cont')):
-            where = np.where(self._spec.y != self._cont.y)
-            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
-        if (hasattr(self, '_fit')):
-            where = np.where(self._spec.y != self._fit.y)
-            ax.plot(self._fit.x[where], self._fit.y[where], c='g')
-
-        if (hasattr(self, '_cont')):
-            cont_sg = savitzky_golay(self._cont.y, window_size=301, order=4)
-            ax.plot(self._cont.x, cont_sg, c='b', lw=1.0)
-        
-        if block is False:
-            plt.ion()
-            plt.draw()
-        else:
-            plt.show()
-
-        
+            
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
         spec = self._spec
@@ -838,9 +796,7 @@ class Line(Spec1D):
         if block is True:
             plt.show()
         
-    def prep(self, x, prof='voigt', vary=False, **kwargs):
-        self._group = self.group(x)            
-        self._chunk = self.chunk(x)            
+    def prep(self, x, prof='voigt', vary=True, **kwargs):
         self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
         if (prof == 'voigt'):
             try:
@@ -859,7 +815,6 @@ class Line(Spec1D):
                 btur = kwargs['btur']
             except:
                 btur = []
-            print(z, N)
             self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
                                           b=b, btur=btur)
         else:
@@ -874,14 +829,14 @@ class Line(Spec1D):
 
         return psf   
 
-    def redchi(self, model_param):
+    def redchi(self, model_param, nvarys):
         model = model_param[0]
         param = model_param[1]
+        param.pretty_print()
         x = self._spec.x[self._chunk[1]]
         y = self._spec.y[self._chunk[1]]        
         dy = self._spec.dy[self._chunk[1]]
         ndata = len(x)
-        nvarys = 3  # Find a way to not have this hardcoded
         mod = model.eval(param, x=x.value)
         ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
         return ret

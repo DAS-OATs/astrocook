@@ -24,7 +24,7 @@ def linear_step_func(x, xmin, xmax, slope, norm):
     return ret
 
 def norm_func(x, norm):
-    ret = norm
+    ret = np.full(len(x), norm)
     return ret
 
 def norm_step_func(x, xmin, xmax, norm):

@@ -220,7 +220,7 @@ class Syst(Line):
 
         return cont_corr
         
-    def chunk(self, x=None, line=None):  # Chunk must be shifted to the system z
+    def chunk(self, x=None, line=None, single=False):  # Chunk must be shifted to the system z
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
@@ -243,7 +243,7 @@ class Syst(Line):
             sel = self._spec.t['X'] < 0.0
             spec = dc(self._spec)
             spec.to_z([ion[p]])
-            for row in self.t[self.group(line=line)[1]]:
+            for row in self.t[self.group(line=line, single=single)[1]]:
                 sel = np.logical_or(sel, np.logical_and(
                     spec.t['X'] >= row['XMIN'],
                     spec.t['X'] <= row['XMAX']))
@@ -251,6 +251,8 @@ class Syst(Line):
                 sel[np.argmax(sel)] = 0
             ret += (sel,)
 
+
+        self._chunk = ret
         return ret
 
     def create_z(self):
@@ -318,6 +320,9 @@ class Syst(Line):
                     xmin=zmin_deflat, xmax=zmax_deflat, dy=dy_deflat,
                     ion=ion_deflat, yunit=yunit)
         self.__dict__.update(syst.__dict__)
+
+    #def fit_new(self):
+        
     
     def fit(self, group, chunk, norm_guess, prof_guess, psf, psf2,
             maxfev=1000):
@@ -421,7 +426,7 @@ class Syst(Line):
                     self._flat.t.add_row([r['X'], r['Y'][i], r['XMIN'],
                                           r['XMAX'], r['DY'][i], r['ION'][i]])
                     
-    def group(self, x=None, line=None):
+    def group(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
@@ -432,28 +437,36 @@ class Syst(Line):
             line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("line is too large.")
-        iter = range(len(self._t))
-        self._t.sort('X')  # This gives a warning on a masked table
-        #self._t.group_by('X')
-        groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
-                                          self._t['XMIN'][1:])) 
-        sel = np.array([groups[l] == groups[line] for l in iter])
 
-        # This part is needed to add interlopers to the group
-        xmin = float('inf') 
-        xmax = 0
-        for r in self._t[sel]:
-            for i in range(len(r['Y'])):
-                xmin = min(xmin, (1 + r['XMIN']) * dict_wave[r['ION'][i]])
-                xmax = max(xmax, (1 + r['XMAX']) * dict_wave[r['ION'][i]])
-        l = 0
-        for r in self._t:
-            for i in range(len(r['Y'])):
-                x = (1 + r['X']) * dict_wave[r['ION'][i]]
-                if ((x > xmin) and (x < xmax)):
-                    sel[l] = True
-            l += 1
-        return (line, sel)
+        if (single == True):
+            sel = np.full(len(self._t), False)
+            sel[line] = True
+        else:
+            iter = range(len(self._t))
+            self._t.sort('X')  # This gives a warning on a masked table
+            #self._t.group_by('X')
+            groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
+                                            self._t['XMIN'][1:])) 
+            sel = np.array([groups[l] == groups[line] for l in iter])
+
+            # This part is needed to add interlopers to the group
+            xmin = float('inf') 
+            xmax = 0
+            for r in self._t[sel]:
+                for i in range(len(r['Y'])):
+                    xmin = min(xmin, (1 + r['XMIN']) * dict_wave[r['ION'][i]])
+                    xmax = max(xmax, (1 + r['XMAX']) * dict_wave[r['ION'][i]])
+            l = 0
+            for r in self._t:
+                for i in range(len(r['Y'])):
+                    x = (1 + r['X']) * dict_wave[r['ION'][i]]
+                    if ((x > xmin) and (x < xmax)):
+                        sel[l] = True
+                l += 1
+            
+        ret = (line, sel)
+        self._group = ret
+        return ret
         
     def match_z(self, ztol=1e-4):
         """ Match redshifts in a list, to define systems """
@@ -743,6 +756,25 @@ class Syst(Line):
         psf = model.psf2(resol_arr)
         return psf   
     
+    def redchi(self, model_param, nvarys):
+        model = model_param[0]
+        param = model_param[1]
+        for c in range(1, len(self._chunk)):
+            if (c == 1):
+                chunk_sum = dc(self._chunk[c])
+            else:
+                chunk_sum += self._chunk[c]
+        x = self._spec.x[chunk_sum]
+        y = self._spec.y[chunk_sum]        
+        dy = self._spec.dy[chunk_sum]
+        ndata = len(x)
+        #param.pretty_print()
+        mod = model.eval(param, x=x.value)
+        #print(mod)
+        #print(y.value)
+        ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
+        return ret
+
     def unabs(self, group, chunk):
         """ Remove lines """
 
