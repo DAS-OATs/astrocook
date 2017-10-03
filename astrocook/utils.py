@@ -156,7 +156,10 @@ def many_voigt(x, *p, constr_list=None, trans_list=None, transf='yes'):
 
 
     return np.exp(-sum)
-    
+
+def redchi(x, y, dy, mod, nvarys=0):
+    return np.sum(((mod-y)/dy)**2) / (len(x)-nvarys)
+
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     r"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.

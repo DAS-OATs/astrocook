@@ -34,7 +34,7 @@ def main():
     line_i = dc(line)
     x_arr = line_i.x
     group_check = 0
-    #for l in range(0):
+    #for l in range(14,15):
     for l in range(ltot):
         
         print("Line %i of %i (%3.2f %s)..." \
@@ -74,13 +74,13 @@ def main():
 
             #""" This runs the second way automatically
             # Fit the model, incrementally adding components
-            group, chunk = line.auto(x=x_arr[l])
+            group, chunk = line.auto(x=x_arr[l], i_max=1)
     
             # Plot lines
             print("Close graph to continue.")
             line.plot(group, chunk)
 
-    line.plot()
+    #line.plot()
 
 
 if __name__ == '__main__':

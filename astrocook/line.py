@@ -214,8 +214,6 @@ class Line(Spec1D):
         if (line is not None):
             if (x is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            #line = np.where(abs(self.x.value-x.value) \
-            #                == abs(self.x.value-x.value).min())[0][0]
             x = self.x[line]
         if ((x is None) and (line >= len(self._t))):
             raise Exception("Line number is too large.")
@@ -232,96 +230,46 @@ class Line(Spec1D):
         self._neb = dc(self)
         while (stop == False):
             i += 1
-            # Let the continuum vary only after a given iteration
-            #if (i <= 0):
-            #    vary = False
-            #else:
-            #    vary = True
-
             noneb = dc(self._noneb)
-            group_noneb, chunk_noneb, norm_guess_noneb, voigt_guess_noneb, \
-                psf_noneb, fit_noneb, psf2_noneb = noneb.auto_fit(x, vary)
+            fit_noneb = noneb.fit_wrap(x, vary)
 
             neb = dc(self._neb)
-            group_neb, chunk_neb, norm_guess_neb, voigt_guess_neb, psf_neb, \
-                fit_neb, psf2_neb = neb.auto_fit(x, vary)
+            fit_neb = neb.fit_wrap(x, vary)
 
             if (noneb._redchi <= neb._redchi):
-                #print("noneb")
                 self_temp = dc(noneb)
-                group = group_noneb
-                chunk = chunk_noneb
-                norm_guess = norm_guess_noneb
-                voigt_guess = voigt_guess_noneb
-                psf = psf_noneb
                 fit = fit_noneb
-                psf2 = psf2_noneb
             else:
-                #print("neb")                
                 self_temp = dc(neb)
-                group = group_neb
-                chunk = chunk_neb
-                norm_guess = norm_guess_neb
-                voigt_guess = voigt_guess_neb
-                psf = psf_neb
                 fit = fit_neb
-                psf2 = psf2_neb
 
+            #self = dc(self_temp)
             self.__dict__.update(self_temp.__dict__)
-
-            self._resid_fit = dc(self._spec)
-            self._resid_fit.y = self._spec.y - self._fit.y
-            self._resid_cont = dc(self._spec)
-            self._resid_cont.y = self._spec.y - self._cont.y * self._spec.y.unit
-            
             print("(%i,%i) %3.2f, %3.2f;" \
                   % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
                    or (i==i_max)
-
+            
             aic_old = self._aic
             redchi_old = self._redchi            
             if (self._redchi < redchi_best): #or 1==1):
-                group_best = group
-                chunk_best = chunk
-                fitobj_best = dc(fit)
+                self_best = dc(self)
+                fit_best = dc(fit)
                 i_best = i
-                t_best = dc(self._t)
-                norm_best = dc(self._norm)
-                voigt_best = dc(self._voigt)
-                cont_best = dc(self._cont)
-                fit_best = dc(self._fit) 
-                redchi_best = self._redchi
-                aic_best = self._aic
 
             if (stop == False):
-                cont_corr = self.corr_resid(group, cont_corr)
-                
-        self._t = dc(t_best)
-        self._norm = dc(norm_best)
-        self._voigt = dc(voigt_best)
-        self._cont = dc(cont_best)
-        self._fit = dc(fit_best)
-        self._redchi = redchi_best
-        self._aic = aic_best
-        fit = fitobj_best
-        #print(fit.fit_report())
-        print("best chi-squared (%i) %3.2f, %3.2f;" % (i_best, self._redchi, self._aic),
-              end=" ", flush=True)
-        
-        return group_best, chunk_best
-    
-    def auto_fit(self, x, vary=False):
-        group = self.group(x)            
-        chunk = self.chunk(x)            
-        norm_guess = self.norm(group, chunk, vary=vary)
-        voigt_guess = self.voigt(group, chunk)
-        psf = self.psf(group, chunk, self._resol)
-        psf2 = self.psf2(group, chunk, self._resol)
-        fit = self.fit(group, chunk, norm_guess, voigt_guess, psf, psf2)
-        return group, chunk, norm_guess, voigt_guess, psf, fit, psf2
+                cont_corr = self.corr_resid(self._group, cont_corr)
 
+        
+        self = dc(self_best)
+        self.__dict__.update(self_best.__dict__)
+        fit = fit_best
+        print("best chi-squared (%i) %3.2f, %3.2f;" \
+              % (i_best, self._redchi, self._aic), end=" ", flush=True)
+        
+        return self._group, self._chunk
+    
     def chunk(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -343,38 +291,6 @@ class Line(Spec1D):
         ret = (line, sel)
         self._chunk = ret
         return ret
-
-    def cont_new(self, kappa=3.0):
-        self._precont = dc(self._spec)
-        range_x = np.max(self._spec.x) - np.min(self._spec.x)
-        x = self._extr.x
-        y = self._extr.y
-        x = self._maxima.x
-        y = self._maxima.y
-        self._cont = dc(self._precont)        
-        clip_x = x
-        clip_y = y
-        stop = False
-        i = 0
-        while (stop == False):
-            i += 1
-            frac = 3*u.nm/range_x * len(x)/len(clip_x)
-            le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
-                                         delta=0.0, is_sorted=True)
-            cont_y = le[:, 1]
-            cont_dy = np.interp(clip_x, self._spec.x, self._spec.dy)
-            max_y = cont_y + kappa * cont_dy
-            min_y = cont_y - kappa * cont_dy
-            where = np.logical_and(clip_y > min_y, clip_y < max_y) 
-            stop = (len(clip_y) == np.sum(where)) #or i > 1
-            clip_x = clip_x[where]
-            clip_y = clip_y[where]
-
-
-        self._clip_x = clip_x
-        self._clip_y = clip_y
-        self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
-        
     
     def cont(self, smooth=3.0):
         self._precont = dc(self._spec)
@@ -407,43 +323,11 @@ class Line(Spec1D):
 
         self._clip_x = clip_x
         self._clip_y = clip_y
-        self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
+        self._cont.t['Y'] = np.interp(self._cont.x, le[:, 0], le[:, 1]) \
+                            * self._cont.y.unit
         #self._cont.y = np.interp(self._cont.x, clip_x, cont_y)
         #self._cont.y = spl(self._cont.x)
     
-    def cont_old(self, wind=5.0, low=4.0, fact=0.0):
-        self._precont = dc(self._spec)
-        maxima_x = self._maxima.x
-        maxima_y = self._maxima.y
-        #maxima_x = self._bound_x
-        #maxima_y = self._bound_y
-        #maxima_x = self._spec.x
-        #maxima_y = self._spec.y
-
-        xmin = np.min(self._spec.x)
-        xmax = 0
-        filt_y = np.array([])
-        for wind in np.arange(1.0, 100.0, 1.0):
-            while (xmax < np.max(self._spec.x)):
-                xmax = xmin + wind * self._spec.x.unit
-                where = np.where(np.logical_and(maxima_x.value >= xmin.value,
-                                                maxima_x.value < xmax.value))
-                sel = maxima_y[where]
-                clip = sigmaclip(sel, low=low, high=10.0)[0]
-                filt_y = np.append(filt_y, clip)
-                xmin = xmax
-        filt_x = maxima_x[np.in1d(maxima_y, filt_y)]
-
-        self._precont.y = np.interp(self._precont.x, maxima_x, maxima_y)
-
-        self._cont = dc(self._precont)        
-
-        # Boxy
-        frac = min(1, fact/len(filt_x))
-        
-        le = sm.nonparametric.lowess(filt_y, filt_x, frac=frac)
-        self._cont.y = np.interp(self._cont.x, le[:, 0], le[:, 1])
-        
     def corr_resid(self, group, cont_corr):
 
         xmin = np.min(self.xmin[group[1]])
@@ -591,54 +475,92 @@ class Line(Spec1D):
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
 
-    def fit(self, group, chunk, norm_guess, prof_guess, psf, maxfev=500):
 
-        model = norm_guess[0] * prof_guess[0]
-        param = norm_guess[1]
-        conv_model = lmc(model, psf[0], convolve)
-        param.update(prof_guess[1])
-        param.update(psf[1])
-        if (hasattr(self, '_cont') == False):
-            self._cont = dc(self._spec)
-        if (hasattr(self, '_fit') == False):
-            self._fit = dc(self._spec)
-        if (hasattr(self, '_rem') == False):
-            self._rem = dc(self._spec)
-        if (len(self._spec.x[chunk[1]]) < len(param)):
+    def fit(self, x=None, y=None, dy=None, guess=None, maxfev=1000):
+
+        if (x is None):
+            x = self._fit_x
+        if (y is None):
+            y = self._fit_y
+        if (dy is None):
+            dy = self._fit_dy
+        if (guess is None):
+            guess = self._guess
+            
+        (model, param) = guess
+        if (hasattr(self, '_chunk_sum')):
+            chunk = self._chunk_sum
+        else:
+            chunk = np.full(len(self._spec.t), True)
+        if (len(self._spec.x[chunk]) < len(param)):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            if (hasattr(self, '_norm')):
-                y = self._spec.y[chunk[1]] / self._cont.y[chunk[1]]
-                dy = self._spec.dy[chunk[1]].value / self._cont.y[chunk[1]].value
-                fit = conv_model.fit(y.value, param,
-                                     x=self._spec.x[chunk[1]].value,
-                                     fit_kws={'maxfev': maxfev},
-                                     weights=1/dy)
-                cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
-                self._fit.y[chunk[1]] = fit.best_fit * self._cont.y[chunk[1]] \
-                                        * self._fit.y[chunk[1]].unit
-                self._cont.y[chunk[1]] = cont['cont_'] \
-                                         * self._cont.y[chunk[1]].value
-                rem = self._cont.y * self._spec.y \
-                      / self._fit.y * self._fit.y.unit
-                where = self._fit.y.value < 0.1 * self._cont.y.value
-                rem[where] = self._cont.y[where] * self._fit.y[where].unit
-                self._rem.y[chunk[1]] = rem[chunk[1]]
-            else:
-                fit = conv_model.fit(self._spec.y[chunk[1]].value, param,
-                                     x=self._spec.x[chunk[1]].value,
-                                     fit_kws={'maxfev': maxfev},
-                                     weights=1/self._spec.dy[chunk[1]].value)
-                cont = fit.eval_components(x=self._spec.x[chunk[1]].value)
-                self._cont.y[chunk[1]] = cont['cont_'] \
-                                         * self._cont.y[chunk[1]].unit
-                self._fit.y[chunk[1]] = fit.best_fit \
-                                        * self._fit.y[chunk[1]].unit
-                self._rem.y[chunk[1]] = self._cont.y[chunk[1]] \
-                                        * self.y[chunk[1]] \
-                                        / self._fit.y[chunk[1]]
+            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value,
+                            fit_kws={'maxfev': maxfev})
+        return fit    
 
+    def fit_prep(self, prof='voigt', vary=False, **kwargs):
+        if (hasattr(self, '_chunk_sum')):
+            where = self._chunk_sum
+        else:
+            where = np.full(len(self._spec.t), True)
+        
+        self._fit_x = self._spec.x[where]
+        self._fit_y = self._spec.y[where] / self._cont.y[where]
+        self._fit_dy = self._spec.dy[where] / self._cont.y[where]
+
+        self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
+        if (prof == 'voigt'):
+            try:
+                z = kwargs['z']
+            except:
+                z = []
+            try:
+                N = kwargs['N']
+            except:
+                N = []
+            try:
+                b = kwargs['b']
+            except:
+                b = []
+            try:
+                btur = kwargs['btur']
+            except:
+                btur = []
+            
+            self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
+                                          b=b, btur=btur)
+        else:
+            raise Exception("Only Voigt profile is supported.")
+        self._psf = self.psf(self._group, self._chunk, self._resol)
+
+        if (hasattr(self, '_fit') == False):
+            self._fit = dc(self._spec)        
+        if (hasattr(self, '_cont') == False):
+            self._cont = dc(self._spec)            
+        if (hasattr(self, '_resid_fit') == False):
+            self._resid_fit = dc(self._spec)        
+        if (hasattr(self, '_resid_cont') == False):
+            self._resid_cont = dc(self._spec)            
+        if (hasattr(self, '_rem') == False):
+            self._rem = dc(self._spec)            
+
+    def fit_prod(self, fit, prof='voigt'):
+        if (hasattr(self, '_chunk_sum')):
+            where = self._chunk_sum
+        else:
+            where = np.full(len(self._spec.t), True)
+        yunit = self._spec.y.unit
+        comp = fit.eval_components(x=self._spec.x[where].value)
+        self._fit.y[where] = fit.best_fit * self._cont.y[where] 
+        self._cont.y[where] = comp['cont_'] * self._cont.y[where]
+        self._resid_fit.y[where] = self._spec.y[where] - self._fit.y[where]
+        self._resid_cont.y[where] = self._spec.y[where] - self._cont.y[where] 
+        self._rem.y[where] = self._cont.y[where] + self._resid_fit.y[where]
+    #* self._spec.y[where] / self._fit.y[where] #* yunit
+        
+        if (prof == 'voigt'):
             z_tags = [z for z in fit.best_values if z.endswith('_z')]
             N_tags = [N for N in fit.best_values if N.endswith('_N')]
             b_tags = [b for b in fit.best_values if b.endswith('_b')]
@@ -646,17 +568,26 @@ class Line(Spec1D):
 
             self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
             self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
-                          * self._N.unit
+                          * self._N_arr[0].unit
             self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
-                          * self._b.unit
+                          * self._b_arr[0].unit
             self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
-                             * self._btur.unit
+                             * self._btur_arr[0].unit
+        else:
+            raise Exception("Only Voigt profile is supported.")
 
-            self._redchi = fit.redchi
-            self._aic = fit.aic
+        self._redchi = fit.redchi
+        self._aic = fit.aic    
+        
+    def fit_wrap(self, x, vary=False):
+        group = self.group(x)
+        chunk = self.chunk(x)            
+        self.fit_prep()
+        guess = self.model()
+        fit = self.fit()
+        self.fit_prod(fit)
+        return fit
 
-        return fit        
-    
     def group(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -693,20 +624,6 @@ class Line(Spec1D):
         if null.size > 0:
             ret[null] = float('nan')
         return ret
-
-    def model(self, prof=True, psf=True):
-        model = self._norm_guess[0]
-        param = self._norm_guess[1]
-        
-        if (prof == True):
-            model = model * self._prof_guess[0]
-            param.update(self._prof_guess[1])
-
-        if (psf == True):
-            model = lmc(model, self._psf[0], convolve)
-            param.update(self._psf[1])
-
-        return (model, param)
 
     def norm(self, group, chunk, value=1.0, vary=False):
         """ Normalize continuum """
@@ -796,30 +713,6 @@ class Line(Spec1D):
         if block is True:
             plt.show()
         
-    def prep(self, x, prof='voigt', vary=True, **kwargs):
-        self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
-        if (prof == 'voigt'):
-            try:
-                z = kwargs['z']
-            except:
-                z = []
-            try:
-                N = kwargs['N']
-            except:
-                N = []
-            try:
-                b = kwargs['b']
-            except:
-                b = []
-            try:
-                btur = kwargs['btur']
-            except:
-                btur = []
-            self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
-                                          b=b, btur=btur)
-        else:
-            raise Exception("Only Voigt profile is supported.")
-        self._psf = self.psf(self._group, self._chunk, self._resol)
     
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
@@ -832,7 +725,6 @@ class Line(Spec1D):
     def redchi(self, model_param, nvarys):
         model = model_param[0]
         param = model_param[1]
-        param.pretty_print()
         x = self._spec.x[self._chunk[1]]
         y = self._spec.y[self._chunk[1]]        
         dy = self._spec.dy[self._chunk[1]]
@@ -861,7 +753,6 @@ class Line(Spec1D):
             raise Exception("Parameter arrays must have the same length.")
         
         model = Model(self._spec, line=self, group=group, chunk=chunk)
-
         if (z == []):
             z = self.x[group[1]] / dict_wave['Ly_a'] - 1
             if (hasattr(self, '_norm')):
@@ -873,7 +764,7 @@ class Line(Spec1D):
                    * u.km / u.s
         if (hasattr(self, '_voigt') == False):
             self._voigt = dc(self._spec)
-        voigt = model.voigt(z, N, b, btur, 'Ly_a')
+        voigt = model.voigt(z, N, b, btur, ['Ly_a'])
         self._voigt.y[chunk[1]] = voigt[0].eval(
             voigt[1], x=self._voigt.x[chunk[1]].value) * self._voigt.y.unit
         if (hasattr(self, '_norm')):
@@ -883,9 +774,9 @@ class Line(Spec1D):
             self._voigt.y[chunk[1]] = self._voigt.y[chunk[1]] \
                                       * self._unabs.y[chunk[1]].value
 
-        self._z = dc(model._z)
-        self._N = dc(model._N)
-        self._b = dc(model._b)
-        self._btur = dc(model._btur)
+        self._z_arr = dc(model._z)
+        self._N_arr = dc(model._N)
+        self._b_arr = dc(model._b)
+        self._btur_arr = dc(model._btur)
 
         return voigt

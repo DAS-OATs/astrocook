@@ -1,6 +1,7 @@
 from . import Line, Model
 from .utils import convolve, convolve2, dict_doub, dict_wave, voigt_def
 from astropy import units as u
+from astropy.io import fits as fits
 from astropy.table import Column, Table
 from copy import deepcopy as dc
 from lmfit import CompositeModel as lmc
@@ -163,7 +164,7 @@ class Syst(Line):
         x = self._resid_fit.x[where][np.argmin(resid_norm[where])]
         y = np.interp(x.value, self._spec.x, self._spec.y) * self._spec.yunit
         dy = np.interp(x.value, self._spec.x, self._spec.dy) * self._spec.yunit
-        
+
         ion_arr = np.unique(self._flat.ion)
         n = len(ion_arr)
         z_arr = np.empty(n)        
@@ -179,7 +180,7 @@ class Syst(Line):
 
         where = (abs(z_arr-z_cen) == abs(z_arr-z_cen).min())
         z_ion = z_arr[where][0]
-        
+
         ion_where = (abs(z_ion-self.x) == abs(z_ion-self.x).min())
         ion = self.ion[ion_where][0]
         zmin_ion = self.xmin[ion_where][0] 
@@ -210,13 +211,15 @@ class Syst(Line):
         self._noneb = dc(self)
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                                ion])
+        self._noneb.t.sort('X')  # This gives an annoying warning
 
         self._neb = dc(self)
         self._neb.flatten_z()
         self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, 
                                    neb])
         self._neb.deflatten_z()
-        self.t.sort('X')  # This gives an annoying warning
+        self._neb.t.sort('X')  # This gives an annoying warning
+
 
         return cont_corr
         
@@ -251,8 +254,13 @@ class Syst(Line):
                 sel[np.argmax(sel)] = 0
             ret += (sel,)
 
-
         self._chunk = ret
+        for c in range(1, len(ret)):
+            if (c == 1):
+                self._chunk_sum = dc(ret[c])
+            else:
+                self._chunk_sum += ret[c]
+
         return ret
 
     def create_z(self):
@@ -321,93 +329,6 @@ class Syst(Line):
                     ion=ion_deflat, yunit=yunit)
         self.__dict__.update(syst.__dict__)
 
-    #def fit_new(self):
-        
-    
-    def fit(self, group, chunk, norm_guess, prof_guess, psf, psf2,
-            maxfev=1000):
-
-        model = norm_guess[0] * prof_guess[0]
-        param = norm_guess[1]
-        param.update(prof_guess[1])
-        conv_model = lmc(model, psf[0], convolve)
-        param.update(psf[1])
-
-        #conv_model = lmc(model, psf2[0], convolve2)
-        #param.update(psf2[1])
-        
-        
-        for c in range(1, len(chunk)):
-            if (c == 1):
-                chunk_sum = dc(chunk[c])
-            else:
-                chunk_sum += chunk[c]
-         
-        if (hasattr(self, '_cont') == False):
-            self._cont = dc(self._spec)            
-        if (hasattr(self, '_fit') == False):
-            self._fit = dc(self._spec)
-        if (hasattr(self, '_rem') == False):
-            self._rem = dc(self._spec)
-        if (len(self._spec.x[chunk_sum]) < len(param)):
-            warnings.warn("Too few data points; skipping.")
-            fit = None
-        else:
-            if (hasattr(self, '_norm')):
-                y = self._spec.y[chunk_sum] / self._cont.y[chunk_sum]
-                dy = self._spec.dy[chunk_sum].value \
-                     / self._cont.y[chunk_sum].value
-                #param.pretty_print()
-                fit = conv_model.fit(y.value, param,
-                                     x=self._spec.x[chunk_sum].value,
-                                     fit_kws={'maxfev': maxfev},
-                                     weights=1/dy)
-                #print(fit.fit_report())
-                comp = fit.eval_components(x=self._spec.x[chunk_sum].value)
-                self._fit.y[chunk_sum] = fit.best_fit \
-                                         * self._cont.y[chunk_sum] \
-                                         * self._fit.y[chunk_sum].unit
-                cont_temp = dc(self._cont)
-                for c in range(1, len(chunk)):
-                    cont_temp.y[chunk_sum] = comp['cont_'] \
-                                             * self._cont.y[chunk_sum].value
-                self._cont = cont_temp
-                self._rem.y[chunk_sum] = self._rem.y[chunk_sum] \
-                                         + self._cont.y[chunk_sum] * self._rem.y[chunk_sum].unit \
-                                         - self._fit.y[chunk_sum]
-                
-            else:
-                fit = conv_model.fit(self._spec.y[chunk_sum].value, param,
-                                     x=self._spec.x[chunk_sum].value,
-                                     fit_kws={'maxfev': maxfev},
-                                     weights=1/self._spec.dy[chunk_sum].value)
-
-                cont = fit.eval_components(x=self._spec.x[chunk_sum].value)
-                self._cont.y[chunk_sum] = cont['cont' + str(c) + '_'] \
-                                          * self._cont.y[chunk_sum].unit
-                self._fit.y[chunk_sum] = fit.best_fit \
-                                         * self._fit.y[chunk_sum].unit
-
-            z_tags = [z for z in fit.best_values if z.endswith('_z')]
-            N_tags = [N for N in fit.best_values if N.endswith('_N')]
-            b_tags = [b for b in fit.best_values if b.endswith('_b')]
-            btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
-
-            self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
-            self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
-                          * self._N_arr[0].unit
-            self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
-                          * self._b_arr[0].unit
-            self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
-                             * self._btur_arr[0].unit
-
-
-            self._redchi = fit.redchi
-            self._aic = fit.aic
-            self._chunk_sum = chunk_sum
-        
-        return fit    
-
     def flatten_z(self):
         """ Create a flattened version of the system, with different entries
         for each ion """
@@ -446,23 +367,28 @@ class Syst(Line):
             self._t.sort('X')  # This gives a warning on a masked table
             #self._t.group_by('X')
             groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
-                                            self._t['XMIN'][1:])) 
+                                              self._t['XMIN'][1:])) 
             sel = np.array([groups[l] == groups[line] for l in iter])
-
+            
             # This part is needed to add interlopers to the group
             xmin = float('inf') 
             xmax = 0
-            for r in self._t[sel]:
-                for i in range(len(r['Y'])):
-                    xmin = min(xmin, (1 + r['XMIN']) * dict_wave[r['ION'][i]])
-                    xmax = max(xmax, (1 + r['XMAX']) * dict_wave[r['ION'][i]])
-            l = 0
-            for r in self._t:
-                for i in range(len(r['Y'])):
-                    x = (1 + r['X']) * dict_wave[r['ION'][i]]
-                    if ((x > xmin) and (x < xmax)):
-                        sel[l] = True
-                l += 1
+            # The cycle must run two times because some interloper may affect
+            # the other doublet component and would then be missed
+            for t in range(2):  
+                for r in self._t[sel]:
+                    for i in range(len(r['Y'])):
+                        xmin = min(xmin,
+                                   (1 + r['XMIN']) * dict_wave[r['ION'][i]])
+                        xmax = max(xmax,
+                                   (1 + r['XMAX']) * dict_wave[r['ION'][i]])
+                l = 0
+                for r in self._t:
+                    for i in range(len(r['Y'])):
+                        x = (1 + r['X']) * dict_wave[r['ION'][i]]
+                        if ((x > xmin) and (x < xmax)):
+                            sel[l] = True
+                    l += 1
             
         ret = (line, sel)
         self._group = ret
@@ -516,12 +442,13 @@ class Syst(Line):
                 dy_coinc_row = (dy_sort[i],)
                 ion_coinc_row = (ion_sort[i],)
             if (coinc[i] == True):
-                z_coinc_row = np.append(z_coinc_row, z_sort[i+1])
-                y_coinc_row = y_coinc_row + (y_sort[i+1],)
-                zmin_coinc_row = np.append(zmin_coinc_row, zmin_sort[i+1])
-                zmax_coinc_row = np.append(zmax_coinc_row, zmax_sort[i+1])
-                dy_coinc_row = dy_coinc_row + (dy_sort[i+1],)
-                ion_coinc_row = ion_coinc_row + (ion_sort[i+1],)
+                if (ion_sort[i+1] not in ion_coinc_row):
+                    z_coinc_row = np.append(z_coinc_row, z_sort[i+1])
+                    y_coinc_row = y_coinc_row + (y_sort[i+1],)
+                    zmin_coinc_row = np.append(zmin_coinc_row, zmin_sort[i+1])
+                    zmax_coinc_row = np.append(zmax_coinc_row, zmax_sort[i+1])
+                    dy_coinc_row = dy_coinc_row + (dy_sort[i+1],)
+                    ion_coinc_row = ion_coinc_row + (ion_sort[i+1],)
             if (coinc[i+1] == False):
                 if (new == False):
                     z_coinc.append(np.mean(z_coinc_row))
@@ -531,6 +458,7 @@ class Syst(Line):
                     dy_coinc.append(dy_coinc_row)
                     ion_coinc.append(ion_coinc_row)
                 new = True
+
         syst = Syst(self.line, self.spec, x=z_coinc, y=y_coinc,
                     xmin=zmin_coinc, xmax=zmax_coinc, dy=dy_coinc,
                     ion=ion_coinc, yunit=y.unit)
@@ -553,7 +481,7 @@ class Syst(Line):
                 chunk_sum += chunk[c]
         self._norm.y[chunk_sum] = norm[0].eval(
             norm[1], x=self._norm.x[chunk_sum].value) \
-            * self._cont.y[chunk_sum] * self._norm.y[chunk_sum].unit 
+            * self._cont.y[chunk_sum] #* self._norm.y[chunk_sum].unit 
 
         return norm 
 
@@ -566,6 +494,9 @@ class Syst(Line):
             z = self._z_fit
         except:
             z = self.x
+
+        if (hasattr(self, '_chunk_sum')):
+            chunk_sum = self._chunk_sum
 
         z_neb = np.asarray([z for k in range(len(z)) if z[k] > 30.0])
         # Change this (hardcoded)
@@ -607,31 +538,54 @@ class Syst(Line):
                     if (hasattr(self, '_norm')):
                         norm = dc(self._norm)
                         norm.to_z([ion[p]])
+                        """
                         for c in range(1, len(chunk)):
                             ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
                                     lw=1.0, linestyle=':')
+                        """
+                        ax.plot(norm.x[chunk_sum], norm.y[chunk_sum], c='y',
+                                lw=1.0, linestyle=':')
                     if (hasattr(self, '_voigt')):
                         voigt = dc(self._voigt)
                         voigt.to_z([ion[p]])
+                        """
                         for c in range(1, len(chunk)):
                             ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
                                     lw=1.0, linestyle=':')
+                        """
+                        ax.plot(voigt.x[chunk_sum], voigt.y[chunk_sum], c='g',
+                                lw=1.0, linestyle=':')
                     if (hasattr(self, '_cont')):
                         cont = dc(self._cont)
                         cont.to_z([ion[p]])
+                        """
                         for c in range(1, len(chunk)):
                             ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
+                        """
+                        ax.plot(cont.x[chunk_sum], cont.y[chunk_sum], c='y')
                     if (hasattr(self, '_fit')):
                         fit = dc(self._fit)
                         fit.to_z([ion[p]])
+                        """
                         for c in range(1, len(chunk)):
                             ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
+                        """
+                        ax.plot(fit.x[chunk_sum], fit.y[chunk_sum], c='g')
                     if (hasattr(self, '_resid_fit')):
                         resid_fit = dc(self._resid_fit)
                         resid_fit.to_z([ion[p]])
+                        """
                         for c in range(1, len(chunk)):
                             ax.plot(resid_fit.x[chunk[c]],
                                     resid_fit.y[chunk[c]], c='b', lw=1.0)
+                        """
+                        ax.plot(resid_fit.x[chunk_sum],
+                                resid_fit.y[chunk_sum], c='b', lw=1.0)
+                    if (hasattr(self, '_rem')):
+                        rem = dc(self._rem)
+                        rem.to_z([ion[p]])
+                        ax.plot(rem.x[chunk_sum], rem.y[chunk_sum], c='b',
+                                lw=1.0)
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
@@ -774,6 +728,19 @@ class Syst(Line):
         #print(y.value)
         ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
         return ret
+
+    def save(self, name):
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='XMIN', format='E', array=self._spec.xmin),
+             fits.Column(name='XMAX', format='E', array=self._spec.xmax),
+             fits.Column(name='X', format='E', array=self._spec.x),
+             fits.Column(name='Y', format='E', array=self._spec.y),
+             fits.Column(name='Y_FIT', format='E', array=self._fit.y),
+             fits.Column(name='Y_REM', format='E', array=self._rem.y),
+             fits.Column(name='DY', format='E', array=self._spec.dy),
+             fits.Column(name='GROUP', format='I', array=self._spec.group),
+             fits.Column(name='RESOL', format='E', array=self._spec.resol)]) 
+        hdu.writeto(name + '_syst_spec.fits', overwrite=True)
 
     def unabs(self, group, chunk):
         """ Remove lines """

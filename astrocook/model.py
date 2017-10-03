@@ -70,19 +70,30 @@ class Model():
                  chunk=None):
         """ Constructor for the Fit class """
 
-        if ((syst is None) and (line is None)):
-            raise Exception("syst or line must be provided.")
+        #if ((syst is None) and (line is None)):
+        #    raise Exception("syst or line must be provided.")
         
         self._spec = spec
-        if (syst is None):
+        if ((syst is None) and (line is not None)):
             self._syst = line
-        else:
+        elif (syst is not None):
             self._syst = syst
-        if (hasattr(self._syst, '_cont')):
-            self._precont = self._syst.cont
-            self._cont = self._syst._cont
-        self._group = group
-        self._chunk = chunk
+        if (hasattr(self, '_syst')):
+            if (hasattr(self._syst, '_cont')):
+                self._precont = self._syst.cont
+                self._cont = self._syst._cont
+            if (hasattr(self._syst, '_group')):            
+                self._group = group
+            if (hasattr(self._syst, '_chunk')):            
+                self._chunk = chunk
+        else:
+            if (hasattr(self._spec, '_cont')):
+                self._precont = self._spec.cont
+                self._cont = self._spec._cont
+            if (hasattr(self._spec, '_group')):            
+                self._group = group
+            if (hasattr(self._spec, '_chunk')):            
+                self._chunk = chunk
         
 # Methods
 
@@ -138,33 +149,7 @@ class Model():
         #    raise Exception("Chunk must be provided.")
 
         if (self._cont is None):
-            raise Exception("Continuum be provided.")
-
-
-    
-        """
-        for c in range(1, len(self._chunk)):
-            pref = 'cont' + str(c) + '_'
-            model = lmm(norm_step_func, prefix=pref)
-            param = model.make_params()
-            xmin = np.min(self._spec.x[self._chunk[c]].value)
-            xmax = np.max(self._spec.x[self._chunk[c]].value)
-            cont = self._cont.y.value
-            norm = value #np.mean(cont)
-            
-            param[pref+'xmin'].set(xmin, vary=False)
-            param[pref+'xmax'].set(xmax, vary=False)
-            if (vary == False):
-                param[pref+'norm'].set(norm, vary=False)
-            else:
-                param[pref+'norm'].set(norm, min=0.95)#, max=1.05, min=0.95)
-
-            if (c == 1):
-                ret = (model, param)
-            else:
-                ret += (model, param)
-        """
-
+            raise Exception("Continuum must be provided.")
         pref = 'cont_'
         model = lmm(norm_func, prefix=pref)
         param = model.make_params()
@@ -309,7 +294,7 @@ class Model():
 
         return ret
 
-    def voigt(self, z, N, b, btur, ion='Ly_a'):
+    def voigt(self, z, N, b, btur, ion=['Ly_a']):
         """ Create a Voigt model for a line """
 
         self._z = dc(z)
@@ -322,7 +307,10 @@ class Model():
         expr_dict = {}
         mult_old = ''
         i = 0
-        for l in range(len(self._syst.t[self._group[1]])):
+        ran = 1
+        if (hasattr(self, '_syst')):
+            ran = len(self._syst.t[self._group[1]])
+        for l in range(ran):
             try:
                 ion = np.sort(self._syst.ion[self._group[1]][l])
             except:
@@ -377,11 +365,7 @@ class Model():
                 #param.pretty_print()
                 mult_old = mult
 
-        ret2 = (model, param)
+        ret = (model, param)
 
 
-        #if (hasattr(self._syst, 'ion')):
-        #    ret += (ret, expr_dict)
-
-
-        return ret2
+        return ret

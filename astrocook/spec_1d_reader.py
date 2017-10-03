@@ -15,7 +15,7 @@ class Spec1DReader:
     def source(self):
         """Source providing the spectrum."""
         return self._source
-        
+    
     def cont(self, filename):
         """Read a spectrum with continuum from an astrocook FITS file"""
 
@@ -60,6 +60,52 @@ class Spec1DReader:
                           em_rem=em_rem, cont=cont)
                           
         return cont
+    
+    def syst(self, name):
+
+        hdulist = fits.open(name + '_syst_spec.fits')
+        data = hdulist[1].data
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
+            
+        names = np.array(hdulist[1].columns.names)
+        units = np.array(hdulist[1].columns.units)
+        x_unit = units[np.where(names == 'X')][0]
+        y_unit = units[np.where(names == 'Y')][0]
+
+        # Currently units are hardcoded
+        x_unit = u.nm
+        y_unit = 1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom
+        #print(np.where(names == 'X'), np.where(names == 'X'))
+        #print(x_unit, y_unit)
+        xmin = data['XMIN']
+        xmax = data['XMAX']
+        x = data['X']
+        y = data['Y']            
+        y_fit = data['Y_FIT']
+        y_rem = data['Y_REM']
+        dy = data['DY']
+        group = data['GROUP']
+        resol = data['RESOL']
+        dx = 0.5 * (xmax - xmin)
+        
+        c1 = np.argwhere(y > 0)
+        c2 = np.argwhere(dy > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        print(x_unit, y_unit)
+        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+                     yunit=y_unit, group=good, resol=resol, meta=meta)
+        fit = Spec1D(x, y=y_fit, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+                     yunit=y_unit, group=good, resol=resol, meta=meta)
+        rem = Spec1D(x, y=y_rem, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+                     yunit=y_unit, group=good, resol=resol, meta=meta)
+        
+        return (spec, fit, rem)
         
 
     def sdss_dr10(self, filename):

@@ -1,11 +1,12 @@
 from . import List
-from .utils import many_gauss, savitzky_golay, dict_wave
+from .utils import convolve, many_gauss, savitzky_golay, dict_wave
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
 from astropy.table import Column, Table
 import copy
 from copy import deepcopy as dc
+from lmfit import CompositeModel as lmc
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
@@ -486,6 +487,21 @@ class Spec1D():
                       yunit=y.unit, group=good, resol=resol, meta=meta)
         return spec
         
+    def model(self, prof=True, psf=True):
+        model = self._norm_guess[0]
+        param = self._norm_guess[1]
+        
+        if (prof == True):
+            model = model * self._prof_guess[0]
+            param.update(self._prof_guess[1])
+            
+        if (psf == True):
+            model = lmc(model, self._psf[0], convolve)
+            param.update(self._psf[1])
+
+        self._guess = (model, param)
+        return self._guess
+
     def plot(self, figsize=(10,4), block=True, **kwargs):
         spec = self
         fig = plt.figure(figsize=figsize)
@@ -499,20 +515,41 @@ class Spec1D():
         ax.plot(spec.x, spec.dy, c='r', lw=1.0)
         if (hasattr(self, '_cont')):
             where = np.where(self.y != self._cont.y)
-            print(self.y, self._cont.y)
-            print(where)
-            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
-            ax.plot(self._cont.x, self._cont.y, c='y')
+            #print(self.y, self._cont.y)
+            #print(where)
+            #ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+            ax.plot(self.x, self._cont.y, c='y')
 
         #if block is False:
         #    plt.ion()
         #    plt.draw()
         if block is True:
             plt.show()
-        
+
+    def redchi(self, model_param=None, nvarys=0, chunk=None):
+        if (hasattr(self, '_spec')):
+            spec = self._spec
+        else:
+            spec = self
+        model = model_param[0]
+        param = model_param[1]
+        #param.pretty_print()
+        if (chunk is None):
+            x = spec.x
+            y = spec.y      
+            dy = spec.dy
+        else:
+            x = spec.x[chunk]
+            y = spec.y[chunk]        
+            dy = spec.dy[chunk]
+        ndata = len(x)
+        mod = model.eval(param, x=x.value)
+        ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
+        return ret
+    
     def rolling_window(self, width):
         """Convert a spectrum in rolling-window format
-    
+     
         Rolling-window format means that each column entry is an array of size
         @p width, obtained by rolling a window through each column. The size
         of the spectrum is 
