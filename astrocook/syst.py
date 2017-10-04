@@ -49,7 +49,7 @@ class Syst(Line):
             self._line = dc(line)
             if (hasattr(line, '_cont')):
                 self._precont = dc(line._precont)
-                self._cont = dc(line._cont) 
+                self._cont = dc(line._cont)
             if (hasattr(line, '_minima')):
                 self._minima = dc(line._minima)
             if (hasattr(line, '_maxima')):
@@ -140,13 +140,13 @@ class Syst(Line):
             raise Exception("Line list has a wrong format.")
     
     @property
-    def z(self):
-        return self._z
+    def linez(self):
+        return self._linez
 
-    @z.setter
-    def z(self, value):
+    @linez.setter
+    def linez(self, value):
         if isinstance(value, Syst):
-            self._z = value
+            self._linez = value
         else:
             raise Exception("Redshift list has a wrong format.")
 
@@ -211,18 +211,31 @@ class Syst(Line):
 
         
         self._noneb = dc(self)
-        self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
-                               ion])
-        self._noneb.t.sort('X')  # This gives an annoying warning
-
+        if (z_ion not in self._noneb.x):
+            self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
+                                   ion])
+            self._noneb.t.sort('X')  # This gives an annoying warning
+            self._noneb._z = np.append(self._z.value, z_ion) 
+            self._noneb._z.sort()
+            self._noneb._z *= self._z.unit
+            self._noneb._last_add = np.where(self._noneb._z == z_ion)
+        else:
+            self._noneb._last_add = None
+            
         self._neb = dc(self)
-        self._neb.flatten_z()
-        self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb, 
-                                   neb])
-        self._neb.deflatten_z()
-        self._neb.t.sort('X')  # This gives an annoying warning
-
-
+        if (z_ion not in self._noneb.x):
+            self._neb.flatten_z()
+            self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb,
+                                       neb])
+            self._neb.deflatten_z()
+            self._neb.t.sort('X')  # This gives an annoying warning
+            self._neb._z = np.append(self._z.value, z_neb.value)
+            self._neb._z.sort()
+            self._neb._z *= self._z.unit
+            self._neb._last_add = np.where(self._neb._z == z_neb) 
+        else:
+            self._neb._last_add = None
+       
         return cont_corr
         
     def chunk(self, x=None, line=None, single=False):  # Chunk must be shifted to the system z
@@ -268,14 +281,14 @@ class Syst(Line):
     def create_z(self):
 
         # Redshift list
-        self._z = dc(self._line)
-        self._z.to_z(self._ion)
-        self._z.t.add_column(Column(np.asarray(dc(self._ion)), name='ION'))
+        self._linez = dc(self._line)
+        self._linez.to_z(self._ion)
+        self._linez.t.add_column(Column(np.asarray(dc(self._ion)), name='ION'))
 
         if self._use_good:
-            self._z.ion = np.asarray(self._z.t['ION'][self._igood])
+            self._linez.ion = np.asarray(self._linez.t['ION'][self._igood])
         else:
-            self._z.ion = np.asarray(self._z.t['ION'])
+            self._linez.ion = np.asarray(self._linez.t['ION'])
 
 
     def deflatten_z(self):
@@ -335,7 +348,7 @@ class Syst(Line):
         """ Create a flattened version of the system, with different entries
         for each ion """
 
-        yunit = self._z.dy.unit
+        yunit = self._linez.dy.unit
         first = True
         for r in self.t:
             for i in range(len(r['Y'])):
@@ -399,19 +412,19 @@ class Syst(Line):
     def match_z(self, ztol=1e-4):
         """ Match redshifts in a list, to define systems """
 
-        if (hasattr(self, '_z') == False):
+        if (hasattr(self, '_linez') == False):
             raise Exception("Redshift table must be created before matching.")
         
         
         # Flatten arrays
         # N.B. Y and DY don't need flattening, as they have only one entry
         # per row. They will be repeated to have the shape of the other arrays.
-        z = np.ravel(self._z.x)
-        y = np.repeat(self._z.y, self._z.x.shape[1])        
-        zmin = np.ravel(self._z.xmin)
-        zmax = np.ravel(self._z.xmax)
-        dy = np.repeat(self._z.dy, self._z.x.shape[1])
-        ion = np.ravel(self._z.ion)
+        z = np.ravel(self._linez.x)
+        y = np.repeat(self._linez.y, self._linez.x.shape[1])        
+        zmin = np.ravel(self._linez.xmin)
+        zmax = np.ravel(self._linez.xmax)
+        dy = np.repeat(self._linez.dy, self._linez.x.shape[1])
+        ion = np.ravel(self._linez.ion)
 
         # Sort arrays
         argsort = np.argsort(z, kind='mergesort')
@@ -461,6 +474,7 @@ class Syst(Line):
                     ion_coinc.append(ion_coinc_row)
                 new = True
 
+        self._z = u.Quantity(np.array(z_coinc))
         syst = Syst(self.line, self.spec, x=z_coinc, y=y_coinc,
                     xmin=zmin_coinc, xmax=zmax_coinc, dy=dy_coinc,
                     ion=ion_coinc, yunit=y.unit)
@@ -493,7 +507,7 @@ class Syst(Line):
         ion = ion[ion != 'neb'] 
         n = len(ion)
         try:
-            z = self._z_fit
+            z = self._linez_fit
         except:
             z = self.x
 
@@ -766,7 +780,8 @@ class Syst(Line):
 
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
-            z = self.x[group[1]]
+            #z = self.x[group[1]]
+            z = self._z[group[1]]
             if (hasattr(self, '_norm')):
                 N = model.N_guess(self._norm, ion=self._flat.ion)
             else:
@@ -782,6 +797,11 @@ class Syst(Line):
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s
 
+        else:
+            for val in N:
+                if (val == voigt_def['N']):
+                    N = model.N_guess(self._norm, ion=self._flat.ion)
+            
         if (hasattr(self, '_voigt') == False):
             self._voigt = dc(self._spec)
 

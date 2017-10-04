@@ -29,7 +29,7 @@ dict_gamma = {'Ly_a': 6.265e8,
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4
-voigt_def = {'N': 1e14, 'b': 20.0, 'btur': 0.0}
+voigt_def = {'N': 1e14, 'b': 5.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
 voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 

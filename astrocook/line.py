@@ -228,6 +228,7 @@ class Line(Spec1D):
         vary = False
         self._noneb = dc(self)
         self._neb = dc(self)
+        self._last_add = 0.0
         while (stop == False):
             i += 1
             noneb = dc(self._noneb)
@@ -237,18 +238,21 @@ class Line(Spec1D):
             fit_neb = neb.fit_wrap(x, vary)
 
             if (noneb._redchi <= neb._redchi):
+                #print("noneb")
                 self_temp = dc(noneb)
                 fit = fit_noneb
             else:
+                #print("neb")
                 self_temp = dc(neb)
                 fit = fit_neb
-
+                
             #self = dc(self_temp)
             self.__dict__.update(self_temp.__dict__)
             print("(%i,%i) %3.2f, %3.2f;" \
                   % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
             stop = (self._redchi < redchi_thr) \
                    or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
+                   or (self._last_add == None) \
                    or (i==i_max)
             
             aic_old = self._aic
@@ -496,11 +500,11 @@ class Line(Spec1D):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value,
-                            fit_kws={'maxfev': maxfev})
+            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)
+                            #, fit_kws={'maxfev': maxfev})
         return fit    
 
-    def fit_prep(self, prof='voigt', vary=False, **kwargs):
+    def fit_prep(self, prof='voigt', vary=False, mode=None, **kwargs):
         if (hasattr(self, '_chunk_sum')):
             where = self._chunk_sum
         else:
@@ -512,23 +516,45 @@ class Line(Spec1D):
 
         self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
         if (prof == 'voigt'):
-            try:
-                z = kwargs['z']
-            except:
-                z = []
-            try:
-                N = kwargs['N']
-            except:
-                N = []
-            try:
-                b = kwargs['b']
-            except:
-                b = []
-            try:
-                btur = kwargs['btur']
-            except:
-                btur = []
-            
+            if (mode == 'use_old'):
+                if (hasattr(self, '_z_fit')):
+                    diff = np.setdiff1d(self._z[self._group[1]], self._z_fit)
+                    z_temp = np.append(self._z_fit.value, diff.value)
+                    #N_temp = np.append(
+                    #    self._N_fit, model.N_guess(self._norm, ion=self._flat.ion))
+                    N_temp = np.append(self._N_fit.value, voigt_def['N'])
+                    b_temp = np.append(self._b_fit.value, voigt_def['b'])
+                    btur_temp = np.append(self._btur_fit.value,
+                                          voigt_def['btur'])
+                    z = np.sort(z_temp) * self._z_fit.unit
+                    N = N_temp[np.argsort(z_temp)] * self._N_fit.unit
+                    b = b_temp[np.argsort(z_temp)] * self._b_fit.unit
+                    btur = btur_temp[np.argsort(z_temp)] * self._b_fit.unit
+                else:
+                    z = []
+                    N = []
+                    b = []
+                    btur = []
+            #"""
+            else:
+                try:
+                    z = kwargs['z']
+                except:
+                    z = []
+                try:
+                    N = kwargs['N']
+                except:
+                    N = []
+                try:
+                    b = kwargs['b']
+                except:
+                    b = []
+                try:
+                    btur = kwargs['btur']
+                except:
+                    btur = []
+            #print(z)
+            #"""    
             self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
                                           b=b, btur=btur)
         else:
@@ -566,6 +592,13 @@ class Line(Spec1D):
             b_tags = [b for b in fit.best_values if b.endswith('_b')]
             btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
 
+            z_best, un = np.unique([fit.best_values[z] for z in z_tags],
+                                   return_index=True)
+            N_best = np.array([fit.best_values[N] for N in N_tags])[un]
+            b_best = np.array([fit.best_values[b] for b in b_tags])[un]
+            btur_best = np.array([fit.best_values[bt] for bt in btur_tags])[un]
+            
+            """
             self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
             self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
                           * self._N_arr[0].unit
@@ -573,6 +606,13 @@ class Line(Spec1D):
                           * self._b_arr[0].unit
             self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
                              * self._btur_arr[0].unit
+            """
+            self._z_fit = np.sort(z_best) * u.nm/u.nm
+            self._N_fit = N_best[np.argsort(z_best)] / u.cm**2
+            self._b_fit = b_best[np.argsort(z_best)] * u.km/u.s           
+            self._btur_fit = btur_best[np.argsort(z_best)] * u.km/u.s
+            #print(self.x[self._group[1]])
+            self._z[self._group[1]] = self._z_fit
         else:
             raise Exception("Only Voigt profile is supported.")
 
@@ -582,7 +622,7 @@ class Line(Spec1D):
     def fit_wrap(self, x, vary=False):
         group = self.group(x)
         chunk = self.chunk(x)            
-        self.fit_prep()
+        self.fit_prep(mode='use_old')
         guess = self.model()
         fit = self.fit()
         self.fit_prod(fit)
