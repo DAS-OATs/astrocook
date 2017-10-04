@@ -49,9 +49,11 @@ class Syst(Line):
             self._line = dc(line)
             if (hasattr(line, '_cont')):
                 self._precont = dc(line._precont)
-                self._cont = dc(line._cont)            
-            self._minima = dc(line._minima)
-            self._maxima = dc(line._maxima)            
+                self._cont = dc(line._cont) 
+            if (hasattr(line, '_minima')):
+                self._minima = dc(line._minima)
+            if (hasattr(line, '_maxima')):
+                self._maxima = dc(line._maxima)            
 
         # Spectrum
         self._spec = None
