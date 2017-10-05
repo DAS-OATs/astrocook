@@ -16,6 +16,7 @@ from scipy.stats import sigmaclip
 from statsmodels.nonparametric.kernel_regression import KernelReg
 import statsmodels.api as sm
 import sys
+import time
 import warnings
 
 yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
@@ -207,72 +208,6 @@ class Line(Spec1D):
 
         
 # Methods
-
-    def auto(self, x=None, line=None, i_max=10):
-        if ((x is None) and (line is None)):
-            raise Exception("Either x or line must be provided.")
-        if (line is not None):
-            if (x is not None):
-                warnings.warn("x will be used; line will be disregarded.")
-            x = self.x[line]
-        if ((x is None) and (line >= len(self._t))):
-            raise Exception("Line number is too large.")
-        stop = False
-        aic_old = float('inf')
-        redchi_old = float('inf')        
-        redchi_best = float('inf')
-        i = 0
-        i_best = 1
-        print("")
-        cont_corr = 1.0
-        vary = False
-        self._noneb = dc(self)
-        self._neb = dc(self)
-        self._last_add = 0.0
-        while (stop == False):
-            i += 1
-            noneb = dc(self._noneb)
-            fit_noneb = noneb.fit_wrap(x, vary)
-
-            neb = dc(self._neb)
-            fit_neb = neb.fit_wrap(x, vary)
-
-            if (noneb._redchi <= neb._redchi):
-                #print("noneb")
-                self_temp = dc(noneb)
-                fit = fit_noneb
-            else:
-                #print("neb")
-                self_temp = dc(neb)
-                fit = fit_neb
-                
-            #self = dc(self_temp)
-            self.__dict__.update(self_temp.__dict__)
-            print("(%i,%i) %3.2f, %3.2f;" \
-                  % (i, i_best, self._redchi, self._aic), end=" ", flush=True)
-            stop = (self._redchi < redchi_thr) \
-                   or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (self._last_add == None) \
-                   or (i==i_max)
-            
-            aic_old = self._aic
-            redchi_old = self._redchi            
-            if (self._redchi < redchi_best): #or 1==1):
-                self_best = dc(self)
-                fit_best = dc(fit)
-                i_best = i
-
-            if (stop == False):
-                cont_corr = self.corr_resid(self._group, cont_corr)
-
-        
-        self = dc(self_best)
-        self.__dict__.update(self_best.__dict__)
-        fit = fit_best
-        print("best chi-squared (%i) %3.2f, %3.2f;" \
-              % (i_best, self._redchi, self._aic), end=" ", flush=True)
-        
-        return self._group, self._chunk
     
     def chunk(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
@@ -501,9 +436,114 @@ class Line(Spec1D):
             fit = None
         else:
             fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)
-                            #, fit_kws={'maxfev': maxfev})
+            #, fit_kws={'maxfev': maxfev})
         return fit    
 
+    def fit_auto(self, x=None, line=None, i_max=10):
+        if ((x is None) and (line is None)):
+            raise Exception("Either x or line must be provided.")
+        if (line is not None):
+            if (x is not None):
+                warnings.warn("x will be used; line will be disregarded.")
+            x = self.x[line]
+        if ((x is None) and (line >= len(self._t))):
+            raise Exception("Line number is too large.")
+        stop = False
+        aic_old = float('inf')
+        redchi_old = float('inf')        
+        redchi_best = float('inf')
+        i = 0
+        i_best = 1
+        cont_corr = 1.0
+        vary = False
+        self._noneb = dc(self)
+        self._neb = dc(self)
+        self._last_add = 0.0
+        while (stop == False):
+            i += 1
+            noneb = dc(self._noneb)
+            #try:
+            #    noneb._z_fit = noneb_z_fit
+            #except:
+            #    pass
+            fit_noneb = noneb.fit_wrap(x, vary)
+
+            neb = dc(self._neb)
+            #try:
+            #    neb._z_fit = neb_z_fit
+            #except:
+            #    pass
+            fit_neb = neb.fit_wrap(x, vary)
+
+            if (noneb._redchi <= neb._redchi):
+                #print("noneb")
+                self_temp = dc(noneb)
+                fit = fit_noneb
+                #noneb_z_fit = noneb._z_fit
+            else:
+                #print("neb")
+                self_temp = dc(neb)
+                fit = fit_neb
+                #neb_z_fit = neb._z_fit
+                
+            #self = dc(self_temp)
+            self.__dict__.update(self_temp.__dict__)
+            print("(%i) %3.2f;" \
+                  % (i, self._redchi), end=" ", flush=True)
+            stop = (self._redchi < redchi_thr) \
+                   or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
+                   or (i==i_max)
+            #or (self._last_add == None) \
+                   
+            aic_old = self._aic
+            redchi_old = self._redchi            
+            if (self._redchi < redchi_best): #or 1==1):
+                self_best = dc(self)
+                fit_best = dc(fit)
+                i_best = i
+
+            if (stop == False):
+                cont_corr = self.corr_resid(self._group, cont_corr)
+
+        
+        self = dc(self_best)
+        self.__dict__.update(self_best.__dict__)
+        fit = fit_best
+        print("best chi-squared (%i) %3.2f, %3.2f;" \
+              % (i_best, self._redchi, self._aic), end=" ", flush=True)
+
+    def fit_list(self, list_range=None, iter_range=range(10,11), plot=True):
+        if (list_range is None):
+            list_range = range(len(self.t))
+
+        self_temp = dc(self)
+        x_arr = self_temp.x
+        #i = 0
+        group_check = 0
+        group_all = None
+        chunk_all = None
+        for l in list_range:
+            start = time.time()
+            print("Redshift %i (%i/%i) (%3.4f)..." \
+                  % (l+1, l+1-list_range[0], len(list_range), x_arr[l].value),
+                  end=" ", flush=True)
+            
+            # Check if the group is new
+            if (np.array_equal(self_temp.group(x=x_arr[l])[1], group_check)):
+                print("same group, skipping.")
+            else:
+                group_check = self_temp.group(x=x_arr[l])[1]
+                for i in iter_range:
+                    self.fit_auto(x=x_arr[l], i_max=i)
+                    print("time: %3.2f;" % (time.time()-start), end=" ",
+                          flush=True)
+                    
+                    if (plot == True):
+                        print("close graphs to continue.")
+                        self.plot(self._group, self._chunk, mode='split')
+                    else:
+                        print("")
+                    
     def fit_prep(self, prof='voigt', vary=False, mode=None, **kwargs):
         if (hasattr(self, '_chunk_sum')):
             where = self._chunk_sum
@@ -553,8 +593,6 @@ class Line(Spec1D):
                     btur = kwargs['btur']
                 except:
                     btur = []
-            #print(z)
-            #"""    
             self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
                                           b=b, btur=btur)
         else:
@@ -592,12 +630,13 @@ class Line(Spec1D):
             b_tags = [b for b in fit.best_values if b.endswith('_b')]
             btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
 
+            #print([fit.best_values[z] for z in z_tags])
             z_best, un = np.unique([fit.best_values[z] for z in z_tags],
                                    return_index=True)
             N_best = np.array([fit.best_values[N] for N in N_tags])[un]
             b_best = np.array([fit.best_values[b] for b in b_tags])[un]
             btur_best = np.array([fit.best_values[bt] for bt in btur_tags])[un]
-            
+
             """
             self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
             self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
@@ -611,8 +650,21 @@ class Line(Spec1D):
             self._N_fit = N_best[np.argsort(z_best)] / u.cm**2
             self._b_fit = b_best[np.argsort(z_best)] * u.km/u.s           
             self._btur_fit = btur_best[np.argsort(z_best)] * u.km/u.s
-            #print(self.x[self._group[1]])
+            #print(self._z_fit)
+            print(len(self._z), len(self._group[1]), len(self._z_fit))
+
+            # When new redshift is a duplicate
+            if ((hasattr(self, '_last_add')) \
+                and (len(self._z_fit) < np.sum(self._group[1]))): 
+                print(self._last_add)
+                self._z = np.delete(self._z, self._last_add)
+                self._t.remove_row(self._last_add)
+                line = self._group[0]
+                self.group(line=line)
+                #self._group[1] = np.delete(self._group[1], self._last_add)
+            print(len(self._z), len(self._group[1]), len(self._z_fit))
             self._z[self._group[1]] = self._z_fit
+            
         else:
             raise Exception("Only Voigt profile is supported.")
 
@@ -621,7 +673,7 @@ class Line(Spec1D):
         
     def fit_wrap(self, x, vary=False):
         group = self.group(x)
-        chunk = self.chunk(x)            
+        chunk = self.chunk(x)
         self.fit_prep(mode='use_old')
         guess = self.model()
         fit = self.fit()

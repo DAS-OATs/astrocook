@@ -97,7 +97,6 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        print(x_unit, y_unit)
         spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
         fit = Spec1D(x, y=y_fit, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 

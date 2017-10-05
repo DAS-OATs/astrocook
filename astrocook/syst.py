@@ -211,30 +211,33 @@ class Syst(Line):
 
         
         self._noneb = dc(self)
-        if (z_ion not in self._noneb.x):
-            self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
-                                   ion])
-            self._noneb.t.sort('X')  # This gives an annoying warning
-            self._noneb._z = np.append(self._z.value, z_ion) 
-            self._noneb._z.sort()
-            self._noneb._z *= self._z.unit
-            self._noneb._last_add = np.where(self._noneb._z == z_ion)
-        else:
-            self._noneb._last_add = None
+        
+        #if (z_ion not in self._noneb.x):
+        self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
+                               ion])
+        self._noneb.t.sort('X')  # This gives an annoying warning
+        self._noneb._z = np.unique(np.append(self._z.value, z_ion)) 
+        self._noneb._z = np.append(self._z.value, z_ion) 
+        self._noneb._z.sort()
+        self._noneb._z *= self._z.unit
+        self._noneb._last_add = np.where(self._noneb._z == z_ion)[0][0]
+        #else:
+        #    self._noneb._last_add = None
             
         self._neb = dc(self)
-        if (z_ion not in self._noneb.x):
-            self._neb.flatten_z()
-            self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb,
-                                       neb])
-            self._neb.deflatten_z()
-            self._neb.t.sort('X')  # This gives an annoying warning
-            self._neb._z = np.append(self._z.value, z_neb.value)
-            self._neb._z.sort()
-            self._neb._z *= self._z.unit
-            self._neb._last_add = np.where(self._neb._z == z_neb) 
-        else:
-            self._neb._last_add = None
+        #if (z_ion not in self._noneb.x):
+        self._neb.flatten_z()
+        self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb,
+                                   neb])
+        self._neb.deflatten_z()
+        self._neb.t.sort('X')  # This gives an annoying warning
+        self._neb._z = np.unique(np.append(self._z.value, z_neb.value))
+        self._neb._z = np.append(self._z.value, z_neb.value)
+        self._neb._z.sort()
+        self._neb._z *= self._z.unit
+        self._neb._last_add = np.where(self._neb._z == z_neb)[0][0] 
+        #else:
+        #    self._neb._last_add = None
        
         return cont_corr
         
@@ -344,6 +347,12 @@ class Syst(Line):
                     ion=ion_deflat, yunit=yunit)
         self.__dict__.update(syst.__dict__)
 
+    def find(self, ztol=1e-4):
+        self.create_z()
+        self.match_z(ztol)
+        self.flatten_z()
+
+        
     def flatten_z(self):
         """ Create a flattened version of the system, with different entries
         for each ion """
@@ -781,6 +790,13 @@ class Syst(Line):
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
             #z = self.x[group[1]]
+            #print(self._z)
+            #print(self._t)
+            #try:
+            #    print(self._z_fit)
+            #except:
+            #    print("emma")
+            #print(len(group[1]))
             z = self._z[group[1]]
             if (hasattr(self, '_norm')):
                 N = model.N_guess(self._norm, ion=self._flat.ion)
