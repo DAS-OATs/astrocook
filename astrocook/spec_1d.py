@@ -1,5 +1,5 @@
 from . import List
-from .utils import convolve, many_gauss, savitzky_golay, dict_wave
+from .utils import convolve, dict_wave, many_gauss, redchi, savitzky_golay
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
@@ -10,10 +10,12 @@ from lmfit import CompositeModel as lmc
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.stats import sigmaclip
 from specutils import extinction
 import statsmodels.api as sm
+import time
 
 class Spec1D():
     """Class for generic spectra
@@ -526,6 +528,80 @@ class Spec1D():
         if block is True:
             plt.show()
 
+    def prof_merge(self, prof, ion=['Ly_a'], z=None):
+        """ Merge a line profile into a spectrum at a random position """
+
+        if (z == None):
+            temp = dc(self)
+            temp.to_z([ion[0]])
+            zmin = np.min(temp.x)
+            zmax = np.max(temp.x)
+            z = random.uniform(zmin, zmax)
+        
+        x_prof = prof.x * (1 + z)
+        xmin = np.min(x_prof)
+        xmax = np.max(x_prof)
+        chunk = np.logical_and((self.x.value > xmin), (self.x.value < xmax))
+        y = np.interp(self.x[chunk], x_prof, prof.y) * self.y.unit
+        self.y[chunk] = self.y[chunk] * y / self._cont.y[chunk]
+        
+        return z
+        
+    def prof_scan(self, prof, ion, line=None, width=0.02 * u.nm):
+        """ Scan a spectrum with a line profile to find matches """
+        
+        i_last = 0
+        z_temp = np.array([])
+        z_match = np.array([])
+
+        spec_temp = dc(self)
+        spec_temp.to_z([ion[0]])
+
+        start = time.time()
+        for i in range(len(self.x)):
+            if (i == 999):
+                print("Scanning (foreseen running time: %.0f s)..." \
+                      % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
+                      flush=True)
+            x = prof.x * (1 + spec_temp.x[i])
+            xmin = np.min(x)
+            xmax = np.max(x)
+            chunk = np.logical_and((self.x.value > xmin), (self.x.value < xmax))
+            y = np.interp(self.x[chunk], x, prof.y) * prof.y.unit
+            redchi_mod = redchi(self.x[chunk].value, self.y[chunk].value,
+                                self.dy[chunk].value, y)
+            redchi_0 = redchi(self.x[chunk].value, self.y[chunk].value,
+                              self.dy[chunk].value,
+                              np.ones(len(self.x[chunk])))
+            #Check thi
+            if ((redchi_mod < 0.9 * redchi_0) and (redchi_mod < 3)):
+                z_temp = np.append(z_temp, spec_temp.x[i])
+                i_last = i
+            else:
+                if (i == i_last+1):
+                    z_match = np.append(z_match, np.mean(z_temp))
+                    z_temp = np.array([])
+
+        z_match = z_match[~np.isnan(z_match)]
+        print("%i matches found." % len(z_match))
+        
+        x = np.array((1.0 + np.asarray(z_match)) * dict_wave[ion[0]])
+        x = np.append(x, (1.0 + np.asarray(z_match)) * dict_wave[ion[1]]) \
+            #* self.x.unit
+
+        # Improve...
+        xmin = x - width.value
+        xmax = x + width.value
+            
+        y = np.interp(np.asarray(x), self.x.value, self.y.value) \
+                 * self.y.unit
+        dy = np.interp(np.asarray(x), self.x.value, self.dy.value) \
+                  * self.y.unit
+        from . import Line
+        line = Line(xmin=xmin, xmax=xmax, x=x, y=y, dy=dy, xunit=self.x.unit,
+                    spec=self)
+        return line
+            
     def redchi(self, model_param=None, nvarys=0, chunk=None):
         if (hasattr(self, '_spec')):
             spec = self._spec

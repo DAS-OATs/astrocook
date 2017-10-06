@@ -9,7 +9,7 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
             'CIV_1548': [154.8204, 0.1899, 2.643e8],
             'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
 
-dict_doub = {'CIV': ['CIV_1548', 'CIV_1550']}
+dict_doubl = {'CIV': ['CIV_1548', 'CIV_1550']}
 
 # All wavelength must have the same unit!
 dict_wave = {'Ly_a': 121.567 * u.nm,

@@ -1,3 +1,4 @@
+from . import Spec1D
 from .utils import *
 from astropy import units as u
 from astropy.constants import c, e, m_e
@@ -166,6 +167,58 @@ class Model():
 
         return ret
             
+    def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.02 * u.nm,
+             prof='voigt', **kwargs):
+        """Create a window with a model profile of a line or multiplet"""
+
+        temp = dc(spec)
+        temp._norm_guess = self.norm()
+        if (prof == 'voigt'):
+            try:
+                z = kwargs['z']
+            except:
+                z = u.Quantity(0.0)
+            try:
+                N = kwargs['N']
+            except:
+                N = voigt_def['N'] / u.cm**2
+            try:
+                b = kwargs['b']
+            except:
+                b = voigt_def['b'] * u.km/u.s 
+            try:
+                btur = kwargs['btur'] 
+            except:
+                btur = voigt_def['btur'] * u.km/u.s
+
+            max_size = 0
+            max_size = np.size(z) if np.size(z) > max_size else max_size
+            max_size = np.size(N) if np.size(N) > max_size else max_size
+            max_size = np.size(b) if np.size(b) > max_size else max_size
+            max_size = np.size(btur) if np.size(btur) > max_size else max_size
+            
+            z = np.full(max_size, z) * z.unit if np.size(z)==1 else z
+            N = np.full(max_size, N) * N.unit if np.size(N)==1 else N
+            b = np.full(max_size, b) * b.unit if np.size(b)==1 else b   
+            btur = np.full(max_size, btur) * btur.unit if np.size(btur)==1 \
+                   else btur
+
+            # Redshifts are translated to be around zero
+            z = z - np.mean(z)
+
+            temp._prof_guess = self.voigt(z, N, b, btur, ion)    
+            voigt = temp.model(psf=False)
+            wave_min = dict_wave[ion[0]] * (1 + z[0]) - width
+            wave_max = dict_wave[ion[-1]] * (1 + z[-1]) + width
+            
+            x = np.arange(wave_min.value, wave_max.value, wave_step.value) \
+                * temp.x.unit
+            y = voigt[0].eval(voigt[1], x=x.value) * temp.y.unit
+            ret = Spec1D(x, y)
+        else:
+            raise Exception("Only Voigt profile is supported.")
+        
+        return ret
     
     def psf(self, resol): #, center, sigma):
 
@@ -308,8 +361,10 @@ class Model():
         mult_old = ''
         i = 0
         ran = 1
-        if (hasattr(self, '_syst')):
-            ran = len(self._syst.t[self._group[1]])
+        #if (hasattr(self, '_syst')):
+        if (len(ion) > 1):
+            #ran = len(self._syst.t[self._group[1]])
+            ran = len(z)
         for l in range(ran):
             try:
                 ion = np.sort(self._syst.ion[self._group[1]][l])
@@ -317,8 +372,8 @@ class Model():
                 pass
             for c in range(len(ion)):
                 mult = ion[c].split('_')[0]
-                pref = 'voigt' + str(c) + '_z' + str(z[l]).replace('.', '') \
-                       + '_'
+                pref = 'voigt' + str(c) + '_z' \
+                       + str(z[l]).replace('.', '').replace('-', 'm') + '_'
                 if (z[l] in z_list):
                     expr = np.asarray(pref_list)[
                         np.where(np.asarray(z_list)==z[l])][0]
@@ -362,10 +417,10 @@ class Model():
                 if (mult == mult_old):
                     for k in expr_dict:
                         param[k].set(expr=expr_dict[k])    
-                #param.pretty_print()
                 mult_old = mult
 
         ret = (model, param)
 
 
         return ret
+

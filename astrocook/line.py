@@ -439,7 +439,7 @@ class Line(Spec1D):
             #, fit_kws={'maxfev': maxfev})
         return fit    
 
-    def fit_auto(self, x=None, line=None, i_max=10):
+    def fit_auto(self, x=None, line=None, i_max=10, mode=None):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (line is not None):
@@ -466,14 +466,14 @@ class Line(Spec1D):
             #    noneb._z_fit = noneb_z_fit
             #except:
             #    pass
-            fit_noneb = noneb.fit_wrap(x, vary)
+            fit_noneb = noneb.fit_wrap(x, vary, mode)
 
             neb = dc(self._neb)
             #try:
             #    neb._z_fit = neb_z_fit
             #except:
             #    pass
-            fit_neb = neb.fit_wrap(x, vary)
+            fit_neb = neb.fit_wrap(x, vary, mode)
 
             if (noneb._redchi <= neb._redchi):
                 #print("noneb")
@@ -512,7 +512,8 @@ class Line(Spec1D):
         print("best chi-squared (%i) %3.2f, %3.2f;" \
               % (i_best, self._redchi, self._aic), end=" ", flush=True)
 
-    def fit_list(self, list_range=None, iter_range=range(10,11), plot=True):
+    def fit_list(self, list_range=None, iter_range=range(10,11), mode=None,
+                 plot=True):
         if (list_range is None):
             list_range = range(len(self.t))
 
@@ -534,7 +535,7 @@ class Line(Spec1D):
             else:
                 group_check = self_temp.group(x=x_arr[l])[1]
                 for i in iter_range:
-                    self.fit_auto(x=x_arr[l], i_max=i)
+                    self.fit_auto(x=x_arr[l], i_max=i, mode=mode)
                     print("time: %3.2f;" % (time.time()-start), end=" ",
                           flush=True)
                     
@@ -651,18 +652,18 @@ class Line(Spec1D):
             self._b_fit = b_best[np.argsort(z_best)] * u.km/u.s           
             self._btur_fit = btur_best[np.argsort(z_best)] * u.km/u.s
             #print(self._z_fit)
-            print(len(self._z), len(self._group[1]), len(self._z_fit))
+            #print(len(self._z), len(self._group[1]), len(self._z_fit))
 
             # When new redshift is a duplicate
             if ((hasattr(self, '_last_add')) \
                 and (len(self._z_fit) < np.sum(self._group[1]))): 
-                print(self._last_add)
+                #print(self._last_add)
                 self._z = np.delete(self._z, self._last_add)
                 self._t.remove_row(self._last_add)
                 line = self._group[0]
                 self.group(line=line)
                 #self._group[1] = np.delete(self._group[1], self._last_add)
-            print(len(self._z), len(self._group[1]), len(self._z_fit))
+            #print(len(self._z), len(self._group[1]), len(self._z_fit))
             self._z[self._group[1]] = self._z_fit
             
         else:
@@ -671,10 +672,10 @@ class Line(Spec1D):
         self._redchi = fit.redchi
         self._aic = fit.aic    
         
-    def fit_wrap(self, x, vary=False):
+    def fit_wrap(self, x, vary=False, mode=None):
         group = self.group(x)
         chunk = self.chunk(x)
-        self.fit_prep(mode='use_old')
+        self.fit_prep(mode=mode)
         guess = self.model()
         fit = self.fit()
         self.fit_prod(fit)

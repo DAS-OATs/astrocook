@@ -1,5 +1,5 @@
 from . import Line, Model
-from .utils import convolve, convolve2, dict_doub, dict_wave, voigt_def
+from .utils import convolve, convolve2, dict_doubl, dict_wave, voigt_def
 from astropy import units as u
 from astropy.io import fits as fits
 from astropy.table import Column, Table
@@ -22,7 +22,7 @@ class Syst(Line):
                  xmax=[],
                  dy=[],
                  ion=[],
-                 doub=[],
+                 doubl=[],
                  yunit=None,
                  meta=None,
                  dtype=float):
@@ -66,9 +66,9 @@ class Syst(Line):
         if (x != []):
             len_ion = len(x)
 
-        if ((ion == []) and (doub != [])):
-            ion = np.stack((np.full(len_ion, dict_doub[doub][0]),
-                            np.full(len_ion, dict_doub[doub][1]))).T
+        if ((ion == []) and (doubl != [])):
+            ion = np.stack((np.full(len_ion, dict_doubl[doubl][0]),
+                            np.full(len_ion, dict_doubl[doubl][1]))).T
                            
         if ((ion is []) or (ion is 'Ly_a')):
             ion = np.full(len_ion, 'Ly_a')           
