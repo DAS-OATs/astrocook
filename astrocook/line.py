@@ -485,7 +485,8 @@ class Line(Spec1D):
                 self_temp = dc(neb)
                 fit = fit_neb
                 #neb_z_fit = neb._z_fit
-                
+            print(fit.fit_report())
+            
             #self = dc(self_temp)
             self.__dict__.update(self_temp.__dict__)
             print("(%i) %3.2f;" \
