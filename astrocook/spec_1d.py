@@ -385,7 +385,8 @@ class Spec1D():
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
     
-    def extract(self, xmin=None, xmax=None, forest=[], zem=[], prox_vel=[]):
+    def extract(self, xmin=None, xmax=None, forest=[], zem=[], prox_vel=[],
+                line=None):
         """ Extract a region of a spectrum """
         if ((forest == []) != (zem == [])):
             raise Exception("Forest name and emission redshift must be "
@@ -409,6 +410,9 @@ class Spec1D():
         where = np.hstack((lt_xmin, gt_xmax))
         reg._t.remove_rows(where)
 
+        if (hasattr(reg, '_cont')):
+            reg._cont._t.remove_rows(where)
+            
         return reg
 
     def find_extrema(self):
@@ -533,8 +537,10 @@ class Spec1D():
 
         if (z == None):
             temp = dc(self)
-            temp.to_z([ion[0]])
+            temp.to_z([ion[-1]])
             zmin = np.min(temp.x)
+            temp = dc(self)
+            temp.to_z([ion[0]])
             zmax = np.max(temp.x)
             z = random.uniform(zmin, zmax)
         
@@ -547,7 +553,7 @@ class Spec1D():
         
         return z
         
-    def prof_scan(self, prof, ion, line=None, width=0.02 * u.nm):
+    def prof_scan(self, prof, ion, line=None, width=0.02 * u.nm, verbose=True):
         """ Scan a spectrum with a line profile to find matches """
         
         i_last = 0
@@ -557,33 +563,60 @@ class Spec1D():
         spec_temp = dc(self)
         spec_temp.to_z([ion[0]])
 
+        xstart = np.min(self.x).value
+        xend = np.max(self.x).value
+        null = np.ones(len(self.x))
+
+        redchi_thr = 0.7
         start = time.time()
+
+        self._redchi = np.zeros(len(self.x))
         for i in range(len(self.x)):
-            if (i == 999):
+            if ((i == 999) and (verbose==True)): 
                 print("Scanning (foreseen running time: %.0f s)..." \
                       % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
                       flush=True)
-            x = prof.x * (1 + spec_temp.x[i])
-            xmin = np.min(x)
-            xmax = np.max(x)
-            chunk = np.logical_and((self.x.value > xmin), (self.x.value < xmax))
-            y = np.interp(self.x[chunk], x, prof.y) * prof.y.unit
-            redchi_mod = redchi(self.x[chunk].value, self.y[chunk].value,
-                                self.dy[chunk].value, y)
-            redchi_0 = redchi(self.x[chunk].value, self.y[chunk].value,
-                              self.dy[chunk].value,
-                              np.ones(len(self.x[chunk])))
-            #Check thi
-            if ((redchi_mod < 0.9 * redchi_0) and (redchi_mod < 3)):
-                z_temp = np.append(z_temp, spec_temp.x[i])
-                i_last = i
-            else:
-                if (i == i_last+1):
-                    z_match = np.append(z_match, np.mean(z_temp))
-                    z_temp = np.array([])
+            for prof_i in prof:
+                mod_x = prof_i.x * (1 + spec_temp.x[i])
+                xmin = np.min(mod_x)
+                xmax = np.max(mod_x)
+                if (xmax < xend):
+                    #chunk[:, i] = np.logical_and((self.x.value > xmin),
+                    #                             (self.x.value < xmax))
+                    chunk_i = np.logical_and((self.x.value > xmin),
+                                                 (self.x.value < xmax))
+                else:
+                    chunk_i = np.full(len(self.x), False)
+                    
+                #chunk_i = chunk[:, i]
+                x = self.x[chunk_i].value
+                y = self.y[chunk_i].value
+                dy = self.dy[chunk_i].value
+                mod_y = np.interp(x, mod_x, prof_i.y) * prof_i.y.unit
+                null_y = self._cont.y[chunk_i].value
+                if (len(x) > 0):
+                    redchi_mod = redchi(x, y, dy, mod_y)
+
+                    #"""
+                    redchi_0 = redchi(x, y, dy, null_y)
+
+                    #Check this
+                    #if ((redchi_mod < redchi_thr * redchi_0) \
+                        #    and (redchi_mod < 2.0)):
+                    #if (redchi_mod < redchi_thr):
+                    if (redchi_mod < redchi_thr * redchi_0):
+                        z_temp = np.append(z_temp, spec_temp.x[i])
+                        i_last = i
+                    else:
+                        if (i == i_last+1):
+                            z_match = np.append(z_match, np.mean(z_temp))
+                            z_temp = np.array([])
+                    #"""
+                self._redchi[i] = redchi_mod
 
         z_match = z_match[~np.isnan(z_match)]
-        print("%i matches found." % len(z_match))
+        if (verbose == True):
+            print("%i matches found." % len(z_match))
         
         x = np.array((1.0 + np.asarray(z_match)) * dict_wave[ion[0]])
         x = np.append(x, (1.0 + np.asarray(z_match)) * dict_wave[ion[1]]) \

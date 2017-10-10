@@ -474,37 +474,40 @@ class Line(Spec1D):
             #except:
             #    pass
             fit_neb = neb.fit_wrap(x, vary, mode)
-
-            if (noneb._redchi <= neb._redchi):
-                #print("noneb")
-                self_temp = dc(noneb)
-                fit = fit_noneb
-                #noneb_z_fit = noneb._z_fit
-            else:
-                #print("neb")
-                self_temp = dc(neb)
-                fit = fit_neb
-                #neb_z_fit = neb._z_fit
-            print(fit.fit_report())
             
-            #self = dc(self_temp)
-            self.__dict__.update(self_temp.__dict__)
-            print("(%i) %3.2f;" \
-                  % (i, self._redchi), end=" ", flush=True)
-            stop = (self._redchi < redchi_thr) \
-                   or ((self._redchi<10*redchi_thr) and (self._aic>aic_old)) \
-                   or (i==i_max)
-            #or (self._last_add == None) \
-                   
-            aic_old = self._aic
-            redchi_old = self._redchi            
-            if (self._redchi < redchi_best): #or 1==1):
-                self_best = dc(self)
-                fit_best = dc(fit)
-                i_best = i
+            if ((fit_noneb == None) or (fit_neb == None)):
+                stop = False
+            else:
+                if (noneb._redchi <= neb._redchi):
+                    #print("noneb")
+                    self_temp = dc(noneb)
+                    fit = fit_noneb
+                    #noneb_z_fit = noneb._z_fit
+                else:
+                    #print("neb")
+                    self_temp = dc(neb)
+                    fit = fit_neb
+                    #neb_z_fit = neb._z_fit
+                
+                #self = dc(self_temp)
+                self.__dict__.update(self_temp.__dict__)
+                print("(%i) %3.2f;" \
+                      % (i, self._redchi), end=" ", flush=True)
+                stop = (self._redchi < redchi_thr) \
+                       or ((self._redchi<10*redchi_thr) \
+                           and (self._aic>aic_old)) \
+                       or (i==i_max)
+                #or (self._last_add == None) \
+                       
+                aic_old = self._aic
+                redchi_old = self._redchi            
+                if (self._redchi < redchi_best): #or 1==1):
+                    self_best = dc(self)
+                    fit_best = dc(fit)
+                    i_best = i
 
-            if (stop == False):
-                cont_corr = self.corr_resid(self._group, cont_corr)
+                if (stop == False):
+                    cont_corr = self.corr_resid(self._group, cont_corr)
 
         
         self = dc(self_best)
@@ -679,7 +682,10 @@ class Line(Spec1D):
         self.fit_prep(mode=mode)
         guess = self.model()
         fit = self.fit()
-        self.fit_prod(fit)
+        if (hasattr(fit, 'fit_report')):
+            self.fit_prod(fit)
+        else:
+            fit = None
         return fit
 
     def group(self, x=None, line=None, single=False):

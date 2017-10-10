@@ -557,8 +557,8 @@ class Syst(Line):
                 spec.to_z([ion[p]])
                 line.to_z([ion[p]])
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
-                ax.plot(spec.x, spec.dy, c='r', lw=1.0)
-                ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
+                #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+                #ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
                 if (chunk is not None):
                     if (hasattr(self, '_norm')):
                         norm = dc(self._norm)
@@ -596,21 +596,20 @@ class Syst(Line):
                             ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
                         """
                         ax.plot(fit.x[chunk_sum], fit.y[chunk_sum], c='g')
+                    """    
                     if (hasattr(self, '_resid_fit')):
                         resid_fit = dc(self._resid_fit)
                         resid_fit.to_z([ion[p]])
-                        """
-                        for c in range(1, len(chunk)):
-                            ax.plot(resid_fit.x[chunk[c]],
-                                    resid_fit.y[chunk[c]], c='b', lw=1.0)
-                        """
                         ax.plot(resid_fit.x[chunk_sum],
                                 resid_fit.y[chunk_sum], c='b', lw=1.0)
+                    """    
+                    """
                     if (hasattr(self, '_rem')):
                         rem = dc(self._rem)
                         rem.to_z([ion[p]])
                         ax.plot(rem.x[chunk_sum], rem.y[chunk_sum], c='b',
                                 lw=1.0)
+                    """
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
@@ -623,6 +622,8 @@ class Syst(Line):
                 else:
                     ax.set_xlabel("Redshift")
                 ax.set_xlim(zmin, zmax)
+                ax.set_ylim(np.min(spec.y[chunk_sum].value),
+                            np.max(spec.y[chunk_sum].value))
                 ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
                         verticalalignment="center", transform=ax.transAxes,
                         fontsize=12)
