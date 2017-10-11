@@ -552,9 +552,43 @@ class Spec1D():
         self.y[chunk] = self.y[chunk] * y / self._cont.y[chunk]
         
         return z
+    
+    def prof_auto(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
+                  plot=False):
+
+        loop = [(logN, b) for logN in logN_range for b in b_range]
+        for (logN, b) in loop:
+            N = np.power(10, logN) / u.cm**2
+            prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
+            redchi = np.zeros((len(self.x), len(prof)))
+            for p in range(len(prof)):
+                redchi[:, p] = self.prof_scan_new([prof[p]], ion)
+
+            where = (np.amin(redchi, axis=0) == redchi[:, 1])
+                
+            if (plot == True):
+                fig = plt.figure(figsize=(10,4))
+                fig.canvas.set_window_title("Spectrum")
+                grid = gs(1, 1)
+                ax = fig.add_subplot(grid[:, :])
+                grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+                ax.set_xlabel("Wavelength [" + str(self.x.unit) + "]")
+                ax.set_ylabel("Reduced chi squared")
+                ax.semilogy(self.x, redchi[0], c='black', lw=1.0)
+                ax.semilogy(self.x, redchi[1], c='b', lw=1.0)
+                ax.semilogy(self.x, redchi[2], c='r', lw=1.0)
+                ax.semilogy(self.x, redchi[3], c='g', lw=1.0)
+                plt.show()    
+
+
+        #cond = np.logical_and(
+        #for logN in logN_range
         
-    def prof_scan(self, prof, ion, line=None, width=0.02 * u.nm, verbose=True):
+    
+    def prof_scan(self, ion, line=None, width=0.02 * u.nm, verbose=True):
         """ Scan a spectrum with a line profile to find matches """
+
+        
         
         i_last = 0
         z_temp = np.array([])
@@ -578,8 +612,8 @@ class Spec1D():
                       flush=True)
             for prof_i in prof:
                 mod_x = prof_i.x * (1 + spec_temp.x[i])
-                xmin = np.min(mod_x)
-                xmax = np.max(mod_x)
+                xmin = np.min(mod_x).value
+                xmax = np.max(mod_x).value
                 if (xmax < xend):
                     #chunk[:, i] = np.logical_and((self.x.value > xmin),
                     #                             (self.x.value < xmax))
@@ -634,7 +668,57 @@ class Spec1D():
         line = Line(xmin=xmin, xmax=xmax, x=x, y=y, dy=dy, xunit=self.x.unit,
                     spec=self)
         return line
+    
+    def prof_scan_new(self, prof, ion, width=0.02 * u.nm, verbose=True):
+        """ Scan a spectrum with a line profile to find matches """
+        
+        i_last = 0
+        z_temp = np.array([])
+        z_match = np.array([])
+
+        spec_temp = dc(self)
+        spec_temp.to_z([ion[0]])
+
+        xstart = np.min(self.x).value
+        xend = np.max(self.x).value
+        null = np.ones(len(self.x))
+
+        start = time.time()
+
+        #for i in range(len(ion)):
             
+        
+        self._redchi = np.zeros(len(self.x))
+        
+        for i in range(len(self.x)):
+            if ((i == 999) and (verbose==True)): 
+                print("Scanning (foreseen running time: %.0f s)..." \
+                      % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
+                      flush=True)
+            for prof_i in prof:
+                mod_x = prof_i.x * (1 + spec_temp.x[i])
+                xmin = np.min(mod_x).value
+                xmax = np.max(mod_x).value
+                if (xmax < xend):
+                    #chunk[:, i] = np.logical_and((self.x.value > xmin),
+                    #                             (self.x.value < xmax))
+                    chunk_i = np.logical_and((self.x.value > xmin),
+                                                 (self.x.value < xmax))
+                else:
+                    chunk_i = np.full(len(self.x), False)
+                    
+                #chunk_i = chunk[:, i]
+                x = self.x[chunk_i].value
+                y = self.y[chunk_i].value
+                dy = self.dy[chunk_i].value
+                mod_y = np.interp(x, mod_x, prof_i.y) #* prof_i.y.unit
+                null_y = self._cont.y[chunk_i].value
+                if (len(x) > 0):
+                    redchi_mod = redchi(x, y, dy, mod_y)
+                self._redchi[i] = redchi_mod
+
+        return self._redchi
+
     def redchi(self, model_param=None, nvarys=0, chunk=None):
         if (hasattr(self, '_spec')):
             spec = self._spec

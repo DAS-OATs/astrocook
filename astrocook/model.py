@@ -167,8 +167,8 @@ class Model():
 
         return ret
             
-    def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.02 * u.nm,
-             prof='voigt', **kwargs):
+    def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.03 * u.nm,
+             prof='voigt', ion_mask=None, **kwargs):
         """Create a window with a model profile of a line or multiplet"""
 
         temp = dc(spec)
@@ -206,19 +206,45 @@ class Model():
             # Redshifts are translated to be around zero
             z = z - np.mean(z)
 
-            temp._prof_guess = self.voigt(z, N, b, btur, ion)    
+            ion_prof = ion
+            if (ion_mask is not None):
+                if (np.sum(ion_mask) == 0):
+                    N = N * 0.0
+                else:
+                    ion_prof = np.array(ion)[ion_mask]
+            temp._prof_guess = self.voigt(z, N, b, btur, ion_prof)    
             voigt = temp.model(psf=False)
-            wave_min = dict_wave[ion[0]] * (1 + z[0]) - width
-            wave_max = dict_wave[ion[-1]] * (1 + z[-1]) + width
+
+            x = np.array([])
+            for p in range(len(ion)):
+                wave_min = dict_wave[ion[p]] * (1 + z[0]) - width
+                wave_max = dict_wave[ion[p]] * (1 + z[-1]) + width
             
-            x = np.arange(wave_min.value, wave_max.value, wave_step.value) \
-                * temp.x.unit
-            y = voigt[0].eval(voigt[1], x=x.value) * temp.y.unit
-            ret = Spec1D(x, y)
+                x = np.append(x, np.arange(wave_min.value, wave_max.value,
+                                           wave_step.value))
+            y = voigt[0].eval(voigt[1], x=x)
+            
+            ret = Spec1D(x, y, xunit=temp.x.unit, yunit=temp.y.unit)
         else:
             raise Exception("Only Voigt profile is supported.")
         
         return ret
+
+    def prof_mult(self, spec, ion, plot=False, **kwargs):
+        ion_mask = np.full(len(ion), False)
+        prof = []
+        prof.append(self.prof(spec, ion, **kwargs))
+        prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask))        
+        for i in range(len(ion)):
+            ion_mask_temp = dc(ion_mask)
+            ion_mask_temp[i] = True
+            prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask_temp))
+
+        if (plot == True):
+            for p in range(len(prof)):
+                prof[p].plot()        
+
+        return prof
     
     def psf(self, resol): #, center, sigma):
 
@@ -404,9 +430,10 @@ class Model():
                 else:
                     model *= model_l
                     param.update(model_l.make_params())
+                N_min = 0 if N[l].value == 0 else voigt_min['N']
                 param[pref+'z'].set(z[l].value, min=z[l].value/z_fact,
                                     max=z[l].value*z_fact)#, expr=str(z_expr))
-                param[pref+'N'].set(N[l].value, min=voigt_min['N'],
+                param[pref+'N'].set(N[l].value, min=N_min, #min=voigt_min['N'],
                                     max=voigt_max['N'])#, expr=N_expr)
                 param[pref+'b'].set(b[l].value, min=voigt_min['b'],
                                     max=voigt_max['b'])#, expr=b_expr)
