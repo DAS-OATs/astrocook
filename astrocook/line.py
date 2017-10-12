@@ -713,9 +713,9 @@ class Line(Spec1D):
         self._group = ret
         return ret
         
+    """
     def mask_col(self, col):
-        """ Mask columns """
-        
+
         if self._use_good:
             ret = self._t[col].quantity[self._igood]
         else:
@@ -724,7 +724,8 @@ class Line(Spec1D):
         if null.size > 0:
             ret[null] = float('nan')
         return ret
-
+    """
+    
     def norm(self, group, chunk, value=1.0, vary=False):
         """ Normalize continuum """
 

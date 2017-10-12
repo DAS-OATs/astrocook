@@ -234,11 +234,11 @@ class Model():
         ion_mask = np.full(len(ion), False)
         prof = []
         prof.append(self.prof(spec, ion, **kwargs))
-        prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask))        
         for i in range(len(ion)):
             ion_mask_temp = dc(ion_mask)
             ion_mask_temp[i] = True
             prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask_temp))
+        prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask))        
 
         if (plot == True):
             for p in range(len(prof)):

@@ -36,9 +36,9 @@ class Spec1D():
     """
     
     def __init__(self, x, y, 
-                 xmin=None,
-                 xmax=None,
-                 dx=None,
+                 xmin=[],
+                 xmax=[],
+                 dx=[],
                  dy=None,
                  group=None,
                  resol=None,
@@ -50,34 +50,52 @@ class Spec1D():
                  dtype=float):
         ''' Constructor for the Spec1D class. '''
 
-        col_x  = Column(np.asarray(copy.deepcopy(x) , dtype=float), name='X')
-        col_y  = Column(np.asarray(copy.deepcopy(y) , dtype=float), name='Y')
 
-        if (xmin is None   and   xmax is not None):
-            raise Exception('When XMAX is used also XMIN must be given')
-        if (xmin is not None   and   xmax is None):
-            raise Exception('When XMIN is used also XMAX must be given')
-        if (xmin is None   and   xmax is None):
-            if (dx is None): 
-                dx = np.roll((x - np.roll(x, 1))/2., -1)
-                dx[-1] = dx[-2]
-            xmin = x - dx
-            xmax = x + dx
-        col_xmin = Column(np.asarray(copy.deepcopy(xmin), dtype=dtype), name='XMIN')
-        col_xmax = Column(np.asarray(copy.deepcopy(xmax), dtype=dtype), name='XMAX')
+        if ((xmin == []) != (xmax == [])):
+            raise Exception("XMIN and XMAX must be provided together.")
+        if ((xmin == []) and (xmax == [])):
+            #if (np.size(x) > 0):
+            if (x != []):
+                if (dx == []):
+                    dx = np.roll((x - np.roll(x, 1))/2., -1)
+                    dx[-1] = dx[-2]
+                xmin = x - dx
+                xmax = x + dx
 
-        if (dy is None):
-            dy = np.repeat(float('nan'), len(col_x))
-        col_dy = Column(np.asarray(copy.deepcopy(dy), dtype=dtype), name='DY')
-        
-        if (group is None):
-            group = np.ones(len(col_x))
-        col_g = Column(np.asarray(copy.deepcopy(group), dtype=int), name='GROUP')
-        
-        if (resol is None):
-            resol = np.repeat(float('nan'), len(col_x))
-        col_r = Column(np.asarray(copy.deepcopy(resol), dtype=dtype), name='RESOL')
-        
+        data = ()
+        if (x is not None):
+            col_x  = Column(np.asarray(dc(x) , dtype=float), name='X')
+            col_y  = Column(np.asarray(dc(y) , dtype=float), name='Y')
+            data = (col_x, col_y)
+            
+        if (xmin != []):
+            col_xmin = Column(np.asarray(dc(xmin), dtype=dtype), name='XMIN')
+            col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
+            data += (col_xmin, col_xmax) 
+
+        if data is ():
+            data = None
+
+
+        if (x is not None):
+            if (dy is None):
+                dy = np.repeat(float('nan'), len(col_x))
+            col_dy = Column(np.asarray(dc(dy), dtype=dtype), name='DY')
+            if (data is not None):
+                data += (col_dy,)
+            
+            if (group is None):
+                group = np.ones(len(col_x))
+            col_group = Column(np.asarray(dc(group), dtype=int), name='GROUP')
+            if (data is not None):
+                data += (col_group,)
+            
+            if (resol is None):
+                resol = np.repeat(float('nan'), len(col_x))
+            col_resol = Column(np.asarray(dc(resol), dtype=dtype), name='RESOL')
+            if (data is not None):
+                data += (col_resol,)
+
         # Auxiliary data and meta
         self._exptime = float(exptime)
         self._order   = int(order)
@@ -85,27 +103,26 @@ class Spec1D():
             meta = {}
 
         # Table creation
-        self._t = Table(
-            data=(col_xmin, col_xmax, col_x, col_y, col_dy, col_g, col_r), 
-            masked=True, meta=meta)
-        self._t['XMIN'].unit = xunit
-        self._t['XMAX'].unit = xunit
-        self._t['X'].unit    = xunit
-        self._t['Y'].unit    = yunit
-        self._t['DY'].unit   = yunit
+        self._t = Table(data=data, masked=True, meta=meta)
+        if (x != []):
+            self._t['X'].unit = xunit
+            self._t['Y'].unit = yunit
+            self._t['DY'].unit = yunit
+            self._t['XMIN'].unit = xunit
+            self._t['XMAX'].unit = xunit
 
-        self._t['XMIN'].mask  = np.isnan(self._t['XMIN'].quantity.value)
-        self._t['XMAX'].mask  = np.isnan(self._t['XMAX'].quantity.value)
-        self._t['X'].mask     = np.isnan(self._t['X'].quantity.value)
-        self._t['Y'].mask     = np.isnan(self._t['Y'].quantity.value)
-        self._t['DY'].mask    = np.isnan(self._t['DY'].quantity.value)
-        self._t['RESOL'].mask = np.isnan(self._t['RESOL'].quantity.value)
+            self._t['XMIN'].mask  = np.isnan(self._t['XMIN'].quantity.value)
+            self._t['XMAX'].mask  = np.isnan(self._t['XMAX'].quantity.value)
+            self._t['X'].mask     = np.isnan(self._t['X'].quantity.value)
+            self._t['Y'].mask     = np.isnan(self._t['Y'].quantity.value)
+            self._t['DY'].mask    = np.isnan(self._t['DY'].quantity.value)
+            self._t['RESOL'].mask = np.isnan(self._t['RESOL'].quantity.value)
 
-        self._useGood = False
+        self._use_good = False
 
 
     def _getWithMask(self,colName):
-        if self._useGood:
+        if self._use_good:
             ret = self._t[colName].quantity[self._igood]
         else:
             ret = self._t[colName].quantity
@@ -116,14 +133,25 @@ class Spec1D():
 
     @property
     def t(self):
-        if self._useGood:
+        if self._use_good:
             return self._t[self._igood]
         else:
             return self._t
 
     @property
+    def use_good(self):
+        return self._use_good
+
+    @use_good.setter
+    def use_good(self, value):
+        self._use_good = value
+        if self._use_good:
+            self._igood = np.argwhere(self._t['GROUP'] >= 0)
+
+    """Tells whether x, y, etc. getters return only data from channels flagged as good."""
+    """
+    @property
     def useGood(self):
-        """Tells whether x, y, etc. getters return only data from channels flagged as good."""
         return self._useGood
 
     @useGood.setter
@@ -131,6 +159,7 @@ class Spec1D():
         self._useGood = value
         if self._useGood:
             self._igood = np.argwhere(self._t['GROUP'] >= 0)
+    """
 
     @property
     def exptime(self):
@@ -149,7 +178,7 @@ class Spec1D():
 
     def nchan(self):
         """Number of channels in the spectrum."""
-        if self._useGood:
+        if self._use_good:
             return len(self._igood)
         else:
             return len(self._t)
@@ -157,11 +186,11 @@ class Spec1D():
     @property
     def x(self):
         """Quantities associated to spectrum channels (e.g. wavelength, frequency, energies, etc.)."""
-        return self._getWithMask('X')
+        return self.mask_col('X')
 
     @x.setter
     def x(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['X'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['X'] = np.asarray(value, dtype='float')
@@ -170,11 +199,11 @@ class Spec1D():
     @property
     def xmin(self):
         """Lower limit of quantity associated to spectrum channels (e.g. wavelength, frequency, energies, etc.)."""
-        return self._getWithMask('XMIN')
+        return self.mask_col('XMIN')
 
     @xmin.setter
     def xmin(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['XMIN'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMIN'] = np.asarray(value, dtype='float')
@@ -183,11 +212,11 @@ class Spec1D():
     @property
     def xmax(self):
         """Upper limit of quantity associated to spectrum channels (e.g. wavelength, frequency, energies, etc.)."""
-        return self._getWithMask('XMAX')
+        return self.mask_col('XMAX')
 
     @xmax.setter
     def xmax(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['XMAX'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['XMAX'] = np.asarray(value, dtype='float')
@@ -196,18 +225,18 @@ class Spec1D():
     @property
     def dx(self):
         """Widths of spectrum channels, in the same units as the spectrum channels."""
-        xmin = self._getWithMask('XMIN')
-        xmax = self._getWithMask('XMAX')
+        xmin = self.mask_col('XMIN')
+        xmax = self.mask_col('XMAX')
         return xmax - xmin
 
     @property
     def y(self):
         """Quantities associated to spectrum intensities (e.g. flux density, luminosity density, nuF_nu, lambdaF_lambda, etc.)."""
-        return self._getWithMask('Y')
+        return self.mask_col('Y')
 
     @y.setter
     def y(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['Y'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['Y'] = np.asarray(value, dtype='float')
@@ -216,11 +245,11 @@ class Spec1D():
     @property
     def dy(self):
         """Uncertainties associated to y values."""
-        return self._getWithMask('DY')
+        return self.mask_col('DY')
 
     @dy.setter
     def dy(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['DY'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['DY'] = np.asarray(value, dtype='float')
@@ -229,14 +258,14 @@ class Spec1D():
     @property
     def group(self):
         """Return group flag for each spectrum channel."""
-        if self._useGood:
+        if self._use_good:
             return self._t['GROUP'].quantity.value[self._igood]
         else:
             return self._t['GROUP'].quantity.value
 
     @group.setter
     def group(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['GROUP'][self._iGood] = np.asarray(value, dtype='int')
         else:
             self._t['GROUP'] = np.asarray(value, dtype='int')
@@ -244,7 +273,7 @@ class Spec1D():
     @property
     def resol(self):
         """Return resolution for each spectrum channel."""
-        return self._getWithMask('RESOL')
+        return self.mask_col('RESOL')
 
     @property
     def xunit(self):
@@ -417,14 +446,22 @@ class Spec1D():
 
     def find_extrema(self):
         """Find the extrema in a spectrum and save them as a spectrum"""
-    
-        min_idx = np.hstack(argrelmin(self.y))
-        max_idx = np.hstack(argrelmax(self.y))
-        extr_idx = np.sort(np.append(min_idx, max_idx))
-        minima = self.from_table(self._t[min_idx])
-        maxima = self.from_table(self._t[max_idx])
-        extrema = self.from_table(self._t[extr_idx])
-        return minima, maxima, extrema
+
+        #min_idx = []
+        #max_idx = []
+        #extr_idx = []
+        if (len(self.t) > 0):
+            min_idx = np.hstack(argrelmin(self.y))
+            max_idx = np.hstack(argrelmax(self.y))
+            extr_idx = np.sort(np.append(min_idx, max_idx))
+            minima = self.from_table(self._t[min_idx])
+            maxima = self.from_table(self._t[max_idx])
+            extr = self.from_table(self._t[extr_idx])
+        else:
+            minima = self.from_table(self._t)
+            maxima = self.from_table(self._t)
+            extr = self.from_table(self._t)
+        return minima, maxima, extr
         
     def find_lines(self, mode='abs', diff='max', kappa=3.0, hwidth=2):
         """Find the lines in a spectrum and save them as a line list"""
@@ -472,27 +509,52 @@ class Spec1D():
 
     def from_table(self, table, meta = {}):
         """Read a spectrum from a (spectrum-like) table"""
-        
-        xmin = table['XMIN']
-        xmax = table['XMAX']
-        x = table['X']
-        y = table['Y']            
-        dy = table['DY']
-        group = table['GROUP']
-        resol = table['RESOL']
-        dx = 0.5 * (xmax - xmin)
-        
-        c1 = np.argwhere(y > 0)
-        c2 = np.argwhere(dy > 0)
-        igood = np.intersect1d(c1, c2)
 
-        good = np.repeat(-1, len(x))
-        good[igood] = 1
+        x = []
+        y = []
+        xmin = []
+        xmax = []
+        dy = None
+        good = None
+        resol = None
+        xunit = None
+        yunit = None
+        meta = None
+        if (len(table) > 0):
+            x = table['X']
+            y = table['Y']            
+            xmin = table['XMIN']
+            xmax = table['XMAX']
+            dy = table['DY']
+            group = table['GROUP']
+            resol = table['RESOL']
+            xunit = x.unit
+            yunit = y.unit
+            dx = 0.5 * (xmax - xmin)
+            
+            c1 = np.argwhere(y > 0)
+            c2 = np.argwhere(dy > 0)
+            igood = np.intersect1d(c1, c2)
 
-        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x.unit, 
-                      yunit=y.unit, group=good, resol=resol, meta=meta)
+            good = np.repeat(-1, len(x))
+            good[igood] = 1
+
+        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=xunit, 
+                      yunit=yunit, group=good, resol=resol, meta=meta)
         return spec
         
+    def mask_col(self, col):
+        """ Mask columns """
+        
+        if self._use_good:
+            ret = self._t[col].quantity[self._igood]
+        else:
+            ret = self._t[col].quantity
+        null = np.argwhere(self._t[col].mask)
+        if null.size > 0:
+            ret[null] = float('nan')
+        return ret
+
     def model(self, prof=True, psf=True):
         model = self._norm_guess[0]
         param = self._norm_guess[1]
@@ -532,6 +594,98 @@ class Spec1D():
         if block is True:
             plt.show()
 
+    def prof_auto(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
+                  width=0.03 * u.nm, plot=False, verbose=False):
+
+        loop = [(logN, b) for logN in logN_range for b in b_range]
+        match = np.array([])
+        minima_x = np.array([])
+        minima_redchi = np.array([])
+        for (logN, b) in loop:
+            N = np.power(10, logN) / u.cm**2
+            prof = model.prof_mult(self, ion, b=b, N=N)
+            redchi = np.zeros((len(self.x), len(prof)))
+            if (verbose == True):
+                print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
+                      end=" ", flush=True)
+            for p in range(len(prof)):
+                if (p == 0):
+                    redchi[:, p] = self.prof_scan_new(prof[p], ion,
+                                                      verbose=verbose)
+                else:
+                    redchi[:, p] = self.prof_scan_new(prof[p], ion)
+
+            where = np.full(len(self.x), False)
+            for x in range(len(self.x)):
+                #if ((redchi[x, 0] == np.min(redchi[x, :])) \
+                #    and (redchi[x, 1] == np.max(redchi[x, :])) \
+                #    and (redchi[x, 2] < redchi[x, 3]) \
+                #    and (redchi[x, 0] < 10.0)):
+                if (np.array_equal(np.sort(redchi[x, :]), redchi[x, :]) \
+                    and (redchi[x, 0] < redchi[x, 1] * 0.95) \
+                    #and (redchi[x, -2] < redchi[x, -1] * 0.95) \
+                    and (redchi[x, 0] < 10.0)):                            
+                    where[x] = True
+
+            minima = None
+            #if (np.sum(where) > 0):
+            redchi_sel = Spec1D(self.x[where], redchi[:, 0][where],
+                                xunit=self.x.unit)
+            minima, maxima, extr = redchi_sel.find_extrema()
+            minima_x = np.append(minima_x, minima.x)
+            minima_redchi = np.append(minima_redchi,
+                                      np.interp(minima.x, self.x, redchi[:, 0]))
+
+            if (verbose == True):
+                print("%i new matches found, %i in total." \
+                      % (len(minima.x), len(np.unique(minima_x))))
+                
+            if (plot == True):
+                self.plot(block=False)
+                
+                fig = plt.figure(figsize=(10,4))
+                fig.canvas.set_window_title("Spectrum")
+                grid = gs(1, 1)
+                ax = fig.add_subplot(grid[:, :])
+                grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+                ax.set_xlabel("Wavelength [" + str(self.x.unit) + "]")
+                ax.set_ylabel("Reduced chi squared")
+                ax.set_yscale("log", nonposy='clip')
+                ax.plot(self.x, redchi[:, 0], c='black', lw=1.0)
+                #ax.plot(self.x[where], redchi[:, 0][where], c='black', lw=2.0)
+                ax.plot(self.x, redchi[:, 1], c='r', lw=1.0)
+                ax.plot(self.x, redchi[:, 2], c='g', lw=1.0)
+                ax.plot(self.x, redchi[:, 3], c='b', lw=1.0)
+                if (len(minima.t) > 0):
+                    ax.scatter(minima.x, minima.y, c='b')
+                plt.show()    
+
+            print(np.asarray(minima.x))
+
+        print(mimima_x, minima_redchi)
+        x = np.array([])
+        for p in range(len(ion)):
+            x = np.append(x, np.asarray(minima.x) \
+                          * dict_wave[ion[p]] / dict_wave[ion[0]]) 
+
+        # Improve...
+        xmin = x - width.value
+        xmax = x + width.value
+            
+        y = np.interp(np.asarray(x), self.x.value, self.y.value) \
+                 * self.y.unit
+        dy = np.interp(np.asarray(x), self.x.value, self.dy.value) \
+                  * self.y.unit
+        from . import Line
+        line = Line(xmin=xmin, xmax=xmax, x=x, y=y, dy=dy, xunit=self.x.unit,
+                    spec=self)
+        return line
+
+    #return minima
+        #cond = np.logical_and(
+        #for logN in logN_range
+        
+    
     def prof_merge(self, prof, ion=['Ly_a'], z=None):
         """ Merge a line profile into a spectrum at a random position """
 
@@ -547,43 +701,12 @@ class Spec1D():
         x_prof = prof.x * (1 + z)
         xmin = np.min(x_prof)
         xmax = np.max(x_prof)
-        chunk = np.logical_and((self.x.value > xmin), (self.x.value < xmax))
+        chunk = np.logical_and((self.x.value > xmin.value),
+                               (self.x.value < xmax.value))
         y = np.interp(self.x[chunk], x_prof, prof.y) * self.y.unit
         self.y[chunk] = self.y[chunk] * y / self._cont.y[chunk]
         
         return z
-    
-    def prof_auto(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
-                  plot=False):
-
-        loop = [(logN, b) for logN in logN_range for b in b_range]
-        for (logN, b) in loop:
-            N = np.power(10, logN) / u.cm**2
-            prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
-            redchi = np.zeros((len(self.x), len(prof)))
-            for p in range(len(prof)):
-                redchi[:, p] = self.prof_scan_new([prof[p]], ion)
-
-            where = (np.amin(redchi, axis=0) == redchi[:, 1])
-                
-            if (plot == True):
-                fig = plt.figure(figsize=(10,4))
-                fig.canvas.set_window_title("Spectrum")
-                grid = gs(1, 1)
-                ax = fig.add_subplot(grid[:, :])
-                grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
-                ax.set_xlabel("Wavelength [" + str(self.x.unit) + "]")
-                ax.set_ylabel("Reduced chi squared")
-                ax.semilogy(self.x, redchi[0], c='black', lw=1.0)
-                ax.semilogy(self.x, redchi[1], c='b', lw=1.0)
-                ax.semilogy(self.x, redchi[2], c='r', lw=1.0)
-                ax.semilogy(self.x, redchi[3], c='g', lw=1.0)
-                plt.show()    
-
-
-        #cond = np.logical_and(
-        #for logN in logN_range
-        
     
     def prof_scan(self, ion, line=None, width=0.02 * u.nm, verbose=True):
         """ Scan a spectrum with a line profile to find matches """
@@ -669,7 +792,7 @@ class Spec1D():
                     spec=self)
         return line
     
-    def prof_scan_new(self, prof, ion, width=0.02 * u.nm, verbose=True):
+    def prof_scan_new(self, prof, ion, width=0.02 * u.nm, verbose=False):
         """ Scan a spectrum with a line profile to find matches """
         
         i_last = 0
@@ -691,31 +814,33 @@ class Spec1D():
         self._redchi = np.zeros(len(self.x))
         
         for i in range(len(self.x)):
+        #for i in range(999):
             if ((i == 999) and (verbose==True)): 
-                print("Scanning (foreseen running time: %.0f s)..." \
-                      % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
-                      flush=True)
-            for prof_i in prof:
-                mod_x = prof_i.x * (1 + spec_temp.x[i])
-                xmin = np.min(mod_x).value
-                xmax = np.max(mod_x).value
-                if (xmax < xend):
-                    #chunk[:, i] = np.logical_and((self.x.value > xmin),
-                    #                             (self.x.value < xmax))
-                    chunk_i = np.logical_and((self.x.value > xmin),
-                                                 (self.x.value < xmax))
-                else:
-                    chunk_i = np.full(len(self.x), False)
-                    
-                #chunk_i = chunk[:, i]
-                x = self.x[chunk_i].value
-                y = self.y[chunk_i].value
-                dy = self.dy[chunk_i].value
-                mod_y = np.interp(x, mod_x, prof_i.y) #* prof_i.y.unit
-                null_y = self._cont.y[chunk_i].value
-                if (len(x) > 0):
-                    redchi_mod = redchi(x, y, dy, mod_y)
-                self._redchi[i] = redchi_mod
+                print("(foreseen running time: %.0f s)..." \
+                      % ((time.time() - start) * len(self.x) * (len(ion) + 2) \
+                         * 1e-3), end=" ", flush=True)
+            mod_x = prof.x * (1 + spec_temp.x[i])
+            xmin = np.min(mod_x).value
+            xmax = np.max(mod_x).value
+            if (xmax < xend):
+                #chunk[:, i] = np.logical_and((self.x.value > xmin),
+                #                             (self.x.value < xmax))
+                chunk_i = np.logical_and((self.x.value > xmin),
+                                             (self.x.value < xmax))
+            else:
+                chunk_i = np.full(len(self.x), False)
+                
+            #chunk_i = chunk[:, i]
+            x = self.x[chunk_i].value
+            y = self.y[chunk_i].value
+            dy = self.dy[chunk_i].value
+            mod_y = np.interp(x, mod_x, prof.y) #* prof.y.unit
+            null_y = self._cont.y[chunk_i].value
+            if (len(x) > 0):
+                redchi_mod = redchi(x, y, dy, mod_y)
+            else:
+                redchi_mod = 'nan'
+            self._redchi[i] = redchi_mod
 
         return self._redchi
 
