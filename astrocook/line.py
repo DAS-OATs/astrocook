@@ -435,8 +435,8 @@ class Line(Spec1D):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)
-            #, fit_kws={'maxfev': maxfev})
+            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value, #)
+                            fit_kws={'maxfev': maxfev})
         return fit    
 
     def fit_auto(self, x=None, line=None, i_max=10, mode=None):
@@ -461,22 +461,34 @@ class Line(Spec1D):
         self._last_add = 0.0
         while (stop == False):
             i += 1
+            #print("before noneb")
+            #print(self._t)
             noneb = dc(self._noneb)
             #try:
             #    noneb._z_fit = noneb_z_fit
             #except:
             #    pass
+            #print("noneb")
+            #print(self._noneb.t)
             fit_noneb = noneb.fit_wrap(x, vary, mode)
+            #print("noneb")
+            #print(self._noneb._t)
 
+            #print("before neb")
+            #print(self._t)
             neb = dc(self._neb)
             #try:
             #    neb._z_fit = neb_z_fit
             #except:
             #    pass
+            #print("neb")
+            #print(self._neb._t)
             fit_neb = neb.fit_wrap(x, vary, mode)
+            #print("neb")
+            #print(self._neb._t)
             
             if ((fit_noneb == None) or (fit_neb == None)):
-                stop = False
+                stop = True
             else:
                 if (noneb._redchi <= neb._redchi):
                     #print("noneb")
@@ -488,9 +500,10 @@ class Line(Spec1D):
                     self_temp = dc(neb)
                     fit = fit_neb
                     #neb_z_fit = neb._z_fit
-                
                 #self = dc(self_temp)
                 self.__dict__.update(self_temp.__dict__)
+                #print("after")
+                #print(self._t)
                 print("(%i) %3.2f;" \
                       % (i, self._redchi), end=" ", flush=True)
                 stop = (self._redchi < redchi_thr) \
@@ -598,6 +611,15 @@ class Line(Spec1D):
                     btur = kwargs['btur']
                 except:
                     btur = []
+            #print(self._t)
+            #print(self._z)
+            #print(self._group[1])
+            #print(len(self._t), len(self._z), len(self._group[1]))
+            #try:
+            #    print(self._z_fit)
+            #    print(len(self._z_fit))
+            #except:
+            #    pass
             self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
                                           b=b, btur=btur)
         else:
@@ -634,7 +656,7 @@ class Line(Spec1D):
             N_tags = [N for N in fit.best_values if N.endswith('_N')]
             b_tags = [b for b in fit.best_values if b.endswith('_b')]
             btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
-
+            """
             #print([fit.best_values[z] for z in z_tags])
             z_best, un = np.unique([fit.best_values[z] for z in z_tags],
                                    return_index=True)
@@ -642,23 +664,36 @@ class Line(Spec1D):
             b_best = np.array([fit.best_values[b] for b in b_tags])[un]
             btur_best = np.array([fit.best_values[bt] for bt in btur_tags])[un]
 
-            """
-            self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
-            self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
-                          * self._N_arr[0].unit
-            self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
-                          * self._b_arr[0].unit
-            self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
-                             * self._btur_arr[0].unit
-            """
             self._z_fit = np.sort(z_best) * u.nm/u.nm
             self._N_fit = N_best[np.argsort(z_best)] / u.cm**2
             self._b_fit = b_best[np.argsort(z_best)] * u.km/u.s           
             self._btur_fit = btur_best[np.argsort(z_best)] * u.km/u.s
+            """
+
+            z_best = np.array([fit.best_values[z] for z in z_tags])
+            N_best = np.array([fit.best_values[N] for N in np.sort(N_tags)] )
+            b_best = np.array([fit.best_values[b] for b in np.sort(b_tags)]) 
+            btur_best = np.array([fit.best_values[bt] for bt \
+                                  in np.sort(btur_tags)])
+            z_sort = np.sort(z_best)
+            N_sort = N_best[np.argsort(z_best)]
+            b_sort = b_best[np.argsort(z_best)]
+            btur_sort = btur_best[np.argsort(z_best)]
+            #print(z_sort)
+            sel = np.append(0,
+                            np.cumsum([len(ion) for ion \
+                                       in self._t['ION'][self._group[1]]]))[:-1]
+            #print(sel)
+            self._z_fit = u.Quantity(z_sort[sel])
+            self._N_fit = N_sort[sel] / u.cm**2
+            self._b_fit = b_sort[sel] * u.km/u.s
+            self._btur_fit = btur_sort[sel] * u.km/u.s
+            
             #print(self._z_fit)
             #print(len(self._z), len(self._group[1]), len(self._z_fit))
 
             # When new redshift is a duplicate
+            """
             if ((hasattr(self, '_last_add')) \
                 and (len(self._z_fit) < np.sum(self._group[1]))): 
                 #print(self._last_add)
@@ -668,6 +703,9 @@ class Line(Spec1D):
                 self.group(line=line)
                 #self._group[1] = np.delete(self._group[1], self._last_add)
             #print(len(self._z), len(self._group[1]), len(self._z_fit))
+            """
+            #print(self._z_fit)
+            #print(len(self._z_fit))
             self._z[self._group[1]] = self._z_fit
             
         else:
@@ -677,15 +715,25 @@ class Line(Spec1D):
         self._aic = fit.aic    
         
     def fit_wrap(self, x, vary=False, mode=None):
+        #print("0")
+        #print(self._t)
         group = self.group(x)
         chunk = self.chunk(x)
+        #print("1")
+        #print(self._t)
         self.fit_prep(mode=mode)
+        #print("2")
+        #print(self._t)
         guess = self.model()
         fit = self.fit()
+        #print("3")
+        #print(self._t)
         if (hasattr(fit, 'fit_report')):
             self.fit_prod(fit)
         else:
             fit = None
+        #print("4")
+        #print(self._t)
         return fit
 
     def group(self, x=None, line=None, single=False):

@@ -662,7 +662,10 @@ class Spec1D():
 
             print(np.asarray(minima.x))
 
-        print(mimima_x, minima_redchi)
+        minima_x_sort = np.sort(minima_x)
+        minima_redchi_sort = minima_redchi[np.argsort(minima_x)]
+        print(minima_x, minima_redchi)
+        print(minima_x_sort, minima_redchi_sort)
         x = np.array([])
         for p in range(len(ion)):
             x = np.append(x, np.asarray(minima.x) \

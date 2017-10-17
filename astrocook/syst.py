@@ -187,13 +187,20 @@ class Syst(Line):
         ion = self.ion[ion_where][0]
         zmin_ion = self.xmin[ion_where][0] 
         zmax_ion = self.xmax[ion_where][0]
-        y_ion = np.empty(len(ion))
-        dy_ion = np.empty(len(ion))        
+        #y_ion = np.empty(len(ion))
+        #dy_ion = np.empty(len(ion))        
         for i in range(len(ion)):
             spec = dc(self._spec)
             spec.to_z([ion[i]])
-            y_ion[i] = np.interp(z_ion, spec.x, spec.y)
-            dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
+            #y_ion[i] = np.interp(z_ion, spec.x, spec.y)
+            #dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
+            if (i == 0):
+                y_ion = (np.interp(z_ion, spec.x, spec.y),)
+                dy_ion = (np.interp(z_ion, spec.x, spec.dy),)
+            else:
+                y_ion += (np.interp(z_ion, spec.x, spec.y),)
+                dy_ion += (np.interp(z_ion, spec.x, spec.dy),)
+                
 
         
         z_neb = x / dict_wave[neb] - 1.0
@@ -225,17 +232,23 @@ class Syst(Line):
         #    self._noneb._last_add = None
             
         self._neb = dc(self)
+        print(self._neb.t)
         #if (z_ion not in self._noneb.x):
         self._neb.flatten_z()
+        print(self._neb._flat.t)
         self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb,
                                    neb])
+        print(self._neb._flat.t)
         self._neb.deflatten_z()
+        print(self._neb.t)
         self._neb.t.sort('X')  # This gives an annoying warning
         self._neb._z = np.unique(np.append(self._z.value, z_neb.value))
-        self._neb._z = np.append(self._z.value, z_neb.value)
+        #self._neb._z = np.append(self._z.value, z_neb.value)
         self._neb._z.sort()
         self._neb._z *= self._z.unit
-        self._neb._last_add = np.where(self._neb._z == z_neb)[0][0] 
+        self._neb._last_add = np.where(self._neb._z == z_neb)[0][0]
+        print(self._neb._z)
+        print(len(self._neb._z))
         #else:
         #    self._neb._last_add = None
        
@@ -314,7 +327,7 @@ class Syst(Line):
         z = 0
         end_row = False
         for l in range(len(self._flat.t)):
-            if (np.isclose(self._flat.x[l], z) == False):
+            if (np.isclose(self._flat.x[l], z, rtol=1e-6) == False):
                 if (end_row == True):
                     z_deflat.append(z)
                     y_deflat.append(y)
