@@ -417,6 +417,8 @@ class Spec1D():
     def extract(self, xmin=None, xmax=None, forest=[], zem=[], prox_vel=[],
                 line=None):
         """ Extract a region of a spectrum """
+
+        self._orig = dc(self)
         if ((forest == []) != (zem == [])):
             raise Exception("Forest name and emission redshift must be "
                             "provided together.")
