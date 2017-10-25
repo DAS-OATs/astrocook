@@ -48,6 +48,10 @@ A CONTRIBUTING.md file will be soon uploaded to detail our code of conduct and t
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
+## License
+
+Astrocook is licensed under the [GNU General Public License (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html).
+
 ## Acknowledgments
 
 The project is carried out at [INAF-OATs](http://www.oats.inaf.it/index.php/en/) with the contributions of Stefano Cristiani and Giuliano Taffoni.
