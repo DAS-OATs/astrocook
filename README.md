@@ -25,7 +25,6 @@ Astrocook requires the following packages to run:
 
 The following tests are available:
 
-* test.py: import and plot a spectrum, create a power-law model, and deredden the spectrum.
 * line_test.py: create a list of absoprtion lines from a spectrum and fit them with Voigt profiles.
 * syst_test.py: create a list of CIV doublets from a spectrum and fit them with Voigt profiles.
 
@@ -34,8 +33,6 @@ To run the tests:
 ```
 python <name-of-the-test>
 ```
-
-DISCLAIMER: Due to the ongoing development, some tests may occasionally crash.
 
 ## Contributing
 
