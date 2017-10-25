@@ -304,6 +304,14 @@ class Line(Spec1D):
         if (cont_rms > 3*np.mean(self._resid_cont.dy.value)):
         #else:
             cont_corr = 1 + cont_rms / np.mean(self._cont.y.value)
+        
+        # This is actually not needed for un-identified lines (no need to 
+        # differentiate between components of the current system and spurious
+        # components) but is now used to allow compatibility with the 
+        # syst.corr_resid method. Fix that.
+        self._noneb = dc(self)
+        self._neb = dc(self)
+        
         return cont_corr
 
     def corr_tau(self, N_thres=None):
@@ -668,9 +676,13 @@ class Line(Spec1D):
             berr_sort = berr_best[np.argsort(z_best)]
             bturerr_sort = bturerr_best[np.argsort(z_best)]
 
-            sel = np.append(0,
-                        np.cumsum([len(ion) for ion \
-                        in self._t['ION'][self._group[1]]]))[:-1]
+            if ('ION' in self.t.colnames):
+                sel = np.append(0,
+                                np.cumsum([len(ion) for ion \
+                                in self._t['ION'][self._group[1]]]))[:-1]
+            else:
+                sel = range(np.sum(self._group[1]))
+            
             self._z_fit = u.Quantity(z_sort[sel])
             self._N_fit = N_sort[sel] / u.cm**2
             self._b_fit = b_sort[sel] * u.km/u.s
@@ -695,7 +707,8 @@ class Line(Spec1D):
                 #self._group[1] = np.delete(self._group[1], self._last_add)
             #print(len(self._z), len(self._group[1]), len(self._z_fit))
             """
-            self._z[self._group[1]] = self._z_fit
+            if (hasattr(self, '_z')):
+                self._z[self._group[1]] = self._z_fit
 
             if ('N' in self._t.colnames):
                 self._t['N'][self._group[1]] = self._N_fit
@@ -771,7 +784,7 @@ class Line(Spec1D):
             self._norm = dc(self._spec)
         self._norm.y[chunk[1]] = norm[0].eval(
             norm[1], x=self._norm.x[chunk[1]].value) \
-            * self._cont.y[chunk[1]] * self._norm.y[chunk[1]].unit 
+            * self._cont.y[chunk[1]].value * self._norm.y[chunk[1]].unit 
 
         return norm 
             

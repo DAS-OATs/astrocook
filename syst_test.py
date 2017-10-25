@@ -24,18 +24,18 @@ def main():
     line.cont()
     
     # Create a Syst object from the lines
-    syst = Syst(line, spec, ion='CIV')
+    syst = Syst(line, spec, doubl='CIV')
     syst._resol = 45000
 
     # Estimate the continuum
     syst.cont()
 
     # Create redshift table
-    syst.create_z()
+    syst.find()
     
-    # Match redshifts
-    syst.match_z()
-
+    syst.fit_list(plot=True)
+    
+    """
     # Flatten redshifts
     syst.flatten_z()
     ltot = len(syst.t)
@@ -52,7 +52,7 @@ def main():
         else:
             group_check = syst_i.group(x=x_arr[l])[1]
             
-            """ This part is commented because it is run automatically later
+            ### This part is commented because it is run automatically later
             # Define the line group around a given redshift
             group = syst.group(x=x_arr[l])
             
@@ -84,9 +84,9 @@ def main():
             
             # Fit the model 
             fit = syst.fit(group, chunk, cont_guess, voigt_guess, psf)
-            """
+            ###
 
-            """ This runs all the part above automatically """
+            ### This runs all the part above automatically ###
             # Fit the model, incrementally adding components
             group, chunk = syst.auto(x=x_arr[l])
     
@@ -94,7 +94,7 @@ def main():
             print("close graph to continue.")
             #syst.plot(group, chunk)  # To visually match components
             syst.plot(group, chunk, mode='split')  # To inspect the fit
-
+    """
             
 
 if __name__ == '__main__':

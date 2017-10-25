@@ -388,7 +388,7 @@ class Model():
         i = 0
         ran = 1
         #if (hasattr(self, '_syst')):
-        if (len(ion) > 1):
+        if (len(ion) > 1 or 1==1):
             #ran = len(self._syst.t[self._group[1]])
             ran = len(z)
         for l in range(ran):
