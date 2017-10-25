@@ -23,6 +23,9 @@ class Syst(Line):
                  dy=[],
                  ion=[],
                  doubl=[],
+                 N=[],
+                 b=[],
+                 btur=[],
                  yunit=None,
                  meta=None,
                  dtype=float):
@@ -33,12 +36,17 @@ class Syst(Line):
             raise Exception("X and Y must be provided together.")
         if ((xmin is []) != (xmax is [])):
             raise Exception("XMIN and XMAX must be provided together.")
-        sumlen = len(x) + len(y) + len(xmin) + len(xmax) + len(dy) + len(ion)
+        sumlen = len(x) + len(y) + len(xmin) + len(xmax) + len(dy) + len(ion) \
+                 + len(doubl) 
         if ((x != []) and (sumlen % len(x) != 0)):
             raise Exception("Data arrays must have the same length.")
         if ((xmin != []) and (sumlen % len(xmin) != 0)):
             raise Exception("Data arrays must have the same length.")
+        sumlen_voigt = len(x) + len(N) + len(b) + len(btur)
+        if ((N != []) and (sumlen_voigt % len(x) != 0)):
+            raise Exception("Voigt parameters must have the same length of X.")
 
+        
         # Warnings
         if ((spec is None) and (line is None) and (x is [])):
             warnings.warn("No spectrum, line list, or data provided.")
@@ -58,6 +66,12 @@ class Syst(Line):
         # Spectrum
         self._spec = None
         if (spec is not None):
+            """
+            if (hasattr(spec, '_orig')):
+                self._spec = dc(spec._orig)
+            else:
+                self._spec = dc(spec)
+            """
             self._spec = dc(spec)
             
         # Ion list
@@ -73,13 +87,22 @@ class Syst(Line):
         if ((ion is []) or (ion is 'Ly_a')):
             ion = np.full(len_ion, 'Ly_a')           
 
+        if (N == []):
+            N = np.full(len_ion, float('nan')) 
+            b = np.full(len_ion, float('nan')) 
+            btur = np.full(len_ion, float('nan'))
+        dN = np.full(len_ion, float('nan')) 
+        db = np.full(len_ion, float('nan')) 
+        dbtur = np.full(len_ion, float('nan'))
+        
+            
         self._ion = ion
             
         # System list
         data = ()
         if (x != []):
             col_x = Column(np.asarray(dc(x), dtype=dtype), name='X')
-            col_y = Column(np.asarray(dc(y)), name='Y')
+            col_y = Column(np.asarray(dc(y)), name='Y', unit=yunit)
             data = (col_x, col_y)
             if yunit is None:
                 try:
@@ -91,11 +114,22 @@ class Syst(Line):
             col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
             data += (col_xmin, col_xmax)
         if (dy != []):
-            col_dy = Column(np.asarray(dc(dy)), name='DY')
+            col_dy = Column(np.asarray(dc(dy)), name='DY', unit=yunit)
             data += (col_dy,)
         if ((x != []) and (ion != [])):
             col_ion = Column(np.asarray(dc(ion)), name='ION')
             data += (col_ion,)
+        if ((x != []) and (ion != [])):
+            col_N = Column(np.asarray(dc(N)), name='N', unit=1/u.cm**2)
+            col_b = Column(np.asarray(dc(b)), name='B', unit=u.km/u.s)
+            col_btur = Column(np.asarray(dc(btur)), name='BTUR',
+                              unit=u.km/u.s)
+            col_dN = Column(np.asarray(dc(dN)), name='DN', unit=1/u.cm**2)
+            col_db = Column(np.asarray(dc(db)), name='DB', unit=u.km/u.s)
+            col_dbtur = Column(np.asarray(dc(dbtur)), name='DBTUR',
+                               unit=u.km/u.s)
+            data += (col_N, col_b, col_btur, col_dN, col_db, col_dbtur)
+            
         if data is ():
             data = None
             
@@ -107,7 +141,8 @@ class Syst(Line):
             self._t['Y'].unit = yunit
         if (dy != []):
             self._t['DY'].unit = yunit
-
+            
+            
         self._use_good = False
 
                 
@@ -153,6 +188,9 @@ class Syst(Line):
 
 # Methods
 
+    #def add_assoc(self, ion, z=None, zmin, zmax):
+    #    self.t.add_row([z, y, zmin, zmax, dy, ion])
+
     def corr_resid(self, group, cont_corr):
         """ Add a new line at the minimum residual """
 
@@ -187,13 +225,20 @@ class Syst(Line):
         ion = self.ion[ion_where][0]
         zmin_ion = self.xmin[ion_where][0] 
         zmax_ion = self.xmax[ion_where][0]
-        y_ion = np.empty(len(ion))
-        dy_ion = np.empty(len(ion))        
+        #y_ion = np.empty(len(ion))
+        #dy_ion = np.empty(len(ion))        
         for i in range(len(ion)):
             spec = dc(self._spec)
             spec.to_z([ion[i]])
-            y_ion[i] = np.interp(z_ion, spec.x, spec.y)
-            dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
+            #y_ion[i] = np.interp(z_ion, spec.x, spec.y)
+            #dy_ion[i] = np.interp(z_ion, spec.x, spec.dy)
+            if (i == 0):
+                y_ion = (np.interp(z_ion, spec.x, spec.y),)
+                dy_ion = (np.interp(z_ion, spec.x, spec.dy),)
+            else:
+                y_ion += (np.interp(z_ion, spec.x, spec.y),)
+                dy_ion += (np.interp(z_ion, spec.x, spec.dy),)
+                
 
         
         z_neb = x / dict_wave[neb] - 1.0
@@ -214,7 +259,8 @@ class Syst(Line):
         
         #if (z_ion not in self._noneb.x):
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
-                               ion])
+                               ion, float('nan'), float('nan'), float('nan'),
+                               float('nan'), float('nan'), float('nan')])
         self._noneb.t.sort('X')  # This gives an annoying warning
         self._noneb._z = np.unique(np.append(self._z.value, z_ion)) 
         self._noneb._z = np.append(self._z.value, z_ion) 
@@ -228,14 +274,16 @@ class Syst(Line):
         #if (z_ion not in self._noneb.x):
         self._neb.flatten_z()
         self._neb._flat.t.add_row([z_neb, y_neb, zmin_neb, zmax_neb, dy_neb,
-                                   neb])
+                                   neb, float('nan'), float('nan'),
+                                   float('nan'), float('nan'), float('nan'),
+                                   float('nan')])
         self._neb.deflatten_z()
         self._neb.t.sort('X')  # This gives an annoying warning
         self._neb._z = np.unique(np.append(self._z.value, z_neb.value))
-        self._neb._z = np.append(self._z.value, z_neb.value)
+        #self._neb._z = np.append(self._z.value, z_neb.value)
         self._neb._z.sort()
         self._neb._z *= self._z.unit
-        self._neb._last_add = np.where(self._neb._z == z_neb)[0][0] 
+        self._neb._last_add = np.where(self._neb._z == z_neb)[0][0]
         #else:
         #    self._neb._last_add = None
        
@@ -310,11 +358,17 @@ class Syst(Line):
         zmax_deflat = []
         ion_deflat = []
         dy_deflat = []
-
+        N_deflat = []
+        b_deflat = []
+        btur_deflat = []        
+        dN_deflat = []
+        db_deflat = []
+        dbtur_deflat = []        
+        
         z = 0
         end_row = False
         for l in range(len(self._flat.t)):
-            if (np.isclose(self._flat.x[l], z) == False):
+            if (np.isclose(self._flat.x[l], z, rtol=1e-6) == False):
                 if (end_row == True):
                     z_deflat.append(z)
                     y_deflat.append(y)
@@ -322,12 +376,24 @@ class Syst(Line):
                     zmax_deflat.append(zmax)
                     dy_deflat.append(dy)
                     ion_deflat.append(ion)
+                    N_deflat.append(N)
+                    b_deflat.append(b)
+                    btur_deflat.append(btur)
+                    dN_deflat.append(dN)
+                    db_deflat.append(db)
+                    dbtur_deflat.append(dbtur)
                     end_row = False
                 y = (self._flat.y[l].value,)
                 zmin = self._flat.xmin[l]
                 zmax = self._flat.xmax[l]
                 dy = (self._flat.dy[l].value,)                
                 ion = (self._flat.ion[l],)
+                N = self._flat.t['N'][l]
+                b = self._flat.t['B'][l]
+                btur = self._flat.t['BTUR'][l]
+                dN = self._flat.t['DN'][l]
+                db = self._flat.t['DB'][l]
+                dbtur = self._flat.t['DBTUR'][l]
             else:
                 z = self._flat.x[l]
                 y = y + (self._flat.y[l].value,)
@@ -341,10 +407,17 @@ class Syst(Line):
         zmax_deflat.append(zmax)
         dy_deflat.append(dy)
         ion_deflat.append(ion)
-        
+        N_deflat.append(N)
+        b_deflat.append(b)
+        btur_deflat.append(btur)
+        dN_deflat.append(dN)
+        db_deflat.append(db)
+        dbtur_deflat.append(dbtur)
+
         syst = Syst(self.line, self.spec, x=z_deflat, y=y_deflat,
                     xmin=zmin_deflat, xmax=zmax_deflat, dy=dy_deflat,
-                    ion=ion_deflat, yunit=yunit)
+                    ion=ion_deflat, N=N_deflat, b=b_deflat, btur=btur_deflat,
+                    yunit=yunit)
         self.__dict__.update(syst.__dict__)
 
     def find(self, ztol=1e-4):
@@ -365,11 +438,15 @@ class Syst(Line):
                     self._flat = Syst(x=[r['X']], y=[r['Y'][i]],
                                       xmin=[r['XMIN']], xmax=[r['XMAX']],
                                       dy=[r['DY'][i]], ion=[r['ION'][i]],
+                                      N=[r['N']], b=[r['B']], btur=[r['BTUR']],
                                       yunit=yunit)
                     first = False
                 else:
-                    self._flat.t.add_row([r['X'], r['Y'][i], r['XMIN'],
-                                          r['XMAX'], r['DY'][i], r['ION'][i]])
+                    row = [r['X'], r['Y'][i], r['XMIN'], r['XMAX'], r['DY'][i],
+                           r['ION'][i]]
+                    for col in r.colnames[6:]:
+                        row.append(r[col])
+                    self._flat.t.add_row(row)
                     
     def group(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
@@ -510,9 +587,10 @@ class Syst(Line):
 
         return norm 
 
-    def plot(self, group=None, chunk=None, figsize=(10,4), mode='simple',
-             block=True, **kwargs):
-        ion = np.unique(self._flat.ion)
+    def plot(self, group=None, chunk=None, ion=[], figsize=(10,4),
+             mode='simple', block=True, **kwargs):
+        if (ion == []):
+            ion = np.unique(self._flat.ion)
         ion = ion[ion != 'neb'] 
         n = len(ion)
         try:
@@ -547,11 +625,19 @@ class Syst(Line):
                         if (ion[p] in t['ION'][l]):
                             zmin = min(zmin, t['XMIN'][l])
                             zmax = max(zmax, t['XMAX'][l])
+                        #zmin = min(zmin, t['XMIN'][l])
+                        #zmax = max(zmax, t['XMAX'][l])
                 else:
                     zmin = np.min(self.xmin)
                     zmax = np.max(self.xmax)
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
                 ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
+                """
+                if (hasattr(self._spec, '_orig')):
+                    spec = dc(self._spec._orig)
+                else:
+                    spec = dc(self._spec)
+                """
                 spec = dc(self._spec)
                 line = dc(self._line)
                 spec.to_z([ion[p]])
@@ -748,10 +834,7 @@ class Syst(Line):
         y = self._spec.y[chunk_sum]        
         dy = self._spec.dy[chunk_sum]
         ndata = len(x)
-        #param.pretty_print()
         mod = model.eval(param, x=x.value)
-        #print(mod)
-        #print(y.value)
         ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
         return ret
 
@@ -791,13 +874,6 @@ class Syst(Line):
         model = Model(self._spec, syst=self, group=group, chunk=chunk)
         if (z == []):
             #z = self.x[group[1]]
-            #print(self._z)
-            #print(self._t)
-            #try:
-            #    print(self._z_fit)
-            #except:
-            #    print("emma")
-            #print(len(group[1]))
             z = self._z[group[1]]
             if (hasattr(self, '_norm')):
                 N = model.N_guess(self._norm, ion=self._flat.ion)

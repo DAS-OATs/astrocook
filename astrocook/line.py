@@ -59,7 +59,7 @@ class Line(Spec1D):
             if (hasattr(spec, '_cont')):
                 self._precont = dc(spec._precont)
                 self._cont = dc(spec._cont)            
-        
+                
         # Line list
         data = ()
         if (x != []):
@@ -220,11 +220,15 @@ class Line(Spec1D):
         if ((x is None) and (line >= len(self._t))):
             raise Exception("Line number is too large.")
         iter = range(len(self._t))
-        sel = self._spec.t['X'] < 0.0
+        if (hasattr(self._spec, '_orig')):
+            spec = dc(self._spec._orig)
+        else:
+            spec = dc(self._spec)
+        sel = spec.t['X'] < 0.0
         for row in self.t[self.group(line=line, single=single)[1]]:
             sel = np.logical_or(sel, np.logical_and(
-                self._spec.t['X'] >= row['XMIN'],
-                self._spec.t['X'] <= row['XMAX']))
+                spec.t['X'] >= row['XMIN'],
+                spec.t['X'] <= row['XMAX']))
         if (np.sum(sel) % 2 == 0):
             sel[np.argmax(sel)] = 0
         ret = (line, sel)
@@ -436,7 +440,7 @@ class Line(Spec1D):
             fit = None
         else:
             fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)
-            #, fit_kws={'maxfev': maxfev})
+                            #fit_kws={'maxfev': maxfev})
         return fit    
 
     def fit_auto(self, x=None, line=None, i_max=10, mode=None):
@@ -462,34 +466,20 @@ class Line(Spec1D):
         while (stop == False):
             i += 1
             noneb = dc(self._noneb)
-            #try:
-            #    noneb._z_fit = noneb_z_fit
-            #except:
-            #    pass
             fit_noneb = noneb.fit_wrap(x, vary, mode)
 
             neb = dc(self._neb)
-            #try:
-            #    neb._z_fit = neb_z_fit
-            #except:
-            #    pass
             fit_neb = neb.fit_wrap(x, vary, mode)
             
             if ((fit_noneb == None) or (fit_neb == None)):
-                stop = False
+                stop = True
             else:
                 if (noneb._redchi <= neb._redchi):
-                    #print("noneb")
                     self_temp = dc(noneb)
                     fit = fit_noneb
-                    #noneb_z_fit = noneb._z_fit
                 else:
-                    #print("neb")
                     self_temp = dc(neb)
                     fit = fit_neb
-                    #neb_z_fit = neb._z_fit
-                
-                #self = dc(self_temp)
                 self.__dict__.update(self_temp.__dict__)
                 print("(%i) %3.2f;" \
                       % (i, self._redchi), end=" ", flush=True)
@@ -525,8 +515,10 @@ class Line(Spec1D):
         x_arr = self_temp.x
         #i = 0
         group_check = 0
-        group_all = None
-        chunk_all = None
+        self._z_list = np.array([])
+        self._N_list = np.array([])
+        self._b_list = np.array([])
+        self._btur_list = np.array([])
         for l in list_range:
             start = time.time()
             print("Redshift %i (%i/%i) (%3.4f)..." \
@@ -542,13 +534,22 @@ class Line(Spec1D):
                     self.fit_auto(x=x_arr[l], i_max=i, mode=mode)
                     print("time: %3.2f;" % (time.time()-start), end=" ",
                           flush=True)
-                    
+                    self._z_list = np.append(self._z_list, self._z_fit) #\
+                                   #* self._z_fit.unit
+                    self._N_list = np.append(self._N_list, self._N_fit) #\
+                                   #* self._N_fit.unit
+                    self._b_list = np.append(self._b_list, self._b_fit) #\
+                                   #* self._b_fit.unit
+                    self._btur_list = np.append(
+                        self._btur_list, self._btur_fit) #* self._btur_fit.unit
+
                     if (plot == True):
                         print("close graphs to continue.")
                         self.plot(self._group, self._chunk, mode='split')
                     else:
                         print("")
-                    
+                
+                        
     def fit_prep(self, prof='voigt', vary=False, mode=None, **kwargs):
         if (hasattr(self, '_chunk_sum')):
             where = self._chunk_sum
@@ -598,8 +599,10 @@ class Line(Spec1D):
                     btur = kwargs['btur']
                 except:
                     btur = []
+
             self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
                                           b=b, btur=btur)
+
         else:
             raise Exception("Only Voigt profile is supported.")
         self._psf = self.psf(self._group, self._chunk, self._resol)
@@ -630,35 +633,58 @@ class Line(Spec1D):
     #* self._spec.y[where] / self._fit.y[where] #* yunit
         
         if (prof == 'voigt'):
+            #print(fit.fit_report())
+            #print(fit.params.pretty_print())
+            #print(fit.errorbars)
+            #print(fit.best_values)
+            #print(fit.params)
+            #print(fit.params['voigt0_z15138094933394572_btur'].stderr)
             z_tags = [z for z in fit.best_values if z.endswith('_z')]
             N_tags = [N for N in fit.best_values if N.endswith('_N')]
             b_tags = [b for b in fit.best_values if b.endswith('_b')]
             btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
 
-            #print([fit.best_values[z] for z in z_tags])
-            z_best, un = np.unique([fit.best_values[z] for z in z_tags],
-                                   return_index=True)
-            N_best = np.array([fit.best_values[N] for N in N_tags])[un]
-            b_best = np.array([fit.best_values[b] for b in b_tags])[un]
-            btur_best = np.array([fit.best_values[bt] for bt in btur_tags])[un]
+            z_best = np.array([fit.best_values[z] for z in z_tags])
+            N_best = np.array([fit.best_values[N] for N in np.sort(N_tags)] )
+            b_best = np.array([fit.best_values[b] for b in np.sort(b_tags)]) 
+            btur_best = np.array([fit.best_values[bt] for bt \
+                                  in np.sort(btur_tags)])
 
-            """
-            self._z_fit = [fit.best_values[z] for z in np.sort(z_tags)]
-            self._N_fit = [fit.best_values[N] for N in np.sort(N_tags)] \
-                          * self._N_arr[0].unit
-            self._b_fit = [fit.best_values[b] for b in np.sort(b_tags)] \
-                          * self._b_arr[0].unit
-            self._btur_fit = [fit.best_values[bt] for bt in np.sort(btur_tags)]\
-                             * self._btur_arr[0].unit
-            """
-            self._z_fit = np.sort(z_best) * u.nm/u.nm
-            self._N_fit = N_best[np.argsort(z_best)] / u.cm**2
-            self._b_fit = b_best[np.argsort(z_best)] * u.km/u.s           
-            self._btur_fit = btur_best[np.argsort(z_best)] * u.km/u.s
-            #print(self._z_fit)
-            #print(len(self._z), len(self._group[1]), len(self._z_fit))
+            zerr_best = np.array([fit.params[z].stderr for z in z_tags])
+            Nerr_best = np.array([fit.params[N].stderr for N \
+                                  in np.sort(N_tags)])
+            berr_best = np.array([fit.params[b].stderr for b \
+                                  in np.sort(b_tags)])
+            bturerr_best = np.array([fit.params[bt].stderr for bt \
+                                     in np.sort(btur_tags)])
+
+            z_sort = np.sort(z_best)
+            N_sort = N_best[np.argsort(z_best)]
+            b_sort = b_best[np.argsort(z_best)]
+            btur_sort = btur_best[np.argsort(z_best)]
+
+            zerr_sort = zerr_best[np.argsort(z_best)]
+            Nerr_sort = Nerr_best[np.argsort(z_best)]
+            berr_sort = berr_best[np.argsort(z_best)]
+            bturerr_sort = bturerr_best[np.argsort(z_best)]
+
+            sel = np.append(0,
+                        np.cumsum([len(ion) for ion \
+                        in self._t['ION'][self._group[1]]]))[:-1]
+            self._z_fit = u.Quantity(z_sort[sel])
+            self._N_fit = N_sort[sel] / u.cm**2
+            self._b_fit = b_sort[sel] * u.km/u.s
+            self._btur_fit = btur_sort[sel] * u.km/u.s
+
+            self._zerr_fit = u.Quantity(zerr_sort[sel])
+            self._Nerr_fit = Nerr_sort[sel] / u.cm**2
+            self._berr_fit = berr_sort[sel] * u.km/u.s
+            self._bturerr_fit = bturerr_sort[sel] * u.km/u.s
+
+            #print(self._Nerr_fit)
 
             # When new redshift is a duplicate
+            """ No action is taken, currently
             if ((hasattr(self, '_last_add')) \
                 and (len(self._z_fit) < np.sum(self._group[1]))): 
                 #print(self._last_add)
@@ -668,8 +694,18 @@ class Line(Spec1D):
                 self.group(line=line)
                 #self._group[1] = np.delete(self._group[1], self._last_add)
             #print(len(self._z), len(self._group[1]), len(self._z_fit))
+            """
             self._z[self._group[1]] = self._z_fit
-            
+
+            if ('N' in self._t.colnames):
+                self._t['N'][self._group[1]] = self._N_fit
+                self._t['B'][self._group[1]] = self._b_fit 
+                self._t['BTUR'][self._group[1]] = self._btur_fit
+                if (fit.errorbars == True):
+                    self._t['DN'][self._group[1]] = self._Nerr_fit
+                    self._t['DB'][self._group[1]] = self._berr_fit 
+                    self._t['DBTUR'][self._group[1]] = self._bturerr_fit
+           
         else:
             raise Exception("Only Voigt profile is supported.")
 
