@@ -660,9 +660,9 @@ class Spec1D():
                     ax.scatter(minima.x, minima.y, c='b')
                 plt.show()    
 
-            print(np.asarray(minima.x))
+            #print(np.asarray(minima.x))
 
-        print(mimima_x, minima_redchi)
+        #print(mimima_x, minima_redchi)
         x = np.array([])
         for p in range(len(ion)):
             x = np.append(x, np.asarray(minima.x) \
