@@ -839,6 +839,7 @@ class Syst(Line):
         return ret
 
     def save(self, name):
+        """
         hdu = fits.BinTableHDU.from_columns(
             [fits.Column(name='XMIN', format='E', array=self._spec.xmin),
              fits.Column(name='XMAX', format='E', array=self._spec.xmax),
@@ -850,7 +851,19 @@ class Syst(Line):
              fits.Column(name='GROUP', format='I', array=self._spec.group),
              fits.Column(name='RESOL', format='E', array=self._spec.resol)]) 
         hdu.writeto(name + '_syst_spec.fits', overwrite=True)
-
+        """
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='X', format='E', array=self.x),
+             fits.Column(name='XMIN', format='E', array=self.xmin),
+             fits.Column(name='XMAX', format='E', array=self.xmax),
+             #fits.Column(name='Y', format='E', array=self._t['Y']),
+             #fits.Column(name='DY', format='E', array=self._t['DY']),
+             #fits.Column(name='ION', format='I', array=self.ion),
+             fits.Column(name='N', format='E', array=self._t['N']),
+             fits.Column(name='B', format='E', array=self._t['B']),
+             fits.Column(name='BTUR', format='E', array=self._t['BTUR'])]) 
+        hdu.writeto(name + '_syst.fits', overwrite=True)
+        
     def unabs(self, group, chunk):
         """ Remove lines """
 

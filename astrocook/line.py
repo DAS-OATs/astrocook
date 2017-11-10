@@ -532,7 +532,7 @@ class Line(Spec1D):
             print("Redshift %i (%i/%i) (%3.4f)..." \
                   % (l+1, l+1-list_range[0], len(list_range), x_arr[l].value),
                   end=" ", flush=True)
-            
+
             # Check if the group is new
             if (np.array_equal(self_temp.group(x=x_arr[l])[1], group_check)):
                 print("same group, skipping.")
