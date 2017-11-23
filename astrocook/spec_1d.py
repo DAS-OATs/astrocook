@@ -428,6 +428,8 @@ class Spec1D():
         if (forest == 'CIV'):
             xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
             xmax = dict_wave['CIV_1550'] * (1 + zem - prox_vel / c)
+        print(xmin, xmax)
+        print(dict_wave['Ly_a'] * (1 + zem + prox_vel / c) / dict_wave['CIV_1550'] - 1, zem - prox_vel / c)
 
         reg = dc(self)
 
@@ -596,6 +598,84 @@ class Spec1D():
         if block is True:
             plt.show()
 
+    def prof_auto2(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
+                   width=0.03 * u.nm, plot=False, verbose=False):
+
+        loop = [(logN, b) for logN in logN_range for b in b_range]
+        match = np.array([])
+        minima_x = np.array([])
+        minima_redchi = np.array([])
+        for (logN, b) in loop:
+            N = np.power(10, logN) / u.cm**2
+            prof = model.prof_mult(self, ion, b=b, N=N)
+            redchi = np.zeros((len(self.x), len(prof)))
+            if (verbose == True):
+                print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
+                      end=" ", flush=True)
+            for p in range(len(prof)):
+                if (p == 0):
+                    redchi[:, p] = self.prof_scan_new(prof[p], ion,
+                                                      verbose=verbose)
+                else:
+                    redchi[:, p] = self.prof_scan_new(prof[p], ion)
+
+            where = np.full(len(self.x), False)
+            for x in range(len(self.x)):
+                if (np.array_equal(np.sort(redchi[x, :]), redchi[x, :]) \
+                    and (redchi[x, 0] < redchi[x, 1] * 0.95) \
+                    and (redchi[x, 0] < 10.0)):                            
+                    where[x] = True
+
+            minima = None
+            redchi_sel = Spec1D(self.x[where], redchi[:, 0][where],
+                                xunit=self.x.unit)
+            minima, maxima, extr = redchi_sel.find_extrema()
+            minima_x = np.append(minima_x, minima.x)
+            minima_redchi = np.append(minima_redchi,
+                                      np.interp(minima.x, self.x, redchi[:, 0]))
+
+            if (verbose == True):
+                print("%i new matches found, %i in total." \
+                      % (len(minima.x), len(np.unique(minima_x))))
+                
+            if (plot == True):
+                self.plot(block=False)
+                
+                fig = plt.figure(figsize=(10,4))
+                fig.canvas.set_window_title("Spectrum")
+                grid = gs(1, 1)
+                ax = fig.add_subplot(grid[:, :])
+                grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+                ax.set_xlabel("Wavelength [" + str(self.x.unit) + "]")
+                ax.set_ylabel("Reduced chi squared")
+                ax.set_yscale("log", nonposy='clip')
+                ax.plot(self.x, redchi[:, 0], c='black', lw=1.0)
+                #ax.plot(self.x[where], redchi[:, 0][where], c='black', lw=2.0)
+                ax.plot(self.x, redchi[:, 1], c='r', lw=1.0)
+                ax.plot(self.x, redchi[:, 2], c='g', lw=1.0)
+                ax.plot(self.x, redchi[:, 3], c='b', lw=1.0)
+                if (len(minima.t) > 0):
+                    ax.scatter(minima.x, minima.y, c='b')
+                plt.show()    
+
+        x = np.array([])
+        for p in range(len(ion)):
+            x = np.append(x, np.asarray(minima.x) \
+                          * dict_wave[ion[p]] / dict_wave[ion[0]]) 
+
+        # Improve...
+        xmin = x - width.value
+        xmax = x + width.value
+            
+        y = np.interp(np.asarray(x), self.x.value, self.y.value) \
+                 * self.y.unit
+        dy = np.interp(np.asarray(x), self.x.value, self.dy.value) \
+                  * self.y.unit
+        from . import Line
+        line = Line(xmin=xmin, xmax=xmax, x=x, y=y, dy=dy, xunit=self.x.unit,
+                    spec=self)
+        return line
+
     def prof_auto(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
                   width=0.03 * u.nm, plot=False, verbose=False):
 
@@ -686,7 +766,6 @@ class Spec1D():
     #return minima
         #cond = np.logical_and(
         #for logN in logN_range
-        
     
     def prof_merge(self, prof, ion=['Ly_a'], z=None):
         """ Merge a line profile into a spectrum at a random position """

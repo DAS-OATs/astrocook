@@ -503,6 +503,7 @@ class Line(Spec1D):
                     self_best = dc(self)
                     fit_best = dc(fit)
                     i_best = i
+                    redchi_best = self._redchi
 
                 if (stop == False):
                     cont_corr = self.corr_resid(self._group, cont_corr)
@@ -512,7 +513,7 @@ class Line(Spec1D):
         self.__dict__.update(self_best.__dict__)
         fit = fit_best
         print("best chi-squared (%i) %3.2f, %3.2f;" \
-              % (i_best, self._redchi, self._aic), end=" ", flush=True)
+              % (i_best, redchi_best, self._aic), end=" ", flush=True)
 
     def fit_list(self, list_range=None, iter_range=range(10,11), mode=None,
                  plot=True):
