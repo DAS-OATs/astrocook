@@ -9,6 +9,7 @@ from lmfit import CompositeModel as lmc
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
+np.set_printoptions(threshold=np.nan)
 from scipy.interpolate import UnivariateSpline
 import scipy.fftpack as fft
 from scipy.signal import argrelmin, argrelmax, fftconvolve
@@ -98,6 +99,9 @@ class Line(Spec1D):
             self._t['XMAX'].unit = xunit
         if (dy != []):
             self._t['DY'].unit = yunit
+
+        self._ion = np.full(len(self._t), 'Ly_a')           
+
 
         self._use_good = False
 
@@ -233,6 +237,11 @@ class Line(Spec1D):
             sel[np.argmax(sel)] = 0
         ret = (line, sel)
         self._chunk = ret
+        for c in range(1, len(ret)):
+            if (c == 1):
+                self._chunk_sum = dc(ret[c])
+            else:
+                self._chunk_sum += ret[c]
         return ret
     
     def cont(self, smooth=3.0):
@@ -296,7 +305,7 @@ class Line(Spec1D):
         x_hi = self._resid_cont.x[np.argmax(cont_norm)]
         y_lo = np.min(fit_norm)
         y_hi = np.max(cont_norm)
-        if (np.absolute(y_lo) > np.absolute(y_hi)):
+        if (np.absolute(y_lo) > np.absolute(y_hi) or 1==1):
             y = np.interp(x_lo.value, self._spec.x, self._spec.y) 
             dy = np.interp(x_lo.value, self._spec.x, self._spec.dy)
             self._t.add_row([x_lo, y, xmin, xmax, dy])
@@ -428,6 +437,7 @@ class Line(Spec1D):
 
 
     def fit(self, x=None, y=None, dy=None, guess=None, maxfev=1000):
+        """ Fit a line group """
 
         if (x is None):
             x = self._fit_x
@@ -437,8 +447,9 @@ class Line(Spec1D):
             dy = self._fit_dy
         if (guess is None):
             guess = self._guess
-            
+        
         (model, param) = guess
+        #param.pretty_print()
         if (hasattr(self, '_chunk_sum')):
             chunk = self._chunk_sum
         else:
@@ -447,11 +458,19 @@ class Line(Spec1D):
             warnings.warn("Too few data points; skipping.")
             fit = None
         else:
-            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)
-                            #fit_kws={'maxfev': maxfev})
+            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value, #)
+                            fit_kws={'maxfev': maxfev})
+
+        #print(chunk)                    
+        #print(y)
+        #fit.params.pretty_print()
+        #sys.exit()
+                            
         return fit    
 
     def fit_auto(self, x=None, line=None, i_max=10, mode=None):
+        """ Fit a line group, automatically adding components """
+        
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (line is not None):
@@ -467,15 +486,18 @@ class Line(Spec1D):
         i = 0
         i_best = 1
         cont_corr = 1.0
-        vary = False
+        vary = True #False
         self._noneb = dc(self)
         self._neb = dc(self)
         self._last_add = 0.0
         while (stop == False):
             i += 1
+
+            # "Non-nebulium" component
             noneb = dc(self._noneb)
             fit_noneb = noneb.fit_wrap(x, vary, mode)
 
+            # Generic "nebulium" component
             neb = dc(self._neb)
             fit_neb = neb.fit_wrap(x, vary, mode)
             
@@ -515,7 +537,7 @@ class Line(Spec1D):
         print("best chi-squared (%i) %3.2f, %3.2f;" \
               % (i_best, redchi_best, self._aic), end=" ", flush=True)
 
-    def fit_list(self, list_range=None, iter_range=range(10,11), mode=None,
+    def fit_list(self, list_range=None, iter_range=range(5,6), mode=None,
                  plot=True):
         if (list_range is None):
             list_range = range(len(self.t))
@@ -634,7 +656,7 @@ class Line(Spec1D):
             where = np.full(len(self._spec.t), True)
         yunit = self._spec.y.unit
         comp = fit.eval_components(x=self._spec.x[where].value)
-        self._fit.y[where] = fit.best_fit * self._cont.y[where] 
+        self._fit.y[where] = fit.best_fit * self._cont.y[where]
         self._cont.y[where] = comp['cont_'] * self._cont.y[where]
         self._resid_fit.y[where] = self._spec.y[where] - self._fit.y[where]
         self._resid_cont.y[where] = self._spec.y[where] - self._cont.y[where] 
@@ -727,10 +749,13 @@ class Line(Spec1D):
         self._aic = fit.aic    
         
     def fit_wrap(self, x, vary=False, mode=None):
+        """ Model a group of lines an fit them """
+        
         group = self.group(x)
         chunk = self.chunk(x)
-        self.fit_prep(mode=mode)
+        self.fit_prep(mode=mode, vary=vary)
         guess = self.model()
+        #print(self._cont.y)
         fit = self.fit()
         if (hasattr(fit, 'fit_report')):
             self.fit_prod(fit)
@@ -910,6 +935,13 @@ class Line(Spec1D):
                 N = model.N_guess(self._norm)
             else:
                 N = model.N_guess(self._unabs)
+            if (hasattr(self, '_unabs')):
+                cont = self._unabs
+            elif (hasattr(self, '_norm')):
+                cont = self._norm
+            else:
+                raise Exception("Continuum not found.")
+            N = model.N_guess(cont, ion=self._ion)
             b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
                    * u.km / u.s

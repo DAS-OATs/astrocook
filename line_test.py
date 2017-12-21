@@ -10,11 +10,11 @@ yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 def main():
 
     # Input data
-    name = 'J0940_Lya_1'    # Single Lya line complex
+    #name = 'J0940_Lya_1'    # Single Lya line complex
     #name = 'J0940_Lya_2'    # Another single Lya line complex
     #name = 'J0940_CIV_1'    # CIV system blindly fitted as Ly_a
     #name = 'J0940_Lya_f_2'    # Whole chunk of Lya forest (time consuming)
-    #name = 'B2126-15_Lya_f_7' # Another whole chunk of Lya forest
+    name = 'B2126-15_Lya_f_7' # Another whole chunk of Lya forest
     #name = 'B1937_all' # A whole spectrum    
     
     # Read the 1D spectrum
@@ -30,7 +30,6 @@ def main():
     # Estimate the continuum
     line.cont()
 
-
     line.fit_list(plot=True)
     
     """
@@ -38,8 +37,8 @@ def main():
     line_i = dc(line)
     x_arr = line_i.x
     group_check = 0
-    #for l in range(14,15):
-    for l in range(ltot):
+    for l in range(14,15):
+    #for l in range(ltot):
         
         print("Line %i of %i (%3.2f %s)..." \
               % (l + 1, ltot, x_arr[l].value, x_arr[l].unit),

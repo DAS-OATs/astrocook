@@ -97,7 +97,7 @@ class Syst(Line):
         
             
         self._ion = ion
-            
+
         # System list
         data = ()
         if (x != []):
@@ -256,7 +256,6 @@ class Syst(Line):
 
         
         self._noneb = dc(self)
-        
         #if (z_ion not in self._noneb.x):
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                                ion, float('nan'), float('nan'), float('nan'),

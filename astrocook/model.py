@@ -80,6 +80,7 @@ class Model():
         elif (syst is not None):
             self._syst = syst
         if (hasattr(self, '_syst')):
+            
             if (hasattr(self._syst, '_cont')):
                 self._precont = self._syst.cont
                 self._cont = self._syst._cont
@@ -108,14 +109,18 @@ class Model():
         if (self._group is not None):
             syst = self._syst.t[self._group[1]]
 
+        r_i = 0
         for r in syst: #self._syst.t[self._group[1]]:
             if (hasattr(self._syst, '_ion')):
                 try:
                     ion = r['ION'][0]
                 except:
-                    ion = r['ION'] 
-                    y = r['Y']                   
-                x = r['X']
+                    try:
+                        ion = r['ION']
+                    except:
+                        ion = self._syst._ion[r_i]
+                    #y = r['Y']                   
+                #x = r['X']
             else:
                 ion = 'Ly_a'
             try:
@@ -124,6 +129,7 @@ class Model():
                 y = r['Y']                   
             x = r['X']
 
+            r_i += 1
             cont = dc(unabs)
             cont.to_z([ion])
             norm = np.mean(y / np.interp(x, cont.x, cont.y))
