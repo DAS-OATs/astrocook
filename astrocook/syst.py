@@ -185,6 +185,12 @@ class Syst(Line):
         else:
             raise Exception("Redshift list has a wrong format.")
 
+    @property
+    def t(self):
+        if self._use_good:
+            return self._t[self._igood]
+        else:
+            return self._t        
 
 # Methods
 
@@ -212,7 +218,6 @@ class Syst(Line):
 
         #xmin_ion = float('inf') * u.nm
         #xmax_ion = 0 * u.nm
-        
         for p in range(n):
             z_arr[p] = x / dict_wave[ion_arr[p]] - 1.0
             tab = Table(self.t[group[1]][ion_arr[p] in 'ION'])
@@ -429,9 +434,16 @@ class Syst(Line):
         """ Create a flattened version of the system, with different entries
         for each ion """
 
-        yunit = self._linez.dy.unit
+        # This "try" will be removed when fitting methods are moved to "abs"
+        try:
+            tab = self.t_all
+        except:
+            tab = self.t
+        yunit = tab['Y'].unit
+        #yunit = self._linez.dy.unit
+
         first = True
-        for r in self.t:
+        for r in tab:
             for i in range(len(r['Y'])):
                 if (first == True):
                     self._flat = Syst(x=[r['X']], y=[r['Y'][i]],

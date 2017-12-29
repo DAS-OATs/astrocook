@@ -122,13 +122,14 @@ class Line(Spec1D):
             self._t['DY'].unit = value.unit
         except:
             raise Exception("DY unit not provided.")
+
     @property
     def t(self):
         if self._use_good:
             return self._t[self._igood]
         else:
             return self._t
-
+        
     @property
     def spec(self):
         return self._spec

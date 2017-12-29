@@ -39,7 +39,6 @@ def psf_func(x):
     ret = np.ones([10, len(x)-10])
     for i in range(len(x)-10):
         ret[:,i] = np.exp( -((x[i:i+10]/x[i+5]-1.0) * resol/4.246609001e-1)**2)
-    print(ret)
     return ret
 
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
@@ -79,6 +78,7 @@ class Model():
             self._syst = line
         elif (syst is not None):
             self._syst = syst
+        #print(self._syst.t)    
         if (hasattr(self, '_syst')):
             
             if (hasattr(self._syst, '_cont')):
@@ -105,6 +105,7 @@ class Model():
         logN_arr = np.arange(20.0, 10.0, -0.1)
 
         logN = []
+        
         syst = self._syst.t
         if (self._group is not None):
             syst = self._syst.t[self._group[1]]

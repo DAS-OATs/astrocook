@@ -1,5 +1,5 @@
-from . import Line, Model
-from .utils import convolve, convolve2, dict_doubl, dict_wave, voigt_def
+from . import Line, Model, Syst
+from .utils import convolve, convolve2, dict_doubl, dict_wave, redchi_thr, voigt_def
 from astropy import units as u
 from astropy.io import fits as fits
 from astropy.table import Column, Table
@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 import sys
+import time
 
-class Abs(Line):
+class Abs(Syst):
 
     def __init__(self,
                  source,
@@ -21,24 +22,6 @@ class Abs(Line):
                  b=[],
                  btur=[],
                  meta=None):
-        """
-                 line=None,
-                 spec=None,
-                 x=[],
-                 y=[],
-                 xmin=[],
-                 xmax=[],
-                 dy=[],
-                 ion=[],
-                 doubl=[],
-                 N=[],
-                 b=[],
-                 btur=[],
-                 yunit=None,
-                 meta=None,
-                 dtype=float):
-        """
-        
         """ Constructor for the Abs class """ 
         
         """
@@ -70,7 +53,8 @@ class Abs(Line):
         # If source is a system
         if (hasattr(source, 'line')):  
             self._line = dc(source._line) 
-            self._syst = dc(source) 
+            self._syst = dc(source)
+            source.t.remove_columns(['N', 'B', 'BTUR', 'DN', 'DB', 'DBTUR'])
         # If source is a line list
         else:                          
             self._line = dc(source)
@@ -79,15 +63,13 @@ class Abs(Line):
 
 
         
-        """ Maybe not needed
-        if (hasattr(self._line, '_cont')):
-            self._precont = dc(self._line._precont)
-            self._cont = dc(self._line._cont)
-        if (hasattr(line, '_minima')):
-            self._minima = dc(self._line._minima)
-        if (hasattr(line, '_maxima')):
-            self._maxima = dc(self._line._maxima)            
-        """
+        if (hasattr(source, '_cont')):
+            self._precont = dc(source._precont)
+            self._cont = dc(source._cont)
+        if (hasattr(source, '_minima')):
+            self._minima = dc(source._minima)
+        if (hasattr(source, '_maxima')):
+            self._maxima = dc(source._maxima)            
 
 
         # Ion list
@@ -120,25 +102,16 @@ class Abs(Line):
 
         # System list
         data = ()
-        
-        """
-        if (x != []):
-            col_x = Column(np.asarray(dc(x), dtype=dtype), name='X')
-            col_y = Column(np.asarray(dc(y)), name='Y', unit=yunit)
-            data = (col_x, col_y)
-            if yunit is None:
-                try:
-                    yunit = y.unit
-                except:
-                    raise Exception("Y unit not provided.")
-        if (xmin != []):
-            col_xmin = Column(np.asarray(dc(xmin), dtype=dtype), name='XMIN')
-            col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
-            data += (col_xmin, col_xmax)
-        if (dy != []):
-            col_dy = Column(np.asarray(dc(dy)), name='DY', unit=yunit)
-            data += (col_dy,)
-        """
+        data_all = ()
+
+        yunit = source.yunit
+        col_x = Column(np.asarray(dc(source.t['X'])), name='X')
+        col_y = Column(np.asarray(dc(source.t['Y'])), name='Y', unit=yunit)
+        col_xmin = Column(np.asarray(dc(source.t['XMIN'])), name='XMIN')
+        col_xmax = Column(np.asarray(dc(source.t['XMAX'])), name='XMAX')
+        col_dy = Column(np.asarray(dc(source.t['DY'])), name='DY', unit=yunit)
+        data_all = (col_x, col_y, col_xmin, col_xmax, col_dy)
+            
         #if (ion != []):
         col_ion = Column(np.asarray(dc(self._ion)), name='ION')
         col_N = Column(np.asarray(dc(N)), name='N', unit=1/u.cm**2)
@@ -150,7 +123,8 @@ class Abs(Line):
         col_dbtur = Column(np.asarray(dc(dbtur)), name='DBTUR',
                            unit=u.km/u.s)
         data = (col_ion, col_N, col_b, col_btur, col_dN, col_db, col_dbtur)
-            
+        data_all += data
+        
         if data is ():
             data = None
             
@@ -158,6 +132,7 @@ class Abs(Line):
             meta = {}
 
         self._t = Table(data=data, masked=True, meta=meta)
+        self._t_all = Table(data=data_all, masked=True, meta=meta)
         """
         if (y != []):
             self._t['Y'].unit = yunit
@@ -206,27 +181,43 @@ class Abs(Line):
         else:
             raise Exception("Redshift list has a wrong format.")
 
+    @property
+    def t(self):
+        if self._use_good:
+            return self._t[self._igood]
+        else:
+            return self._t
+
+    @property
+    def t_all(self):
+        if self._use_good:
+            return self._t_all[self._igood]
+        else:
+            return self._t_all
 
 # Methods
 
     #def add_assoc(self, ion, z=None, zmin, zmax):
     #    self.t.add_row([z, y, zmin, zmax, dy, ion])
 
-    def corr_resid(self, group, cont_corr):
-        """ Add a new line at the minimum residual """
+    #"""
+    def add(self, group, cont_corr, ion=None):
 
+        source = self
+        #print(source.t)
         neb = 'neb'
+
         
-        where = self._chunk_sum
-        resid_norm = np.full(len(self._resid_fit.y.value), 
-                             np.max(self._resid_fit.y[where]\
-                                    /self._resid_fit.dy[where]) * 10)
-        resid_norm[where] = self._resid_fit.y[where]/self._resid_fit.dy[where]
-        x = self._resid_fit.x[where][np.argmin(resid_norm[where])]
+        where = source._chunk_sum
+        resid_norm = np.full(len(source._resid_fit.y.value), 
+                             np.max(source._resid_fit.y[where]\
+                                    /source._resid_fit.dy[where]) * 10)
+        resid_norm[where] = source._resid_fit.y[where]/source._resid_fit.dy[where]
+        x = source._resid_fit.x[where][np.argmin(resid_norm[where])]
         y = np.interp(x.value, self._spec.x, self._spec.y) * self._spec.yunit
         dy = np.interp(x.value, self._spec.x, self._spec.dy) * self._spec.yunit
 
-        ion_arr = np.unique(self._flat.ion)
+        ion_arr = np.unique(source._flat.ion)
         n = len(ion_arr)
         z_arr = np.empty(n)        
         z_cen = np.empty(n)        
@@ -236,16 +227,16 @@ class Abs(Line):
         
         for p in range(n):
             z_arr[p] = x / dict_wave[ion_arr[p]] - 1.0
-            tab = Table(self.t[group[1]][ion_arr[p] in 'ION'])
+            tab = Table(source.t_all[group[1]][ion_arr[p] in 'ION'])
             z_cen[p] = tab['X']
 
         where = (abs(z_arr-z_cen) == abs(z_arr-z_cen).min())
         z_ion = z_arr[where][0]
 
-        ion_where = (abs(z_ion-self.x) == abs(z_ion-self.x).min())
-        ion = self.ion[ion_where][0]
-        zmin_ion = self.xmin[ion_where][0] 
-        zmax_ion = self.xmax[ion_where][0]
+        ion_where = (abs(z_ion-source.t_all['X']) == abs(z_ion-source.t_all['X']).min())
+        ion = source.ion[ion_where][0]
+        zmin_ion = source.t_all['XMIN'][ion_where][0] 
+        zmax_ion = source.t_all['XMAX'][ion_where][0]
         #y_ion = np.empty(len(ion))
         #dy_ion = np.empty(len(ion))        
         for i in range(len(ion)):
@@ -278,18 +269,18 @@ class Abs(Line):
         
         self._noneb = dc(self)
         #if (z_ion not in self._noneb.x):
-        self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
+        self._noneb.t_all.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                                ion, float('nan'), float('nan'), float('nan'),
                                float('nan'), float('nan'), float('nan')])
-        self._noneb.t.sort('X')  # This gives an annoying warning
-        self._noneb._z = np.unique(np.append(self._z.value, z_ion)) 
-        self._noneb._z = np.append(self._z.value, z_ion) 
+        self._noneb.t_all.sort('X')  # This gives an annoying warning
+        self._noneb._z = np.unique(np.append(source._z.value, z_ion)) 
+        self._noneb._z = np.append(source._z.value, z_ion) 
         self._noneb._z.sort()
-        self._noneb._z *= self._z.unit
+        self._noneb._z *= source._z.unit
         self._noneb._last_add = np.where(self._noneb._z == z_ion)[0][0]
         #else:
         #    self._noneb._last_add = None
-            
+
         self._neb = dc(self)
         #if (z_ion not in self._noneb.x):
         self._neb.flatten_z()
@@ -298,41 +289,60 @@ class Abs(Line):
                                    float('nan'), float('nan'), float('nan'),
                                    float('nan')])
         self._neb.deflatten_z()
-        self._neb.t.sort('X')  # This gives an annoying warning
-        self._neb._z = np.unique(np.append(self._z.value, z_neb.value))
-        #self._neb._z = np.append(self._z.value, z_neb.value)
+        self._neb._t_all = dc(self._neb.t)
+        self._neb.t_all.sort('X')  # This gives an annoying warning
+        self._neb._z = np.unique(np.append(source._z.value, z_neb.value))
+        #self._neb._z = np.append(source._z.value, z_neb.value)
         self._neb._z.sort()
-        self._neb._z *= self._z.unit
+        self._neb._z *= source._z.unit
         self._neb._last_add = np.where(self._neb._z == z_neb)[0][0]
         #else:
         #    self._neb._last_add = None
-       
+
+        self._noneb._source._t = self._noneb.t_all['X', 'Y', 'XMIN', 'XMAX',
+                                                  'DY', 'ION']
+        self._noneb._t = self._noneb.t_all['ION', 'N', 'B', 'BTUR', 'DN', 'DB',
+                                          'DBTUR']
+        self._neb._source._t = self._neb.t_all['X', 'Y', 'XMIN', 'XMAX',
+                                               'DY', 'ION']
+        self._neb._t = self._neb.t_all['ION', 'N', 'B', 'BTUR', 'DN', 'DB',
+                                       'DBTUR']
+        #print(self._source.t)
+        """
+        print(self._noneb.t_all)
+        print(self._noneb._source.t)
+        print(self._noneb.t)
+        print(self._neb.t_all)
+        print(self._neb._source.t)
+        print(self._neb.t)
+        """
         return cont_corr
-        
+
     def chunk(self, x=None, line=None, single=False):  # Chunk must be shifted to the system z
+        source = self._source
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
             if (line is not None):
                 warnings.warn("x will be used; line will be disregarded.")
-            #line = np.where(abs(self.x-x.value) \
-            #                == abs(self.x-x.value).min())[0][0]
-            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
-        if ((x is None) and (line >= len(self._t))):
+            #line = np.where(abs(source.x-x.value) \
+            #                == abs(source.x-x.value).min())[0][0]
+            line = np.where(abs(source.x-x) == abs(source.x-x).min())[0][0]
+        if ((x is None) and (line >= len(source._t))):
             raise Exception("Line number is too large.")
 
         try:  # When ION has different sizes in different rows
-            ion = np.unique(np.asarray(np.sum(self.ion)))
+            ion = np.unique(np.asarray(np.sum(source.ion)))
         except:
-            ion = np.unique(self.ion)
+            ion = np.unique(source.ion)
         n = len(ion)
-        iter = range(len(self._t))
+        iter = range(len(source._t))
         ret = (line,)
         for p in range(n):
             sel = self._spec.t['X'] < 0.0
             spec = dc(self._spec)
             spec.to_z([ion[p]])
-            for row in self.t[self.group(line=line, single=single)[1]]:
+            for row in source.t[self.group(line=line, single=single)[1]]:
                 sel = np.logical_or(sel, np.logical_and(
                     spec.t['X'] >= row['XMIN'],
                     spec.t['X'] <= row['XMAX']))
@@ -362,113 +372,310 @@ class Abs(Line):
             self._linez.ion = np.asarray(self._linez.t['ION'])
 
 
-    def deflatten_z(self):
-        """ Create a non-flattened version of the system from a flattened one"""
+    def fit_add(self, x=None, line=None, i_max=10, mode=None):
+        """ Fit a line group, automatically adding components """
+        source = self._source
+        if ((x is None) and (line is None)):
+            raise Exception("Either x or line must be provided.")
+        if (line is not None):
+            if (x is not None):
+                warnings.warn("x will be used; line will be disregarded.")
+            x = source.x[line]
+        if ((x is None) and (line >= len(self._t))):
+            raise Exception("Line number is too large.")
+        stop = False
+        aic_old = float('inf')
+        redchi_old = float('inf')        
+        redchi_best = float('inf')
+        i = 0
+        i_best = 1
+        cont_corr = 1.0
+        vary = True #False
+        self._noneb = dc(source)
+        self._neb = dc(source)
+        self._last_add = 0.0
+        while (stop == False):
+            i += 1
 
-        try:
-            yunit = self.y.unit
-        except:
-            yunit = self._line.y.unit
-        self._flat.t.sort('X')  # This gives an annoying warning        
-        
-        first = True
-        z_deflat = []
-        y_deflat = []
-        zmin_deflat = []        
-        zmax_deflat = []
-        ion_deflat = []
-        dy_deflat = []
-        N_deflat = []
-        b_deflat = []
-        btur_deflat = []        
-        dN_deflat = []
-        db_deflat = []
-        dbtur_deflat = []        
-        
-        z = 0
-        end_row = False
-        for l in range(len(self._flat.t)):
-            if (np.isclose(self._flat.x[l], z, rtol=1e-6) == False):
-                if (end_row == True):
-                    z_deflat.append(z)
-                    y_deflat.append(y)
-                    zmin_deflat.append(zmin)
-                    zmax_deflat.append(zmax)
-                    dy_deflat.append(dy)
-                    ion_deflat.append(ion)
-                    N_deflat.append(N)
-                    b_deflat.append(b)
-                    btur_deflat.append(btur)
-                    dN_deflat.append(dN)
-                    db_deflat.append(db)
-                    dbtur_deflat.append(dbtur)
-                    end_row = False
-                y = (self._flat.y[l].value,)
-                zmin = self._flat.xmin[l]
-                zmax = self._flat.xmax[l]
-                dy = (self._flat.dy[l].value,)                
-                ion = (self._flat.ion[l],)
-                N = self._flat.t['N'][l]
-                b = self._flat.t['B'][l]
-                btur = self._flat.t['BTUR'][l]
-                dN = self._flat.t['DN'][l]
-                db = self._flat.t['DB'][l]
-                dbtur = self._flat.t['DBTUR'][l]
+            # "Non-nebulium" component
+            noneb = dc(self._noneb)
+            fit_noneb = noneb.fit_wrap(x, vary, mode)
+
+            # Generic "nebulium" component
+            neb = dc(self._neb)
+            fit_neb = neb.fit_wrap(x, vary, mode)
+            
+            if ((fit_noneb == None) or (fit_neb == None)):
+                stop = True
             else:
-                z = self._flat.x[l]
-                y = y + (self._flat.y[l].value,)
-                dy = dy + (self._flat.dy[l].value,)
-                ion = ion + (self._flat.ion[l],)
-            z = self._flat.x[l]
-            end_row = True
-        z_deflat.append(z)
-        y_deflat.append(y)
-        zmin_deflat.append(zmin)
-        zmax_deflat.append(zmax)
-        dy_deflat.append(dy)
-        ion_deflat.append(ion)
-        N_deflat.append(N)
-        b_deflat.append(b)
-        btur_deflat.append(btur)
-        dN_deflat.append(dN)
-        db_deflat.append(db)
-        dbtur_deflat.append(dbtur)
+                if (noneb._redchi <= neb._redchi):
+                    self_temp = dc(noneb)
+                    fit = fit_noneb
+                else:
+                    self_temp = dc(neb)
+                    fit = fit_neb
+                self.__dict__.update(self_temp.__dict__)
+                print("(%i) %3.2f;" \
+                      % (i, self._redchi), end=" ", flush=True)
+                stop = (self._redchi < redchi_thr) \
+                       or ((self._redchi<10*redchi_thr) \
+                           and (self._aic>aic_old)) \
+                       or (i==i_max)
+                #or (self._last_add == None) \
+           
+                aic_old = self._aic
+                redchi_old = self._redchi            
+                if (self._redchi < redchi_best): #or 1==1):
+                    self_best = dc(self)
+                    fit_best = dc(fit)
+                    i_best = i
+                    redchi_best = self._redchi
 
-        syst = Syst(self.line, self.spec, x=z_deflat, y=y_deflat,
-                    xmin=zmin_deflat, xmax=zmax_deflat, dy=dy_deflat,
-                    ion=ion_deflat, N=N_deflat, b=b_deflat, btur=btur_deflat,
-                    yunit=yunit)
-        self.__dict__.update(syst.__dict__)
-
-    def find(self, ztol=1e-4):
-        self.create_z()
-        self.match_z(ztol)
-        self.flatten_z()
+                if (stop == False):
+                    cont_corr = self.add(self._group, cont_corr)
 
         
-    def flatten_z(self):
-        """ Create a flattened version of the system, with different entries
-        for each ion """
+        self = dc(self_best)
+        self.__dict__.update(self_best.__dict__)
+        fit = fit_best
+        print("best chi-squared (%i) %3.2f, %3.2f;" \
+              % (i_best, redchi_best, self._aic), end=" ", flush=True)
 
-        yunit = self._linez.dy.unit
-        first = True
-        for r in self.t:
-            for i in range(len(r['Y'])):
-                if (first == True):
-                    self._flat = Syst(x=[r['X']], y=[r['Y'][i]],
-                                      xmin=[r['XMIN']], xmax=[r['XMAX']],
-                                      dy=[r['DY'][i]], ion=[r['ION'][i]],
-                                      N=[r['N']], b=[r['B']], btur=[r['BTUR']],
-                                      yunit=yunit)
-                    first = False
+    def fit_all(self, list_range=None, iter_range=range(5,6), mode=None,
+                 plot=True):
+        if (list_range is None):
+            list_range = range(len(self.t))
+
+        self_temp = dc(self)
+        x_arr = self._source.x
+        #i = 0
+        group_check = 0
+        self._z_list = np.array([])
+        self._N_list = np.array([])
+        self._b_list = np.array([])
+        self._btur_list = np.array([])
+        for l in list_range:
+            start = time.time()
+            print("Redshift %i (%i/%i) (%3.4f)..." \
+                  % (l+1, l+1-list_range[0], len(list_range), x_arr[l].value),
+                  end=" ", flush=True)
+
+            # Check if the group is new
+            if (np.array_equal(self_temp.group(x=x_arr[l])[1], group_check)):
+                print("same group, skipping.")
+            else:
+                group_check = self_temp.group(x=x_arr[l])[1]
+                for i in iter_range:
+                    self.fit_add(x=x_arr[l], i_max=i, mode=mode)
+                    print("time: %3.2f;" % (time.time()-start), end=" ",
+                          flush=True)
+                    self._z_list = np.append(self._z_list, self._z_fit) #\
+                                   #* self._z_fit.unit
+                    self._N_list = np.append(self._N_list, self._N_fit) #\
+                                   #* self._N_fit.unit
+                    self._b_list = np.append(self._b_list, self._b_fit) #\
+                                   #* self._b_fit.unit
+                    self._btur_list = np.append(
+                        self._btur_list, self._btur_fit) #* self._btur_fit.unit
+
+                    if (plot == True):
+                        print("close graphs to continue.")
+                        self._source._chunk_sum = self._chunk_sum
+                        self._source._fit = self._fit
+                        self._source._redchi = self._redchi
+                        self._source.plot(self._group, self._chunk, mode='split')
+                    else:
+                        print("")
+
+    def fit_prep(self, prof='voigt', vary=False, mode=None, **kwargs):
+        if (hasattr(self, '_chunk_sum')):
+            where = self._chunk_sum
+        else:
+            where = np.full(len(self._spec.t), True)
+        
+        self._fit_x = self._spec.x[where]
+        self._fit_y = self._spec.y[where] / self._cont.y[where]
+        self._fit_dy = self._spec.dy[where] / self._cont.y[where]
+
+        self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
+        if (prof == 'voigt'):
+            if (mode == 'use_old'):
+                if (hasattr(self, '_z_fit')):
+                    diff = np.setdiff1d(self._z[self._group[1]], self._z_fit)
+                    z_temp = np.append(self._z_fit.value, diff.value)
+                    #N_temp = np.append(
+                    #    self._N_fit, model.N_guess(self._norm, ion=self._flat.ion))
+                    N_temp = np.append(self._N_fit.value, voigt_def['N'])
+                    b_temp = np.append(self._b_fit.value, voigt_def['b'])
+                    btur_temp = np.append(self._btur_fit.value,
+                                          voigt_def['btur'])
+                    z = np.sort(z_temp) * self._z_fit.unit
+                    N = N_temp[np.argsort(z_temp)] * self._N_fit.unit
+                    b = b_temp[np.argsort(z_temp)] * self._b_fit.unit
+                    btur = btur_temp[np.argsort(z_temp)] * self._b_fit.unit
                 else:
-                    row = [r['X'], r['Y'][i], r['XMIN'], r['XMAX'], r['DY'][i],
-                           r['ION'][i]]
-                    for col in r.colnames[6:]:
-                        row.append(r[col])
-                    self._flat.t.add_row(row)
-                    
+                    z = []
+                    N = []
+                    b = []
+                    btur = []
+            #"""
+            else:
+                try:
+                    z = kwargs['z']
+                except:
+                    z = []
+                try:
+                    N = kwargs['N']
+                except:
+                    N = []
+                try:
+                    b = kwargs['b']
+                except:
+                    b = []
+                try:
+                    btur = kwargs['btur']
+                except:
+                    btur = []
+
+            #print(self.t)
+            #print(self._flat.t)
+            self.flatten_z()
+            self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
+                                          b=b, btur=btur)
+
+        else:
+            raise Exception("Only Voigt profile is supported.")
+        self._psf = self.psf(self._group, self._chunk, self._source._resol)
+
+        if (hasattr(self, '_fit') == False):
+            self._fit = dc(self._spec)        
+        if (hasattr(self, '_cont') == False):
+            self._cont = dc(self._spec)            
+        if (hasattr(self, '_resid_fit') == False):
+            self._resid_fit = dc(self._spec)        
+        if (hasattr(self, '_resid_cont') == False):
+            self._resid_cont = dc(self._spec)            
+        if (hasattr(self, '_rem') == False):
+            self._rem = dc(self._spec)            
+
+    def fit_prod(self, fit, prof='voigt'):
+        if (hasattr(self, '_chunk_sum')):
+            where = self._chunk_sum
+        else:
+            where = np.full(len(self._spec.t), True)
+        yunit = self._spec.y.unit
+        comp = fit.eval_components(x=self._spec.x[where].value)
+        self._fit.y[where] = fit.best_fit * self._cont.y[where]
+        self._cont.y[where] = comp['cont_'] * self._cont.y[where]
+        self._resid_fit.y[where] = self._spec.y[where] - self._fit.y[where]
+        self._resid_cont.y[where] = self._spec.y[where] - self._cont.y[where] 
+        self._rem.y[where] = self._cont.y[where] + self._resid_fit.y[where]
+    #* self._spec.y[where] / self._fit.y[where] #* yunit
+        
+        if (prof == 'voigt'):
+            #print(fit.fit_report())
+            #print(fit.params.pretty_print())
+            #print(fit.errorbars)
+            #print(fit.best_values)
+            #print(fit.params)
+            #print(fit.params['voigt0_z15138094933394572_btur'].stderr)
+            z_tags = [z for z in fit.best_values if z.endswith('_z')]
+            N_tags = [N for N in fit.best_values if N.endswith('_N')]
+            b_tags = [b for b in fit.best_values if b.endswith('_b')]
+            btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
+
+            z_best = np.array([fit.best_values[z] for z in z_tags])
+            N_best = np.array([fit.best_values[N] for N in np.sort(N_tags)] )
+            b_best = np.array([fit.best_values[b] for b in np.sort(b_tags)]) 
+            btur_best = np.array([fit.best_values[bt] for bt \
+                                  in np.sort(btur_tags)])
+
+            zerr_best = np.array([fit.params[z].stderr for z in z_tags])
+            Nerr_best = np.array([fit.params[N].stderr for N \
+                                  in np.sort(N_tags)])
+            berr_best = np.array([fit.params[b].stderr for b \
+                                  in np.sort(b_tags)])
+            bturerr_best = np.array([fit.params[bt].stderr for bt \
+                                     in np.sort(btur_tags)])
+
+            z_sort = np.sort(z_best)
+            N_sort = N_best[np.argsort(z_best)]
+            b_sort = b_best[np.argsort(z_best)]
+            btur_sort = btur_best[np.argsort(z_best)]
+
+            zerr_sort = zerr_best[np.argsort(z_best)]
+            Nerr_sort = Nerr_best[np.argsort(z_best)]
+            berr_sort = berr_best[np.argsort(z_best)]
+            bturerr_sort = bturerr_best[np.argsort(z_best)]
+
+            if ('ION' in self.t.colnames):
+                sel = np.append(0,
+                                np.cumsum([len(ion) for ion \
+                                in self._t['ION'][self._group[1]]]))[:-1]
+            else:
+                sel = range(np.sum(self._group[1]))
+            
+            self._z_fit = u.Quantity(z_sort[sel])
+            self._N_fit = N_sort[sel] / u.cm**2
+            self._b_fit = b_sort[sel] * u.km/u.s
+            self._btur_fit = btur_sort[sel] * u.km/u.s
+
+            self._zerr_fit = u.Quantity(zerr_sort[sel])
+            self._Nerr_fit = Nerr_sort[sel] / u.cm**2
+            self._berr_fit = berr_sort[sel] * u.km/u.s
+            self._bturerr_fit = bturerr_sort[sel] * u.km/u.s
+
+            #print(self._Nerr_fit)
+
+            # When new redshift is a duplicate
+            """ No action is taken, currently
+            if ((hasattr(self, '_last_add')) \
+                and (len(self._z_fit) < np.sum(self._group[1]))): 
+                #print(self._last_add)
+                self._z = np.delete(self._z, self._last_add)
+                self._t.remove_row(self._last_add)
+                line = self._group[0]
+                self.group(line=line)
+                #self._group[1] = np.delete(self._group[1], self._last_add)
+            #print(len(self._z), len(self._group[1]), len(self._z_fit))
+            """
+            if (hasattr(self, '_z')):
+                self._z[self._group[1]] = self._z_fit
+
+            if ('N' in self._t.colnames):
+                self._t['N'][self._group[1]] = self._N_fit
+                self._t['B'][self._group[1]] = self._b_fit 
+                self._t['BTUR'][self._group[1]] = self._btur_fit
+                if (fit.errorbars == True):
+                    self._t['DN'][self._group[1]] = self._Nerr_fit
+                    self._t['DB'][self._group[1]] = self._berr_fit 
+                    self._t['DBTUR'][self._group[1]] = self._bturerr_fit
+           
+        else:
+            raise Exception("Only Voigt profile is supported.")
+
+        self._redchi = fit.redchi
+        self._aic = fit.aic    
+
+    def fit_wrap(self, x, vary=False, mode=None):
+        source = self #._source
+        group = source.group(x)
+        chunk = source.chunk(x)
+        source.fit_prep(mode=mode, vary=vary)
+        guess = source.model()
+        #print(source._cont.y)
+        fit = source.fit()
+        if (hasattr(fit, 'fit_report')):
+            source.fit_prod(fit)
+        else:
+            fit = None
+        self._redchi = source._redchi
+        self._aic = source._aic
+        return fit
+
     def group(self, x=None, line=None, single=False):
+        source = self._source
+        
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
         if (x is not None):
@@ -476,19 +683,20 @@ class Abs(Line):
                 warnings.warn("x will be used; line will be disregarded.")
             #line = np.where(abs(self.x.value-x.value) \
             #                == abs(self.x.value-x.value).min())[0][0]
-            line = np.where(abs(self.x-x) == abs(self.x-x).min())[0][0]
-        if ((x is None) and (line >= len(self._t))):
+            line = np.where(abs(source.x-x) ==
+                            abs(source.x-x).min())[0][0]
+        if ((x is None) and (line >= len(source._t))):
             raise Exception("line is too large.")
 
         if (single == True):
-            sel = np.full(len(self._t), False)
+            sel = np.full(len(source._t), False)
             sel[line] = True
         else:
-            iter = range(len(self._t))
-            self._t.sort('X')  # This gives a warning on a masked table
-            #self._t.group_by('X')
-            groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
-                                              self._t['XMIN'][1:])) 
+            iter = range(len(source._t))
+            source._t.sort('X')  # This gives a warning on a masked table
+            #source._t.group_by('X')
+            groups = np.append([0], np.cumsum(source._t['XMAX'][:-1] <
+                                              source._t['XMIN'][1:])) 
             sel = np.array([groups[l] == groups[line] for l in iter])
             
             # This part is needed to add interlopers to the group
@@ -496,17 +704,31 @@ class Abs(Line):
             xmax = 0
             # The cycle must run two times because some interloper may affect
             # the other doublet component and would then be missed
-            for t in range(2):  
-                for r in self._t[sel]:
-                    for i in range(len(r['Y'])):
+            for t in range(2):
+                for (r, s) in zip(source._t[sel], self._t[sel]):
+                    for i in range(np.size(r['Y'])):
+                        if (np.size(s['ION']) == 1):
+                            try:
+                                ion = np.array(s['ION'])[0]
+                            except:
+                                ion = s['ION']
+                        else:
+                            ion = s['ION'][i]
                         xmin = min(xmin,
-                                   (1 + r['XMIN']) * dict_wave[r['ION'][i]])
+                                   (1 + r['XMIN']) * dict_wave[ion])
                         xmax = max(xmax,
-                                   (1 + r['XMAX']) * dict_wave[r['ION'][i]])
+                                   (1 + r['XMAX']) * dict_wave[ion])
                 l = 0
-                for r in self._t:
-                    for i in range(len(r['Y'])):
-                        x = (1 + r['X']) * dict_wave[r['ION'][i]]
+                for (r, s) in zip(source._t, self._t):
+                    for i in range(np.size(r['Y'])):
+                        if (np.size(s['ION']) == 1):
+                            try:
+                                ion = np.array(s['ION'])[0]
+                            except:
+                                ion = s['ION']
+                        else:
+                            ion = s['ION'][i]
+                        x = (1 + r['X']) * dict_wave[ion]
                         if ((x > xmin) and (x < xmax)):
                             sel[l] = True
                     l += 1
@@ -514,7 +736,7 @@ class Abs(Line):
         ret = (line, sel)
         self._group = ret
         return ret
-        
+    
     def match_z(self, ztol=1e-4):
         """ Match redshifts in a list, to define systems """
 
@@ -607,19 +829,22 @@ class Abs(Line):
 
         return norm 
 
+    """
     def plot(self, group=None, chunk=None, ion=[], figsize=(10,4),
              mode='simple', block=True, **kwargs):
+
+        source = self._source
         if (ion == []):
-            ion = np.unique(self._flat.ion)
+            ion = np.unique(source._flat.ion)
         ion = ion[ion != 'neb'] 
         n = len(ion)
         try:
-            z = self._linez_fit
+            z = source._linez_fit
         except:
-            z = self.x
+            z = source.x
 
-        if (hasattr(self, '_chunk_sum')):
-            chunk_sum = self._chunk_sum
+        if (hasattr(source, '_chunk_sum')):
+            chunk_sum = source._chunk_sum
 
         z_neb = np.asarray([z for k in range(len(z)) if z[k] > 30.0])
         # Change this (hardcoded)
@@ -640,7 +865,7 @@ class Abs(Line):
                 zmin = float('inf')
                 zmax = 0
                 if (group is not None):
-                    t = Table(self._t[group[1]])
+                    t = Table(source._t[group[1]])
                     for l in range(len(t)):
                         if (ion[p] in t['ION'][l]):
                             zmin = min(zmin, t['XMIN'][l])
@@ -648,74 +873,60 @@ class Abs(Line):
                         #zmin = min(zmin, t['XMIN'][l])
                         #zmax = max(zmax, t['XMAX'][l])
                 else:
-                    zmin = np.min(self.xmin)
-                    zmax = np.max(self.xmax)
+                    zmin = np.min(source.xmin)
+                    zmax = np.max(source.xmax)
                 ax = fig.add_subplot(grid[p%4, int(np.floor(p/4))])
-                ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
-                """
-                if (hasattr(self._spec, '_orig')):
-                    spec = dc(self._spec._orig)
-                else:
-                    spec = dc(self._spec)
-                """
-                spec = dc(self._spec)
-                line = dc(self._line)
+                ax.set_ylabel("Flux [" + str(source._spec.y.unit) + "]")
+                #if (hasattr(source._spec, '_orig')):
+                #    spec = dc(source._spec._orig)
+                #else:
+                #    spec = dc(source._spec)
+                spec = dc(source._spec)
+                line = dc(source._line)
                 spec.to_z([ion[p]])
                 line.to_z([ion[p]])
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
                 #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
                 #ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
                 if (chunk is not None):
-                    if (hasattr(self, '_norm')):
-                        norm = dc(self._norm)
+                    if (hasattr(source, '_norm')):
+                        norm = dc(source._norm)
                         norm.to_z([ion[p]])
-                        """
-                        for c in range(1, len(chunk)):
-                            ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
-                                    lw=1.0, linestyle=':')
-                        """
+                        #for c in range(1, len(chunk)):
+                        #    ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
+                        #            lw=1.0, linestyle=':')
                         ax.plot(norm.x[chunk_sum], norm.y[chunk_sum], c='y',
                                 lw=1.0, linestyle=':')
-                    if (hasattr(self, '_voigt')):
-                        voigt = dc(self._voigt)
+                    if (hasattr(source, '_voigt')):
+                        voigt = dc(source._voigt)
                         voigt.to_z([ion[p]])
-                        """
-                        for c in range(1, len(chunk)):
-                            ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
-                                    lw=1.0, linestyle=':')
-                        """
+                        #for c in range(1, len(chunk)):
+                        #    ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
+                        #            lw=1.0, linestyle=':')
                         ax.plot(voigt.x[chunk_sum], voigt.y[chunk_sum], c='g',
                                 lw=1.0, linestyle=':')
-                    if (hasattr(self, '_cont')):
-                        cont = dc(self._cont)
+                    if (hasattr(source, '_cont')):
+                        cont = dc(source._cont)
                         cont.to_z([ion[p]])
-                        """
-                        for c in range(1, len(chunk)):
-                            ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
-                        """
+                        #for c in range(1, len(chunk)):
+                        #    ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
                         ax.plot(cont.x[chunk_sum], cont.y[chunk_sum], c='y')
-                    if (hasattr(self, '_fit')):
-                        fit = dc(self._fit)
+                    if (hasattr(source, '_fit')):
+                        fit = dc(source._fit)
                         fit.to_z([ion[p]])
-                        """
-                        for c in range(1, len(chunk)):
-                            ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
-                        """
+                        #for c in range(1, len(chunk)):
+                        #    ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
                         ax.plot(fit.x[chunk_sum], fit.y[chunk_sum], c='g')
-                    """    
-                    if (hasattr(self, '_resid_fit')):
-                        resid_fit = dc(self._resid_fit)
-                        resid_fit.to_z([ion[p]])
-                        ax.plot(resid_fit.x[chunk_sum],
-                                resid_fit.y[chunk_sum], c='b', lw=1.0)
-                    """    
-                    """
-                    if (hasattr(self, '_rem')):
-                        rem = dc(self._rem)
-                        rem.to_z([ion[p]])
-                        ax.plot(rem.x[chunk_sum], rem.y[chunk_sum], c='b',
-                                lw=1.0)
-                    """
+                    #if (hasattr(source, '_resid_fit')):
+                    #    resid_fit = dc(source._resid_fit)
+                    #    resid_fit.to_z([ion[p]])
+                    #    ax.plot(resid_fit.x[chunk_sum],
+                    #            resid_fit.y[chunk_sum], c='b', lw=1.0)
+                    #if (hasattr(source, '_rem')):
+                    #    rem = dc(source._rem)
+                    #    rem.to_z([ion[p]])
+                    #    ax.plot(rem.x[chunk_sum], rem.y[chunk_sum], c='b',
+                    #            lw=1.0)
                 ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
@@ -733,25 +944,25 @@ class Abs(Line):
                 ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
                         verticalalignment="center", transform=ax.transAxes,
                         fontsize=12)
-            if (hasattr(self, '_fit')):
-                fig.suptitle("Reduced chi-squared: %3.2f" % (self._redchi),
+            if (hasattr(source, '_fit')):
+                fig.suptitle("Reduced chi-squared: %3.2f" % (source._redchi),
                              fontsize=10)
         elif mode == 'compare':
             if (chunk is not None):
-                zmin = np.min(self.xmin[group[1]])
-                zmax = np.max(self.xmax[group[1]])
+                zmin = np.min(source.xmin[group[1]])
+                zmax = np.max(source.xmax[group[1]])
             else:
-                zmin = np.min(self.xmin)
-                zmax = np.max(self.xmax)
+                zmin = np.min(source.xmin)
+                zmax = np.max(source.xmax)
             grid = gs(1,1)
             fig = plt.figure(figsize=figsize)
             fig.canvas.set_window_title("System")
             ax = fig.add_subplot(grid[:,:])
             ax.set_xlabel("Redshift")
-            ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
+            ax.set_ylabel("Flux [" + str(source._spec.y.unit) + "]")
             for p in range(n):
-                spec = dc(self._spec)
-                line = dc(self._line)
+                spec = dc(source._spec)
+                line = dc(source._line)
                 spec.to_z([ion[p]])
                 line.to_z([ion[p]])
                 ax.set_xlim(zmin, zmax)
@@ -766,46 +977,46 @@ class Abs(Line):
                     verticalalignment="center", transform=ax.transAxes,
                     fontsize=12)
         elif mode == 'simple':
-            zmin = np.min(self.xmin)
-            zmax = np.max(self.xmax)
+            zmin = np.min(source.xmin)
+            zmax = np.max(source.xmax)
             grid = gs(1,1)
             fig = plt.figure(figsize=figsize)
             fig.canvas.set_window_title("System")
             ax = fig.add_subplot(grid[:,:])
             ax.set_xlabel("Redshift")
-            ax.set_ylabel("Flux [" + str(self._spec.y.unit) + "]")
-            spec = dc(self._spec)
-            line = dc(self._line)
+            ax.set_ylabel("Flux [" + str(source._spec.y.unit) + "]")
+            spec = dc(source._spec)
+            line = dc(source._line)
             spec.to_z([ion[0]])
             line.to_z([ion[0]])
             ax.set_xlim(zmin, zmax)
             ax.plot(spec.x, spec.y, c='black', lw=1.0)
             ax.plot(spec.x, spec.dy, c='r', lw=1.0)
             if (chunk is not None):
-                if (hasattr(self, '_norm')):
-                    norm = dc(self._norm)
+                if (hasattr(source, '_norm')):
+                    norm = dc(source._norm)
                     norm.to_z([ion[0]])
                     for c in range(1, len(chunk)):
                         ax.plot(norm.x[chunk[c]], norm.y[chunk[c]], c='y',
                                 lw=1.0, linestyle=':')
-                if (hasattr(self, '_voigt')):
-                    voigt = dc(self._voigt)
+                if (hasattr(source, '_voigt')):
+                    voigt = dc(source._voigt)
                     voigt.to_z([ion[0]])
                     for c in range(1, len(chunk)):
                         ax.plot(voigt.x[chunk[c]], voigt.y[chunk[c]], c='g',
                                 lw=1.0, linestyle=':')
-                if (hasattr(self, '_cont')):
-                    cont = dc(self._cont)
+                if (hasattr(source, '_cont')):
+                    cont = dc(source._cont)
                     cont.to_z([ion[0]])
                     for c in range(1, len(chunk)):
                         ax.plot(cont.x[chunk[c]], cont.y[chunk[c]], c='y')
-                if (hasattr(self, '_fit')):
-                    fit = dc(self._fit)
+                if (hasattr(source, '_fit')):
+                    fit = dc(source._fit)
                     fit.to_z([ion[0]])
                     for c in range(1, len(chunk)):
                         ax.plot(fit.x[chunk[c]], fit.y[chunk[c]], c='g')
-                if (hasattr(self, '_rem')):
-                    rem = dc(self._rem)
+                if (hasattr(source, '_rem')):
+                    rem = dc(source._rem)
                     rem.to_z([ion[0]])
                     for c in range(1, len(chunk)):
                         ax.plot(rem.x[chunk[c]], rem.y[chunk[c]], c='b', lw=1.0)
@@ -820,6 +1031,7 @@ class Abs(Line):
         grid.update(hspace=0.2)
         if block is True:
             plt.show()
+    """
 
     def psf(self, group, chunk, resol):
         """ Model the instrumental PSF """
@@ -899,39 +1111,45 @@ class Abs(Line):
         return unabs
 
     def voigt(self, group=None, chunk=None, z=[], N=[], b=[], btur=[]):
-
+        source = self #._source
+        #print(self.t)
+        #print(self._source.t)
+        #print(self._flat.t)
+        
         sumlen = len(z) + len(N) + len(b) + len(btur)
         if ((z != []) and (sumlen % len(z) != 0)):
             raise Exception("Parameter arrays must have the same length.")
 
-        model = Model(self._spec, syst=self, group=group, chunk=chunk)
+        syst = dc(source)
+        syst._t = source.t_all
+        model = Model(self._spec, syst=syst, group=group, chunk=chunk)
         if (z == []):
             #z = self.x[group[1]]
             z = self._z[group[1]]
             if (hasattr(self, '_norm')):
-                N = model.N_guess(self._norm, ion=self._flat.ion)
+                N = model.N_guess(self._norm, ion=source._flat.ion)
             else:
-                N = model.N_guess(self._unabs, ion=self._flat.ion)
+                N = model.N_guess(self._unabs, ion=source._flat.ion)
             if (hasattr(self, '_unabs')):
                 cont = self._unabs
             elif (hasattr(self, '_norm')):
                 cont = self._norm
             else:
                 raise Exception("Continuum not found.")
-            N = model.N_guess(cont, ion=self._flat.ion)
-            b = np.full(len(self.x[group[1]]), voigt_def['b']) * u.km / u.s
-            btur = np.full(len(self.x[group[1]]), voigt_def['btur']) \
+            N = model.N_guess(cont, ion=source._flat.ion)
+            b = np.full(len(source._t_all['X'][group[1]]), voigt_def['b']) * u.km / u.s
+            btur = np.full(len(source._t_all['X'][group[1]]), voigt_def['btur']) \
                    * u.km / u.s
 
         else:
             for val in N:
                 if (val == voigt_def['N']):
-                    N = model.N_guess(self._norm, ion=self._flat.ion)
+                    N = model.N_guess(self._norm, ion=source._flat.ion)
             
         if (hasattr(self, '_voigt') == False):
             self._voigt = dc(self._spec)
 
-        ion = np.unique(self._flat.ion)
+        ion = np.unique(source._flat.ion)
         voigt = model.voigt(z, N, b, btur, ion)
         for c in range(1, len(chunk)):
             """
