@@ -1,5 +1,5 @@
 from . import Spec1D, Model
-from .utils import convolve, dict_wave, redchi_thr, savitzky_golay, voigt_def
+from .utils import convolve, dict_wave, savitzky_golay, voigt_def
 from astropy.table import Column, Table
 from astropy.stats import sigma_clip
 from astropy import units as u
@@ -14,8 +14,9 @@ from scipy.interpolate import UnivariateSpline
 import scipy.fftpack as fft
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.stats import sigmaclip
-from statsmodels.nonparametric.kernel_regression import KernelReg
-import statsmodels.api as sm
+#from statsmodels.nonparametric.kernel_regression import KernelReg
+#import statsmodels.api as sm
+from statsmodels.nonparametric.smoothers_lowess import lowess
 import sys
 import time
 import warnings
@@ -32,6 +33,8 @@ class Line(Spec1D):
                  xmin=[],
                  xmax=[],
                  dy=[],
+                 group=[],
+                 resol=[],
                  xunit=None,
                  yunit=None,
                  meta=None,
@@ -84,6 +87,17 @@ class Line(Spec1D):
         if (dy != []):
             col_dy = Column(np.asarray(dc(dy), dtype=dtype), name='DY')
             data += (col_dy,)
+
+        # Needed for backwards compatibility with Spec1DCont
+        if (group == []):
+            group = np.ones(len(x))
+        col_group = Column(np.asarray(dc(group), dtype=dtype), name='GROUP')
+        data += (col_group,)
+        if (resol == []):
+            resol = np.zeros(len(x))
+        col_resol = Column(np.asarray(dc(resol), dtype=dtype), name='RESOL')
+        data += (col_resol,)
+
         if data is ():
             data = None
             
@@ -214,6 +228,7 @@ class Line(Spec1D):
         
 # Methods
     
+    """
     def chunk(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -244,43 +259,55 @@ class Line(Spec1D):
             else:
                 self._chunk_sum += ret[c]
         return ret
-    
-    def cont(self, smooth=3.0):
+    """
+
+    def cont(self, smooth=3.0, flux_corr=1.0, kappa_low=2.0, kappa_high=2.0):
+        """ Determine the emission continuum by removing absorption lines """
+        
         self._precont = dc(self._spec)
         range_x = np.max(self._spec.x) - np.min(self._spec.x)
         x = self._maxima.x
-        y = self._maxima.y
+        y = self._maxima.y * flux_corr
         #x = self._extr.x
         #y = self._extr.y
         self._cont = dc(self._precont)        
+
         clip_x = x
         clip_y = y
         stop = False
         i = 0
+
+
         while (stop == False):
+            #plt.plot(self._spec.x, self._spec.y, color='black')
+            #plt.scatter(clip_x, clip_y, color='red')
+            #plt.show()
             #frac = min(1, smooth * 10/len(x)) 
             #le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac)
             frac = smooth*u.nm/range_x #* len(x)/len(clip_x)
-            le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
-                                         delta=0.0, is_sorted=True)
+            #le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
+            #                             delta=0.0, is_sorted=True)
+            le = lowess(clip_y, clip_x, frac=frac, it=0, delta=0.0,
+                        is_sorted=True)
             cont_y = np.interp(clip_x, le[:, 0], le[:, 1])
             norm_y = clip_y / cont_y
             #clip_y = sigmaclip(norm_y, low=2.0, high=100.0)[0]
-            clip_y = sigmaclip(norm_y, low=3.0, high=3.0)[0]
-            clip_y = sigmaclip(norm_y, low=3.0, high=100.0)[0]            
+            clip_y = sigmaclip(norm_y, low=kappa_low, high=kappa_high)[0]
+            #clip_y = sigmaclip(norm_y, low=2.0, high=100.0)[0]            
             clip_x = clip_x[np.isin(norm_y, clip_y)]
             cont_y = cont_y[np.isin(norm_y, clip_y)]
             clip_y = clip_y * cont_y
-            stop = (len(clip_y) == len(norm_y)) #or i > 1
+            stop = ((len(clip_y) == len(norm_y)) \
+                    or (len(clip_y) < 100))
 
 
         self._clip_x = clip_x
         self._clip_y = clip_y
         self._cont.t['Y'] = np.interp(self._cont.x, le[:, 0], le[:, 1]) \
                             * self._cont.y.unit
-        #self._cont.y = np.interp(self._cont.x, clip_x, cont_y)
-        #self._cont.y = spl(self._cont.x)
-    
+
+        
+    """    
     def corr_resid(self, group, cont_corr):
 
         xmin = np.min(self.xmin[group[1]])
@@ -323,6 +350,7 @@ class Line(Spec1D):
         self._neb = dc(self)
         
         return cont_corr
+    """
 
     def corr_tau(self, N_thres=None):
 
@@ -387,7 +415,7 @@ class Line(Spec1D):
 
     def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0,
              hwidth=2):
-        """ Find lines in a spectrum """
+        """ Find lines """
 
         if (self._spec is None):
             raise Exception("Spectrum not provided.")
@@ -436,334 +464,7 @@ class Line(Spec1D):
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
 
-
-    def fit(self, x=None, y=None, dy=None, guess=None, maxfev=1000):
-        """ Fit a line group """
-
-        if (x is None):
-            x = self._fit_x
-        if (y is None):
-            y = self._fit_y
-        if (dy is None):
-            dy = self._fit_dy
-        if (guess is None):
-            guess = self._guess
-        
-        (model, param) = guess
-        #param.pretty_print()
-        if (hasattr(self, '_chunk_sum')):
-            chunk = self._chunk_sum
-        else:
-            chunk = np.full(len(self._spec.t), True)
-        if (len(self._spec.x[chunk]) < len(param)):
-            warnings.warn("Too few data points; skipping.")
-            fit = None
-        else:
-            fit = model.fit(y.value, param, x=x.value, weights=1/dy.value, #)
-                            fit_kws={'maxfev': maxfev})
-
-        #print(chunk)                    
-        #print(y)
-        #fit.params.pretty_print()
-        #sys.exit()
-                            
-        return fit    
-
-    def fit_auto(self, x=None, line=None, i_max=10, mode=None):
-        """ Fit a line group, automatically adding components """
-        
-        if ((x is None) and (line is None)):
-            raise Exception("Either x or line must be provided.")
-        if (line is not None):
-            if (x is not None):
-                warnings.warn("x will be used; line will be disregarded.")
-            x = self.x[line]
-        if ((x is None) and (line >= len(self._t))):
-            raise Exception("Line number is too large.")
-        stop = False
-        aic_old = float('inf')
-        redchi_old = float('inf')        
-        redchi_best = float('inf')
-        i = 0
-        i_best = 1
-        cont_corr = 1.0
-        vary = True #False
-        self._noneb = dc(self)
-        self._neb = dc(self)
-        self._last_add = 0.0
-        while (stop == False):
-            i += 1
-
-            # "Non-nebulium" component
-            noneb = dc(self._noneb)
-            fit_noneb = noneb.fit_wrap(x, vary, mode)
-
-            # Generic "nebulium" component
-            neb = dc(self._neb)
-            fit_neb = neb.fit_wrap(x, vary, mode)
-            
-            if ((fit_noneb == None) or (fit_neb == None)):
-                stop = True
-            else:
-                if (noneb._redchi <= neb._redchi):
-                    self_temp = dc(noneb)
-                    fit = fit_noneb
-                else:
-                    self_temp = dc(neb)
-                    fit = fit_neb
-                self.__dict__.update(self_temp.__dict__)
-                print("(%i) %3.2f;" \
-                      % (i, self._redchi), end=" ", flush=True)
-                stop = (self._redchi < redchi_thr) \
-                       or ((self._redchi<10*redchi_thr) \
-                           and (self._aic>aic_old)) \
-                       or (i==i_max)
-                #or (self._last_add == None) \
-                       
-                aic_old = self._aic
-                redchi_old = self._redchi            
-                if (self._redchi < redchi_best): #or 1==1):
-                    self_best = dc(self)
-                    fit_best = dc(fit)
-                    i_best = i
-                    redchi_best = self._redchi
-
-                if (stop == False):
-                    cont_corr = self.corr_resid(self._group, cont_corr)
-
-        
-        self = dc(self_best)
-        self.__dict__.update(self_best.__dict__)
-        fit = fit_best
-        print("best chi-squared (%i) %3.2f, %3.2f;" \
-              % (i_best, redchi_best, self._aic), end=" ", flush=True)
-
-    def fit_list(self, list_range=None, iter_range=range(5,6), mode=None,
-                 plot=True):
-        if (list_range is None):
-            list_range = range(len(self.t))
-
-        self_temp = dc(self)
-        x_arr = self_temp.x
-        #i = 0
-        group_check = 0
-        self._z_list = np.array([])
-        self._N_list = np.array([])
-        self._b_list = np.array([])
-        self._btur_list = np.array([])
-        for l in list_range:
-            start = time.time()
-            print("Redshift %i (%i/%i) (%3.4f)..." \
-                  % (l+1, l+1-list_range[0], len(list_range), x_arr[l].value),
-                  end=" ", flush=True)
-
-            # Check if the group is new
-            if (np.array_equal(self_temp.group(x=x_arr[l])[1], group_check)):
-                print("same group, skipping.")
-            else:
-                group_check = self_temp.group(x=x_arr[l])[1]
-                for i in iter_range:
-                    self.fit_auto(x=x_arr[l], i_max=i, mode=mode)
-                    print("time: %3.2f;" % (time.time()-start), end=" ",
-                          flush=True)
-                    self._z_list = np.append(self._z_list, self._z_fit) #\
-                                   #* self._z_fit.unit
-                    self._N_list = np.append(self._N_list, self._N_fit) #\
-                                   #* self._N_fit.unit
-                    self._b_list = np.append(self._b_list, self._b_fit) #\
-                                   #* self._b_fit.unit
-                    self._btur_list = np.append(
-                        self._btur_list, self._btur_fit) #* self._btur_fit.unit
-
-                    if (plot == True):
-                        print("close graphs to continue.")
-                        self.plot(self._group, self._chunk, mode='split')
-                    else:
-                        print("")
-                
-                        
-    def fit_prep(self, prof='voigt', vary=False, mode=None, **kwargs):
-        if (hasattr(self, '_chunk_sum')):
-            where = self._chunk_sum
-        else:
-            where = np.full(len(self._spec.t), True)
-        
-        self._fit_x = self._spec.x[where]
-        self._fit_y = self._spec.y[where] / self._cont.y[where]
-        self._fit_dy = self._spec.dy[where] / self._cont.y[where]
-
-        self._norm_guess = self.norm(self._group, self._chunk, vary=vary)
-        if (prof == 'voigt'):
-            if (mode == 'use_old'):
-                if (hasattr(self, '_z_fit')):
-                    diff = np.setdiff1d(self._z[self._group[1]], self._z_fit)
-                    z_temp = np.append(self._z_fit.value, diff.value)
-                    #N_temp = np.append(
-                    #    self._N_fit, model.N_guess(self._norm, ion=self._flat.ion))
-                    N_temp = np.append(self._N_fit.value, voigt_def['N'])
-                    b_temp = np.append(self._b_fit.value, voigt_def['b'])
-                    btur_temp = np.append(self._btur_fit.value,
-                                          voigt_def['btur'])
-                    z = np.sort(z_temp) * self._z_fit.unit
-                    N = N_temp[np.argsort(z_temp)] * self._N_fit.unit
-                    b = b_temp[np.argsort(z_temp)] * self._b_fit.unit
-                    btur = btur_temp[np.argsort(z_temp)] * self._b_fit.unit
-                else:
-                    z = []
-                    N = []
-                    b = []
-                    btur = []
-            #"""
-            else:
-                try:
-                    z = kwargs['z']
-                except:
-                    z = []
-                try:
-                    N = kwargs['N']
-                except:
-                    N = []
-                try:
-                    b = kwargs['b']
-                except:
-                    b = []
-                try:
-                    btur = kwargs['btur']
-                except:
-                    btur = []
-
-            self._prof_guess = self.voigt(self._group, self._chunk, z=z, N=N,
-                                          b=b, btur=btur)
-
-        else:
-            raise Exception("Only Voigt profile is supported.")
-        self._psf = self.psf(self._group, self._chunk, self._resol)
-
-        if (hasattr(self, '_fit') == False):
-            self._fit = dc(self._spec)        
-        if (hasattr(self, '_cont') == False):
-            self._cont = dc(self._spec)            
-        if (hasattr(self, '_resid_fit') == False):
-            self._resid_fit = dc(self._spec)        
-        if (hasattr(self, '_resid_cont') == False):
-            self._resid_cont = dc(self._spec)            
-        if (hasattr(self, '_rem') == False):
-            self._rem = dc(self._spec)            
-
-    def fit_prod(self, fit, prof='voigt'):
-        if (hasattr(self, '_chunk_sum')):
-            where = self._chunk_sum
-        else:
-            where = np.full(len(self._spec.t), True)
-        yunit = self._spec.y.unit
-        comp = fit.eval_components(x=self._spec.x[where].value)
-        self._fit.y[where] = fit.best_fit * self._cont.y[where]
-        self._cont.y[where] = comp['cont_'] * self._cont.y[where]
-        self._resid_fit.y[where] = self._spec.y[where] - self._fit.y[where]
-        self._resid_cont.y[where] = self._spec.y[where] - self._cont.y[where] 
-        self._rem.y[where] = self._cont.y[where] + self._resid_fit.y[where]
-    #* self._spec.y[where] / self._fit.y[where] #* yunit
-        
-        if (prof == 'voigt'):
-            #print(fit.fit_report())
-            #print(fit.params.pretty_print())
-            #print(fit.errorbars)
-            #print(fit.best_values)
-            #print(fit.params)
-            #print(fit.params['voigt0_z15138094933394572_btur'].stderr)
-            z_tags = [z for z in fit.best_values if z.endswith('_z')]
-            N_tags = [N for N in fit.best_values if N.endswith('_N')]
-            b_tags = [b for b in fit.best_values if b.endswith('_b')]
-            btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
-
-            z_best = np.array([fit.best_values[z] for z in z_tags])
-            N_best = np.array([fit.best_values[N] for N in np.sort(N_tags)] )
-            b_best = np.array([fit.best_values[b] for b in np.sort(b_tags)]) 
-            btur_best = np.array([fit.best_values[bt] for bt \
-                                  in np.sort(btur_tags)])
-
-            zerr_best = np.array([fit.params[z].stderr for z in z_tags])
-            Nerr_best = np.array([fit.params[N].stderr for N \
-                                  in np.sort(N_tags)])
-            berr_best = np.array([fit.params[b].stderr for b \
-                                  in np.sort(b_tags)])
-            bturerr_best = np.array([fit.params[bt].stderr for bt \
-                                     in np.sort(btur_tags)])
-
-            z_sort = np.sort(z_best)
-            N_sort = N_best[np.argsort(z_best)]
-            b_sort = b_best[np.argsort(z_best)]
-            btur_sort = btur_best[np.argsort(z_best)]
-
-            zerr_sort = zerr_best[np.argsort(z_best)]
-            Nerr_sort = Nerr_best[np.argsort(z_best)]
-            berr_sort = berr_best[np.argsort(z_best)]
-            bturerr_sort = bturerr_best[np.argsort(z_best)]
-
-            if ('ION' in self.t.colnames):
-                sel = np.append(0,
-                                np.cumsum([len(ion) for ion \
-                                in self._t['ION'][self._group[1]]]))[:-1]
-            else:
-                sel = range(np.sum(self._group[1]))
-            
-            self._z_fit = u.Quantity(z_sort[sel])
-            self._N_fit = N_sort[sel] / u.cm**2
-            self._b_fit = b_sort[sel] * u.km/u.s
-            self._btur_fit = btur_sort[sel] * u.km/u.s
-
-            self._zerr_fit = u.Quantity(zerr_sort[sel])
-            self._Nerr_fit = Nerr_sort[sel] / u.cm**2
-            self._berr_fit = berr_sort[sel] * u.km/u.s
-            self._bturerr_fit = bturerr_sort[sel] * u.km/u.s
-
-            #print(self._Nerr_fit)
-
-            # When new redshift is a duplicate
-            """ No action is taken, currently
-            if ((hasattr(self, '_last_add')) \
-                and (len(self._z_fit) < np.sum(self._group[1]))): 
-                #print(self._last_add)
-                self._z = np.delete(self._z, self._last_add)
-                self._t.remove_row(self._last_add)
-                line = self._group[0]
-                self.group(line=line)
-                #self._group[1] = np.delete(self._group[1], self._last_add)
-            #print(len(self._z), len(self._group[1]), len(self._z_fit))
-            """
-            if (hasattr(self, '_z')):
-                self._z[self._group[1]] = self._z_fit
-
-            if ('N' in self._t.colnames):
-                self._t['N'][self._group[1]] = self._N_fit
-                self._t['B'][self._group[1]] = self._b_fit 
-                self._t['BTUR'][self._group[1]] = self._btur_fit
-                if (fit.errorbars == True):
-                    self._t['DN'][self._group[1]] = self._Nerr_fit
-                    self._t['DB'][self._group[1]] = self._berr_fit 
-                    self._t['DBTUR'][self._group[1]] = self._bturerr_fit
-           
-        else:
-            raise Exception("Only Voigt profile is supported.")
-
-        self._redchi = fit.redchi
-        self._aic = fit.aic    
-        
-    def fit_wrap(self, x, vary=False, mode=None):
-        """ Model a group of lines an fit them """
-        
-        group = self.group(x)
-        chunk = self.chunk(x)
-        self.fit_prep(mode=mode, vary=vary)
-        guess = self.model()
-        #print(self._cont.y)
-        fit = self.fit()
-        if (hasattr(fit, 'fit_report')):
-            self.fit_prod(fit)
-        else:
-            fit = None
-        return fit
-
+    """
     def group(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
             raise Exception("Either x or line must be provided.")
@@ -788,7 +489,8 @@ class Line(Spec1D):
         ret = (line, sel)
         self._group = ret
         return ret
-        
+    """
+
     """
     def mask_col(self, col):
 
@@ -801,10 +503,9 @@ class Line(Spec1D):
             ret[null] = float('nan')
         return ret
     """
-    
-    def norm(self, group, chunk, value=1.0, vary=False):
-        """ Normalize continuum """
 
+    """
+    def norm(self, group, chunk, value=1.0, vary=False):
         model = Model(self._spec, line=self, group=group, chunk=chunk) 
         norm = model.norm(value, vary)
         if (hasattr(self, '_norm') == False):
@@ -814,7 +515,7 @@ class Line(Spec1D):
             * self._cont.y[chunk[1]].value * self._norm.y[chunk[1]].unit 
 
         return norm 
-            
+    """
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
         spec = self._spec
@@ -890,15 +591,16 @@ class Line(Spec1D):
         if block is True:
             plt.show()
         
-    
+    """
     def psf(self, group, chunk, resol):
-        """ Model the instrumental PSF """
         
         model = Model(self._spec, line=self, group=group, chunk=chunk)
         psf = model.psf(resol)
 
         return psf   
+    """
 
+    """
     def redchi(self, model_param, nvarys):
         model = model_param[0]
         param = model_param[1]
@@ -909,10 +611,10 @@ class Line(Spec1D):
         mod = model.eval(param, x=x.value)
         ret = np.sum(((mod-y.value)/dy.value)**2) / (ndata-nvarys)
         return ret
-        
-    def unabs(self, group, chunk):
-        """ Remove lines """
+    """
 
+    """
+    def unabs(self, group, chunk):
         model = Model(self._spec, line=self, group=group, chunk=chunk) 
         unabs = model.unabs()
         if (hasattr(self, '_unabs') == False):
@@ -922,7 +624,9 @@ class Line(Spec1D):
             * self._unabs.y[chunk[1]].unit
 
         return unabs 
-    
+    """
+
+    """
     def voigt(self, group, chunk, z=[], N=[], b=[], btur=[]):
 
         sumlen = len(z) + len(N) + len(b) + len(btur)
@@ -964,3 +668,4 @@ class Line(Spec1D):
         self._btur_arr = dc(model._btur)
 
         return voigt
+    """

@@ -9,22 +9,79 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
             'CIV_1548': [154.8204, 0.1899, 2.643e8],
             'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
 
-dict_doubl = {'CIV': ['CIV_1548', 'CIV_1550']}
+# Doublets
+dict_doubl = {'Ly': ['Ly_a', 'Ly_b', 'Ly_g'], #'Ly_d', 'Ly_e'], #'Ly_6', 'Ly_7',
+                    # 'Ly_8', 'Ly_9', 'Ly_10', 'Ly_11', 'Ly_12', 'Ly_13',
+                    # 'Ly_14', 'Ly_15'],
+              'CIV': ['CIV_1548', 'CIV_1550'],
+              'MgII': ['MgII_2796', 'MgII_2803']}
 
+# Ionic wavelengths
 # All wavelength must have the same unit!
 dict_wave = {'Ly_a': 121.567 * u.nm,
+             'Ly_b': 102.5722200 * u.nm,
+             'Ly_g': 97.2536700 * u.nm,
+             'Ly_d': 94.9743000 * u.nm,
+             'Ly_e': 93.7803400 * u.nm,
+             'Ly_6': 93.0748200 * u.nm,
+             'Ly_7': 92.6225600 * u.nm,
+             'Ly_8': 92.3150300 * u.nm,
+             'Ly_9': 92.0963000 * u.nm,
+             'Ly_10': 91.9351300 * u.nm,
+             'Ly_11': 91.8129300 * u.nm,
+             'Ly_12': 91.7180500 * u.nm,
+             'Ly_13': 91.6429100 * u.nm,
+             'Ly_14': 91.5823800 * u.nm,
+             'Ly_15': 91.5328900 * u.nm,
+             'Ly_lim': 91.18 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
              'CIV_1550': 155.0781 * u.nm,
+             'MgII_2796': 279.63543 * u.nm,
+             'MgII_2803': 280.35315 * u.nm,
              'neb': 10.0 * u.nm}
 
+# Ionic oscillator strengths
 dict_f = {'Ly_a': 0.416,
+          'Ly_b': 0.0791000,
+          'Ly_g': 0.0290100,
+          'Ly_d': 0.0139000,
+          'Ly_e': 0.0078000,
+          'Ly_6': 0.0048100,
+          'Ly_7': 0.0031850,
+          'Ly_8': 0.0022170,
+          'Ly_9': 0.0016060,
+          'Ly_10': 0.0012010,
+          'Ly_11': 0.0009219,
+          'Ly_12': 0.0007231,
+          'Ly_13': 0.0005777,
+          'Ly_14': 0.0004689,
+          'Ly_15': 0.0003858,
           'CIV_1548': 0.1899,
           'CIV_1550': 0.09475,
+          'MgII_2796': 0.6155,
+          'MgII_2803': 0.3058,
           'neb': 0.1} 
 
+# Ionic damping lengths
 dict_gamma = {'Ly_a': 6.265e8,
+              'Ly_b': 1.8970e+08,
+              'Ly_g': 8.1260e+07,
+              'Ly_d': 4.2040e+07,
+              'Ly_e': 2.4500e+07,
+              'Ly_6': 1.2360e+07,
+              'Ly_7': 8.2550e+06,
+              'Ly_8': 5.7850e+06,
+              'Ly_9': 4.2100e+06,
+              'Ly_10': 3.1600e+06,
+              'Ly_11': 2.4320e+06,
+              'Ly_12': 1.9110e+06,
+              'Ly_13': 1.5290e+06,
+              'Ly_14': 1.2430e+06,
+              'Ly_15': 1.0240e+06,
               'CIV_1548': 2.643e8,
               'CIV_1550': 2.628e8,
+              'MgII_2796': 2.625e8,
+              'MgII_2803': 2.595e8,
               'neb': 5e8} 
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
@@ -66,7 +123,7 @@ def convolve2(arr, ker_mat):
         ret[c] = conv[c]
     return ret
 
-def many_gauss(x, *p, mode='abs', cont = 1):
+def many_gauss(x, *p, mode='abs', cont=1):
     """Sum of gaussian profiles
     
     Adapted from: 

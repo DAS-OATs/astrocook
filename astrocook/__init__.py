@@ -7,5 +7,6 @@ from .spec_1d_reader import Spec1DReader
 from .model import Model
 from .line import Line
 from .syst import Syst
+from .system import System
 from .abs import Abs
 from .voigt import Voigt

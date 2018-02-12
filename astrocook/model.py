@@ -114,7 +114,8 @@ class Model():
         for r in syst: #self._syst.t[self._group[1]]:
             if (hasattr(self._syst, '_ion')):
                 try:
-                    ion = r['ION'][0]
+                    for i in range(len(r['Y']) - len(r['Y']) + 1):
+                        ion = r['ION'][i]
                 except:
                     try:
                         ion = r['ION']
@@ -253,7 +254,7 @@ class Model():
 
         return prof
     
-    def psf(self, resol): #, center, sigma):
+    def psf(self): #, center, sigma):
 
         """
         for c in range(1, len(self._chunk)):
@@ -291,6 +292,7 @@ class Model():
         x = self._spec.x[chunk_sum]
         if (len(x) % 2 == 0):
             x = x[:-1]
+        resol = self._spec.t['RESOL'][int((len(x)-1)*0.5)]
         center = np.median(x.value)
         sigma = center / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
@@ -302,7 +304,7 @@ class Model():
         #"""
         return ret
 
-    def psf2(self, resol):
+    def psf2(self):
         pref = 'psf_'
         model = lmm(psf_func, prefix=pref)
         param = model.make_params() 

@@ -78,7 +78,7 @@ class Spec1DCont(Spec1D):
         self._t['ABS_REM'].unit = self._t['Y'].unit
         self._t['EM_REM'].unit = self._t['Y'].unit
         self._t['CONT'].unit = self._t['Y'].unit
-        self._useGood = False
+        self._use_good = False
         
     @property
     def abs_fit(self):
@@ -86,7 +86,7 @@ class Spec1DCont(Spec1D):
 
     @abs_fit.setter
     def abs_fit(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['ABS_FIT'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['ABS_FIT'] = np.asarray(value, dtype='float')
@@ -98,7 +98,7 @@ class Spec1DCont(Spec1D):
 
     @em_fit.setter
     def em_fit(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['EM_FIT'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['EM_FIT'] = np.asarray(value, dtype='float')
@@ -110,7 +110,7 @@ class Spec1DCont(Spec1D):
 
     @abs_rem.setter
     def abs_rem(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['ABS_REM'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['ABS_REM'] = np.asarray(value, dtype='float')
@@ -122,7 +122,7 @@ class Spec1DCont(Spec1D):
 
     @em_rem.setter
     def em_rem(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['EM_REM'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['EM_REM'] = np.asarray(value, dtype='float')
@@ -134,7 +134,7 @@ class Spec1DCont(Spec1D):
 
     @cont.setter
     def cont(self, value):
-        if self._useGood:
+        if self._use_good:
             self._t['CONT'][self._iGood] = np.asarray(value, dtype='float')
         else:
             self._t['CONT'] = np.asarray(value, dtype='float')

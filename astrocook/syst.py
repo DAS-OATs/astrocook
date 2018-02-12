@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 import sys
+import time
 
 class Syst(Line):
 
@@ -218,6 +219,7 @@ class Syst(Line):
 
         #xmin_ion = float('inf') * u.nm
         #xmax_ion = 0 * u.nm
+
         for p in range(n):
             z_arr[p] = x / dict_wave[ion_arr[p]] - 1.0
             tab = Table(self.t[group[1]][ion_arr[p] in 'ION'])
@@ -232,6 +234,8 @@ class Syst(Line):
         zmax_ion = self.xmax[ion_where][0]
         #y_ion = np.empty(len(ion))
         #dy_ion = np.empty(len(ion))        
+
+
         for i in range(len(ion)):
             spec = dc(self._spec)
             spec.to_z([ion[i]])
@@ -244,7 +248,6 @@ class Syst(Line):
                 y_ion += (np.interp(z_ion, spec.x, spec.y),)
                 dy_ion += (np.interp(z_ion, spec.x, spec.dy),)
                 
-
         
         z_neb = x / dict_wave[neb] - 1.0
         line = dc(self._line)
@@ -259,7 +262,6 @@ class Syst(Line):
         dy_neb = np.interp(x.value, self._spec.x, self._spec.dy) \
                  * self._spec.yunit
 
-        
         self._noneb = dc(self)
         #if (z_ion not in self._noneb.x):
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
@@ -801,7 +803,7 @@ class Syst(Line):
                     for c in range(1, len(chunk)):
                         ax.plot(rem.x[chunk[c]], rem.y[chunk[c]], c='b', lw=1.0)
             ax.scatter(line.x, line.y, marker='+')
-            text = ion[0] + 'redshifts'
+            text = ion[0] + ' redshifts'
 
             ax.text(0.5, 0.92, text, horizontalalignment="center",
                     verticalalignment="center", transform=ax.transAxes,

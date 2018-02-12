@@ -14,7 +14,8 @@ import random
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.stats import sigmaclip
 from specutils import extinction
-import statsmodels.api as sm
+#import statsmodels.api as sm
+from statsmodels.nonparametric.smoothers_lowess import lowess
 import time
 
 class Spec1D():
@@ -296,8 +297,9 @@ class Spec1D():
         stop = False
         i = 0
         frac = smooth*u.nm/range_x
-        le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
-                                     delta=0.0, is_sorted=True)
+        #le = sm.nonparametric.lowess(clip_y, clip_x, frac=frac, it=0,
+        #                             delta=0.0, is_sorted=True)
+        le = lowess(clip_y, clip_x, frac=frac, it=0, delta=0.0, is_sorted=True)
         """
         while (stop == False):
             frac = smooth*u.nm/range_x 
@@ -319,7 +321,6 @@ class Spec1D():
         #self._cont.y = np.interp(self._cont.x, clip_x, cont_y)
         #self._cont.y = spl(self._cont.x)
         
-    
     def convert(self, xunit=None, yunit=None):
         """Convert x and/or y values into equivalent quantities."""
         if not (xunit is None):
@@ -400,7 +401,7 @@ class Spec1D():
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
-            par = np.stack([[np.mean(conv.x.value)], [gauss_sigma], [1]])
+            par = np.stack([[np.median(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
             prof = prof / np.sum(prof)
@@ -423,13 +424,18 @@ class Spec1D():
             raise Exception("Forest name and emission redshift must be "
                             "provided together.")
 
+        # Check this part
         if ((forest != []) and (prox_vel == [])):  
             prox_vel = 7e3 * (u.km/u.s)
+        if (forest == 'Ly'):
+            xmin = dict_wave['Ly_lim'] * (1 + zem + prox_vel / c)
+            xmax = dict_wave['Ly_a'] * (1 + zem - prox_vel / c)
         if (forest == 'CIV'):
             xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
             xmax = dict_wave['CIV_1550'] * (1 + zem - prox_vel / c)
-        print(xmin, xmax)
-        print(dict_wave['Ly_a'] * (1 + zem + prox_vel / c) / dict_wave['CIV_1550'] - 1, zem - prox_vel / c)
+        if (forest == 'MgII'):
+            xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
+            xmax = dict_wave['MgII_2803'] * (1 + zem - prox_vel / c)
 
         reg = dc(self)
 
@@ -439,10 +445,11 @@ class Spec1D():
             lt_xmin = np.where(reg.x < xmin)[0]
         if (xmax is not None):
             gt_xmax = np.where(reg.x > xmax)[0]
-
+            
         where = np.hstack((lt_xmin, gt_xmax))
         reg._t.remove_rows(where)
 
+        # Check this part
         if (hasattr(reg, '_cont')):
             reg._cont._t.remove_rows(where)
             
@@ -1020,9 +1027,9 @@ class Spec1D():
 
         if ((len(ion) > 1) and (len(ion) != len(self.t))):
             raise Exception("Ion list and table must have the same length.")
-            
         ion = np.asarray(ion)
         ion_ravel = np.ravel(ion, 'F')
+        #print(ion_ravel)
         ion_wave = np.asarray([dict_wave[i].value for i in ion_ravel]) \
                    * dict_wave['Ly_a'].unit
         x = np.resize(self.x.value, ion_ravel.shape) * self.x.unit

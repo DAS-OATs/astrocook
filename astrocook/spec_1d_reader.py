@@ -147,63 +147,6 @@ class Spec1DReader:
         self._source = filename
         return s
 
-
-    def uves(self, filename):
-        """Read a spectrum from a UVES file."""
-        hdulist = fits.open(filename)
-
-        if (self._verbose > 0):
-            print("spec1reader.uves: reading from " + filename)
-            hdulist.info()
-
-        #Convert header from first extension into a dict
-        meta = {}
-        for (key, val) in hdulist[0].header.items():
-            meta[key] = val
-
-        data = hdulist[1].data
-        try:
-            x = data.field('WAVEL')
-        except:
-            x = data.field('wave') * 0.1
-        try:
-            dx = data.field('PIXSIZE')
-        except:
-            dx = data.field('wpix') * 0.1
-        try:
-            y = data.field('FLUX')
-            y_name = 'FLUX'
-        except:
-            y = data.field('flux')
-            y_name = 'flux'
-        try:
-            dy = data.field('FLUXERR')
-            dy_name = 'FLUXERR'
-        except:
-            dy = data.field('sigma')
-            dy_name = 'sigma'
-        resol = [60000.] * len(data)
-        resol_e = [1000.] * len(data)
-
-        c1 = np.argwhere(hdulist[1].data[y_name] > 0)
-        c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
-        igood = np.intersect1d(c1, c2)
-
-        good = np.repeat(-1, len(x))
-        good[igood] = 1
-
-        s = Spec1D(x, y, dy=dy, 
-                   xunit=u.nm, 
-                   yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
-                   group=good, 
-                   resol=resol,
-                   meta=meta)
-        hdulist.close()
-
-        #self._method = sdss_dr10 #TODO: check this
-        self._source = filename
-        return s
-
     def simul(self, filename):
         """Read a simulated spectrum."""
 
@@ -252,3 +195,119 @@ class Spec1DReader:
         #self._method = sdss_dr10 #TODO: check this
         self._source = filename
         return s
+
+    def uves(self, filename, resol=None):
+        """Read a spectrum from a UVES file."""
+        hdulist = fits.open(filename)
+
+        if (self._verbose > 0):
+            print("spec1reader.uves: reading from " + filename)
+            hdulist.info()
+
+        #Convert header from first extension into a dict
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
+
+        data = hdulist[1].data
+        try:
+            x = data.field('WAVEL')
+        except:
+            x = data.field('wave') * 0.1
+        try:
+            dx = data.field('PIXSIZE')
+        except:
+            dx = data.field('wpix') * 0.1
+        try:
+            y = data.field('FLUX')
+            y_name = 'FLUX'
+        except:
+            y = data.field('flux')
+            y_name = 'flux'
+        try:
+            dy = data.field('FLUXERR')
+            dy_name = 'FLUXERR'
+        except:
+            dy = data.field('sigma')
+            dy_name = 'sigma'
+        #resol = [60000.] * len(data)
+        #resol_e = [1000.] * len(data)
+        resol_arr = [resol] * len(data)
+        
+        c1 = np.argwhere(hdulist[1].data[y_name] > 0)
+        c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        s = Spec1D(x, y, dy=dy, 
+                   xunit=u.nm, 
+                   yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
+                   group=good, 
+                   resol=resol_arr,
+                   meta=meta)
+        hdulist.close()
+
+        #self._method = sdss_dr10 #TODO: check this
+        self._source = filename
+        return s
+
+    def xsh(self, filename, resol=None):
+        """Read a spectrum from a UVES file."""
+        hdulist = fits.open(filename)
+
+        if (self._verbose > 0):
+            print("spec1reader.uves: reading from " + filename)
+            hdulist.info()
+
+        #Convert header from first extension into a dict
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
+
+        data = hdulist[1].data
+        try:
+            x = data.field('WAVEL')
+        except:
+            x = data.field('wave') * 0.1
+        try:
+            dx = data.field('PIXSIZE')
+        except:
+            dx = data.field('pixsize') * 0.1
+        try:
+            y = data.field('FLUX')
+            y_name = 'FLUX'
+        except:
+            y = data.field('flux')
+            y_name = 'flux'
+        try:
+            dy = data.field('FLUXERR')
+            dy_name = 'FLUXERR'
+        except:
+            dy = data.field('err')
+            dy_name = 'err'
+        try:
+            resol_arr = data.field('resol')
+            resol_name = 'resol'
+        except:
+            resol_arr = [resol] * len(data)
+
+        c1 = np.argwhere(hdulist[1].data[y_name] > 0)
+        c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        s = Spec1D(x, y, dy=dy, 
+                   xunit=u.nm, 
+                   yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
+                   group=good, 
+                   resol=resol_arr,
+                   meta=meta)
+        hdulist.close()
+
+        self._source = filename
+        return s
+    
