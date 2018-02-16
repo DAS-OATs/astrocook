@@ -10,7 +10,7 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
             'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
 
 # Doublets
-dict_doubl = {'Ly': ['Ly_a', 'Ly_b', 'Ly_g'], #'Ly_d', 'Ly_e'], #'Ly_6', 'Ly_7',
+dict_doubl = {'Ly': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e'], #'Ly_6', 'Ly_7',
                     # 'Ly_8', 'Ly_9', 'Ly_10', 'Ly_11', 'Ly_12', 'Ly_13',
                     # 'Ly_14', 'Ly_15'],
               'CIV': ['CIV_1548', 'CIV_1550'],

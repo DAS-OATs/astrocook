@@ -8,5 +8,5 @@ from .model import Model
 from .line import Line
 from .syst import Syst
 from .system import System
-from .abs import Abs
+#from .abs import Abs
 from .voigt import Voigt
