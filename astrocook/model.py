@@ -175,7 +175,7 @@ class Model():
 
         return ret
             
-    def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.03 * u.nm,
+    def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.2*u.nm,#width=0.03 * u.nm,
              prof='voigt', ion_mask=None, **kwargs):
         """Create a window with a model profile of a line or multiplet"""
 
@@ -241,10 +241,13 @@ class Model():
     def prof_mult(self, spec, ion, plot=False, **kwargs):
         ion_mask = np.full(len(ion), False)
         prof = []
-        prof.append(self.prof(spec, ion, **kwargs))
+        prof.append(self.prof(spec, ion, **kwargs))       
+        f_list = np.array([dict_f[ion[i]] for i in range(len(ion))]) 
+        f_sort = np.argsort(f_list)[::-1]
         for i in range(len(ion)):
             ion_mask_temp = dc(ion_mask)
-            ion_mask_temp[i] = True
+            ion_mask_temp[f_sort[i]] = True
+            #ion_mask_temp[i] = True
             prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask_temp))
         prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask))        
 

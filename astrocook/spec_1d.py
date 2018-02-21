@@ -1,5 +1,5 @@
 from . import List
-from .utils import convolve, dict_wave, many_gauss, redchi, savitzky_golay
+from .utils import convolve, dict_wave, dict_f, many_gauss, redchi_f, savitzky_golay
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
@@ -633,6 +633,7 @@ class Spec1D():
                     and (redchi[x, 0] < 10.0)):                            
                     where[x] = True
 
+                    
             minima = None
             redchi_sel = Spec1D(self.x[where], redchi[:, 0][where],
                                 xunit=self.x.unit)
@@ -692,11 +693,16 @@ class Spec1D():
         minima_redchi = np.array([])
         for (logN, b) in loop:
             N = np.power(10, logN) / u.cm**2
-            prof = model.prof_mult(self, ion, b=b, N=N)
+
+            wave_list = np.array([dict_wave[ion[i]].value \
+                                  for i in range(len(ion))]) 
+            ion = np.array(ion)[np.argsort(wave_list)]
+            prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
             redchi = np.zeros((len(self.x), len(prof)))
             if (verbose == True):
                 print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
                       end=" ", flush=True)
+
             for p in range(len(prof)):
                 if (p == 0):
                     redchi[:, p] = self.prof_scan_new(prof[p], ion,
@@ -711,9 +717,12 @@ class Spec1D():
                 #    and (redchi[x, 2] < redchi[x, 3]) \
                 #    and (redchi[x, 0] < 10.0)):
                 if (np.array_equal(np.sort(redchi[x, :]), redchi[x, :]) \
+                    #and (redchi[x, 0] < redchi[x, 1] * 0.95) \
                     and (redchi[x, 0] < redchi[x, 1] * 0.95) \
                     #and (redchi[x, -2] < redchi[x, -1] * 0.95) \
-                    and (redchi[x, 0] < 10.0)):                            
+                    #and (redchi[x, 0] < 10.0) \
+                    #and (redchi[x, 0] < redchi[x, 1]) \
+                    ):
                     where[x] = True
 
             minima = None
@@ -908,28 +917,58 @@ class Spec1D():
                       % ((time.time() - start) * len(self.x) * (len(ion) + 2) \
                          * 1e-3), end=" ", flush=True)
             mod_x = prof.x * (1 + spec_temp.x[i])
-            xmin = np.min(mod_x).value
-            xmax = np.max(mod_x).value
-            if (xmax < xend):
-                #chunk[:, i] = np.logical_and((self.x.value > xmin),
-                #                             (self.x.value < xmax))
-                chunk_i = np.logical_and((self.x.value > xmin),
-                                             (self.x.value < xmax))
-            else:
-                chunk_i = np.full(len(self.x), False)
-                
+
+
+            # To determine the regions where the model is defined, look for
+            # jumps in the x array
+            mod_xmin = prof.xmin * (1 + spec_temp.x[i])
+            mod_xmax = prof.xmax * (1 + spec_temp.x[i])
+            #print(prof.xmin, prof.xmax)
+            mod_xmin_l = np.append(mod_xmin, float("inf"))
+            mod_xmax_l = np.append(0, mod_xmax)
+            #print(mod_xmin, mod_xmax)
+            where = np.abs(mod_xmin_l.value-mod_xmax_l.value) \
+                    > (mod_xmax[1].value-mod_xmin[0].value)
+            xmin = mod_xmin_l[where][::2].value
+            xmax = mod_xmax_l[where][1::2].value
+            #print(mod_xmin_l[where], mod_xmax_l[where])
+            #print(xmin, xmax)
+            
+            #print(prof.t)
+            #xmin = np.min(mod_x).value
+            #xmax = np.max(mod_x).value
+            #print(np.min(mod_x).value, np.max(mod_x).value)
+            
+            chunk_i = np.full(len(self.x), False)
+            for j in range(np.size(xmin)):
+                if (xmax[j] < xend):
+                    #chunk[:, i] = np.logical_and((self.x.value > xmin),
+                    #                             (self.x.value < xmax))
+                    chunk_i = np.logical_or(chunk_i,
+                                  np.logical_and((self.x.value > xmin[j]),
+                                                 (self.x.value < xmax[j])))
+                else:
+                    chunk_i = np.full(len(self.x), False)
+                    
+
+            #chunk_i = np.logical_and(
+            
             #chunk_i = chunk[:, i]
             x = self.x[chunk_i].value
-            y = self.y[chunk_i].value
-            dy = self.dy[chunk_i].value
+            y = self.y[chunk_i].value/self._cont.y[chunk_i].value
+            dy = self.dy[chunk_i].value/self._cont.y[chunk_i].value
             mod_y = np.interp(x, mod_x, prof.y) #* prof.y.unit
-            null_y = self._cont.y[chunk_i].value
             if (len(x) > 0):
-                redchi_mod = redchi(x, y, dy, mod_y)
+                redchi_mod = redchi_f(x, y, dy, mod_y)
             else:
                 redchi_mod = 'nan'
             self._redchi[i] = redchi_mod
 
+            #plt.plot(x, y)
+            #plt.plot(x, dy)
+            #plt.plot(x, mod_y)
+            #plt.show()
+            
         return self._redchi
 
     def redchi(self, model_param=None, nvarys=0, chunk=None):

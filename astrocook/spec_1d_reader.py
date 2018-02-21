@@ -311,3 +311,51 @@ class Spec1DReader:
         self._source = filename
         return s
     
+    def xq(self, filename, resol=None):
+        """Read a spectrum from a UVES file."""
+        hdulist = fits.open(filename)
+
+        if (self._verbose > 0):
+            print("spec1reader.uves: reading from " + filename)
+            hdulist.info()
+
+        #Convert header from first extension into a dict
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
+
+        data = hdulist[1].data
+        
+        x = data.field('wave')*0.1
+        dx = data.field('wpix')*0.1
+       
+        y = data.field('flux')
+        
+        y_name = 'flux'
+        dy = data.field('err')
+        dy_name = 'err'
+        try:
+            resol_arr = data.field('resolution')
+        except:
+            resol_arr = data.field('resol')            
+        resol_name = 'resol'
+        
+
+        c1 = np.argwhere(hdulist[1].data[y_name] > 0)
+        c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        s = Spec1D(x, y, dy=dy, 
+                   xunit=u.nm, 
+                   yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
+                   group=good, 
+                   resol=resol_arr,
+                   meta=meta)
+        hdulist.close()
+
+        self._source = filename
+        return s
+    
