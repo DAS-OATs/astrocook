@@ -1458,6 +1458,27 @@ class System(Line):
              fits.Column(name='B', format='E', array=self._t['B']),
              fits.Column(name='BTUR', format='E', array=self._t['BTUR'])]) 
         hdu.writeto(name + '_syst.fits', overwrite=True)
+
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='XMIN', format='E', array=self._fit.xmin),
+             fits.Column(name='XMAX', format='E', array=self._fit.xmax),
+             fits.Column(name='X', format='E', array=self._fit.x),
+             fits.Column(name='Y', format='E', array=self._fit.y),
+             fits.Column(name='DY', format='E', array=self._fit.dy),
+             fits.Column(name='GROUP', format='I', array=self._fit.group),
+             fits.Column(name='RESOL', format='E', array=self._fit.resol)])
+        hdu.writeto(name + '_syst_fit.fits', overwrite=True)
+
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='XMIN', format='E', array=self._rem.xmin),
+             fits.Column(name='XMAX', format='E', array=self._rem.xmax),
+             fits.Column(name='X', format='E', array=self._rem.x),
+             fits.Column(name='Y', format='E', array=self._rem.y),
+             fits.Column(name='DY', format='E', array=self._rem.dy),
+             fits.Column(name='GROUP', format='I', array=self._rem.group),
+             fits.Column(name='RESOL', format='E', array=self._rem.resol)])
+        hdu.writeto(name + '_syst_rem.fits', overwrite=True)
+
         
     def unabs(self):
         """ Remove lines """

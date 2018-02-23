@@ -1,5 +1,5 @@
 from . import List
-from .utils import convolve, dict_wave, dict_f, many_gauss, redchi_f, savitzky_golay
+from .utils import convolve, dict_doubl, dict_wave, dict_f, many_gauss, redchi_f, savitzky_golay
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
@@ -415,43 +415,63 @@ class Spec1D():
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
     
-    def extract(self, xmin=None, xmax=None, forest=[], zem=[], prox_vel=[],
-                line=None):
+    def extract(self, xmin=None, xmax=None, prox=False, forest=[], zem=[],
+                prox_vel=[], line=None):
         """ Extract a region of a spectrum """
 
         self._orig = dc(self)
+        if (prox != (zem == [])):
+            raise Exception("Forest name and emission redshift must be "
+                            "provided together.")
         if ((forest == []) != (zem == [])):
             raise Exception("Forest name and emission redshift must be "
                             "provided together.")
-
-        # Check this part
-        if ((forest != []) and (prox_vel == [])):  
-            prox_vel = 7e3 * (u.km/u.s)
-        if (forest == 'Ly'):
-            xmin = dict_wave['Ly_lim'] * (1 + zem + prox_vel / c)
-            xmax = dict_wave['Ly_a'] * (1 + zem - prox_vel / c)
-        if (forest == 'CIV'):
-            xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
-            xmax = dict_wave['CIV_1550'] * (1 + zem - prox_vel / c)
-        if (forest == 'MgII'):
-            xmin = dict_wave['Ly_a'] * (1 + zem + prox_vel / c)
-            xmax = dict_wave['MgII_2803'] * (1 + zem - prox_vel / c)
+        if ((forest != []) == prox):
+            raise Exception("Please choose either forest or proximity.")
 
         reg = dc(self)
+        if (prox == False):
 
-        lt_xmin = []
-        gt_xmax = []        
-        if (xmin is not None):
-            lt_xmin = np.where(reg.x < xmin)[0]
-        if (xmax is not None):
-            gt_xmax = np.where(reg.x > xmax)[0]
-            
-        where = np.hstack((lt_xmin, gt_xmax))
+            # Check this part
+            if ((forest != []) and (prox_vel == [])):  
+                prox_vel = 7e3 * (u.km/u.s)
+            if (forest == 'Ly'):
+                xmin = 0*u.nm#dict_wave['Ly_lim'] * (1 + zem + prox_vel / c)
+                xmax = dict_wave['Ly_a'] * (1 + zem) * (1 - prox_vel / c)
+            if (forest == 'CIV'):
+                xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c)
+                xmax = dict_wave['CIV_1550'] * (1 + zem) * (1 - prox_vel / c)
+            if (forest == 'MgII'):
+                xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c)
+                xmax = dict_wave['MgII_2803'] * (1 + zem) * (1 - prox_vel / c)
+                
+
+            lt_xmin = []
+            gt_xmax = []        
+            if (xmin is not None):
+                lt_xmin = np.where(reg.x < xmin)[0]
+            if (xmax is not None):
+                gt_xmax = np.where(reg.x > xmax)[0]
+                
+            where = np.hstack((lt_xmin, gt_xmax))
+
+        else:
+
+            ion = dict_doubl['Ly']
+            wave_list = np.array([dict_wave[ion[i]].value \
+                                  for i in range(len(ion))])
+            xmin = wave_list * (1 + zem) * (1 - prox_vel/c)
+            xmax = wave_list * (1 + zem)
+            where = np.full(len(reg.x), True) 
+            for i in range(len(xmin)):
+                w = np.logical_and(reg.x.value > xmin[i], reg.x.value < xmax[i])
+                where[w] = False
         reg._t.remove_rows(where)
 
         # Check this part
         if (hasattr(reg, '_cont')):
             reg._cont._t.remove_rows(where)
+                
             
         return reg
 
@@ -698,6 +718,7 @@ class Spec1D():
                                   for i in range(len(ion))]) 
             ion = np.array(ion)[np.argsort(wave_list)]
             prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
+            #print(prof.x)
             redchi = np.zeros((len(self.x), len(prof)))
             if (verbose == True):
                 print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
@@ -734,6 +755,8 @@ class Spec1D():
             minima_redchi = np.append(minima_redchi,
                                       np.interp(minima.x, self.x, redchi[:, 0]))
 
+            print(minima_x, minima_redchi)
+            
             if (verbose == True):
                 print("%i new matches found, %i in total." \
                       % (len(minima.x), len(np.unique(minima_x))))
@@ -939,6 +962,7 @@ class Spec1D():
             #xmax = np.max(mod_x).value
             #print(np.min(mod_x).value, np.max(mod_x).value)
             
+            #"""
             chunk_i = np.full(len(self.x), False)
             for j in range(np.size(xmin)):
                 if (xmax[j] < xend):
@@ -949,7 +973,14 @@ class Spec1D():
                                                  (self.x.value < xmax[j])))
                 else:
                     chunk_i = np.full(len(self.x), False)
-                    
+            #"""        
+            #if (xmax < xend):
+            #    #chunk[:, i] = np.logical_and((self.x.value > xmin),
+            #    #                             (self.x.value < xmax))
+            #    chunk_i = np.logical_and((self.x.value > xmin),
+            #                                 (self.x.value < xmax))
+            #else:
+            #    chunk_i = np.full(len(self.x), False)
 
             #chunk_i = np.logical_and(
             
