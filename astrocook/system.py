@@ -1,6 +1,7 @@
 from . import Line, Model
 from .utils import convolve, convolve2, dict_doubl, dict_wave, redchi_thr, \
     voigt_def
+from .model import voigt_params
 from astropy import units as u
 from astropy.io import fits as fits
 from astropy.table import Column, Table
@@ -247,7 +248,8 @@ class System(Line):
             else:
                 y_ion += (np.interp(z_ion, spec.x, spec.y),)
                 dy_ion += (np.interp(z_ion, spec.x, spec.dy),)
-
+                
+        self._z_add = z_ion
         self._t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
                         ion, float('nan'), float('nan'), float('nan'),
                         float('nan'), float('nan'), float('nan')])
@@ -318,8 +320,11 @@ class System(Line):
                 
         
         z_neb = x / dict_wave[neb] - 1.0
-        line = dc(self._line)
-        line.to_z([neb])
+        if self._line != None:
+            line = dc(self._line)
+            line.to_z([neb])
+        else:
+            line = self
         neb_where = abs(z_neb-line.x) == abs(z_neb-line.x).min()
         zmin_neb = line.xmin[neb_where][0] 
         zmax_neb = line.xmax[neb_where][0]
@@ -330,6 +335,8 @@ class System(Line):
         dy_neb = np.interp(x.value, self._spec.x, self._spec.dy) \
                  * self._spec.yunit
 
+        self._z_add = z_ion
+        
         self._noneb = dc(self)
         #if (z_ion not in self._noneb.x):
         self._noneb.t.add_row([z_ion, y_ion, zmin_ion, zmax_ion, dy_ion, 
@@ -531,12 +538,17 @@ class System(Line):
 
         # Otherwise fit
         else:
+            #print("before fit")
+            #param.pretty_print()
+            #print(param)
             fit = model.fit(y.value, param, x=x.value, weights=1/dy.value)#, #)
                             #fit_kws={'maxfev': maxfev})
-
+            #print("after fit")                
+            #fit.params.pretty_print()
+            #print(fit.params)
         return fit
 
-    def fit_add(self, x=None, line=None, i_max=10, mode=None):
+    def fit_add(self, x=None, line=None, i_max=10, mode=None, **kwargs):
         """ Fit a group of lines 
         
         Given a line, the whole group of adjacient lines is fitted, adding
@@ -561,7 +573,7 @@ class System(Line):
         i = 0
         i_best = 1
         cont_corr = 1.0
-        vary = True  # To change the continuum
+        vary = False  # To change the continuum
         self._last_add = 0.0
         while (stop == False):
             i += 1
@@ -571,7 +583,11 @@ class System(Line):
             chunk = self.chunk(x)
 
             # Prepare the parameters
-            self.fit_prep(mode=mode, vary=vary)
+            if i == 1:
+                start = voigt_params(self, **kwargs)
+            else:
+                start = {'z': [], 'N': [], 'b': [], 'btur': []}
+            self.fit_prep(mode=mode, vary=vary, **start)
 
             # Create a model
             guess = self.model()
@@ -657,11 +673,10 @@ class System(Line):
                                self.redchi(y, dy, y_try, len(y)-fit.nvarys))
             #plt.plot(x, y_try)
         #plt.show()
-        print(redchi)
 
         return stop
 
-    def fit_auto(self, x=None, line=None, i_max=10, mode=None):
+    def fit_auto(self, x=None, line=None, i_max=10, mode=None, **kwargs):
         """ Fit a group of lines 
         
         Given a line, the whole group of adjacient lines is fitted, adding
@@ -686,7 +701,7 @@ class System(Line):
         i = 0
         i_best = 1
         cont_corr = 1.0
-        vary = True #False
+        vary = False
         self._noneb = dc(self)
         self._neb = dc(self)
         self._last_add = 0.0
@@ -694,16 +709,20 @@ class System(Line):
             i += 1
 
             #print(time.time()-start)
+            if i == 1:
+                start = voigt_params(self, **kwargs)
+            else:
+                start = {'z': [], 'N': [], 'b': [], 'btur': []}
             
             # Add associated component
             noneb = dc(self._noneb)
-            fit_noneb = noneb.fit_wrap(x, vary, mode)
+            fit_noneb = noneb.fit_wrap(x, vary, mode, **start)
 
             #print(time.time()-start)
 
             # Add generic "nebulium" component
             neb = dc(self._neb)
-            fit_neb = neb.fit_wrap(x, vary, mode)
+            fit_neb = neb.fit_wrap(x, vary, mode, **start)
 
             # Check results and choose the best option
             if ((fit_noneb == None) or (fit_neb == None)):
@@ -746,10 +765,12 @@ class System(Line):
 
 
     def fit_list(self, list_range=None, iter_range=range(5,6), mode=None,
-                 plot=True):
+                 plot=True, **kwargs):
         if (list_range is None):
             list_range = range(len(self.t))
 
+        # Read Voigt parameters, if provided
+        
         self_temp = dc(self)
         x_arr = self_temp.x
         #i = 0
@@ -770,8 +791,9 @@ class System(Line):
             else:
                 group_check = self_temp.group(x=x_arr[l])[1]
                 for i in iter_range:
-                    #self.fit_add(x=x_arr[l], i_max=i, mode=mode)
-                    self.fit_auto(x=x_arr[l], i_max=i, mode=mode)
+                    
+                    #self.fit_add(x=x_arr[l], i_max=i, mode=mode, **kwargs)
+                    self.fit_auto(x=x_arr[l], i_max=i, mode=mode, **kwargs)
                     print("time: %3.2f;" % (time.time()-start), end=" ",
                           flush=True)
                     self._z_list = np.append(self._z_list, self._z_fit) #\
@@ -807,8 +829,9 @@ class System(Line):
         if (prof == 'voigt'):
             if (mode == 'use_old'):
                 if (hasattr(self, '_z_fit')):
-                    diff = np.setdiff1d(self._z[self._group[1]], self._z_fit)
-                    z_temp = np.append(self._z_fit.value, diff.value)
+                    #diff = np.setdiff1d(self._z[self._group[1]], self._z_fit)
+                    z_temp = np.append(self._z_fit.value, self._z_add)
+                    #print(diff, z_temp)
                     #N_temp = np.append(
                     #    self._N_fit, model.N_guess(self._norm, ion=self._flat.ion))
                     N_temp = np.append(self._N_fit.value, voigt_def['N'])
@@ -819,6 +842,8 @@ class System(Line):
                     N = N_temp[np.argsort(z_temp)] * self._N_fit.unit
                     b = b_temp[np.argsort(z_temp)] * self._b_fit.unit
                     btur = btur_temp[np.argsort(z_temp)] * self._b_fit.unit
+                    print("fit_prep")
+                    print(z, N, b, btur)
                 else:
                     z = []
                     N = []
@@ -895,10 +920,10 @@ class System(Line):
             btur_tags = [bt for bt in fit.best_values if bt.endswith('_btur')]
 
             z_best = np.array([fit.best_values[z] for z in z_tags])
-            N_best = np.array([fit.best_values[N] for N in np.sort(N_tags)] )
-            b_best = np.array([fit.best_values[b] for b in np.sort(b_tags)]) 
+            N_best = np.array([fit.best_values[N] for N in N_tags] )
+            b_best = np.array([fit.best_values[b] for b in b_tags]) 
             btur_best = np.array([fit.best_values[bt] for bt \
-                                  in np.sort(btur_tags)])
+                                  in btur_tags])
 
             zerr_best = np.array([fit.params[z].stderr for z in z_tags])
             Nerr_best = np.array([fit.params[N].stderr for N \
@@ -925,12 +950,13 @@ class System(Line):
             else:
                 # Probably obsolete
                 sel = range(np.sum(self._group[1]))
-
             self._z_fit = u.Quantity(z_sort[sel])
             self._N_fit = N_sort[sel] / u.cm**2
             self._b_fit = b_sort[sel] * u.km/u.s
             self._btur_fit = btur_sort[sel] * u.km/u.s
 
+            print("fit_prod")
+            print(self._z_fit, self._N_fit, self._b_fit, self._btur_fit)
             self._zerr_fit = u.Quantity(zerr_sort[sel])
             self._Nerr_fit = Nerr_sort[sel] / u.cm**2
             self._berr_fit = berr_sort[sel] * u.km/u.s
@@ -962,19 +988,24 @@ class System(Line):
                     self._t['DB'][self._group[1]] = self._berr_fit 
                     self._t['DBTUR'][self._group[1]] = self._bturerr_fit
            
+            model = Model(self._spec, syst=self, group=self._group, chunk=self._chunk)
+            voigt = model.voigt(self._z_fit, self._N_fit, self._b_fit,
+                                self._btur_fit, self._flat.ion)
+            self._fit.y[where] = voigt[0].eval(
+                voigt[1], x=self._fit.x[where].value) * cont
         else:
             raise Exception("Only Voigt profile is supported.")
 
         self._redchi = fit.redchi
         self._aic = fit.aic    
         
-    def fit_wrap(self, x, vary=False, mode=None):
+    def fit_wrap(self, x, vary=False, mode=None, **kwargs):
         """ Model a group of lines an fit them """
         
         group = self.group(x)
         chunk = self.chunk(x)
 
-        self.fit_prep(mode=mode, vary=vary)
+        self.fit_prep(mode=mode, vary=vary, **kwargs)
 
         # Create a model
         guess = self.model()
@@ -1010,6 +1041,7 @@ class System(Line):
                 # Tuples
                 for i in range(len(r['Y'])):
                     if (first == True):
+                        #print(r['ION'][i])
                         self._flat = System(x=[r['X']], y=[r['Y'][i]],
                                             xmin=[r['XMIN']], xmax=[r['XMAX']],
                                             dy=[r['DY'][i]], ion=[r['ION'][i]],
@@ -1049,7 +1081,6 @@ class System(Line):
             groups = np.append([0], np.cumsum(self._t['XMAX'][:-1] <
                                               self._t['XMIN'][1:])) 
             sel = np.array([groups[l] == groups[line] for l in iter])
-            
             # This part is needed to add interlopers to the group
             xmin = float('inf') 
             xmax = 0
@@ -1060,6 +1091,7 @@ class System(Line):
                     try:
                         # Tuples
                         for i in range(len(r['Y'])):
+                            #print(r['ION'][i])
                             xmin = min(xmin,
                                        (1 + r['XMIN']) * dict_wave[r['ION'][i]])
                             xmax = max(xmax,
@@ -1189,7 +1221,8 @@ class System(Line):
              mode='simple', block=True, **kwargs):
         if (ion == []):
             ion = np.unique(self._flat.ion)
-        ion = ion[ion != 'neb'] 
+        ion = ion[ion != 'neb']
+
         n = len(ion)
         try:
             z = self._linez_fit
@@ -1237,9 +1270,12 @@ class System(Line):
                     spec = dc(self._spec)
                 """
                 spec = dc(self._spec)
-                line = dc(self._line)
                 spec.to_z([ion[p]])
-                line.to_z([ion[p]])
+                if self._line != None:
+                    line = dc(self._line)
+                    line.to_z([ion[p]])
+                else:
+                    line = self
                 ax.plot(spec.x, spec.y, c='black', lw=1.0)
                 #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
                 #ax.plot(spec.x, -spec.dy, c='r', lw=1.0)
@@ -1294,7 +1330,7 @@ class System(Line):
                         ax.plot(rem.x[chunk_sum], rem.y[chunk_sum], c='b',
                                 lw=1.0)
                     """
-                ax.scatter(line.x, line.y, c='b')
+                #ax.scatter(line.x, line.y, c='b')
                 for comp in z:
                     ax.axvline(x=comp, ymin=0.65, ymax=0.85, color='black')
                 if (len(x_neb) > 0):
@@ -1307,7 +1343,8 @@ class System(Line):
                     ax.set_xlabel("Redshift")
                 ax.set_xlim(zmin, zmax)
                 ax.set_ylim(np.min(spec.y[chunk_sum].value),
-                            np.max(spec.y[chunk_sum].value))
+                            np.max([np.max(cont.y[chunk_sum].value),
+                                    np.max(spec.y[chunk_sum].value)]))
                 ax.text(0.5, 0.92, ion[p], horizontalalignment="center",
                         verticalalignment="center", transform=ax.transAxes,
                         fontsize=12)
@@ -1517,7 +1554,6 @@ class System(Line):
             b = np.full(len(self.x[self._group[1]]), voigt_def['b']) * u.km / u.s
             btur = np.full(len(self.x[self._group[1]]), voigt_def['btur']) \
                    * u.km / u.s
-
         else:
             for val in N:
                 if (val == voigt_def['N']):
@@ -1527,6 +1563,8 @@ class System(Line):
             self._voigt = dc(self._spec)
 
         ion = np.unique(self._flat.ion)
+        print("voigt")
+        print(z, N, b, btur)
         voigt = model.voigt(z, N, b, btur, ion)
         """
         for c in range(1, len(chunk)):
@@ -1535,6 +1573,8 @@ class System(Line):
             else: 
                 chunk_sum += chunk[c]
         """
+        #print("voigt")
+        #voigt[1].pretty_print()
         self._voigt.y[self._chunk_sum] = voigt[0].eval(voigt[1], 
             x=self._voigt.x[self._chunk_sum].value) * self._voigt.y.unit
         if (hasattr(self, '_norm')):
@@ -1543,7 +1583,7 @@ class System(Line):
         else:
             self._voigt.y[self._chunk_sum] = self._voigt.y[self._chunk_sum] \
                                        * self._unabs.y[self._chunk_sum].value    
-
+            
         self._z_arr = dc(model._z)
         self._N_arr = dc(model._N)
         self._b_arr = dc(model._b)

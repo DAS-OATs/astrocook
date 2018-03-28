@@ -1,5 +1,6 @@
 import numpy as np
 from math import factorial
+import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.constants import c
 from scipy.signal import fftconvolve
@@ -10,9 +11,10 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
             'CIV_1550': [155.0781, 0.09475, 2.628e8]} 
 
 # Doublets
-dict_doubl = {'Ly': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7',
-                     'Ly_8', 'Ly_9', 'Ly_10', 'Ly_11', 'Ly_12', 'Ly_13',
-                     'Ly_14', 'Ly_15'],
+dict_doubl = {#'Ly': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7',
+              #       'Ly_8', 'Ly_9', 'Ly10', 'Ly11', 'Ly12', 'Ly13', 'Ly14',
+              #       'Ly15'],
+              'Ly': ['Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7'],
               'CIV': ['CIV_1548', 'CIV_1550'],
               'MgII': ['MgII_2796', 'MgII_2803']}
 
@@ -27,12 +29,12 @@ dict_wave = {'Ly_a': 121.567 * u.nm,
              'Ly_7': 92.6225600 * u.nm,
              'Ly_8': 92.3150300 * u.nm,
              'Ly_9': 92.0963000 * u.nm,
-             'Ly_10': 91.9351300 * u.nm,
-             'Ly_11': 91.8129300 * u.nm,
-             'Ly_12': 91.7180500 * u.nm,
-             'Ly_13': 91.6429100 * u.nm,
-             'Ly_14': 91.5823800 * u.nm,
-             'Ly_15': 91.5328900 * u.nm,
+             'Ly10': 91.9351300 * u.nm,
+             'Ly11': 91.8129300 * u.nm,
+             'Ly12': 91.7180500 * u.nm,
+             'Ly13': 91.6429100 * u.nm,
+             'Ly14': 91.5823800 * u.nm,
+             'Ly15': 91.5328900 * u.nm,
              'Ly_lim': 91.18 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
              'CIV_1550': 155.0781 * u.nm,
@@ -50,12 +52,12 @@ dict_f = {'Ly_a': 0.416,
           'Ly_7': 0.0031850,
           'Ly_8': 0.0022170,
           'Ly_9': 0.0016060,
-          'Ly_10': 0.0012010,
-          'Ly_11': 0.0009219,
-          'Ly_12': 0.0007231,
-          'Ly_13': 0.0005777,
-          'Ly_14': 0.0004689,
-          'Ly_15': 0.0003858,
+          'Ly10': 0.0012010,
+          'Ly11': 0.0009219,
+          'Ly12': 0.0007231,
+          'Ly13': 0.0005777,
+          'Ly14': 0.0004689,
+          'Ly15': 0.0003858,
           'CIV_1548': 0.1899,
           'CIV_1550': 0.09475,
           'MgII_2796': 0.6155,
@@ -72,12 +74,12 @@ dict_gamma = {'Ly_a': 6.265e8,
               'Ly_7': 8.2550e+06,
               'Ly_8': 5.7850e+06,
               'Ly_9': 4.2100e+06,
-              'Ly_10': 3.1600e+06,
-              'Ly_11': 2.4320e+06,
-              'Ly_12': 1.9110e+06,
-              'Ly_13': 1.5290e+06,
-              'Ly_14': 1.2430e+06,
-              'Ly_15': 1.0240e+06,
+              'Ly10': 3.1600e+06,
+              'Ly11': 2.4320e+06,
+              'Ly12': 1.9110e+06,
+              'Ly13': 1.5290e+06,
+              'Ly14': 1.2430e+06,
+              'Ly15': 1.0240e+06,
               'CIV_1548': 2.643e8,
               'CIV_1550': 2.628e8,
               'MgII_2796': 2.625e8,
@@ -86,7 +88,7 @@ dict_gamma = {'Ly_a': 6.265e8,
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4
-voigt_def = {'N': 1e14, 'b': 5.0, 'btur': 0.0}
+voigt_def = {'N': 1e13, 'b': 5.0, 'btur': 0.0}
 voigt_min = {'N': 1e10, 'b': 1.0, 'btur': 0.0}
 voigt_max = {'N': 1e20, 'b': 100.0, 'btur': 100.0}
 
@@ -105,12 +107,25 @@ def convolve(arr, ker):
             pad  = np.ones(npts)
             tmp  = np.concatenate((pad*arr[0], arr, pad*arr[-1]))
             out  = np.convolve(tmp, ker, mode='valid')
+            #out  = np.convolve(tmp, ker, mode='same')
             if (npts % 2 == 0):
-                noff = int((len(out) - npts)/2)
+                noff = int(np.floor((len(out) - npts)/2)) 
             else:
-                noff = int((len(out) - npts)/2)       
-            ret[where] = out[noff:noff+npts] / np.sum(ker)
+                noff = int(np.floor((len(out) - npts)/2))
+            ret[where] = (out[noff:])[:npts] / np.sum(ker)
+            #ret[where] = (out[npts:])[:npts] / np.sum(ker)
 
+            """
+            ran = range(len(out))
+            plt.plot(ran, tmp)
+            plt.plot(ran, out/np.sum(ker))
+            plt.plot((ran[npts:])[:npts], ret)
+            plt.show()
+            """
+        else:
+            print("ker empty")
+    else:
+        print("where empty")
     return ret
 
 def convolve2(arr, ker_mat):

@@ -60,6 +60,46 @@ def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
     return model
 
 
+def voigt_params(syst, **kwargs):
+    """ Read voigt parameters, provided as kwargs, and format them as arrays
+    of the same length of the system to be fitted """
+
+    try:
+        z = kwargs['z']
+        try:
+            z_arr = [z.value] * len(syst.t) * z.unit
+        except:
+            z_arr = [z] * len(syst.t) * u.nm/u.nm            
+    except:
+        z_arr = []
+    try:
+        N = kwargs['N']
+        try:
+            N_arr = [N.value] * len(syst.t) * N.unit
+        except:
+            N_arr = [N] * len(syst.t) / u.cm**2            
+    except:
+        N_arr = []
+    try:
+        b = kwargs['b']
+        try:
+            b_arr = [b.value] * len(syst.t) * b.unit
+        except:
+            b_arr = [b] * len(syst.t) * u.km/u.s            
+    except:
+        b_arr = []
+    try:
+        btur = kwargs['btur']
+        try:
+            btur_arr = [btur.value] * len(syst.t) * btur.unit
+        except:
+            btur_arr = [btur] * len(syst.t) * u.km/u.s            
+    except:
+        btur_arr = []
+
+    ret = {'z': z_arr, 'N': N_arr, 'b': b_arr, 'btur': btur_arr}
+    return ret
+
 class Model():
 
     def __init__(self,
@@ -198,7 +238,7 @@ class Model():
                 btur = kwargs['btur'] 
             except:
                 btur = voigt_def['btur'] * u.km/u.s
-
+                
             max_size = 0
             max_size = np.size(z) if np.size(z) > max_size else max_size
             max_size = np.size(N) if np.size(N) > max_size else max_size
@@ -220,9 +260,10 @@ class Model():
                     N = N * 0.0
                 else:
                     ion_prof = np.array(ion)[ion_mask]
-            temp._prof_guess = self.voigt(z, N, b, btur, ion_prof)    
-            voigt = temp.model(psf=False)
 
+            temp._prof_guess = self.voigt(z, N, b, btur, ion=ion_prof)    
+            voigt = temp.model(psf=False)
+            
             x = np.array([])
             for p in range(len(ion)):
                 wave_min = dict_wave[ion[p]] * (1 + z[0]) - width
@@ -231,7 +272,6 @@ class Model():
                 x = np.append(x, np.arange(wave_min.value, wave_max.value,
                                            wave_step.value))
             y = voigt[0].eval(voigt[1], x=x)
-            
             ret = Spec1D(x, y, xunit=temp.x.unit, yunit=temp.y.unit)
         else:
             raise Exception("Only Voigt profile is supported.")
@@ -297,6 +337,7 @@ class Model():
         if (len(x) % 2 == 0):
             x = x[:-1]
         resol = self._spec.t['RESOL'][int((len(x)-1)*0.5)]
+        resol = 20000000
         center = np.median(x.value)
         sigma = center / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
@@ -386,7 +427,8 @@ class Model():
 
         return ret
 
-    def voigt(self, z, N, b, btur, ion=['Ly_a']):
+    def voigt(self, z, N, b, btur, z_vary=True, N_vary=True, b_vary=True,
+              btur_vary=False, ion=['Ly_a']):
         """ Create a Voigt model for a line """
 
         self._z = dc(z)
@@ -445,11 +487,11 @@ class Model():
                     param.update(model_l.make_params())
                 N_min = 0 if N[l].value == 0 else voigt_min['N']
                 param[pref+'z'].set(z[l].value, min=z[l].value/z_fact,
-                                    max=z[l].value*z_fact)#, expr=str(z_expr))
+                                    max=z[l].value*z_fact)#, vary=z_vary)#, expr=str(z_expr))
                 param[pref+'N'].set(N[l].value, min=N_min, #min=voigt_min['N'],
-                                    max=voigt_max['N'])#, expr=N_expr)
+                                    max=voigt_max['N'])#, vary=N_vary)#, expr=N_expr)
                 param[pref+'b'].set(b[l].value, min=voigt_min['b'],
-                                    max=voigt_max['b'])#, expr=b_expr)
+                                    max=voigt_max['b'])#, vary=b_vary)#, expr=b_expr)
                 param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
                                        max=voigt_max['btur'], vary=False)
                 #, expr=btur_expr)

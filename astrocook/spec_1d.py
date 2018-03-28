@@ -1,5 +1,5 @@
 from . import List
-from .utils import convolve, dict_doubl, dict_wave, dict_f, many_gauss, redchi_f, savitzky_golay
+from .utils import convolve, convolve2, dict_doubl, dict_wave, dict_f, many_gauss, redchi_f, savitzky_golay
 from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
@@ -420,14 +420,14 @@ class Spec1D():
         """ Extract a region of a spectrum """
 
         self._orig = dc(self)
-        if (prox != (zem == [])):
-            raise Exception("Forest name and emission redshift must be "
-                            "provided together.")
+        #if (prox != (zem == [])):
+        #    raise Exception("Forest name and emission redshift must be "
+        #                    "provided together.")
         if ((forest == []) != (zem == [])):
             raise Exception("Forest name and emission redshift must be "
                             "provided together.")
-        if ((forest != []) == prox):
-            raise Exception("Please choose either forest or proximity.")
+        #if ((forest != []) == prox):
+        #    raise Exception("Please choose either forest or proximity.")
 
         reg = dc(self)
         if (prox == False):
@@ -755,7 +755,7 @@ class Spec1D():
             minima_redchi = np.append(minima_redchi,
                                       np.interp(minima.x, self.x, redchi[:, 0]))
 
-            print(minima_x, minima_redchi)
+            #print(minima_x, minima_redchi)
             
             if (verbose == True):
                 print("%i new matches found, %i in total." \
@@ -1099,7 +1099,6 @@ class Spec1D():
             raise Exception("Ion list and table must have the same length.")
         ion = np.asarray(ion)
         ion_ravel = np.ravel(ion, 'F')
-        #print(ion_ravel)
         ion_wave = np.asarray([dict_wave[i].value for i in ion_ravel]) \
                    * dict_wave['Ly_a'].unit
         x = np.resize(self.x.value, ion_ravel.shape) * self.x.unit
