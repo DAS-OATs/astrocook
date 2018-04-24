@@ -16,6 +16,43 @@ class Spec1DReader:
         """Source providing the spectrum."""
         return self._source
     
+    def ac(self, filename):
+        """Read a spectrum from an astrocook FITS file"""
+
+        hdulist = fits.open(filename)
+        data = hdulist[1].data
+        meta = {}
+        for (key, val) in hdulist[0].header.items():
+            meta[key] = val
+            
+            
+        names = np.array(hdulist[1].columns.names)
+        units = np.array(hdulist[1].columns.units)
+        x_unit = units[np.where(names == 'X')][0]
+        y_unit = units[np.where(names == 'Y')][0]
+        #print(np.where(names == 'X'), np.where(names == 'X'))
+        #print(x_unit, y_unit)
+        xmin = data['XMIN']
+        xmax = data['XMAX']
+        x = data['X']
+        y = data['Y']            
+        dy = data['DY']
+        group = data['GROUP']
+        resol = data['RESOL']
+
+        dx = 0.5 * (xmax - xmin)
+        
+        c1 = np.argwhere(y > 0)
+        c2 = np.argwhere(dy > 0)
+        igood = np.intersect1d(c1, c2)
+
+        good = np.repeat(-1, len(x))
+        good[igood] = 1
+
+        gen = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+                     yunit=y_unit, group=good, resol=resol, meta=meta)
+        return gen
+    
     def cont(self, filename):
         """Read a spectrum with continuum from an astrocook FITS file"""
 
@@ -339,7 +376,10 @@ class Spec1DReader:
         except:
             resol_arr = data.field('resol')            
         resol_name = 'resol'
-        
+
+
+        resol_arr[resol_arr==5100] = 5500
+        resol_arr[resol_arr==8800] = 8900
 
         c1 = np.argwhere(hdulist[1].data[y_name] > 0)
         c2 = np.argwhere(hdulist[1].data[dy_name] > 0)

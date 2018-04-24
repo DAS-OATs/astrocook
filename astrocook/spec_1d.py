@@ -7,6 +7,8 @@ from astropy.table import Column, Table
 import copy
 from copy import deepcopy as dc
 from lmfit import CompositeModel as lmc
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
+    NavigationToolbar2TkAgg
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +19,7 @@ from specutils import extinction
 #import statsmodels.api as sm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import time
+#import tkinter as tk
 
 class Spec1D():
     """Class for generic spectra
@@ -404,6 +407,8 @@ class Spec1D():
             par = np.stack([[np.median(conv.x.value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
             prof = many_gauss(conv.x.value, *par)
+            if (len(prof) % 2 == 0):
+                prof = prof[:-1]
             prof = prof / np.sum(prof)
         conv.y = fftconvolve(conv_col, prof, mode=mode)
         if convert == True:
@@ -601,17 +606,20 @@ class Spec1D():
         self._guess = (model, param)
         return self._guess
 
-    def plot(self, figsize=(10,4), block=True, **kwargs):
+    def plot(self, ax=None):
         spec = self
-        fig = plt.figure(figsize=figsize)
-        fig.canvas.set_window_title("Spectrum")
-        grid = gs(1, 1)
-        ax = fig.add_subplot(grid[:, :])
-        grid.tight_layout(fig, rect=[0.02, 0.02, 1, 0.97])
+        if ax == None:
+            fig = plt.figure(figsize=(10,4))
+            fig.canvas.set_window_title("Spectrum")
+            grid = gs(1, 1)
+            ax = fig.add_subplot(grid[:, :])
+        #ax_z = ax.twiny()
         ax.set_xlabel("Wavelength [" + str(spec.x.unit) + "]")
         ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
-        ax.plot(spec.x, spec.y, c='black', lw=1.0)
-        ax.plot(spec.x, spec.dy, c='r', lw=1.0)
+        #ax_z.set_xlabel("Lyman-alpha redshift")
+        ax.plot(spec.x, spec.y, lw=1.0)
+        #ax_z.plot(spec.x/dict_wave['Ly_a']-1, spec.y, lw=1.0)
+        #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
         if (hasattr(self, '_cont')):
             where = np.where(self.y != self._cont.y)
             #print(self.y, self._cont.y)
@@ -622,7 +630,10 @@ class Spec1D():
         #if block is False:
         #    plt.ion()
         #    plt.draw()
-        if block is True:
+        #fig.tight_layout()
+        if ax == None:
+            grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
+            grid.update(wspace=0.2, hspace=0.0)
             plt.show()
 
     def prof_auto2(self, model, ion, logN_range=[12.0], b_range=[8] * u.km/u.s,
@@ -636,9 +647,10 @@ class Spec1D():
             N = np.power(10, logN) / u.cm**2
             prof = model.prof_mult(self, ion, b=b, N=N)
             redchi = np.zeros((len(self.x), len(prof)))
-            if (verbose == True):
-                print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
-                      end=" ", flush=True)
+            # Not working with Python 2.7
+            #if (verbose == True):
+                #print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
+                #      end=" ", flush=True)
             for p in range(len(prof)):
                 if (p == 0):
                     redchi[:, p] = self.prof_scan_new(prof[p], ion,
@@ -720,9 +732,10 @@ class Spec1D():
             prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
             #print(prof.x)
             redchi = np.zeros((len(self.x), len(prof)))
-            if (verbose == True):
-                print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
-                      end=" ", flush=True)
+            # Not working with Python 2.7
+            #if (verbose == True):
+            #    print("LogN = %.2f, b = %.2f km/s: scanning" % (logN, b.value),
+            #          end=" ", flush=True)
 
             for p in range(len(prof)):
                 if (p == 0):
@@ -849,10 +862,11 @@ class Spec1D():
 
         self._redchi = np.zeros(len(self.x))
         for i in range(len(self.x)):
-            if ((i == 999) and (verbose==True)): 
-                print("Scanning (foreseen running time: %.0f s)..." \
-                      % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
-                      flush=True)
+            # Not working with Python 2.7
+            #if ((i == 999) and (verbose==True)): 
+            #    print("Scanning (foreseen running time: %.0f s)..." \
+            #          % ((time.time() - start) * len(self.x) * 1e-3), end=" ",
+            #          flush=True)
             for prof_i in prof:
                 mod_x = prof_i.x * (1 + spec_temp.x[i])
                 xmin = np.min(mod_x).value
@@ -935,10 +949,11 @@ class Spec1D():
         
         for i in range(len(self.x)):
         #for i in range(999):
-            if ((i == 999) and (verbose==True)): 
-                print("(foreseen running time: %.0f s)..." \
-                      % ((time.time() - start) * len(self.x) * (len(ion) + 2) \
-                         * 1e-3), end=" ", flush=True)
+            # Not working with Python 2.7
+            #if ((i == 999) and (verbose==True)): 
+            #    print("(foreseen running time: %.0f s)..." \
+            #          % ((time.time() - start) * len(self.x) * (len(ion) + 2) \
+            #             * 1e-3), end=" ", flush=True)
             mod_x = prof.x * (1 + spec_temp.x[i])
 
 
@@ -1057,11 +1072,16 @@ class Spec1D():
         
     def save(self, filename):
         hdu = fits.BinTableHDU.from_columns(
-            [fits.Column(name='XMIN', format='E', array=self.xmin),
-             fits.Column(name='XMAX', format='E', array=self.xmax),
-             fits.Column(name='X', format='E', array=self.x),
-             fits.Column(name='Y', format='E', array=self.y),
-             fits.Column(name='DY', format='E', array=self.dy),
+            [fits.Column(name='XMIN', format='E', array=self.xmin,
+                         unit=self.xmin.unit.name),
+             fits.Column(name='XMAX', format='E', array=self.xmax,
+                         unit=self.xmax.unit.name),
+             fits.Column(name='X', format='E', array=self.x,
+                         unit=self.x.unit.name),
+             fits.Column(name='Y', format='E', array=self.y,
+                         unit=self.y.unit.to_string()),
+             fits.Column(name='DY', format='E', array=self.dy,
+                         unit=self.dy.unit.to_string()),
              fits.Column(name='GROUP', format='I', array=self.group),
              fits.Column(name='RESOL', format='E', array=self.resol)])
         hdu.writeto(filename, overwrite=True)

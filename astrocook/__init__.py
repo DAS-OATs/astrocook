@@ -10,3 +10,4 @@ from .syst import Syst
 from .system import System
 #from .abs import Abs
 from .voigt import Voigt
+from .app import MainFrame

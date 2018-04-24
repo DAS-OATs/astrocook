@@ -238,11 +238,12 @@ class Spec1DCont(Spec1D):
 
             groups = np.unique(list.t['GROUP'])
             #groups = np.array([2])
-            
-            end=""
-            end="\n   "
-            print("  %i line groups (v = Voigt fit, X = failure): " \
-                  % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
+
+            # Not working with Python 2.7
+            #end=""
+            #end="\n   "
+            #print("  %i line groups (v = Voigt fit, X = failure): " \
+            #      % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
             fail = 0
             for group in groups:
 
@@ -384,12 +385,13 @@ class Spec1DCont(Spec1D):
                         #min_voigt = np.append(min_voigt, min_add)
                         #max_voigt = np.append(max_voigt, max_add)
                         """
-                    if end == "":
-                        print("v ", end=end, flush=True)
-                    else:
-                        print("[%f-%f]: v (%f) " 
-                              % (xmin.value, xmax.value, rchisq), 
-                              end=end, flush=True)
+                    # Not working with Python 2.7
+                    #if end == "":
+                    #    print("v ", end=end, flush=True)
+                    #else:
+                    #    print("[%f-%f]: v (%f) " 
+                    #          % (xmin.value, xmax.value, rchisq), 
+                    #          end=end, flush=True)
 
                 #"""
                 except (RuntimeError, Exception):
@@ -398,11 +400,12 @@ class Spec1DCont(Spec1D):
                     y_fit[where_spec] = group_spec_col                           
                     y_rem[where_spec] = cont * self_col.unit                           
                     fail = fail + 1
-                    if end == "":
-                        print("X ", end=end, flush=True)
-                    else:
-                        print("[%f-%f]:  X" % (xmin.value, xmax.value), 
-                              end=end, flush=True)
+                    # Not working with Python 2.7
+                    #if end == "":
+                    #    print("X ", end=end, flush=True)
+                    #else:
+                    #    print("[%f-%f]:  X" % (xmin.value, xmax.value), 
+                    #          end=end, flush=True)
                 finally:
                     signal.alarm(0)
                 #"""
@@ -470,12 +473,13 @@ class Spec1DCont(Spec1D):
 
             groups = np.unique(list.t['GROUP'])
             #groups = [0]
-            
-            end=""
+
+            # Not working with Python 2.7
+            #end=""
             #end="\n   "
-            print("  %i line groups (sg = Savitzky-Golay fit, " \
-                  "X = failure): " \
-                  % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
+            #print("  %i line groups (sg = Savitzky-Golay fit, " \
+            #      "X = failure): " \
+            #      % (len(np.unique(list.t['GROUP']))), end=end, flush=True)
 
             # Loop over groups
             fail = 0
@@ -521,11 +525,12 @@ class Spec1DCont(Spec1D):
                                         - prof * self_col.unit                              
                     y_rem[where_spec] = group_spec_col \
                                         + prof * self_col.unit  
-                    if end == "":
-                        print("sg ", end=end, flush=True)
-                    else:
-                        print("[%f-%f]: sg " % (xmin.value, xmax.value), 
-                              end=end, flush=True)
+                    # Not working with Python 2.7
+                    #if end == "":
+                    #    print("sg ", end=end, flush=True)
+                    #else:
+                    #    print("[%f-%f]: sg " % (xmin.value, xmax.value), 
+                    #          end=end, flush=True)
 
                 except:
                     
@@ -534,11 +539,12 @@ class Spec1DCont(Spec1D):
                     y_rem[where_spec] = cont * self_col.unit                           
 
                     fail = fail + 1
-                    if end == "":
-                        print("X ", end=end, flush=True)
-                    else:
-                        print("[%f-%f]:  X" % (xmin.value, xmax.value), 
-                              end=end, flush=True)
+                    # Not working with Python 2.7
+                    #if end == "":
+                    #    print("X ", end=end, flush=True)
+                    #else:
+                    #    print("[%f-%f]:  X" % (xmin.value, xmax.value), 
+                    #          end=end, flush=True)
                     
                 finally:
                     signal.alarm(0)

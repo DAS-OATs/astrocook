@@ -3,6 +3,7 @@ from .utils import convolve, dict_wave, savitzky_golay, voigt_def
 from astropy.table import Column, Table
 from astropy.stats import sigma_clip
 from astropy import units as u
+from astropy.io import fits
 from copy import deepcopy as dc
 import inspect
 from lmfit import CompositeModel as lmc
@@ -60,13 +61,15 @@ class Line(Spec1D):
         self._spec = None
         if (spec is not None):
             self._spec = dc(spec)
-            if (hasattr(spec, '_cont')):
+            if (hasattr(spec, '_precont')):
                 self._precont = dc(spec._precont)
+            if (hasattr(spec, '_cont')):
                 self._cont = dc(spec._cont)            
                 
         # Line list
         data = ()
-        if (x != []):
+        #if (x != []):
+        if (np.size(x)>0):
             col_x = Column(np.asarray(dc(x), dtype=dtype), name='X')
             col_y = Column(np.asarray(dc(y), dtype=dtype), name='Y')
             data = (col_x, col_y)
@@ -80,11 +83,13 @@ class Line(Spec1D):
                     yunit = y.unit
                 except:
                     raise Exception("Y unit not provided.")
-        if (xmin != []):
+        #if (xmin != []):
+        if (np.size(xmin) > 0):
             col_xmin = Column(np.asarray(dc(xmin), dtype=dtype), name='XMIN')
             col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
             data += (col_xmin, col_xmax)
-        if (dy != []):
+        #if (dy != []):
+        if (np.size(dy) > 0):
             col_dy = Column(np.asarray(dc(dy), dtype=dtype), name='DY')
             data += (col_dy,)
 
@@ -97,7 +102,7 @@ class Line(Spec1D):
             resol = np.zeros(len(x))
         col_resol = Column(np.asarray(dc(resol), dtype=dtype), name='RESOL')
         data += (col_resol,)
-
+        
         if data is ():
             data = None
             
@@ -516,6 +521,28 @@ class Line(Spec1D):
 
         return norm 
     """
+    def plot_new(self, ax=None):
+        spec = self._spec
+        line = self
+        if ax == None:
+            fig = plt.figure(figsize=(10,4))
+            fig.canvas.set_window_title("Lines")
+            grid = gs(1, 1)
+            ax = fig.add_subplot(grid[:, :])
+            ax.plot(spec.x, spec.y, lw=1.0)
+        ax.scatter(line.x, line.y, c='r', marker='+', s=100)
+        ax.set_xlabel("Wavelength [" + str(line.x.unit) + "]")
+        ax.set_ylabel("Flux [" + str(line.y.unit) + "]")
+        try:
+            ax.plot(spec.x, line._conv.y, linestyle=':')
+        except:
+            pass
+
+        if ax == None:
+            grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
+            grid.update(wspace=0.2, hspace=0.0)
+            plt.show()
+
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
         spec = self._spec
@@ -669,3 +696,17 @@ class Line(Spec1D):
 
         return voigt
     """
+    def save(self, filename):
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='X', format='E', array=self.x,
+                         unit=self.x.unit.name),
+             fits.Column(name='XMIN', format='E', array=self.xmin,
+                         unit=self.xmin.unit.name),
+             fits.Column(name='XMAX', format='E', array=self.xmax,
+                         unit=self.xmax.unit.name),
+             fits.Column(name='Y', format='E', array=self.y,
+                         unit=self.y.unit.to_string()),
+             fits.Column(name='DY', format='E', array=self.dy,
+                         unit=self.dy.unit.to_string())])
+        hdu.writeto(filename, overwrite=True)
+

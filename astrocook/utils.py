@@ -1,10 +1,27 @@
+from copy import deepcopy as dc
 import numpy as np
-from math import factorial
+from numpy.core.umath_tests import inner1d
+from math import fabs, factorial
 import matplotlib.pyplot as plt
 from astropy import units as u
 from astropy.constants import c
 from scipy.signal import fftconvolve
 from scipy.special import wofz
+
+
+
+# Default units for spectra
+xunit_def = u.nm
+yunit_def = u.erg / (u.Angstrom * u.cm**2 * u.s)
+zunit_def = u.nm / u.nm
+Nunit_def = 1 / u.cm**2
+bunit_def = u.km / u.s
+
+# Default values for Voigt parameters
+z_def = 0.0
+N_def = 1e14
+b_def = 10.0
+btur_def = 0.0
 
 ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
             'CIV_1548': [154.8204, 0.1899, 2.643e8],
@@ -14,9 +31,13 @@ ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],
 dict_doubl = {#'Ly': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7',
               #       'Ly_8', 'Ly_9', 'Ly10', 'Ly11', 'Ly12', 'Ly13', 'Ly14',
               #       'Ly15'],
-              'Ly': ['Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7'],
               'CIV': ['CIV_1548', 'CIV_1550'],
               'MgII': ['MgII_2796', 'MgII_2803']}
+dict_series = {'Ly': [['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
+                       'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
+                       'Ly_b', 'Ly_a']],
+               'CIV': ['CIV_1548', 'CIV_1550'],
+               'MgII': ['MgII_2796', 'MgII_2803']}
 
 # Ionic wavelengths
 # All wavelength must have the same unit!
@@ -29,18 +50,19 @@ dict_wave = {'Ly_a': 121.567 * u.nm,
              'Ly_7': 92.6225600 * u.nm,
              'Ly_8': 92.3150300 * u.nm,
              'Ly_9': 92.0963000 * u.nm,
-             'Ly10': 91.9351300 * u.nm,
-             'Ly11': 91.8129300 * u.nm,
-             'Ly12': 91.7180500 * u.nm,
-             'Ly13': 91.6429100 * u.nm,
-             'Ly14': 91.5823800 * u.nm,
-             'Ly15': 91.5328900 * u.nm,
+             'Ly_10': 91.9351300 * u.nm,
+             'Ly_11': 91.8129300 * u.nm,
+             'Ly_12': 91.7180500 * u.nm,
+             'Ly_13': 91.6429100 * u.nm,
+             'Ly_14': 91.5823800 * u.nm,
+             'Ly_15': 91.5328900 * u.nm,
              'Ly_lim': 91.18 * u.nm,
              'CIV_1548': 154.8204 * u.nm,
              'CIV_1550': 155.0781 * u.nm,
              'MgII_2796': 279.63543 * u.nm,
              'MgII_2803': 280.35315 * u.nm,
-             'neb': 10.0 * u.nm}
+             'neb': 10.0 * u.nm,
+             'unknown': 10.0 * u.nm}
 
 # Ionic oscillator strengths
 dict_f = {'Ly_a': 0.416,
@@ -52,17 +74,18 @@ dict_f = {'Ly_a': 0.416,
           'Ly_7': 0.0031850,
           'Ly_8': 0.0022170,
           'Ly_9': 0.0016060,
-          'Ly10': 0.0012010,
-          'Ly11': 0.0009219,
-          'Ly12': 0.0007231,
-          'Ly13': 0.0005777,
-          'Ly14': 0.0004689,
-          'Ly15': 0.0003858,
+          'Ly_10': 0.0012010,
+          'Ly_11': 0.0009219,
+          'Ly_12': 0.0007231,
+          'Ly_13': 0.0005777,
+          'Ly_14': 0.0004689,
+          'Ly_15': 0.0003858,
           'CIV_1548': 0.1899,
           'CIV_1550': 0.09475,
           'MgII_2796': 0.6155,
           'MgII_2803': 0.3058,
-          'neb': 0.1} 
+          'neb': 0.1,
+          'unknown': 0.1} 
 
 # Ionic damping lengths
 dict_gamma = {'Ly_a': 6.265e8,
@@ -74,17 +97,18 @@ dict_gamma = {'Ly_a': 6.265e8,
               'Ly_7': 8.2550e+06,
               'Ly_8': 5.7850e+06,
               'Ly_9': 4.2100e+06,
-              'Ly10': 3.1600e+06,
-              'Ly11': 2.4320e+06,
-              'Ly12': 1.9110e+06,
-              'Ly13': 1.5290e+06,
-              'Ly14': 1.2430e+06,
-              'Ly15': 1.0240e+06,
+              'Ly_10': 3.1600e+06,
+              'Ly_11': 2.4320e+06,
+              'Ly_12': 1.9110e+06,
+              'Ly_13': 1.5290e+06,
+              'Ly_14': 1.2430e+06,
+              'Ly_15': 1.0240e+06,
               'CIV_1548': 2.643e8,
               'CIV_1550': 2.628e8,
               'MgII_2796': 2.625e8,
               'MgII_2803': 2.595e8,
-              'neb': 5e8} 
+              'neb': 5e8,
+              'unknown': 5e8} 
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4
@@ -137,8 +161,69 @@ def convolve2(arr, ker_mat):
         conv = convolve(arr, ker_mat[:, c])
         ret[c] = conv[c]
     return ret
+    
+def convolve_best(dat, kernel):
+    """simple convolution of two arrays"""
+    npts = min(len(dat), len(kernel))
+    pad = np.ones(npts)
+    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    out = np.convolve(tmp, kernel, mode='same')
+    print(len(dat), len(out))
+    noff = int((len(out) - npts) / 2)
+    return (out[noff:])[:npts] / np.sum(kernel)    
 
-def many_gauss(x, *p, mode='abs', cont=1):
+def convolve_new2(data, kernel):
+    data = np.array(data)
+    kernel = np.array(kernel)
+    #"""
+    fsize = kernel.shape[1]
+    hsize = (fsize-1)//2
+    ret = dc(data)
+    
+    #for i in range(hsize, len(data)-hsize-1):
+    #    ret[i] = np.dot(data[i+hsize+1:i-hsize:-1], kernel[i-hsize])
+    data_mat = np.asarray([data[i+2*hsize+1:i:-1] for i in range(len(kernel))])
+    #print(data_mat)
+    #print(kernel)
+    #ret = np.array([np.dot(data_mat[i+hsize], kernel[i]) for i in range(len(kernel))])
+    ret = inner1d(data_mat, kernel)
+    ret = np.append(data[:hsize], np.append(ret, data[-hsize-1:]))
+
+    #return ret
+    #"""
+    #ret = fftconvolve(data, kernel[0], mode='same')
+    return ret
+
+def conv(data, kernel):
+    s = 0
+    l = 0
+    ret = np.array([])
+    for k in kernel:
+        s += l
+        l = len(k)
+        k_arr = k[np.where(k>0)]
+        k_arr = k_arr/np.sum(k_arr)
+        data_arr = data[s:s+l]
+        pad_l = len(k_arr)#*2
+        pad = np.ones(pad_l)
+        temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
+        conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
+        ret = np.append(ret, conv)
+    return ret
+
+def find_nearest(array,value):
+    # From https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+    
+    idx = np.searchsorted(array, value, side="left")
+    if idx > 0 and (idx == len(array) \
+                    or fabs(value - array[idx-1]) < fabs(value - array[idx])):
+        return idx-1, array[idx-1]
+    else:
+        return idx, array[idx]
+
+def many_gauss(x, *p):# Not working with Python 2.7, mode='abs', cont=1):
+    mode = 'abs'
+    cont = 1
     """Sum of gaussian profiles
     
     Adapted from: 
@@ -159,7 +244,10 @@ def many_gauss(x, *p, mode='abs', cont=1):
     
     return y
     
-def many_voigt(x, *p, constr_list=None, trans_list=None, transf='yes'):
+def many_voigt(x, *p):# Not working with Python 2.7, constr_list=None, trans_list=None, transf='yes'):
+    constr_list = None
+    trans_list = None
+    transf = 'yes'
 
     """
     Return the voigt line shape at x with Lorentzian component HWHM gamma

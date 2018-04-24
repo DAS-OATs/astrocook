@@ -8,6 +8,7 @@ from lmfit import Parameters as lmp
 from lmfit.lineshapes import gaussian
 import numpy as np
 from scipy.special import wofz
+import sys
 
 yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 
@@ -34,13 +35,13 @@ def norm_step_func(x, xmin, xmax, norm):
     ret[where] = norm
     return ret
 
-def psf_func(x):
-    resol = 45000
-    ret = np.ones([10, len(x)-10])
-    for i in range(len(x)-10):
-        ret[:,i] = np.exp( -((x[i:i+10]/x[i+5]-1.0) * resol/4.246609001e-1)**2)
+def psf_func(x, c_min, c_max, center, resol):
+    sigma = center / resol * 4.246609001e-1
+    psf = np.exp(-(0.5 * (x-center) / sigma)**2)
+    psf[np.where(psf < 1e-4)] = 0.0
+    ret = [np.array(psf)[c_min:c_max]]
     return ret
-
+    
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
     wave = dict_wave[ion].value * 1e-9
@@ -57,8 +58,8 @@ def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
         model = np.exp(-tau0.value * fadd_func(a, u)) #* yunit
     else:
         model = np.exp(-tau0.value * tab(a, u).flatten()) #* yunit
-    return model
-
+    ret = np.array(model)
+    return ret
 
 def voigt_params(syst, **kwargs):
     """ Read voigt parameters, provided as kwargs, and format them as arrays
@@ -214,6 +215,14 @@ class Model():
         ret = (model, param)
 
         return ret
+
+    def norm_new(self, level=1.0, vary=[True], expr=[None], pref='norm'):
+        """ Normalization of the continuum """
+        
+        self._norm_fun = lmm(norm_func, prefix=pref+'_')
+        self._norm_par = self._norm_fun.make_params()
+        self._norm_par[pref+'_norm'].set(level, vary=vary[0], expr=expr[0])
+        
             
     def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.2 * u.nm, #0.03*u.nm,
              prof='voigt', ion_mask=None, **kwargs):
@@ -277,7 +286,7 @@ class Model():
             raise Exception("Only Voigt profile is supported.")
         
         return ret
-
+    
     def prof_mult(self, spec, ion, plot=False, **kwargs):
         ion_mask = np.full(len(ion), False)
         prof = []
@@ -289,8 +298,8 @@ class Model():
             ion_mask_temp[f_sort[i]] = True
             #print(i, ion, ion_mask_temp)
             #ion_mask_temp[i] = True
-            prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask_temp))
-        prof.append(self.prof(spec, ion, **kwargs, ion_mask=ion_mask))        
+            prof.append(self.prof(spec, ion, ion_mask=ion_mask_temp, **kwargs))
+        prof.append(self.prof(spec, ion, ion_mask=ion_mask, **kwargs))        
 
         if (plot == True):
             for p in range(len(prof)):
@@ -337,7 +346,7 @@ class Model():
         if (len(x) % 2 == 0):
             x = x[:-1]
         resol = self._spec.t['RESOL'][int((len(x)-1)*0.5)]
-        resol = 20000000
+        #resol = 20000000
         center = np.median(x.value)
         sigma = center / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
@@ -349,6 +358,28 @@ class Model():
         #"""
         return ret
 
+    def psf_new(self, center=None, resol=None, vary=[False, False],
+                expr=[None, None], pref='psf'):
+        """ Instrumental PSF """
+
+        sigma = center / resol * 4.246609001e-1  # Convert FWHM into st. dev.
+        self._psf_fun = lmm(gaussian, prefix=pref+'_')
+        self._psf_par = self._psf_fun.make_params()
+        self._psf_par[pref+'_amplitude'].set(1.0, vary=False)
+        self._psf_par[pref+'_center'].set(center, vary=vary[0], expr=expr[0])
+        self._psf_par[pref+'_sigma'].set(sigma, vary=vary[1], expr=expr[1])
+        
+    def psf_new2(self, c_min, c_max, center, resol, vary=False, expr=None,
+                 pref='psf'):
+        self._psf_fun = lmm(psf_func, prefix=pref+'_')
+        self._psf_par = self._psf_fun.make_params()
+        self._psf_par[pref+'_c_min'].set(c_min, vary=False)
+        self._psf_par[pref+'_c_max'].set(c_max, vary=False)
+        self._psf_par[pref+'_center'].set(center, vary=False)
+        self._psf_par[pref+'_resol'].set(resol, vary=vary,
+                                         min=resol/1.1, max=resol*1.1,
+                                         expr=expr)
+   
     def psf2(self):
         pref = 'psf_'
         model = lmm(psf_func, prefix=pref)
@@ -426,6 +457,20 @@ class Model():
                 ret += (model, param)
 
         return ret
+
+    def voigt_new(self, ion, z, N, b, btur,
+                  vary=[True, True, True, False],
+                  expr=[None, None, None, None], pref='voigt'):
+        """ Voigt profile """
+
+        self._prof_fun = lmm(voigt_func, prefix=pref+'_', ion=ion)
+        self._prof_par = self._prof_fun.make_params()
+        #self._prof_par[pref+'_chunk_lim'].set(chunk_lim, vary=False)
+        self._prof_par[pref+'_z'].set(z, vary=vary[0], min=0, expr=expr[0])
+        self._prof_par[pref+'_N'].set(N, vary=vary[1], min=0, expr=expr[1])
+        self._prof_par[pref+'_b'].set(b, vary=vary[2], min=0, expr=expr[2])
+        self._prof_par[pref+'_btur'].set(btur, vary=vary[3], min=0,
+                                         expr=expr[3])
 
     def voigt(self, z, N, b, btur, z_vary=True, N_vary=True, b_vary=True,
               btur_vary=False, ion=['Ly_a']):
