@@ -1,4 +1,4 @@
-from . import Line, Spec1DReader, System
+from . import Cont, IO, Line, Spec1DReader, System
 from .utils import *
 from astropy.io import fits
 from collections import OrderedDict as od
@@ -10,7 +10,6 @@ from matplotlib.figure import Figure
 import numpy as np
 import os
 import sys
-import tarfile
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -24,8 +23,12 @@ class MainFrame(wx.Frame):
         super(MainFrame, self).__init__(parent, title=title, size=size)
         self.init_UI(**kwargs)
 
+        self.IO = IO()
+        
         self.spec_dict = {}
+        self.part_dict = {}
         self.line_dict = {}
+        self.cont_dict = {}
         self.syst_dict = {}
         
     def init_UI(self, **kwargs):
@@ -126,12 +129,15 @@ class MainFrame(wx.Frame):
         """ Create the spectrum panel """
 
         self.spec_lc = EditableListCtrl(panel, -1, style=wx.LC_REPORT)
-        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_spec_edit)
+        self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_spec_begin_edit)
+        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_spec_end_edit)
         self.spec_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_spec_select)
-        self.spec_lc.InsertColumn(0, 'path', width=200)
-        self.spec_lc.InsertColumn(1, 'object', width=100)
-        self.spec_lc.InsertColumn(2, 'redshift')
-        #self.spec_lc.Select(0)
+        self.spec_lc.InsertColumn(0, 'target', width=150)
+        self.spec_lc.InsertColumn(1, 'object', width=150)
+        self.spec_lc.InsertColumn(2, 'redshift', width=150)
+        self.spec_lc.InsertColumn(3, 'active range [nm]', width=150)
+        self.spec_lc.InsertColumn(4, '# lines', width=150)
+        self.spec_lc.InsertColumn(5, '# systems', width=150)
         
     def init_syst(self, panel):
         """ Create the system list panel """
@@ -152,55 +158,90 @@ class MainFrame(wx.Frame):
     def menu(self, **kwargs):
         """ Create a menu in the frame """
 
-        # File menu
-        file_menu = wx.Menu()
+        # Menu item IDs
+        self.id_spec = 100
+        self.id_line = 200
+        self.id_cont = 300
+        self.id_syst = 400
+
         
-        file_open = wx.MenuItem(file_menu, wx.ID_OPEN, "&Open\tCtrl+O")
-        file_save = wx.MenuItem(file_menu, wx.ID_SAVE, "&Save\tCtrl+S")
-        file_quit = wx.MenuItem(file_menu, wx.ID_EXIT, "&Quit\tCtrl+Q")
+        # File menu
+        self.file_menu = wx.Menu()
+        
+        file_open = wx.MenuItem(self.file_menu, wx.ID_OPEN, "&Open\tCtrl+O")
+        file_save = wx.MenuItem(self.file_menu, self.id_spec, "&Save\tCtrl+S")
+        file_quit = wx.MenuItem(self.file_menu, wx.ID_EXIT, "&Quit\tCtrl+Q")
         self.Bind(wx.EVT_MENU, lambda e: self.on_file_open(e, **kwargs),
                   file_open)
         self.Bind(wx.EVT_MENU, lambda e: self.on_file_save(e, **kwargs),
                   file_save)
         self.Bind(wx.EVT_MENU, self.on_quit, file_quit)
 
-        file_menu.Append(file_open)
-        file_menu.AppendSeparator()
-        file_menu.Append(file_save)
-        file_menu.AppendSeparator()
-        file_menu.Append(file_quit)
+        self.file_menu.Append(file_open)
+        self.file_menu.AppendSeparator()
+        self.file_menu.Append(file_save)
+        self.file_menu.AppendSeparator()
+        self.file_menu.Append(file_quit)
+
+        if (hasattr(self, 'spec') == False):
+            self.menu_disable(self.file_menu, self.id_spec)
 
         # Recipes menu
-        rec_menu = wx.Menu()
+        self.rec_menu = wx.Menu()
 
-        rec_spec_extract = wx.MenuItem(rec_menu, wx.ID_ANY,
+        rec_spec_extract = wx.MenuItem(self.rec_menu, self.id_spec+1,
                                        "E&xtract Spectral Region...")
-        rec_line_find = wx.MenuItem(rec_menu, wx.ID_ANY, "Find &Lines...")
-        rec_line_cont = wx.MenuItem(rec_menu, wx.ID_ANY,
+        rec_line_find = wx.MenuItem(self.rec_menu, self.id_spec+2,
+                                    "Find &Lines...")
+        rec_line_cont = wx.MenuItem(self.rec_menu, self.id_line,
                                     "Find &Continuum by Removing Lines...")
-        rec_syst_find = wx.MenuItem(rec_menu, wx.ID_ANY, "Find &Systems...")
-        rec_syst_fit = wx.MenuItem(rec_menu, wx.ID_ANY,
+        rec_syst_find = wx.MenuItem(self.rec_menu, self.id_cont,
+                                    "Find &Systems...")
+        rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst,
                                    "&Fit Selected System...")
+
         self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
         self.Bind(wx.EVT_MENU, self.on_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_line_cont, rec_line_cont)
         self.Bind(wx.EVT_MENU, self.on_syst_find, rec_syst_find)
         self.Bind(wx.EVT_MENU, self.on_syst_fit, rec_syst_fit)
         
-        rec_menu.Append(rec_spec_extract)
-        rec_menu.AppendSeparator()
-        rec_menu.Append(rec_line_find)
-        rec_menu.Append(rec_line_cont)
-        rec_menu.AppendSeparator()
-        rec_menu.Append(rec_syst_find)
-        rec_menu.Append(rec_syst_fit)
+        self.rec_menu.Append(rec_spec_extract)
+        self.rec_menu.AppendSeparator()
+        self.rec_menu.Append(rec_line_find)
+        self.rec_menu.Append(rec_line_cont)
+        self.rec_menu.AppendSeparator()
+        self.rec_menu.Append(rec_syst_find)
+        self.rec_menu.Append(rec_syst_fit)
+        
+        if (hasattr(self, 'spec') == False):
+            self.menu_disable(self.rec_menu, self.id_spec)
+        if (hasattr(self, 'line') == False):
+            self.menu_disable(self.rec_menu, self.id_line)
+        if (hasattr(self, 'cont') == False):
+            self.menu_disable(self.rec_menu, self.id_cont)
+        self.menu_disable(self.rec_menu, self.id_syst)            
         
         # Menu bar
         menu_bar = wx.MenuBar()
-        menu_bar.Append(file_menu, '&File')
-        menu_bar.Append(rec_menu, '&Recipes')
+        menu_bar.Append(self.file_menu, '&File')
+        menu_bar.Append(self.rec_menu, '&Recipes')
         self.SetMenuBar(menu_bar)        
 
+    def menu_disable(self, menu, id):
+        for i in range(2):
+            try:
+                menu.Enable(id+i, False)
+            except:
+                pass
+
+    def menu_enable(self, menu, id):
+        for i in range(100):
+            try:
+                menu.Enable(id+i, True)
+            except:
+                pass
+            
     def on_file_open(self, event, path='.'):
         """ Behaviour for File > Open """
 
@@ -218,111 +259,64 @@ class MainFrame(wx.Frame):
 
             name = fileDialog.GetPath()
             if (name[-4:] == '.acs'):
-                self.session = fileDialog.GetFilename()[:-24]
+                self.targ = fileDialog.GetFilename()[:-24]
                 try:
-                    with tarfile.open(name) as arch:
-                        arch.extractall(path=path)
-
-                        # Open spectrum
-                        self.spec_name = name[:-4]+'_spec.fits'
-                        self.spec = Spec1DReader().ac(self.spec_name)
-                        self.z = 0.0
-                        self.spec_dict[self.spec_name] = self.spec 
-                        self.spec_lc.insert_string_item(
-                            self.spec_lc.GetItemCount(), self.spec_name)
-                        self.spec_lc.SetStringItem(
-                            self.spec_lc.GetItemCount()-1, 2, str(self.z))
-                        #self.on_plot_draw(None, self.spec)
-                        os.remove(self.spec_name)
-
-                        # Open line list
-                        try:
-                            line_name = name[:-4]+'_line.fits'
-
-                            # Put in a dedicated class
-                            hdulist =  fits.open(line_name)
-                            data = hdulist[1].data
-                            names = np.array(hdulist[1].columns.names)
-                            units = np.array(hdulist[1].columns.units)
-                            xunit = units[np.where(names == 'X')][0]
-                            yunit = units[np.where(names == 'Y')][0]
-                            x = data['X']
-                            xmin = data['XMIN']
-                            xmax = data['XMAX']
-                            y = data['Y']            
-                            dy = data['DY']
-                            self.line = Line(x=x, xmin=xmin, xmax=xmax, y=y,
-                                             dy=dy, xunit=xunit, yunit=yunit)
-                            self.line_dict[self.spec_name] = self.line
-                            self.refresh_line()
-                            os.remove(line_name)
-                        except:
-                            pass
-                        
-                        # Open system list
-                        try:
-                            syst_name = name[:-4]+'_syst.fits'
-
-                            # Put in a dedicated class
-                            hdulist =  fits.open(syst_name)
-                            data = hdulist[1].data
-                            names = np.array(hdulist[1].columns.names)
-                            units = np.array(hdulist[1].columns.units)
-                            Nunit = units[np.where(names == 'N')][0]
-                            bunit = units[np.where(names == 'B')][0]
-                            series = data['SERIES']
-                            z = data['Z']
-                            N = data['N']
-                            b = data['B']
-                            btur = data['BTUR']
-                            dz = data['DZ']
-                            dN = data['DN']
-                            db = data['DB']
-                            dbtur = data['DBTUR']
-                            vary = data['VARY']
-                            expr = data['EXPR']
-                            self.syst = System(
-                                self.spec, series=series,
-                                z=z, N=N, b=b, btur=btur,
-                                dz=dz, dN=dN, db=db, dbtur=dbtur,
-                                vary=vary, expr=expr, Nunit=Nunit, bunit=bunit)
-                            self.syst_dict[self.spec_name] = self.syst
-                            self.refresh_syst()
-                            os.remove(syst_name)
-                        except:
-                            pass
-
-                        self.on_plot_draw(None)
-                    
+                    acs = self.IO.acs_read(name, path)
+                    self.spec = acs.spec
+                    self.spec_name = acs.spec_name
                 except IOError:
-                    wx.LogError("Cannot open file '%s'." % arch)
-                
+                    wx.LogError("Cannot open archive '%s'." % name)
             else:
-                self.session = fileDialog.GetFilename()[:-5] 
+                self.targ = fileDialog.GetFilename()[:-5] 
                 try:
-                    with open(name, 'r') as file:
-                        try:
-                            self.spec = Spec1DReader().ac(name)
-                        except:
-                            self.spec = Spec1DReader().xq(name)
-                        self.z = 0.0
-                        self.spec_dict[name] = self.spec 
-                        self.spec_lc.insert_string_item(
-                            self.spec_lc.GetItemCount(), name)
-                        self.spec_lc.SetStringItem(
-                            self.spec_lc.GetItemCount()-1, 2, str(self.z))
-                        #self.on_plot_draw(None, self.spec)
-                        self.on_plot_draw(None)
-                    
+                    self.spec = self.IO.spec_read(name)
+                    self.spec_name = name
                 except IOError:
-                    wx.LogError("Cannot open file '%s'." % file)
+                    wx.LogError("Cannot open file '%s'." % name)
+            
+            self.spec_dict[self.targ] = self.spec
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.menu_enable(self.file_menu, self.id_spec)
+            self.menu_enable(self.rec_menu, self.id_spec)
+            try:
+                self.line = acs.line
+                self.line_name = acs.line_name
+                self.line_dict[self.targ] = self.line
+                self.update_line()
+                self.menu_enable(self.file_menu, self.id_line)
+                self.menu_enable(self.rec_menu, self.id_line)
+            except:
+                self.line = None
+            
+            try:
+                self.cont = acs.cont
+                self.cont_name = acs.cont_name
+                self.cont_dict[self.targ] = self.cont
+                self.menu_enable(self.file_menu, self.id_cont)
+                self.menu_enable(self.rec_menu, self.id_cont)
+            except:
+                pass
+
+            try:
+                self.syst = acs.syst
+                self.syst_name = acs.syst_name
+                self.syst_dict[self.targ] = self.syst
+                self.menu_enable(self.file_menu, self.id_syst)
+                self.menu_enable(self.rec_menu, self.id_syst)
+            except:
+                pass
+
+            self.update_spec()
+            self.update_plot()
+            
 
     def on_file_save(self, event, path='.'):
         """ Behaviour for File > Save """
 
         timestamp = \
             '_'+str(datetime.now()).replace(" ", "_").replace(":", "-")[:-7]
-        snapshot = self.session + timestamp
+        snapshot = self.targ + timestamp
         root = path + snapshot
         with wx.FileDialog(self, "Save session", path, snapshot,
                            wildcard="Astrocook session (*.acs)|*.acs",
@@ -331,38 +325,29 @@ class MainFrame(wx.Frame):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
 
+            name = fileDialog.GetPath()
             try:
-                with tarfile.open(root+'.acs', 'w:gz') as arch:
-                    spec_name = root + '_spec.fits'
-                    spec_arcname = snapshot + '_spec.fits'
-                    self.spec.save(spec_name)
-                    arch.add(spec_name, arcname=spec_arcname)
-                    os.remove(spec_name)
-                    if hasattr(self, 'line'):
-                        line_name = root + '_line.fits'
-                        line_arcname = snapshot + '_line.fits'
-                        self.line.save(line_name)
-                        arch.add(line_name, arcname=line_arcname)
-                        os.remove(line_name)
-                    if hasattr(self, 'syst'):
-                        syst_name = root + '_syst.fits'
-                        syst_arcname = snapshot + '_syst.fits'
-                        self.syst.save(syst_name)
-                        arch.add(syst_name, arcname=syst_arcname)
-                        os.remove(syst_name)
+                acs = self
+                self.IO.acs_write(acs, name, path)
 
             except IOError:
                 wx.LogError("Cannot save session '%s'." % newfile)
 
     def on_line_cont(self, event):
-        self.line.cont()
+        self.cont = Cont(self.spec, self.line)
+        
+        #self.line.cont()
+        self.cont.smooth_maxima()
 
         # Only until the Cont class is rewritten
-        self.spec._cont = self.line._cont
+        #self.spec._cont = self.cont._y
         
-        self.ax.plot(self.spec.x, self.line._cont.y)
+        #self.ax.plot(self.spec.x, self.line._cont.y)
+        self.ax.plot(self.spec.x, self.cont._t['Y'])
         self.plot_fig.draw()
 
+        self.menu_enable(self.rec_menu, self.id_cont)
+        
     def on_line_find(self, event):
         """ Behaviour for Recipes > Find Lines """
         self.params = od([('kappa', 5.0), ('sigma', 40.0)])
@@ -371,12 +356,15 @@ class MainFrame(wx.Frame):
         param.Destroy()
         if param.execute == True:
             self.line = Line(self.spec)
-            self.line_dict[self.spec_name] = self.line
+            self.line_dict[self.targ] = self.line
             self.line.find(kappa=float(self.params['kappa']),
                            sigma=float(self.params['sigma']))
 
-        self.refresh_line()
-        self.refresh_plot()
+            self.line_num = len(self.line.t)
+            self.update_spec()
+            self.update_line()
+            self.update_plot()
+            self.menu_enable(self.rec_menu, self.id_line)
         
     def on_line_select(self, event):
         """ Behaviour for line selection """        
@@ -398,9 +386,18 @@ class MainFrame(wx.Frame):
 
     #def on_plot_draw(self, event, obj):
     def on_plot_draw(self, event):
+        self.spec = self.spec_dict[self.targ]
         self.spec.plot(ax=self.ax)
         try:
             self.line.plot_new(ax=self.ax)
+        except:
+            pass
+        try:
+            self.ax.plot(self.cont.t['X'], self.cont.t['Y'])
+        except:
+            pass
+        try:
+            self.syst = self.syst_dict[self.targ]
         except:
             pass
         self.plot_fig.draw()
@@ -409,41 +406,76 @@ class MainFrame(wx.Frame):
         """ Behaviour for File > Quit """
         self.Close()
 
-    def on_spec_edit(self, event):
-        """ Behaviour when spectrum is selected from list """
+    def on_spec_begin_edit(self, event):
+        """ Veto the editing of some columns of the spectrum list """
+        if event.GetColumn() in [0,3,4,5]:
+            event.Veto()
+        else:
+            event.Skip()
 
+    def on_spec_end_edit(self, event):
+        """ Behaviour when spectrum is edited on list """
+        
         index = self.spec_lc.GetFocusedItem()
         row = event.GetIndex()
         col = event.GetColumn()
         data = event.GetLabel()
-        self.spec_lc.SetStringItem(row, col, data)
-        self.z = self.spec_lc.GetItem(index, 2).GetText()
+        self.spec_lc.SetItem(row, col, data)
+        try:
+            self.z = self.spec_lc.GetItem(index, 2).GetText()
+        except:
+            pass
         
     def on_spec_extract(self, event):
-        self.params = od([('zem', self.z), ('forest', 'Ly')])#('Lyman', True), ('CIV', False)])
+        if (hasattr(self, 'z') == False):
+            self.z = 0.0
+        self.xmin  = 0.0
+        self.xmax  = 0.0
+        self.params = od([('xmin', self.xmin), ('xmax', self.xmax),
+                          ('prox', False), ('forest', 'Ly'), ('zem', self.z)])#('Lyman', True), ('CIV', False)])
 #        xmin=None, xmax=None, prox=False, forest=[], zem=[],
 #                prox_vel=[]
         param = ParamDialog(self, title="Extract Spectral Region")
         param.ShowModal()
         param.Destroy()
         if param.execute == True:
-            forest = self.spec.extract(forest=str(self.params['forest']),
-                                       zem=float(self.params['zem']))
+            self.targ = self.targ + '_%3.2f-%3.2f' \
+                        % (float(self.params['xmin']),
+                           float(self.params['xmax']))
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            forest = self.spec.extract(xmin=float(self.params['xmin'])*u.nm,
+                                       xmax=float(self.params['xmax'])*u.nm)
+
+                                       #forest=str(self.params['forest']),
+                                       #zem=float(self.params['zem']))
             self.spec = forest
-            self.spec.plot(ax=self.ax)
-            self.plot_fig.draw()
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
+            self.update_plot()
 
     def on_spec_select(self, event):
         """ Behaviour when spectrum is selected from list """
 
         item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
-        self.spec_name = item.GetText()
-        self.spec = self.spec_dict[self.spec_name]
+        self.targ = item.GetText()
+        self.row = event.GetIndex()
+        self.spec = self.spec_dict[self.targ]
         try:
-            self.line = self.line_dict[self.spec_name]
-            self.refresh_line()
+            self.line = self.line_dict[self.targ]
         except:
-            pass
+            self.line = None
+            
+        try:
+            self.cont = self.cont_dict[self.targ]
+        except:
+            self.cont = None
+        try:
+            self.syst = self.syst_dict[self.targ]
+        except:
+            self.syst = None
+        self.update_plot()
+        #self.update_spec()
         
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
@@ -452,17 +484,21 @@ class MainFrame(wx.Frame):
         param.ShowModal()
         param.Destroy()
         if param.execute == True:
-            self.syst = System(self.spec, self.line)#, doubl=self.params['doubl'])
+            self.syst = System(self.spec, self.line, self.cont)#, doubl=self.params['doubl'])
+            self.syst_dict[self.targ] = self.syst
             self.syst.find(tag=self.params['series'])
-            self.refresh_syst()
+            self.update_spec()
+            self.update_syst()
 
         # Only until the Cont class is rewritten
-        self.syst._cont = self.line._cont
+        #self.syst._cont = self.line._cont
+        #self.syst._cont = self.cont._y
             
     def on_syst_fit(self, event):
         syst_sel = self.syst.extract(self.syst_sel)
 
         # Only until the Cont class is rewritten
+        #syst_sel._cont = self.syst._cont
         syst_sel._cont = self.syst._cont
 
         z_sel = syst_sel.t['Z']
@@ -474,7 +510,7 @@ class MainFrame(wx.Frame):
         for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
                   'EXPR']:
             self.syst._t[self.syst_sel][c] = syst_sel.t[c]
-        self.refresh_syst()
+        self.update_syst()
         
     def on_syst_select(self, event):
         """ Behaviour for line selection """        
@@ -492,9 +528,11 @@ class MainFrame(wx.Frame):
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
             self.syst_sel = sel
-            
+            self.menu_enable(self.rec_menu, self.id_syst)
         
-    def refresh_line(self):
+    def update_line(self):
+        """ Update the line table """
+        
         try:
             self.line_gr.DeleteRows(pos=0, numRows=self.line_gr.GetNumberRows())
         except:
@@ -506,14 +544,44 @@ class MainFrame(wx.Frame):
             self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
             self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
             self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
-        #self.line.plot_new(ax=self.ax)
-        #self.plot_fig.draw()
 
-    def refresh_plot(self):
+    def update_plot(self):
+        """ Update the plot panel """
+
         self.on_plot_clear(None)
         self.on_plot_draw(None)
+
+    def update_spec(self):
+        """ Update the spec list """
+
+        self.spec = self.spec_dict[self.targ]
+
+        try:
+            self.spec_lc.SetItem(self.row, 2, str(self.z))
+        except:
+            pass
+
+        xmin = self.spec.t['X'][0]
+        xmax = self.spec.t['X'][-1]
+        self.spec_lc.SetItem(self.row, 3, "[%3.2f, %3.2f]" % (xmin, xmax))
+
+        try:
+            self.spec_lc.SetItem(self.row, 4, str(len(self.line.t)))
+        except:
+            pass
+            
+        try:
+            self.ax.plot(self.cont.t['X'], self.cont.t['Y'])
+        except:
+            pass
+        try:
+            self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
+        except:
+            pass
         
-    def refresh_syst(self):
+    def update_syst(self):
+        """ Update the system table """
+        
         try:
             self.syst_gr.DeleteRows(pos=0, numRows=self.syst_gr.GetNumberRows())
         except:
@@ -521,12 +589,12 @@ class MainFrame(wx.Frame):
         self.syst_gr.AppendRows(len(self.syst.t))
         for i, l in enumerate(self.syst.t):
             self.syst_gr.SetCellValue(i, 0, str(l['SERIES']))
-            self.syst_gr.SetCellValue(i, 1, "%3.3f" % l['Z'])
+            self.syst_gr.SetCellValue(i, 1, "%3.5f" % l['Z'])
             self.syst_gr.SetCellValue(i, 2, "%3.3e" % l['N'])
             self.syst_gr.SetCellValue(i, 3, "%3.3f" % l['B'])
             self.syst_gr.SetCellValue(i, 4, "%3.3f" % l['BTUR'])
-            self.syst_gr.SetCellValue(i, 5, "%3.3e" % l['DZ'])
-            self.syst_gr.SetCellValue(i, 6, "%3.3f" % l['DN'])
+            self.syst_gr.SetCellValue(i, 5, "%3.5f" % l['DZ'])
+            self.syst_gr.SetCellValue(i, 6, "%3.3e" % l['DN'])
             self.syst_gr.SetCellValue(i, 7, "%3.3f" % l['DB'])
             self.syst_gr.SetCellValue(i, 8, "%3.3f" % l['DBTUR'])
         
@@ -540,7 +608,7 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
 
 
     def insert_string_item(self, *args):
-        self.InsertStringItem(*args)
+        self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
         
 class ParamDialog(wx.Dialog):

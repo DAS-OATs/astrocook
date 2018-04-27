@@ -1,4 +1,4 @@
-from . import Line, Model
+from . import Cont, Line, Model, Spec1D
 from .utils import *
 from .model import voigt_params
 from astropy import units as u
@@ -13,9 +13,10 @@ import warnings
 import sys
 import time
 
-class System(Line):
+class System(Spec1D, Line, Cont):
 
-    def __init__(self, spec=None, line=None, series=None, ion=None,
+    def __init__(self, spec=None, line=None, cont=None,
+                 series=None, ion=None,
                  z=None, N=None, b=None, btur=None,  
                  dz=None, dN=None, db=None, dbtur=None,
                  vary=[True,True,True,False], expr=[None,None,None,None],
@@ -25,6 +26,7 @@ class System(Line):
                  meta=None, dtype=float):  
         """ Constructor for the System class """ 
 
+        
         # Spectrum
         if (spec != None):
             self._spec = dc(spec)
@@ -44,14 +46,21 @@ class System(Line):
             if (line != None):
                 self._line = dc(line)
             elif (x is not None):
-                if (xunit == None):
+                if (x.unit == None):
                     x = x * xunit_def
-                if (yunit == None):
+                if (y.unit == None):
                     y = y * yunit_def
                 self._line = Line(spec=spec, x=x, y=y, xmin=xmin, xmax=xmax,
                                   dy=dy)
             if (ion != None):
                 self.create_z(ion)
+
+
+        # Continuum
+        if (cont != None):
+            self._cont = dc(cont)
+        else:
+            self._cont = dc(line._cont)
 
         """
         # Line list -- Deprecated!
@@ -260,7 +269,7 @@ class System(Line):
 
         # Find adjacent maxima to determine xmin and xmax - Improve!
         conv = self._spec.convolve(gauss_sigma=sigma, convert=False)
-        minima, maxima, extrema = conv.find_extrema()
+        mins, maxs, exts = conv.find_extrema()
         self._conv = conv
         for s in self._t:
             z = s['Z']
@@ -270,12 +279,12 @@ class System(Line):
                 x_temp = np.append(x_temp, wave_z)
                 z_temp = np.append(z_temp, z)
                 if (xmin == None or xmax == None):
-                    pos_min, wave_min = find_nearest(np.array(maxima.x),
+                    pos_min, wave_min = find_nearest(np.array(maxs['X']),
                                                      wave_z.value)
                     if wave_min > wave_z.value:
                         pos_min = pos_min-1
-                    xmin_temp = np.append(xmin_temp, maxima.x[pos_min])
-                    xmax_temp = np.append(xmax_temp, maxima.x[pos_min+1])
+                    xmin_temp = np.append(xmin_temp, maxs['X'][pos_min])
+                    xmax_temp = np.append(xmax_temp, maxs['X'][pos_min+1])
                 
         #x = np.sort(x_temp)
         x = x_temp
@@ -297,7 +306,7 @@ class System(Line):
     def create_t(self, series=[['unknown']],
                  z=z_def, N=N_def, b=b_def, btur=btur_def, 
                  dz=None, dN=None, db=None, dbtur=None,
-                 vary=[True, True, False, False], expr=[None,None,None,None],
+                 vary=[True, True, True, False], expr=[None,None,None,None],
                  Nunit=Nunit_def, bunit=bunit_def, dtype=float):
         """ Create a list of systems """
 
@@ -359,7 +368,8 @@ class System(Line):
     def extract(self, row):
         sel = self._t[row]
         syst_sel = System(
-            spec=self._spec, series=[sel['SERIES']],
+            spec=self._spec, cont=self._cont,
+            series=[sel['SERIES']],
             z=sel['Z'], N=sel['N'], b=sel['B'], btur=sel['BTUR'],
             dz=sel['DZ'], dN=sel['DN'], db=sel['DB'], dbtur=sel['DBTUR'],
             vary=sel['VARY'], expr=sel['EXPR'])
@@ -393,10 +403,10 @@ class System(Line):
 
         fun = self._fun
         par = self._par
-        par.pretty_print()
+        #par.pretty_print()
         fit = fun.fit(y/cont, par, x=x, weights=cont/dy)
         par = fit.params
-        par.pretty_print()
+        #par.pretty_print()
         model = fit.eval(par, x=x) * cont
         #self._model = fit.eval(par, x=self._spec.t['X']) * self._spec.t['CONT']
         #model = fit.best_fit * cont

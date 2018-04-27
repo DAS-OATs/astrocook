@@ -271,10 +271,8 @@ class Line(Spec1D):
         
         self._precont = dc(self._spec)
         range_x = np.max(self._spec.x) - np.min(self._spec.x)
-        x = self._maxima.x
-        y = self._maxima.y * flux_corr
-        #x = self._extr.x
-        #y = self._extr.y
+        x = self._maxs['X']
+        y = self._maxs['Y'] * flux_corr
         self._cont = dc(self._precont)        
 
         clip_x = x
@@ -433,15 +431,16 @@ class Line(Spec1D):
         self._conv = conv
         
         # Find extrema
-        minima, maxima, extr = conv.find_extrema()
-        self._minima = minima
-        self._maxima = maxima
-        self._extr = extr
+        mins, maxs, exts = conv.find_extrema()
+        self._mins = mins
+        self._maxs = maxs
+        self._exts = exts
+
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (extr.y[:-2] - extr.y[1:-1]) 
-        diff_y_right = (extr.y[2:] - extr.y[1:-1]) 
+        diff_y_left = (exts['Y'][:-2] - exts['Y'][1:-1]) 
+        diff_y_right = (exts['Y'][2:] - exts['Y'][1:-1]) 
         if mode is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
@@ -449,20 +448,20 @@ class Line(Spec1D):
         # Check if the difference is above threshold
         diff_y_min = np.minimum(diff_y_left, diff_y_right)
         diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = extr.dy[1:-1] * kappa
+        thres = exts['DY'][1:-1] * kappa
         if diff is 'min':
             pos = np.greater(diff_y_min, thres)
         else:
             pos = np.greater(diff_y_max, thres)
-        x = extr.x[1:-1][pos]
-        y = extr.y[1:-1][pos]
-        dy = extr.dy[1:-1][pos]
+        x = exts['X'][1:-1][pos]
+        y = exts['Y'][1:-1][pos]
+        dy = exts['DY'][1:-1][pos]
         xmin = []
         xmax = []        
         if len(x) > 0: 
 
-            xmin = np.asarray(extr.x[:-2][pos]) * x.unit
-            xmax = np.asarray(extr.x[2:][pos]) * x.unit
+            xmin = np.asarray(exts['X'][:-2][pos]) * x.unit
+            xmax = np.asarray(exts['X'][2:][pos]) * x.unit
 
         self._bound_x = np.setxor1d(xmin, xmax)
         self._bound_y = np.interp(self._bound_x, spec.x, spec.y)

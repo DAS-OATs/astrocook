@@ -489,26 +489,36 @@ class Spec1D():
         if (len(self.t) > 0):
             min_idx = np.hstack(argrelmin(self.y))
             max_idx = np.hstack(argrelmax(self.y))
-            extr_idx = np.sort(np.append(min_idx, max_idx))
-            minima = self.from_table(self._t[min_idx])
-            maxima = self.from_table(self._t[max_idx])
-            extr = self.from_table(self._t[extr_idx])
+            ext_idx = np.sort(np.append(min_idx, max_idx))
+            #mins = self.from_table(self._t[min_idx])
+            #maxs = self.from_table(self._t[max_idx])
+            #extr = self.from_table(self._t[extr_idx])
+            mins = Table([self.x[min_idx], self.y[min_idx], self.dy[min_idx]],
+                         names=('X', 'Y', 'DY'))
+            maxs = Table([self.x[max_idx], self.y[max_idx], self.dy[max_idx]],
+                         names=('X', 'Y', 'DY'))
+            exts = Table([self.x[ext_idx], self.y[ext_idx], self.dy[ext_idx]],
+                         names=('X', 'Y', 'DY'))
         else:
-            minima = self.from_table(self._t)
-            maxima = self.from_table(self._t)
-            extr = self.from_table(self._t)
-        return minima, maxima, extr
+            #mins = self.from_table(self._t)
+            #maxs = self.from_table(self._t)
+            #extr = self.from_table(self._t)
+            mins = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
+            maxs = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
+            exts = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
+        return mins, maxs, exts
         
     def find_lines(self, mode='abs', diff='max', kappa=3.0, hwidth=2):
         """Find the lines in a spectrum and save them as a line list"""
+        """ DEPRECATED """
         
         # Find the extrema
-        minima, maxima, extr = self.find_extrema()
+        mins, maxs, exts = self.find_extrema()
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (extr.y[:-2] - extr.y[1:-1]) 
-        diff_y_right = (extr.y[2:] - extr.y[1:-1]) 
+        diff_y_left = (exts['Y'][:-2] - exts['Y'][1:-1]) 
+        diff_y_right = (exts['Y'][2:] - exts['Y'][1:-1]) 
         if mode is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
@@ -516,18 +526,18 @@ class Spec1D():
         # Check if the difference is above threshold
         diff_y_min = np.minimum(diff_y_left, diff_y_right)
         diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = extr.dy[1:-1] * kappa
+        thres = exts['DY'][1:-1] * kappa
         if diff is 'min':
             line_pos = np.greater(diff_y_min, thres)
         else:
             line_pos = np.greater(diff_y_max, thres)
-        line_x = extr.x[1:-1][line_pos]
-        line_y = extr.y[1:-1][line_pos]
+        line_x = exts['X'][1:-1][line_pos]
+        line_y = exts['Y'][1:-1][line_pos]
 
         if len(line_x) > 0: 
 
             # Compute the boundaries for line fitting    
-            window = extr.rolling_window(hwidth * 2 + 1)
+            window = exts.rolling_window(hwidth * 2 + 1)
             bound = np.full(hwidth + 1, np.amin(self.x))
             if mode is 'em':
                 bound = np.append(bound, 
@@ -641,8 +651,8 @@ class Spec1D():
 
         loop = [(logN, b) for logN in logN_range for b in b_range]
         match = np.array([])
-        minima_x = np.array([])
-        minima_redchi = np.array([])
+        mins_x = np.array([])
+        mins_redchi = np.array([])
         for (logN, b) in loop:
             N = np.power(10, logN) / u.cm**2
             prof = model.prof_mult(self, ion, b=b, N=N)
@@ -666,17 +676,17 @@ class Spec1D():
                     where[x] = True
 
                     
-            minima = None
+            mins = None
             redchi_sel = Spec1D(self.x[where], redchi[:, 0][where],
                                 xunit=self.x.unit)
-            minima, maxima, extr = redchi_sel.find_extrema()
-            minima_x = np.append(minima_x, minima.x)
-            minima_redchi = np.append(minima_redchi,
-                                      np.interp(minima.x, self.x, redchi[:, 0]))
+            mins, maxs, exts = redchi_sel.find_extrema()
+            mins_x = np.append(mins_x, mins['X'])
+            mins_redchi = np.append(mins_redchi,
+                                      np.interp(mins['X'], self.x, redchi[:, 0]))
 
             if (verbose == True):
                 print("%i new matches found, %i in total." \
-                      % (len(minima.x), len(np.unique(minima_x))))
+                      % (len(mins['X']), len(np.unique(mins_x))))
                 
             if (plot == True):
                 self.plot(block=False)
@@ -694,13 +704,13 @@ class Spec1D():
                 ax.plot(self.x, redchi[:, 1], c='r', lw=1.0)
                 ax.plot(self.x, redchi[:, 2], c='g', lw=1.0)
                 ax.plot(self.x, redchi[:, 3], c='b', lw=1.0)
-                if (len(minima.t) > 0):
-                    ax.scatter(minima.x, minima.y, c='b')
+                if (len(mins) > 0):
+                    ax.scatter(mins['X'], mins['Y'], c='b')
                 plt.show()    
 
         x = np.array([])
         for p in range(len(ion)):
-            x = np.append(x, np.asarray(minima.x) \
+            x = np.append(x, np.asarray(mins['X']) \
                           * dict_wave[ion[p]] / dict_wave[ion[0]]) 
 
         # Improve...
@@ -721,8 +731,8 @@ class Spec1D():
 
         loop = [(logN, b) for logN in logN_range for b in b_range]
         match = np.array([])
-        minima_x = np.array([])
-        minima_redchi = np.array([])
+        mins_x = np.array([])
+        mins_redchi = np.array([])
         for (logN, b) in loop:
             N = np.power(10, logN) / u.cm**2
 
@@ -759,20 +769,20 @@ class Spec1D():
                     ):
                     where[x] = True
 
-            minima = None
+            mins = None
             #if (np.sum(where) > 0):
             redchi_sel = Spec1D(self.x[where], redchi[:, 0][where],
                                 xunit=self.x.unit)
-            minima, maxima, extr = redchi_sel.find_extrema()
-            minima_x = np.append(minima_x, minima.x)
-            minima_redchi = np.append(minima_redchi,
-                                      np.interp(minima.x, self.x, redchi[:, 0]))
+            mins, maxs, exts = redchi_sel.find_extrema()
+            mins_x = np.append(mins_x, mins['X'])
+            mins_redchi = np.append(mins_redchi,
+                                      np.interp(mins['X'], self.x, redchi[:, 0]))
 
-            #print(minima_x, minima_redchi)
+            #print(mins_x, mins_redchi)
             
             if (verbose == True):
                 print("%i new matches found, %i in total." \
-                      % (len(minima.x), len(np.unique(minima_x))))
+                      % (len(mins['X']), len(np.unique(mins_x))))
                 
             if (plot == True):
                 self.plot(block=False)
@@ -790,16 +800,16 @@ class Spec1D():
                 ax.plot(self.x, redchi[:, 1], c='r', lw=1.0)
                 ax.plot(self.x, redchi[:, 2], c='g', lw=1.0)
                 ax.plot(self.x, redchi[:, 3], c='b', lw=1.0)
-                if (len(minima.t) > 0):
-                    ax.scatter(minima.x, minima.y, c='b')
+                if (len(mins) > 0):
+                    ax.scatter(mins['X'], mins['Y'], c='b')
                 plt.show()    
 
-            #print(np.asarray(minima.x))
+            #print(np.asarray(mins.x))
 
-        #print(mimima_x, minima_redchi)
+        #print(mimima_x, mins_redchi)
         x = np.array([])
         for p in range(len(ion)):
-            x = np.append(x, np.asarray(minima.x) \
+            x = np.append(x, np.asarray(mins['X']) \
                           * dict_wave[ion[p]] / dict_wave[ion[0]]) 
 
         # Improve...
@@ -815,7 +825,7 @@ class Spec1D():
                     spec=self)
         return line
 
-    #return minima
+    #return mins
         #cond = np.logical_and(
         #for logN in logN_range
     
@@ -1072,12 +1082,12 @@ class Spec1D():
         
     def save(self, filename):
         hdu = fits.BinTableHDU.from_columns(
-            [fits.Column(name='XMIN', format='E', array=self.xmin,
+            [fits.Column(name='X', format='E', array=self.x,
+                         unit=self.x.unit.name),
+             fits.Column(name='XMIN', format='E', array=self.xmin,
                          unit=self.xmin.unit.name),
              fits.Column(name='XMAX', format='E', array=self.xmax,
                          unit=self.xmax.unit.name),
-             fits.Column(name='X', format='E', array=self.x,
-                         unit=self.x.unit.name),
              fits.Column(name='Y', format='E', array=self.y,
                          unit=self.y.unit.to_string()),
              fits.Column(name='DY', format='E', array=self.dy,
