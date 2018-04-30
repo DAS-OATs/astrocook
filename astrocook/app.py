@@ -24,12 +24,16 @@ class MainFrame(wx.Frame):
         self.init_UI(**kwargs)
 
         self.IO = IO()
-        
+
+        self.targ_list = []
         self.spec_dict = {}
+        self.z_dict = {}
         self.part_dict = {}
         self.line_dict = {}
         self.cont_dict = {}
-        self.syst_dict = {}
+        self.syst_dict = {} 
+
+        self.count = 0
         
     def init_UI(self, **kwargs):
         """ Initialize the main frame """
@@ -261,6 +265,8 @@ class MainFrame(wx.Frame):
             if (name[-4:] == '.acs'):
                 self.targ = fileDialog.GetFilename()[:-24]
                 try:
+                #    ciao
+                #except:
                     acs = self.IO.acs_read(name, path)
                     self.spec = acs.spec
                     self.spec_name = acs.spec_name
@@ -273,7 +279,12 @@ class MainFrame(wx.Frame):
                     self.spec_name = name
                 except IOError:
                     wx.LogError("Cannot open file '%s'." % name)
-            
+
+            if self.targ in self.targ_list:
+                self.count = self.count + 1
+                self.targ = self.targ + '_%i' % self.count
+            self.targ_list.append(self.targ)
+                    
             self.spec_dict[self.targ] = self.spec
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
@@ -302,6 +313,7 @@ class MainFrame(wx.Frame):
                 self.syst = acs.syst
                 self.syst_name = acs.syst_name
                 self.syst_dict[self.targ] = self.syst
+                self.update_syst()
                 self.menu_enable(self.file_menu, self.id_syst)
                 self.menu_enable(self.rec_menu, self.id_syst)
             except:
@@ -350,15 +362,18 @@ class MainFrame(wx.Frame):
         
     def on_line_find(self, event):
         """ Behaviour for Recipes > Find Lines """
-        self.params = od([('kappa', 5.0), ('sigma', 40.0)])
+        self.params = od([('Mode:', 'abs'), ('Difference:', 'max'),
+                          ('Threshold (sigma):', 5.0),
+                          ('Smoothing (km/s):', 40.0)])
         param = ParamDialog(self, title="Find Lines")
         param.ShowModal()
         param.Destroy()
         if param.execute == True:
+            val = self.params.values()
             self.line = Line(self.spec)
             self.line_dict[self.targ] = self.line
-            self.line.find(kappa=float(self.params['kappa']),
-                           sigma=float(self.params['sigma']))
+            self.line.find(mode=val[0], diff=val[1], kappa=float(val[2]),
+                           sigma=float(val[3]))
 
             self.line_num = len(self.line.t)
             self.update_spec()
@@ -408,7 +423,7 @@ class MainFrame(wx.Frame):
 
     def on_spec_begin_edit(self, event):
         """ Veto the editing of some columns of the spectrum list """
-        if event.GetColumn() in [0,3,4,5]:
+        if event.GetColumn() in [3,4,5]:
             event.Veto()
         else:
             event.Skip()
@@ -422,33 +437,39 @@ class MainFrame(wx.Frame):
         data = event.GetLabel()
         self.spec_lc.SetItem(row, col, data)
         try:
-            self.z = self.spec_lc.GetItem(index, 2).GetText()
+            self.z_dict[self.targ] = self.spec_lc.GetItem(index, 2).GetText()
         except:
             pass
         
     def on_spec_extract(self, event):
-        if (hasattr(self, 'z') == False):
-            self.z = 0.0
-        self.xmin  = 0.0
-        self.xmax  = 0.0
-        self.params = od([('xmin', self.xmin), ('xmax', self.xmax),
-                          ('prox', False), ('forest', 'Ly'), ('zem', self.z)])#('Lyman', True), ('CIV', False)])
-#        xmin=None, xmax=None, prox=False, forest=[], zem=[],
-#                prox_vel=[]
+        try:
+            z = self.z_dict[self.targ]
+        except:
+            z = 0.0
+        self.params = od(
+            [('Use Forest', True), ('Ion', 'Ly'), ('Emission redshift', z),
+             ('Use Range', False), ('Min. wavelength', 0.0),
+             ('Max. wavelength', 0.0), ('Prox. velocity', 0.0)])
         param = ParamDialog(self, title="Extract Spectral Region")
         param.ShowModal()
         param.Destroy()
         if param.execute == True:
-            self.targ = self.targ + '_%3.2f-%3.2f' \
-                        % (float(self.params['xmin']),
-                           float(self.params['xmax']))
+            val = self.params.values()
+            if val[0] == 'True':
+                forest = self.spec.extract(forest=val[1], zem=float(val[2]))
+                self.targ = self.targ + '_' + val[1]
+                self.z_dict[self.targ] = float(val[2])
+            else:
+                forest = self.spec.extract(xmin=float(val[4])*u.nm,
+                                           xmax=float(val[5])*u.nm)
+                self.targ = self.targ + '_%3.0f-%3.0f' \
+                            % (float(val[4]), float(val[5]))
+                if float(val[2]) != 0.0:
+                    self.z_dict[self.targ] = float(val[2])
+
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
-            forest = self.spec.extract(xmin=float(self.params['xmin'])*u.nm,
-                                       xmax=float(self.params['xmax'])*u.nm)
 
-                                       #forest=str(self.params['forest']),
-                                       #zem=float(self.params['zem']))
             self.spec = forest
             self.spec_dict[self.targ] = self.spec
             self.update_spec()
@@ -475,6 +496,8 @@ class MainFrame(wx.Frame):
         except:
             self.syst = None
         self.update_plot()
+        self.update_line()
+        self.update_syst()
         #self.update_spec()
         
     def on_syst_find(self, event):
@@ -484,11 +507,12 @@ class MainFrame(wx.Frame):
         param.ShowModal()
         param.Destroy()
         if param.execute == True:
-            self.syst = System(self.spec, self.line, self.cont)#, doubl=self.params['doubl'])
+            syst = System(self.spec, self.line, self.cont)
+            self.syst = syst
             self.syst_dict[self.targ] = self.syst
             self.syst.find(tag=self.params['series'])
             self.update_spec()
-            self.update_syst()
+            self.update_syst(clear=False)
 
         # Only until the Cont class is rewritten
         #self.syst._cont = self.line._cont
@@ -544,6 +568,8 @@ class MainFrame(wx.Frame):
             self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
             self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
             self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
+        self.line_dict[self.targ] = self.line
+        print self.line_dict
 
     def update_plot(self):
         """ Update the plot panel """
@@ -557,7 +583,7 @@ class MainFrame(wx.Frame):
         self.spec = self.spec_dict[self.targ]
 
         try:
-            self.spec_lc.SetItem(self.row, 2, str(self.z))
+            self.spec_lc.SetItem(self.row, 2, str(self.z_dict[self.targ]))
         except:
             pass
 
@@ -575,28 +601,31 @@ class MainFrame(wx.Frame):
         except:
             pass
         try:
-            self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
+            self.spec_lc.SetItem(self.row, 5, str(len(self.syst._t)))
         except:
             pass
         
-    def update_syst(self):
+    def update_syst(self, clear=True):
         """ Update the system table """
-        
-        try:
-            self.syst_gr.DeleteRows(pos=0, numRows=self.syst_gr.GetNumberRows())
-        except:
-            pass
+
+        if clear == True:
+            try:
+                self.syst_gr.DeleteRows(pos=0,
+                                        numRows=self.syst_gr.GetNumberRows())
+            except:
+                pass
+        i0 = self.syst_gr.GetNumberRows()
         self.syst_gr.AppendRows(len(self.syst.t))
         for i, l in enumerate(self.syst.t):
-            self.syst_gr.SetCellValue(i, 0, str(l['SERIES']))
-            self.syst_gr.SetCellValue(i, 1, "%3.5f" % l['Z'])
-            self.syst_gr.SetCellValue(i, 2, "%3.3e" % l['N'])
-            self.syst_gr.SetCellValue(i, 3, "%3.3f" % l['B'])
-            self.syst_gr.SetCellValue(i, 4, "%3.3f" % l['BTUR'])
-            self.syst_gr.SetCellValue(i, 5, "%3.5f" % l['DZ'])
-            self.syst_gr.SetCellValue(i, 6, "%3.3e" % l['DN'])
-            self.syst_gr.SetCellValue(i, 7, "%3.3f" % l['DB'])
-            self.syst_gr.SetCellValue(i, 8, "%3.3f" % l['DBTUR'])
+            self.syst_gr.SetCellValue(i0+i, 0, str(l['SERIES']))
+            self.syst_gr.SetCellValue(i0+i, 1, "%3.5f" % l['Z'])
+            self.syst_gr.SetCellValue(i0+i, 2, "%3.3e" % l['N'])
+            self.syst_gr.SetCellValue(i0+i, 3, "%3.3f" % l['B'])
+            self.syst_gr.SetCellValue(i0+i, 4, "%3.3f" % l['BTUR'])
+            self.syst_gr.SetCellValue(i0+i, 5, "%3.5f" % l['DZ'])
+            self.syst_gr.SetCellValue(i0+i, 6, "%3.3e" % l['DN'])
+            self.syst_gr.SetCellValue(i0+i, 7, "%3.3f" % l['DB'])
+            self.syst_gr.SetCellValue(i0+i, 8, "%3.3f" % l['DBTUR'])
         
 
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
@@ -636,12 +665,12 @@ class ParamDialog(wx.Dialog):
             box_param = wx.BoxSizer(wx.HORIZONTAL)
             self.p.append(p)
             if type(v) == bool:
-                rb = wx.RadioButton(panel, label=p)
-                box_param.Add(rb, 1, wx.LEFT, border=5)
+                rb = wx.RadioButton(panel, -1, label=p)
+                box_param.Add(rb, 1, 0)
                 self.ctrl.append(rb)
             else:
                 st = wx.StaticText(panel, -1, label=p)
-                tc = wx.TextCtrl(panel, -1, value=str(v))
+                tc = wx.TextCtrl(panel, -1, value=str(v), size=(150,25))
                 box_param.Add(st, 1, 0)
                 box_param.Add(tc, 1, 0)
                 self.ctrl.append(tc)

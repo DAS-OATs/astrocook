@@ -1,6 +1,6 @@
 from . import Cont, Line, Spec1DReader, System
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Column, Table
 import difflib
 import numpy as np
 import os
@@ -22,7 +22,6 @@ class IO():
             # Spectrum (required)
             acs.spec_name = name[:-4]+'_spec.fits'
             #acs.spec_name = 'spec.fits'
-            print acs.spec_name
             acs.spec = acs.spec_read(acs.spec_name)
             os.remove(acs.spec_name)
             
@@ -186,13 +185,13 @@ class IO():
     def syst_read(self, name):
         """ Read an astrocook system from a FITS frame """
 
-        hdul =  fits.open(syst_name)
+        hdul =  fits.open(name)
         data = hdul[1].data
         names = np.array(hdul[1].columns.names)
         units = np.array(hdul[1].columns.units)
         Nunit = units[np.where(names == 'N')][0]
         bunit = units[np.where(names == 'B')][0]
-        series = data['SERIES']
+        series = [i.split(' ') for i in data['SERIES']]
         z = data['Z']
         N = data['N']
         b = data['B']
@@ -201,18 +200,43 @@ class IO():
         dN = data['DN']
         db = data['DB']
         dbtur = data['DBTUR']
-        vary = data['VARY']
-        expr = data['EXPR']
-        self.syst = System(
+        vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
+        expr = [i.split(' ') for i in data['EXPR']]
+        syst = System(
             spec=self.spec, cont=self.cont,
             series=series,
             z=z, N=N, b=b, btur=btur,
             dz=dz, dN=dN, db=db, dbtur=dbtur,
             vary=vary, expr=expr, Nunit=Nunit, bunit=bunit)
-        syst.t.write(name, format='fits', overwrite=overwrite)
 
+        return syst
+        
     def syst_write(self, syst, name, overwrite=True):
         """ Write an astrocook line list onto a FITS frame """
 
-        syst.t.write(name, format='fits', overwrite=overwrite)
+        series = [' '.join(syst.t['SERIES'][i]) for i in range(len(syst.t))]
+        vary = [' '.join(map(str, syst.t['VARY'][i])) \
+                for i in range(len(syst.t))]
+        expr = [' '.join(map(str, syst.t['EXPR'][i])) \
+                for i in range(len(syst.t))]
+        
+        hdu = fits.BinTableHDU.from_columns(
+            [fits.Column(name='Z', format='E', array=syst.t['Z']),
+             fits.Column(name='N', format='E', array=syst.t['N'],
+                         unit=syst.t['N'].unit.to_string()),
+             fits.Column(name='B', format='E', array=syst.t['B'],
+                         unit=syst.t['B'].unit.to_string()),
+             fits.Column(name='BTUR', format='E', array=syst.t['BTUR'],
+                         unit=syst.t['BTUR'].unit.to_string()),
+             fits.Column(name='DZ', format='E', array=syst.t['DZ']),
+             fits.Column(name='DN', format='E', array=syst.t['DN'],
+                         unit=syst.t['DN'].unit.to_string()),
+             fits.Column(name='DB', format='E', array=syst.t['DB'],
+                         unit=syst.t['DB'].unit.to_string()),
+             fits.Column(name='DBTUR', format='E', array=syst.t['DBTUR'],
+                         unit=syst.t['DBTUR'].unit.to_string()),
+             fits.Column(name='VARY', format='A23', array=vary),
+             fits.Column(name='EXPR', format='A500', array=expr),
+             fits.Column(name='SERIES', format='A500', array=series)])
+        hdu.writeto(name, overwrite=overwrite)
         

@@ -33,12 +33,14 @@ class System(Spec1D, Line, Cont):
         else:
             self._spec = dc(line._spec)
 
-        if (z != None):            
-            if (btur == None):
+        # "is not" works also with arrays
+        if (z is not None):            
+            if (btur is None):
                 btur = 0.0 * bunit_def
             self._t = self.create_t(series, z, N, b, btur,
                                     dz, dN, db, dbtur, vary, expr,
                                     Nunit, bunit, dtype)
+            print self._t
             self.create_line(xmin=xmin, xmax=xmax)
             
         # Line list
