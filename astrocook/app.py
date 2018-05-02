@@ -167,6 +167,7 @@ class MainFrame(wx.Frame):
         self.id_line = 200
         self.id_cont = 300
         self.id_syst = 400
+        self.id_syst_sel = 500
 
         
         # File menu
@@ -201,7 +202,7 @@ class MainFrame(wx.Frame):
                                     "Find &Continuum by Removing Lines...")
         rec_syst_find = wx.MenuItem(self.rec_menu, self.id_cont,
                                     "Find &Systems...")
-        rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst,
+        rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst_sel,
                                    "&Fit Selected System...")
 
         self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
@@ -224,7 +225,9 @@ class MainFrame(wx.Frame):
             self.menu_disable(self.rec_menu, self.id_line)
         if (hasattr(self, 'cont') == False):
             self.menu_disable(self.rec_menu, self.id_cont)
-        self.menu_disable(self.rec_menu, self.id_syst)            
+        if (hasattr(self, 'syst') == False):
+            self.menu_disable(self.rec_menu, self.id_syst)            
+            self.menu_disable(self.rec_menu, self.id_syst_sel)            
         
         # Menu bar
         menu_bar = wx.MenuBar()
@@ -317,8 +320,9 @@ class MainFrame(wx.Frame):
                 self.menu_enable(self.file_menu, self.id_syst)
                 self.menu_enable(self.rec_menu, self.id_syst)
             except:
-                pass
+                self.syst = None
 
+            self.update_syst()
             self.update_spec()
             self.update_plot()
             
@@ -365,10 +369,10 @@ class MainFrame(wx.Frame):
         self.params = od([('Mode:', 'abs'), ('Difference:', 'max'),
                           ('Threshold (sigma):', 5.0),
                           ('Smoothing (km/s):', 40.0)])
-        param = ParamDialog(self, title="Find Lines")
-        param.ShowModal()
-        param.Destroy()
-        if param.execute == True:
+        dialog = ParamDialog(self, title="Find Lines")
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
             val = self.params.values()
             self.line = Line(self.spec)
             self.line_dict[self.targ] = self.line
@@ -423,7 +427,7 @@ class MainFrame(wx.Frame):
 
     def on_spec_begin_edit(self, event):
         """ Veto the editing of some columns of the spectrum list """
-        if event.GetColumn() in [3,4,5]:
+        if event.GetColumn() in [0,3,4,5]:
             event.Veto()
         else:
             event.Skip()
@@ -450,10 +454,10 @@ class MainFrame(wx.Frame):
             [('Use Forest', True), ('Ion', 'Ly'), ('Emission redshift', z),
              ('Use Range', False), ('Min. wavelength', 0.0),
              ('Max. wavelength', 0.0), ('Prox. velocity', 0.0)])
-        param = ParamDialog(self, title="Extract Spectral Region")
-        param.ShowModal()
-        param.Destroy()
-        if param.execute == True:
+        dialog = ParamDialog(self, title="Extract Spectral Region")
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
             val = self.params.values()
             if val[0] == 'True':
                 forest = self.spec.extract(forest=val[1], zem=float(val[2]))
@@ -503,38 +507,52 @@ class MainFrame(wx.Frame):
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
         self.params = od([('series', 'CIV')])
-        param = ParamDialog(self, title="Find Lines")
-        param.ShowModal()
-        param.Destroy()
-        if param.execute == True:
+        dialog = ParamDialog(self, title="Find Lines")
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
             syst = System(self.spec, self.line, self.cont)
-            self.syst = syst
+            syst.find(tag=self.params['series'])
+
+            if self.syst != None:
+                self.syst.merge(syst)
+            else:
+                self.syst = syst
+
             self.syst_dict[self.targ] = self.syst
-            self.syst.find(tag=self.params['series'])
             self.update_spec()
-            self.update_syst(clear=False)
+            self.update_syst()
 
         # Only until the Cont class is rewritten
         #self.syst._cont = self.line._cont
         #self.syst._cont = self.cont._y
             
     def on_syst_fit(self, event):
+        print self.syst_dict[self.targ].t
+        self.syst = self.syst_dict[self.targ]
         syst_sel = self.syst.extract(self.syst_sel)
 
-        # Only until the Cont class is rewritten
-        #syst_sel._cont = self.syst._cont
-        syst_sel._cont = self.syst._cont
+        dialog = SystDialog(self, title="Fit selected system")
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
+            print "ciao"
+            
+            # Only until the Cont class is rewritten
+            #syst_sel._cont = self.syst._cont
+            syst_sel._cont = self.syst._cont
 
-        z_sel = syst_sel.t['Z']
-        syst_sel.fit(z_sel, norm=False)
-        chunk = syst_sel._chunk
-        self.ax.plot(chunk['X'], chunk['MODEL'])
-        self.plot_fig.draw()
+            z_sel = syst_sel.t['Z']
+            syst_sel.fit(z_sel, norm=False)
+            chunk = syst_sel._chunk
+            self.ax.plot(chunk['X'], chunk['MODEL'])
+            self.plot_fig.draw()
 
-        for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
-                  'EXPR']:
-            self.syst._t[self.syst_sel][c] = syst_sel.t[c]
-        self.update_syst()
+            for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
+                      'EXPR']:
+                self.syst._t[self.syst_sel][c] = syst_sel.t[c]
+                print self.syst.t
+            self.update_syst()
         
     def on_syst_select(self, event):
         """ Behaviour for line selection """        
@@ -549,10 +567,11 @@ class MainFrame(wx.Frame):
                  for i in self.syst.t['SERIES'][sel]]
             dx = 0.5
             h = np.max(self.spec.y)
+            self.syst.group(z, dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
             self.syst_sel = sel
-            self.menu_enable(self.rec_menu, self.id_syst)
+            self.menu_enable(self.rec_menu, self.id_syst_sel)
         
     def update_line(self):
         """ Update the line table """
@@ -569,7 +588,6 @@ class MainFrame(wx.Frame):
             self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
             self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
         self.line_dict[self.targ] = self.line
-        print self.line_dict
 
     def update_plot(self):
         """ Update the plot panel """
@@ -601,32 +619,35 @@ class MainFrame(wx.Frame):
         except:
             pass
         try:
-            self.spec_lc.SetItem(self.row, 5, str(len(self.syst._t)))
+            self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
         except:
             pass
         
-    def update_syst(self, clear=True):
+    def update_syst(self):
         """ Update the system table """
 
-        if clear == True:
-            try:
-                self.syst_gr.DeleteRows(pos=0,
-                                        numRows=self.syst_gr.GetNumberRows())
-            except:
-                pass
-        i0 = self.syst_gr.GetNumberRows()
-        self.syst_gr.AppendRows(len(self.syst.t))
-        for i, l in enumerate(self.syst.t):
-            self.syst_gr.SetCellValue(i0+i, 0, str(l['SERIES']))
-            self.syst_gr.SetCellValue(i0+i, 1, "%3.5f" % l['Z'])
-            self.syst_gr.SetCellValue(i0+i, 2, "%3.3e" % l['N'])
-            self.syst_gr.SetCellValue(i0+i, 3, "%3.3f" % l['B'])
-            self.syst_gr.SetCellValue(i0+i, 4, "%3.3f" % l['BTUR'])
-            self.syst_gr.SetCellValue(i0+i, 5, "%3.5f" % l['DZ'])
-            self.syst_gr.SetCellValue(i0+i, 6, "%3.3e" % l['DN'])
-            self.syst_gr.SetCellValue(i0+i, 7, "%3.3f" % l['DB'])
-            self.syst_gr.SetCellValue(i0+i, 8, "%3.3f" % l['DBTUR'])
-        
+        try:
+            self.syst_gr.DeleteRows(pos=0,
+                                    numRows=self.syst_gr.GetNumberRows())
+        except:
+            pass
+
+        try:
+            self.syst_gr.AppendRows(len(self.syst.t))
+            for i, s in enumerate(self.syst.t):
+                self.syst_gr.SetCellValue(i, 0, str(s['SERIES']))
+                self.syst_gr.SetCellValue(i, 1, "%3.5f" % s['Z'])
+                self.syst_gr.SetCellValue(i, 2, "%3.3e" % s['N'])
+                self.syst_gr.SetCellValue(i, 3, "%3.3f" % s['B'])
+                self.syst_gr.SetCellValue(i, 4, "%3.3f" % s['BTUR'])
+                self.syst_gr.SetCellValue(i, 5, "%3.5f" % s['DZ'])
+                self.syst_gr.SetCellValue(i, 6, "%3.3e" % s['DN'])
+                self.syst_gr.SetCellValue(i, 7, "%3.3f" % s['DB'])
+                self.syst_gr.SetCellValue(i, 8, "%3.3f" % s['DBTUR'])
+            self.syst_dict[self.targ] = self.syst
+        except:
+            pass
+
 
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
     def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
@@ -654,6 +675,7 @@ class ParamDialog(wx.Dialog):
 
         
     def init_UI(self):
+        """ Initialize the main frame """
         
         panel = wx.Panel(self)
         box_main = wx.BoxSizer(wx.VERTICAL)
@@ -679,18 +701,6 @@ class ParamDialog(wx.Dialog):
             box_params.Add(box_param, 1, 0, 0)
 
         panel.SetSizer(box_params)
-        #for tc, p in zip(tc_list, p_list):
-        #    print(tc, p)
-        #    self.Bind(wx.EVT_TEXT, lambda e, p=p: self.on_edit(e, p), tc)
-        
-        #sb = wx.StaticBox(panel, label='Colors')
-        #sbs = wx.StaticBoxSizer(sb, orient=wx.VERTICAL)        
-        #sbs.Add(wx.RadioButton(panel, label='256 Colors', 
-        #    style=wx.RB_GROUP))
-        #sbs.Add(wx.RadioButton(panel, label='16 Colors'))
-        #sbs.Add(wx.RadioButton(panel, label='2 Colors'))
-        
-        #box_main.Add(wx.TextCtrl(panel), flag=wx.LEFT, border=5)
         
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
@@ -722,4 +732,99 @@ class ParamDialog(wx.Dialog):
         self.execute = True
         self.Destroy()
                       
+class SystDialog(wx.Dialog):
+
+    def __init__(self, parent=None, title="Parameters", **kwargs):
+        """ Constructor for the ParamDialog class """
+
+        size = (wx.DisplaySize()[0]*0.5, wx.DisplaySize()[1]*0.7)
+        super(SystDialog, self).__init__(parent, title=title, size=size) 
+
+        self.parent = parent
+        self.init_UI()
+        #self.SetSize((250, 200))
+        #self.SetTitle("Change Color Depth")
+
+    def init_group(self, panel):
+        """ Create the group list panel """
+
+        self.group_gr = gridlib.Grid(panel)
+        self.group_gr.CreateGrid(0, 10)
+        self.group_gr.SetColLabelValue(0, "X")
+        self.group_gr.SetColLabelValue(1, "XMIN")
+        self.group_gr.SetColLabelValue(2, "XMAX")
+        self.group_gr.SetColLabelValue(3, "ION")
+        self.group_gr.SetColLabelValue(4, "Z")
+        self.group_gr.SetColLabelValue(5, "N")
+        self.group_gr.SetColLabelValue(6, "B")
+        self.group_gr.SetColLabelValue(7, "BTUR")
+        self.group_gr.SetColLabelValue(8, "VARY")
+        self.group_gr.SetColLabelValue(9, "EXPR")
+        #self.group_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
+    
+    def init_UI(self):
+        """ Initialize the main frame """
+
+        panel = wx.Panel(self)
+
+        self.init_group(panel)
+        self.update_group()
+
+        box_main = wx.BoxSizer(wx.VERTICAL)
+
+        box_group = wx.BoxSizer(wx.HORIZONTAL)
+        box_group.Add(self.group_gr, 1)
         
+
+        panel.SetSizer(box_group)
+        
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        cancel_button = wx.Button(self, label='Cancel')
+        run_button = wx.Button(self, label='Run')
+        run_button.SetDefault()
+        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+        buttons.Add(run_button, 0)
+ 
+        box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
+        box_main.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        box_main.SetSizeHints(self)
+
+        self.SetSizer(box_main)
+        
+        cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
+        run_button.Bind(wx.EVT_BUTTON, self.on_run)
+
+        self.Centre()
+        self.Show()
+
+    def on_cancel(self, e):
+        self.execute = False
+        self.Destroy()
+
+    def on_run(self, e):
+        self.execute = True
+        self.Destroy()
+        
+    def update_group(self):
+        """ Update the group table """
+        
+        try:
+            self.group_gr.DeleteRows(pos=0, numRows=
+                                     self.group_gr.GetNumberRows())
+        except:
+            pass
+        group = self.parent.syst._group
+        self.group_gr.AppendRows(len(group))
+        print group
+        for i, g in enumerate(group):
+            self.group_gr.SetCellValue(i, 0, "%3.3f" % g['X'])
+            self.group_gr.SetCellValue(i, 1, "%3.3f" % g['XMIN'])
+            self.group_gr.SetCellValue(i, 2, "%3.3f" % g['XMAX'])
+            self.group_gr.SetCellValue(i, 3, str(g['ION']))
+            self.group_gr.SetCellValue(i, 4, "%3.5f" % g['Z'])
+            self.group_gr.SetCellValue(i, 5, "%3.3e" % g['N'])
+            self.group_gr.SetCellValue(i, 6, "%3.3f" % g['B'])
+            self.group_gr.SetCellValue(i, 7, "%3.3f" % g['BTUR'])
+            self.group_gr.SetCellValue(i, 8, str(g['VARY']))
+            self.group_gr.SetCellValue(i, 9, str(g['EXPR']))

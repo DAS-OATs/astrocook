@@ -40,7 +40,6 @@ class System(Spec1D, Line, Cont):
             self._t = self.create_t(series, z, N, b, btur,
                                     dz, dN, db, dbtur, vary, expr,
                                     Nunit, bunit, dtype)
-            print self._t
             self.create_line(xmin=xmin, xmax=xmax)
             
         # Line list
@@ -368,6 +367,8 @@ class System(Spec1D, Line, Cont):
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
 
     def extract(self, row):
+        print self.t
+        print self._t
         sel = self._t[row]
         syst_sel = System(
             spec=self._spec, cont=self._cont,
@@ -543,7 +544,12 @@ class System(Spec1D, Line, Cont):
             self._chunk['MODEL'] = model
         self._fun = fun
         self._par = par
-        
+
+    def merge(self, syst):
+
+        new_t = vstack([self._t, syst._t])
+        self._t = new_t
+
     def plot(self, ax=None, dz=0.01):
         """ Plot a system """
 

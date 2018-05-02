@@ -201,7 +201,8 @@ class IO():
         db = data['DB']
         dbtur = data['DBTUR']
         vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
-        expr = [i.split(' ') for i in data['EXPR']]
+        #expr = [i.split(' ') for i in data['EXPR']]
+        expr = [None, None, None, None]
         syst = System(
             spec=self.spec, cont=self.cont,
             series=series,
