@@ -40,7 +40,10 @@ class System(Spec1D, Line, Cont):
             self._t = self.create_t(series, z, N, b, btur,
                                     dz, dN, db, dbtur, vary, expr,
                                     Nunit, bunit, dtype)
-            self.create_line(xmin=xmin, xmax=xmax)
+            if (line is None):
+                self.create_line(xmin=xmin, xmax=xmax)
+            else:
+                self._line = dc(line)
             
         # Line list
         else:
@@ -298,7 +301,7 @@ class System(Spec1D, Line, Cont):
         self._line = Line(spec=self._spec, x=x, y=y,
                           xmin=xmin, xmax=xmax,
                           dy=dy, xunit=xunit_def, yunit=yunit_def)
-        
+
         # Table to map rows of self._line.t into rows of self._t
         self._map = Table()
         self._map['X'] = Column(x_temp.value, dtype=float, unit=xunit_def)
@@ -335,11 +338,14 @@ class System(Spec1D, Line, Cont):
         t['EXPR'] = Column(expr)
         
         # Needed to have the series column without defined shape
-        t.add_column(Column(dtype=object, length=len(t),
-                            shape=1, name='SERIES'), index=0)
-        for (i, s) in enumerate(t):
-            s['SERIES'] = series[0]
-            #s['SERIES'] = series[i]
+        try:
+            t['SERIES'] = Column(series, dtype=object)
+        except:
+            t.add_column(Column(dtype=object, length=len(t),
+                                shape=1, name='SERIES'), index=0)
+            for (i, s) in enumerate(t):
+                s['SERIES'] = series[0]
+                #s['SERIES'] = series[i]
 
         return t
         
@@ -367,11 +373,9 @@ class System(Spec1D, Line, Cont):
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
 
     def extract(self, row):
-        print self.t
-        print self._t
         sel = self._t[row]
         syst_sel = System(
-            spec=self._spec, cont=self._cont,
+            spec=self._spec, line=self._line, cont=self._cont,
             series=[sel['SERIES']],
             z=sel['Z'], N=sel['N'], b=sel['B'], btur=sel['BTUR'],
             dz=sel['DZ'], dN=sel['DN'], db=sel['DB'], dbtur=sel['DBTUR'],
@@ -389,14 +393,23 @@ class System(Spec1D, Line, Cont):
         match = np.isclose(z_arr[1:], z_arr[:-1], atol=ztol) 
         dec = np.core.defchararray.not_equal(ion_arr[1:], ion_arr[:-1])
         match = np.logical_and(match, dec)
-        z_sel = np.mean([z_arr[1:][match], z_arr[:-1][match]], axis=0)
+        z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
+
+        z_sel = z_mean[match]
         self._t = self.create_t(series=[ion], z=z_sel)
+        self._t['Z'] = z_sel  # To avoid rounding errors
         
+        # Table to map rows of self._line.t into rows of self._t
+        self._map = Table()
+        self._map['X'] = np.append(self._z['X'][1:][match],
+                                   self._z['X'][:-1][match])
+        self._map['Z'] = np.append(z_sel, z_sel)
+        self._map.sort('X')
 
     def fit(self, z, save=True, **kwargs):
         """ Fit the model on a system """
 
-        if (hasattr(self, '_fun') == False or True):
+        if (hasattr(self, '_fun') == False):# or True):
             self.model(z, **kwargs)
 
         x = self._chunk['X']
@@ -434,12 +447,12 @@ class System(Spec1D, Line, Cont):
         """ Extract the lines needed for fitting (both from systems and not)
         and setup the fitting parameters """
 
-        if (hasattr(self, '_map') == False or True):
+        
+        if (hasattr(self, '_map') == False):
             self.create_line(dx, **kwargs)
 
         self._line.t.sort('X')
         
-
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
         
@@ -462,14 +475,14 @@ class System(Spec1D, Line, Cont):
 
         # Define the ion and prefix columns
         ion = np.array([])
-        for g in group:
+        for ig, g in enumerate(group):
             xs = (1+g['Z'])*np.array([dict_wave[i].value for i in g['SERIES']])
             ion = np.append(ion, g['SERIES'][np.abs(xs - g['X']).argmin()])
         pref = np.array(['voigt_'+str(i) for i in range(len(group))])
         group.add_column(Column(ion, name='ION'), index=1)
         group.add_column(Column(pref, name='PREF'), index=2)
         zlist = np.array(group['Z'])
-        
+
         # Find rows with duplicate redshift values
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
@@ -487,8 +500,8 @@ class System(Spec1D, Line, Cont):
     def model(self, z, norm=True, prof=True, psf=True, **kwargs):
         """ Create a model to fit, including normalization, profile and PSF """
 
-        if (hasattr(self, '_chunk') == False or True):
-            self.chunk(z, **kwargs)
+        #if (hasattr(self, '_chunk') == False or True):
+        self.chunk(z, **kwargs)
             
         x = self._chunk['X']
         y = self._chunk['Y']
@@ -548,7 +561,9 @@ class System(Spec1D, Line, Cont):
     def merge(self, syst):
 
         new_t = vstack([self._t, syst._t])
+        new_map = vstack([self._map, syst._map])
         self._t = new_t
+        self._map = new_map
 
     def plot(self, ax=None, dz=0.01):
         """ Plot a system """
@@ -556,40 +571,41 @@ class System(Spec1D, Line, Cont):
         if (hasattr(self, '_chunk') == False):
             self.chunk(z, **kwargs)
 
-        t = self._t
-        series = t['SERIES']
-        ions = np.unique([[i for i in s] for s in series])
+        #t = self._t
+        #series = t['SERIES']
+        #ions = np.unique([[i for i in s] for s in series])
+        ions = self._group['ION']
         waves = [dict_wave[i].value for i in ions]
         ions = ions[np.argsort(waves)]
+        rown = 5
+        n = len(ions)
         if ax == None:
-            rown = 5
-            n = len(ions)
             row = min(n,rown)
             col = int(np.ceil(n/rown))
             fig = plt.figure(figsize=(col*6, n*3.5))
             grid = gs(row,col)
-            ax_arr = []
-            axt_arr = []
-            top = []
-            bottom = []
-            left = []
+            ax = []
             for p in range(n):
-                if p%rown == 0:
-                    top.append(p)
-                if p%rown==rown-1 or p==n-1:
-                    bottom.append(p)
-                if n<rown:
-                    left.append(p)
-                else:
-                    left = [rown//2]
-                ax_arr.append(fig.add_subplot(grid[p%rown,
-                                                   int(np.floor(p/rown))]))
-                axt_arr.append(ax_arr[p].twiny())
+                ax.append(fig.add_subplot(grid[p%rown,
+                                               int(np.floor(p/rown))]))
             try:
                 fig.suptitle(r"$\chi_r^2$ = %3.1f" % self._fit.redchi)
             except:
                 pass
-                
+        top = []    
+        bottom = []
+        left = []
+        #axt = []
+        for p in range(n):
+            if p%rown == 0:
+                top.append(p)
+            if p%rown==rown-1 or p==n-1:
+                bottom.append(p)
+            if n<rown:
+                left.append(p)
+            else:
+                left = [rown//2]
+            #axt.append(ax[p].twiny())
         spec = dc(self._spec.t)
         group = dc(self._group)
         chunk = dc(self._chunk)
@@ -614,35 +630,37 @@ class System(Spec1D, Line, Cont):
             residc = yc-modelc
             xc_z = xc / dict_wave[i] - 1
             
-            ax_arr[c].set_xlim(zmin, zmax)
-            axt_arr[c].set_xlim(xmin, xmax)
+            ax[c].set_xlim(zmin, zmax)
+            #axt[c].set_xlim(xmin, xmax)
             maxf = 1.25
-            ax_arr[c].set_ylim(-max(contc)*0.2, max(contc)*maxf)
+            #ax[c].set_ylim(-max(contc)*0.2, max(contc)*maxf)
             if c in bottom:
-                ax_arr[c].set_xlabel(r"$z$")
+                ax[c].set_xlabel(r"$z$")
             else:
-                ax_arr[c].set_xticks([], [])
+                ax[c].set_xticks([], [])
             if c in left:
-                ax_arr[c].set_ylabel(r"Flux [%s]" % y.unit)
-            axt_arr[c].tick_params(axis="x",direction="in", pad=-20)
-            ax_arr[c].text(0.05, 0.5, i, transform=ax_arr[c].transAxes,
+                ax[c].set_ylabel(r"Flux [%s]" % y.unit)
+            #axt[c].tick_params(axis="x",direction="in", pad=-20)
+            ax[c].text(0.05, 0.5, i, transform=ax[c].transAxes,
                            fontsize=13)
-            ax_arr[c].plot(x_z, y, color='C0', linestyle='--')
-            ax_arr[c].plot(x_z, self._conv.y, color='C2', linestyle=':')
-            ax_arr[c].plot(xc_z, yc, color='C0')
-            ax_arr[c].plot(xc_z, contc, color='C1')
-            ax_arr[c].plot(xc_z, modelc, color='C2')
-            ax_arr[c].plot(xc_z, residc, color='C3', linestyle=':')
+            ax[c].plot(x_z, y, color='C0', linestyle='--')
+            #ax[c].plot(x_z, self._conv.y, color='C2', linestyle=':')
+            ax[c].plot(xc_z, yc, color='C0')
+            ax[c].plot(xc_z, contc, color='C1')
+            ax[c].plot(xc_z, modelc, color='C2')
+            ax[c].plot(xc_z, residc, color='C3', linestyle=':')
             for g in group[where_g]:
+                """
                 if c in top:
-                    ax_arr[c].text(g['Z'], max(contc)*(maxf+0.18), 
+                    ax[c].text(g['Z'], max(contc)*(maxf+0.18), 
                                    "%3.1f" % np.log10(g['N']), ha='center',
                                    fontsize=9) 
-                    ax_arr[c].text(g['Z'], max(contc)*(maxf+0.1), 
+                    ax[c].text(g['Z'], max(contc)*(maxf+0.1), 
                                    "%3.1f" % g['B'], ha='center', fontsize=9) 
-                    ax_arr[c].text(g['Z'], max(contc)*(maxf+0.02), 
+                    ax[c].text(g['Z'], max(contc)*(maxf+0.02), 
                                    "%3.1f" % g['BTUR'], ha='center', fontsize=9)
-                ax_arr[c].axvline(x=g['Z'], color='C3', alpha=0.5)
+                """
+                ax[c].axvline(x=g['Z'], color='C3', alpha=0.5)
         if ax == None:
             grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
             grid.update(wspace=0.2, hspace=0.0)

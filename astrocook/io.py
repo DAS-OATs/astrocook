@@ -51,6 +51,7 @@ class IO():
                 acs.syst_name = name[:-4]+'_syst.fits'
                 acs.syst = acs.syst_read(acs.syst_name)
                 os.remove(acs.syst_name)
+                os.remove(acs.syst_name[:-10]+'_map.fits')
             except:
                 pass
 
@@ -103,7 +104,10 @@ class IO():
                 syst_arcname = diff[:-4] + '_syst.fits'
                 self.syst_write(acs.syst, syst_name)
                 arch.add(syst_name, arcname=syst_arcname)
+                arch.add(syst_name[:-10]+'_map.fits',
+                         arcname=syst_arcname[:-10]+'_map.fits')
                 os.remove(syst_name)
+                os.remove(syst_name[:-10]+'_map.fits')
             except:
                 pass
 
@@ -204,11 +208,17 @@ class IO():
         #expr = [i.split(' ') for i in data['EXPR']]
         expr = [None, None, None, None]
         syst = System(
-            spec=self.spec, cont=self.cont,
+            spec=self.spec, line=self.line, cont=self.cont,
             series=series,
             z=z, N=N, b=b, btur=btur,
             dz=dz, dN=dN, db=db, dbtur=dbtur,
             vary=vary, expr=expr, Nunit=Nunit, bunit=bunit)
+
+        # Extrema
+        try:
+            syst._map = Table.read(name[:-10]+'_map.fits')
+        except:
+            pass
 
         return syst
         
@@ -222,7 +232,7 @@ class IO():
                 for i in range(len(syst.t))]
         
         hdu = fits.BinTableHDU.from_columns(
-            [fits.Column(name='Z', format='E', array=syst.t['Z']),
+            [fits.Column(name='Z', format='D', array=syst.t['Z']),
              fits.Column(name='N', format='E', array=syst.t['N'],
                          unit=syst.t['N'].unit.to_string()),
              fits.Column(name='B', format='E', array=syst.t['B'],
@@ -241,3 +251,5 @@ class IO():
              fits.Column(name='SERIES', format='A500', array=series)])
         hdu.writeto(name, overwrite=overwrite)
         
+        # Table with mapping between lines and systems
+        syst._map.write(name[:-10]+'_map.fits')

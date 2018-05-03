@@ -3,6 +3,7 @@ from .utils import *
 from astropy.io import fits
 from collections import OrderedDict as od
 from datetime import datetime
+from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
@@ -21,10 +22,12 @@ class MainFrame(wx.Frame):
         size = (wx.DisplaySize()[0]*0.708, wx.DisplaySize()[1]*0.9)
         self.pad = 10
         super(MainFrame, self).__init__(parent, title=title, size=size)
-        self.init_UI(**kwargs)
-
-        self.IO = IO()
-
+        self.targ = None
+        self.spec = None
+        self.line = None
+        self.cont = None
+        self.syst = None
+        
         self.targ_list = []
         self.spec_dict = {}
         self.z_dict = {}
@@ -34,6 +37,70 @@ class MainFrame(wx.Frame):
         self.syst_dict = {} 
 
         self.count = 0
+        
+        self.init_UI(**kwargs)
+        self.IO = IO()
+
+        
+    def init_line(self, panel):
+        """ Create the line list panel """
+
+        self.line_gr = gridlib.Grid(panel)
+        self.line_gr.CreateGrid(0, 5)
+        self.line_gr.SetColLabelValue(0, "X")
+        self.line_gr.SetColLabelValue(1, "XMIN")
+        self.line_gr.SetColLabelValue(2, "XMAX")
+        self.line_gr.SetColLabelValue(3, "Y")
+        self.line_gr.SetColLabelValue(4, "DY")
+        self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
+        self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_line_edit)
+       
+    def init_plot(self, panel):
+        """ Create the spectrum panel """
+        self.fig = Figure()#figsize=(20,20))
+        self.ax = self.fig.add_subplot(111)
+        self.fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
+        self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
+        self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
+        self.plot_tb.Realize()
+        self.plot_pb = wx.Button(panel, label="Plot", size=(100,38))
+        self.plot_cb = wx.Button(panel, label="Clear", size=(100,38))
+        #self.plot_pb.Bind(wx.EVT_BUTTON,
+        #                  lambda e: self.on_plot_draw(e, self.spec))
+        self.plot_pb.Bind(wx.EVT_BUTTON, self.on_plot_draw)
+        self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
+        
+    def init_spec(self, panel):
+        """ Create the spectrum panel """
+
+        self.spec_lc = EditableListCtrl(panel, -1, style=wx.LC_REPORT)
+        self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_spec_begin_edit)
+        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_spec_end_edit)
+        self.spec_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_spec_select)
+        self.spec_lc.InsertColumn(0, 'target', width=150)
+        self.spec_lc.InsertColumn(1, 'object', width=150)
+        self.spec_lc.InsertColumn(2, 'redshift', width=150)
+        self.spec_lc.InsertColumn(3, 'active range [nm]', width=150)
+        self.spec_lc.InsertColumn(4, '# lines', width=150)
+        self.spec_lc.InsertColumn(5, '# systems', width=150)
+        
+    def init_syst(self, panel):
+        """ Create the system list panel """
+
+        self.syst_gr = gridlib.Grid(panel)
+        self.syst_gr.CreateGrid(0, 9)
+        self.syst_gr.SetColLabelValue(0, "SERIES")
+        self.syst_gr.SetColLabelValue(1, "Z")
+        self.syst_gr.SetColLabelValue(2, "N")
+        self.syst_gr.SetColLabelValue(3, "B")
+        self.syst_gr.SetColLabelValue(4, "BTUR")
+        self.syst_gr.SetColLabelValue(5, "DZ")
+        self.syst_gr.SetColLabelValue(6, "DN")
+        self.syst_gr.SetColLabelValue(7, "DB")
+        self.syst_gr.SetColLabelValue(8, "DBTUR")
+        self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_syst_select)
+        self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_syst_edit)
+        #self.syst_gr.Bind(gridlib.EVT_BUTTON, self.on_syst_menu)
         
     def init_UI(self, **kwargs):
         """ Initialize the main frame """
@@ -102,63 +169,6 @@ class MainFrame(wx.Frame):
         self.Centre()
         self.Show()
 
-    def init_line(self, panel):
-        """ Create the line list panel """
-
-        self.line_gr = gridlib.Grid(panel)
-        self.line_gr.CreateGrid(0, 5)
-        self.line_gr.SetColLabelValue(0, "X")
-        self.line_gr.SetColLabelValue(1, "XMIN")
-        self.line_gr.SetColLabelValue(2, "XMAX")
-        self.line_gr.SetColLabelValue(3, "Y")
-        self.line_gr.SetColLabelValue(4, "DY")
-        self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
-        
-    def init_plot(self, panel):
-        """ Create the spectrum panel """
-        self.fig = Figure()#figsize=(20,20))
-        self.ax = self.fig.add_subplot(111)
-        self.fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
-        self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
-        self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
-        self.plot_tb.Realize()
-        self.plot_pb = wx.Button(panel, label="Plot", size=(100,38))
-        self.plot_cb = wx.Button(panel, label="Clear", size=(100,38))
-        #self.plot_pb.Bind(wx.EVT_BUTTON,
-        #                  lambda e: self.on_plot_draw(e, self.spec))
-        self.plot_pb.Bind(wx.EVT_BUTTON, self.on_plot_draw)
-        self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
-        
-    def init_spec(self, panel):
-        """ Create the spectrum panel """
-
-        self.spec_lc = EditableListCtrl(panel, -1, style=wx.LC_REPORT)
-        self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_spec_begin_edit)
-        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_spec_end_edit)
-        self.spec_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_spec_select)
-        self.spec_lc.InsertColumn(0, 'target', width=150)
-        self.spec_lc.InsertColumn(1, 'object', width=150)
-        self.spec_lc.InsertColumn(2, 'redshift', width=150)
-        self.spec_lc.InsertColumn(3, 'active range [nm]', width=150)
-        self.spec_lc.InsertColumn(4, '# lines', width=150)
-        self.spec_lc.InsertColumn(5, '# systems', width=150)
-        
-    def init_syst(self, panel):
-        """ Create the system list panel """
-
-        self.syst_gr = gridlib.Grid(panel)
-        self.syst_gr.CreateGrid(0, 9)
-        self.syst_gr.SetColLabelValue(0, "SERIES")
-        self.syst_gr.SetColLabelValue(1, "Z")
-        self.syst_gr.SetColLabelValue(2, "N")
-        self.syst_gr.SetColLabelValue(3, "B")
-        self.syst_gr.SetColLabelValue(4, "BTUR")
-        self.syst_gr.SetColLabelValue(5, "DZ")
-        self.syst_gr.SetColLabelValue(6, "DN")
-        self.syst_gr.SetColLabelValue(7, "DB")
-        self.syst_gr.SetColLabelValue(8, "DBTUR")
-        self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_syst_select)
-        
     def menu(self, **kwargs):
         """ Create a menu in the frame """
 
@@ -218,7 +228,8 @@ class MainFrame(wx.Frame):
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
         self.rec_menu.Append(rec_syst_fit)
-        
+
+        """
         if (hasattr(self, 'spec') == False):
             self.menu_disable(self.rec_menu, self.id_spec)
         if (hasattr(self, 'line') == False):
@@ -228,15 +239,18 @@ class MainFrame(wx.Frame):
         if (hasattr(self, 'syst') == False):
             self.menu_disable(self.rec_menu, self.id_syst)            
             self.menu_disable(self.rec_menu, self.id_syst_sel)            
+        """
         
         # Menu bar
+        self.update_menu()
         menu_bar = wx.MenuBar()
         menu_bar.Append(self.file_menu, '&File')
         menu_bar.Append(self.rec_menu, '&Recipes')
         self.SetMenuBar(menu_bar)        
 
+        
     def menu_disable(self, menu, id):
-        for i in range(2):
+        for i in range(10):
             try:
                 menu.Enable(id+i, False)
             except:
@@ -268,8 +282,6 @@ class MainFrame(wx.Frame):
             if (name[-4:] == '.acs'):
                 self.targ = fileDialog.GetFilename()[:-24]
                 try:
-                #    ciao
-                #except:
                     acs = self.IO.acs_read(name, path)
                     self.spec = acs.spec
                     self.spec_name = acs.spec_name
@@ -310,8 +322,8 @@ class MainFrame(wx.Frame):
                 self.menu_enable(self.file_menu, self.id_cont)
                 self.menu_enable(self.rec_menu, self.id_cont)
             except:
-                pass
-
+                self.cont = None
+                
             try:
                 self.syst = acs.syst
                 self.syst_name = acs.syst_name
@@ -363,6 +375,13 @@ class MainFrame(wx.Frame):
         self.plot_fig.draw()
 
         self.menu_enable(self.rec_menu, self.id_cont)
+        
+    def on_line_edit(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        label = self.line_gr.GetColLabelValue(col)
+        data = self.line_gr.GetCellValue(row, col)
+        self.line._t[label][row] = data
         
     def on_line_find(self, event):
         """ Behaviour for Recipes > Find Lines """
@@ -476,8 +495,11 @@ class MainFrame(wx.Frame):
 
             self.spec = forest
             self.spec_dict[self.targ] = self.spec
-            self.update_spec()
-            self.update_plot()
+            self.update_all()
+            #self.update_spec()
+            #self.update_line()
+            #self.update_syst()
+            #self.update_plot()
 
     def on_spec_select(self, event):
         """ Behaviour when spectrum is selected from list """
@@ -486,23 +508,14 @@ class MainFrame(wx.Frame):
         self.targ = item.GetText()
         self.row = event.GetIndex()
         self.spec = self.spec_dict[self.targ]
-        try:
-            self.line = self.line_dict[self.targ]
-        except:
-            self.line = None
-            
-        try:
-            self.cont = self.cont_dict[self.targ]
-        except:
-            self.cont = None
-        try:
-            self.syst = self.syst_dict[self.targ]
-        except:
-            self.syst = None
-        self.update_plot()
-        self.update_line()
-        self.update_syst()
-        #self.update_spec()
+        self.update_all()
+
+    def on_syst_edit(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        label = self.syst_gr.GetColLabelValue(col)
+        data = self.syst_gr.GetCellValue(row, col)
+        self.syst._t[label][row] = data
         
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
@@ -528,15 +541,14 @@ class MainFrame(wx.Frame):
         #self.syst._cont = self.cont._y
             
     def on_syst_fit(self, event):
-        print self.syst_dict[self.targ].t
         self.syst = self.syst_dict[self.targ]
-        syst_sel = self.syst.extract(self.syst_sel)
 
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
-            print "ciao"
+            syst_sel = self.syst.extract(self.syst_sel)
+            syst_sel._group = self.syst._group
             
             # Only until the Cont class is rewritten
             #syst_sel._cont = self.syst._cont
@@ -548,14 +560,20 @@ class MainFrame(wx.Frame):
             self.ax.plot(chunk['X'], chunk['MODEL'])
             self.plot_fig.draw()
 
+            # Update syst._t and syst._map
             for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
                       'EXPR']:
-                self.syst._t[self.syst_sel][c] = syst_sel.t[c]
-                print self.syst.t
+                self.syst._t[c][dialog.t_mask] = np.array(syst_sel.t[c])
+            for c in ['Z']:
+                self.syst._map[c][dialog.map_mask] = np.array(syst_sel.t[c])
+
             self.update_syst()
+
+    #def on_syst_menu(self, event):
+        
         
     def on_syst_select(self, event):
-        """ Behaviour for line selection """        
+        """ Behaviour for system selection """        
         if event.GetTopRow() == event.GetBottomRow():            
             sel = event.GetTopRow()
             try:
@@ -567,11 +585,35 @@ class MainFrame(wx.Frame):
                  for i in self.syst.t['SERIES'][sel]]
             dx = 0.5
             h = np.max(self.spec.y)
-            self.syst.group(z, dx)
+            self.syst.model(z, dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
             self.syst_sel = sel
             self.menu_enable(self.rec_menu, self.id_syst_sel)
+
+    def update_all(self):
+        """ Update all panels """
+        
+        self.spec = self.spec_dict[self.targ]
+        try:
+            self.line = self.line_dict[self.targ]
+        except:
+            self.line = None
+            
+        try:
+            self.cont = self.cont_dict[self.targ]
+        except:
+            self.cont = None
+        try:
+            self.syst = self.syst_dict[self.targ]
+        except:
+            self.syst = None
+        self.update_spec()
+        self.update_line()
+        self.update_syst()
+        self.update_plot()
+        self.update_menu()
+        
         
     def update_line(self):
         """ Update the line table """
@@ -580,15 +622,43 @@ class MainFrame(wx.Frame):
             self.line_gr.DeleteRows(pos=0, numRows=self.line_gr.GetNumberRows())
         except:
             pass
-        self.line_gr.AppendRows(len(self.line.t))
-        for i, l in enumerate(self.line.t):
-            self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
-            self.line_gr.SetCellValue(i, 1, "%3.3f" % l['XMIN'])
-            self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
-            self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
-            self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
-        self.line_dict[self.targ] = self.line
+        try:
+            self.line_gr.AppendRows(len(self.line.t))
+            for i, l in enumerate(self.line.t):
+                self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
+                self.line_gr.SetCellValue(i, 1, "%3.3f" % l['XMIN'])
+                self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
+                self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
+                self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
+            self.line_dict[self.targ] = self.line
+        except:
+            pass
 
+    def update_menu(self):
+        """ Update the menus """
+        
+        #if (hasattr(self, 'spec') == False):
+        if (self.spec is None):
+            self.menu_disable(self.rec_menu, self.id_spec)
+        else:
+            self.menu_enable(self.rec_menu, self.id_spec)
+        if (self.line is None):
+            self.menu_disable(self.rec_menu, self.id_line)
+        else:
+            self.menu_enable(self.rec_menu, self.id_line)
+        if (self.cont is None):
+            self.menu_disable(self.rec_menu, self.id_cont)
+        else:
+            self.menu_enable(self.rec_menu, self.id_cont)
+        if (self.syst is None):
+            self.menu_disable(self.rec_menu, self.id_syst)            
+        else:
+            self.menu_enable(self.rec_menu, self.id_syst)
+
+        self.menu_disable(self.rec_menu, self.id_syst_sel)
+                        
+    
+            
     def update_plot(self):
         """ Update the plot panel """
 
@@ -749,7 +819,7 @@ class SystDialog(wx.Dialog):
         """ Create the group list panel """
 
         self.group_gr = gridlib.Grid(panel)
-        self.group_gr.CreateGrid(0, 10)
+        self.group_gr.CreateGrid(0, 11)
         self.group_gr.SetColLabelValue(0, "X")
         self.group_gr.SetColLabelValue(1, "XMIN")
         self.group_gr.SetColLabelValue(2, "XMAX")
@@ -761,22 +831,59 @@ class SystDialog(wx.Dialog):
         self.group_gr.SetColLabelValue(8, "VARY")
         self.group_gr.SetColLabelValue(9, "EXPR")
         #self.group_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
-    
+
+    def init_plot(self, panel):
+        """ Create the spectrum panel """
+        self.fig = Figure()#figsize=(20,20))
+
+        #t = self.parent.syst._t
+        #series = t['SERIES']
+        #ions = np.unique([[i for i in s] for s in series])
+        ions = self.parent.syst._group['ION']
+        waves = [dict_wave[i].value for i in ions]
+        ions = ions[np.argsort(waves)]
+
+        rown = 5.
+        self.pn = len(ions)
+        row = min(self.pn,rown)
+        col = int(np.ceil(self.pn/rown))
+        #fig = plt.figure(figsize=(col*6, n*3.5))
+        grid = gs(row,col)
+        self.ax = []
+        for p in range(self.pn):
+            self.ax.append(self.fig.add_subplot(grid[int(p%rown),
+                                                int(np.floor(p/rown))]))
+        try:
+            self.fig.suptitle(r"$\chi_r^2$ = %3.1f" % self._fit.redchi)
+        except:
+            pass
+
+        #grid.update(wspace=0.2, hspace=0.0)
+        grid.tight_layout(self.fig, rect=[0.01, 0.01, 1, 0.9], h_pad=0.0)
+        self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
+        
     def init_UI(self):
         """ Initialize the main frame """
 
         panel = wx.Panel(self)
 
         self.init_group(panel)
+        self.init_plot(panel)
         self.update_group()
 
         box_main = wx.BoxSizer(wx.VERTICAL)
 
         box_group = wx.BoxSizer(wx.HORIZONTAL)
         box_group.Add(self.group_gr, 1)
-        
 
-        panel.SetSizer(box_group)
+        box_plot = wx.BoxSizer(wx.VERTICAL)
+        box_plot.Add(self.plot_fig, 1, wx.EXPAND)
+
+        box_disp = wx.BoxSizer(wx.VERTICAL)
+        box_disp.Add(box_group)
+        box_disp.Add(box_plot, 1, wx.EXPAND)
+
+        panel.SetSizer(box_disp)
         
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
@@ -798,11 +905,35 @@ class SystDialog(wx.Dialog):
         self.Centre()
         self.Show()
 
-    def on_cancel(self, e):
+    def on_cancel(self, event):
         self.execute = False
         self.Destroy()
 
-    def on_run(self, e):
+    def on_group_edit(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        label = self.group_gr.GetColLabelValue(col)
+        data = self.group_gr.GetCellValue(row, col)
+        line = self.parent.line
+        syst = self.parent.syst
+        syst_gr = self.parent.syst_gr
+        group = syst._group
+        x = group['X'][row]
+        z = group['Z'][row]
+        dx = 0.5
+        #where_line = np.where(line._t['X'] == x)
+        #print np.array(line._t['X']), x
+        where_syst = np.where(syst._t['Z'] == z)[0]
+        where_group = np.where(syst._group['Z'] == z)[0]
+        syst._t[label][where_syst] = data
+        syst._group[label][where_group] = data
+        syst.model(z, dx)
+        for p in range(self.pn):
+            self.ax[p].clear()
+        syst.plot(ax=self.ax)
+        self.plot_fig.draw()
+        
+    def on_run(self, event):
         self.execute = True
         self.Destroy()
         
@@ -816,7 +947,6 @@ class SystDialog(wx.Dialog):
             pass
         group = self.parent.syst._group
         self.group_gr.AppendRows(len(group))
-        print group
         for i, g in enumerate(group):
             self.group_gr.SetCellValue(i, 0, "%3.3f" % g['X'])
             self.group_gr.SetCellValue(i, 1, "%3.3f" % g['XMIN'])
@@ -828,3 +958,22 @@ class SystDialog(wx.Dialog):
             self.group_gr.SetCellValue(i, 7, "%3.3f" % g['BTUR'])
             self.group_gr.SetCellValue(i, 8, str(g['VARY']))
             self.group_gr.SetCellValue(i, 9, str(g['EXPR']))
+            self.group_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED,
+                               self.on_group_edit)
+            
+        # Find rows of syst._t and syst._map to be updated
+        syst = self.parent.syst
+        t_i = np.array([], dtype=int)
+        map_i = np.array([], dtype=int)
+        for z in group['Z']:
+            t_i = np.append(t_i, np.where(syst._t['Z'] == z)[0])
+            map_i = np.append(map_i, np.where(syst._map['Z'] == z)[0])
+        self.t_mask = np.zeros(len(syst.t), dtype=bool)
+        self.t_mask[t_i] = 1
+        self.map_mask = np.zeros(len(syst._map), dtype=bool)
+        self.map_mask[map_i] = 1
+
+        # Plot system
+        syst.plot(ax=self.ax)
+        self.plot_fig.draw()
+        
