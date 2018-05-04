@@ -230,10 +230,10 @@ class System(Spec1D, Line, Cont):
     def chunk(self, z, dx=0.0, **kwargs):
         """ Extract the chunks of spectrum needed for fitting """
 
-        if (hasattr(self, '_group') == False or True):
+        if (hasattr(self, '_group') == False):# or True):
             self.group(z, dx, **kwargs)
 
-        if (hasattr(self, '_chunk') == False or True):
+        if (hasattr(self, '_chunk') == False):# or True):
             spec = dc(self._spec.t)
             spec.add_column(Column(self._cont.t['Y'], name='CONT'))
         else:
@@ -372,15 +372,27 @@ class System(Spec1D, Line, Cont):
         self._z['ION'] = Column(ion) 
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
 
-    def extract(self, row):
-        sel = self._t[row]
+    def extract(self, z, dx=0.0):
+        """ Extract a system from a list """
+        
+        if (hasattr(self, '_group') == False):# or True):
+            self.group(z, dx, **kwargs)
+
+        self._t.sort('Z')
+        syst_z = self._t['Z']
+        syst_idx = np.full(len(self._t), False)
+        for g in self._group:
+            z = g['Z']
+            syst_idx += z==syst_z
+
+        sel = self._t[syst_idx]
         syst_sel = System(
             spec=self._spec, line=self._line, cont=self._cont,
-            series=[sel['SERIES']],
+            series=sel['SERIES'],
             z=sel['Z'], N=sel['N'], b=sel['B'], btur=sel['BTUR'],
             dz=sel['DZ'], dN=sel['DN'], db=sel['DB'], dbtur=sel['DBTUR'],
             vary=sel['VARY'], expr=sel['EXPR'])
-        return syst_sel
+        return syst_sel, syst_idx
             
     def find(self, tag, ztol=1e-4):
         """ Find systems by matching redshifts """
@@ -449,12 +461,14 @@ class System(Spec1D, Line, Cont):
 
         
         if (hasattr(self, '_map') == False):
+            print "ciaone"
             self.create_line(dx, **kwargs)
 
         self._line.t.sort('X')
-        
+
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
+        #print join_t
         
         # Select lines at the system redshift
         join_z = join_t['Z']
@@ -469,8 +483,16 @@ class System(Spec1D, Line, Cont):
             xmax = j['XMAX']
             #cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
             cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+
+        # Select doublet companions of the previously selected lines
+        join_xz = join_t['Z']
+        cond_xz = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_x)[0]]:
+            xz = j['Z']
+            cond_xz += xz==join_xz
+
         
-        group = join_t[np.where(cond_x)[0]]
+        group = join_t[np.where(cond_xz)[0]]
         group.sort(['Z', 'X'])
 
         # Define the ion and prefix columns
@@ -497,11 +519,25 @@ class System(Spec1D, Line, Cont):
 
         self._group = group
 
+    def merge(self, syst):
+        """ Merge two systems """
+
+        self._t = vstack([self._t, syst._t])
+        self._t.sort('Z')
+        try:
+            self._group = vstack([self._group, syst._group])
+        except:
+            pass
+        try:
+            self._map = vstack([self._map, syst._map])
+        except:
+            pass
+
     def model(self, z, norm=True, prof=True, psf=True, **kwargs):
         """ Create a model to fit, including normalization, profile and PSF """
 
-        #if (hasattr(self, '_chunk') == False or True):
-        self.chunk(z, **kwargs)
+        if (hasattr(self, '_chunk') == False):# or True):
+            self.chunk(z, **kwargs)
             
         x = self._chunk['X']
         y = self._chunk['Y']
@@ -558,14 +594,7 @@ class System(Spec1D, Line, Cont):
         self._fun = fun
         self._par = par
 
-    def merge(self, syst):
-
-        new_t = vstack([self._t, syst._t])
-        new_map = vstack([self._map, syst._map])
-        self._t = new_t
-        self._map = new_map
-
-    def plot(self, ax=None, dz=0.01):
+    def plot(self, z=None, ax=None, dz=0.01):
         """ Plot a system """
 
         if (hasattr(self, '_chunk') == False):
@@ -574,10 +603,14 @@ class System(Spec1D, Line, Cont):
         #t = self._t
         #series = t['SERIES']
         #ions = np.unique([[i for i in s] for s in series])
-        ions = self._group['ION']
+        rown = 5
+
+        if (z == None):
+            ions = self._group['ION']
+        else:
+            ions = self._group['ION'][np.where(self._group['Z'] == z)]
         waves = [dict_wave[i].value for i in ions]
         ions = ions[np.argsort(waves)]
-        rown = 5
         n = len(ions)
         if ax == None:
             row = min(n,rown)
@@ -592,6 +625,7 @@ class System(Spec1D, Line, Cont):
                 fig.suptitle(r"$\chi_r^2$ = %3.1f" % self._fit.redchi)
             except:
                 pass
+
         top = []    
         bottom = []
         left = []
@@ -611,8 +645,10 @@ class System(Spec1D, Line, Cont):
         chunk = dc(self._chunk)
         x = spec['X']
         y = spec['Y']
-        zmin = np.mean(group['Z'])-dz
-        zmax = np.mean(group['Z'])+dz
+        #zmin = np.mean(group['Z'])-dz
+        #zmax = np.mean(group['Z'])+dz
+        zmin = z-dz
+        zmax = z+dz
         for c, i in enumerate(ions):
             x_z = x/dict_wave[i] - 1
             xmin = (1+zmin) * dict_wave[i].value

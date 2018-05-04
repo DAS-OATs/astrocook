@@ -422,7 +422,8 @@ class Line(Spec1D):
 
         if (self._spec is None):
             raise Exception("Spectrum not provided.")
-        
+
+        print mode
         spec = dc(self._spec)
 
         # Convolve the 1D spectrum with a gaussian filter

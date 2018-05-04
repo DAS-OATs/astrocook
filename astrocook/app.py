@@ -1,6 +1,7 @@
 from . import Cont, IO, Line, Spec1DReader, System
 from .utils import *
 from astropy.io import fits
+from astropy.table import vstack
 from collections import OrderedDict as od
 from datetime import datetime
 from matplotlib.gridspec import GridSpec as gs
@@ -10,6 +11,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
 from matplotlib.figure import Figure
 import numpy as np
 import os
+import random
 import sys
 import wx
 import wx.grid as gridlib
@@ -140,9 +142,9 @@ class MainFrame(wx.Frame):
         box_line.Add(self.line_gr, 1, wx.EXPAND|wx.RIGHT, self.pad)
         box_syst.Add(wx.StaticText(panel, label="Systems"))
         box_syst.Add(self.syst_gr, 1, wx.EXPAND)
-        box_ctrl.Add(self.plot_tb, 1)
-        box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT)
-        box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT)
+        box_ctrl.Add(self.plot_tb, 1, wx.RIGHT, border=5)
+        box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
+        box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
         box_plot.Add(box_ctrl, 0, wx.TOP, self.pad)
 
@@ -393,6 +395,7 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         if dialog.execute == True:
             val = self.params.values()
+            print val[0]
             self.line = Line(self.spec)
             self.line_dict[self.targ] = self.line
             self.line.find(mode=val[0], diff=val[1], kappa=float(val[2]),
@@ -542,35 +545,36 @@ class MainFrame(wx.Frame):
             
     def on_syst_fit(self, event):
         self.syst = self.syst_dict[self.targ]
-
+        
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
-            syst_sel = self.syst.extract(self.syst_sel)
-            syst_sel._group = self.syst._group
             
             # Only until the Cont class is rewritten
             #syst_sel._cont = self.syst._cont
-            syst_sel._cont = self.syst._cont
-
-            z_sel = syst_sel.t['Z']
-            syst_sel.fit(z_sel, norm=False)
-            chunk = syst_sel._chunk
-            self.ax.plot(chunk['X'], chunk['MODEL'])
+            #self.syst_sel._cont = self.syst._cont
+            z_old = self.syst_sel._t['Z']
+            self.syst_sel.fit(self.z_sel, norm=False)
+            z_new = self.syst_sel._t['Z']
+            self.ax.plot(self.syst_sel._chunk['X'],
+                         self.syst_sel._chunk['MODEL'])
             self.plot_fig.draw()
 
             # Update syst._t and syst._map
-            for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
-                      'EXPR']:
-                self.syst._t[c][dialog.t_mask] = np.array(syst_sel.t[c])
-            for c in ['Z']:
-                self.syst._map[c][dialog.map_mask] = np.array(syst_sel.t[c])
+            #for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
+            #          'EXPR']:
+            #    self.syst._t[c][self.syst_idx] = np.array(self.syst_sel.t[c])
+            self.syst._t.remove_row(np.where(self.syst_idx == True)[0][0])
+            self.syst.merge(self.syst_sel)
+            self.syst._map = self.syst_sel._map
+            print len(self.syst._t), len(self.syst._map)
+
+            for i, z in enumerate(z_old):
+                match = np.where(self.syst._map['Z'] == z)[0]
+                self.syst._map['Z'][match] = z_new[i]
 
             self.update_syst()
-
-    #def on_syst_menu(self, event):
-        
         
     def on_syst_select(self, event):
         """ Behaviour for system selection """        
@@ -585,11 +589,17 @@ class MainFrame(wx.Frame):
                  for i in self.syst.t['SERIES'][sel]]
             dx = 0.5
             h = np.max(self.spec.y)
-            self.syst.model(z, dx)
+            self.syst.group(z, dx)
+            self.syst.chunk(z)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
-            self.syst_sel = sel
+            
+            self.syst_sel, self.syst_idx = self.syst.extract(z)
+            self.syst_sel._group = self.syst._group
+            self.syst_sel._map = self.syst._map
+            self.syst_sel.model(z, dx)            
             self.menu_enable(self.rec_menu, self.id_syst_sel)
+            self.z_sel = z
 
     def update_all(self):
         """ Update all panels """
@@ -738,7 +748,7 @@ class ParamDialog(wx.Dialog):
         """ Constructor for the ParamDialog class """
         super(ParamDialog, self).__init__(parent, title=title)#, size=size) 
 
-        self.parent = parent
+        self.p = parent
         self.init_UI()
         #self.SetSize((250, 200))
         #self.SetTitle("Change Color Depth")
@@ -751,11 +761,11 @@ class ParamDialog(wx.Dialog):
         box_main = wx.BoxSizer(wx.VERTICAL)
 
         box_params = wx.BoxSizer(wx.VERTICAL)
-        self.p = []
+        self.par = []
         self.ctrl = []
-        for p, v in self.parent.params.iteritems():
+        for p, v in self.p.params.iteritems():
             box_param = wx.BoxSizer(wx.HORIZONTAL)
-            self.p.append(p)
+            self.par.append(p)
             if type(v) == bool:
                 rb = wx.RadioButton(panel, -1, label=p)
                 box_param.Add(rb, 1, 0)
@@ -797,8 +807,8 @@ class ParamDialog(wx.Dialog):
         self.Destroy()
 
     def on_run(self, e):
-        for p, ctrl in zip(self.p, self.ctrl):
-            self.parent.params[p] = str(ctrl.GetValue())
+        for p, ctrl in zip(self.par, self.ctrl):
+            self.p.params[p] = str(ctrl.GetValue())
         self.execute = True
         self.Destroy()
                       
@@ -810,41 +820,33 @@ class SystDialog(wx.Dialog):
         size = (wx.DisplaySize()[0]*0.5, wx.DisplaySize()[1]*0.7)
         super(SystDialog, self).__init__(parent, title=title, size=size) 
 
-        self.parent = parent
+        self.p = parent
+        self.syst = self.p.syst_sel
+        self.group = self.p.syst_sel._group
+        self.z = self.p.z_sel
+        self.sel = np.where(self.syst._t['Z'] == self.z)[0]
+        self.series = self.syst._t['SERIES'][self.sel][0]
         self.init_UI()
-        #self.SetSize((250, 200))
-        #self.SetTitle("Change Color Depth")
 
-    def init_group(self, panel):
-        """ Create the group list panel """
+    def init_buttons(self, panel):
+        self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
+        self.line_b = wx.Button(panel, label="Add line", size=(100,38))
+        self.syst_b.Bind(wx.EVT_BUTTON, self.on_syst_add)
 
-        self.group_gr = gridlib.Grid(panel)
-        self.group_gr.CreateGrid(0, 11)
-        self.group_gr.SetColLabelValue(0, "X")
-        self.group_gr.SetColLabelValue(1, "XMIN")
-        self.group_gr.SetColLabelValue(2, "XMAX")
-        self.group_gr.SetColLabelValue(3, "ION")
-        self.group_gr.SetColLabelValue(4, "Z")
-        self.group_gr.SetColLabelValue(5, "N")
-        self.group_gr.SetColLabelValue(6, "B")
-        self.group_gr.SetColLabelValue(7, "BTUR")
-        self.group_gr.SetColLabelValue(8, "VARY")
-        self.group_gr.SetColLabelValue(9, "EXPR")
-        #self.group_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
-
+        
     def init_plot(self, panel):
         """ Create the spectrum panel """
         self.fig = Figure()#figsize=(20,20))
 
-        #t = self.parent.syst._t
-        #series = t['SERIES']
-        #ions = np.unique([[i for i in s] for s in series])
-        ions = self.parent.syst._group['ION']
-        waves = [dict_wave[i].value for i in ions]
-        ions = ions[np.argsort(waves)]
 
+        
+        #sel = np.where(self.p.syst._t['Z'] == self.p.z_sel)[0]
+        
+        #ions = self.p.syst._t['SERIES'][sel][0] #self.p.syst._group['ION']
+        #waves = [dict_wave[i].value for i in ions]
+        #ions = ions[np.argsort(waves)]
         rown = 5.
-        self.pn = len(ions)
+        self.pn = len(self.series)
         row = min(self.pn,rown)
         col = int(np.ceil(self.pn/rown))
         #fig = plt.figure(figsize=(col*6, n*3.5))
@@ -861,27 +863,70 @@ class SystDialog(wx.Dialog):
         #grid.update(wspace=0.2, hspace=0.0)
         grid.tight_layout(self.fig, rect=[0.01, 0.01, 1, 0.9], h_pad=0.0)
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
+        self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
+        self.plot_tb.Realize()
         
+    def init_tab(self, panel):
+        """ Create the system list panel """
+
+        gr = gridlib.Grid(panel)
+        gr.CreateGrid(0, 11)
+        gr.SetColLabelValue(0, "X")
+        gr.SetColLabelValue(1, "XMIN")
+        gr.SetColLabelValue(2, "XMAX")
+        gr.SetColLabelValue(3, "ION")
+        gr.SetColLabelValue(4, "Z")
+        gr.SetColLabelValue(5, "N")
+        gr.SetColLabelValue(6, "B")
+        gr.SetColLabelValue(7, "BTUR")
+        gr.SetColLabelValue(8, "VARY")
+        gr.SetColLabelValue(9, "EXPR")
+        gr.SetColLabelValue(10, "#")
+        gr.Bind(gridlib.EVT_GRID_CELL_CHANGED,
+                lambda e: self.on_tab_edit(e, gr))
+        #self.focus_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
+
+        return gr
+
     def init_UI(self):
         """ Initialize the main frame """
 
         panel = wx.Panel(self)
 
-        self.init_group(panel)
+        self.focus_gr = self.init_tab(panel)
+        self.add_gr = self.init_tab(panel)
+        self.init_buttons(panel)
+        self.add_gr.SetColLabelSize(0)
         self.init_plot(panel)
-        self.update_group()
+        #self.update_group()
 
-        box_main = wx.BoxSizer(wx.VERTICAL)
+        self.box_main = wx.BoxSizer(wx.VERTICAL)
 
-        box_group = wx.BoxSizer(wx.HORIZONTAL)
-        box_group.Add(self.group_gr, 1)
+        box_focus = wx.BoxSizer(wx.VERTICAL)
+        #box_focus.Add(wx.StaticText(panel, label="Focus"))
+        box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
+
+        box_button = wx.BoxSizer(wx.HORIZONTAL)
+        box_button.Add(self.syst_b, 0, wx.RIGHT, border=5)
+        box_button.Add(self.line_b, 0, wx.RIGHT, border=5)
+
+        box_add = wx.BoxSizer(wx.VERTICAL)
+        #box_add.Add(wx.StaticText(panel, label="Additional lines"))
+        box_add.Add(self.add_gr, 1, wx.BOTTOM, border=10)
+        box_add.Add(box_button)
 
         box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
 
+        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
+        box_ctrl.Add(self.plot_tb, 1)
+
         box_disp = wx.BoxSizer(wx.VERTICAL)
-        box_disp.Add(box_group)
-        box_disp.Add(box_plot, 1, wx.EXPAND)
+        box_disp.Add(box_focus)
+        box_disp.Add(box_add)
+        box_disp.Add(box_plot, 1, wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
+        box_disp.Add(box_ctrl)
+
 
         panel.SetSizer(box_disp)
         
@@ -892,16 +937,19 @@ class SystDialog(wx.Dialog):
         buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
         buttons.Add(run_button, 0)
  
-        box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
-        box_main.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
-                     border=10)
-        box_main.SetSizeHints(self)
+        self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self.box_main.Add(
+            buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+        self.box_main.SetSizeHints(self)
 
-        self.SetSizer(box_main)
+        self.SetSizer(self.box_main)
         
         cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
         run_button.Bind(wx.EVT_BUTTON, self.on_run)
 
+        self.update_tab()
+        self.update_plot()
+        
         self.Centre()
         self.Show()
 
@@ -909,71 +957,96 @@ class SystDialog(wx.Dialog):
         self.execute = False
         self.Destroy()
 
-    def on_group_edit(self, event):
+    def on_tab_edit(self, event, tab):
+        """ Behaviour when table is edited """
+        
         row = event.GetRow()
         col = event.GetCol()
-        label = self.group_gr.GetColLabelValue(col)
-        data = self.group_gr.GetCellValue(row, col)
-        line = self.parent.line
-        syst = self.parent.syst
-        syst_gr = self.parent.syst_gr
-        group = syst._group
-        x = group['X'][row]
-        z = group['Z'][row]
+        label = tab.GetColLabelValue(col)
+        data = tab.GetCellValue(row, col)
+        idx = int(tab.GetCellValue(row, 10))
+        print row, col, data, idx
+        t = self.syst._t
+        group = self.syst._group
+        x = group['X'][idx]
+        z = group['Z'][idx]
         dx = 0.5
-        #where_line = np.where(line._t['X'] == x)
-        #print np.array(line._t['X']), x
-        where_syst = np.where(syst._t['Z'] == z)[0]
-        where_group = np.where(syst._group['Z'] == z)[0]
-        syst._t[label][where_syst] = data
-        syst._group[label][where_group] = data
-        syst.model(z, dx)
-        for p in range(self.pn):
-            self.ax[p].clear()
-        syst.plot(ax=self.ax)
-        self.plot_fig.draw()
+        where_syst = np.where(t['Z'] == z)[0]
+        where_group = np.where(group['Z'] == z)[0]
+        t[label][where_syst] = data
+        group[label][where_group] = data
+        self.syst.model(z, dx)
+        self.update_plot()
         
     def on_run(self, event):
         self.execute = True
         self.Destroy()
-        
-    def update_group(self):
-        """ Update the group table """
-        
-        try:
-            self.group_gr.DeleteRows(pos=0, numRows=
-                                     self.group_gr.GetNumberRows())
-        except:
-            pass
-        group = self.parent.syst._group
-        self.group_gr.AppendRows(len(group))
-        for i, g in enumerate(group):
-            self.group_gr.SetCellValue(i, 0, "%3.3f" % g['X'])
-            self.group_gr.SetCellValue(i, 1, "%3.3f" % g['XMIN'])
-            self.group_gr.SetCellValue(i, 2, "%3.3f" % g['XMAX'])
-            self.group_gr.SetCellValue(i, 3, str(g['ION']))
-            self.group_gr.SetCellValue(i, 4, "%3.5f" % g['Z'])
-            self.group_gr.SetCellValue(i, 5, "%3.3e" % g['N'])
-            self.group_gr.SetCellValue(i, 6, "%3.3f" % g['B'])
-            self.group_gr.SetCellValue(i, 7, "%3.3f" % g['BTUR'])
-            self.group_gr.SetCellValue(i, 8, str(g['VARY']))
-            self.group_gr.SetCellValue(i, 9, str(g['EXPR']))
-            self.group_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED,
-                               self.on_group_edit)
-            
-        # Find rows of syst._t and syst._map to be updated
-        syst = self.parent.syst
-        t_i = np.array([], dtype=int)
-        map_i = np.array([], dtype=int)
-        for z in group['Z']:
-            t_i = np.append(t_i, np.where(syst._t['Z'] == z)[0])
-            map_i = np.append(map_i, np.where(syst._map['Z'] == z)[0])
-        self.t_mask = np.zeros(len(syst.t), dtype=bool)
-        self.t_mask[t_i] = 1
-        self.map_mask = np.zeros(len(syst._map), dtype=bool)
-        self.map_mask[map_i] = 1
 
-        # Plot system
-        syst.plot(ax=self.ax)
+    def on_syst_add(self, event):
+        print self.syst._t
+        z_shift = 0.001*random.random()
+        
+        dupl = self.syst._t[self.sel]
+        dupl['Z'] = dupl['Z']+z_shift
+
+        match = np.where(self.syst._map['Z'] == self.z)[0]
+        print self.syst._map[match]
+        for r in self.syst._map[match]:
+            self.syst._map.add_row(r)
+            self.syst._map['Z'][-1] = self.syst._map['Z'][-1]+z_shift
+        print self.syst._map
+
+        self.syst._map.sort('X')
+        print self.syst._map
+        
+        self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
+        print self.syst._t
+        self.syst.group(self.z, 0.5)
+        print self.syst._group
+        dx = 0.5
+        self.syst.model(self.z, dx)
+        self.update_tab()
+        self.update_plot()
+        
+    def update_plot(self):
+        for p in range(self.pn):
+            self.ax[p].clear()
+        self.syst.plot(z=self.z, ax=self.ax)
         self.plot_fig.draw()
         
+        
+    def update_tab(self):
+        """ Update the system table """
+
+        try:
+            self.focus_gr.DeleteRows(pos=0,
+                                     numRows=self.focus_gr.GetNumberRows())
+        except:
+            pass
+        try:
+            self.add_gr.DeleteRows(pos=0,
+                                   numRows=self.add_gr.GetNumberRows())
+        except:
+            pass
+
+        group = self.syst._group
+        for i, g in enumerate(group):
+            if g['Z'] == self.z:
+                tab = self.focus_gr
+            else:
+                tab = self.add_gr
+            r = tab.GetNumberRows()
+            tab.AppendRows(1)
+            tab.SetCellValue(r, 0, "%3.3f" % g['X'])
+            tab.SetCellValue(r, 1, "%3.3f" % g['XMIN'])
+            tab.SetCellValue(r, 2, "%3.3f" % g['XMAX'])
+            tab.SetCellValue(r, 3, str(g['ION']))
+            tab.SetCellValue(r, 4, "%3.5f" % g['Z'])
+            tab.SetCellValue(r, 5, "%3.3e" % g['N'])
+            tab.SetCellValue(r, 6, "%3.3f" % g['B'])
+            tab.SetCellValue(r, 7, "%3.3f" % g['BTUR'])
+            tab.SetCellValue(r, 8, str(g['VARY']))
+            tab.SetCellValue(r, 9, str(g['EXPR']))
+            tab.SetCellValue(r, 10, str(i))
+        
+        self.box_main.Fit(self)
