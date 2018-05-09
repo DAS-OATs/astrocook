@@ -33,9 +33,12 @@ dict_doubl = {#'Ly': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7',
               #       'Ly15'],
               'CIV': ['CIV_1548', 'CIV_1550'],
               'MgII': ['MgII_2796', 'MgII_2803']}
-dict_series = {'Ly': [['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
+dict_series = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
-                       'Ly_b', 'Ly_a']],
+                       'Ly_b', 'Ly_a'],
+               #'Ly': [['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
+              #         'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
+              #         'Ly_b', 'Ly_a']],
                'CIV': ['CIV_1548', 'CIV_1550'],
                'MgII': ['MgII_2796', 'MgII_2803']}
 

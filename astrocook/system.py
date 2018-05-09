@@ -230,10 +230,10 @@ class System(Spec1D, Line, Cont):
     def chunk(self, z, dx=0.0, **kwargs):
         """ Extract the chunks of spectrum needed for fitting """
 
-        if (hasattr(self, '_group') == False):# or True):
+        if (hasattr(self, '_group') == False or True):
             self.group(z, dx, **kwargs)
 
-        if (hasattr(self, '_chunk') == False):# or True):
+        if (hasattr(self, '_chunk') == False or True):
             spec = dc(self._spec.t)
             spec.add_column(Column(self._cont.t['Y'], name='CONT'))
         else:
@@ -242,6 +242,7 @@ class System(Spec1D, Line, Cont):
         x = spec['X']
         where = np.array([], dtype=int)
         for l in self._group:
+            print l
             xmin = l['XMIN']-dx
             xmax = l['XMAX']+dx
             #cond_temp = np.logical_and(x>xmin, x<xmax)
@@ -416,13 +417,15 @@ class System(Spec1D, Line, Cont):
         self._map['X'] = np.append(self._z['X'][1:][match],
                                    self._z['X'][:-1][match])
         self._map['Z'] = np.append(z_sel, z_sel)
-        self._map.sort('X')
+        self._map.sort('Z')
 
     def fit(self, z, save=True, **kwargs):
         """ Fit the model on a system """
 
-        if (hasattr(self, '_fun') == False):# or True):
-            self.model(z, **kwargs)
+        z_old = self._map['Z']
+        
+        #if (hasattr(self, '_fun') == False):# or True):
+        self.model(z, **kwargs)
 
         x = self._chunk['X']
         y = self._chunk['Y']
@@ -453,18 +456,21 @@ class System(Spec1D, Line, Cont):
             l['DB'] = par[pref+'_b'].stderr
             l['DBTUR'] = par[pref+'_btur'].stderr
         self._chunk['MODEL'] = model
-        self._t = unique(self._group[self._t.colnames], keys='Z')
-
+        new_t = unique(self._group[self._t.colnames], keys='Z')
+        new_map = self._group[self._map.colnames]
+        self._t[self._group_t] = new_t
+        self._map[self._group_map] = new_map
+        
     def group(self, z, dx, **kwargs):
         """ Extract the lines needed for fitting (both from systems and not)
         and setup the fitting parameters """
 
         
         if (hasattr(self, '_map') == False):
-            print "ciaone"
             self.create_line(dx, **kwargs)
 
         self._line.t.sort('X')
+        print self._line.t
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
@@ -505,6 +511,15 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(pref, name='PREF'), index=2)
         zlist = np.array(group['Z'])
 
+        # Define the mininimum- and maximum-redshift columns
+        zmin = np.array([group['XMIN'][i]/dict_wave[group['ION'][i]].value-1
+                         for i in range(len(group))])
+        zmax = np.array([group['XMAX'][i]/dict_wave[group['ION'][i]].value-1
+                         for i in range(len(group))])
+        group.add_column(Column(zmin, name='ZMIN'), index=1)
+        group.add_column(Column(zmax, name='ZMAX'), index=2)
+
+        print group
         # Find rows with duplicate redshift values
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
@@ -519,6 +534,11 @@ class System(Spec1D, Line, Cont):
 
         self._group = group
 
+        self._t.sort('Z')
+        self._map.sort('Z')
+        self._group_t = np.in1d(self._t['Z'], group['Z'])
+        self._group_map = np.in1d(self._map['Z'], group['Z'])
+        
     def merge(self, syst):
         """ Merge two systems """
 
@@ -536,7 +556,7 @@ class System(Spec1D, Line, Cont):
     def model(self, z, norm=True, prof=True, psf=True, **kwargs):
         """ Create a model to fit, including normalization, profile and PSF """
 
-        if (hasattr(self, '_chunk') == False):# or True):
+        if (hasattr(self, '_chunk') == False  or True):
             self.chunk(z, **kwargs)
             
         x = self._chunk['X']
@@ -697,6 +717,8 @@ class System(Spec1D, Line, Cont):
                                    "%3.1f" % g['BTUR'], ha='center', fontsize=9)
                 """
                 ax[c].axvline(x=g['Z'], color='C3', alpha=0.5)
+                ax[c].axvline(x=g['ZMIN'], color='C3', alpha=0.5, linestyle=':')
+                ax[c].axvline(x=g['ZMAX'], color='C3', alpha=0.5, linestyle=':')
         if ax == None:
             grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
             grid.update(wspace=0.2, hspace=0.0)

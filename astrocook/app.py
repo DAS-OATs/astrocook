@@ -395,7 +395,6 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         if dialog.execute == True:
             val = self.params.values()
-            print val[0]
             self.line = Line(self.spec)
             self.line_dict[self.targ] = self.line
             self.line.find(mode=val[0], diff=val[1], kappa=float(val[2]),
@@ -549,33 +548,22 @@ class MainFrame(wx.Frame):
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
         dialog.Destroy()
-        if dialog.execute == True:
+        while dialog.execute == True:
             
-            # Only until the Cont class is rewritten
-            #syst_sel._cont = self.syst._cont
-            #self.syst_sel._cont = self.syst._cont
-            z_old = self.syst_sel._t['Z']
-            self.syst_sel.fit(self.z_sel, norm=False)
-            z_new = self.syst_sel._t['Z']
-            self.ax.plot(self.syst_sel._chunk['X'],
-                         self.syst_sel._chunk['MODEL'])
+            self.syst.fit(self.z_sel, norm=False)
+            new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
+            self.z_sel = self.syst._t['Z'][new_z]
+            self.ax.plot(self.syst._chunk['X'],
+                         self.syst._chunk['MODEL'])
             self.plot_fig.draw()
 
-            # Update syst._t and syst._map
-            #for c in ['Z', 'N', 'B', 'BTUR', 'DZ', 'DN', 'DB', 'DBTUR', 'VARY',
-            #          'EXPR']:
-            #    self.syst._t[c][self.syst_idx] = np.array(self.syst_sel.t[c])
-            self.syst._t.remove_row(np.where(self.syst_idx == True)[0][0])
-            self.syst.merge(self.syst_sel)
-            self.syst._map = self.syst_sel._map
-            print len(self.syst._t), len(self.syst._map)
-
-            for i, z in enumerate(z_old):
-                match = np.where(self.syst._map['Z'] == z)[0]
-                self.syst._map['Z'][match] = z_new[i]
-
             self.update_syst()
-        
+            dialog = SystDialog(self, title="Fit selected system")
+            dialog.ShowModal()
+            dialog.Destroy()
+        self.update_syst()
+            
+            
     def on_syst_select(self, event):
         """ Behaviour for system selection """        
         if event.GetTopRow() == event.GetBottomRow():            
@@ -589,15 +577,19 @@ class MainFrame(wx.Frame):
                  for i in self.syst.t['SERIES'][sel]]
             dx = 0.5
             h = np.max(self.spec.y)
-            self.syst.group(z, dx)
-            self.syst.chunk(z)
+            #self.syst.group(z, dx)
+            self.syst.model(z, dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
-            
+
+            """
             self.syst_sel, self.syst_idx = self.syst.extract(z)
             self.syst_sel._group = self.syst._group
+            self.syst_sel._group_t = self.syst._group_t
+            self.syst_sel._group_map = self.syst._group_map
             self.syst_sel._map = self.syst._map
             self.syst_sel.model(z, dx)            
+            """
             self.menu_enable(self.rec_menu, self.id_syst_sel)
             self.z_sel = z
 
@@ -821,8 +813,8 @@ class SystDialog(wx.Dialog):
         super(SystDialog, self).__init__(parent, title=title, size=size) 
 
         self.p = parent
-        self.syst = self.p.syst_sel
-        self.group = self.p.syst_sel._group
+        self.syst = self.p.syst#_sel
+        self.group = self.p.syst._group
         self.z = self.p.z_sel
         self.sel = np.where(self.syst._t['Z'] == self.z)[0]
         self.series = self.syst._t['SERIES'][self.sel][0]
@@ -965,17 +957,36 @@ class SystDialog(wx.Dialog):
         label = tab.GetColLabelValue(col)
         data = tab.GetCellValue(row, col)
         idx = int(tab.GetCellValue(row, 10))
-        print row, col, data, idx
-        t = self.syst._t
         group = self.syst._group
+        t = self.syst._t
+        line = self.syst._line._t
+        map = self.syst._map
+        
         x = group['X'][idx]
         z = group['Z'][idx]
+        #print z
         dx = 0.5
-        where_syst = np.where(t['Z'] == z)[0]
-        where_group = np.where(group['Z'] == z)[0]
-        t[label][where_syst] = data
-        group[label][where_group] = data
-        self.syst.model(z, dx)
+        group_z = np.where(group['Z'] == z)[0]
+        print group_z
+        group[label][group_z] = data
+        if label in t.colnames:
+            t[label][np.where(t['Z'] == z)[0]] = data
+        if label in line.colnames:
+            line[label][np.where(map['Z'] == z)[0]] = data
+        if label == 'Z':
+            map[label][np.where(map['Z'] == z)[0]] = data
+        #"""
+        if label == 'XMIN':
+            group['XMIN'][group_z] = data
+            group['ZMIN'][group_z] = [g['XMIN']/dict_wave[g['ION']].value - 1 \
+                                      for g in group[group_z]]
+        if label == 'XMAX':
+            group['XMAX'][group_z] = data
+            group['ZMAX'][group_z] = [g['XMAX']/dict_wave[g['ION']].value - 1 \
+                                      for g in group[group_z]]
+        #"""
+        print group
+        self.syst.model(self.z, dx)
         self.update_plot()
         
     def on_run(self, event):
@@ -983,26 +994,32 @@ class SystDialog(wx.Dialog):
         self.Destroy()
 
     def on_syst_add(self, event):
-        print self.syst._t
         z_shift = 0.001*random.random()
-        
+
+        chunk = self.syst._chunk
+        group = self.syst._group
+        x_min = chunk['X'][(chunk['Y']-chunk['MODEL']).argmin()]
+        z_min_arr = np.array([])
+        for r in range(self.focus_gr.GetNumberRows()):
+            ion = self.focus_gr.GetCellValue(r, 3)
+            z_min_arr = np.append(z_min_arr, x_min/dict_wave[ion].value - 1)
+        z_min = z_min_arr[np.abs(z_min_arr-self.z).argmin()]
+        print z_min
+            
         dupl = self.syst._t[self.sel]
-        dupl['Z'] = dupl['Z']+z_shift
+        #dupl['Z'] = dupl['Z']+z_shift
+        dupl['Z'] = z_min
+        print dupl
 
         match = np.where(self.syst._map['Z'] == self.z)[0]
-        print self.syst._map[match]
         for r in self.syst._map[match]:
             self.syst._map.add_row(r)
-            self.syst._map['Z'][-1] = self.syst._map['Z'][-1]+z_shift
-        print self.syst._map
+            self.syst._map['Z'][-1] = z_min#self.syst._map['Z'][-1]+z_shift
 
         self.syst._map.sort('X')
-        print self.syst._map
         
         self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
-        print self.syst._t
         self.syst.group(self.z, 0.5)
-        print self.syst._group
         dx = 0.5
         self.syst.model(self.z, dx)
         self.update_tab()
