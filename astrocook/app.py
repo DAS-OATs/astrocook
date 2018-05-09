@@ -967,12 +967,11 @@ class SystDialog(wx.Dialog):
         #print z
         dx = 0.5
         group_z = np.where(group['Z'] == z)[0]
-        print group_z
         group[label][group_z] = data
         if label in t.colnames:
             t[label][np.where(t['Z'] == z)[0]] = data
         if label in line.colnames:
-            line[label][np.where(map['Z'] == z)[0]] = data
+            line[label][np.where(line['X'] == x)[0]] = data
         if label == 'Z':
             map[label][np.where(map['Z'] == z)[0]] = data
         #"""
@@ -985,7 +984,6 @@ class SystDialog(wx.Dialog):
             group['ZMAX'][group_z] = [g['XMAX']/dict_wave[g['ION']].value - 1 \
                                       for g in group[group_z]]
         #"""
-        print group
         self.syst.model(self.z, dx)
         self.update_plot()
         
@@ -1004,12 +1002,10 @@ class SystDialog(wx.Dialog):
             ion = self.focus_gr.GetCellValue(r, 3)
             z_min_arr = np.append(z_min_arr, x_min/dict_wave[ion].value - 1)
         z_min = z_min_arr[np.abs(z_min_arr-self.z).argmin()]
-        print z_min
             
         dupl = self.syst._t[self.sel]
         #dupl['Z'] = dupl['Z']+z_shift
         dupl['Z'] = z_min
-        print dupl
 
         match = np.where(self.syst._map['Z'] == self.z)[0]
         for r in self.syst._map[match]:

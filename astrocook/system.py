@@ -242,7 +242,6 @@ class System(Spec1D, Line, Cont):
         x = spec['X']
         where = np.array([], dtype=int)
         for l in self._group:
-            print l
             xmin = l['XMIN']-dx
             xmax = l['XMAX']+dx
             #cond_temp = np.logical_and(x>xmin, x<xmax)
@@ -470,7 +469,6 @@ class System(Spec1D, Line, Cont):
             self.create_line(dx, **kwargs)
 
         self._line.t.sort('X')
-        print self._line.t
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
@@ -519,7 +517,6 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(zmin, name='ZMIN'), index=1)
         group.add_column(Column(zmax, name='ZMAX'), index=2)
 
-        print group
         # Find rows with duplicate redshift values
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
