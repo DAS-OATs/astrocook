@@ -195,7 +195,8 @@ class IO():
         units = np.array(hdul[1].columns.units)
         Nunit = units[np.where(names == 'N')][0]
         bunit = units[np.where(names == 'B')][0]
-        series = [i.split(' ') for i in data['SERIES']]
+        #series = [i.split(' ') for i in data['SERIES']]
+        series = data['SERIES']
         z = data['Z']
         N = data['N']
         b = data['B']
@@ -225,12 +226,12 @@ class IO():
     def syst_write(self, syst, name, overwrite=True):
         """ Write an astrocook line list onto a FITS frame """
 
-        series = [' '.join(syst.t['SERIES'][i]) for i in range(len(syst.t))]
+        #series = [' '.join(syst.t['SERIES'][i]) for i in range(len(syst.t))]
         vary = [' '.join(map(str, syst.t['VARY'][i])) \
                 for i in range(len(syst.t))]
         expr = [' '.join(map(str, syst.t['EXPR'][i])) \
                 for i in range(len(syst.t))]
-        
+
         hdu = fits.BinTableHDU.from_columns(
             [fits.Column(name='Z', format='D', array=syst.t['Z']),
              fits.Column(name='N', format='E', array=syst.t['N'],
@@ -248,7 +249,7 @@ class IO():
                          unit=syst.t['DBTUR'].unit.to_string()),
              fits.Column(name='VARY', format='A23', array=vary),
              fits.Column(name='EXPR', format='A500', array=expr),
-             fits.Column(name='SERIES', format='A500', array=series)])
+             fits.Column(name='SERIES', format='A500', array=syst.t['SERIES'])])
         hdu.writeto(name, overwrite=overwrite)
         
         # Table with mapping between lines and systems

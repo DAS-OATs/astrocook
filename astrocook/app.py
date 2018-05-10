@@ -1,7 +1,7 @@
 from . import Cont, IO, Line, Spec1DReader, System
 from .utils import *
 from astropy.io import fits
-from astropy.table import vstack
+from astropy.table import Column, vstack
 from collections import OrderedDict as od
 from datetime import datetime
 from matplotlib.gridspec import GridSpec as gs
@@ -527,7 +527,7 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         if dialog.execute == True:
             syst = System(self.spec, self.line, self.cont)
-            syst.find(tag=self.params['series'])
+            syst.find(series=self.params['series'])
 
             if self.syst != None:
                 self.syst.merge(syst)
@@ -574,7 +574,7 @@ class MainFrame(wx.Frame):
                 pass
             z = self.syst.t['Z'][sel]
             x = [(1 + z) * dict_wave[i].value \
-                 for i in self.syst.t['SERIES'][sel]]
+                 for i in dict_series[self.syst.t['SERIES'][sel]]]
             dx = 0.5
             h = np.max(self.spec.y)
             #self.syst.group(z, dx)
@@ -816,14 +816,20 @@ class SystDialog(wx.Dialog):
         self.syst = self.p.syst#_sel
         self.group = self.p.syst._group
         self.z = self.p.z_sel
-        self.sel = np.where(self.syst._t['Z'] == self.z)[0]
-        self.series = self.syst._t['SERIES'][self.sel][0]
+        print self.z
+        print self.syst._t
+        cond = np.logical_and(self.syst._t['Z'] > self.z-0.001,
+                              self.syst._t['Z'] < self.z+0.001)
+        self.sel = np.where(cond)[0]
+        self.series = dict_series[self.syst._t['SERIES'][self.sel][0]]
+        print self.series
         self.init_UI()
 
     def init_buttons(self, panel):
         self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
         self.line_b = wx.Button(panel, label="Add line", size=(100,38))
-        self.syst_b.Bind(wx.EVT_BUTTON, self.on_syst_add)
+        self.syst_b.Bind(wx.EVT_BUTTON, self.on_tab_add)
+        self.line_b.Bind(wx.EVT_BUTTON, lambda e: self.on_tab_add(e, 'unknown'))
 
         
     def init_plot(self, panel):
@@ -853,7 +859,7 @@ class SystDialog(wx.Dialog):
             pass
 
         #grid.update(wspace=0.2, hspace=0.0)
-        grid.tight_layout(self.fig, rect=[0.01, 0.01, 1, 0.9], h_pad=0.0)
+        #grid.tight_layout(self.fig, rect=[0.01, 0.01, 1, 0.9], h_pad=0.0)
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
@@ -949,6 +955,74 @@ class SystDialog(wx.Dialog):
         self.execute = False
         self.Destroy()
 
+        
+    def on_run(self, event):
+        self.execute = True
+        self.Destroy()
+
+    def on_tab_add(self, event, series=None):
+
+        dx = 0.5
+        
+        chunk = self.syst._chunk
+        group = self.syst._group
+
+        # Minimum X
+        x_min = chunk['X'][(chunk['Y']-chunk['MODEL']).argmin()]
+
+        # Minimum Z
+        z_min = np.array([])
+        ions = np.array([])
+        if series is None:
+            for r in range(self.focus_gr.GetNumberRows()):
+                ion = self.focus_gr.GetCellValue(r, 3)
+                ions = np.append(ions, ion)
+                z_min = np.append(z_min, x_min/dict_wave[ion].value - 1)
+        else:
+            for ion in dict_series[series]:
+                ions = np.append(ions, ion)
+                z_min = np.append(z_min, x_min/dict_wave[ion].value - 1)
+        z_add = z_min[np.abs(z_min-self.z).argmin()]
+        
+        # Create a duplicate of the system
+        dupl = self.syst._t[self.sel]
+        #dupl['Z'] = dupl['Z']+z_shift
+        dupl['Z'] = z_add
+        if series is not None:
+            dupl['SERIES'] = series
+        
+        # Update line and map tables
+        match_z = np.where(self.syst._map['Z'] == self.z)[0]
+        #x_add = np.array((1+z_add)/(1+self.syst._map['Z'][match_z]) \
+        #                 * self.syst._map['X'][match_z])
+        x_add = [(1+z_add)*dict_wave[i].value for i in ions]
+        if series is not None:
+            if series is 'unknown':
+                match_z = [match_z[0]]
+        #match_x = np.where(self.syst._line.t['X'] \
+        #                   == self.syst._map['X'][match_z])[0]
+        match_x = np.where(np.in1d(self.syst._line.t['X'],
+                                   self.syst._map['X'][match_z]))[0]
+        for i, r in enumerate(self.syst._map[match_z]):
+            self.syst._map.add_row(r)
+            self.syst._map['X'][-1] = x_add[i]
+            self.syst._map['Z'][-1] = z_add
+        for i, r in enumerate(self.syst._line.t[match_x]):
+            self.syst._line._t.add_row(r)
+            self.syst._line._t['X'][-1] = x_add[i]
+            #self.syst._line._t['XMIN'][-1] = x_add[i]-dx
+            #self.syst._line._t['XMAX'][-1] = x_add[i]+dx
+
+        
+        self.syst._map.sort('Z')
+        self.syst._line._t.sort('X')
+
+        self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
+        self.syst.group(self.z, 0.5)
+        self.syst.model(self.z, dx)
+        self.update_tab()
+        self.update_plot()
+        
     def on_tab_edit(self, event, tab):
         """ Behaviour when table is edited """
         
@@ -964,7 +1038,6 @@ class SystDialog(wx.Dialog):
         
         x = group['X'][idx]
         z = group['Z'][idx]
-        #print z
         dx = 0.5
         group_z = np.where(group['Z'] == z)[0]
         group[label][group_z] = data
@@ -985,40 +1058,6 @@ class SystDialog(wx.Dialog):
                                       for g in group[group_z]]
         #"""
         self.syst.model(self.z, dx)
-        self.update_plot()
-        
-    def on_run(self, event):
-        self.execute = True
-        self.Destroy()
-
-    def on_syst_add(self, event):
-        z_shift = 0.001*random.random()
-
-        chunk = self.syst._chunk
-        group = self.syst._group
-        x_min = chunk['X'][(chunk['Y']-chunk['MODEL']).argmin()]
-        z_min_arr = np.array([])
-        for r in range(self.focus_gr.GetNumberRows()):
-            ion = self.focus_gr.GetCellValue(r, 3)
-            z_min_arr = np.append(z_min_arr, x_min/dict_wave[ion].value - 1)
-        z_min = z_min_arr[np.abs(z_min_arr-self.z).argmin()]
-            
-        dupl = self.syst._t[self.sel]
-        #dupl['Z'] = dupl['Z']+z_shift
-        dupl['Z'] = z_min
-
-        match = np.where(self.syst._map['Z'] == self.z)[0]
-        for r in self.syst._map[match]:
-            self.syst._map.add_row(r)
-            self.syst._map['Z'][-1] = z_min#self.syst._map['Z'][-1]+z_shift
-
-        self.syst._map.sort('X')
-        
-        self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
-        self.syst.group(self.z, 0.5)
-        dx = 0.5
-        self.syst.model(self.z, dx)
-        self.update_tab()
         self.update_plot()
         
     def update_plot(self):

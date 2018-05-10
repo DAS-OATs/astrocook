@@ -277,7 +277,7 @@ class System(Spec1D, Line, Cont):
         self._conv = conv
         for s in self._t:
             z = s['Z']
-            for i in s['SERIES']:
+            for i in dict_series[s['SERIES']]:
                 wave = dict_wave[i]
                 wave_z = wave.to(xunit_def) * (1+z)
                 x_temp = np.append(x_temp, wave_z)
@@ -307,7 +307,7 @@ class System(Spec1D, Line, Cont):
         self._map['X'] = Column(x_temp.value, dtype=float, unit=xunit_def)
         self._map['Z'] = Column(z_temp, dtype=float, unit=u.nm/u.nm)
 
-    def create_t(self, series=[['unknown']],
+    def create_t(self, series='unknown',
                  z=z_def, N=N_def, b=b_def, btur=btur_def, 
                  dz=None, dN=None, db=None, dbtur=None,
                  vary=[True, True, True, False], expr=[None,None,None,None],
@@ -344,7 +344,8 @@ class System(Spec1D, Line, Cont):
             t.add_column(Column(dtype=object, length=len(t),
                                 shape=1, name='SERIES'), index=0)
             for (i, s) in enumerate(t):
-                s['SERIES'] = series[0]
+                #s['SERIES'] = series[0]
+                s['SERIES'] = series
                 #s['SERIES'] = series[i]
 
         return t
@@ -394,10 +395,10 @@ class System(Spec1D, Line, Cont):
             vary=sel['VARY'], expr=sel['EXPR'])
         return syst_sel, syst_idx
             
-    def find(self, tag, ztol=1e-4):
+    def find(self, series, ztol=1e-4):
         """ Find systems by matching redshifts """
         
-        ion = dict_series[tag]
+        ion = dict_series[series]
         self.create_z(ion)
         self._z.sort('Z')
         z_arr = self._z['Z']
@@ -408,7 +409,7 @@ class System(Spec1D, Line, Cont):
         z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
 
         z_sel = z_mean[match]
-        self._t = self.create_t(series=[ion], z=z_sel)
+        self._t = self.create_t(series, z=z_sel)
         self._t['Z'] = z_sel  # To avoid rounding errors
         
         # Table to map rows of self._line.t into rows of self._t
@@ -457,8 +458,11 @@ class System(Spec1D, Line, Cont):
         self._chunk['MODEL'] = model
         new_t = unique(self._group[self._t.colnames], keys='Z')
         new_map = self._group[self._map.colnames]
+        new_line = self._group[self._line.t.colnames]
         self._t[self._group_t] = new_t
         self._map[self._group_map] = new_map
+        #self._line._t[self._group_line] = new_line
+        #self._line._t.sort('X')
         
     def group(self, z, dx, **kwargs):
         """ Extract the lines needed for fitting (both from systems and not)
@@ -472,38 +476,51 @@ class System(Spec1D, Line, Cont):
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
-        #print join_t
-        
-        # Select lines at the system redshift
+
+        # Select the system redshift 
         join_z = join_t['Z']
         cond_z = z==join_z
+        #join_z = join_t['Z']
+        #cond_z = np.full(len(join_t), False)
+        #for j in join_t:
+        #    zmin = j['Z']-0.001
+        #    zmax = j['Z']+0.001
+        #    cond_z += np.logical_and(join_z>=zmin, join_z<=zmax)
         
-        # Select lines close to the previously selected ones
+        # Select lines close in wavelength to the previously selected ones
         join_xmin = join_t['XMIN']
         join_xmax = join_t['XMAX']
         cond_x = np.full(len(join_t), False)
         for j in join_t[cond_z]:
             xmin = j['XMIN']
             xmax = j['XMAX']
-            #cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
             cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
 
-        # Select doublet companions of the previously selected lines
-        join_xz = join_t['Z']
-        cond_xz = np.full(len(join_t), False)
+        # Select doublet companions of the previously selected ones
+        join_xc = join_t['Z']
+        cond_xc = np.full(len(join_t), False)
         for j in join_t[np.where(cond_x)[0]]:
-            xz = j['Z']
-            cond_xz += xz==join_xz
+            z = j['Z']
+            cond_xc += z==join_xc
 
+
+        # Select lines close in redshift to the previously selected ones
+        join_zc = join_t['Z']
+        cond_zc = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_z)[0]]:
+            zmin = j['Z']-0.001
+            zmax = j['Z']+0.001
+            cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
         
-        group = join_t[np.where(cond_xz)[0]]
+        group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
         group.sort(['Z', 'X'])
 
         # Define the ion and prefix columns
         ion = np.array([])
         for ig, g in enumerate(group):
-            xs = (1+g['Z'])*np.array([dict_wave[i].value for i in g['SERIES']])
-            ion = np.append(ion, g['SERIES'][np.abs(xs - g['X']).argmin()])
+            series = dict_series[g['SERIES']]
+            xs = (1+g['Z'])*np.array([dict_wave[i].value for i in series])
+            ion = np.append(ion, series[np.abs(xs - g['X']).argmin()])
         pref = np.array(['voigt_'+str(i) for i in range(len(group))])
         group.add_column(Column(ion, name='ION'), index=1)
         group.add_column(Column(pref, name='PREF'), index=2)
@@ -535,6 +552,7 @@ class System(Spec1D, Line, Cont):
         self._map.sort('Z')
         self._group_t = np.in1d(self._t['Z'], group['Z'])
         self._group_map = np.in1d(self._map['Z'], group['Z'])
+        self._group_line = np.in1d(self._line.t['X'], group['X'])
         
     def merge(self, syst):
         """ Merge two systems """
@@ -624,8 +642,13 @@ class System(Spec1D, Line, Cont):
 
         if (z == None):
             ions = self._group['ION']
+            series = self._group['SERIES']
         else:
-            ions = self._group['ION'][np.where(self._group['Z'] == z)]
+            cond = np.logical_and(self._group['Z'] > z-0.001,
+                                  self._group['Z'] < z+0.001)
+            ions = self._group['ION'][np.where(cond)]
+            series = self._group['SERIES'][np.where(cond)]
+        #print series
         waves = [dict_wave[i].value for i in ions]
         ions = ions[np.argsort(waves)]
         n = len(ions)
@@ -672,6 +695,9 @@ class System(Spec1D, Line, Cont):
             xmax = (1+zmax) * dict_wave[i].value
 
             where_g = group['ION']==i
+            #print np.array(group['SERIES']), np.array(series)
+            where_s = [g not in np.array(series) for g in group['SERIES']]
+            #print where_s
             z = group['Z'][where_g]
 
             where_c = np.where(np.logical_and(chunk['X']>=xmin,
@@ -684,16 +710,17 @@ class System(Spec1D, Line, Cont):
             xc_z = xc / dict_wave[i] - 1
             
             ax[c].set_xlim(zmin, zmax)
-            #axt[c].set_xlim(xmin, xmax)
+            axt = ax[c].twiny()
+            axt.set_xlim(xmin, xmax)
             maxf = 1.25
-            #ax[c].set_ylim(-max(contc)*0.2, max(contc)*maxf)
+            ax[c].set_ylim(-max(contc)*0.2, max(contc)*maxf)
             if c in bottom:
                 ax[c].set_xlabel(r"$z$")
             else:
                 ax[c].set_xticks([], [])
             if c in left:
                 ax[c].set_ylabel(r"Flux [%s]" % y.unit)
-            #axt[c].tick_params(axis="x",direction="in", pad=-20)
+            axt.tick_params(axis="x",direction="in", pad=-20)
             ax[c].text(0.05, 0.5, i, transform=ax[c].transAxes,
                            fontsize=13)
             ax[c].plot(x_z, y, color='C0', linestyle='--')
@@ -702,6 +729,7 @@ class System(Spec1D, Line, Cont):
             ax[c].plot(xc_z, contc, color='C1')
             ax[c].plot(xc_z, modelc, color='C2')
             ax[c].plot(xc_z, residc, color='C3', linestyle=':')
+            #print group
             for g in group[where_g]:
                 """
                 if c in top:
@@ -714,8 +742,15 @@ class System(Spec1D, Line, Cont):
                                    "%3.1f" % g['BTUR'], ha='center', fontsize=9)
                 """
                 ax[c].axvline(x=g['Z'], color='C3', alpha=0.5)
-                ax[c].axvline(x=g['ZMIN'], color='C3', alpha=0.5, linestyle=':')
-                ax[c].axvline(x=g['ZMAX'], color='C3', alpha=0.5, linestyle=':')
+                ax[c].axvline(x=g['ZMIN'], color='C3', alpha=0.5,
+                              linestyle=':')
+                ax[c].axvline(x=g['ZMAX'], color='C3', alpha=0.5,
+                              linestyle=':')
+            for g in group[where_s]:
+                #print where_s
+                #print g['X'], g['Z']
+                axt.axvline(x=g['X'], color='C3', alpha=0.5)
+                
         if ax == None:
             grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
             grid.update(wspace=0.2, hspace=0.0)
