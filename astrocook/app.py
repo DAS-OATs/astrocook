@@ -3,6 +3,7 @@ from .utils import *
 from astropy.io import fits
 from astropy.table import Column, vstack
 from collections import OrderedDict as od
+from copy import deepcopy as dc
 from datetime import datetime
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
@@ -547,7 +548,7 @@ class MainFrame(wx.Frame):
         
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
-        dialog.Destroy()
+        dialog.Close()
         while dialog.execute == True:
             
             self.syst.fit(self.z_sel, norm=False)
@@ -560,9 +561,9 @@ class MainFrame(wx.Frame):
             self.update_syst()
             dialog = SystDialog(self, title="Fit selected system")
             dialog.ShowModal()
-            dialog.Destroy()
+            dialog.Close()
+        dialog.Destroy()
         self.update_syst()
-            
             
     def on_syst_select(self, event):
         """ Behaviour for system selection """        
@@ -796,13 +797,13 @@ class ParamDialog(wx.Dialog):
         
     def on_cancel(self, e):
         self.execute = False
-        self.Destroy()
+        self.Close()
 
     def on_run(self, e):
         for p, ctrl in zip(self.par, self.ctrl):
             self.p.params[p] = str(ctrl.GetValue())
         self.execute = True
-        self.Destroy()
+        self.Close()
                       
 class SystDialog(wx.Dialog):
 
@@ -818,12 +819,13 @@ class SystDialog(wx.Dialog):
         self.z = self.p.z_sel
         cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
                                    self.syst._t['Z'] < self.z+0.002)
+        cond = self.syst._t['Z'] == self.z
         self.sel = np.where(cond)[0]
         self.zs = self.syst._t['Z'][self.sel]
-        print self.syst._t['SERIES'][self.sel]
-        self.series = np.unique([dict_series[i] \
-                                 for i in self.syst._t['SERIES'][self.sel]])
-        print self.series
+        self.ions = np.unique([dict_series[i] \
+                                 for i in self.group['SERIES']])#[self.sel]])
+        self.ions = np.unique(np.ravel(self.group['ION']))
+        self.ions = self.ions[np.where(self.ions != 'unknown')]
         self.init_UI()
 
     def init_buttons(self, panel):
@@ -845,7 +847,7 @@ class SystDialog(wx.Dialog):
         #waves = [dict_wave[i].value for i in ions]
         #ions = ions[np.argsort(waves)]
         rown = 5.
-        self.pn = len(self.series)
+        self.pn = len(self.ions)
         print self.pn
         row = min(self.pn,rown)
         col = int(np.ceil(self.pn/rown))
@@ -893,10 +895,10 @@ class SystDialog(wx.Dialog):
 
         panel = wx.Panel(self)
 
-        self.focus_gr = self.init_tab(panel)
+        #self.focus_gr = self.init_tab(panel)
         self.add_gr = self.init_tab(panel)
         self.init_buttons(panel)
-        self.add_gr.SetColLabelSize(0)
+        #self.add_gr.SetColLabelSize(0)
         self.init_plot(panel)
         #self.update_group()
 
@@ -904,7 +906,7 @@ class SystDialog(wx.Dialog):
 
         box_focus = wx.BoxSizer(wx.VERTICAL)
         #box_focus.Add(wx.StaticText(panel, label="Focus"))
-        box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
+        #box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
 
         box_button = wx.BoxSizer(wx.HORIZONTAL)
         box_button.Add(self.syst_b, 0, wx.RIGHT, border=5)
@@ -922,7 +924,7 @@ class SystDialog(wx.Dialog):
         box_ctrl.Add(self.plot_tb, 1)
 
         box_disp = wx.BoxSizer(wx.VERTICAL)
-        box_disp.Add(box_focus)
+        #box_disp.Add(box_focus)
         box_disp.Add(box_add)
         box_disp.Add(box_plot, 1, wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
         box_disp.Add(box_ctrl)
@@ -955,12 +957,12 @@ class SystDialog(wx.Dialog):
 
     def on_cancel(self, event):
         self.execute = False
-        self.Destroy()
+        self.Close()
 
         
     def on_run(self, event):
         self.execute = True
-        self.Destroy()
+        self.Close()
 
     def on_tab_add(self, event, series=None):
 
@@ -971,38 +973,38 @@ class SystDialog(wx.Dialog):
 
         # Minimum X
         x_min = chunk['X'][(chunk['Y']-chunk['MODEL']).argmin()]
+    
+        # Minimum positions in system list and in group
+        group_min = np.abs(x_min-self.group['X']).argmin()
+        syst_min = np.abs(self.group['Z'][group_min]\
+                          -self.syst._t['Z']).argmin()
+        z_min = self.syst._t['Z'][syst_min]
 
-        # Minimum Z
-        z_min = np.array([])
-        ions = np.array([])
-        if series is None:
-            for r in range(self.focus_gr.GetNumberRows()):
-                ion = self.focus_gr.GetCellValue(r, 3)
-                ions = np.append(ions, ion)
-                z_min = np.append(z_min, x_min/dict_wave[ion].value - 1)
-        else:
-            for ion in dict_series[series]:
-                ions = np.append(ions, ion)
-                z_min = np.append(z_min, x_min/dict_wave[ion].value - 1)
-        z_add = z_min[np.abs(z_min-self.z).argmin()]
+        if series == None:
+            ion_min = self.group['ION'][group_min]
+            ions = dict_series[self.group['SERIES'][group_min]]   
+        elif series == 'unknown':
+            ion_min = dict_series[series][0]
+            ions = [ion_min]
+        z_add = x_min/dict_wave[ion_min].value - 1     
+        print z_add
+        print group_min
+        print syst_min
+        print ions   
         
         # Create a duplicate of the system
-        dupl = self.syst._t[self.sel]
-        #dupl['Z'] = dupl['Z']+z_shift
+        dupl = dc(self.syst._t[syst_min])
         dupl['Z'] = z_add
         if series is not None:
             dupl['SERIES'] = series
         
         # Update line and map tables
-        match_z = np.where(self.syst._map['Z'] == self.z)[0]
-        #x_add = np.array((1+z_add)/(1+self.syst._map['Z'][match_z]) \
-        #                 * self.syst._map['X'][match_z])
+        match_z = np.where(self.syst._map['Z'] == z_min)[0]
         x_add = [(1+z_add)*dict_wave[i].value for i in ions]
+        print x_add
         if series is not None:
             if series is 'unknown':
                 match_z = [match_z[0]]
-        #match_x = np.where(self.syst._line.t['X'] \
-        #                   == self.syst._map['X'][match_z])[0]
         match_x = np.where(np.in1d(self.syst._line.t['X'],
                                    self.syst._map['X'][match_z]))[0]
         for i, r in enumerate(self.syst._map[match_z]):
@@ -1012,14 +1014,12 @@ class SystDialog(wx.Dialog):
         for i, r in enumerate(self.syst._line.t[match_x]):
             self.syst._line._t.add_row(r)
             self.syst._line._t['X'][-1] = x_add[i]
-            #self.syst._line._t['XMIN'][-1] = x_add[i]-dx
-            #self.syst._line._t['XMAX'][-1] = x_add[i]+dx
-
         
         self.syst._map.sort('Z')
         self.syst._line._t.sort('X')
 
         self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
+        print len(self.syst._t)
         self.syst.group(self.z, 0.5)
         self.syst.model(self.z, dx)
         self.update_tab()
@@ -1065,7 +1065,7 @@ class SystDialog(wx.Dialog):
     def update_plot(self):
         for p in range(self.pn):
             self.ax[p].clear()
-        self.syst.plot(z=self.z, ax=self.ax)
+        self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()
         
         
@@ -1086,10 +1086,11 @@ class SystDialog(wx.Dialog):
         group = self.syst._group
         for i, g in enumerate(group):
             #if g['Z'] == self.z:
-            if g['Z'] in self.zs:
-                tab = self.focus_gr
-            else:
-                tab = self.add_gr
+            #if g['Z'] in self.zs:
+            #    tab = self.focus_gr
+            #else:
+            #    tab = self.add_gr
+            tab = self.add_gr
             r = tab.GetNumberRows()
             tab.AppendRows(1)
             tab.SetCellValue(r, 0, "%3.3f" % g['X'])
