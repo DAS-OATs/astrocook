@@ -629,7 +629,7 @@ class System(Spec1D, Line, Cont):
         self._fun = fun
         self._par = par
 
-    def plot(self, z=None, ax=None, dz=0.01):
+    def plot(self, z=None, ax=None, dz=0.008):
         """ Plot a system """
 
         if (hasattr(self, '_chunk') == False):
@@ -644,9 +644,9 @@ class System(Spec1D, Line, Cont):
             ions = self._group['ION']
             series = self._group['SERIES']
         else:
-            cond = np.logical_and(self._group['Z'] > z-0.001,
-                                  self._group['Z'] < z+0.001)
-            ions = self._group['ION'][np.where(cond)]
+            cond = np.logical_and(self._group['Z'] > z-0.002,
+                                  self._group['Z'] < z+0.002)
+            ions = np.unique(self._group['ION'][np.where(cond)])
             series = self._group['SERIES'][np.where(cond)]
         #print series
         waves = [dict_wave[i].value for i in ions]
@@ -689,21 +689,26 @@ class System(Spec1D, Line, Cont):
         #zmax = np.mean(group['Z'])+dz
         zmin = z-dz
         zmax = z+dz
+        print ions
         for c, i in enumerate(ions):
+            print c
             x_z = x/dict_wave[i] - 1
-            xmin = (1+zmin) * dict_wave[i].value
-            xmax = (1+zmax) * dict_wave[i].value
+            xmin_p = (1+zmin) * dict_wave[i].value
+            xmax_p = (1+zmax) * dict_wave[i].value
 
             where_g = group['ION']==i
             #print np.array(group['SERIES']), np.array(series)
             where_s = [g not in np.array(series) for g in group['SERIES']]
             #print where_s
             z = group['Z'][where_g]
-
-            where_c = np.where(np.logical_and(chunk['X']>=xmin,
-                                              chunk['X']<=xmax))
+            xmin = group['XMIN'][where_g][0]
+            xmax = group['XMAX'][where_g][0]
+            
+            where_c = np.where(np.logical_and(chunk['X']>=xmin_p,
+                                              chunk['X']<=xmax_p))
             xc = chunk['X'][where_c]
             yc = chunk['Y'][where_c]
+            dyc = chunk['DY'][where_c]
             contc = chunk['CONT'][where_c]
             modelc = chunk['MODEL'][where_c]
             residc = yc-modelc
@@ -711,24 +716,27 @@ class System(Spec1D, Line, Cont):
             
             ax[c].set_xlim(zmin, zmax)
             axt = ax[c].twiny()
-            axt.set_xlim(xmin, xmax)
+            axt.set_xlim(xmin_p, xmax_p)
             maxf = 1.25
             ax[c].set_ylim(-max(contc)*0.2, max(contc)*maxf)
             if c in bottom:
-                ax[c].set_xlabel(r"$z$")
+                ax[c].set_xlabel(r"Redshift")
             else:
                 ax[c].set_xticks([], [])
+            axt.set_xlabel(r"Wavelength [%s]" % x.unit)
             if c in left:
-                ax[c].set_ylabel(r"Flux [%s]" % y.unit)
+                ax[c].set_ylabel(r"Flux density")#[%s]" % y.unit)
             axt.tick_params(axis="x",direction="in", pad=-20)
             ax[c].text(0.05, 0.5, i, transform=ax[c].transAxes,
                            fontsize=13)
             ax[c].plot(x_z, y, color='C0', linestyle='--')
             #ax[c].plot(x_z, self._conv.y, color='C2', linestyle=':')
             ax[c].plot(xc_z, yc, color='C0')
-            ax[c].plot(xc_z, contc, color='C1')
-            ax[c].plot(xc_z, modelc, color='C2')
+            ax[c].plot(xc_z, contc, color='C6')
+            ax[c].plot(xc_z, modelc, color='C1')
             ax[c].plot(xc_z, residc, color='C3', linestyle=':')
+            ax[c].plot(xc_z, dyc, color='C3')
+            ax[c].plot(xc_z, -dyc, color='C3')
             #print group
             for g in group[where_g]:
                 """

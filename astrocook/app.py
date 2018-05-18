@@ -816,12 +816,13 @@ class SystDialog(wx.Dialog):
         self.syst = self.p.syst#_sel
         self.group = self.p.syst._group
         self.z = self.p.z_sel
-        print self.z
-        print self.syst._t
-        cond = np.logical_and(self.syst._t['Z'] > self.z-0.001,
-                              self.syst._t['Z'] < self.z+0.001)
+        cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
+                                   self.syst._t['Z'] < self.z+0.002)
         self.sel = np.where(cond)[0]
-        self.series = dict_series[self.syst._t['SERIES'][self.sel][0]]
+        self.zs = self.syst._t['Z'][self.sel]
+        print self.syst._t['SERIES'][self.sel]
+        self.series = np.unique([dict_series[i] \
+                                 for i in self.syst._t['SERIES'][self.sel]])
         print self.series
         self.init_UI()
 
@@ -845,6 +846,7 @@ class SystDialog(wx.Dialog):
         #ions = ions[np.argsort(waves)]
         rown = 5.
         self.pn = len(self.series)
+        print self.pn
         row = min(self.pn,rown)
         col = int(np.ceil(self.pn/rown))
         #fig = plt.figure(figsize=(col*6, n*3.5))
@@ -1083,7 +1085,8 @@ class SystDialog(wx.Dialog):
 
         group = self.syst._group
         for i, g in enumerate(group):
-            if g['Z'] == self.z:
+            #if g['Z'] == self.z:
+            if g['Z'] in self.zs:
                 tab = self.focus_gr
             else:
                 tab = self.add_gr
