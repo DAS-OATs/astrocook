@@ -215,6 +215,8 @@ class MainFrame(wx.Frame):
                                     "Find &Continuum by Removing Lines...")
         rec_syst_find = wx.MenuItem(self.rec_menu, self.id_cont,
                                     "Find &Systems...")
+        rec_syst_def = wx.MenuItem(self.rec_menu, self.id_cont+1,
+                                    "&Define System...")
         rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst_sel,
                                    "&Fit Selected System...")
 
@@ -222,6 +224,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_line_cont, rec_line_cont)
         self.Bind(wx.EVT_MENU, self.on_syst_find, rec_syst_find)
+        self.Bind(wx.EVT_MENU, self.on_syst_def, rec_syst_def)
         self.Bind(wx.EVT_MENU, self.on_syst_fit, rec_syst_fit)
         
         self.rec_menu.Append(rec_spec_extract)
@@ -230,6 +233,7 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_line_cont)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
+        self.rec_menu.Append(rec_syst_def)
         self.rec_menu.Append(rec_syst_fit)
 
         """
@@ -513,6 +517,35 @@ class MainFrame(wx.Frame):
         self.spec = self.spec_dict[self.targ]
         self.update_all()
 
+    def on_syst_def(self, event):
+        """ Behaviour for Systems > Define System """
+        self.params = od([('series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
+                          ('b', '20')])
+        dialog = ParamDialog(self, title="Define System")
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
+            #vary = [bool(v) for v in self.params['vary']]
+            syst = System(self.spec, self.line, self.cont,
+                          series=self.params['series'], 
+                          z=self.params['z'], N=self.params['N'],
+                          b=self.params['b'])
+            dx = 0.5
+            syst.create_line(dx)
+
+            if self.syst != None:
+                self.syst.merge(syst)
+            else:
+                self.syst = syst
+            self.syst._line._t = vstack([self.line._t, syst._line._t])
+
+            self.line = self.syst._line#vstack([self.line._t, syst._line._t])
+            self.line_dict[self.targ] = self.line
+            self.syst_dict[self.targ] = self.syst
+            self.update_spec()
+            self.update_line()
+            self.update_syst()
+
     def on_syst_edit(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -523,7 +556,7 @@ class MainFrame(wx.Frame):
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
         self.params = od([('series', 'CIV')])
-        dialog = ParamDialog(self, title="Find Lines")
+        dialog = ParamDialog(self, title="Find Systems")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
@@ -550,7 +583,6 @@ class MainFrame(wx.Frame):
         dialog.ShowModal()
         dialog.Close()
         while dialog.execute == True:
-            
             self.syst.fit(self.z_sel, norm=False)
             new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
             self.z_sel = self.syst._t['Z'][new_z]
@@ -567,7 +599,7 @@ class MainFrame(wx.Frame):
             
     def on_syst_select(self, event):
         """ Behaviour for system selection """        
-        if event.GetTopRow() == event.GetBottomRow():            
+        if event.GetTopRow() == event.GetBottomRow():  
             sel = event.GetTopRow()
             try:
                 self.syst_focus.remove()
@@ -578,7 +610,6 @@ class MainFrame(wx.Frame):
                  for i in dict_series[self.syst.t['SERIES'][sel]]]
             dx = 0.5
             h = np.max(self.spec.y)
-            #self.syst.group(z, dx)
             self.syst.model(z, dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
@@ -848,8 +879,7 @@ class SystDialog(wx.Dialog):
         #ions = ions[np.argsort(waves)]
         rown = 5.
         self.pn = len(self.ions)
-        print self.pn
-        row = min(self.pn,rown)
+        row = int(min(self.pn,rown))
         col = int(np.ceil(self.pn/rown))
         #fig = plt.figure(figsize=(col*6, n*3.5))
         grid = gs(row,col)
@@ -987,10 +1017,6 @@ class SystDialog(wx.Dialog):
             ion_min = dict_series[series][0]
             ions = [ion_min]
         z_add = x_min/dict_wave[ion_min].value - 1     
-        print z_add
-        print group_min
-        print syst_min
-        print ions   
         
         # Create a duplicate of the system
         dupl = dc(self.syst._t[syst_min])
@@ -1001,7 +1027,6 @@ class SystDialog(wx.Dialog):
         # Update line and map tables
         match_z = np.where(self.syst._map['Z'] == z_min)[0]
         x_add = [(1+z_add)*dict_wave[i].value for i in ions]
-        print x_add
         if series is not None:
             if series is 'unknown':
                 match_z = [match_z[0]]
@@ -1019,7 +1044,6 @@ class SystDialog(wx.Dialog):
         self.syst._line._t.sort('X')
 
         self.syst._t = vstack([self.syst._t, dupl])#merge(dupl)
-        print len(self.syst._t)
         self.syst.group(self.z, 0.5)
         self.syst.model(self.z, dx)
         self.update_tab()

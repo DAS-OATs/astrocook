@@ -476,7 +476,6 @@ class System(Spec1D, Line, Cont):
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
-        print len(join_t['Z'])
 
         # Select the system redshift 
         join_z = join_t['Z']
@@ -507,17 +506,14 @@ class System(Spec1D, Line, Cont):
 
         # Select lines close in redshift to the previously selected ones
         join_zc = join_t['Z']
-        print len(join_t['Z'])        
         cond_zc = np.full(len(join_t), False)
         for j in join_t[np.where(cond_z)[0]]:
             zmin = j['Z']-0.002
             zmax = j['Z']+0.002
-            print zmin, zmax
             cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
         
         group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
         group.sort(['Z', 'X'])
-        print group
 
         # Define the ion and prefix columns
         ion = np.array([])
@@ -537,7 +533,7 @@ class System(Spec1D, Line, Cont):
                          for i in range(len(group))])
         group.add_column(Column(zmin, name='ZMIN'), index=1)
         group.add_column(Column(zmax, name='ZMAX'), index=2)
-
+    
         # Find rows with duplicate redshift values
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
@@ -697,27 +693,27 @@ class System(Spec1D, Line, Cont):
         chunk = dc(self._chunk)
         x = spec['X']
         y = spec['Y']
-        #zmin = np.mean(group['Z'])-dz
-        #zmax = np.mean(group['Z'])+dz
-        zmin = z-dz
-        zmax = z+dz
         for c, i in enumerate(ions):
+            where_g = group['ION']==i
+            
+            zmin = group['Z'][where_g]-dz
+            zmax = group['Z'][where_g]+dz
+            
             x_z = x/dict_wave[i] - 1
             xmin_p = (1+zmin) * dict_wave[i].value
             xmax_p = (1+zmax) * dict_wave[i].value
 
-            where_g = group['ION']==i
-            print where_g
             #print np.array(group['SERIES']), np.array(series)
             #where_s = [g not in np.array(series) for g in group['SERIES']]
-            #where_s = [g not in np.array(ions) for g in group['SERIES']]
+            where_s = [g not in np.array(ions) for g in group['SERIES']]
             #print where_s
-            z = group['Z'][where_g]
+            #z = group['Z'][where_g]
             xmin = group['XMIN'][where_g][0]
             xmax = group['XMAX'][where_g][0]
-            
+
             where_c = np.where(np.logical_and(chunk['X']>=xmin_p,
                                               chunk['X']<=xmax_p))
+            
             xc = chunk['X'][where_c]
             yc = chunk['Y'][where_c]
             dyc = chunk['DY'][where_c]
@@ -766,10 +762,11 @@ class System(Spec1D, Line, Cont):
                               linestyle=':')
                 ax[c].axvline(x=g['ZMAX'], color='C3', alpha=0.5,
                               linestyle=':')
-            #for g in group[where_s]:
+            for g in group[where_s]:
                 #print where_s
                 #print g['X'], g['Z']
-                #axt.axvline(x=g['X'], color='C3', alpha=0.5)
+                axt.axvline(x=g['X'], color='C3', alpha=0.5, 
+                            linestyle='--')
                 
         if ax == None:
             grid.tight_layout(fig, rect=[0.01, 0.01, 1, 0.9])
