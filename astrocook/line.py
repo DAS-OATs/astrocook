@@ -13,7 +13,7 @@ import numpy as np
 np.set_printoptions(threshold=np.nan)
 from scipy.interpolate import UnivariateSpline
 import scipy.fftpack as fft
-from scipy.signal import argrelmin, argrelmax, fftconvolve
+from scipy.signal import argrelmin, argrelmax, fftconvolve, savgol_filter, wiener
 from scipy.stats import sigmaclip
 #from statsmodels.nonparametric.kernel_regression import KernelReg
 #import statsmodels.api as sm
@@ -415,21 +415,63 @@ class Line(Spec1D):
         flux_corr = np.exp(tau_norm * pow(1+z, tau_index) * num/den)
         return flux_corr
         
+    def find_special(self, mode='abs', diff='max', kappa=3.0, 
+                     sigma_min=5.0, sigma_max=100.0):
+    
+        x = np.array([])
+        y = np.array([])
+        xmin = np.array([])
+        xmax = np.array([])
+        dy = np.array([])
+        #for log_sigma in np.arange(0.6, 2.0, 0.4):
+        print np.log(sigma_max)
+        print np.log(sigma_min)
+        for log_sigma in np.arange(np.log10(sigma_max), np.log10(sigma_min), -0.1):
+            sigma = 10**log_sigma
+            (x_t, y_t, xmin_t, xmax_t, dy_t) = \
+                self.find(mode, diff, True, kappa, sigma)
+            w = np.zeros(len(x_t), dtype=bool)
+            for min, max in zip(xmin, xmax):
+                w += np.logical_and(x_t>min, x_t<max)
+            #print len(w)
+            if (len(w) > 0):
+                w_not = np.logical_not(w)
+                x = np.append(x, x_t[w_not])
+                y = np.append(y, y_t[w_not])
+                xmin = np.append(xmin, xmin_t[w_not])
+                xmax = np.append(xmax, xmax_t[w_not])
+                dy = np.append(dy, dy_t[w_not])
+            else:
+                x = np.append(x, 0)
+                y = np.append(y, 0)
+                xmin = np.append(xmin, 0)
+                xmax = np.append(xmax, 0)
+                dy = np.append(dy, 0)
 
-    def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0,
-             hwidth=2):
+
+        line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy, 
+                    xunit=u.nm, yunit=yunit)
+        self.__dict__.update(line.__dict__)
+        self._t.sort('X')   
+
+    def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0):
         """ Find lines """
 
         if (self._spec is None):
             raise Exception("Spectrum not provided.")
 
-        print mode
         spec = dc(self._spec)
 
         # Convolve the 1D spectrum with a gaussian filter
         conv = spec.convolve(gauss_sigma=sigma, convert=convert)
+        
         #conv = dc(spec)
+        #conv._t['Y'] = savgol_filter(spec._t['Y'], int(sigma)*2+1, 4,  mode='nearest')
+        #conv._t['Y'] = wiener(spec._t['Y'], int(sigma)*2+1)
+        
         self._conv = conv
+
+        
         
         # Find extrema
         mins, maxs, exts = conv.find_extrema()
@@ -437,11 +479,17 @@ class Line(Spec1D):
         self._maxs = maxs
         self._exts = exts
 
+        spec_exts_y = np.interp(exts['X'], spec.t['X'], spec.t['Y']) \
+                      * spec.t['Y'].unit
+        spec_exts_dy = np.interp(exts['X'], spec.t['X'], spec.t['DY']) \
+                       * spec.t['DY'].unit
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (exts['Y'][:-2] - exts['Y'][1:-1]) 
-        diff_y_right = (exts['Y'][2:] - exts['Y'][1:-1]) 
+        #diff_y_left = (exts['Y'][:-2] - exts['Y'][1:-1]) 
+        #diff_y_right = (exts['Y'][2:] - exts['Y'][1:-1]) 
+        diff_y_left = (spec_exts_y[:-2] - spec_exts_y[1:-1]) 
+        diff_y_right = (spec_exts_y[2:] - spec_exts_y[1:-1]) 
         if mode is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
@@ -455,19 +503,33 @@ class Line(Spec1D):
         else:
             pos = np.greater(diff_y_max, thres)
         x = exts['X'][1:-1][pos]
-        y = exts['Y'][1:-1][pos]
-        dy = exts['DY'][1:-1][pos]
+        #y = exts['Y'][1:-1][pos]
+        #dy = exts['DY'][1:-1][pos]
+        #y = np.interp(exts['X'][1:-1][pos], spec.t['X'], spec.t['Y']) \
+        #              * spec.t['Y'].unit
+        #dy = np.interp(exts['X'][1:-1][pos], spec.t['X'], spec.t['DY']) \
+        #               * spec.t['DY'].unit
+        y = spec_exts_y[1:-1][pos]
+        dy = spec_exts_dy[1:-1][pos]
+        
+        
         xmin = []
         xmax = []        
         if len(x) > 0: 
 
-            xmin = np.asarray(exts['X'][:-2][pos]) * x.unit
-            xmax = np.asarray(exts['X'][2:][pos]) * x.unit
+            #xmin = np.asarray(exts['X'][:-2][pos]) * x.unit
+            #xmax = np.asarray(exts['X'][2:][pos]) * x.unit
+            
+            xmin = (1 - 3*sigma/300000)*x
+            xmax = (1 + 3*sigma/300000)*x
 
         self._bound_x = np.setxor1d(xmin, xmax)
         self._bound_y = np.interp(self._bound_x, spec.x, spec.y)
+        
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
         self.__dict__.update(line.__dict__)
+        return (x, y, xmin, xmax, dy)
+        
 
     """
     def group(self, x=None, line=None, single=False):

@@ -3,8 +3,10 @@ from .utils import *
 from astropy import units as u
 from astropy.table import Column, Table
 from copy import deepcopy as dc
+from copy import copy
 import numpy as np
 from scipy.stats import sigmaclip
+from scipy.signal import savgol_filter
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 class Cont(Spec1D, Line):
@@ -43,10 +45,36 @@ class Cont(Spec1D, Line):
         t['DY'] = Column(dy, dtype=dtype, unit=yunit)
 
         return t
+        
+    def line_rem(self, wsize=101, ord=2, frac=0.03):
+        x = copy(self._spec._t['X'])
+        y = copy(self._spec._t['Y'])
+        
+        where = np.zeros(len(x), dtype=bool)
+        for l in self._line._t:
+            xmin = l['XMIN']
+            xmax = l['XMAX']
+            ymin = np.interp(xmin, x, y)
+            ymax = np.interp(xmax, x, y)
+            print xmin, xmax, ymin, ymax
+            w = np.logical_and(x>xmin, x<xmax)
+            y[w] = (ymax-ymin)/(xmax-xmin) * (x[w]-xmin) + ymin
+            where += np.logical_and(x>l['XMIN'], x<l['XMAX'])
+        
+        x = x[np.logical_not(where)]
+        y = y[np.logical_not(where)]
+        frac = 0.03
+        le = lowess(y, x, frac)
+        y_smooth = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
+        #y_smooth = savgol_filter(np.array(y), wsize, ord,  mode='nearest')
+    
+    
+    
+        self._t = self.create_t(x, y_smooth)    
 
-    def smooth_maxima(self, smooth=3.0, flux_corr=1.0, kappa_low=2.0,
-                    kappa_high=2.0):
-        """ Determine the emission continuum by removing absorption lines """
+    def max_smooth(self, smooth=10.0, flux_corr=1.0, kappa_low=1.0,
+                   kappa_high=10.0):
+        """ Determine the emission continuum by smoothing the flux maxima """
         
         range_x = np.max(self._spec.x) - np.min(self._spec.x)
         x = self._line._maxs['X']
