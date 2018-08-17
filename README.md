@@ -2,6 +2,8 @@
 
 A thousand ways to cook a spectrum!
 
+ [![DOI](https://zenodo.org/badge/78840469.svg)](https://zenodo.org/badge/latestdoi/78840469)
+
 ## Getting Started
 
 To get a copy of Astrocook on your local machine: 
