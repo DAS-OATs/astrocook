@@ -45,6 +45,11 @@ A CONTRIBUTING.md file will be soon uploaded to detail our code of conduct and t
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
+## Releases
+
+v0.1 - Start of the project
+v0.2 - First release with a DOI; GUI available; tools for finding lines, determining continuum, and fitting systems
+
 ## License
 
 Astrocook is licensed under the [GNU General Public License (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html).
