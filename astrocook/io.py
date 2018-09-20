@@ -11,7 +11,7 @@ class IO():
         """ Constructor for the IO class. """
         pass
 
-    def acs_read(self, name, path):
+    def acs_read(self, name, path='.'):
         """ Read an astrocook session from a tar.gz archive """
 
         acs = IO()

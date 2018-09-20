@@ -1,7 +1,7 @@
 from . import Cont, IO, Line, Spec1DReader, System
 from .utils import *
 from astropy import units as u
-from astropy.io import fits
+from astropy.io import ascii, fits
 from astropy.table import Column, vstack
 from collections import OrderedDict as od
 from copy import deepcopy as dc
@@ -45,6 +45,19 @@ class MainFrame(wx.Frame):
         
         self.init_UI(**kwargs)
         self.IO = IO()
+
+        try:
+            ciao
+        except:
+            bck = open("astrocook_app.bck", "r")
+            lines = bck.readlines()
+            self.path_chosen = lines[0][:-1]
+            print self.path_chosen
+            targ = lines[1]
+            print targ
+            self.on_file_open(None, targ=targ, **kwargs)
+        #except:
+        #    pass
 
         
     def init_line(self, panel):
@@ -266,87 +279,96 @@ class MainFrame(wx.Frame):
             except:
                 pass
             
-    def on_file_open(self, event, path='.'):
+    def on_file_open(self, event, path='.', targ=None):
         """ Behaviour for File > Open """
 
-        wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                   "FITS files (*.fits)|*.fits"
-        
+
         # otherwise ask the user what new file to open
-        with wx.FileDialog(self, "Open file", path,
-                           wildcard=wildcard,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
-                           as fileDialog:
+        if (targ == None):
+            wildcard = "Astrocook sessions (*.acs)|*.acs|" \
+                       "FITS files (*.fits)|*.fits"
+            with wx.FileDialog(self, "Open file", path,
+                               wildcard=wildcard,
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
+                               as fileDialog:
 
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return
-            name = fileDialog.GetPath()
-            path_chosen = fileDialog.GetDirectory()
-            if (name[-4:] == '.acs'):
-                self.targ = fileDialog.GetFilename()
-                r = re.compile('_.{4}-.{2}-.{2}_.{2}-.{2}-.{2}.acs')
-                tail = self.targ[-24:]
-                if r.match(tail):
-                    self.targ = self.targ[:-24]
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                name = fileDialog.GetPath()
+                self.path_chosen = fileDialog.GetDirectory()
+                if (name[-4:] == '.acs'):
+                    self.targ = fileDialog.GetFilename()
+                    r = re.compile('_.{4}-.{2}-.{2}_.{2}-.{2}-.{2}.acs')
+                    tail = self.targ[-24:]
+                    if r.match(tail):
+                        self.targ = self.targ[:-24]
+                    else:
+                        self.targ = self.targ[:-4]
+                    try:
+                        acs = self.IO.acs_read(name, self.path_chosen)
+                        self.spec = acs.spec
+                        self.spec_name = acs.spec_name
+                    except IOError:
+                        wx.LogError("Cannot open archive '%s'." % name)
                 else:
-                    self.targ = self.targ[:-4]
-                try:
-                    acs = self.IO.acs_read(name, path_chosen)
-                    self.spec = acs.spec
-                    self.spec_name = acs.spec_name
-                except IOError:
-                    wx.LogError("Cannot open archive '%s'." % name)
-            else:
-                self.targ = fileDialog.GetFilename()[:-5] 
-                try:
-                    self.spec = self.IO.spec_read(name)
-                    self.spec_name = name
-                except IOError:
-                    wx.LogError("Cannot open file '%s'." % name)
+                    self.targ = fileDialog.GetFilename()[:-5] 
+                    try:
+                        self.spec = self.IO.spec_read(name)
+                        self.spec_name = name
+                    except IOError:
+                        wx.LogError("Cannot open file '%s'." % name)
+        else:
+            self.targ = targ
+            name = self.path_chosen+'/'+targ+'.acs'
+            acs = self.IO.acs_read(name, path=self.path_chosen)
+            self.spec = acs.spec
+            self.spec_name = acs.spec_name
+            
 
-            if self.spec != None:
-                if self.targ in self.targ_list:
-                    self.count = self.count + 1
-                    self.targ = self.targ + '_%i' % self.count
-                self.targ_list.append(self.targ)
-                        
-                self.spec_dict[self.targ] = self.spec
-                self.row = self.spec_lc.GetItemCount()
-                self.spec_lc.insert_string_item(self.row, self.targ)
-                self.menu_enable(self.file_menu, self.id_spec)
-                self.menu_enable(self.rec_menu, self.id_spec)
-                try:
-                    self.line = acs.line
-                    self.line_name = acs.line_name
-                    self.line_dict[self.targ] = self.line
-                    self.update_line()
-                    self.menu_enable(self.file_menu, self.id_line)
-                    self.menu_enable(self.rec_menu, self.id_line)
-                except:
-                    self.line = None
-                
-                try:
-                    self.cont = acs.cont
-                    self.cont_name = acs.cont_name
-                    self.cont_dict[self.targ] = self.cont
-                    self.menu_enable(self.file_menu, self.id_cont)
-                    self.menu_enable(self.rec_menu, self.id_cont)
-                except:
-                    self.cont = None
+        print self.targ
+        if self.spec != None:
+            if self.targ in self.targ_list:
+                self.count = self.count + 1
+                self.targ = self.targ + '_%i' % self.count
+            self.targ_list.append(self.targ)
                     
-                try:
-                    self.syst = acs.syst
-                    self.syst_name = acs.syst_name
-                    self.syst_dict[self.targ] = self.syst
-                    self.update_syst()
-                    self.menu_enable(self.file_menu, self.id_syst)
-                    self.menu_enable(self.rec_menu, self.id_syst)
-                except:
-                    self.syst = None
-
+            self.spec_dict[self.targ] = self.spec
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.menu_enable(self.file_menu, self.id_spec)
+            self.menu_enable(self.rec_menu, self.id_spec)
+            try:
+                self.line = acs.line
+                self.line_name = acs.line_name
+                self.line_dict[self.targ] = self.line
+                self.update_line()
+                self.menu_enable(self.file_menu, self.id_line)
+                self.menu_enable(self.rec_menu, self.id_line)
+            except:
+                self.line = None
+            
+            try:
+                self.cont = acs.cont
+                self.cont_name = acs.cont_name
+                self.cont_dict[self.targ] = self.cont
+                self.menu_enable(self.file_menu, self.id_cont)
+                self.menu_enable(self.rec_menu, self.id_cont)
+            except:
+                self.cont = None
+                
+            try:
+                self.syst = acs.syst
+                self.syst_name = acs.syst_name
+                self.syst_dict[self.targ] = self.syst
                 self.update_syst()
-                self.update_spec()
-                self.update_plot()
+                self.menu_enable(self.file_menu, self.id_syst)
+                self.menu_enable(self.rec_menu, self.id_syst)
+            except:
+                self.syst = None
+
+            self.update_syst()
+            self.update_spec()
+            self.update_plot()
         
 
     def on_file_save(self, event, path='.'):
@@ -364,10 +386,10 @@ class MainFrame(wx.Frame):
                 return
 
             name = fileDialog.GetPath()
-            path_chosen = fileDialog.GetDirectory()
+            self.path_chosen = fileDialog.GetDirectory()
             try:
                 acs = self
-                self.IO.acs_write(acs, name, path_chosen)
+                self.IO.acs_write(acs, name, self.path_chosen)
 
             except IOError:
                 wx.LogError("Cannot save session '%s'." % name)
@@ -473,6 +495,10 @@ class MainFrame(wx.Frame):
         
     def on_quit(self, event):
         """ Behaviour for File > Quit """
+        bck = open("astrocook_app.bck", "wb")
+        bck.write(self.path_chosen+'\n')
+        bck.write(self.targ)
+        bck.close()
         self.Close()
 
     def on_spec_begin_edit(self, event):
@@ -962,27 +988,29 @@ class SystDialog(wx.Dialog):
         box_focus = wx.BoxSizer(wx.VERTICAL)
         #box_focus.Add(wx.StaticText(panel, label="Focus"))
         #box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
+        box_focus.Add(self.add_gr, 1, wx.BOTTOM, border=10)
 
         box_button = wx.BoxSizer(wx.HORIZONTAL)
         box_button.Add(self.syst_b, 0, wx.RIGHT, border=5)
         box_button.Add(self.line_b, 0, wx.RIGHT, border=5)
 
-        box_add = wx.BoxSizer(wx.VERTICAL)
+        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+
+        box_add = wx.BoxSizer(wx.HORIZONTAL)
         #box_add.Add(wx.StaticText(panel, label="Additional lines"))
-        box_add.Add(self.add_gr, 1, wx.BOTTOM, border=10)
+        #box_add.Add(self.add_gr, 1, wx.BOTTOM, border=10)
         box_add.Add(box_button)
+        box_add.Add(box_ctrl)
 
         box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
 
-        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
-        box_ctrl.Add(self.plot_tb, 1)
-
         box_disp = wx.BoxSizer(wx.VERTICAL)
-        #box_disp.Add(box_focus)
+        box_disp.Add(box_focus)
         box_disp.Add(box_add)
         box_disp.Add(box_plot, 1, wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
-        box_disp.Add(box_ctrl)
+        #box_disp.Add(box_ctrl)
 
 
         panel.SetSizer(box_disp)
@@ -1021,6 +1049,7 @@ class SystDialog(wx.Dialog):
 
     def on_tab_add(self, event, series=None):
 
+
         dx = 0.5
         
         chunk = self.syst._chunk
@@ -1035,6 +1064,7 @@ class SystDialog(wx.Dialog):
                           -self.syst._t['Z']).argmin()
         z_min = self.syst._t['Z'][syst_min]
 
+        print series
         if series == None:
             ion_min = self.group['ION'][group_min]
             ions = dict_series[self.group['SERIES'][group_min]]   
@@ -1042,6 +1072,7 @@ class SystDialog(wx.Dialog):
             ion_min = dict_series[series][0]
             ions = [ion_min]
         z_add = x_min/dict_wave[ion_min].value - 1     
+        print "ciaonez"
         
         # Create a duplicate of the system
         dupl = dc(self.syst._t[syst_min])
