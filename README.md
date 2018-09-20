@@ -2,6 +2,8 @@
 
 A thousand ways to cook a spectrum!
 
+ [![DOI](https://zenodo.org/badge/78840469.svg)](https://zenodo.org/badge/latestdoi/78840469)
+
 ## Getting Started
 
 To get a copy of Astrocook on your local machine: 
@@ -44,6 +46,11 @@ A CONTRIBUTING.md file will be soon uploaded to detail our code of conduct and t
 * **[Giorgio Calderone](https://github.com/gcalderone)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## Releases
+
+v0.1 - Start of the project
+v0.2 - First release with a DOI; GUI available; tools for finding lines, determining continuum, and fitting systems
 
 ## License
 
