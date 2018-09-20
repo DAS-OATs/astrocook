@@ -424,15 +424,16 @@ class Line(Spec1D):
         xmax = np.array([])
         dy = np.array([])
         #for log_sigma in np.arange(0.6, 2.0, 0.4):
-        print np.log(sigma_max)
-        print np.log(sigma_min)
-        for log_sigma in np.arange(np.log10(sigma_max), np.log10(sigma_min), -0.1):
+        #for log_sigma in np.arange(np.log10(sigma_max), np.log10(sigma_min), -0.1):
+        for log_sigma in np.arange(np.log10(sigma_min), np.log10(sigma_max), 0.5):
             sigma = 10**log_sigma
+        #for sigma in np.arange(sigma_min, sigma_max, 10.0):
+            print sigma
             (x_t, y_t, xmin_t, xmax_t, dy_t) = \
                 self.find(mode, diff, True, kappa, sigma)
             w = np.zeros(len(x_t), dtype=bool)
-            for min, max in zip(xmin, xmax):
-                w += np.logical_and(x_t>min, x_t<max)
+            #for min, max in zip(xmin, xmax):
+            #    w += np.logical_and(x_t>min, x_t<max)
             #print len(w)
             if (len(w) > 0):
                 w_not = np.logical_not(w)
@@ -447,7 +448,11 @@ class Line(Spec1D):
                 xmin = np.append(xmin, 0)
                 xmax = np.append(xmax, 0)
                 dy = np.append(dy, 0)
-
+            x, ind = np.unique(x, return_index=True)
+            y = y[ind]
+            xmin = xmin[ind]
+            xmax = xmax[ind]
+            dy = dy[ind]
 
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy, 
                     xunit=u.nm, yunit=yunit)
@@ -502,6 +507,9 @@ class Line(Spec1D):
             pos = np.greater(diff_y_min, thres)
         else:
             pos = np.greater(diff_y_max, thres)
+
+
+        """
         x = exts['X'][1:-1][pos]
         #y = exts['Y'][1:-1][pos]
         #dy = exts['DY'][1:-1][pos]
@@ -522,6 +530,30 @@ class Line(Spec1D):
             
             xmin = (1 - 3*sigma/300000)*x
             xmax = (1 + 3*sigma/300000)*x
+        """
+
+        # Select the region of the spectrum between two adjacent maxima
+        x = np.array([0])
+        xmin = np.array([])
+        xmax = np.array([])
+        y = np.array([])
+        dy = np.array([])
+        for lo, up in zip(exts['X'][:-2][pos], exts['X'][2:][pos]):
+            sel = np.where(np.logical_and(spec.t['X'] > lo, spec.t['X'] < up))
+            cho = np.argmin(spec.t['Y'][sel])
+            x = np.append(x, spec.t['X'][sel][cho])
+            y = np.append(y, spec.t['Y'][sel][cho])   
+            xmin = np.append(xmin, lo)
+            xmax = np.append(xmax, up)
+            dy = np.append(dy, spec.t['DY'][sel][cho])
+        x = x[1:]
+        x_unit = spec.t['X'].unit
+        y_unit = spec.t['Y'].unit
+        x = x * x_unit
+        y = y * y_unit
+        xmin = xmin * x_unit
+        xmax = xmax * x_unit
+        dy = dy * y_unit
 
         self._bound_x = np.setxor1d(xmin, xmax)
         self._bound_y = np.interp(self._bound_x, spec.x, spec.y)

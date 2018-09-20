@@ -72,6 +72,25 @@ class Cont(Spec1D, Line):
     
         self._t = self.create_t(x, y_smooth)    
 
+    def line_rem_special(self, frac=0.03):
+        x = copy(self._spec._t['X'])
+        y = copy(self._spec._t['Y'])
+        
+        where = np.zeros(len(x), dtype=bool)
+        for l in self._line._t:
+            where += np.logical_and(x>l['XMIN'], x<l['XMAX'])
+        
+        x = x[np.logical_not(where)]
+        y = y[np.logical_not(where)]
+        frac = 0.03
+        le = lowess(y, x, frac)
+        y_smooth = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
+        #y_smooth = savgol_filter(np.array(y), wsize, ord,  mode='nearest')
+    
+    
+    
+        self._t = self.create_t(x, y_smooth)    
+
     def max_smooth(self, smooth=10.0, flux_corr=1.0, kappa_low=1.0,
                    kappa_high=10.0):
         """ Determine the emission continuum by smoothing the flux maxima """

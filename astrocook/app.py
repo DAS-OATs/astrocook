@@ -47,17 +47,13 @@ class MainFrame(wx.Frame):
         self.IO = IO()
 
         try:
-            ciao
-        except:
             bck = open("astrocook_app.bck", "r")
             lines = bck.readlines()
             self.path_chosen = lines[0][:-1]
-            print self.path_chosen
             targ = lines[1]
-            print targ
             self.on_file_open(None, targ=targ, **kwargs)
-        #except:
-        #    pass
+        except:
+            pass
 
         
     def init_line(self, panel):
@@ -325,7 +321,6 @@ class MainFrame(wx.Frame):
             self.spec_name = acs.spec_name
             
 
-        print self.targ
         if self.spec != None:
             if self.targ in self.targ_list:
                 self.count = self.count + 1
@@ -402,7 +397,7 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         if dialog.execute == True:
             val = self.params.values()
-            self.cont.line_rem(frac=float(val[0]))
+            self.cont.line_rem_special(frac=float(val[0]))
             self.cont_dict[self.targ] = self.cont
             self.update_plot()
             self.menu_enable(self.rec_menu, self.id_cont)
@@ -660,7 +655,7 @@ class MainFrame(wx.Frame):
                  for i in dict_series[self.syst.t['SERIES'][sel]]]
             dx = 0.5
             h = np.max(self.spec.y)
-            self.syst.model(z, dx)
+            self.syst.model(z, norm=False, dx=dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
 
@@ -898,6 +893,7 @@ class SystDialog(wx.Dialog):
         self.p = parent
         self.syst = self.p.syst#_sel
         self.group = self.p.syst._group
+        print self.group
         self.z = self.p.z_sel
         cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
                                    self.syst._t['Z'] < self.z+0.002)
@@ -1064,15 +1060,14 @@ class SystDialog(wx.Dialog):
                           -self.syst._t['Z']).argmin()
         z_min = self.syst._t['Z'][syst_min]
 
-        print series
         if series == None:
             ion_min = self.group['ION'][group_min]
-            ions = dict_series[self.group['SERIES'][group_min]]   
+            #ions = dict_series[self.group['SERIES'][group_min]]
+            ions = np.array(self.group['ION'])
         elif series == 'unknown':
             ion_min = dict_series[series][0]
             ions = [ion_min]
         z_add = x_min/dict_wave[ion_min].value - 1     
-        print "ciaonez"
         
         # Create a duplicate of the system
         dupl = dc(self.syst._t[syst_min])
