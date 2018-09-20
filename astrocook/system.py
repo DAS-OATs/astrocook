@@ -695,9 +695,8 @@ class System(Spec1D, Line, Cont):
         y = spec['Y']
         for c, i in enumerate(ions):
             where_g = group['ION']==i
-            
-            zmin = group['Z'][where_g]-dz
-            zmax = group['Z'][where_g]+dz
+            zmin = np.min(group['Z'][where_g])-dz
+            zmax = np.max(group['Z'][where_g])+dz
             
             x_z = x/dict_wave[i] - 1
             xmin_p = (1+zmin) * dict_wave[i].value
@@ -1314,6 +1313,8 @@ class System(Spec1D, Line, Cont):
         # Read Voigt parameters, if provided
         
         self_temp = dc(self)
+        print self_temp._line
+        print self_temp._t
         x_arr = self_temp.x
         #i = 0
         group_check = 0

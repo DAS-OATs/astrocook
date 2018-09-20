@@ -8,7 +8,7 @@ import tarfile
 
 class IO():
     def __init__(self):
-        """ Constructor for the Spec1DReader class. """
+        """ Constructor for the IO class. """
         pass
 
     def acs_read(self, name, path):
@@ -168,16 +168,19 @@ class IO():
         line.t.write(name, format='fits', overwrite=overwrite)
 
         # Table with extrema
-        line._mins.write(name[:-10]+'_mins.fits')
-        line._maxs.write(name[:-10]+'_maxs.fits')
-        line._exts.write(name[:-10]+'_exts.fits')
+        line._mins.write(name[:-10]+'_mins.fits', overwrite=overwrite)
+        line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
+        line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
 
     def spec_read(self, name):
         """ Read a spectrum from a FITS frame """
         try:
             spec = Spec1DReader().ac(name)
         except:
-            spec = Spec1DReader().xq(name)
+            try:
+                spec = Spec1DReader().xq(name)
+            except:
+                spec = Spec1DReader().uves(name, resol=45000)
 
         return spec
             
@@ -253,4 +256,4 @@ class IO():
         hdu.writeto(name, overwrite=overwrite)
         
         # Table with mapping between lines and systems
-        syst._map.write(name[:-10]+'_map.fits')
+        syst._map.write(name[:-10]+'_map.fits', overwrite=overwrite)

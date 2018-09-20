@@ -628,13 +628,16 @@ class Spec1D():
         ax.set_ylabel("Flux [" + str(spec.y.unit) + "]")
         #ax_z.set_xlabel("Lyman-alpha redshift")
         ax.plot(spec.x, spec.y, lw=1.0)
+        #ax.plot(spec.x, np.cumsum(spec.y)*10/len(spec.y), lw=2.0)
+        #ax.plot(spec.x, np.gradient(np.convolve(spec.y, np.ones(100), 'same')), lw=2.0)
+        #ax.plot(spec.x, np.gradient(np.gradient(np.convolve(spec.y, np.ones(100), 'same'))), lw=2.0)
         #ax_z.plot(spec.x/dict_wave['Ly_a']-1, spec.y, lw=1.0)
         #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
         if (hasattr(self, '_cont')):
             where = np.where(self.y != self._cont.y)
             #print(self.y, self._cont.y)
             #print(where)
-            #ax.plot(self._cont.x[where], self._cont.y[where], c='y')
+            ax.plot(self._cont.x[where], self._cont.y[where], c='y')
             ax.plot(self.x, self._cont.y, c='y')
 
         #if block is False:

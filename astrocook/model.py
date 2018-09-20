@@ -253,7 +253,6 @@ class Model():
             max_size = np.size(N) if np.size(N) > max_size else max_size
             max_size = np.size(b) if np.size(b) > max_size else max_size
             max_size = np.size(btur) if np.size(btur) > max_size else max_size
-            
             z = np.full(max_size, z) * z.unit if np.size(z)==1 else z
             N = np.full(max_size, N) * N.unit if np.size(N)==1 else N
             b = np.full(max_size, b) * b.unit if np.size(b)==1 else b   
@@ -262,7 +261,6 @@ class Model():
 
             # Redshifts are translated to be around zero
             z = z - np.mean(z)
-
             ion_prof = ion
             if (ion_mask is not None):
                 if (np.sum(ion_mask) == 0):

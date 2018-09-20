@@ -215,7 +215,7 @@ class Spec1DReader:
         c1 = np.argwhere(hdulist[1].data['NORMFLUX'] > 0)
         c2 = np.argwhere(hdulist[1].data['STDEV'] > 0)
         igood = np.intersect1d(c1, c2)
-
+        
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
@@ -247,34 +247,41 @@ class Spec1DReader:
             meta[key] = val
 
         data = hdulist[1].data
+
+        
+        
         try:
-            x = data.field('WAVEL')
+            cond = ~np.isnan(data.field('WAVEL'))
+            x = data.field('WAVEL')[cond]
+            x_name = 'WAVEL'
         except:
-            x = data.field('wave') * 0.1
+            cond = ~np.isnan(data.field('wave'))            
+            x = data.field('wave')[cond] * 0.1
+            x_name = 'wave'
         try:
-            dx = data.field('PIXSIZE')
+            dx = data.field('PIXSIZE')[cond]
         except:
-            dx = data.field('wpix') * 0.1
+            dx = data.field('wpix')[cond] * 0.1
         try:
-            y = data.field('FLUX')
+            y = data.field('FLUX')[cond]
             y_name = 'FLUX'
         except:
-            y = data.field('flux')
+            y = data.field('flux')[cond]
             y_name = 'flux'
         try:
-            dy = data.field('FLUXERR')
+            dy = data.field('FLUXERR')[cond]
             dy_name = 'FLUXERR'
         except:
-            dy = data.field('sigma')
+            dy = data.field('sigma')[cond]
             dy_name = 'sigma'
         #resol = [60000.] * len(data)
         #resol_e = [1000.] * len(data)
-        resol_arr = [resol] * len(data)
+        resol_arr = [resol] * len(x)
         
         c1 = np.argwhere(hdulist[1].data[y_name] > 0)
         c2 = np.argwhere(hdulist[1].data[dy_name] > 0)
         igood = np.intersect1d(c1, c2)
-
+        
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
@@ -304,6 +311,7 @@ class Spec1DReader:
             meta[key] = val
 
         data = hdulist[1].data
+            
         try:
             x = data.field('WAVEL')
         except:

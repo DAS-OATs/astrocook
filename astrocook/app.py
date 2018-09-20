@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import os
 import random
+import re
 import sys
 import wx
 import wx.grid as gridlib
@@ -279,12 +280,18 @@ class MainFrame(wx.Frame):
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
-
             name = fileDialog.GetPath()
+            path_chosen = fileDialog.GetDirectory()
             if (name[-4:] == '.acs'):
-                self.targ = fileDialog.GetFilename()[:-24]
+                self.targ = fileDialog.GetFilename()
+                r = re.compile('_.{4}-.{2}-.{2}_.{2}-.{2}-.{2}.acs')
+                tail = self.targ[-24:]
+                if r.match(tail):
+                    self.targ = self.targ[:-24]
+                else:
+                    self.targ = self.targ[:-4]
                 try:
-                    acs = self.IO.acs_read(name, path)
+                    acs = self.IO.acs_read(name, path_chosen)
                     self.spec = acs.spec
                     self.spec_name = acs.spec_name
                 except IOError:
@@ -297,48 +304,49 @@ class MainFrame(wx.Frame):
                 except IOError:
                     wx.LogError("Cannot open file '%s'." % name)
 
-            if self.targ in self.targ_list:
-                self.count = self.count + 1
-                self.targ = self.targ + '_%i' % self.count
-            self.targ_list.append(self.targ)
-                    
-            self.spec_dict[self.targ] = self.spec
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-            self.menu_enable(self.file_menu, self.id_spec)
-            self.menu_enable(self.rec_menu, self.id_spec)
-            try:
-                self.line = acs.line
-                self.line_name = acs.line_name
-                self.line_dict[self.targ] = self.line
-                self.update_line()
-                self.menu_enable(self.file_menu, self.id_line)
-                self.menu_enable(self.rec_menu, self.id_line)
-            except:
-                self.line = None
-            
-            try:
-                self.cont = acs.cont
-                self.cont_name = acs.cont_name
-                self.cont_dict[self.targ] = self.cont
-                self.menu_enable(self.file_menu, self.id_cont)
-                self.menu_enable(self.rec_menu, self.id_cont)
-            except:
-                self.cont = None
+            if self.spec != None:
+                if self.targ in self.targ_list:
+                    self.count = self.count + 1
+                    self.targ = self.targ + '_%i' % self.count
+                self.targ_list.append(self.targ)
+                        
+                self.spec_dict[self.targ] = self.spec
+                self.row = self.spec_lc.GetItemCount()
+                self.spec_lc.insert_string_item(self.row, self.targ)
+                self.menu_enable(self.file_menu, self.id_spec)
+                self.menu_enable(self.rec_menu, self.id_spec)
+                try:
+                    self.line = acs.line
+                    self.line_name = acs.line_name
+                    self.line_dict[self.targ] = self.line
+                    self.update_line()
+                    self.menu_enable(self.file_menu, self.id_line)
+                    self.menu_enable(self.rec_menu, self.id_line)
+                except:
+                    self.line = None
                 
-            try:
-                self.syst = acs.syst
-                self.syst_name = acs.syst_name
-                self.syst_dict[self.targ] = self.syst
-                self.update_syst()
-                self.menu_enable(self.file_menu, self.id_syst)
-                self.menu_enable(self.rec_menu, self.id_syst)
-            except:
-                self.syst = None
+                try:
+                    self.cont = acs.cont
+                    self.cont_name = acs.cont_name
+                    self.cont_dict[self.targ] = self.cont
+                    self.menu_enable(self.file_menu, self.id_cont)
+                    self.menu_enable(self.rec_menu, self.id_cont)
+                except:
+                    self.cont = None
+                    
+                try:
+                    self.syst = acs.syst
+                    self.syst_name = acs.syst_name
+                    self.syst_dict[self.targ] = self.syst
+                    self.update_syst()
+                    self.menu_enable(self.file_menu, self.id_syst)
+                    self.menu_enable(self.rec_menu, self.id_syst)
+                except:
+                    self.syst = None
 
-            self.update_syst()
-            self.update_spec()
-            self.update_plot()
+                self.update_syst()
+                self.update_spec()
+                self.update_plot()
         
 
     def on_file_save(self, event, path='.'):
@@ -356,27 +364,24 @@ class MainFrame(wx.Frame):
                 return
 
             name = fileDialog.GetPath()
+            path_chosen = fileDialog.GetDirectory()
             try:
                 acs = self
-                self.IO.acs_write(acs, name, path)
+                self.IO.acs_write(acs, name, path_chosen)
 
             except IOError:
-                wx.LogError("Cannot save session '%s'." % newfile)
+                wx.LogError("Cannot save session '%s'." % name)
 
     def on_line_cont(self, event):
         self.cont = Cont(self.spec, self.line)
-        #self.params = od([('Window size:', 101)])
         self.params = od([('Fraction:', 0.03)])
         dialog = ParamDialog(self, title="Find Lines")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
             val = self.params.values()
-            #self.cont.line_rem(int(val[0]))
             self.cont.line_rem(frac=float(val[0]))
-
-            #self.ax.plot(self.spec.x, self.cont._t['Y'])
-            #self.plot_fig.draw()
+            self.cont_dict[self.targ] = self.cont
             self.update_plot()
             self.menu_enable(self.rec_menu, self.id_cont)
         
@@ -440,9 +445,7 @@ class MainFrame(wx.Frame):
                                  flux_corr=float(val[1]),
                                  kappa_low=float(val[2]),
                                  kappa_high=float(val[3]))
-
-            #self.ax.plot(self.spec.x, self.cont._t['Y'])
-            #self.plot_fig.draw()
+            self.cont_dict[self.targ] = self.cont
             self.update_plot()
             self.menu_enable(self.rec_menu, self.id_cont)
         
@@ -577,7 +580,7 @@ class MainFrame(wx.Frame):
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
         self.params = od([('series', 'CIV')])
-        dialog = ParamDialog(self, title="Find Systems")
+        dialog = ParamDialog(self, title="Find Systems")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
@@ -654,15 +657,16 @@ class MainFrame(wx.Frame):
             self.line = self.line_dict[self.targ]
         except:
             self.line = None
-            
         try:
             self.cont = self.cont_dict[self.targ]
         except:
             self.cont = None
+
         try:
             self.syst = self.syst_dict[self.targ]
         except:
             self.syst = None
+
         self.update_spec()
         self.update_line()
         self.update_syst()
