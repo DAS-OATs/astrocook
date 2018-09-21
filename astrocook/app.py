@@ -626,6 +626,7 @@ class MainFrame(wx.Frame):
         
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
+        #dialog.Show()
         dialog.Close()
         while dialog.execute == True:
             self.syst.fit(self.z_sel, norm=False)
@@ -638,6 +639,7 @@ class MainFrame(wx.Frame):
             self.update_syst()
             dialog = SystDialog(self, title="Fit selected system")
             dialog.ShowModal()
+            #dialog.Show()
             dialog.Close()
         dialog.Destroy()
         self.update_syst()
@@ -893,7 +895,6 @@ class SystDialog(wx.Dialog):
         self.p = parent
         self.syst = self.p.syst#_sel
         self.group = self.p.syst._group
-        print self.group
         self.z = self.p.z_sel
         cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
                                    self.syst._t['Z'] < self.z+0.002)

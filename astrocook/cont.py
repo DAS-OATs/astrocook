@@ -56,15 +56,14 @@ class Cont(Spec1D, Line):
             xmax = l['XMAX']
             ymin = np.interp(xmin, x, y)
             ymax = np.interp(xmax, x, y)
-            print xmin, xmax, ymin, ymax
             w = np.logical_and(x>xmin, x<xmax)
             y[w] = (ymax-ymin)/(xmax-xmin) * (x[w]-xmin) + ymin
             where += np.logical_and(x>l['XMIN'], x<l['XMAX'])
         
-        x = x[np.logical_not(where)]
-        y = y[np.logical_not(where)]
+        x_rem = x[np.logical_not(where)]
+        y_rem = y[np.logical_not(where)]
         frac = 0.03
-        le = lowess(y, x, frac)
+        le = lowess(y_rem, x_rem, frac)
         y_smooth = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
         #y_smooth = savgol_filter(np.array(y), wsize, ord,  mode='nearest')
     
@@ -80,16 +79,16 @@ class Cont(Spec1D, Line):
         for l in self._line._t:
             where += np.logical_and(x>l['XMIN'], x<l['XMAX'])
         
-        x = x[np.logical_not(where)]
-        y = y[np.logical_not(where)]
+        x_rem = x[np.logical_not(where)]
+        y_rem = y[np.logical_not(where)]
         frac = 0.03
-        le = lowess(y, x, frac)
+        le = lowess(y_rem, x_rem, frac)
         y_smooth = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
         #y_smooth = savgol_filter(np.array(y), wsize, ord,  mode='nearest')
     
     
     
-        self._t = self.create_t(x, y_smooth)    
+        self._t = self.create_t(x, y_smooth)
 
     def max_smooth(self, smooth=10.0, flux_corr=1.0, kappa_low=1.0,
                    kappa_high=10.0):
