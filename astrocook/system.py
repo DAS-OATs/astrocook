@@ -397,7 +397,6 @@ class System(Spec1D, Line, Cont):
             
     def find(self, series, ztol=1e-4):
         """ Find systems by matching redshifts """
-        
         ion = dict_series[series]
         self.create_z(ion)
         self._z.sort('Z')

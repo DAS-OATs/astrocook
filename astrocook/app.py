@@ -19,6 +19,7 @@ import sys
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import yaml
 
 class MainFrame(wx.Frame):
     def __init__(self, parent=None, title="Astrocook", **kwargs):
@@ -46,6 +47,7 @@ class MainFrame(wx.Frame):
         self.init_UI(**kwargs)
         self.IO = IO()
 
+        #"""
         try:
             bck = open("astrocook_app.bck", "r")
             lines = bck.readlines()
@@ -54,7 +56,7 @@ class MainFrame(wx.Frame):
             self.on_file_open(None, targ=targ, **kwargs)
         except:
             pass
-
+        #"""
         
     def init_line(self, panel):
         """ Create the line list panel """
@@ -361,6 +363,14 @@ class MainFrame(wx.Frame):
             except:
                 self.syst = None
 
+            try:
+                self.log = acs.log
+                self.log_name = acs.log_name
+            except:
+                self.log = dict()
+                self.log["targ"] = self.targ
+            print self.log
+                
             self.update_syst()
             self.update_spec()
             self.update_plot()
@@ -411,10 +421,11 @@ class MainFrame(wx.Frame):
         
     def on_line_find(self, event):
         """ Behaviour for Recipes > Find Lines """
-        self.params = od([('Mode:', 'abs'), ('Difference:', 'min'),
-                          ('Threshold (sigma):', 5.0),
+        self.params = od([("Mode:", 'abs'), ("Difference:", 'min'),
+                          ("Threshold (sigma):", 5.0),
         #                  ('Smoothing (km/s):', 40.0)])
-                          ('Min. sigma:', 5.0), ('Max. sigma', 100.0)])
+                          ("Min. sigma:", 5.0), ("Max. sigma", 100.0)])
+        
         dialog = ParamDialog(self, title="Find Lines")
         dialog.ShowModal()
         dialog.Destroy()
@@ -428,6 +439,7 @@ class MainFrame(wx.Frame):
                                    float(val[3]), float(val[4]))
             
             self.line_num = len(self.line.t)
+            self.log["line_dict"] = dict(self.params)
             self.update_spec()
             self.update_line()
             self.update_plot()
@@ -441,10 +453,18 @@ class MainFrame(wx.Frame):
                 self.line_focus.remove()
             except:
                 pass
+
+            # Move to line.py
             x = self.line.x[sel]
             y = self.line.y[sel]
-            self.line_focus, = self.ax.plot(x, y, c='C0', marker='o', ms=20,
-                                            alpha=0.2)
+            xmin = self.line.xmin[sel]
+            xmax = self.line.xmax[sel]
+            #self.line_focus, = self.ax.plot(x, y, c='C0', marker='o', ms=20,
+            #                                alpha=0.2)
+            self.update_plot(xmin.value-0.3, xmax.value+0.3)
+            self.ax.axvline(x=x.value, color='C3', alpha=0.5)
+            self.ax.axvline(x=xmin.value, color='C3', alpha=0.5, linestyle=':')
+            self.ax.axvline(x=xmax.value, color='C3', alpha=0.5, linestyle=':')
             self.plot_fig.draw()
             
     def on_max_cont(self, event):
@@ -453,6 +473,7 @@ class MainFrame(wx.Frame):
                           ('Flux correction:', 1.0),
                           ('Lower thresh. (sigma):', 3.0),
                           ('Upper thresh. (sigma):', 3.0)])
+        print yaml.dump(dict(self.params))
         dialog = ParamDialog(self, title="Find Lines")
         dialog.ShowModal()
         dialog.Destroy()
@@ -471,7 +492,11 @@ class MainFrame(wx.Frame):
         self.plot_fig.draw()
 
     #def on_plot_draw(self, event, obj):
-    def on_plot_draw(self, event):
+    def on_plot_draw(self, event, xmin=None, xmax=None):
+        if xmin == None:
+            xmin = self.xmin
+        if xmax == None:
+            xmax = self.xmax
         self.spec = self.spec_dict[self.targ]
         self.spec.plot(ax=self.ax)
         try:
@@ -486,6 +511,7 @@ class MainFrame(wx.Frame):
             self.syst = self.syst_dict[self.targ]
         except:
             pass
+	self.ax.set_xlim(xmin, xmax)
         self.plot_fig.draw()
         
     def on_quit(self, event):
@@ -522,9 +548,10 @@ class MainFrame(wx.Frame):
         except:
             z = 0.0
         self.params = od(
-            [('Use Forest', True), ('Ion', 'Ly'), ('Emission redshift', z), ('Prox. velocity', 0.0),
-             ('Use Range', False), ('Min. wavelength', 0.0),
-             ('Max. wavelength', 0.0)])
+            [("Use Forest", True), ("Ion", 'Ly'), ("Emission redshift", z),
+             ("Prox. velocity", 0.0),
+             ("Use Range", False), ("Min. wavelength", 0.0),
+             ("Max. wavelength", 0.0)])
         dialog = ParamDialog(self, title="Extract Spectral Region")
         dialog.ShowModal()
         dialog.Destroy()
@@ -548,6 +575,7 @@ class MainFrame(wx.Frame):
             self.spec = forest
             self.spec_dict[self.targ] = self.spec
             self.update_all()
+            self.log["spec_extract"] = dict(self.params)
             #self.update_spec()
             #self.update_line()
             #self.update_syst()
@@ -564,7 +592,7 @@ class MainFrame(wx.Frame):
 
     def on_syst_def(self, event):
         """ Behaviour for Systems > Define System """
-        self.params = od([('series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
+        self.params = od([('Series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
                           ('b', '20')])
         dialog = ParamDialog(self, title="Define System")
         dialog.ShowModal()
@@ -572,7 +600,7 @@ class MainFrame(wx.Frame):
         if dialog.execute == True:
             #vary = [bool(v) for v in self.params['vary']]
             syst = System(self.spec, self.line, self.cont,
-                          series=self.params['series'], 
+                          series=self.params['Series'], 
                           z=self.params['z'], N=self.params['N'],
                           b=self.params['b'])
             dx = 0.5
@@ -600,13 +628,14 @@ class MainFrame(wx.Frame):
         
     def on_syst_find(self, event):
         """ Behaviour for Recipes > Find Lines """
-        self.params = od([('series', 'CIV')])
+        self.params = od([('Series', 'CIV'), ('Redshift tolerance', 1e-4)])
         dialog = ParamDialog(self, title="Find Systems")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
             syst = System(self.spec, self.line, self.cont)
-            syst.find(series=self.params['series'])
+            syst.find(series=self.params['Series'],
+                      ztol=float(self.params['Redshift tolerance']))
 
             if self.syst != None:
                 self.syst.merge(syst)
@@ -626,7 +655,6 @@ class MainFrame(wx.Frame):
         
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
-        #dialog.Show()
         dialog.Close()
         while dialog.execute == True:
             self.syst.fit(self.z_sel, norm=False)
@@ -639,7 +667,6 @@ class MainFrame(wx.Frame):
             self.update_syst()
             dialog = SystDialog(self, title="Fit selected system")
             dialog.ShowModal()
-            #dialog.Show()
             dialog.Close()
         dialog.Destroy()
         self.update_syst()
@@ -657,6 +684,8 @@ class MainFrame(wx.Frame):
                  for i in dict_series[self.syst.t['SERIES'][sel]]]
             dx = 0.5
             h = np.max(self.spec.y)
+            if self.ax.get_xlim() != (self.xmin, self.xmax):
+                self.update_plot()
             self.syst.model(z, norm=False, dx=dx)
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
@@ -741,11 +770,11 @@ class MainFrame(wx.Frame):
                         
     
             
-    def update_plot(self):
+    def update_plot(self, *kwargs):
         """ Update the plot panel """
 
         self.on_plot_clear(None)
-        self.on_plot_draw(None)
+        self.on_plot_draw(None, *kwargs)
 
     def update_spec(self):
         """ Update the spec list """
@@ -757,9 +786,10 @@ class MainFrame(wx.Frame):
         except:
             pass
 
-        xmin = self.spec.t['X'][0]
-        xmax = self.spec.t['X'][-1]
-        self.spec_lc.SetItem(self.row, 3, "[%3.2f, %3.2f]" % (xmin, xmax))
+        self.xmin = self.spec.t['X'][0]
+        self.xmax = self.spec.t['X'][-1]
+        self.spec_lc.SetItem(self.row, 3, "[%3.2f, %3.2f]"
+                             % (self.xmin, self.xmax))
 
         try:
             self.spec_lc.SetItem(self.row, 4, str(len(self.line.t)))

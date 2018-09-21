@@ -5,6 +5,7 @@ import difflib
 import numpy as np
 import os
 import tarfile
+import yaml
 
 class IO():
     def __init__(self):
@@ -55,6 +56,17 @@ class IO():
             except:
                 pass
 
+            # Log
+            try:
+                ciao
+            except:
+                acs.log_name = name[:-4]+'.log'
+                log = file(acs.log_name, "r")
+                acs.log = yaml.safe_load(log)
+                os.remove(acs.log_name)
+            #except:
+            #    pass
+
         return acs
 
     def acs_write(self, acs, name, path, overwrite=True):
@@ -65,6 +77,8 @@ class IO():
             if d[0] == '-':
                 diff += d[-1]
         with tarfile.open(name, 'w:gz') as arch:
+
+            # Spectrum (required)
             spec_name = name[:-4] + '_spec.fits'
             spec_arcname = diff[:-4] + '_spec.fits'
             #self.spec_write(acs.spec, spec_name)
@@ -72,6 +86,7 @@ class IO():
             arch.add(spec_name, arcname=spec_arcname)
             os.remove(spec_name)
 
+            # Line list
             try:
                 line_name = name[:-4] + '_line.fits'
                 line_arcname = diff[:-4] + '_line.fits'
@@ -90,6 +105,7 @@ class IO():
             except:
                 pass
 
+            # Continuum
             try:
                 cont_name = name[:-4] + '_cont.fits'
                 cont_arcname = diff[:-4] + '_cont.fits'
@@ -99,6 +115,7 @@ class IO():
             except:
                 pass
 
+            # System list
             try:
                 syst_name = name[:-4] + '_syst.fits'
                 syst_arcname = diff[:-4] + '_syst.fits'
@@ -108,6 +125,18 @@ class IO():
                          arcname=syst_arcname[:-10]+'_map.fits')
                 os.remove(syst_name)
                 os.remove(syst_name[:-10]+'_map.fits')
+            except:
+                pass
+
+            # Log
+            try:
+                log_name = name[:-4] + '.log'
+                log_arcname = diff[:-4] + '.log'
+                log = open(log_name, "w")
+                log.write(yaml.safe_dump(acs.log))
+                log.close()
+                arch.add(log_name, arcname=log_arcname)
+                os.remove(log_name)
             except:
                 pass
 
@@ -172,6 +201,8 @@ class IO():
         line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
         line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
 
+
+    
     def spec_read(self, name):
         """ Read a spectrum from a FITS frame """
         try:
