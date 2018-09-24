@@ -1,5 +1,6 @@
-from . import Cont, IO, Line, Spec1DReader, System
+from . import Cont, IO, Line, Spec1DReader, System, Recipe
 from .utils import *
+from .recipe import *
 from astropy import units as u
 from astropy.io import ascii, fits
 from astropy.table import Column, vstack
@@ -20,6 +21,8 @@ import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import yaml
+
+
 
 class MainFrame(wx.Frame):
     def __init__(self, parent=None, title="Astrocook", **kwargs):
@@ -224,9 +227,9 @@ class MainFrame(wx.Frame):
                                        "E&xtract Spectral Region...")
         rec_line_find = wx.MenuItem(self.rec_menu, self.id_spec+2,
                                     "Find &Lines...")
-        rec_line_cont = wx.MenuItem(self.rec_menu, self.id_line,
-                                    "Find Continuum by Removing Lines...")
-        rec_max_cont = wx.MenuItem(self.rec_menu, self.id_line+1,
+        rec_cont_line_rem = wx.MenuItem(self.rec_menu, self.id_line,
+                                        rec_descr['cont_line_rem']+"...")
+        rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
                                     "Find Continuum by Smoothing the "
                                     "Flux Maxima...")
         rec_syst_find = wx.MenuItem(self.rec_menu, self.id_cont,
@@ -238,8 +241,8 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
         self.Bind(wx.EVT_MENU, self.on_line_find, rec_line_find)
-        self.Bind(wx.EVT_MENU, self.on_line_cont, rec_line_cont)
-        self.Bind(wx.EVT_MENU, self.on_max_cont, rec_max_cont)
+        self.Bind(wx.EVT_MENU, self.on_cont_line_rem, rec_cont_line_rem)
+        self.Bind(wx.EVT_MENU, self.on_cont_max_smooth, rec_cont_max_smooth)
         self.Bind(wx.EVT_MENU, self.on_syst_find, rec_syst_find)
         self.Bind(wx.EVT_MENU, self.on_syst_def, rec_syst_def)
         self.Bind(wx.EVT_MENU, self.on_syst_fit, rec_syst_fit)
@@ -247,8 +250,9 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_spec_extract)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_line_find)
-        self.rec_menu.Append(rec_line_cont)
-        self.rec_menu.Append(rec_max_cont)
+        self.rec_menu.AppendSeparator()
+        self.rec_menu.Append(rec_cont_line_rem)
+        self.rec_menu.Append(rec_cont_max_smooth)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
         self.rec_menu.Append(rec_syst_def)
@@ -276,6 +280,27 @@ class MainFrame(wx.Frame):
                 menu.Enable(id+i, True)
             except:
                 pass
+            
+    def on_cont_line_rem(self, event):
+        """ Behaviour for Recipes > Find Continuum by Removing Lines """
+        
+        self.cont = Cont(self.spec, self.line)
+        run = self.recipe_dialog(self.cont, "cont_line_rem")
+        if run:
+            self.cont_dict[self.targ] = self.cont
+            self.update_plot()
+            self.menu_enable(self.rec_menu, self.id_cont)
+
+    def on_cont_max_smooth(self, event):
+        """ Behaviour for Recipes > Find Continuum by Smoothing the Flux 
+        Maxima """
+
+        self.cont = Cont(self.spec, self.line)
+        run = self.recipe_dialog(self.cont, 'cont_max_smooth')
+        if run:
+            self.cont_dict[self.targ] = self.cont
+            self.update_plot()
+            self.menu_enable(self.rec_menu, self.id_cont)
             
     def on_file_open(self, event, path='.', targ=None):
         """ Behaviour for File > Open """
@@ -369,7 +394,6 @@ class MainFrame(wx.Frame):
             except:
                 self.log = dict()
                 self.log["targ"] = self.targ
-            print self.log
                 
             self.update_syst()
             self.update_spec()
@@ -399,19 +423,6 @@ class MainFrame(wx.Frame):
             except IOError:
                 wx.LogError("Cannot save session '%s'." % name)
 
-    def on_line_cont(self, event):
-        self.cont = Cont(self.spec, self.line)
-        self.params = od([('Fraction:', 0.03)])
-        dialog = ParamDialog(self, title="Find Lines")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            val = self.params.values()
-            self.cont.line_rem_special(frac=float(val[0]))
-            self.cont_dict[self.targ] = self.cont
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)
-        
     def on_line_edit(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -421,32 +432,19 @@ class MainFrame(wx.Frame):
         
     def on_line_find(self, event):
         """ Behaviour for Recipes > Find Lines """
-        self.params = od([("Mode:", 'abs'), ("Difference:", 'min'),
-                          ("Threshold (sigma):", 5.0),
-        #                  ('Smoothing (km/s):', 40.0)])
-                          ("Min. sigma:", 5.0), ("Max. sigma", 100.0)])
-        
-        dialog = ParamDialog(self, title="Find Lines")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            val = self.params.values()
-            self.line = Line(self.spec)
-            self.line_dict[self.targ] = self.line
-            #self.line.find(mode=val[0], diff=val[1], kappa=float(val[2]),
-            #               sigma=float(val[3]))
-            self.line.find_special(val[0], val[1], float(val[2]),
-                                   float(val[3]), float(val[4]))
-            
+
+        self.line = Line(self.spec)
+        run = self.recipe_dialog(self.line, "line_find")
+        if run:            
             self.line_num = len(self.line.t)
-            self.log["line_dict"] = dict(self.params)
             self.update_spec()
             self.update_line()
             self.update_plot()
             self.menu_enable(self.rec_menu, self.id_line)
         
     def on_line_select(self, event):
-        """ Behaviour for line selection """        
+        """ Behaviour for line selection """
+        
         if event.GetTopRow() == event.GetBottomRow():            
             sel = event.GetTopRow()
             try:
@@ -467,26 +465,6 @@ class MainFrame(wx.Frame):
             self.ax.axvline(x=xmax.value, color='C3', alpha=0.5, linestyle=':')
             self.plot_fig.draw()
             
-    def on_max_cont(self, event):
-        self.cont = Cont(self.spec, self.line)
-        self.params = od([('Smoothing:', 40.0), 
-                          ('Flux correction:', 1.0),
-                          ('Lower thresh. (sigma):', 3.0),
-                          ('Upper thresh. (sigma):', 3.0)])
-        print yaml.dump(dict(self.params))
-        dialog = ParamDialog(self, title="Find Lines")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            val = self.params.values()
-            self.cont.max_smooth(smooth=float(val[0]), 
-                                 flux_corr=float(val[1]),
-                                 kappa_low=float(val[2]),
-                                 kappa_high=float(val[3]))
-            self.cont_dict[self.targ] = self.cont
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)
-        
     def on_plot_clear(self, event):
         self.ax.clear()
         self.plot_fig.draw()
@@ -516,6 +494,7 @@ class MainFrame(wx.Frame):
         
     def on_quit(self, event):
         """ Behaviour for File > Quit """
+        
         bck = open("astrocook_app.bck", "wb")
         bck.write(self.path_chosen+'\n')
         bck.write(self.targ)
@@ -543,32 +522,36 @@ class MainFrame(wx.Frame):
             pass
         
     def on_spec_extract(self, event):
+        """ Behavior for Recipes > Extract Spectral Region """
+
+        #"""
         try:
             z = self.z_dict[self.targ]
         except:
             z = 0.0
-        self.params = od(
-            [("Use Forest", True), ("Ion", 'Ly'), ("Emission redshift", z),
-             ("Prox. velocity", 0.0),
-             ("Use Range", False), ("Min. wavelength", 0.0),
-             ("Max. wavelength", 0.0)])
+        #"""
+        self.rec = Recipe(self.spec, 'spec_extract')
         dialog = ParamDialog(self, title="Extract Spectral Region")
         dialog.ShowModal()
         dialog.Destroy()
         if dialog.execute == True:
-            val = self.params.values()
-            if val[0] == 'True':
-                forest = self.spec.extract(forest=val[1], zem=float(val[2]), prox_vel=float(val[3])*u.km/u.s)
-                self.targ = self.targ + '_' + val[1]
-                self.z_dict[self.targ] = float(val[2])
+            if self.rec.params['forest'] == True:
+                params = {k: self.rec.params[k] for k in ['ion', 'zem',
+                                                        'prox_vel']}
+                print params
+                forest = self.spec.extract_forest(**params)
+                self.targ = self.targ + '_' + params['ion']
+                self.z_dict[self.targ] = params['zem']
             else:
-                forest = self.spec.extract(xmin=float(val[5])*u.nm,
-                                           xmax=float(val[6])*u.nm)
+                params = {k: self.rec.params[k] for k in ['xmin', 'xmax']}
                 self.targ = self.targ + '_%3.0f-%3.0f' \
-                            % (float(val[5]), float(val[6]))
-                if float(val[2]) != 0.0:
-                    self.z_dict[self.targ] = float(val[2])
+                            % (params['xmin'], params['xmax'])
+                if float(params['zem']) != 0.0:
+                    self.z_dict[self.targ] = float(params['zem'])
+                forest = self.spec.extract_reg(**params)
 
+            print forest.t
+                
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
 
@@ -580,7 +563,8 @@ class MainFrame(wx.Frame):
             #self.update_line()
             #self.update_syst()
             #self.update_plot()
-
+        #"""
+        
     def on_spec_select(self, event):
         """ Behaviour when spectrum is selected from list """
 
@@ -592,7 +576,7 @@ class MainFrame(wx.Frame):
 
     def on_syst_def(self, event):
         """ Behaviour for Systems > Define System """
-        self.params = od([('Series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
+        self.params = od([('series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
                           ('b', '20')])
         dialog = ParamDialog(self, title="Define System")
         dialog.ShowModal()
@@ -600,7 +584,7 @@ class MainFrame(wx.Frame):
         if dialog.execute == True:
             #vary = [bool(v) for v in self.params['vary']]
             syst = System(self.spec, self.line, self.cont,
-                          series=self.params['Series'], 
+                          series=self.params['series'], 
                           z=self.params['z'], N=self.params['N'],
                           b=self.params['b'])
             dx = 0.5
@@ -615,6 +599,7 @@ class MainFrame(wx.Frame):
             self.line = self.syst._line#vstack([self.line._t, syst._line._t])
             self.line_dict[self.targ] = self.line
             self.syst_dict[self.targ] = self.syst
+            self.log["syst_def"] = dict(self.params)
             self.update_spec()
             self.update_line()
             self.update_syst()
@@ -627,28 +612,18 @@ class MainFrame(wx.Frame):
         self.syst._t[label][row] = data
         
     def on_syst_find(self, event):
-        """ Behaviour for Recipes > Find Lines """
-        self.params = od([('Series', 'CIV'), ('Redshift tolerance', 1e-4)])
-        dialog = ParamDialog(self, title="Find Systems")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            syst = System(self.spec, self.line, self.cont)
-            syst.find(series=self.params['Series'],
-                      ztol=float(self.params['Redshift tolerance']))
+        """ Behaviour for Recipes > Find Systems """
 
+        syst = System(self.spec, self.line, self.cont)
+        run = self.recipe_dialog(syst, "syst_find")
+        if run:
             if self.syst != None:
                 self.syst.merge(syst)
             else:
                 self.syst = syst
-
             self.syst_dict[self.targ] = self.syst
             self.update_spec()
             self.update_syst()
-
-        # Only until the Cont class is rewritten
-        #self.syst._cont = self.line._cont
-        #self.syst._cont = self.cont._y
             
     def on_syst_fit(self, event):
         self.syst = self.syst_dict[self.targ]
@@ -701,6 +676,18 @@ class MainFrame(wx.Frame):
             self.menu_enable(self.rec_menu, self.id_syst_sel)
             self.z_sel = z
 
+    def recipe_dialog(self, obj, name):
+        self.rec = Recipe(obj, name)
+        dialog = ParamDialog(self)
+        dialog.ShowModal()
+        dialog.Destroy()
+        if dialog.execute == True:
+            #getattr(obj, self.rec.procs)(**self.rec.params)
+            self.rec.execute()
+            self.log[name] = self.rec.params
+        return dialog.execute
+        
+        
     def update_all(self):
         """ Update all panels """
         
@@ -845,16 +832,13 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         
 class ParamDialog(wx.Dialog):
 
-    def __init__(self, parent=None, title="Parameters", size=(250,500),
-                 **kwargs):
+    def __init__(self, parent=None, size=(250,500), **kwargs):
         """ Constructor for the ParamDialog class """
-        super(ParamDialog, self).__init__(parent, title=title)#, size=size) 
 
         self.p = parent
+        self.rec = self.p.rec
+        super(ParamDialog, self).__init__(parent=self.p, title=self.p.rec.descr)
         self.init_UI()
-        #self.SetSize((250, 200))
-        #self.SetTitle("Change Color Depth")
-
         
     def init_UI(self):
         """ Initialize the main frame """
@@ -864,16 +848,23 @@ class ParamDialog(wx.Dialog):
 
         box_params = wx.BoxSizer(wx.VERTICAL)
         self.par = []
+        self.dial = []
         self.ctrl = []
-        for p, v in self.p.params.iteritems():
+        self.type = []
+        #for d, v in self.p.rec.dialog.iteritems():
+        for d in self.p.rec.dialog:
             box_param = wx.BoxSizer(wx.HORIZONTAL)
+            p = self.p.rec.dialog[d]
+            v = self.p.rec.params[p]
             self.par.append(p)
+            self.dial.append(d)
+            self.type.append(type(v))
             if type(v) == bool:
                 rb = wx.RadioButton(panel, -1, label=p)
                 box_param.Add(rb, 1, 0)
                 self.ctrl.append(rb)
             else:
-                st = wx.StaticText(panel, -1, label=p)
+                st = wx.StaticText(panel, -1, label=d)
                 tc = wx.TextCtrl(panel, -1, value=str(v), size=(150,25))
                 box_param.Add(st, 1, 0)
                 box_param.Add(tc, 1, 0)
@@ -881,7 +872,6 @@ class ParamDialog(wx.Dialog):
 
 
             box_params.Add(box_param, 1, 0, 0)
-
         panel.SetSizer(box_params)
         
         buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -909,11 +899,12 @@ class ParamDialog(wx.Dialog):
         self.Close()
 
     def on_run(self, e):
-        for p, ctrl in zip(self.par, self.ctrl):
-            self.p.params[p] = str(ctrl.GetValue())
+        for p, t, ctrl in zip(self.par, self.type, self.ctrl):
+            self.p.rec.params[p] = t(ctrl.GetValue())
         self.execute = True
         self.Close()
-                      
+
+                
 class SystDialog(wx.Dialog):
 
     def __init__(self, parent=None, title="Parameters", **kwargs):

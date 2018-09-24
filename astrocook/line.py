@@ -428,7 +428,6 @@ class Line(Spec1D):
         for log_sigma in np.arange(np.log10(sigma_min), np.log10(sigma_max), 0.5):
             sigma = 10**log_sigma
         #for sigma in np.arange(sigma_min, sigma_max, 10.0):
-            print sigma
             (x_t, y_t, xmin_t, xmax_t, dy_t) = \
                 self.find(mode, diff, True, kappa, sigma)
             w = np.zeros(len(x_t), dtype=bool)

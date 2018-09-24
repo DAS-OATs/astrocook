@@ -419,10 +419,41 @@ class Spec1D():
         extFactor = extinction.reddening(self._t['X'], A_v, model=model)
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
-    
+
+    def extract_forest(self, ion='Ly_a', zem=0.0, prox_vel=0.0):
+        """ Extract the region bluewards from an emission line (Lyman-alpha
+        forest, CIV forest, etc."""
+
+        if (ion == 'Ly_a'):
+            xmin = 0*u.nm
+            xmax = dict_wave['Ly_a'] * (1 + zem) * (1 - prox_vel / c.value)
+        if (ion == 'CIV'):
+            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
+            xmax = dict_wave['CIV_1550'] * (1 + zem) * (1 - prox_vel / c.value)
+        if (ion == 'MgII'):
+            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
+            xmax = dict_wave['MgII_2803'] * (1 + zem) * (1 - prox_vel / c.value)
+
+        return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
+
+    def extract_reg(self, xmin=0.0, xmax=0.0):
+        """ Extract a spectral region, given minimum and maximum wavelength """
+
+        print xmin, xmax
+        reg = dc(self)
+        where = np.full(len(reg.x), True)
+        s = np.where(np.logical_and(reg.x.value > xmin, reg.x.value < xmax))
+        where[s] = False
+        reg._t.remove_rows(where)
+
+        if (hasattr(reg, '_cont')):
+            reg._cont._t.remove_rows(where)                
+            
+        return reg
+        
     def extract(self, xmin=None, xmax=None, prox=False, forest=[], zem=[],
                 prox_vel=[], line=None):
-        """ Extract a region of a spectrum """
+        """ DEPRECATED Extract a region of a spectrum """
 
         self._orig = dc(self)
         #if (prox != (zem == [])):
@@ -434,6 +465,7 @@ class Spec1D():
         #if ((forest != []) == prox):
         #    raise Exception("Please choose either forest or proximity.")
 
+        print xmin, xmax, prox, forest, zem, prox_vel
         reg = dc(self)
         if (prox == False):
 
@@ -480,6 +512,8 @@ class Spec1D():
             
         return reg
 
+    #def extract_
+    
     def find_extrema(self):
         """Find the extrema in a spectrum and save them as a spectrum"""
 

@@ -12,4 +12,5 @@ from .system import System
 #from .abs import Abs
 from .voigt import Voigt
 from .io import IO
+from .recipe import Recipe
 from .app import MainFrame
