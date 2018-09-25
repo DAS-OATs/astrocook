@@ -1,4 +1,4 @@
-from . import Cont, IO, Line, Spec1DReader, System, Recipe
+from . import * #Cont, IO, Line, Plot, Recipe, Spec1DReader, System
 from .utils import *
 from .recipe import *
 from astropy import units as u
@@ -7,6 +7,7 @@ from astropy.table import Column, vstack
 from collections import OrderedDict as od
 from copy import deepcopy as dc
 from datetime import datetime
+import inspect
 from matplotlib.gridspec import GridSpec as gs
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
@@ -22,6 +23,12 @@ import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import yaml
 
+proc_descr = {'convolve': "Convolve with a custom profile",
+              'extract_forest': "Extract forest",
+              'extract_reg': "Extract spectral region",
+              'find_extrema': "Find flux extrema (maxima and minima)",
+              'select_extrema': "Select the most prominent extrema",
+}
 
 
 class MainFrame(wx.Frame):
@@ -36,6 +43,9 @@ class MainFrame(wx.Frame):
         self.line = None
         self.cont = None
         self.syst = None
+
+        self.rec = None
+        self.plot = None
         
         self.targ_list = []
         self.spec_dict = {}
@@ -43,14 +53,15 @@ class MainFrame(wx.Frame):
         self.part_dict = {}
         self.line_dict = {}
         self.cont_dict = {}
-        self.syst_dict = {} 
+        self.syst_dict = {}
+        self.proc_dict = {}
+        self.rec_dict = {}
 
         self.count = 0
         
         self.init_UI(**kwargs)
         self.IO = IO()
 
-        #"""
         try:
             bck = open("astrocook_app.bck", "r")
             lines = bck.readlines()
@@ -59,10 +70,48 @@ class MainFrame(wx.Frame):
             self.on_file_open(None, targ=targ, **kwargs)
         except:
             pass
-        #"""
+
         
+    def dialog_proc(self, obj, proc):
+        """ Run a procedure through a dialog window """
+
+        self.obj = obj
+        self.procs = [proc]
+        self.descr = proc_descr[proc]
+        dialog = ParamDialog(self)
+        dialog.ShowModal()
+        dialog.Destroy()
+        self.params = dialog.params
+        self.proc_dict[proc] = dialog.execute
+        if dialog.execute == True:
+            out = getattr(obj, proc)(**self.params)
+            self.log[proc] = self.params
+        else:
+            out = None
+        return out
+
+    def dialog_rec(self, obj, rec):
+        """ Run a recipe through a dialog window """
+
+        self.obj = obj
+        self.rec = Recipe(obj, rec)
+        self.procs = self.rec.procs
+        self.descr = self.rec.descr
+        dialog = ParamDialog(self)
+        dialog.ShowModal()
+        dialog.Destroy()
+        self.params = dialog.params
+        self.rec_dict[rec] = dialog.execute
+        if dialog.execute == True:
+            #out = getattr(obj, rec)(**self.params)
+            out = self.rec.line_find(**self.params)
+            self.log[rec] = self.params
+        else:
+            out = None
+        return out
+    
     def init_line(self, panel):
-        """ Create the line list panel """
+        """ Create the Lines panel """
 
         self.line_gr = gridlib.Grid(panel)
         self.line_gr.CreateGrid(0, 5)
@@ -75,10 +124,12 @@ class MainFrame(wx.Frame):
         self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_line_edit)
        
     def init_plot(self, panel):
-        """ Create the spectrum panel """
+        """ Create the Plot panel """
+        
         self.fig = Figure()#figsize=(20,20))
         self.ax = self.fig.add_subplot(111)
         self.fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
+        self.plot = Plot(self.ax)
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
@@ -90,7 +141,7 @@ class MainFrame(wx.Frame):
         self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
         
     def init_spec(self, panel):
-        """ Create the spectrum panel """
+        """ Create the Spectra panel """
 
         self.spec_lc = EditableListCtrl(panel, -1, style=wx.LC_REPORT)
         self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_spec_begin_edit)
@@ -104,7 +155,7 @@ class MainFrame(wx.Frame):
         self.spec_lc.InsertColumn(5, '# systems', width=150)
         
     def init_syst(self, panel):
-        """ Create the system list panel """
+        """ Create the Systems panel """
 
         self.syst_gr = gridlib.Grid(panel)
         self.syst_gr.CreateGrid(0, 9)
@@ -136,55 +187,50 @@ class MainFrame(wx.Frame):
         self.line_gr.SetMaxSize((502,3000))
         self.syst_gr.SetMinSize((822,3000))
 
-        #box_main = wx.BoxSizer(wx.VERTICAL)
-        box_main = wx.GridSizer(2, 1, 0, 0)
         
-        box_list = wx.BoxSizer(wx.VERTICAL)
-        #box_list = wx.GridSizer(3, 1, 0, 0)
-        box_displ = wx.BoxSizer(wx.VERTICAL)
-
+        # Spectra panel
         box_spec = wx.BoxSizer(wx.VERTICAL)
-        #box_table = wx.GridSizer(2, self.pad, self.pad)
-        box_table = wx.BoxSizer(wx.HORIZONTAL)
-        box_line = wx.BoxSizer(wx.VERTICAL)
-        box_syst = wx.BoxSizer(wx.VERTICAL)
-        
-        box_plot = wx.BoxSizer(wx.VERTICAL)
-        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
-
         box_spec.Add(wx.StaticText(panel, label="Spectra"))
         box_spec.Add(self.spec_lc, 1, wx.EXPAND)
+
+        # Lines panel
+        box_line = wx.BoxSizer(wx.VERTICAL)
         box_line.Add(wx.StaticText(panel, label="Lines"))
-        #box_line.Add(self.line_lc, 1, wx.EXPAND)
         box_line.Add(self.line_gr, 1, wx.EXPAND|wx.RIGHT, self.pad)
+
+        # Systems panel
+        box_syst = wx.BoxSizer(wx.VERTICAL)
         box_syst.Add(wx.StaticText(panel, label="Systems"))
         box_syst.Add(self.syst_gr, 1, wx.EXPAND)
+
+        # Plot control panel
+        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
         box_ctrl.Add(self.plot_tb, 1, wx.RIGHT, border=5)
         box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
         box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
+
+        # Plot panel (includinc controls)
+        box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
         box_plot.Add(box_ctrl, 0, wx.TOP, self.pad)
 
+        # Tables panel (Lines + Systems)
+        box_table = wx.BoxSizer(wx.HORIZONTAL)
         box_table.Add(box_line, 1, wx.EXPAND)
         box_table.Add(box_syst, 1, wx.EXPAND|wx.ALIGN_LEFT)
-        
-        box_list.Add(box_spec, 0, wx.EXPAND|wx.BOTTOM, self.pad)
-        #box_list.Add(box_line, 1, wx.EXPAND|wx.RIGHT, self.pad)
-        #box_list.Add(box_syst, 1, wx.EXPAND)
-        box_list.Add(box_table, 1, wx.EXPAND)
-        
-        #box_displ.Add(box_plot, 1, wx.EXPAND)
-        #box_displ.Add(box_ctrl, 1)
 
+        # Lists panel (Spectra + Tables)
+        box_list = wx.BoxSizer(wx.VERTICAL)
+        box_list.Add(box_spec, 0, wx.EXPAND|wx.BOTTOM, self.pad)
+        box_list.Add(box_table, 1, wx.EXPAND)
+
+        # Main panel (Lists + Plot)
+        box_main = wx.GridSizer(2, 1, 0, 0)
         box_main.Add(box_list, 1, wx.EXPAND|wx.ALL, self.pad)
         box_main.Add(box_plot, 1, wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,
                      self.pad)
-        #box_main.Add(box_ctrl, 0, wx.BOTTOM|wx.LEFT|wx.RIGHT,
-        #             self.pad)
-        
         panel.SetSizer(box_main)
         
-
         self.Centre()
         self.Show()
 
@@ -197,7 +243,6 @@ class MainFrame(wx.Frame):
         self.id_cont = 300
         self.id_syst = 400
         self.id_syst_sel = 500
-
         
         # File menu
         self.file_menu = wx.Menu()
@@ -220,13 +265,51 @@ class MainFrame(wx.Frame):
         if (hasattr(self, 'spec') == False):
             self.menu_disable(self.file_menu, self.id_spec)
 
+        # Procedures menu
+        # N.B. Procedures are simple methods applied to objects (spectra, lines,
+        # ecc.)
+        self.proc_menu = wx.Menu()
+        proc_spec_convolve = wx.MenuItem(
+            self.proc_menu, 11, proc_descr['convolve']+"...")
+        proc_spec_extract_forest = wx.MenuItem(
+            self.proc_menu, 12, proc_descr['extract_forest']+"...")
+        proc_spec_extract_reg = wx.MenuItem(
+            self.proc_menu, 13, proc_descr['extract_reg']+"...")
+        proc_spec_find_extrema = wx.MenuItem(
+            self.proc_menu, 14, proc_descr['find_extrema'])
+        proc_spec_select_extrema = wx.MenuItem(
+            self.proc_menu, 15, proc_descr['select_extrema']+"...")
+        
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve,
+                  proc_spec_convolve)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_forest,
+                  proc_spec_extract_forest)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_reg,
+                  proc_spec_extract_reg)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_find_extrema,
+                  proc_spec_find_extrema)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
+                  proc_spec_select_extrema)
+        
+        self.proc_menu.Append(proc_spec_convolve)
+        self.proc_menu.Append(proc_spec_extract_forest)
+        self.proc_menu.Append(proc_spec_extract_reg)
+        self.proc_menu.Append(proc_spec_find_extrema)
+        self.proc_menu.Append(proc_spec_select_extrema)
+        
         # Recipes menu
         self.rec_menu = wx.Menu()
 
+        rec_line_find = wx.MenuItem(self.rec_menu, 21,
+                                    rec_descr['line_find']+"...")
+
+        self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
+        
+        self.rec_menu.Append(rec_line_find)
+        
+        """
         rec_spec_extract = wx.MenuItem(self.rec_menu, self.id_spec+1,
                                        "E&xtract Spectral Region...")
-        rec_line_find = wx.MenuItem(self.rec_menu, self.id_spec+2,
-                                    "Find &Lines...")
         rec_cont_line_rem = wx.MenuItem(self.rec_menu, self.id_line,
                                         rec_descr['cont_line_rem']+"...")
         rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
@@ -238,8 +321,7 @@ class MainFrame(wx.Frame):
                                     "&Define System...")
         rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst_sel,
                                    "&Fit Selected System...")
-
-        self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
+        #self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
         self.Bind(wx.EVT_MENU, self.on_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_cont_line_rem, rec_cont_line_rem)
         self.Bind(wx.EVT_MENU, self.on_cont_max_smooth, rec_cont_max_smooth)
@@ -257,13 +339,25 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_syst_find)
         self.rec_menu.Append(rec_syst_def)
         self.rec_menu.Append(rec_syst_fit)
+        """
 
+        # Utilities menu
+        self.util_menu = wx.Menu()
+
+        util_log_view = wx.MenuItem(self.proc_menu, 41, "View log")
+
+        self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
+
+        self.util_menu.Append(util_log_view)
+        
         
         # Menu bar
         self.update_menu()
         menu_bar = wx.MenuBar()
         menu_bar.Append(self.file_menu, '&File')
+        menu_bar.Append(self.proc_menu, '&Procedures')
         menu_bar.Append(self.rec_menu, '&Recipes')
+        menu_bar.Append(self.util_menu, '&Utilities')
         self.SetMenuBar(menu_bar)        
 
         
@@ -280,7 +374,69 @@ class MainFrame(wx.Frame):
                 menu.Enable(id+i, True)
             except:
                 pass
+
+    def on_proc_spec_convolve(self, event):
+        proc = 'convolve'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_all()
+
+    def on_proc_spec_extract_forest(self, event):
+        proc = 'extract_forest'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + self.params['ion']
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_all()
+        
+    def on_proc_spec_extract_reg(self, event):
+        proc = 'extract_reg'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_%3.0f-%3.0f' \
+                        % (self.params['xmin'], self.params['xmax'])
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_all()
+
+    def on_proc_spec_find_extrema(self, event):
+        proc = 'find_extrema'
+        getattr(self.spec, proc)()
+        self.plot.line(self.spec._mins)
+        self.plot.line(self.spec._maxs, c='b')
+        self.plot_fig.draw()
+        self.log[proc] = None
+
+    def on_proc_spec_select_extrema(self, event):
+        proc = 'select_extrema'
+        self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.plot.line(self.spec._exts_sel, c='g', marker='o')
+            self.plot_fig.draw()
             
+    def on_rec_line_find(self, event):
+        rec = 'line_find'
+        run = self.dialog_rec(self.spec, rec)
+        self.line = self.rec.line
+        if self.rec_dict[rec]:            
+            self.line_num = len(self.line.t)
+            self.plot.line(self.line.t, c='g')
+            self.plot_fig.draw()
+
+    def on_util_log_view(self, event):
+        dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
+        dialog.ShowModal()
+        
     def on_cont_line_rem(self, event):
         """ Behaviour for Recipes > Find Continuum by Removing Lines """
         
@@ -398,14 +554,13 @@ class MainFrame(wx.Frame):
             self.update_syst()
             self.update_spec()
             self.update_plot()
-        
 
     def on_file_save(self, event, path='.'):
         """ Behaviour for File > Save """
 
-        timestamp = \
-            '_'+str(datetime.now()).replace(" ", "_").replace(":", "-")[:-7]
-        snapshot = self.targ + timestamp
+        #timestamp = \
+        #    '_'+str(datetime.now()).replace(" ", "_").replace(":", "-")[:-7]
+        snapshot = self.targ #+ timestamp
         root = path + snapshot
         with wx.FileDialog(self, "Save session", path, snapshot,
                            wildcard="Astrocook session (*.acs)|*.acs",
@@ -434,7 +589,7 @@ class MainFrame(wx.Frame):
         """ Behaviour for Recipes > Find Lines """
 
         self.line = Line(self.spec)
-        run = self.recipe_dialog(self.line, "line_find")
+        run = self.method_dialog(self.line, "find_special")
         if run:            
             self.line_num = len(self.line.t)
             self.update_spec()
@@ -475,6 +630,7 @@ class MainFrame(wx.Frame):
             xmin = self.xmin
         if xmax == None:
             xmax = self.xmax
+        """
         self.spec = self.spec_dict[self.targ]
         self.spec.plot(ax=self.ax)
         try:
@@ -489,7 +645,9 @@ class MainFrame(wx.Frame):
             self.syst = self.syst_dict[self.targ]
         except:
             pass
-	self.ax.set_xlim(xmin, xmax)
+	"""
+        self.plot.spec(self.spec.t)
+        self.ax.set_xlim(xmin, xmax)
         self.plot_fig.draw()
         
     def on_quit(self, event):
@@ -538,7 +696,6 @@ class MainFrame(wx.Frame):
             if self.rec.params['forest'] == True:
                 params = {k: self.rec.params[k] for k in ['ion', 'zem',
                                                         'prox_vel']}
-                print params
                 forest = self.spec.extract_forest(**params)
                 self.targ = self.targ + '_' + params['ion']
                 self.z_dict[self.targ] = params['zem']
@@ -550,7 +707,6 @@ class MainFrame(wx.Frame):
                     self.z_dict[self.targ] = float(params['zem'])
                 forest = self.spec.extract_reg(**params)
 
-            print forest.t
                 
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
@@ -676,17 +832,6 @@ class MainFrame(wx.Frame):
             self.menu_enable(self.rec_menu, self.id_syst_sel)
             self.z_sel = z
 
-    def recipe_dialog(self, obj, name):
-        self.rec = Recipe(obj, name)
-        dialog = ParamDialog(self)
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            #getattr(obj, self.rec.procs)(**self.rec.params)
-            self.rec.execute()
-            self.log[name] = self.rec.params
-        return dialog.execute
-        
         
     def update_all(self):
         """ Update all panels """
@@ -836,8 +981,28 @@ class ParamDialog(wx.Dialog):
         """ Constructor for the ParamDialog class """
 
         self.p = parent
-        self.rec = self.p.rec
-        super(ParamDialog, self).__init__(parent=self.p, title=self.p.rec.descr)
+
+        self.params = {}
+        for p in self.p.procs:
+            method = getattr(self.p.obj, p)
+            try:
+                self.params.update({k: v for (k,v) in
+                                    zip(inspect.getargspec(method)[0][1:],
+                                        inspect.getargspec(method)[3])})
+            # When the procedure has no parameters
+            except:
+                pass  
+        self.dialog = self.params
+        """
+        except:
+            method = getattr(self.p.obj, self.p.proc)
+            title = self.p.proc
+            self.params = {k: v for (k,v) in
+                           zip(inspect.getargspec(method)[0][1:],
+                               inspect.getargspec(method)[3])}
+            self.dialog = self.params
+        """
+        super(ParamDialog, self).__init__(parent=self.p, title=self.p.descr)
         self.init_UI()
         
     def init_UI(self):
@@ -852,19 +1017,20 @@ class ParamDialog(wx.Dialog):
         self.ctrl = []
         self.type = []
         #for d, v in self.p.rec.dialog.iteritems():
-        for d in self.p.rec.dialog:
+        #for d in self.dialog:
+        for p in self.params:
             box_param = wx.BoxSizer(wx.HORIZONTAL)
-            p = self.p.rec.dialog[d]
-            v = self.p.rec.params[p]
+            #p = self.dialog[d]
+            v = self.params[p]
             self.par.append(p)
-            self.dial.append(d)
+            self.dial.append(p)
             self.type.append(type(v))
-            if type(v) == bool:
+            if type(v) == bool and 1==0:
                 rb = wx.RadioButton(panel, -1, label=p)
                 box_param.Add(rb, 1, 0)
                 self.ctrl.append(rb)
             else:
-                st = wx.StaticText(panel, -1, label=d)
+                st = wx.StaticText(panel, -1, label=p)
                 tc = wx.TextCtrl(panel, -1, value=str(v), size=(150,25))
                 box_param.Add(st, 1, 0)
                 box_param.Add(tc, 1, 0)
@@ -900,7 +1066,10 @@ class ParamDialog(wx.Dialog):
 
     def on_run(self, e):
         for p, t, ctrl in zip(self.par, self.type, self.ctrl):
-            self.p.rec.params[p] = t(ctrl.GetValue())
+            try:
+                self.params[p] = t(ctrl.GetValue())
+            except:
+                self.params[p] = None
         self.execute = True
         self.Close()
 

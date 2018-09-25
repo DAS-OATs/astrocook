@@ -389,8 +389,6 @@ class Spec1D():
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
-
-
     def convolve(self, col='y', prof=None, gauss_sigma=20, convert=True,
                  mode='same'):
         """Convolve a spectrum with a profile using FFT transform
@@ -410,7 +408,7 @@ class Spec1D():
             if (len(prof) % 2 == 0):
                 prof = prof[:-1]
             prof = prof / np.sum(prof)
-        conv.y = fftconvolve(conv_col, prof, mode=mode)
+        conv.t['Y'] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
         if convert == True:
             conv.todo_convert_logx(xunit=self.x.unit)
         return conv
@@ -439,7 +437,6 @@ class Spec1D():
     def extract_reg(self, xmin=0.0, xmax=0.0):
         """ Extract a spectral region, given minimum and maximum wavelength """
 
-        print xmin, xmax
         reg = dc(self)
         where = np.full(len(reg.x), True)
         s = np.where(np.logical_and(reg.x.value > xmin, reg.x.value < xmax))
@@ -465,7 +462,6 @@ class Spec1D():
         #if ((forest != []) == prox):
         #    raise Exception("Please choose either forest or proximity.")
 
-        print xmin, xmax, prox, forest, zem, prox_vel
         reg = dc(self)
         if (prox == False):
 
@@ -512,80 +508,42 @@ class Spec1D():
             
         return reg
 
-    #def extract_
-    
     def find_extrema(self):
         """Find the extrema in a spectrum and save them as a spectrum"""
 
-        #min_idx = []
-        #max_idx = []
-        #extr_idx = []
         if (len(self.t) > 0):
-            min_idx = np.hstack(argrelmin(self.y))
-            max_idx = np.hstack(argrelmax(self.y))
+            min_idx = np.hstack(argrelmin(self.t['Y']))
+            max_idx = np.hstack(argrelmax(self.t['Y']))
             ext_idx = np.sort(np.append(min_idx, max_idx))
-            #mins = self.from_table(self._t[min_idx])
-            #maxs = self.from_table(self._t[max_idx])
-            #extr = self.from_table(self._t[extr_idx])
-            mins = Table([self.x[min_idx], self.y[min_idx], self.dy[min_idx]],
-                         names=('X', 'Y', 'DY'))
-            maxs = Table([self.x[max_idx], self.y[max_idx], self.dy[max_idx]],
-                         names=('X', 'Y', 'DY'))
-            exts = Table([self.x[ext_idx], self.y[ext_idx], self.dy[ext_idx]],
-                         names=('X', 'Y', 'DY'))
+            self._mins = self.t[min_idx]
+            self._maxs = self.t[max_idx]
+            self._exts = self.t[ext_idx]
         else:
-            #mins = self.from_table(self._t)
-            #maxs = self.from_table(self._t)
-            #extr = self.from_table(self._t)
-            mins = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
-            maxs = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
-            exts = Table([self.x, self.y, self.dy], names=('X', 'Y', 'DY'))
-        return mins, maxs, exts
+            self._mins = None
+            self._maxs = None
+            self._exts = None
         
-    def find_lines(self, mode='abs', diff='max', kappa=3.0, hwidth=2):
-        """Find the lines in a spectrum and save them as a line list"""
-        """ DEPRECATED """
-        
-        # Find the extrema
-        mins, maxs, exts = self.find_extrema()
-        
+    def select_extrema(self, kind='abs', diff='max', kappa=3.0):
+        """ Select the most prominent extrema """
+                
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (exts['Y'][:-2] - exts['Y'][1:-1]) 
-        diff_y_right = (exts['Y'][2:] - exts['Y'][1:-1]) 
-        if mode is 'em':
+        diff_y_left = (self._exts['Y'][:-2] - self._exts['Y'][1:-1]) 
+        diff_y_right = (self._exts['Y'][2:] - self._exts['Y'][1:-1]) 
+        if kind is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
         
         # Check if the difference is above threshold
         diff_y_min = np.minimum(diff_y_left, diff_y_right)
         diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = exts['DY'][1:-1] * kappa
+        thres = self._exts['DY'][1:-1] * kappa
         if diff is 'min':
             line_pos = np.greater(diff_y_min, thres)
         else:
             line_pos = np.greater(diff_y_max, thres)
-        line_x = exts['X'][1:-1][line_pos]
-        line_y = exts['Y'][1:-1][line_pos]
+        self._exts_sel = self._exts[1:-1][line_pos]
 
-        if len(line_x) > 0: 
-
-            # Compute the boundaries for line fitting    
-            window = exts.rolling_window(hwidth * 2 + 1)
-            bound = np.full(hwidth + 1, np.amin(self.x))
-            if mode is 'em':
-                bound = np.append(bound, 
-                    window.x[np.arange(len(window.x)), np.argmin(window.y, 1)])
-            else:
-                bound = np.append(bound,
-                    window.x[np.arange(len(window.x)), np.argmax(window.y, 1)])
-            bound = np.append(bound, np.full(hwidth + 1, np.amax(self.x)))
-            line_xmin = bound[:-hwidth * 2][line_pos]
-            line_xmax = bound[hwidth * 2:][line_pos]
-            
-            # Create the linelist
-            list = List(line_x, line_y, xmin=line_xmin, xmax=line_xmax)
-            return list
 
     def from_table(self, table, meta = {}):
         """Read a spectrum from a (spectrum-like) table"""
@@ -651,6 +609,8 @@ class Spec1D():
         return self._guess
 
     def plot(self, ax=None):
+        """ Deprecated, use class Plot instead """
+        
         spec = self
         if ax == None:
             fig = plt.figure(figsize=(10,4))

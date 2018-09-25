@@ -456,10 +456,10 @@ class Line(Spec1D):
         line = Line(self.spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy, 
                     xunit=u.nm, yunit=yunit)
         self.__dict__.update(line.__dict__)
-        self._t.sort('X')   
+        self._t.sort('X')
 
     def find(self, mode='abs', diff='max', convert=True, kappa=3.0, sigma=10.0):
-        """ Find lines """
+        """ DEPRECATED Find lines """
 
         if (self._spec is None):
             raise Exception("Spectrum not provided.")
@@ -615,6 +615,8 @@ class Line(Spec1D):
         return norm 
     """
     def plot_new(self, ax=None):
+        """ Deprecated, use class Plot instead """
+
         spec = self._spec
         line = self
         if ax == None:
@@ -638,6 +640,8 @@ class Line(Spec1D):
 
     def plot(self, group=None, chunk=None, figsize=(10,4), block=True,
              **kwargs):
+        """ Deprecated, use class Plot instead """
+        
         spec = self._spec
         fig = plt.figure(figsize=figsize)
         fig.canvas.set_window_title("Lines")

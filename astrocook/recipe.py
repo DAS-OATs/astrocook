@@ -1,6 +1,7 @@
+from . import *
 from astropy import units as u
 from collections import OrderedDict as od
-
+import inspect
 
 # Description
 rec_descr = {'cont_line_rem': "Find Continuum by Removing Lines",
@@ -17,7 +18,13 @@ class Recipe():
         self.obj = obj
         self.name = name
         self.descr = rec_descr[name]        
-
+        self.params = None
+        
+        if name == 'line_find':
+            self.procs = ['convolve', 'find_extrema', 'select_extrema']
+            self.modes = ['pass', None, None]
+                           
+        """
         if name == 'cont_line_rem':
             self.params = {'frac': 0.03}
             self.dialog = od([('Fraction:', 'frac')])
@@ -84,9 +91,28 @@ class Recipe():
             self.dialog = od([('Series:', 'series'),
                               ('Redshift tolerance:', 'ztol')])
             self.procs = ['find']
+        """
+        
+    def execute(self, **kwargs):
 
-    def execute(self):
-        for p in zip(self.procs):
-            ret = getattr(self.obj, p)(**self.params)
+        for p, m in zip(self.procs, self.modes):
+            method = getattr(self.obj, p)
+            try:
+                param = {k: kwargs[k] for k in kwargs \
+                         if k in inspect.getargspec(method)[0][1:]}
+                out = method(**param)
+            except:
+                out = method()
+            if m == 'pass':
+                self.obj = out
+        return out
 
-        return ret
+    def line_find(self, **kwargs):
+
+        out = self.execute()
+        
+        sel = self.obj._exts_sel
+        self.line = Line(self.obj, x=sel['X'], y=sel['Y'], xmin=sel['XMIN'],
+                    xmax=sel['XMAX'], dy=sel['DY'])
+        self.__dict__.update(self.line.__dict__)        
+        return out
