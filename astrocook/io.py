@@ -32,9 +32,11 @@ class IO():
                 #acs.line_name = 'line.fits'
                 acs.line = acs.line_read(acs.line_name)
                 os.remove(acs.line_name)
+                """
                 os.remove(acs.line_name[:-10]+'_mins.fits')
                 os.remove(acs.line_name[:-10]+'_maxs.fits')
                 os.remove(acs.line_name[:-10]+'_exts.fits')
+                """
             except:
                 pass
 
@@ -92,16 +94,20 @@ class IO():
                 line_arcname = diff[:-4] + '_line.fits'
                 self.line_write(acs.line, line_name)
                 arch.add(line_name, arcname=line_arcname)
+                """
                 arch.add(line_name[:-10]+'_mins.fits',
                          arcname=line_arcname[:-10]+'_mins.fits')
                 arch.add(line_name[:-10]+'_maxs.fits',
                          arcname=line_arcname[:-10]+'_maxs.fits')
                 arch.add(line_name[:-10]+'_exts.fits',
                          arcname=line_arcname[:-10]+'_exts.fits')
+                """
                 os.remove(line_name)
+                """
                 os.remove(line_name[:-10]+'_mins.fits')
                 os.remove(line_name[:-10]+'_maxs.fits')
                 os.remove(line_name[:-10]+'_exts.fits')
+                """
             except:
                 pass
 
@@ -182,13 +188,14 @@ class IO():
                     yunit=yunit)
 
         # Extrema
+        """
         try:
             line._mins = Table.read(name[:-10]+'_mins.fits')
             line._maxs = Table.read(name[:-10]+'_maxs.fits')
             line._exts = Table.read(name[:-10]+'_exts.fits')
         except:
             pass
-        
+        """
         return line
 
     def line_write(self, line, name, overwrite=True):
@@ -197,10 +204,11 @@ class IO():
         line.t.write(name, format='fits', overwrite=overwrite)
 
         # Table with extrema
+        """
         line._mins.write(name[:-10]+'_mins.fits', overwrite=overwrite)
         line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
         line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
-
+        """
 
     
     def spec_read(self, name):

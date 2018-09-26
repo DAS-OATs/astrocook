@@ -1,6 +1,5 @@
 from . import * #Cont, IO, Line, Plot, Recipe, Spec1DReader, System
 from .utils import *
-from .recipe import *
 from astropy import units as u
 from astropy.io import ascii, fits
 from astropy.table import Column, vstack
@@ -22,14 +21,6 @@ import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import yaml
-
-proc_descr = {'convolve': "Convolve with a custom profile",
-              'extract_forest': "Extract forest",
-              'extract_reg': "Extract spectral region",
-              'find_extrema': "Find flux extrema (maxima and minima)",
-              'select_extrema': "Select the most prominent extrema",
-}
-
 
 class MainFrame(wx.Frame):
     def __init__(self, parent=None, title="Astrocook", **kwargs):
@@ -97,6 +88,7 @@ class MainFrame(wx.Frame):
         self.rec = Recipe(obj, rec)
         self.procs = self.rec.procs
         self.descr = self.rec.descr
+        self.defaults = self.rec.defaults
         dialog = ParamDialog(self)
         dialog.ShowModal()
         dialog.Destroy()
@@ -104,7 +96,7 @@ class MainFrame(wx.Frame):
         self.rec_dict[rec] = dialog.execute
         if dialog.execute == True:
             #out = getattr(obj, rec)(**self.params)
-            out = self.rec.line_find(**self.params)
+            out = getattr(self.rec, rec)(**self.params)
             self.log[rec] = self.params
         else:
             out = None
@@ -271,47 +263,63 @@ class MainFrame(wx.Frame):
         self.proc_menu = wx.Menu()
         proc_spec_convolve = wx.MenuItem(
             self.proc_menu, 11, proc_descr['convolve']+"...")
+        proc_spec_smooth_lowess = wx.MenuItem(
+            self.proc_menu, 12, proc_descr['smooth_lowess']+"...")
         proc_spec_extract_forest = wx.MenuItem(
-            self.proc_menu, 12, proc_descr['extract_forest']+"...")
+            self.proc_menu, 13, proc_descr['extract_forest']+"...")
         proc_spec_extract_reg = wx.MenuItem(
-            self.proc_menu, 13, proc_descr['extract_reg']+"...")
-        proc_spec_find_extrema = wx.MenuItem(
-            self.proc_menu, 14, proc_descr['find_extrema'])
+            self.proc_menu, 14, proc_descr['extract_reg']+"...")
         proc_spec_select_extrema = wx.MenuItem(
             self.proc_menu, 15, proc_descr['select_extrema']+"...")
+        proc_line_mask = wx.MenuItem(
+            self.proc_menu, 16, proc_descr['mask']+"...")
         
         self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve,
                   proc_spec_convolve)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
+                  proc_spec_smooth_lowess)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_forest,
                   proc_spec_extract_forest)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_reg,
                   proc_spec_extract_reg)
-        self.Bind(wx.EVT_MENU, self.on_proc_spec_find_extrema,
-                  proc_spec_find_extrema)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
                   proc_spec_select_extrema)
+        self.Bind(wx.EVT_MENU, self.on_proc_line_mask,
+                  proc_line_mask)
         
         self.proc_menu.Append(proc_spec_convolve)
+        self.proc_menu.Append(proc_spec_smooth_lowess)
         self.proc_menu.Append(proc_spec_extract_forest)
         self.proc_menu.Append(proc_spec_extract_reg)
-        self.proc_menu.Append(proc_spec_find_extrema)
         self.proc_menu.Append(proc_spec_select_extrema)
+        self.proc_menu.AppendSeparator()
+        self.proc_menu.Append(proc_line_mask)
         
         # Recipes menu
         self.rec_menu = wx.Menu()
 
-        rec_line_find = wx.MenuItem(self.rec_menu, 21,
+        rec_spec_cont = wx.MenuItem(self.rec_menu, 21,
+                                    rec_descr['spec_cont']+"...")
+        rec_line_find = wx.MenuItem(self.rec_menu, 22,
                                     rec_descr['line_find']+"...")
+        rec_line_cont = wx.MenuItem(self.rec_menu, 23,
+                                    rec_descr['line_cont']+"...")
+        rec_syst_find = wx.MenuItem(self.rec_menu, 24,
+                                    rec_descr['syst_find']+"...")
 
+        self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
+        self.Bind(wx.EVT_MENU, self.on_rec_line_cont, rec_line_cont)
+        self.Bind(wx.EVT_MENU, self.on_rec_syst_find, rec_syst_find)
         
+        self.rec_menu.Append(rec_spec_cont)
         self.rec_menu.Append(rec_line_find)
+        self.rec_menu.AppendSeparator()
+        self.rec_menu.Append(rec_line_cont)
+        self.rec_menu.AppendSeparator()
+        self.rec_menu.Append(rec_syst_find)
         
         """
-        rec_spec_extract = wx.MenuItem(self.rec_menu, self.id_spec+1,
-                                       "E&xtract Spectral Region...")
-        rec_cont_line_rem = wx.MenuItem(self.rec_menu, self.id_line,
-                                        rec_descr['cont_line_rem']+"...")
         rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
                                     "Find Continuum by Smoothing the "
                                     "Flux Maxima...")
@@ -341,23 +349,41 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_syst_fit)
         """
 
+        # Workflows menu
+        self.wkf_menu = wx.Menu()
+
         # Utilities menu
         self.util_menu = wx.Menu()
 
-        util_log_view = wx.MenuItem(self.proc_menu, 41, "View log")
+        util_mask_to_spec = wx.MenuItem(self.proc_menu, 41,
+                                        util_descr['mask_to_spec']+"...")
+        util_log_view = wx.MenuItem(self.proc_menu, 42, "View log")
 
+        self.Bind(wx.EVT_MENU, self.on_util_mask_to_spec, util_mask_to_spec)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
+        self.util_menu.Append(util_mask_to_spec)
+        self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
+
+        # Info menu
+        self.info_menu = wx.Menu()
+
+        info_about_view = wx.MenuItem(self.proc_menu, 51, "About")
+
+        self.Bind(wx.EVT_MENU, self.on_info_about_view, info_about_view)
         
-        
+        self.info_menu.Append(info_about_view)
+
         # Menu bar
         self.update_menu()
         menu_bar = wx.MenuBar()
         menu_bar.Append(self.file_menu, '&File')
         menu_bar.Append(self.proc_menu, '&Procedures')
         menu_bar.Append(self.rec_menu, '&Recipes')
+        menu_bar.Append(self.wkf_menu, '&Workflows')
         menu_bar.Append(self.util_menu, '&Utilities')
+        menu_bar.Append(self.info_menu, '&Info')
         self.SetMenuBar(menu_bar)        
 
         
@@ -375,6 +401,19 @@ class MainFrame(wx.Frame):
             except:
                 pass
 
+    def on_backup_write(self, event):
+        bck = open("astrocook_app.bck", "wb")
+        bck.write(self.path_chosen+'\n')
+        bck.write(self.targ)
+        bck.close()
+
+    def on_proc_line_mask(self, event):
+        proc = 'mask'
+        self.mask = getattr(self.line, proc)()
+        self.plot.spec(self.mask.t, replace=False, c='C3', c_other='C4')
+        #self.plot.spec(self.spec.t, replace=False, c='C5', c_other='C4')
+        self.plot_fig.draw()
+
     def on_proc_spec_convolve(self, event):
         proc = 'convolve'
         out = self.dialog_proc(self.spec, proc)
@@ -384,7 +423,7 @@ class MainFrame(wx.Frame):
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.spec_dict[self.targ] = self.spec
-            self.update_all()
+            self.update_spec()
 
     def on_proc_spec_extract_forest(self, event):
         proc = 'extract_forest'
@@ -395,7 +434,7 @@ class MainFrame(wx.Frame):
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.spec_dict[self.targ] = self.spec
-            self.update_all()
+            self.update_spec()
         
     def on_proc_spec_extract_reg(self, event):
         proc = 'extract_reg'
@@ -409,33 +448,80 @@ class MainFrame(wx.Frame):
             self.spec_dict[self.targ] = self.spec
             self.update_all()
 
-    def on_proc_spec_find_extrema(self, event):
-        proc = 'find_extrema'
-        getattr(self.spec, proc)()
-        self.plot.line(self.spec._mins)
-        self.plot.line(self.spec._maxs, c='b')
-        self.plot_fig.draw()
-        self.log[proc] = None
-
     def on_proc_spec_select_extrema(self, event):
         proc = 'select_extrema'
         self.dialog_proc(self.spec, proc)
         if self.proc_dict[proc]:
-            self.plot.line(self.spec._exts_sel, c='g', marker='o')
+            self.plot.line(self.spec._exts_sel, c='g')
             self.plot_fig.draw()
             
+    def on_proc_spec_smooth_lowess(self, event):
+        proc = 'smooth_lowess'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
+
     def on_rec_line_find(self, event):
         rec = 'line_find'
         run = self.dialog_rec(self.spec, rec)
-        self.line = self.rec.line
         if self.rec_dict[rec]:            
+            self.line = self.rec.line
+            self.line_dict[self.targ] = self.line
             self.line_num = len(self.line.t)
-            self.plot.line(self.line.t, c='g')
+            self.update_line()
+
+    def on_rec_line_cont(self, event):
+        rec = 'line_cont'
+        run = self.dialog_rec(self.line, rec)
+        if self.rec_dict[rec]:            
+            self.cont = self.rec.cont
+            self.cont_dict[self.targ] = self.cont
+            self.plot.cont(self.cont.t)
             self.plot_fig.draw()
 
+    def on_rec_spec_cont(self, event):
+        rec = 'spec_cont'
+        run = self.dialog_rec(self.spec, rec)
+        if self.rec_dict[rec]:            
+            self.cont = self.rec.cont
+            self.cont_dict[self.targ] = self.cont
+            self.plot.cont(self.cont.t)
+            self.plot_fig.draw()
+
+    def on_rec_syst_find(self, event):
+        rec = 'syst_find'
+        run = self.dialog_rec(self, rec)
+        if self.rec_dict[rec]:            
+            self.syst = self.rec.syst
+            self.syst_dict[self.targ] = self.syst
+            self.syst_num = len(self.syst.t)
+            self.update_syst()
+
+    def on_util_mask_to_spec(self, event):
+        self.spec = self.mask
+        self.targ = self.targ + '_mask'
+        self.row = self.spec_lc.GetItemCount()
+        self.spec_lc.insert_string_item(self.row, self.targ)
+        self.spec_dict[self.targ] = self.spec
+        self.update_spec()
+            
     def on_util_log_view(self, event):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
         dialog.ShowModal()
+
+    def on_info_about_view(self, event):
+        dialog = wx.MessageDialog(
+            None,
+            "ASTROCOOK: a thousand recipes to cook a spectrum!\n\n"
+            "2018 - G. Cupani, G. Calderone, S. Cristiani\n"
+            "INAF-Astronomical Observatory of Trieste, Italy",
+            'About',wx.OK)
+        dialog.ShowModal()        
         
     def on_cont_line_rem(self, event):
         """ Behaviour for Recipes > Find Continuum by Removing Lines """
@@ -445,8 +531,8 @@ class MainFrame(wx.Frame):
         if run:
             self.cont_dict[self.targ] = self.cont
             self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)
-
+            self.menu_enable(self.rec_menu, self.id_cont)    
+            
     def on_cont_max_smooth(self, event):
         """ Behaviour for Recipes > Find Continuum by Smoothing the Flux 
         Maxima """
@@ -464,6 +550,7 @@ class MainFrame(wx.Frame):
 
         # otherwise ask the user what new file to open
         if (targ == None):
+        
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
                        "FITS files (*.fits)|*.fits"
             with wx.FileDialog(self, "Open file", path,
@@ -503,8 +590,10 @@ class MainFrame(wx.Frame):
             self.spec = acs.spec
             self.spec_name = acs.spec_name
             
-
+            
         if self.spec != None:
+            self.ax.clear()
+            self.plot_fig.draw()
             if self.targ in self.targ_list:
                 self.count = self.count + 1
                 self.targ = self.targ + '_%i' % self.count
@@ -515,11 +604,12 @@ class MainFrame(wx.Frame):
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.menu_enable(self.file_menu, self.id_spec)
             self.menu_enable(self.rec_menu, self.id_spec)
+            
             try:
                 self.line = acs.line
                 self.line_name = acs.line_name
                 self.line_dict[self.targ] = self.line
-                self.update_line()
+                self.line._spec = self.spec
                 self.menu_enable(self.file_menu, self.id_line)
                 self.menu_enable(self.rec_menu, self.id_line)
             except:
@@ -529,6 +619,8 @@ class MainFrame(wx.Frame):
                 self.cont = acs.cont
                 self.cont_name = acs.cont_name
                 self.cont_dict[self.targ] = self.cont
+                self.cont._spec = self.spec
+                self.cont._line = self.line
                 self.menu_enable(self.file_menu, self.id_cont)
                 self.menu_enable(self.rec_menu, self.id_cont)
             except:
@@ -550,10 +642,12 @@ class MainFrame(wx.Frame):
             except:
                 self.log = dict()
                 self.log["targ"] = self.targ
-                
-            self.update_syst()
+
             self.update_spec()
-            self.update_plot()
+            self.update_line()
+            self.update_cont()
+            self.on_backup_write(None)
+                
 
     def on_file_save(self, event, path='.'):
         """ Behaviour for File > Save """
@@ -653,10 +747,6 @@ class MainFrame(wx.Frame):
     def on_quit(self, event):
         """ Behaviour for File > Quit """
         
-        bck = open("astrocook_app.bck", "wb")
-        bck.write(self.path_chosen+'\n')
-        bck.write(self.targ)
-        bck.close()
         self.Close()
 
     def on_spec_begin_edit(self, event):
@@ -728,7 +818,9 @@ class MainFrame(wx.Frame):
         self.targ = item.GetText()
         self.row = event.GetIndex()
         self.spec = self.spec_dict[self.targ]
+        self.ax.clear()
         self.update_all()
+        self.on_backup_write(None)
 
     def on_syst_def(self, event):
         """ Behaviour for Systems > Define System """
@@ -832,11 +924,12 @@ class MainFrame(wx.Frame):
             self.menu_enable(self.rec_menu, self.id_syst_sel)
             self.z_sel = z
 
-        
+            
     def update_all(self):
         """ Update all panels """
         
         self.spec = self.spec_dict[self.targ]
+        self.update_spec()
         try:
             self.line = self.line_dict[self.targ]
         except:
@@ -848,15 +941,19 @@ class MainFrame(wx.Frame):
 
         try:
             self.syst = self.syst_dict[self.targ]
+            self.update_syst()
         except:
             self.syst = None
 
-        self.update_spec()
         self.update_line()
-        self.update_syst()
-        self.update_plot()
         self.update_menu()
-        
+
+    def update_cont(self):
+        try:
+            self.plot.cont(self.cont.t)
+            self.plot_fig.draw()
+        except:
+            pass
         
     def update_line(self):
         """ Update the line table """
@@ -874,9 +971,12 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
             self.line_dict[self.targ] = self.line
+            self.plot.line(self.line.t, c='g')
+            self.plot_fig.draw()
         except:
             pass
 
+        
     def update_menu(self):
         """ Update the menus """
         
@@ -936,6 +1036,11 @@ class MainFrame(wx.Frame):
             self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
         except:
             pass
+
+        self.ax.clear()
+        self.plot.spec(self.spec.t, xmin=self.xmin, xmax=self.xmax)
+        self.plot_fig.draw()
+
         
     def update_syst(self):
         """ Update the system table """
@@ -989,6 +1094,8 @@ class ParamDialog(wx.Dialog):
                 self.params.update({k: v for (k,v) in
                                     zip(inspect.getargspec(method)[0][1:],
                                         inspect.getargspec(method)[3])})
+                for d in self.p.defaults:
+                    self.params[d] = self.p.defaults[d]
             # When the procedure has no parameters
             except:
                 pass  

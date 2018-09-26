@@ -125,7 +125,7 @@ class Spec1D():
         self._use_good = False
 
 
-    def _getWithMask(self,colName):
+    def _getWithMask(self, colName):
         if self._use_good:
             ret = self._t[colName].quantity[self._igood]
         else:
@@ -288,6 +288,117 @@ class Spec1D():
     def yunit(self):
         """Physical unit for the y property, to be expressed as an astropy unit."""
         return self._t['Y'].unit
+
+# Methods
+
+    def convolve(self, col='y', prof=None, gauss_sigma=20, convert=True,
+                 mode='same'):
+        """Convolve a spectrum with a profile using FFT transform
+        
+        The profile must have the same length of the column X of the spectrum.
+        If no profile @a prof is provided, a normalized Gaussian profile with 
+        @a gauss_sigma is applied."""
+
+        conv = copy.deepcopy(self)
+        conv_col = getattr(conv, col)
+        if convert == True:
+            conv.todo_convert_logx(xunit=u.km/u.s)        
+        if prof is None:
+            par = np.stack([[np.median(conv.x.value)], [gauss_sigma], [1]])
+            par = np.ndarray.flatten(par, order='F')
+            prof = many_gauss(conv.x.value, *par)
+            if (len(prof) % 2 == 0):
+                prof = prof[:-1]
+            prof = prof / np.sum(prof)
+        conv.t['Y'] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
+        if convert == True:
+            conv.todo_convert_logx(xunit=self.x.unit)
+        return conv
+    
+    def extract_forest(self, ion='Ly_a', zem=0.0, prox_vel=0.0):
+        """ Extract the region bluewards from an emission line (Lyman-alpha
+        forest, CIV forest, etc."""
+
+        if (ion == 'Ly_a'):
+            xmin = 0*u.nm
+            xmax = dict_wave['Ly_a'] * (1 + zem) * (1 - prox_vel / c.value)
+        if (ion == 'CIV'):
+            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
+            xmax = dict_wave['CIV_1550'] * (1 + zem) * (1 - prox_vel / c.value)
+        if (ion == 'MgII'):
+            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
+            xmax = dict_wave['MgII_2803'] * (1 + zem) * (1 - prox_vel / c.value)
+
+        return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
+
+    def extract_reg(self, xmin=0.0, xmax=0.0):
+        """ Extract a spectral region, given minimum and maximum wavelength """
+
+        reg = dc(self)
+        where = np.full(len(reg.x), True)
+        s = np.where(np.logical_and(reg.x.value > xmin, reg.x.value < xmax))
+        where[s] = False
+        reg._t.remove_rows(where)
+
+        if (hasattr(reg, '_cont')):
+            reg._cont._t.remove_rows(where)                
+            
+        return reg
+    
+    def find_extrema(self):
+        """Find the extrema in a spectrum and save them as a spectrum"""
+
+        if (len(self.t) > 0):
+            min_idx = np.hstack(argrelmin(self.t['Y']))
+            max_idx = np.hstack(argrelmax(self.t['Y']))
+            ext_idx = np.sort(np.append(min_idx, max_idx))
+            #self._mins = self.t[min_idx]
+            #self._maxs = self.t[max_idx]
+            self._exts = self.t[ext_idx]
+            self._exts['XMIN'][0] = self.t['X'][0]
+            self._exts['XMIN'][1:] = self._exts['X'][:-1]
+            self._exts['XMAX'][-1] = self.t['X'][-1]
+            self._exts['XMAX'][:-1] = self._exts['X'][1:]
+        else:
+            #self._mins = None
+            #self._maxs = None
+            self._exts = None
+        
+    def select_extrema(self, kind='abs', diff='max', kappa=3.0):
+        """ Select the most prominent extrema """
+
+        self.find_extrema()
+        
+        # Compute the difference between each extremum and its neighbours
+        # N.B. Negative fluxes give wrong results! To be fixed 
+        diff_y_left = (self._exts['Y'][:-2] - self._exts['Y'][1:-1]) 
+        diff_y_right = (self._exts['Y'][2:] - self._exts['Y'][1:-1]) 
+        if kind is 'em':
+            diff_y_left = -diff_y_left
+            diff_y_right = -diff_y_right
+        
+        # Check if the difference is above threshold
+        diff_y_min = np.minimum(diff_y_left, diff_y_right)
+        diff_y_max = np.maximum(diff_y_left, diff_y_right)
+        thres = self._exts['DY'][1:-1] * kappa
+        if diff is 'min':
+            line_pos = np.greater(diff_y_min, thres)
+        else:
+            line_pos = np.greater(diff_y_max, thres)
+        self._exts_sel = self._exts[1:-1][line_pos]
+
+    def smooth_lowess(self, frac=0.03):
+        """ Smooth the flux using LOWESS method """
+
+        out = dc(self)
+        x = self.t['X']
+        y = self.t['Y']
+        le = lowess(y, x, frac)
+        out.t['Y'] = np.interp(x, le[:, 0], le[:, 1]) * y.unit
+
+        return out
+        
+# To be checked
     
     def cont(self, smooth=20.0, flux_corr=1.0):
         self._precont = dc(self)
@@ -389,64 +500,12 @@ class Spec1D():
             self._t['XMAX'] = p
             self._t['XMAX'].mask = mask
 
-    def convolve(self, col='y', prof=None, gauss_sigma=20, convert=True,
-                 mode='same'):
-        """Convolve a spectrum with a profile using FFT transform
-        
-        The profile must have the same length of the column X of the spectrum.
-        If no profile @a prof is provided, a normalized Gaussian profile with 
-        @a gauss_sigma is applied."""
-
-        conv = copy.deepcopy(self)
-        conv_col = getattr(conv, col)
-        if convert == True:
-            conv.todo_convert_logx(xunit=u.km/u.s)        
-        if prof is None:
-            par = np.stack([[np.median(conv.x.value)], [gauss_sigma], [1]])
-            par = np.ndarray.flatten(par, order='F')
-            prof = many_gauss(conv.x.value, *par)
-            if (len(prof) % 2 == 0):
-                prof = prof[:-1]
-            prof = prof / np.sum(prof)
-        conv.t['Y'] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
-        if convert == True:
-            conv.todo_convert_logx(xunit=self.x.unit)
-        return conv
         
     def deredden(self, A_v, model='od94'):
         extFactor = extinction.reddening(self._t['X'], A_v, model=model)
         self._t['Y']  *= extFactor
         self._t['DY'] *= extFactor
 
-    def extract_forest(self, ion='Ly_a', zem=0.0, prox_vel=0.0):
-        """ Extract the region bluewards from an emission line (Lyman-alpha
-        forest, CIV forest, etc."""
-
-        if (ion == 'Ly_a'):
-            xmin = 0*u.nm
-            xmax = dict_wave['Ly_a'] * (1 + zem) * (1 - prox_vel / c.value)
-        if (ion == 'CIV'):
-            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
-            xmax = dict_wave['CIV_1550'] * (1 + zem) * (1 - prox_vel / c.value)
-        if (ion == 'MgII'):
-            xmin = dict_wave['Ly_a'] * (1 + zem) * (1 + prox_vel / c.value)
-            xmax = dict_wave['MgII_2803'] * (1 + zem) * (1 - prox_vel / c.value)
-
-        return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
-
-    def extract_reg(self, xmin=0.0, xmax=0.0):
-        """ Extract a spectral region, given minimum and maximum wavelength """
-
-        reg = dc(self)
-        where = np.full(len(reg.x), True)
-        s = np.where(np.logical_and(reg.x.value > xmin, reg.x.value < xmax))
-        where[s] = False
-        reg._t.remove_rows(where)
-
-        if (hasattr(reg, '_cont')):
-            reg._cont._t.remove_rows(where)                
-            
-        return reg
         
     def extract(self, xmin=None, xmax=None, prox=False, forest=[], zem=[],
                 prox_vel=[], line=None):
@@ -507,42 +566,6 @@ class Spec1D():
                 
             
         return reg
-
-    def find_extrema(self):
-        """Find the extrema in a spectrum and save them as a spectrum"""
-
-        if (len(self.t) > 0):
-            min_idx = np.hstack(argrelmin(self.t['Y']))
-            max_idx = np.hstack(argrelmax(self.t['Y']))
-            ext_idx = np.sort(np.append(min_idx, max_idx))
-            self._mins = self.t[min_idx]
-            self._maxs = self.t[max_idx]
-            self._exts = self.t[ext_idx]
-        else:
-            self._mins = None
-            self._maxs = None
-            self._exts = None
-        
-    def select_extrema(self, kind='abs', diff='max', kappa=3.0):
-        """ Select the most prominent extrema """
-                
-        # Compute the difference between each extremum and its neighbours
-        # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (self._exts['Y'][:-2] - self._exts['Y'][1:-1]) 
-        diff_y_right = (self._exts['Y'][2:] - self._exts['Y'][1:-1]) 
-        if kind is 'em':
-            diff_y_left = -diff_y_left
-            diff_y_right = -diff_y_right
-        
-        # Check if the difference is above threshold
-        diff_y_min = np.minimum(diff_y_left, diff_y_right)
-        diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = self._exts['DY'][1:-1] * kappa
-        if diff is 'min':
-            line_pos = np.greater(diff_y_min, thres)
-        else:
-            line_pos = np.greater(diff_y_max, thres)
-        self._exts_sel = self._exts[1:-1][line_pos]
 
 
     def from_table(self, table, meta = {}):

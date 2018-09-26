@@ -8,6 +8,25 @@ from astropy.constants import c
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 
+# Menu description
+proc_descr = {'convolve': "Convolve with a custom profile",
+              'extract_forest': "Extract forest",
+              'extract_reg': "Extract spectral region",
+              'mask': "Mask lines",
+              'select_extrema': "Select the most prominent extrema",
+              'smooth_lowess': "Smooth with a LOWESS method",
+              }
+
+
+rec_descr = {'line_cont': "Estimate continuum by masking lines",
+             'line_find': "Find lines",
+             'spec_cont': "Estimate continuum by smoothing spectrum",
+             'syst_find': "Find systems",
+             }
+
+util_descr = {'mask_to_spec': "Create new spectrum from mask",
+              }
+
 
 
 # Default units for spectra

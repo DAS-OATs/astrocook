@@ -47,32 +47,7 @@ class Cont(Spec1D, Line):
 
         return t
         
-    def line_rem(self, wsize=101, ord=2, frac=0.03):
-        x = copy(self._spec._t['X'])
-        y = copy(self._spec._t['Y'])
-        
-        where = np.zeros(len(x), dtype=bool)
-        for l in self._line._t:
-            xmin = l['XMIN']
-            xmax = l['XMAX']
-            ymin = np.interp(xmin, x, y)
-            ymax = np.interp(xmax, x, y)
-            w = np.logical_and(x>xmin, x<xmax)
-            y[w] = (ymax-ymin)/(xmax-xmin) * (x[w]-xmin) + ymin
-            where += np.logical_and(x>l['XMIN'], x<l['XMAX'])
-        
-        x_rem = x[np.logical_not(where)]
-        y_rem = y[np.logical_not(where)]
-        frac = 0.03
-        le = lowess(y_rem, x_rem, frac)
-        y_smooth = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
-        #y_smooth = savgol_filter(np.array(y), wsize, ord,  mode='nearest')
-    
-    
-    
-        self._t = self.create_t(x, y_smooth)    
-
-    def line_rem_special(self, frac=0.03):
+    def line_rem(self, frac=0.03):
         x = copy(self._spec._t['X'])
         y = copy(self._spec._t['Y'])
         

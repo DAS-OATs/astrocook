@@ -1,21 +1,18 @@
 from . import *
+from .utils import *
 from astropy import units as u
 from collections import OrderedDict as od
+from copy import deepcopy as dc
 import inspect
-
-# Description
-rec_descr = {'cont_line_rem': "Find Continuum by Removing Lines",
-             'cont_max_smooth': "Find Continuum by Smoothing the Flux Maxima",
-             'line_find': "Find Lines",
-             'spec_extract': "Extract Spectral Region",
-             'syst_def': "Define System",
-             'syst_find': "Find Systems",
-             'syst_fit': "Fit Systems"}
 
 class Recipe():
     def __init__(self, obj, name):
 
         self.obj = obj
+        #self.spec = obj.spec
+        #self.line = obj.line
+        #self.syst = obj.syst
+        #self.cont = obj.cont
         self.name = name
         self.descr = rec_descr[name]        
         self.params = None
@@ -23,55 +20,24 @@ class Recipe():
         if name == 'line_find':
             self.procs = ['convolve', 'find_extrema', 'select_extrema']
             self.modes = ['pass', None, None]
+            self.defaults = {}
+
+        if name == 'line_cont':
+            self.procs = ['mask', 'smooth_lowess']
+            self.modes = ['pass', 'pass']
+            self.defaults = {}
+
+        if name == 'spec_cont':
+            self.procs = ['convolve']
+            self.modes = ['pass']
+            self.defaults = {'gauss_sigma': 1000}
                            
+        if name == 'syst_find':
+            self.procs = ['create_z', 'match_z']#, 'create_t']
+            self.modes = [None, 'pass']#, None]
+            self.defaults = {}
+
         """
-        if name == 'cont_line_rem':
-            self.params = {'frac': 0.03}
-            self.dialog = od([('Fraction:', 'frac')])
-            self.procs = ['line_rem']
-                             
-        if name == 'cont_max_smooth':
-            self.params = {'smooth': 4.0,
-                           'flux_corr': 1.0,
-                           'kappa_low': 3.0,
-                           'kappa_high': 3.0}
-            self.dialog = od([('Smoothing:', 'smooth'),
-                              ('Flux correction:', 'flux_corr'),
-                              ('Lower thresh. (sigma):', 'kappa_low'),
-                              ('Upper thresh. (sigma):', 'kappa_high')])
-            self.procs = ['max_smooth']
-
-        if name == 'line_find':
-            self.params = {'mode': 'abs',
-                           'diff': 'min',
-                           'kappa': 5.0,
-                           'sigma_min': 5.0,
-                           'sigma_max': 100.0}
-            self.dialog = od([('Mode:', 'mode'),
-                              ('Difference:', 'diff'),
-                              ('Threshold (sigma):', 'kappa'),
-                              ('Min. sigma (sigma):', 'sigma_min'),
-                              ('Max. sigma (sigma):', 'sigma_max')])
-            self.procs = ['find_special']
-
-
-        if name == 'spec_extract':
-            self.params = {'forest': True,
-                           'ion': 'Ly_a',
-                           'zem': 0.0,
-                           'prox_vel': 0.0,
-                           'reg': False,
-                           'xmin': 0.0,
-                           'xmax': 0.0}
-            self.dialog = od([('Use forest:', 'forest'),
-                              ('Ion:', 'ion'),
-                              ('Emission redshift:', 'zem'),
-                              ('Prox. velocity:', 'prox_vel'),
-                              ('Use region:', 'reg'), 
-                              ('Min. wavelength:', 'xmin'),
-                              ('Max. wavelength:', 'xmax')])
-            self.procs = ['extract']
-
         if name == 'syst_def':
             self.params = {'forest': 'Ly',
                            'zem': 0.0,
@@ -95,24 +61,48 @@ class Recipe():
         
     def execute(self, **kwargs):
 
+        obj = dc(self.obj)
         for p, m in zip(self.procs, self.modes):
-            method = getattr(self.obj, p)
+            method = getattr(obj, p)
             try:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(method)[0][1:]}
                 out = method(**param)
             except:
                 out = method()
-            if m == 'pass':
-                self.obj = out
+            if m != None:
+                obj = out
+        return obj
+
+    def line_cont(self, **kwargs):
+
+        out = self.execute(**kwargs)
+        t = out.t
+        self.cont = Cont(out, x=t['X'], y=t['Y'], dy=t['DY'])
+        self.__dict__.update(self.cont.__dict__)        
         return out
 
     def line_find(self, **kwargs):
 
-        out = self.execute()
-        
-        sel = self.obj._exts_sel
+        out = self.execute(**kwargs)
+        sel = out._exts_sel
         self.line = Line(self.obj, x=sel['X'], y=sel['Y'], xmin=sel['XMIN'],
                     xmax=sel['XMAX'], dy=sel['DY'])
         self.__dict__.update(self.line.__dict__)        
         return out
+
+    def spec_cont(self, **kwargs):
+
+        out = self.execute(**kwargs)
+        t = self.obj.t
+        self.cont = Cont(self.obj, x=t['X'], y=t['Y'], dy=t['DY'])
+        self.__dict__.update(self.cont.__dict__)        
+
+    def syst_find(self, **kwargs):
+
+        out = self.execute(**kwargs)
+        print out
+        self.syst = System(line=self.obj, z=out)
+        return out
+
+    

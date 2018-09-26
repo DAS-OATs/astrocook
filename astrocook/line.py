@@ -1,5 +1,5 @@
 from . import Spec1D, Model
-from .utils import convolve, dict_wave, savitzky_golay, voigt_def
+from .utils import *
 from astropy.table import Column, Table
 from astropy.stats import sigma_clip
 from astropy import units as u
@@ -232,7 +232,69 @@ class Line(Spec1D):
 
         
 # Methods
+
+    def create_z(self, series='Ly_ab'):
+        """ Create a list of redshifts from a list of lines """
+
+        ion = dict_series[series]
+        ion_in = np.array(ion, ndmin=1)
+        if (len(ion_in.shape) > 1):
+            raise Exception("Ion must be a scalar or a 1-d array.") 
+
+        x = np.array([])
+        ion = np.array([])
+        z = np.array([])
+        for i in ion_in:
+            x_temp = self.x
+            wave = dict_wave[i]
+            x = np.append(x, x_temp.to(xunit_def).value)
+            ion = np.append(ion, np.full(len(self.t), i))
+            z = np.append(z, (x_temp/wave).value - 1)
+        print "x:", type(x)
+        print "z:", type(z)
+        #print len(x)
+            
+        # Redshift table
+        self._z = Table()
+        self._z['X'] = Column(x, dtype=float, unit=xunit_def)
+        self._z['ION'] = Column(ion) 
+        self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
+        
+    def mask(self):
+        """ Remove the spectral regions between XMIN and XMAX """
+
+        mask = np.array(self._spec.t.mask)
+        out = dc(self._spec)
+        where = np.zeros(len(out.t), dtype=bool)
+        for l in self.t:
+            where += np.logical_and(out.t['X']>l['XMIN'], out.t['X']<l['XMAX'])
+            
+        out.t.mask['Y'][where] = True
+        out.t.mask['DY'][where] = True
+
+        # This trick is needed to make the out table an independent object and
+        # restore the original spectrum to unmasked state. Bug in Astropy?
+        out.t['Y'] = out.t['Y']*-1*-1
+        self._spec.t.mask = mask
+        return out
+
+    def match_z(self, ztol=1e-4):
+        """ Match redshifts to find coincidences """
+        
+        self._z.sort('Z')
+        z_arr = self._z['Z']
+        ion_arr = self._z['ION']
+        match = np.isclose(z_arr[1:], z_arr[:-1], atol=ztol) 
+        dec = np.core.defchararray.not_equal(ion_arr[1:], ion_arr[:-1])
+        match = np.logical_and(match, dec)
+        z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
+
+        return z_mean[match]
+
+        
     
+# To be checked
+
     """
     def chunk(self, x=None, line=None, single=False):
         if ((x is None) and (line is None)):
