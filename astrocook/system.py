@@ -15,9 +15,9 @@ import time
 
 class System(Spec1D, Line, Cont):
 
-    def __init__(self, spec=None, line=None, cont=None,
+    def __init__(self, acs=None, spec=None, line=None, cont=None,
                  series=None, ion=None,
-                 z=None, N=None, b=None, btur=None,  
+                 z=None, N=N_def, b=b_def, btur=btur_def,  
                  dz=None, dN=None, db=None, dbtur=None,
                  vary=[True,True,True,False], expr=[None,None,None,None],
                  x=None, y=None, xmin=None, xmax=None, dy=None,  
@@ -26,13 +26,22 @@ class System(Spec1D, Line, Cont):
                  meta=None, dtype=float):  
         """ Constructor for the System class """ 
 
+        if acs != None:
+            self._acs(acs)
+
         
         # Spectrum
         if (spec != None):
             self._spec = dc(spec)
-        else:
-            self._spec = dc(line._spec)
+        #else:
+        #    self._spec = dc(line._spec)
 
+
+        # Continuum
+        if (cont != None):
+            self._cont = dc(cont)
+
+            
         # "is not" works also with arrays
         if (z is not None):            
             if (btur is None):
@@ -40,10 +49,8 @@ class System(Spec1D, Line, Cont):
             self._t = self.create_t(series, z, N, b, btur,
                                     dz, dN, db, dbtur, vary, expr,
                                     Nunit, bunit, dtype)
-            if (line is None):
-                self.create_line(xmin=xmin, xmax=xmax)
-            else:
-                self._line = dc(line)
+            #if (self._line is None):
+            #    self.create_line(xmin=xmin, xmax=xmax)
             
         # Line list
         else:
@@ -60,11 +67,6 @@ class System(Spec1D, Line, Cont):
                 self.create_z(ion)
 
 
-        # Continuum
-        if (cont != None):
-            self._cont = dc(cont)
-        else:
-            self._cont = dc(line._cont)
 
         """
         # Line list -- Deprecated!
@@ -166,7 +168,16 @@ class System(Spec1D, Line, Cont):
             
         self._use_good = False
 
-                
+
+    def _acs(self, acs):
+        self._spec = acs.spec
+        self._line = acs.line
+        self._cont = acs.cont
+        try:
+            self._map = acs.line._map  # When loading from a current session
+        except:
+            pass  # When loading from a saved session
+            
 # Properties
 
     @property
@@ -397,6 +408,8 @@ class System(Spec1D, Line, Cont):
             
     def find(self, series, ztol=1e-4):
         """ Find systems by matching redshifts """
+        """ Deprecated """
+        
         ion = dict_series[series]
         self.create_z(ion)
         self._z.sort('Z')

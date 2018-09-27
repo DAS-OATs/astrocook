@@ -1,4 +1,4 @@
-from . import Cont, Line, Spec1DReader, System
+from . import Cont, Line, Spec1D, Spec1DReader, System
 from astropy.io import fits
 from astropy.table import Column, Table
 import difflib
@@ -10,7 +10,10 @@ import yaml
 class IO():
     def __init__(self):
         """ Constructor for the IO class. """
-        pass
+        self.spec = Spec1D()
+        self.line = Line()
+        self.cont = Cont()
+        self.syst = System()
 
     def acs_read(self, name, path='.'):
         """ Read an astrocook session from a tar.gz archive """
@@ -35,8 +38,8 @@ class IO():
                 """
                 os.remove(acs.line_name[:-10]+'_mins.fits')
                 os.remove(acs.line_name[:-10]+'_maxs.fits')
-                os.remove(acs.line_name[:-10]+'_exts.fits')
                 """
+                os.remove(acs.line_name[:-10]+'_exts.fits')
             except:
                 pass
 
@@ -60,14 +63,12 @@ class IO():
 
             # Log
             try:
-                ciao
-            except:
                 acs.log_name = name[:-4]+'.log'
                 log = file(acs.log_name, "r")
                 acs.log = yaml.safe_load(log)
                 os.remove(acs.log_name)
-            #except:
-            #    pass
+            except:
+                pass
 
         return acs
 
@@ -90,6 +91,8 @@ class IO():
 
             # Line list
             try:
+                oky
+            except:
                 line_name = name[:-4] + '_line.fits'
                 line_arcname = diff[:-4] + '_line.fits'
                 self.line_write(acs.line, line_name)
@@ -99,17 +102,17 @@ class IO():
                          arcname=line_arcname[:-10]+'_mins.fits')
                 arch.add(line_name[:-10]+'_maxs.fits',
                          arcname=line_arcname[:-10]+'_maxs.fits')
+                """
                 arch.add(line_name[:-10]+'_exts.fits',
                          arcname=line_arcname[:-10]+'_exts.fits')
-                """
                 os.remove(line_name)
                 """
                 os.remove(line_name[:-10]+'_mins.fits')
                 os.remove(line_name[:-10]+'_maxs.fits')
-                os.remove(line_name[:-10]+'_exts.fits')
                 """
-            except:
-                pass
+                os.remove(line_name[:-10]+'_exts.fits')
+            #except:
+            #    pass
 
             # Continuum
             try:
@@ -188,14 +191,14 @@ class IO():
                     yunit=yunit)
 
         # Extrema
-        """
         try:
+            """
             line._mins = Table.read(name[:-10]+'_mins.fits')
             line._maxs = Table.read(name[:-10]+'_maxs.fits')
+            """
             line._exts = Table.read(name[:-10]+'_exts.fits')
         except:
             pass
-        """
         return line
 
     def line_write(self, line, name, overwrite=True):
@@ -207,8 +210,9 @@ class IO():
         """
         line._mins.write(name[:-10]+'_mins.fits', overwrite=overwrite)
         line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
-        line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
         """
+        print line._exts
+        line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
 
     
     def spec_read(self, name):
@@ -250,8 +254,8 @@ class IO():
         vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
         #expr = [i.split(' ') for i in data['EXPR']]
         expr = [None, None, None, None]
-        syst = System(
-            spec=self.spec, line=self.line, cont=self.cont,
+        syst = System(acs=self,
+            #spec=self.spec, line=self.line, cont=self.cont,
             series=series,
             z=z, N=N, b=b, btur=btur,
             dz=dz, dN=dN, db=db, dbtur=dbtur,

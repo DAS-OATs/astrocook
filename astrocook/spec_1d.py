@@ -4,7 +4,6 @@ from astropy import units as u
 from astropy.constants import c
 from astropy.io import fits as fits
 from astropy.table import Column, Table
-import copy
 from copy import deepcopy as dc
 from lmfit import CompositeModel as lmc
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, \
@@ -39,7 +38,7 @@ class Spec1D():
         -# @meta: miscellaneous information (TBD).        
     """
     
-    def __init__(self, x, y, 
+    def __init__(self, x=None, y=None, 
                  xmin=[],
                  xmax=[],
                  dx=[],
@@ -54,12 +53,12 @@ class Spec1D():
                  dtype=float):
         ''' Constructor for the Spec1D class. '''
 
-
+        
         if ((xmin == []) != (xmax == [])):
             raise Exception("XMIN and XMAX must be provided together.")
         if ((xmin == []) and (xmax == [])):
             #if (np.size(x) > 0):
-            if (x != []):
+            if (x is not None and x != []):
                 if (dx == []):
                     dx = np.roll((x - np.roll(x, 1))/2., -1)
                     dx[-1] = dx[-2]
@@ -108,7 +107,7 @@ class Spec1D():
 
         # Table creation
         self._t = Table(data=data, masked=True, meta=meta)
-        if (x != []):
+        if (x is not None):
             self._t['X'].unit = xunit
             self._t['Y'].unit = yunit
             self._t['DY'].unit = yunit
@@ -299,7 +298,7 @@ class Spec1D():
         If no profile @a prof is provided, a normalized Gaussian profile with 
         @a gauss_sigma is applied."""
 
-        conv = copy.deepcopy(self)
+        conv = dc(self)
         conv_col = getattr(conv, col)
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
@@ -354,7 +353,9 @@ class Spec1D():
             ext_idx = np.sort(np.append(min_idx, max_idx))
             #self._mins = self.t[min_idx]
             #self._maxs = self.t[max_idx]
-            self._exts = self.t[ext_idx]
+            self._exts = self._t[ext_idx]
+            self._exts.meta = None  # Needed, otherwise the Astropy fails when
+                                    # trying to save the table
             self._exts['XMIN'][0] = self.t['X'][0]
             self._exts['XMIN'][1:] = self._exts['X'][:-1]
             self._exts['XMAX'][-1] = self.t['X'][-1]

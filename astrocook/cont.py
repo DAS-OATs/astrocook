@@ -32,6 +32,11 @@ class Cont(Spec1D, Line):
             self._t = self.create_t(x, y, dy)
 
         self._use_good = False
+
+    def _acs(self, acs):
+        self._spec = acs.spec
+        self._line = acs.line
+        self._syst = acs.syst
         
     def create_t(self, x, y, dy=None,
                  xunit=xunit_def, yunit=yunit_def, dtype=float):

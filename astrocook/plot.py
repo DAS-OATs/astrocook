@@ -3,36 +3,39 @@ class Plot():
     def __init__(self, ax):
         self.ax = ax
 
+        (self.xmin, self.xmax) = self.ax.get_xlim()
+        
         # Lists of all previously plotted data, to clear them selectively
         self.cont_p = []
         self.line_p = []
         self.spec_p = []
+        self.sel_p = []
 
-    def cont(self, tab, replace=False, c='C2', lw=2.0, **kwargs):
+    def clean(self, attr):
+        """ Clear all previously plotted data from a list, if requested """
+
+        attr_p = getattr(self, attr)
         try:
-            for p in self.cont_p:
+            for p in attr_p:
                 p.remove()                
-            self.cont_p = []
+            setattr(self, attr, [])
         except:
             pass
-
-        (p, p_other) = self.spec(tab, replace, dy=False, c=c, lw=lw, **kwargs)
+        
+    def cont(self, tab, replace=True, c='C2', lw=2.0, **kwargs):
+        if replace:
+            self.clean('cont_p')
+        
+        (p, p_other) = self.spec(tab, replace=False, dy=False, c=c, lw=lw,
+                                 **kwargs)
         self.cont_p.append(p)
 
         return p
         
-    def line(self, tab, replace=True, s=100, c='r', marker='+', fill=False):
-        
-        # Clear all previously plotted lines, if requested
+    def line(self, tab, replace=True, s=100, c='C3', marker='+', fill=False):
         if replace:
-            try:
-                for p in self.line_p:
-                    p.remove()
-                self.line_p = []
-            except:
-                pass
-
-        # Plot new lines
+            self.clean('line_p')
+        
         if marker == 'o':
             if fill:
                 p = self.ax.scatter(tab['X'], tab['Y'], s=s, marker=marker,
@@ -45,20 +48,47 @@ class Plot():
 
         self.line_p.append(p)
         return p
-            
+
+    def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3', **kwargs):
+        if replace:
+            self.clean('sel_p')
+
+        xmins = []
+        xmaxs = []
+        for r in rows:
+            x = obj.x[r]
+            y = obj.y[r]
+            xmin = obj.xmin[r]
+            xmax = obj.xmax[r]
+            xmins.append(xmin.value)
+            xmaxs.append(xmax.value)
+        
+            p = self.ax.axvline(x=x.value, color=c, **kwargs)
+            pmin = self.ax.axvline(x=xmin.value, color=c, linestyle=':',
+                                   **kwargs)
+            pmax = self.ax.axvline(x=xmax.value, color=c, linestyle=':',
+                                   **kwargs)
+
+            self.sel_p.append(p)
+            self.sel_p.append(pmin)
+            self.sel_p.append(pmax)
+
+        if extra_width > 0:
+            xmin_a = min(xmins)
+            xmax_a = max(xmaxs)
+            w = extra_width*(xmax_a-xmin_a)
+            self.ax.set_xlim(xmin_a-w, xmax_a+w)
+        else:
+            self.ax.set_xlim(self.xmin, self.xmax)
+        
     def spec(self, tab, replace=True, dy=True, xmin=None, xmax=None, c='C0',
              c_other='C1',  lw=1.0, **kwargs):
-
-        # Clear all previously plotted spectra, if requested
         if replace:
-            try:
-                for p in self.spec_p:
-                    p.remove()
-                self.spec_p = []
-            except:
-                pass
+            self.clean('spec_p')
 
         if xmin != None and xmax != None:
+            self.xmin = xmin
+            self.xmax = xmax
             self.ax.set_xlim(xmin, xmax)
             
         # Plot new spectra

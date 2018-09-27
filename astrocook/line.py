@@ -28,6 +28,7 @@ yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 class Line(Spec1D):
 
     def __init__(self,
+                 acs=None,
                  spec=None,
                  x=[],
                  y=[],
@@ -41,6 +42,9 @@ class Line(Spec1D):
                  meta=None,
                  dtype=float):
         """ Constructor for the Line class """
+
+        if acs != None:
+            self._acs(acs)
         
         # Exceptions
         if ((x == []) != (y == [])):
@@ -58,7 +62,7 @@ class Line(Spec1D):
             warnings.warn("No spectrum or data provided.")
 
         # Spectrum
-        self._spec = None
+        #self._spec = None
         if (spec is not None):
             self._spec = dc(spec)
             if (hasattr(spec, '_precont')):
@@ -124,6 +128,15 @@ class Line(Spec1D):
 
         self._use_good = False
 
+
+    def _acs(self, acs):
+        self._spec = acs.spec
+        self._cont = acs.cont
+        try:
+            self._exts = acs.spec._exts  # When loading from a current session
+        except:
+            pass  # When loading from a saved session
+        
         
 # Properties
         
@@ -260,6 +273,16 @@ class Line(Spec1D):
         self._z['ION'] = Column(ion) 
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
         
+    def map_z(self):
+        """ Map lines to redshifts """
+        
+        self._map = Table()
+        self._map['X'] = np.append(self._z['X'][1:][self._x_match],
+                                   self._z['X'][:-1][self._x_match])
+        self._map['Z'] = np.append(self._z_match, self._z_match)
+        self._map.sort('Z')
+
+        
     def mask(self):
         """ Remove the spectral regions between XMIN and XMAX """
 
@@ -289,8 +312,8 @@ class Line(Spec1D):
         match = np.logical_and(match, dec)
         z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
 
-        return z_mean[match]
-
+        self._x_match = match
+        self._z_match = z_mean[match]
         
     
 # To be checked

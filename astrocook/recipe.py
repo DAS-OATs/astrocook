@@ -6,35 +6,49 @@ from copy import deepcopy as dc
 import inspect
 
 class Recipe():
-    def __init__(self, obj, name):
+    def __init__(self, acs, name):
 
-        self.obj = obj
-        #self.spec = obj.spec
-        #self.line = obj.line
-        #self.syst = obj.syst
-        #self.cont = obj.cont
+        self.acs = acs
+        self.spec = acs.spec
+        try:
+            self.line = acs.line
+        except:
+            self.line = None
+        try:
+            self.syst = acs.syst
+        except:
+            self.line = None
+        try:
+            self.cont = acs.cont
+        except:
+            self.line = None
+
         self.name = name
         self.descr = rec_descr[name]        
         self.params = None
         
         if name == 'line_find':
+            self.objs = ['spec', 'spec', 'spec']
             self.procs = ['convolve', 'find_extrema', 'select_extrema']
             self.modes = ['pass', None, None]
             self.defaults = {}
 
         if name == 'line_cont':
+            self.objs = ['line', 'spec']
             self.procs = ['mask', 'smooth_lowess']
             self.modes = ['pass', 'pass']
             self.defaults = {}
 
         if name == 'spec_cont':
+            self.objs = ['spec']
             self.procs = ['convolve']
             self.modes = ['pass']
             self.defaults = {'gauss_sigma': 1000}
                            
         if name == 'syst_find':
-            self.procs = ['create_z', 'match_z']#, 'create_t']
-            self.modes = [None, 'pass']#, None]
+            self.objs = ['line', 'line', 'line']
+            self.procs = ['create_z', 'match_z', 'map_z']
+            self.modes = [None, None, None]
             self.defaults = {}
 
         """
@@ -61,8 +75,9 @@ class Recipe():
         
     def execute(self, **kwargs):
 
-        obj = dc(self.obj)
-        for p, m in zip(self.procs, self.modes):
+        acs = dc(self.acs)
+        for o, p, m in zip(self.objs, self.procs, self.modes):
+            obj = getattr(acs, o)
             method = getattr(obj, p)
             try:
                 param = {k: kwargs[k] for k in kwargs \
@@ -71,38 +86,40 @@ class Recipe():
             except:
                 out = method()
             if m != None:
-                obj = out
-        return obj
+                setattr(acs, o, out)
+        return acs
 
     def line_cont(self, **kwargs):
 
         out = self.execute(**kwargs)
-        t = out.t
-        self.cont = Cont(out, x=t['X'], y=t['Y'], dy=t['DY'])
+        spec = out.spec
+        self.cont = Cont(spec=spec, x=spec.t['X'], y=spec.t['Y'],
+                         dy=spec.t['DY'])
         self.__dict__.update(self.cont.__dict__)        
         return out
 
     def line_find(self, **kwargs):
 
         out = self.execute(**kwargs)
-        sel = out._exts_sel
-        self.line = Line(self.obj, x=sel['X'], y=sel['Y'], xmin=sel['XMIN'],
-                    xmax=sel['XMAX'], dy=sel['DY'])
+        spec = out.spec
+        self.line = Line(acs=out, x=spec._exts_sel['X'],
+                         y=spec._exts_sel['Y'], xmin=spec._exts_sel['XMIN'],
+                         xmax=spec._exts_sel['XMAX'], dy=spec._exts_sel['DY'])
         self.__dict__.update(self.line.__dict__)        
         return out
 
     def spec_cont(self, **kwargs):
 
         out = self.execute(**kwargs)
-        t = self.obj.t
-        self.cont = Cont(self.obj, x=t['X'], y=t['Y'], dy=t['DY'])
+        spec = out.spec
+        self.cont = Cont(spec=spec, x=spec.t['X'], y=spec.t['Y'],
+                         dy=spec.t['DY'])
         self.__dict__.update(self.cont.__dict__)        
 
     def syst_find(self, **kwargs):
-
         out = self.execute(**kwargs)
-        print out
-        self.syst = System(line=self.obj, z=out)
+        line = out.line
+        self.syst = System(acs=out, series=kwargs['series'], z=line._z_match)
         return out
 
     

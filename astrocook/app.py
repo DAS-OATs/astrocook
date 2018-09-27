@@ -66,9 +66,11 @@ class MainFrame(wx.Frame):
     def dialog_proc(self, obj, proc):
         """ Run a procedure through a dialog window """
 
-        self.obj = obj
+        #self.obj = obj
+        self.objs = [obj]
         self.procs = [proc]
         self.descr = proc_descr[proc]
+        self.dialog_type = 'proc'
         dialog = ParamDialog(self)
         dialog.ShowModal()
         dialog.Destroy()
@@ -81,14 +83,16 @@ class MainFrame(wx.Frame):
             out = None
         return out
 
-    def dialog_rec(self, obj, rec):
+    def dialog_rec(self, acs, rec):
         """ Run a recipe through a dialog window """
 
-        self.obj = obj
-        self.rec = Recipe(obj, rec)
+        self.acs = acs
+        self.rec = Recipe(acs, rec)
+        self.objs = self.rec.objs
         self.procs = self.rec.procs
         self.descr = self.rec.descr
         self.defaults = self.rec.defaults
+        self.dialog_type = 'rec'
         dialog = ParamDialog(self)
         dialog.ShowModal()
         dialog.Destroy()
@@ -112,7 +116,7 @@ class MainFrame(wx.Frame):
         self.line_gr.SetColLabelValue(2, "XMAX")
         self.line_gr.SetColLabelValue(3, "Y")
         self.line_gr.SetColLabelValue(4, "DY")
-        self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
+        self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_line)
         self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_line_edit)
        
     def init_plot(self, panel):
@@ -160,7 +164,7 @@ class MainFrame(wx.Frame):
         self.syst_gr.SetColLabelValue(6, "DN")
         self.syst_gr.SetColLabelValue(7, "DB")
         self.syst_gr.SetColLabelValue(8, "DBTUR")
-        self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_syst_select)
+        self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_syst)
         self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_syst_edit)
         #self.syst_gr.Bind(gridlib.EVT_BUTTON, self.on_syst_menu)
         
@@ -468,16 +472,17 @@ class MainFrame(wx.Frame):
 
     def on_rec_line_find(self, event):
         rec = 'line_find'
-        run = self.dialog_rec(self.spec, rec)
+        run = self.dialog_rec(self.acs, rec)
         if self.rec_dict[rec]:            
             self.line = self.rec.line
             self.line_dict[self.targ] = self.line
             self.line_num = len(self.line.t)
             self.update_line()
-
+            self.update_acs()
+            
     def on_rec_line_cont(self, event):
         rec = 'line_cont'
-        run = self.dialog_rec(self.line, rec)
+        run = self.dialog_rec(self.acs, rec)
         if self.rec_dict[rec]:            
             self.cont = self.rec.cont
             self.cont_dict[self.targ] = self.cont
@@ -486,7 +491,7 @@ class MainFrame(wx.Frame):
 
     def on_rec_spec_cont(self, event):
         rec = 'spec_cont'
-        run = self.dialog_rec(self.spec, rec)
+        run = self.dialog_rec(self.acs, rec)
         if self.rec_dict[rec]:            
             self.cont = self.rec.cont
             self.cont_dict[self.targ] = self.cont
@@ -495,13 +500,31 @@ class MainFrame(wx.Frame):
 
     def on_rec_syst_find(self, event):
         rec = 'syst_find'
-        run = self.dialog_rec(self, rec)
+        run = self.dialog_rec(self.acs, rec)
         if self.rec_dict[rec]:            
             self.syst = self.rec.syst
             self.syst_dict[self.targ] = self.syst
             self.syst_num = len(self.syst.t)
             self.update_syst()
 
+    def on_sel_line(self, event):
+        if event.GetTopRow() == event.GetBottomRow():            
+            row = event.GetTopRow()
+            rows = [row]
+            self.plot.sel(self.line, rows, extra_width=3.0)
+            self.plot_fig.draw()
+            
+    def on_sel_syst(self, event):
+        if event.GetTopRow() == event.GetBottomRow():  
+            row = event.GetTopRow()
+            z = self.syst.t['Z'][row]
+            map_w = np.where(z==self.syst._map['Z'])[0]
+            rows = []
+            for m in self.syst._map[map_w]:
+                rows.append(np.where(m['X']==self.line.t['X'])[0][0])
+            self.plot.sel(self.line, rows, extra_width=0)
+            self.plot_fig.draw()
+            
     def on_util_mask_to_spec(self, event):
         self.spec = self.mask
         self.targ = self.targ + '_mask'
@@ -550,7 +573,6 @@ class MainFrame(wx.Frame):
 
         # otherwise ask the user what new file to open
         if (targ == None):
-        
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
                        "FITS files (*.fits)|*.fits"
             with wx.FileDialog(self, "Open file", path,
@@ -589,8 +611,9 @@ class MainFrame(wx.Frame):
             acs = self.IO.acs_read(name, path=self.path_chosen)
             self.spec = acs.spec
             self.spec_name = acs.spec_name
-            
-            
+
+        self.acs = acs
+    
         if self.spec != None:
             self.ax.clear()
             self.plot_fig.draw()
@@ -607,20 +630,19 @@ class MainFrame(wx.Frame):
             
             try:
                 self.line = acs.line
+                self.line._acs(acs)
                 self.line_name = acs.line_name
                 self.line_dict[self.targ] = self.line
-                self.line._spec = self.spec
                 self.menu_enable(self.file_menu, self.id_line)
                 self.menu_enable(self.rec_menu, self.id_line)
             except:
                 self.line = None
-            
+
             try:
                 self.cont = acs.cont
+                self.cont._acs(acs)
                 self.cont_name = acs.cont_name
                 self.cont_dict[self.targ] = self.cont
-                self.cont._spec = self.spec
-                self.cont._line = self.line
                 self.menu_enable(self.file_menu, self.id_cont)
                 self.menu_enable(self.rec_menu, self.id_cont)
             except:
@@ -628,9 +650,9 @@ class MainFrame(wx.Frame):
                 
             try:
                 self.syst = acs.syst
+                self.syst._acs(acs)
                 self.syst_name = acs.syst_name
                 self.syst_dict[self.targ] = self.syst
-                self.update_syst()
                 self.menu_enable(self.file_menu, self.id_syst)
                 self.menu_enable(self.rec_menu, self.id_syst)
             except:
@@ -646,6 +668,7 @@ class MainFrame(wx.Frame):
             self.update_spec()
             self.update_line()
             self.update_cont()
+            self.update_syst()
             self.on_backup_write(None)
                 
 
@@ -690,9 +713,9 @@ class MainFrame(wx.Frame):
             self.update_line()
             self.update_plot()
             self.menu_enable(self.rec_menu, self.id_line)
-        
+
+    """
     def on_line_select(self, event):
-        """ Behaviour for line selection """
         
         if event.GetTopRow() == event.GetBottomRow():            
             sel = event.GetTopRow()
@@ -713,7 +736,7 @@ class MainFrame(wx.Frame):
             self.ax.axvline(x=xmin.value, color='C3', alpha=0.5, linestyle=':')
             self.ax.axvline(x=xmax.value, color='C3', alpha=0.5, linestyle=':')
             self.plot_fig.draw()
-            
+    """        
     def on_plot_clear(self, event):
         self.ax.clear()
         self.plot_fig.draw()
@@ -925,6 +948,13 @@ class MainFrame(wx.Frame):
             self.z_sel = z
 
             
+    def update_acs(self):
+        self.acs.spec = self.spec
+        self.acs.line = self.line
+        self.acs.syst = self.syst
+        self.acs.cont = self.cont
+       
+
     def update_all(self):
         """ Update all panels """
         
@@ -938,7 +968,6 @@ class MainFrame(wx.Frame):
             self.cont = self.cont_dict[self.targ]
         except:
             self.cont = None
-
         try:
             self.syst = self.syst_dict[self.targ]
             self.update_syst()
@@ -946,6 +975,7 @@ class MainFrame(wx.Frame):
             self.syst = None
 
         self.update_line()
+        self.update_cont()
         self.update_menu()
 
     def update_cont(self):
@@ -976,7 +1006,6 @@ class MainFrame(wx.Frame):
         except:
             pass
 
-        
     def update_menu(self):
         """ Update the menus """
         
@@ -1088,8 +1117,12 @@ class ParamDialog(wx.Dialog):
         self.p = parent
 
         self.params = {}
-        for p in self.p.procs:
-            method = getattr(self.p.obj, p)
+        for o, p in zip(self.p.objs, self.p.procs):
+            if self.p.dialog_type == 'proc':
+                obj = o
+            if self.p.dialog_type == 'rec':
+                obj = getattr(self.p.acs, o)
+            method = getattr(obj, p)
             try:
                 self.params.update({k: v for (k,v) in
                                     zip(inspect.getargspec(method)[0][1:],
@@ -1138,7 +1171,7 @@ class ParamDialog(wx.Dialog):
                 self.ctrl.append(rb)
             else:
                 st = wx.StaticText(panel, -1, label=p)
-                tc = wx.TextCtrl(panel, -1, value=str(v), size=(150,25))
+                tc = wx.TextCtrl(panel, -1, value=str(v), size=(200,25))
                 box_param.Add(st, 1, 0)
                 box_param.Add(tc, 1, 0)
                 self.ctrl.append(tc)
