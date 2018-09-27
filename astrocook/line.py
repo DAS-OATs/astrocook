@@ -263,9 +263,6 @@ class Line(Spec1D):
             x = np.append(x, x_temp.to(xunit_def).value)
             ion = np.append(ion, np.full(len(self.t), i))
             z = np.append(z, (x_temp/wave).value - 1)
-        print "x:", type(x)
-        print "z:", type(z)
-        #print len(x)
             
         # Redshift table
         self._z = Table()

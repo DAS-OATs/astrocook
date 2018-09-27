@@ -431,9 +431,12 @@ class System(Spec1D, Line, Cont):
         self._map['Z'] = np.append(z_sel, z_sel)
         self._map.sort('Z')
 
-    def fit(self, z, save=True, **kwargs):
+    def fit(self, z=None, save=True, **kwargs):
         """ Fit the model on a system """
 
+        if z is None:
+            z = self._z_sel
+        
         z_old = self._map['Z']
         
         #if (hasattr(self, '_fun') == False):# or True):
@@ -476,13 +479,13 @@ class System(Spec1D, Line, Cont):
         #self._line._t[self._group_line] = new_line
         #self._line._t.sort('X')
         
-    def group(self, z, dx, **kwargs):
+    def group(self, z, dx=0.0, **kwargs):
         """ Extract the lines needed for fitting (both from systems and not)
         and setup the fitting parameters """
 
         
-        if (hasattr(self, '_map') == False):
-            self.create_line(dx, **kwargs)
+        #if (hasattr(self, '_map') == False):
+        #    self.create_line(dx, **kwargs)
 
         self._line.t.sort('X')
 
@@ -729,8 +732,11 @@ class System(Spec1D, Line, Cont):
             yc = chunk['Y'][where_c]
             dyc = chunk['DY'][where_c]
             contc = chunk['CONT'][where_c]
-            modelc = chunk['MODEL'][where_c]
-            residc = yc-modelc
+            try:
+                modelc = chunk['MODEL'][where_c]
+                residc = yc-modelc
+            except:
+                pass
             xc_z = xc / dict_wave[i] - 1
             
             ax[c].set_xlim(zmin, zmax)
@@ -752,8 +758,11 @@ class System(Spec1D, Line, Cont):
             #ax[c].plot(x_z, self._conv.y, color='C2', linestyle=':')
             ax[c].plot(xc_z, yc, color='C0')
             ax[c].plot(xc_z, contc, color='C6')
-            ax[c].plot(xc_z, modelc, color='C1')
-            ax[c].plot(xc_z, residc, color='C3', linestyle=':')
+            try:
+                ax[c].plot(xc_z, modelc, color='C1')
+                ax[c].plot(xc_z, residc, color='C3', linestyle=':')
+            except:
+                pass
             ax[c].plot(xc_z, dyc, color='C3')
             ax[c].plot(xc_z, -dyc, color='C3')
             #print group

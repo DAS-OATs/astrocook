@@ -51,6 +51,12 @@ class Recipe():
             self.modes = [None, None, None]
             self.defaults = {}
 
+        if name == 'syst_fit':
+            self.objs = ['syst']
+            self.procs = ['fit']
+            self.modes = [None]
+            self.defaults = {}
+            
         """
         if name == 'syst_def':
             self.params = {'forest': 'Ly',
@@ -122,4 +128,10 @@ class Recipe():
         self.syst = System(acs=out, series=kwargs['series'], z=line._z_match)
         return out
 
+    def syst_fit(self, **kwargs):
+        out = self.execute(**kwargs)
+        syst = out.syst
+        #self.syst = System(acs=out, series=kwargs['series'], z=line._z_match)
+        return out
+    
     

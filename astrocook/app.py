@@ -48,6 +48,8 @@ class MainFrame(wx.Frame):
         self.proc_dict = {}
         self.rec_dict = {}
 
+        self.syst_frame = None
+        
         self.count = 0
         
         self.init_UI(**kwargs)
@@ -117,7 +119,7 @@ class MainFrame(wx.Frame):
         self.line_gr.SetColLabelValue(3, "Y")
         self.line_gr.SetColLabelValue(4, "DY")
         self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_line)
-        self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_line_edit)
+        self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_line)
        
     def init_plot(self, panel):
         """ Create the Plot panel """
@@ -129,20 +131,20 @@ class MainFrame(wx.Frame):
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
-        self.plot_pb = wx.Button(panel, label="Plot", size=(100,38))
-        self.plot_cb = wx.Button(panel, label="Clear", size=(100,38))
+        #self.plot_pb = wx.Button(panel, label="Plot", size=(100,38))
+        #self.plot_cb = wx.Button(panel, label="Clear", size=(100,38))
         #self.plot_pb.Bind(wx.EVT_BUTTON,
         #                  lambda e: self.on_plot_draw(e, self.spec))
-        self.plot_pb.Bind(wx.EVT_BUTTON, self.on_plot_draw)
-        self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
+        #self.plot_pb.Bind(wx.EVT_BUTTON, self.on_plot_draw)
+        #self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
         
     def init_spec(self, panel):
         """ Create the Spectra panel """
 
         self.spec_lc = EditableListCtrl(panel, -1, style=wx.LC_REPORT)
-        self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_spec_begin_edit)
-        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_spec_end_edit)
-        self.spec_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_spec_select)
+        self.spec_lc.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_edit_spec_begin)
+        self.spec_lc.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_edit_spec_end)
+        self.spec_lc.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_sel_spec)
         self.spec_lc.InsertColumn(0, 'target', width=150)
         self.spec_lc.InsertColumn(1, 'object', width=150)
         self.spec_lc.InsertColumn(2, 'redshift', width=150)
@@ -165,7 +167,7 @@ class MainFrame(wx.Frame):
         self.syst_gr.SetColLabelValue(7, "DB")
         self.syst_gr.SetColLabelValue(8, "DBTUR")
         self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_syst)
-        self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_syst_edit)
+        self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_syst)
         #self.syst_gr.Bind(gridlib.EVT_BUTTON, self.on_syst_menu)
         
     def init_UI(self, **kwargs):
@@ -199,13 +201,13 @@ class MainFrame(wx.Frame):
         box_syst.Add(wx.StaticText(panel, label="Systems"))
         box_syst.Add(self.syst_gr, 1, wx.EXPAND)
 
-        # Plot control panel
+        # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
         box_ctrl.Add(self.plot_tb, 1, wx.RIGHT, border=5)
-        box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
-        box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
+        #box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
+        #box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
 
-        # Plot panel (includinc controls)
+        # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
         box_plot.Add(box_ctrl, 0, wx.TOP, self.pad)
@@ -220,7 +222,7 @@ class MainFrame(wx.Frame):
         box_list.Add(box_spec, 0, wx.EXPAND|wx.BOTTOM, self.pad)
         box_list.Add(box_table, 1, wx.EXPAND)
 
-        # Main panel (Lists + Plot)
+        # Main panel (Lists + plot)
         box_main = wx.GridSizer(2, 1, 0, 0)
         box_main.Add(box_list, 1, wx.EXPAND|wx.ALL, self.pad)
         box_main.Add(box_plot, 1, wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,
@@ -310,11 +312,14 @@ class MainFrame(wx.Frame):
                                     rec_descr['line_cont']+"...")
         rec_syst_find = wx.MenuItem(self.rec_menu, 24,
                                     rec_descr['syst_find']+"...")
+        rec_syst_fit = wx.MenuItem(self.rec_menu, 25,
+                                   rec_descr['syst_fit']+"...")
 
         self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_rec_line_cont, rec_line_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_syst_find, rec_syst_find)
+        self.Bind(wx.EVT_MENU, self.on_rec_syst_fit, rec_syst_fit)
         
         self.rec_menu.Append(rec_spec_cont)
         self.rec_menu.Append(rec_line_find)
@@ -322,33 +327,21 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_line_cont)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
+        self.rec_menu.Append(rec_syst_fit)
         
         """
         rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
                                     "Find Continuum by Smoothing the "
                                     "Flux Maxima...")
-        rec_syst_find = wx.MenuItem(self.rec_menu, self.id_cont,
-                                    "Find &Systems...")
         rec_syst_def = wx.MenuItem(self.rec_menu, self.id_cont+1,
                                     "&Define System...")
         rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst_sel,
                                    "&Fit Selected System...")
-        #self.Bind(wx.EVT_MENU, self.on_spec_extract, rec_spec_extract)
-        self.Bind(wx.EVT_MENU, self.on_line_find, rec_line_find)
-        self.Bind(wx.EVT_MENU, self.on_cont_line_rem, rec_cont_line_rem)
         self.Bind(wx.EVT_MENU, self.on_cont_max_smooth, rec_cont_max_smooth)
-        self.Bind(wx.EVT_MENU, self.on_syst_find, rec_syst_find)
         self.Bind(wx.EVT_MENU, self.on_syst_def, rec_syst_def)
         self.Bind(wx.EVT_MENU, self.on_syst_fit, rec_syst_fit)
         
-        self.rec_menu.Append(rec_spec_extract)
-        self.rec_menu.AppendSeparator()
-        self.rec_menu.Append(rec_line_find)
-        self.rec_menu.AppendSeparator()
-        self.rec_menu.Append(rec_cont_line_rem)
         self.rec_menu.Append(rec_cont_max_smooth)
-        self.rec_menu.AppendSeparator()
-        self.rec_menu.Append(rec_syst_find)
         self.rec_menu.Append(rec_syst_def)
         self.rec_menu.Append(rec_syst_fit)
         """
@@ -361,12 +354,17 @@ class MainFrame(wx.Frame):
 
         util_mask_to_spec = wx.MenuItem(self.proc_menu, 41,
                                         util_descr['mask_to_spec']+"...")
-        util_log_view = wx.MenuItem(self.proc_menu, 42, "View log")
+        util_syst_open = wx.MenuItem(self.proc_menu, 42,
+                                     "View selected system...")
+        util_log_view = wx.MenuItem(self.proc_menu, 43, "View log")
 
         self.Bind(wx.EVT_MENU, self.on_util_mask_to_spec, util_mask_to_spec)
+        self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
         self.util_menu.Append(util_mask_to_spec)
+        self.util_menu.AppendSeparator()
+        self.util_menu.Append(util_syst_open)
         self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
 
@@ -411,162 +409,40 @@ class MainFrame(wx.Frame):
         bck.write(self.targ)
         bck.close()
 
-    def on_proc_line_mask(self, event):
-        proc = 'mask'
-        self.mask = getattr(self.line, proc)()
-        self.plot.spec(self.mask.t, replace=False, c='C3', c_other='C4')
-        #self.plot.spec(self.spec.t, replace=False, c='C5', c_other='C4')
-        self.plot_fig.draw()
-
-    def on_proc_spec_convolve(self, event):
-        proc = 'convolve'
-        out = self.dialog_proc(self.spec, proc)
-        if self.proc_dict[proc]:
-            self.spec = out
-            self.targ = self.targ + '_' + proc
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-            self.spec_dict[self.targ] = self.spec
-            self.update_spec()
-
-    def on_proc_spec_extract_forest(self, event):
-        proc = 'extract_forest'
-        out = self.dialog_proc(self.spec, proc)
-        if self.proc_dict[proc]:
-            self.spec = out
-            self.targ = self.targ + '_' + self.params['ion']
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-            self.spec_dict[self.targ] = self.spec
-            self.update_spec()
+    def on_edit_line(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        label = self.line_gr.GetColLabelValue(col)
+        data = self.line_gr.GetCellValue(row, col)
+        self.line._t[label][row] = data
         
-    def on_proc_spec_extract_reg(self, event):
-        proc = 'extract_reg'
-        out = self.dialog_proc(self.spec, proc)
-        if self.proc_dict[proc]:
-            self.spec = out
-            self.targ = self.targ + '_%3.0f-%3.0f' \
-                        % (self.params['xmin'], self.params['xmax'])
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-            self.spec_dict[self.targ] = self.spec
-            self.update_all()
+    def on_edit_spec_begin(self, event):
+        """ Veto the editing of some columns of the spectrum list """
+        if event.GetColumn() in [0,3,4,5]:
+            event.Veto()
+        else:
+            event.Skip()
 
-    def on_proc_spec_select_extrema(self, event):
-        proc = 'select_extrema'
-        self.dialog_proc(self.spec, proc)
-        if self.proc_dict[proc]:
-            self.plot.line(self.spec._exts_sel, c='g')
-            self.plot_fig.draw()
-            
-    def on_proc_spec_smooth_lowess(self, event):
-        proc = 'smooth_lowess'
-        out = self.dialog_proc(self.spec, proc)
-        if self.proc_dict[proc]:
-            self.spec = out
-            self.targ = self.targ + '_' + proc
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-            self.spec_dict[self.targ] = self.spec
-            self.update_spec()
-
-    def on_rec_line_find(self, event):
-        rec = 'line_find'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.line = self.rec.line
-            self.line_dict[self.targ] = self.line
-            self.line_num = len(self.line.t)
-            self.update_line()
-            self.update_acs()
-            
-    def on_rec_line_cont(self, event):
-        rec = 'line_cont'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.cont = self.rec.cont
-            self.cont_dict[self.targ] = self.cont
-            self.plot.cont(self.cont.t)
-            self.plot_fig.draw()
-
-    def on_rec_spec_cont(self, event):
-        rec = 'spec_cont'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.cont = self.rec.cont
-            self.cont_dict[self.targ] = self.cont
-            self.plot.cont(self.cont.t)
-            self.plot_fig.draw()
-
-    def on_rec_syst_find(self, event):
-        rec = 'syst_find'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.syst = self.rec.syst
-            self.syst_dict[self.targ] = self.syst
-            self.syst_num = len(self.syst.t)
-            self.update_syst()
-
-    def on_sel_line(self, event):
-        if event.GetTopRow() == event.GetBottomRow():            
-            row = event.GetTopRow()
-            rows = [row]
-            self.plot.sel(self.line, rows, extra_width=3.0)
-            self.plot_fig.draw()
-            
-    def on_sel_syst(self, event):
-        if event.GetTopRow() == event.GetBottomRow():  
-            row = event.GetTopRow()
-            z = self.syst.t['Z'][row]
-            map_w = np.where(z==self.syst._map['Z'])[0]
-            rows = []
-            for m in self.syst._map[map_w]:
-                rows.append(np.where(m['X']==self.line.t['X'])[0][0])
-            self.plot.sel(self.line, rows, extra_width=0)
-            self.plot_fig.draw()
-            
-    def on_util_mask_to_spec(self, event):
-        self.spec = self.mask
-        self.targ = self.targ + '_mask'
-        self.row = self.spec_lc.GetItemCount()
-        self.spec_lc.insert_string_item(self.row, self.targ)
-        self.spec_dict[self.targ] = self.spec
-        self.update_spec()
-            
-    def on_util_log_view(self, event):
-        dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
-        dialog.ShowModal()
-
-    def on_info_about_view(self, event):
-        dialog = wx.MessageDialog(
-            None,
-            "ASTROCOOK: a thousand recipes to cook a spectrum!\n\n"
-            "2018 - G. Cupani, G. Calderone, S. Cristiani\n"
-            "INAF-Astronomical Observatory of Trieste, Italy",
-            'About',wx.OK)
-        dialog.ShowModal()        
+    def on_edit_spec_end(self, event):
+        """ Behaviour when spectrum is edited on list """
         
-    def on_cont_line_rem(self, event):
-        """ Behaviour for Recipes > Find Continuum by Removing Lines """
+        index = self.spec_lc.GetFocusedItem()
+        row = event.GetIndex()
+        col = event.GetColumn()
+        data = event.GetLabel()
+        self.spec_lc.SetItem(row, col, data)
+        try:
+            self.z_dict[self.targ] = self.spec_lc.GetItem(index, 2).GetText()
+        except:
+            pass
         
-        self.cont = Cont(self.spec, self.line)
-        run = self.recipe_dialog(self.cont, "cont_line_rem")
-        if run:
-            self.cont_dict[self.targ] = self.cont
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)    
-            
-    def on_cont_max_smooth(self, event):
-        """ Behaviour for Recipes > Find Continuum by Smoothing the Flux 
-        Maxima """
+    def on_edit_syst(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        label = self.syst_gr.GetColLabelValue(col)
+        data = self.syst_gr.GetCellValue(row, col)
+        self.syst._t[label][row] = data
 
-        self.cont = Cont(self.spec, self.line)
-        run = self.recipe_dialog(self.cont, 'cont_max_smooth')
-        if run:
-            self.cont_dict[self.targ] = self.cont
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)
-            
     def on_file_open(self, event, path='.', targ=None):
         """ Behaviour for File > Open """
 
@@ -671,7 +547,6 @@ class MainFrame(wx.Frame):
             self.update_syst()
             self.on_backup_write(None)
                 
-
     def on_file_save(self, event, path='.'):
         """ Behaviour for File > Save """
 
@@ -695,112 +570,208 @@ class MainFrame(wx.Frame):
             except IOError:
                 wx.LogError("Cannot save session '%s'." % name)
 
-    def on_line_edit(self, event):
-        row = event.GetRow()
-        col = event.GetCol()
-        label = self.line_gr.GetColLabelValue(col)
-        data = self.line_gr.GetCellValue(row, col)
-        self.line._t[label][row] = data
+    def on_info_about_view(self, event):
+        dialog = wx.MessageDialog(
+            None,
+            "ASTROCOOK: a thousand recipes to cook a spectrum!\n\n"
+            "2018 - G. Cupani, G. Calderone, S. Cristiani\n"
+            "INAF-Astronomical Observatory of Trieste, Italy",
+            'About',wx.OK)
+        dialog.ShowModal()        
         
-    def on_line_find(self, event):
-        """ Behaviour for Recipes > Find Lines """
+    def on_proc_line_mask(self, event):
+        proc = 'mask'
+        self.mask = getattr(self.line, proc)()
+        self.plot.spec(self.mask.t, replace=False, c='C3', c_other='C4')
+        #self.plot.spec(self.spec.t, replace=False, c='C5', c_other='C4')
+        self.plot_fig.draw()
 
-        self.line = Line(self.spec)
-        run = self.method_dialog(self.line, "find_special")
-        if run:            
-            self.line_num = len(self.line.t)
+    def on_proc_spec_convolve(self, event):
+        proc = 'convolve'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
             self.update_spec()
-            self.update_line()
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_line)
+
+    def on_proc_spec_extract_forest(self, event):
+        proc = 'extract_forest'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + self.params['ion']
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
+        
+    def on_proc_spec_extract_reg(self, event):
+        proc = 'extract_reg'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_%3.0f-%3.0f' \
+                        % (self.params['xmin'], self.params['xmax'])
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_all()
+
+    def on_proc_spec_select_extrema(self, event):
+        proc = 'select_extrema'
+        self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.plot.line(self.spec._exts_sel, c='g')
+            self.plot_fig.draw()
+            
+    def on_proc_spec_smooth_lowess(self, event):
+        proc = 'smooth_lowess'
+        out = self.dialog_proc(self.spec, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
 
     """
-    def on_line_select(self, event):
-        
-        if event.GetTopRow() == event.GetBottomRow():            
-            sel = event.GetTopRow()
-            try:
-                self.line_focus.remove()
-            except:
-                pass
-
-            # Move to line.py
-            x = self.line.x[sel]
-            y = self.line.y[sel]
-            xmin = self.line.xmin[sel]
-            xmax = self.line.xmax[sel]
-            #self.line_focus, = self.ax.plot(x, y, c='C0', marker='o', ms=20,
-            #                                alpha=0.2)
-            self.update_plot(xmin.value-0.3, xmax.value+0.3)
-            self.ax.axvline(x=x.value, color='C3', alpha=0.5)
-            self.ax.axvline(x=xmin.value, color='C3', alpha=0.5, linestyle=':')
-            self.ax.axvline(x=xmax.value, color='C3', alpha=0.5, linestyle=':')
-            self.plot_fig.draw()
-    """        
     def on_plot_clear(self, event):
         self.ax.clear()
         self.plot_fig.draw()
 
-    #def on_plot_draw(self, event, obj):
     def on_plot_draw(self, event, xmin=None, xmax=None):
         if xmin == None:
             xmin = self.xmin
         if xmax == None:
             xmax = self.xmax
-        """
-        self.spec = self.spec_dict[self.targ]
-        self.spec.plot(ax=self.ax)
-        try:
-            self.line.plot_new(ax=self.ax)
-        except:
-            pass
-        try:
-            self.ax.plot(self.cont.t['X'], self.cont.t['Y'])
-        except:
-            pass
-        try:
-            self.syst = self.syst_dict[self.targ]
-        except:
-            pass
-	"""
         self.plot.spec(self.spec.t)
         self.ax.set_xlim(xmin, xmax)
         self.plot_fig.draw()
-        
+    """
     def on_quit(self, event):
-        """ Behaviour for File > Quit """
-        
         self.Close()
 
-    def on_spec_begin_edit(self, event):
-        """ Veto the editing of some columns of the spectrum list """
-        if event.GetColumn() in [0,3,4,5]:
-            event.Veto()
-        else:
-            event.Skip()
+    def on_rec_line_find(self, event):
+        rec = 'line_find'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.line = self.rec.line
+            self.line_dict[self.targ] = self.line
+            self.line_num = len(self.line.t)
+            self.update_line()
+            self.update_acs()
+            
+    def on_rec_line_cont(self, event):
+        rec = 'line_cont'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.cont = self.rec.cont
+            self.cont_dict[self.targ] = self.cont
+            self.plot.cont(self.cont.t)
+            self.plot_fig.draw()
 
-    def on_spec_end_edit(self, event):
-        """ Behaviour when spectrum is edited on list """
+    def on_rec_spec_cont(self, event):
+        rec = 'spec_cont'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.cont = self.rec.cont
+            self.cont_dict[self.targ] = self.cont
+            self.plot.cont(self.cont.t)
+            self.plot_fig.draw()
+
+    def on_rec_syst_find(self, event):
+        rec = 'syst_find'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.syst = self.rec.syst
+            self.syst_dict[self.targ] = self.syst
+            self.syst_num = len(self.syst.t)
+            self.update_syst()
+
+    def on_rec_syst_fit(self, event):
+        self.syst._z_sel = self.z_sel
+        rec = 'syst_fit'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:
+            self.syst = run.syst
+            new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
+            self.z_sel = self.syst._t['Z'][new_z]
+            self.ax.plot(self.syst._chunk['X'],
+                         self.syst._chunk['MODEL'])
+            self.plot_fig.draw()
+
+            self.update_syst()
+            if self.syst_frame == None:
+                self.syst_frame = SystFrame(self, title="Selected system")
+            self.syst_frame.Show()
+
+    def on_sel_line(self, event):
+        if event.GetTopRow() == event.GetBottomRow():            
+            row = event.GetTopRow()
+            rows = [row]
+            self.plot.sel(self.line, rows, extra_width=3.0)
+            self.plot_fig.draw()
+            
+    def on_sel_spec(self, event):
+        item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
+        self.targ = item.GetText()
+        self.row = event.GetIndex()
+        self.spec = self.spec_dict[self.targ]
+        self.ax.clear()
+        self.plot = Plot(self.ax)
+        self.update_all()
+        self.on_backup_write(None)
+
+    def on_sel_syst(self, event):
+        if event.GetTopRow() == event.GetBottomRow():  
+            row = event.GetTopRow()
+            self.z_sel = self.syst.t['Z'][row]
+            map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
+            rows = []
+            for m in self.syst._map[map_w]:
+                rows.append(np.where(m['X']==self.line.t['X'])[0][0])
+            self.plot.sel(self.line, rows, extra_width=0)
+            self.plot_fig.draw()
+
+            # On selection, define group and chunks for the system
+            self.syst.group(self.z_sel)
+            self.syst.chunk(self.z_sel)
+            
+    def on_util_log_view(self, event):
+        dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
+        dialog.ShowModal()
+
+    def on_util_mask_to_spec(self, event):
+        self.spec = self.mask
+        self.targ = self.targ + '_mask'
+        self.row = self.spec_lc.GetItemCount()
+        self.spec_lc.insert_string_item(self.row, self.targ)
+        self.spec_dict[self.targ] = self.spec
+        self.update_spec()
+            
+    def on_util_syst_open(self, event):
+        if self.syst_frame == None:
+            self.syst_frame = SystFrame(self, title="Selected system")
+        self.syst_frame.Show()
+
         
-        index = self.spec_lc.GetFocusedItem()
-        row = event.GetIndex()
-        col = event.GetColumn()
-        data = event.GetLabel()
-        self.spec_lc.SetItem(row, col, data)
-        try:
-            self.z_dict[self.targ] = self.spec_lc.GetItem(index, 2).GetText()
-        except:
-            pass
-        
+    """
+    def on_cont_max_smooth(self, event):
+        self.cont = Cont(self.spec, self.line)
+        run = self.recipe_dialog(self.cont, 'cont_max_smooth')
+        if run:
+            self.cont_dict[self.targ] = self.cont
+            self.update_plot()
+            self.menu_enable(self.rec_menu, self.id_cont)
+    """        
+
+    """
     def on_spec_extract(self, event):
-        """ Behavior for Recipes > Extract Spectral Region """
 
-        #"""
-        try:
-            z = self.z_dict[self.targ]
-        except:
-            z = 0.0
-        #"""
         self.rec = Recipe(self.spec, 'spec_extract')
         dialog = ParamDialog(self, title="Extract Spectral Region")
         dialog.ShowModal()
@@ -832,21 +803,9 @@ class MainFrame(wx.Frame):
             #self.update_line()
             #self.update_syst()
             #self.update_plot()
-        #"""
-        
-    def on_spec_select(self, event):
-        """ Behaviour when spectrum is selected from list """
-
-        item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
-        self.targ = item.GetText()
-        self.row = event.GetIndex()
-        self.spec = self.spec_dict[self.targ]
-        self.ax.clear()
-        self.update_all()
-        self.on_backup_write(None)
-
+    """
+    """ 
     def on_syst_def(self, event):
-        """ Behaviour for Systems > Define System """
         self.params = od([('series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
                           ('b', '20')])
         dialog = ParamDialog(self, title="Define System")
@@ -874,17 +833,9 @@ class MainFrame(wx.Frame):
             self.update_spec()
             self.update_line()
             self.update_syst()
-
-    def on_syst_edit(self, event):
-        row = event.GetRow()
-        col = event.GetCol()
-        label = self.syst_gr.GetColLabelValue(col)
-        data = self.syst_gr.GetCellValue(row, col)
-        self.syst._t[label][row] = data
-        
+    """
+    """    
     def on_syst_find(self, event):
-        """ Behaviour for Recipes > Find Systems """
-
         syst = System(self.spec, self.line, self.cont)
         run = self.recipe_dialog(syst, "syst_find")
         if run:
@@ -895,7 +846,7 @@ class MainFrame(wx.Frame):
             self.syst_dict[self.targ] = self.syst
             self.update_spec()
             self.update_syst()
-            
+    """        
     def on_syst_fit(self, event):
         self.syst = self.syst_dict[self.targ]
         
@@ -916,9 +867,9 @@ class MainFrame(wx.Frame):
             dialog.Close()
         dialog.Destroy()
         self.update_syst()
-            
+
+    """
     def on_syst_select(self, event):
-        """ Behaviour for system selection """        
         if event.GetTopRow() == event.GetBottomRow():  
             sel = event.GetTopRow()
             try:
@@ -936,17 +887,9 @@ class MainFrame(wx.Frame):
             self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
             self.plot_fig.draw()
 
-            """
-            self.syst_sel, self.syst_idx = self.syst.extract(z)
-            self.syst_sel._group = self.syst._group
-            self.syst_sel._group_t = self.syst._group_t
-            self.syst_sel._group_map = self.syst._group_map
-            self.syst_sel._map = self.syst._map
-            self.syst_sel.model(z, dx)            
-            """
             self.menu_enable(self.rec_menu, self.id_syst_sel)
             self.z_sel = z
-
+    """
             
     def update_acs(self):
         self.acs.spec = self.spec
@@ -1030,13 +973,12 @@ class MainFrame(wx.Frame):
         self.menu_disable(self.rec_menu, self.id_syst_sel)
                         
     
-            
+    """
     def update_plot(self, *kwargs):
-        """ Update the plot panel """
-
         self.on_plot_clear(None)
         self.on_plot_draw(None, *kwargs)
-
+    """
+    
     def update_spec(self):
         """ Update the spec list """
 
@@ -1069,7 +1011,6 @@ class MainFrame(wx.Frame):
         self.ax.clear()
         self.plot.spec(self.spec.t, xmin=self.xmin, xmax=self.xmax)
         self.plot_fig.draw()
-
         
     def update_syst(self):
         """ Update the system table """
@@ -1214,13 +1155,14 @@ class ParamDialog(wx.Dialog):
         self.Close()
 
                 
-class SystDialog(wx.Dialog):
+#class SystDialog(wx.Dialog):
+class SystFrame(wx.Frame):
 
     def __init__(self, parent=None, title="Parameters", **kwargs):
         """ Constructor for the ParamDialog class """
 
-        size = (wx.DisplaySize()[0]*0.5, wx.DisplaySize()[1]*0.7)
-        super(SystDialog, self).__init__(parent, title=title, size=size) 
+        size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)
+        super(wx.Frame, self).__init__(parent, title=title, size=size) 
 
         self.p = parent
         self.syst = self.p.syst#_sel
@@ -1237,6 +1179,7 @@ class SystDialog(wx.Dialog):
         self.ions = self.ions[np.where(self.ions != 'unknown')]
         self.init_UI()
 
+    
     def init_buttons(self, panel):
         self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
         self.line_b = wx.Button(panel, label="Add line", size=(100,38))
@@ -1305,60 +1248,61 @@ class SystDialog(wx.Dialog):
 
         #self.focus_gr = self.init_tab(panel)
         self.add_gr = self.init_tab(panel)
-        self.init_buttons(panel)
+        #self.init_buttons(panel)
         #self.add_gr.SetColLabelSize(0)
         self.init_plot(panel)
         #self.update_group()
 
         self.box_main = wx.BoxSizer(wx.VERTICAL)
 
+        # Table panel
         box_focus = wx.BoxSizer(wx.VERTICAL)
         #box_focus.Add(wx.StaticText(panel, label="Focus"))
         #box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
         box_focus.Add(self.add_gr, 1, wx.BOTTOM, border=10)
 
+        """
         box_button = wx.BoxSizer(wx.HORIZONTAL)
         box_button.Add(self.syst_b, 0, wx.RIGHT, border=5)
         box_button.Add(self.line_b, 0, wx.RIGHT, border=5)
+        """
 
+        # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
         box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
 
+        """
         box_add = wx.BoxSizer(wx.HORIZONTAL)
-        #box_add.Add(wx.StaticText(panel, label="Additional lines"))
-        #box_add.Add(self.add_gr, 1, wx.BOTTOM, border=10)
         box_add.Add(box_button)
         box_add.Add(box_ctrl)
-
+        """
+        # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
+        box_plot.Add(box_ctrl, 0, wx.TOP, 10)
 
+        # Display panel (table + plot)
         box_disp = wx.BoxSizer(wx.VERTICAL)
         box_disp.Add(box_focus)
-        box_disp.Add(box_add)
-        box_disp.Add(box_plot, 1, wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
-        #box_disp.Add(box_ctrl)
-
-
+        box_disp.Add(box_plot, 1, wx.EXPAND)
         panel.SetSizer(box_disp)
-        
+
+        """
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
         run_button = wx.Button(self, label='Run')
         run_button.SetDefault()
         buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
         buttons.Add(run_button, 0)
- 
+        """
+        # Main panel
         self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
-        self.box_main.Add(
-            buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+        #self.box_main.Add(
+        #    buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
         self.box_main.SetSizeHints(self)
 
         self.SetSizer(self.box_main)
         
-        cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
-        run_button.Bind(wx.EVT_BUTTON, self.on_run)
-
         self.update_tab()
         self.update_plot()
         
@@ -1375,7 +1319,6 @@ class SystDialog(wx.Dialog):
         self.Close()
 
     def on_tab_add(self, event, series=None):
-
 
         dx = 0.5
         
@@ -1467,7 +1410,7 @@ class SystDialog(wx.Dialog):
         #"""
         self.syst.model(self.z, dx)
         self.update_plot()
-        
+
     def update_plot(self):
         for p in range(self.pn):
             self.ax[p].clear()

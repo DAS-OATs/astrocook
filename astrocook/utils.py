@@ -22,6 +22,7 @@ rec_descr = {'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'spec_cont': "Estimate continuum by smoothing spectrum",
              'syst_find': "Find systems",
+             'syst_fit': "Fit selected system",
              }
 
 util_descr = {'mask_to_spec': "Create new spectrum from mask",
