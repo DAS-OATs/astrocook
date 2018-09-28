@@ -32,30 +32,35 @@ class Recipe():
             self.procs = ['convolve', 'find_extrema', 'select_extrema']
             self.modes = ['pass', None, None]
             self.defaults = {}
+            self.omits = {}
 
         if name == 'line_cont':
             self.objs = ['line', 'spec']
             self.procs = ['mask', 'smooth_lowess']
             self.modes = ['pass', 'pass']
             self.defaults = {}
+            self.omits = {}
 
         if name == 'spec_cont':
             self.objs = ['spec']
             self.procs = ['convolve']
             self.modes = ['pass']
             self.defaults = {'gauss_sigma': 1000}
+            self.omits = {}
                            
         if name == 'syst_find':
             self.objs = ['line', 'line', 'line']
             self.procs = ['create_z', 'match_z', 'map_z']
             self.modes = [None, None, None]
             self.defaults = {}
+            self.omits = {}
 
         if name == 'syst_fit':
             self.objs = ['syst']
             self.procs = ['fit']
             self.modes = [None]
             self.defaults = {}
+            self.omits = {'z'}
             
         """
         if name == 'syst_def':
@@ -86,11 +91,13 @@ class Recipe():
             obj = getattr(acs, o)
             method = getattr(obj, p)
             try:
+                ok
+            except:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(method)[0][1:]}
                 out = method(**param)
-            except:
-                out = method()
+            #except:
+            #    out = method()
             if m != None:
                 setattr(acs, o, out)
         return acs

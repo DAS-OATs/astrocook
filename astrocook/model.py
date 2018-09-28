@@ -36,10 +36,17 @@ def norm_step_func(x, xmin, xmax, norm):
     return ret
 
 def psf_func(x, c_min, c_max, center, resol):
+#def psf_func(x, c_min, c_max, c_tot, center, resol):
     sigma = center / resol * 4.246609001e-1
     psf = np.exp(-(0.5 * (x-center) / sigma)**2)
     psf[np.where(psf < 1e-4)] = 0.0
     ret = [np.array(psf)[c_min:c_max]]
+    """
+    psf_all = np.append(np.append(np.zeros(c_min),
+                                  np.array(psf)[c_min:c_max]),
+                        np.zeros(c_tot-c_max))
+    ret = [psf_all]
+    """
     return ret
     
 def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
@@ -369,10 +376,13 @@ class Model():
         
     def psf_new2(self, c_min, c_max, center, resol, vary=False, expr=None,
                  pref='psf'):
+#    def psf_new2(self, c_min, c_max, c_tot, center, resol, vary=False,
+#                 expr=None, pref='psf'):
         self._psf_fun = lmm(psf_func, prefix=pref+'_')
         self._psf_par = self._psf_fun.make_params()
         self._psf_par[pref+'_c_min'].set(c_min, vary=False)
         self._psf_par[pref+'_c_max'].set(c_max, vary=False)
+        #self._psf_par[pref+'_c_tot'].set(c_tot, vary=False)
         self._psf_par[pref+'_center'].set(center, vary=False)
         self._psf_par[pref+'_resol'].set(resol, vary=vary,
                                          min=resol/1.1, max=resol*1.1,

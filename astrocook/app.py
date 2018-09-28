@@ -95,6 +95,7 @@ class MainFrame(wx.Frame):
         self.procs = self.rec.procs
         self.descr = self.rec.descr
         self.defaults = self.rec.defaults
+        self.omits = self.rec.omits
         self.dialog_type = 'rec'
         dialog = ParamDialog(self)
         dialog.ShowModal()
@@ -263,19 +264,25 @@ class MainFrame(wx.Frame):
         # ecc.)
         self.proc_menu = wx.Menu()
         proc_spec_convolve = wx.MenuItem(
-            self.proc_menu, 11, proc_descr['convolve']+"...")
+            self.proc_menu, 100, proc_descr['convolve']+"...")
         proc_spec_smooth_lowess = wx.MenuItem(
-            self.proc_menu, 12, proc_descr['smooth_lowess']+"...")
+            self.proc_menu, 101, proc_descr['smooth_lowess']+"...")
         proc_spec_extract_forest = wx.MenuItem(
-            self.proc_menu, 13, proc_descr['extract_forest']+"...")
+            self.proc_menu, 102, proc_descr['extract_forest']+"...")
         proc_spec_extract_reg = wx.MenuItem(
-            self.proc_menu, 14, proc_descr['extract_reg']+"...")
+            self.proc_menu, 103, proc_descr['extract_reg']+"...")
         proc_spec_select_extrema = wx.MenuItem(
-            self.proc_menu, 15, proc_descr['select_extrema']+"...")
+            self.proc_menu, 104, proc_descr['select_extrema']+"...")
         proc_line_mask = wx.MenuItem(
-            self.proc_menu, 16, proc_descr['mask']+"...")
-        proc_mask_to_spec = wx.MenuItem(self.proc_menu, 17,
-                                        util_descr['mask_to_spec']+"...")
+            self.proc_menu, 110, proc_descr['mask']+"...")
+        proc_mask_to_spec = wx.MenuItem(
+            self.proc_menu, 111, proc_descr['mask_to_spec']+"...")
+        #proc_syst_group = wx.MenuItem(
+        #    self.proc_menu, 120, proc_descr['group']+"...")
+        proc_syst_model = wx.MenuItem(
+            self.proc_menu, 120, proc_descr['model']+"...")
+        proc_syst_fit = wx.MenuItem(
+            self.proc_menu, 121, proc_descr['fit']+"...")
         
         self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve, proc_spec_convolve)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
@@ -288,6 +295,9 @@ class MainFrame(wx.Frame):
                   proc_spec_select_extrema)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
         self.Bind(wx.EVT_MENU, self.on_proc_mask_to_spec, proc_mask_to_spec)
+        #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
+        self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
+        self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
         
         self.proc_menu.Append(proc_spec_convolve)
         self.proc_menu.Append(proc_spec_smooth_lowess)
@@ -296,8 +306,12 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_spec_select_extrema)
         self.proc_menu.AppendSeparator()
         self.proc_menu.Append(proc_line_mask)
-        self.proc_menu.Append(proc_mask_to_spec)
-        
+        self.proc_menu.Append(proc_mask_to_spec) 
+        self.proc_menu.AppendSeparator()
+        #self.proc_menu.Append(proc_syst_group)
+        self.proc_menu.Append(proc_syst_model)
+        self.proc_menu.Append(proc_syst_fit)
+       
         # Recipes menu
         self.rec_menu = wx.Menu()
 
@@ -309,14 +323,11 @@ class MainFrame(wx.Frame):
                                     rec_descr['line_cont']+"...")
         rec_syst_find = wx.MenuItem(self.rec_menu, 24,
                                     rec_descr['syst_find']+"...")
-        rec_syst_fit = wx.MenuItem(self.rec_menu, 25,
-                                   rec_descr['syst_fit']+"...")
 
         self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_rec_line_cont, rec_line_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_syst_find, rec_syst_find)
-        self.Bind(wx.EVT_MENU, self.on_rec_syst_fit, rec_syst_fit)
         
         self.rec_menu.Append(rec_spec_cont)
         self.rec_menu.Append(rec_line_find)
@@ -324,7 +335,6 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_line_cont)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
-        self.rec_menu.Append(rec_syst_fit)
         
         """
         rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
@@ -643,6 +653,59 @@ class MainFrame(wx.Frame):
             self.spec_dict[self.targ] = self.spec
             self.update_spec()
 
+    """
+    def on_proc_syst_group(self, event):
+        proc = 'group'
+        self.defaults = {'z': self.z_sel}
+        out = self.dialog_proc(self.syst, proc)
+        if self.proc_dict[proc]:
+            print "ciao"
+    """        
+
+    def on_proc_syst_fit(self, event):
+        self.syst._z_sel = self.z_sel
+        proc = 'fit'
+        self.dialog_proc(self.syst, proc)
+        if self.proc_dict[proc]:
+            new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
+            self.z_sel = self.syst._t['Z'][new_z]
+            print self.z_sel
+            #self.ax.plot(self.syst._chunk['X'],
+            #             self.syst._chunk['MODEL'])
+            #self.update_syst()
+            self.plot.model(self.syst._model)
+            self.plot_fig.draw()
+            if self.syst_frame == None:
+                self.syst_frame = SystFrame(self, title="Selected system")
+                self.syst_frame.Show()
+            else:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+            for p in range(self.syst_frame.pn):
+                self.syst_frame.plot[p].model(self.syst._model, replace=False,
+                                             cont=self.cont.t,
+                                             ion=self.syst_frame.ions[p])
+                self.syst_frame.plot_fig.draw()
+
+    def on_proc_syst_model(self, event):
+        self.syst._z_sel = self.z_sel
+        proc = 'model'
+        self.dialog_proc(self.syst, proc)
+        if self.proc_dict[proc]:
+            self.plot.model(self.syst._model)
+            self.plot_fig.draw()
+            if self.syst_frame == None:
+                self.syst_frame = SystFrame(self, title="Selected system")
+                self.syst_frame.Show()
+            else:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+            for p in range(self.syst_frame.pn):
+                self.syst_frame.plot[p].model(self.syst._model, replace=False,
+                                             cont=self.cont.t,
+                                             ion=self.syst_frame.ions[p])
+                self.syst_frame.plot_fig.draw()
+
     def on_quit(self, event):
         self.Close()
 
@@ -683,30 +746,6 @@ class MainFrame(wx.Frame):
             self.syst_num = len(self.syst.t)
             self.update_syst()
 
-    def on_rec_syst_fit(self, event):
-        self.acs.syst._z_sel = self.z_sel
-        rec = 'syst_fit'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:
-            self.syst = run.syst
-            new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
-            self.z_sel = self.syst._t['Z'][new_z]
-            #self.ax.plot(self.syst._chunk['X'],
-            #             self.syst._chunk['MODEL'])
-            #self.update_syst()
-            self.plot.fit(self.syst._model)
-            self.plot_fig.draw()
-            if self.syst_frame == None:
-                self.syst_frame = SystFrame(self, title="Selected system")
-                self.syst_frame.Show()
-            else:
-                self.syst_frame.z = self.z_sel
-                self.syst_frame.update_plot()
-            for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].fit(self.syst._model, replace=False,
-                                             cont=self.cont.t,
-                                             ion=self.syst_frame.ions[p])
-                self.syst_frame.plot_fig.draw()
 
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
@@ -731,6 +770,11 @@ class MainFrame(wx.Frame):
             row = event.GetTopRow()
             self.z_sel = self.syst.t['Z'][row]
             map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
+
+            # On selection, define group and chunks for the system
+            self.syst.group(self.z_sel)
+            self.syst.chunk(self.z_sel)
+
             self.syst_rows = []
             for m in self.syst._map[map_w]:
                 self.syst_rows.append(np.where(m['X']==self.line.t['X'])[0][0])
@@ -740,9 +784,6 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
             
-            # On selection, define group and chunks for the system
-            self.syst.group(self.z_sel)
-            self.syst.chunk(self.z_sel)
             
     def on_util_log_view(self, event):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
@@ -764,94 +805,7 @@ class MainFrame(wx.Frame):
         #    self.syst_frame.update_plot()
 
         
-    """
-    def on_cont_max_smooth(self, event):
-        self.cont = Cont(self.spec, self.line)
-        run = self.recipe_dialog(self.cont, 'cont_max_smooth')
-        if run:
-            self.cont_dict[self.targ] = self.cont
-            self.update_plot()
-            self.menu_enable(self.rec_menu, self.id_cont)
-    """        
-
-    """
-    def on_spec_extract(self, event):
-
-        self.rec = Recipe(self.spec, 'spec_extract')
-        dialog = ParamDialog(self, title="Extract Spectral Region")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            if self.rec.params['forest'] == True:
-                params = {k: self.rec.params[k] for k in ['ion', 'zem',
-                                                        'prox_vel']}
-                forest = self.spec.extract_forest(**params)
-                self.targ = self.targ + '_' + params['ion']
-                self.z_dict[self.targ] = params['zem']
-            else:
-                params = {k: self.rec.params[k] for k in ['xmin', 'xmax']}
-                self.targ = self.targ + '_%3.0f-%3.0f' \
-                            % (params['xmin'], params['xmax'])
-                if float(params['zem']) != 0.0:
-                    self.z_dict[self.targ] = float(params['zem'])
-                forest = self.spec.extract_reg(**params)
-
-                
-            self.row = self.spec_lc.GetItemCount()
-            self.spec_lc.insert_string_item(self.row, self.targ)
-
-            self.spec = forest
-            self.spec_dict[self.targ] = self.spec
-            self.update_all()
-            self.log["spec_extract"] = dict(self.params)
-            #self.update_spec()
-            #self.update_line()
-            #self.update_syst()
-            #self.update_plot()
-    """
-    """ 
-    def on_syst_def(self, event):
-        self.params = od([('series', 'Ly'), ('z', '0.0'), ('N', '1e14'),
-                          ('b', '20')])
-        dialog = ParamDialog(self, title="Define System")
-        dialog.ShowModal()
-        dialog.Destroy()
-        if dialog.execute == True:
-            #vary = [bool(v) for v in self.params['vary']]
-            syst = System(self.spec, self.line, self.cont,
-                          series=self.params['series'], 
-                          z=self.params['z'], N=self.params['N'],
-                          b=self.params['b'])
-            dx = 0.5
-            syst.create_line(dx)
-
-            if self.syst != None:
-                self.syst.merge(syst)
-            else:
-                self.syst = syst
-            self.syst._line._t = vstack([self.line._t, syst._line._t])
-
-            self.line = self.syst._line#vstack([self.line._t, syst._line._t])
-            self.line_dict[self.targ] = self.line
-            self.syst_dict[self.targ] = self.syst
-            self.log["syst_def"] = dict(self.params)
-            self.update_spec()
-            self.update_line()
-            self.update_syst()
-    """
     """    
-    def on_syst_find(self, event):
-        syst = System(self.spec, self.line, self.cont)
-        run = self.recipe_dialog(syst, "syst_find")
-        if run:
-            if self.syst != None:
-                self.syst.merge(syst)
-            else:
-                self.syst = syst
-            self.syst_dict[self.targ] = self.syst
-            self.update_spec()
-            self.update_syst()
-    """        
     def on_syst_fit(self, event):
         self.syst = self.syst_dict[self.targ]
         
@@ -872,30 +826,8 @@ class MainFrame(wx.Frame):
             dialog.Close()
         dialog.Destroy()
         self.update_syst()
-
     """
-    def on_syst_select(self, event):
-        if event.GetTopRow() == event.GetBottomRow():  
-            sel = event.GetTopRow()
-            try:
-                self.syst_focus.remove()
-            except:
-                pass
-            z = self.syst.t['Z'][sel]
-            x = [(1 + z) * dict_wave[i].value \
-                 for i in dict_series[self.syst.t['SERIES'][sel]]]
-            dx = 0.5
-            h = np.max(self.spec.y)
-            if self.ax.get_xlim() != (self.xmin, self.xmax):
-                self.update_plot()
-            self.syst.model(z, norm=False, dx=dx)
-            self.syst_focus = self.ax.bar(x, h, dx, 0, color='C1', alpha=0.2)
-            self.plot_fig.draw()
-
-            self.menu_enable(self.rec_menu, self.id_syst_sel)
-            self.z_sel = z
-    """
-            
+    
     def update_acs(self):
         self.acs.spec = self.spec
         self.acs.line = self.line
@@ -1064,6 +996,9 @@ class ParamDialog(wx.Dialog):
                                         inspect.getargspec(method)[3])})
                 for d in self.p.defaults:
                     self.params[d] = self.p.defaults[d]
+                for o in self.p.omits:
+                    print o
+                    del self.params[o]
             # When the procedure has no parameters
             except:
                 pass  
@@ -1383,6 +1318,11 @@ class SystFrame(wx.Frame):
                               ion=self.ions[p])
             self.plot[p].sel(self.p.line, self.p.syst_rows, ion=self.ions[p],
                              extra_width=0.0)
+
+            self.plot[p].spec(self.p.syst._chunk, replace=False,
+                              cont=self.p.cont.t, ion=self.ions[p], lw=2.0)
+            self.plot[p].line(self.p.syst._group, cont=self.p.cont.t,
+                              ion=self.ions[p], marker="o")
             
         #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()

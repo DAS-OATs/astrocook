@@ -241,8 +241,8 @@ class System(Spec1D, Line, Cont):
     def chunk(self, z, dx=0.0, **kwargs):
         """ Extract the chunks of spectrum needed for fitting """
 
-        if (hasattr(self, '_group') == False or True):
-            self.group(z, dx, **kwargs)
+        #if (hasattr(self, '_group') == False or True):
+        #    self.group(z, dx, **kwargs)
 
         if (hasattr(self, '_chunk') == False or True):
             spec = dc(self._spec.t)
@@ -262,18 +262,47 @@ class System(Spec1D, Line, Cont):
                 where_temp = where_temp[:-1]
             where = np.append(where, where_temp)
         where = np.unique(where)
+
+        # Using extracted spectrum
+        """
         self._chunk = spec[where]
         self._chunk.sort('X')
-
-        # Table with indexes of the chunk limits
+        """
         imin = np.append(0, np.where(np.ediff1d(where)>1)[0]+1)
-        imax = np.append(np.where(np.ediff1d(where)>1)[0]+1, len(self._chunk))
+        imax = np.append(np.where(np.ediff1d(where)>1)[0]+1, len(where))
         imean = (imax+imin)//2
+
+        #"""
+        # Using masked spectrum
+        mask = np.array(spec.mask)
+        self._chunk = dc(spec)
+        self._chunk.mask['X'][:] = True
+        self._chunk.mask['X'][where] = False
+        len_mask = len(self._chunk) - len(self._chunk['X'].mask.nonzero()[0])
+
+        
+        # This trick is needed to make the out table an independent object and
+        # restore the original spectrum to unmasked state. Bug in Astropy?
+        self._chunk['X'] = self._chunk['X']*-1*-1
+        spec.mask = mask
+        #"""
+        """
+        nz = self._chunk['X'].mask.nonzero()[0]
+        print nz[880:910]
+        print nz[17630:17670]
+        imin = np.array([nz[np.where(np.ediff1d(nz)>1)[0][0]]+1,
+                         nz[np.where(np.ediff1d(nz)>1)[0][1]]+1])
+        imax = np.array([nz[np.where(np.ediff1d(nz)>1)[0][0]+1],
+                         nz[np.where(np.ediff1d(nz)>1)[0][1]+1]])
+        imean = (imax+imin)//2
+        #"""
+        #"""
         self._chunk_lim = Table()
         self._chunk_lim['MIN'] = Column(imin, dtype=int)
         self._chunk_lim['MAX'] = Column(imax, dtype=int)
         self._chunk_lim['MEAN'] = Column(imean, dtype=int)
-        
+        print imin, imax, imean
+        #"""
     def create_line(self, xmin=None, xmax=None, sigma=0.07):
         """ Create a list of lines from a list of systems """
 
@@ -436,18 +465,25 @@ class System(Spec1D, Line, Cont):
 
         if z is None:
             z = self._z_sel
-        print z
         
         z_old = self._map['Z']
         
         #if (hasattr(self, '_fun') == False):# or True):
         self.model(z, **kwargs)
 
+        chunk = dc(self._chunk)
+        chunk.remove_rows(self._chunk['X'].mask.nonzero()[0])
+        """
         x = self._chunk['X']
         y = self._chunk['Y']
         dy = self._chunk['DY']
         cont = self._chunk['CONT']
-
+        """
+        x = chunk['X']
+        y = chunk['Y']
+        dy = chunk['DY']
+        cont = chunk['CONT']
+        
         fun = self._fun
         par = self._par
         #par.pretty_print()
@@ -472,11 +508,11 @@ class System(Spec1D, Line, Cont):
             l['DB'] = par[pref+'_b'].stderr
             l['DBTUR'] = par[pref+'_btur'].stderr
         
-        self._chunk['MODEL'] = model
+        chunk['MODEL'] = model
 
         # Temporary
         self._model = dc(self._chunk)
-        self._model['Y'] = self._model['MODEL']
+        self._model['Y'][self._model['X'].mask == False] = chunk['MODEL']
 
         new_t = unique(self._group[self._t.colnames], keys='Z')
         new_map = self._group[self._map.colnames]
@@ -490,7 +526,8 @@ class System(Spec1D, Line, Cont):
         """ Extract the lines needed for fitting (both from systems and not)
         and setup the fitting parameters """
 
-        
+        if z is None:
+            z = self._z_sel        
         #if (hasattr(self, '_map') == False):
         #    self.create_line(dx, **kwargs)
 
@@ -590,17 +627,40 @@ class System(Spec1D, Line, Cont):
         except:
             pass
 
-    def model(self, z, norm=True, prof=True, psf=True, **kwargs):
+    def model(self, z=None, norm=True, prof=True, psf=True, **kwargs):
         """ Create a model to fit, including normalization, profile and PSF """
 
+        if (hasattr(self, '_group') == False  or True):
+            self.group(z, **kwargs)
         if (hasattr(self, '_chunk') == False  or True):
             self.chunk(z, **kwargs)
-            
+
+        # Extract non-masked lines and limits of the masked region
+        nz = self._chunk['X'].mask.nonzero()[0]
+        cs = np.append(0, np.cumsum(nz[np.where(np.ediff1d(nz)>1)[0]+1]\
+                                    -nz[np.where(np.ediff1d(nz)>1)[0]]-1))
+        imin = cs[:-1]
+        imax = cs[1:]
+        imean = (imax+imin)//2
+        chunk = dc(self._chunk)
+        chunk.remove_rows(self._chunk['X'].mask.nonzero()[0])
+        print imin, imax, imean
+        #chunk.sort('X')
+        #imin = np.append(0, np.where(np.ediff1d(where)>1)[0]+1)
+        #imax = np.append(np.where(np.ediff1d(where)>1)[0]+1, len(chunk))
+        #imean = (imax+imin)//2
+
+        """
         x = self._chunk['X']
         y = self._chunk['Y']
         dy = self._chunk['DY']
         cont = self._chunk['CONT']
-
+        """
+        x = chunk['X']
+        y = chunk['Y']
+        dy = chunk['DY']
+        cont = chunk['CONT']
+        #"""
         mods = Model(self._spec, syst=self)
 
         if (norm == True):
@@ -611,7 +671,6 @@ class System(Spec1D, Line, Cont):
             mods.norm_new(vary=[False])
             fun = mods._norm_fun
             par = mods._norm_par
-            
         if (prof == True):
             # The only available profile shape is Voigt
             for (i, l) in enumerate(self._group):
@@ -622,13 +681,17 @@ class System(Spec1D, Line, Cont):
                 par.update(mods._prof_par)
 
         if (psf == True):
-            for i, c in enumerate(self._chunk_lim):
-                c_min = c['MIN']
-                c_max = c['MAX']
-                c_mean = c['MEAN']
-                center = self._chunk['X'][c_mean]
-                resol = self._chunk['RESOL'][c_mean]
-                #print(center, resol)
+            #for i, c in enumerate(self._chunk_lim):
+            #    c_min = c['MIN']
+            #    c_max = c['MAX']
+            #    c_mean = c['MEAN']
+                #center = self._chunk['X'][c_mean]
+                #resol = self._chunk['RESOL'][c_mean]
+            for i, (c_min, c_max, c_mean) in enumerate(zip(imin, imax, imean)):
+                center = chunk['X'][c_mean]
+                resol = chunk['RESOL'][c_mean]
+                #"""
+            #print(center, resol)
                 mods.psf_new2(c_min, c_max, center, resol, vary=False,
                               pref='psf_'+str(i))
                 if i == 0:
@@ -639,15 +702,31 @@ class System(Spec1D, Line, Cont):
                     psf_par.update(mods._psf_par)
 
             #psf_y = np.concatenate(psf_fun.eval(psf_par, x=x))
+            #print len(psf_y), len(x)
+        #"""    
             fun = lmc(fun, psf_fun, conv)
             par.update(psf_par)
-
+        #"""
         model = fun.eval(par, x=x) * cont
-        
+        #model = fun.eval(par, x=chunk['X']) * cont
+
+        #"""
         try:
-            self._chunk.add_column(Column(model, name='MODEL', dtype=float))
+            #self._chunk.add_column(Column(model, name='MODEL', dtype=float))
+            chunk.add_column(Column(model, name='MODEL', dtype=float))
         except:
-            self._chunk['MODEL'] = model
+            #self._chunk['MODEL'] = model
+            chunk['MODEL'] = model            
+        #"""
+
+        # Temporary
+        """
+        self._model = dc(self._chunk)
+        self._model['Y'][self._model['X'].mask == False] = self._chunk['MODEL']
+        """
+        self._model = dc(self._chunk)
+        self._model['Y'][self._model['X'].mask == False] = chunk['MODEL']
+
         self._fun = fun
         self._par = par
 

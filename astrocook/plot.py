@@ -26,7 +26,7 @@ class Plot():
         
         # Lists of all previously plotted data, to clear them selectively
         self.cont_p = []
-        self.fit_p = []
+        self.model_p = []
         self.line_p = []
         self.spec_p = []
         self.sel_p = []
@@ -60,14 +60,14 @@ class Plot():
 
         return p
 
-    def fit(self, tab, replace=True, cont=None, ion=None, c='C4', lw=1.0,
+    def model(self, tab, replace=True, cont=None, ion=None, c='C4', lw=1.0,
             **kwargs):
         if replace:
-            self.clean('fit_p')
+            self.clean('model_p')
         
         (p, p_other) = self.spec(tab, replace=False, cont=cont, ion=ion,
                                  dy=False, c=c, lw=lw, **kwargs)
-        self.fit_p.append(p)
+        self.model_p.append(p)
 
         return p
         

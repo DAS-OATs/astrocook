@@ -12,21 +12,23 @@ from scipy.special import wofz
 proc_descr = {'convolve': "Convolve with a custom profile",
               'extract_forest': "Extract forest",
               'extract_reg': "Extract spectral region",
+              'fit': "Fit selected system",
               'mask': "Mask lines",
+              'mask_to_spec': "Create new spectrum from mask",
+              'model': "Model selected system",
               'select_extrema': "Select the most prominent extrema",
               'smooth_lowess': "Smooth with a LOWESS method",
-              }
+              #'group': "Find lines grouped with a system",
+}
 
 
 rec_descr = {'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'spec_cont': "Estimate continuum by smoothing spectrum",
              'syst_find': "Find systems",
-             'syst_fit': "Fit selected system",
+             
              }
 
-util_descr = {'mask_to_spec': "Create new spectrum from mask",
-              }
 
 
 
@@ -282,6 +284,7 @@ def conv(data, kernel):
         pad = np.ones(pad_l)
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
         conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
+        #conv = np.convolve(data_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
         ret = np.append(ret, conv)
     return ret
 
