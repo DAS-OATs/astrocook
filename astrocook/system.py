@@ -436,6 +436,7 @@ class System(Spec1D, Line, Cont):
 
         if z is None:
             z = self._z_sel
+        print z
         
         z_old = self._map['Z']
         
@@ -470,7 +471,13 @@ class System(Spec1D, Line, Cont):
             l['DN'] = par[pref+'_N'].stderr
             l['DB'] = par[pref+'_b'].stderr
             l['DBTUR'] = par[pref+'_btur'].stderr
+        
         self._chunk['MODEL'] = model
+
+        # Temporary
+        self._model = dc(self._chunk)
+        self._model['Y'] = self._model['MODEL']
+
         new_t = unique(self._group[self._t.colnames], keys='Z')
         new_map = self._group[self._map.colnames]
         new_line = self._group[self._line.t.colnames]

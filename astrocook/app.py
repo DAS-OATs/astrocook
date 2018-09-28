@@ -51,6 +51,7 @@ class MainFrame(wx.Frame):
         self.syst_frame = None
         
         self.count = 0
+        self.norm = False
         
         self.init_UI(**kwargs)
         self.IO = IO()
@@ -124,19 +125,13 @@ class MainFrame(wx.Frame):
     def init_plot(self, panel):
         """ Create the Plot panel """
         
-        self.fig = Figure()#figsize=(20,20))
+        self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
         self.fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
         self.plot = Plot(self.ax)
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
-        #self.plot_pb = wx.Button(panel, label="Plot", size=(100,38))
-        #self.plot_cb = wx.Button(panel, label="Clear", size=(100,38))
-        #self.plot_pb.Bind(wx.EVT_BUTTON,
-        #                  lambda e: self.on_plot_draw(e, self.spec))
-        #self.plot_pb.Bind(wx.EVT_BUTTON, self.on_plot_draw)
-        #self.plot_cb.Bind(wx.EVT_BUTTON, self.on_plot_clear)
         
     def init_spec(self, panel):
         """ Create the Spectra panel """
@@ -279,9 +274,10 @@ class MainFrame(wx.Frame):
             self.proc_menu, 15, proc_descr['select_extrema']+"...")
         proc_line_mask = wx.MenuItem(
             self.proc_menu, 16, proc_descr['mask']+"...")
+        proc_mask_to_spec = wx.MenuItem(self.proc_menu, 17,
+                                        util_descr['mask_to_spec']+"...")
         
-        self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve,
-                  proc_spec_convolve)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve, proc_spec_convolve)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
                   proc_spec_smooth_lowess)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_forest,
@@ -290,8 +286,8 @@ class MainFrame(wx.Frame):
                   proc_spec_extract_reg)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
                   proc_spec_select_extrema)
-        self.Bind(wx.EVT_MENU, self.on_proc_line_mask,
-                  proc_line_mask)
+        self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
+        self.Bind(wx.EVT_MENU, self.on_proc_mask_to_spec, proc_mask_to_spec)
         
         self.proc_menu.Append(proc_spec_convolve)
         self.proc_menu.Append(proc_spec_smooth_lowess)
@@ -300,6 +296,7 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_spec_select_extrema)
         self.proc_menu.AppendSeparator()
         self.proc_menu.Append(proc_line_mask)
+        self.proc_menu.Append(proc_mask_to_spec)
         
         # Recipes menu
         self.rec_menu = wx.Menu()
@@ -352,18 +349,17 @@ class MainFrame(wx.Frame):
         # Utilities menu
         self.util_menu = wx.Menu()
 
-        util_mask_to_spec = wx.MenuItem(self.proc_menu, 41,
-                                        util_descr['mask_to_spec']+"...")
-        util_syst_open = wx.MenuItem(self.proc_menu, 42,
+        util_plot_norm = wx.MenuItem(self.util_menu, 41,
+                                     "Toggle plot normalization...")
+        util_syst_open = wx.MenuItem(self.util_menu, 42,
                                      "View selected system...")
-        util_log_view = wx.MenuItem(self.proc_menu, 43, "View log")
+        util_log_view = wx.MenuItem(self.util_menu, 43, "View log")
 
-        self.Bind(wx.EVT_MENU, self.on_util_mask_to_spec, util_mask_to_spec)
+        self.Bind(wx.EVT_MENU, self.on_util_plot_norm, util_plot_norm)
         self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
-        self.util_menu.Append(util_mask_to_spec)
-        self.util_menu.AppendSeparator()
+        self.util_menu.Append(util_plot_norm)
         self.util_menu.Append(util_syst_open)
         self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
@@ -489,10 +485,11 @@ class MainFrame(wx.Frame):
             self.spec_name = acs.spec_name
 
         self.acs = acs
+        self.norm = False
     
         if self.spec != None:
-            self.ax.clear()
-            self.plot_fig.draw()
+            #self.ax.clear()
+            #self.plot_fig.draw()
             if self.targ in self.targ_list:
                 self.count = self.count + 1
                 self.targ = self.targ + '_%i' % self.count
@@ -586,6 +583,14 @@ class MainFrame(wx.Frame):
         #self.plot.spec(self.spec.t, replace=False, c='C5', c_other='C4')
         self.plot_fig.draw()
 
+    def on_proc_mask_to_spec(self, event):
+        self.spec = self.mask
+        self.targ = self.targ + '_mask'
+        self.row = self.spec_lc.GetItemCount()
+        self.spec_lc.insert_string_item(self.row, self.targ)
+        self.spec_dict[self.targ] = self.spec
+        self.update_spec()
+            
     def on_proc_spec_convolve(self, event):
         proc = 'convolve'
         out = self.dialog_proc(self.spec, proc)
@@ -638,20 +643,6 @@ class MainFrame(wx.Frame):
             self.spec_dict[self.targ] = self.spec
             self.update_spec()
 
-    """
-    def on_plot_clear(self, event):
-        self.ax.clear()
-        self.plot_fig.draw()
-
-    def on_plot_draw(self, event, xmin=None, xmax=None):
-        if xmin == None:
-            xmin = self.xmin
-        if xmax == None:
-            xmax = self.xmax
-        self.plot.spec(self.spec.t)
-        self.ax.set_xlim(xmin, xmax)
-        self.plot_fig.draw()
-    """
     def on_quit(self, event):
         self.Close()
 
@@ -693,35 +684,44 @@ class MainFrame(wx.Frame):
             self.update_syst()
 
     def on_rec_syst_fit(self, event):
-        self.syst._z_sel = self.z_sel
+        self.acs.syst._z_sel = self.z_sel
         rec = 'syst_fit'
         run = self.dialog_rec(self.acs, rec)
         if self.rec_dict[rec]:
             self.syst = run.syst
             new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
             self.z_sel = self.syst._t['Z'][new_z]
-            self.ax.plot(self.syst._chunk['X'],
-                         self.syst._chunk['MODEL'])
+            #self.ax.plot(self.syst._chunk['X'],
+            #             self.syst._chunk['MODEL'])
+            #self.update_syst()
+            self.plot.fit(self.syst._model)
             self.plot_fig.draw()
-
-            self.update_syst()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
-            self.syst_frame.Show()
+                self.syst_frame.Show()
+            else:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+            for p in range(self.syst_frame.pn):
+                self.syst_frame.plot[p].fit(self.syst._model, replace=False,
+                                             cont=self.cont.t,
+                                             ion=self.syst_frame.ions[p])
+                self.syst_frame.plot_fig.draw()
 
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
             row = event.GetTopRow()
-            rows = [row]
-            self.plot.sel(self.line, rows, extra_width=3.0)
+            self.line_rows = [row]
+            self.plot.sel(self.line, self.line_rows, extra_width=3.0)
             self.plot_fig.draw()
             
     def on_sel_spec(self, event):
         item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
+        self.norm = False
         self.targ = item.GetText()
         self.row = event.GetIndex()
         self.spec = self.spec_dict[self.targ]
-        self.ax.clear()
+        self.plot.clear()
         self.plot = Plot(self.ax)
         self.update_all()
         self.on_backup_write(None)
@@ -731,12 +731,15 @@ class MainFrame(wx.Frame):
             row = event.GetTopRow()
             self.z_sel = self.syst.t['Z'][row]
             map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
-            rows = []
+            self.syst_rows = []
             for m in self.syst._map[map_w]:
-                rows.append(np.where(m['X']==self.line.t['X'])[0][0])
-            self.plot.sel(self.line, rows, extra_width=0)
+                self.syst_rows.append(np.where(m['X']==self.line.t['X'])[0][0])
+            self.plot.sel(self.line, self.syst_rows, extra_width=0)
             self.plot_fig.draw()
-
+            if self.syst_frame != None:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+            
             # On selection, define group and chunks for the system
             self.syst.group(self.z_sel)
             self.syst.chunk(self.z_sel)
@@ -745,18 +748,20 @@ class MainFrame(wx.Frame):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
         dialog.ShowModal()
 
-    def on_util_mask_to_spec(self, event):
-        self.spec = self.mask
-        self.targ = self.targ + '_mask'
-        self.row = self.spec_lc.GetItemCount()
-        self.spec_lc.insert_string_item(self.row, self.targ)
-        self.spec_dict[self.targ] = self.spec
-        self.update_spec()
-            
+    def on_util_plot_norm(self, event):
+        self.norm = ~self.norm
+        if self.norm:
+            self.update_all(self.cont.t)
+        else:
+            self.update_all()
+
     def on_util_syst_open(self, event):
         if self.syst_frame == None:
             self.syst_frame = SystFrame(self, title="Selected system")
-        self.syst_frame.Show()
+            self.syst_frame.Show()
+        #else:
+        #    print "ciao"
+        #    self.syst_frame.update_plot()
 
         
     """
@@ -898,11 +903,11 @@ class MainFrame(wx.Frame):
         self.acs.cont = self.cont
        
 
-    def update_all(self):
+    def update_all(self, cont=None):
         """ Update all panels """
         
         self.spec = self.spec_dict[self.targ]
-        self.update_spec()
+        self.update_spec(cont)
         try:
             self.line = self.line_dict[self.targ]
         except:
@@ -917,18 +922,18 @@ class MainFrame(wx.Frame):
         except:
             self.syst = None
 
-        self.update_line()
-        self.update_cont()
+        self.update_line(cont)
+        self.update_cont(cont)
         self.update_menu()
 
-    def update_cont(self):
+    def update_cont(self, cont=None):
         try:
-            self.plot.cont(self.cont.t)
+            self.plot.cont(self.cont.t, cont=cont)
             self.plot_fig.draw()
         except:
             pass
         
-    def update_line(self):
+    def update_line(self, cont=None):
         """ Update the line table """
         
         try:
@@ -944,7 +949,7 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
             self.line_dict[self.targ] = self.line
-            self.plot.line(self.line.t, c='g')
+            self.plot.line(self.line.t, cont=cont, c='g')
             self.plot_fig.draw()
         except:
             pass
@@ -972,14 +977,7 @@ class MainFrame(wx.Frame):
 
         self.menu_disable(self.rec_menu, self.id_syst_sel)
                         
-    
-    """
-    def update_plot(self, *kwargs):
-        self.on_plot_clear(None)
-        self.on_plot_draw(None, *kwargs)
-    """
-    
-    def update_spec(self):
+    def update_spec(self, cont=None):
         """ Update the spec list """
 
         self.spec = self.spec_dict[self.targ]
@@ -1000,16 +998,12 @@ class MainFrame(wx.Frame):
             pass
             
         try:
-            self.ax.plot(self.cont.t['X'], self.cont.t['Y'])
-        except:
-            pass
-        try:
             self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
         except:
             pass
 
-        self.ax.clear()
-        self.plot.spec(self.spec.t, xmin=self.xmin, xmax=self.xmax)
+        self.plot.clear()
+        self.plot.spec(self.spec.t, cont=cont, xmin=self.xmin, xmax=self.xmax)
         self.plot_fig.draw()
         
     def update_syst(self):
@@ -1189,32 +1183,23 @@ class SystFrame(wx.Frame):
         
     def init_plot(self, panel):
         """ Create the spectrum panel """
-        self.fig = Figure()#figsize=(20,20))
-
-
-        
-        #sel = np.where(self.p.syst._t['Z'] == self.p.z_sel)[0]
-        
-        #ions = self.p.syst._t['SERIES'][sel][0] #self.p.syst._group['ION']
-        #waves = [dict_wave[i].value for i in ions]
-        #ions = ions[np.argsort(waves)]
+        self.fig = Figure()
         rown = 5.
         self.pn = len(self.ions)
         row = int(min(self.pn,rown))
         col = int(np.ceil(self.pn/rown))
-        #fig = plt.figure(figsize=(col*6, n*3.5))
         grid = gs(row,col)
+        self.fig.tight_layout(rect=[0, 0, 1, 1])
         self.ax = []
+        self.plot = []
         for p in range(self.pn):
             self.ax.append(self.fig.add_subplot(grid[int(p%rown),
                                                 int(np.floor(p/rown))]))
-        try:
-            self.fig.suptitle(r"$\chi_r^2$ = %3.1f" % self._fit.redchi)
-        except:
-            pass
-
-        #grid.update(wspace=0.2, hspace=0.0)
-        #grid.tight_layout(self.fig, rect=[0.01, 0.01, 1, 0.9], h_pad=0.0)
+            xlabel = ""
+            ylabel = ""
+            if p == 1:
+                xlabel = "Redshift" 
+            self.plot.append(Plot(self.ax[p], xlabel=xlabel, ylabel=ylabel))
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
@@ -1246,36 +1231,19 @@ class SystFrame(wx.Frame):
 
         panel = wx.Panel(self)
 
-        #self.focus_gr = self.init_tab(panel)
         self.add_gr = self.init_tab(panel)
-        #self.init_buttons(panel)
-        #self.add_gr.SetColLabelSize(0)
         self.init_plot(panel)
-        #self.update_group()
 
         self.box_main = wx.BoxSizer(wx.VERTICAL)
 
         # Table panel
         box_focus = wx.BoxSizer(wx.VERTICAL)
-        #box_focus.Add(wx.StaticText(panel, label="Focus"))
-        #box_focus.Add(self.focus_gr, 1, wx.BOTTOM, border=5)
         box_focus.Add(self.add_gr, 1, wx.BOTTOM, border=10)
-
-        """
-        box_button = wx.BoxSizer(wx.HORIZONTAL)
-        box_button.Add(self.syst_b, 0, wx.RIGHT, border=5)
-        box_button.Add(self.line_b, 0, wx.RIGHT, border=5)
-        """
 
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
         box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
 
-        """
-        box_add = wx.BoxSizer(wx.HORIZONTAL)
-        box_add.Add(box_button)
-        box_add.Add(box_ctrl)
-        """
         # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
         box_plot.Add(self.plot_fig, 1, wx.EXPAND)
@@ -1287,14 +1255,6 @@ class SystFrame(wx.Frame):
         box_disp.Add(box_plot, 1, wx.EXPAND)
         panel.SetSizer(box_disp)
 
-        """
-        buttons = wx.BoxSizer(wx.HORIZONTAL)
-        cancel_button = wx.Button(self, label='Cancel')
-        run_button = wx.Button(self, label='Run')
-        run_button.SetDefault()
-        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
-        buttons.Add(run_button, 0)
-        """
         # Main panel
         self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
         #self.box_main.Add(
@@ -1413,8 +1373,18 @@ class SystFrame(wx.Frame):
 
     def update_plot(self):
         for p in range(self.pn):
-            self.ax[p].clear()
-        self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
+            self.plot[p].clear()
+            self.plot[p].spec(self.p.spec.t, cont=self.p.cont.t,
+                              ion=self.ions[p], xmin=self.z/1.002,
+                              xmax=self.z*1.002)
+            self.plot[p].line(self.p.line.t, cont=self.p.cont.t,
+                              ion=self.ions[p])
+            self.plot[p].cont(self.p.cont.t, cont=self.p.cont.t,
+                              ion=self.ions[p])
+            self.plot[p].sel(self.p.line, self.p.syst_rows, ion=self.ions[p],
+                             extra_width=0.0)
+            
+        #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()
         
         
