@@ -26,7 +26,7 @@ class MainFrame(wx.Frame):
     def __init__(self, parent=None, title="Astrocook", **kwargs):
         """ Constructor for the Frame class """ 
 
-        size = (wx.DisplaySize()[0]*0.708, wx.DisplaySize()[1]*0.9)
+        size = (wx.DisplaySize()[0]*0.75, wx.DisplaySize()[1]*0.9)
         self.pad = 10
         super(MainFrame, self).__init__(parent, title=title, size=size)
         self.targ = None
@@ -114,12 +114,13 @@ class MainFrame(wx.Frame):
         """ Create the Lines panel """
 
         self.line_gr = gridlib.Grid(panel)
-        self.line_gr.CreateGrid(0, 5)
+        self.line_gr.CreateGrid(0, 6)
         self.line_gr.SetColLabelValue(0, "X")
         self.line_gr.SetColLabelValue(1, "XMIN")
         self.line_gr.SetColLabelValue(2, "XMAX")
         self.line_gr.SetColLabelValue(3, "Y")
         self.line_gr.SetColLabelValue(4, "DY")
+        self.line_gr.SetColLabelValue(5, "EW")
         self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_line)
         self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_line)
        
@@ -178,7 +179,7 @@ class MainFrame(wx.Frame):
         self.init_plot(panel)
 
         self.spec_lc.SetMaxSize((3000,120))
-        self.line_gr.SetMaxSize((502,3000))
+        self.line_gr.SetMaxSize((582,3000))
         self.syst_gr.SetMinSize((822,3000))
 
         
@@ -200,8 +201,6 @@ class MainFrame(wx.Frame):
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
         box_ctrl.Add(self.plot_tb, 1, wx.RIGHT, border=5)
-        #box_ctrl.Add(self.plot_pb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
-        #box_ctrl.Add(self.plot_cb, 0, wx.ALIGN_RIGHT|wx.RIGHT, border=5)
 
         # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
@@ -242,7 +241,7 @@ class MainFrame(wx.Frame):
         self.file_menu = wx.Menu()
         
         file_open = wx.MenuItem(self.file_menu, wx.ID_OPEN, "&Open\tCtrl+O")
-        file_save = wx.MenuItem(self.file_menu, self.id_spec, "&Save\tCtrl+S")
+        file_save = wx.MenuItem(self.file_menu, 01, "&Save\tCtrl+S")
         file_quit = wx.MenuItem(self.file_menu, wx.ID_EXIT, "&Quit\tCtrl+Q")
         self.Bind(wx.EVT_MENU, lambda e: self.on_file_open(e, **kwargs),
                   file_open)
@@ -273,16 +272,20 @@ class MainFrame(wx.Frame):
             self.proc_menu, 103, proc_descr['extract_reg']+"...")
         proc_spec_select_extrema = wx.MenuItem(
             self.proc_menu, 104, proc_descr['select_extrema']+"...")
+        proc_line_ew_all = wx.MenuItem(
+            self.proc_menu, 110, proc_descr['ew_all'])
         proc_line_mask = wx.MenuItem(
-            self.proc_menu, 110, proc_descr['mask']+"...")
+            self.proc_menu, 111, proc_descr['mask']+"...")
         proc_mask_to_spec = wx.MenuItem(
-            self.proc_menu, 111, proc_descr['mask_to_spec']+"...")
+            self.proc_menu, 112, proc_descr['mask_to_spec']+"...")
         #proc_syst_group = wx.MenuItem(
         #    self.proc_menu, 120, proc_descr['group']+"...")
+        proc_syst_N_all = wx.MenuItem(
+            self.proc_menu, 120, proc_descr['N_all'])
         proc_syst_model = wx.MenuItem(
-            self.proc_menu, 120, proc_descr['model']+"...")
+            self.proc_menu, 121, proc_descr['model']+"...")
         proc_syst_fit = wx.MenuItem(
-            self.proc_menu, 121, proc_descr['fit']+"...")
+            self.proc_menu, 122, proc_descr['fit']+"...")
         
         self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve, proc_spec_convolve)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
@@ -293,9 +296,11 @@ class MainFrame(wx.Frame):
                   proc_spec_extract_reg)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
                   proc_spec_select_extrema)
+        self.Bind(wx.EVT_MENU, self.on_proc_line_ew_all, proc_line_ew_all)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
         self.Bind(wx.EVT_MENU, self.on_proc_mask_to_spec, proc_mask_to_spec)
         #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
+        self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
         
@@ -305,10 +310,12 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_spec_extract_reg)
         self.proc_menu.Append(proc_spec_select_extrema)
         self.proc_menu.AppendSeparator()
+        self.proc_menu.Append(proc_line_ew_all)
         self.proc_menu.Append(proc_line_mask)
         self.proc_menu.Append(proc_mask_to_spec) 
         self.proc_menu.AppendSeparator()
         #self.proc_menu.Append(proc_syst_group)
+        self.proc_menu.Append(proc_syst_N_all)
         self.proc_menu.Append(proc_syst_model)
         self.proc_menu.Append(proc_syst_fit)
        
@@ -586,6 +593,12 @@ class MainFrame(wx.Frame):
             'About',wx.OK)
         dialog.ShowModal()        
         
+    def on_proc_line_ew_all(self, event):
+        proc = 'ew_all'
+        self.line._cont = self.cont
+        getattr(self.line, proc)()
+        self.update_line()
+
     def on_proc_line_mask(self, event):
         proc = 'mask'
         self.mask = getattr(self.line, proc)()
@@ -669,11 +682,11 @@ class MainFrame(wx.Frame):
         if self.proc_dict[proc]:
             new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
             self.z_sel = self.syst._t['Z'][new_z]
-            print self.z_sel
             #self.ax.plot(self.syst._chunk['X'],
             #             self.syst._chunk['MODEL'])
             #self.update_syst()
             self.plot.model(self.syst._model)
+            self.plot.model(self.syst._model_norm, replace=False)
             self.plot_fig.draw()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
@@ -682,9 +695,12 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model, replace=False,
-                                             cont=self.cont.t,
-                                             ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(
+                    self.syst._model, cont=self.cont.t,
+                    ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(
+                    self.syst._model_norm, replace=False, cont=self.cont.t,
+                    ion=self.syst_frame.ions[p])
                 self.syst_frame.plot_fig.draw()
 
     def on_proc_syst_model(self, event):
@@ -693,6 +709,7 @@ class MainFrame(wx.Frame):
         self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
             self.plot.model(self.syst._model)
+            self.plot.model(self.syst._model_norm, replace=False)
             self.plot_fig.draw()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
@@ -701,13 +718,30 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model, replace=False,
-                                             cont=self.cont.t,
-                                             ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(
+                    self.syst._model, cont=self.cont.t,
+                    ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(
+                    self.syst._model_norm, replace=False, cont=self.cont.t,
+                    ion=self.syst_frame.ions[p])
                 self.syst_frame.plot_fig.draw()
+
+    def on_proc_syst_N_all(self, event):
+        proc = 'N_all'
+        getattr(self.syst, proc)()
+        self.update_syst()
 
     def on_quit(self, event):
         self.Close()
+
+    def on_rec_line_cont(self, event):
+        rec = 'line_cont'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.cont = self.rec.cont
+            self.cont_dict[self.targ] = self.cont
+            self.plot.cont(self.cont.t)
+            self.plot_fig.draw()
 
     def on_rec_line_find(self, event):
         rec = 'line_find'
@@ -719,15 +753,6 @@ class MainFrame(wx.Frame):
             self.update_line()
             self.update_acs()
             
-    def on_rec_line_cont(self, event):
-        rec = 'line_cont'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.cont = self.rec.cont
-            self.cont_dict[self.targ] = self.cont
-            self.plot.cont(self.cont.t)
-            self.plot_fig.draw()
-
     def on_rec_spec_cont(self, event):
         rec = 'spec_cont'
         run = self.dialog_rec(self.acs, rec)
@@ -751,8 +776,11 @@ class MainFrame(wx.Frame):
         if event.GetTopRow() == event.GetBottomRow():            
             row = event.GetTopRow()
             self.line_rows = [row]
+            self.line_sel = self.line.t[row]
+            #self.line.ew(self.line_sel)
             self.plot.sel(self.line, self.line_rows, extra_width=3.0)
             self.plot_fig.draw()
+            #self.update_line()
             
     def on_sel_spec(self, event):
         item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
@@ -769,11 +797,13 @@ class MainFrame(wx.Frame):
         if event.GetTopRow() == event.GetBottomRow():  
             row = event.GetTopRow()
             self.z_sel = self.syst.t['Z'][row]
+            self.syst_sel = self.syst.t[row]
             map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
 
             # On selection, define group and chunks for the system
             self.syst.group(self.z_sel)
             self.syst.chunk(self.z_sel)
+            self.syst.N(self.syst_sel)
 
             self.syst_rows = []
             for m in self.syst._map[map_w]:
@@ -880,6 +910,7 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
                 self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
+                self.line_gr.SetCellValue(i, 5, "%3.3f" % l['EW'])
             self.line_dict[self.targ] = self.line
             self.plot.line(self.line.t, cont=cont, c='g')
             self.plot_fig.draw()
@@ -997,7 +1028,6 @@ class ParamDialog(wx.Dialog):
                 for d in self.p.defaults:
                     self.params[d] = self.p.defaults[d]
                 for o in self.p.omits:
-                    print o
                     del self.params[o]
             # When the procedure has no parameters
             except:

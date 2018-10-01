@@ -12,10 +12,12 @@ from scipy.special import wofz
 proc_descr = {'convolve': "Convolve with a custom profile",
               'extract_forest': "Extract forest",
               'extract_reg': "Extract spectral region",
+              'ew_all': "Estimate all equivalent widths",
               'fit': "Fit selected system",
               'mask': "Mask lines",
               'mask_to_spec': "Create new spectrum from mask",
               'model': "Model selected system",
+              'N_all': "Estimate all column densities",
               'select_extrema': "Select the most prominent extrema",
               'smooth_lowess': "Smooth with a LOWESS method",
               #'group': "Find lines grouped with a system",
@@ -24,9 +26,9 @@ proc_descr = {'convolve': "Convolve with a custom profile",
 
 rec_descr = {'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
+             'line_ew': "Estimate all equivalent widths",
              'spec_cont': "Estimate continuum by smoothing spectrum",
-             'syst_find': "Find systems",
-             
+             'syst_find': "Find systems",             
              }
 
 
@@ -42,7 +44,7 @@ bunit_def = u.km / u.s
 # Default values for Voigt parameters
 z_def = 0.0
 N_def = 1e14
-b_def = 10.0
+b_def = 20.0
 btur_def = 0.0
 
 ion_dict = {'Ly_a': [121.567, 0.416, 6.265e8],

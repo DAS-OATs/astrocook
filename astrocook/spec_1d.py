@@ -331,11 +331,15 @@ class Spec1D():
         return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
 
     def extract_reg(self, xmin=0.0, xmax=0.0):
-        """ Extract a spectral region, given minimum and maximum wavelength """
+        """ @brief Extract a spectral region
+        @param xmin Minimum wavelength
+        @param xmax Maximum wavelength
+        """
 
         reg = dc(self)
-        where = np.full(len(reg.x), True)
-        s = np.where(np.logical_and(reg.x.value > xmin, reg.x.value < xmax))
+        where = np.full(len(reg.t['X']), True)
+        s = np.where(np.logical_and(reg.t['X'] > xmin,
+                                    reg.t['X'] < xmax))
         where[s] = False
         reg._t.remove_rows(where)
 

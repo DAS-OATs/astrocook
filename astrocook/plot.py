@@ -60,13 +60,14 @@ class Plot():
 
         return p
 
-    def model(self, tab, replace=True, cont=None, ion=None, c='C4', lw=1.0,
-            **kwargs):
+    def model(self, tab, replace=True, cont=None, ion=None, c='C5', lw=1.0,
+              linestyle='--', **kwargs):
         if replace:
             self.clean('model_p')
         
         (p, p_other) = self.spec(tab, replace=False, cont=cont, ion=ion,
-                                 dy=False, c=c, lw=lw, **kwargs)
+                                 dy=False, c=c, lw=lw, linestyle=linestyle,
+                                 **kwargs)
         self.model_p.append(p)
 
         return p
@@ -105,16 +106,18 @@ class Plot():
         xmins = []
         xmaxs = []
         for r in rows:
-            x = self.x_mode(obj.x[r], ion)
-            xmin = self.x_mode(obj.xmin[r], ion)
-            xmax = self.x_mode(obj.xmax[r], ion)
-            xmins.append(xmin.value)
-            xmaxs.append(xmax.value)
+            x = self.x_mode(obj.t['X'][r], ion)
+            xmin = self.x_mode(obj.t['XMIN'][r], ion)
+            xmax = self.x_mode(obj.t['XMAX'][r], ion)
+            #xmins.append(xmin.value)
+            #xmaxs.append(xmax.value)
+            xmins.append(xmin)
+            xmaxs.append(xmax)
         
-            p = self.ax.axvline(x=x.value, color=c, **kwargs)
-            pmin = self.ax.axvline(x=xmin.value, color=c, linestyle=':',
+            p = self.ax.axvline(x=x, color=c, **kwargs)
+            pmin = self.ax.axvline(x=xmin, color=c, linestyle=':',
                                    **kwargs)
-            pmax = self.ax.axvline(x=xmax.value, color=c, linestyle=':',
+            pmax = self.ax.axvline(x=xmax, color=c, linestyle=':',
                                    **kwargs)
 
             self.sel_p.append(p)
@@ -153,7 +156,7 @@ class Plot():
             
     def x_mode(self, x, ion):
         if ion != None:
-            x = x/dict_wave[ion]-1
+            x = x/dict_wave[ion].value-1
         return x
 
     def y_mode(self, tab, cont):

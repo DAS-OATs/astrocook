@@ -27,19 +27,26 @@ class Recipe():
         self.descr = rec_descr[name]        
         self.params = None
         
-        if name == 'line_find':
-            self.objs = ['spec', 'spec', 'spec']
-            self.procs = ['convolve', 'find_extrema', 'select_extrema']
-            self.modes = ['pass', None, None]
-            self.defaults = {}
-            self.omits = {}
-
         if name == 'line_cont':
             self.objs = ['line', 'spec']
             self.procs = ['mask', 'smooth_lowess']
             self.modes = ['pass', 'pass']
             self.defaults = {}
             self.omits = {}
+
+        if name == 'line_ew':
+            self.objs = ['line']
+            self.procs = ['ew']
+            self.modes = [None]
+            self.defaults = {}
+            self.omits = {}
+
+        if name == 'line_find':
+            self.objs = ['spec', 'spec', 'spec']
+            self.procs = ['convolve', 'find_extrema', 'select_extrema']
+            self.modes = ['pass', None, None]
+            self.defaults = {}
+            self.omits = {'l'}
 
         if name == 'spec_cont':
             self.objs = ['spec']
@@ -111,6 +118,13 @@ class Recipe():
         self.__dict__.update(self.cont.__dict__)        
         return out
 
+    def line_ew(self, **kwargs):
+
+        for l in self.acs.line.t:
+            kwargs['l'] = l
+            out = self.execute(**kwargs)
+        return out
+    
     def line_find(self, **kwargs):
 
         out = self.execute(**kwargs)

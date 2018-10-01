@@ -27,26 +27,16 @@ yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 
 class Line(Spec1D):
 
-    def __init__(self,
-                 acs=None,
-                 spec=None,
-                 x=[],
-                 y=[],
-                 xmin=[],
-                 xmax=[],
-                 dy=[],
-                 group=[],
-                 resol=[],
-                 xunit=None,
-                 yunit=None,
-                 meta=None,
-                 dtype=float):
+    def __init__(self, acs=None, spec=None, x=None, y=None, xmin=None,
+                 xmax=None, dy=None, ew=None, group=None, resol=None,
+                 xunit=xunit_def, yunit=yunit_def, dtype=float, meta=None):
         """ Constructor for the Line class """
 
         if acs != None:
             self._acs(acs)
         
         # Exceptions
+        """
         if ((x == []) != (y == [])):
             raise Exception("X and Y must be provided together.")
         if ((xmin == []) != (xmax == [])):
@@ -56,7 +46,7 @@ class Line(Spec1D):
             raise Exception("Data arrays must have the same length.")
         if ((xmin != []) and (sumlen % len(xmin) != 0)):
             raise Exception("Data arrays must have the same length.")
-
+        """
         # Warnings
         if ((spec is None) and (x is [])):
             warnings.warn("No spectrum or data provided.")
@@ -69,7 +59,8 @@ class Line(Spec1D):
                 self._precont = dc(spec._precont)
             if (hasattr(spec, '_cont')):
                 self._cont = dc(spec._cont)            
-                
+
+        """
         # Line list
         data = ()
         #if (x != []):
@@ -96,6 +87,9 @@ class Line(Spec1D):
         if (np.size(dy) > 0):
             col_dy = Column(np.asarray(dc(dy), dtype=dtype), name='DY')
             data += (col_dy,)
+        if (np.size(ew) > 0):
+            col_ew = Column(np.asarray(dc(ew), dtype=dtype), name='EW')
+            data += (col_ew,)
 
         # Needed for backwards compatibility with Spec1DCont
         if (group == []):
@@ -106,7 +100,6 @@ class Line(Spec1D):
             resol = np.zeros(len(x))
         col_resol = Column(np.asarray(dc(resol), dtype=dtype), name='RESOL')
         data += (col_resol,)
-        
         if data is ():
             data = None
             
@@ -122,8 +115,14 @@ class Line(Spec1D):
             self._t['XMAX'].unit = xunit
         if (dy != []):
             self._t['DY'].unit = yunit
+        if (ew != []):
+            self._t['EW'].unit = xunit
+        """
 
-        self._ion = np.full(len(self._t), 'Ly_a')           
+        if x is not None:
+            self._t = self.create_t(x, xmin, xmax, y, dy, ew, xunit, yunit,
+                                    dtype)
+            self._ion = np.full(len(self._t), 'Ly_a')           
 
 
         self._use_good = False
@@ -246,6 +245,34 @@ class Line(Spec1D):
         
 # Methods
 
+    def create_t(self, x=None, xmin=None, xmax=None, y=None, dy=None, ew=None,
+                 xunit=xunit_def, yunit=yunit_def, dtype=float):
+        """ @brief Create a line table 
+        @param x Wavelength- or frequency-like array
+        @param xmin Minimum x spanned by the line
+        @param xmax Maximum x spanned by the line
+        @param y Flux-like array
+        @param dy Error on y
+        @param ew Equivalent width
+        @return t Astropy table with spectral lines
+        """
+
+        x = np.array(x, ndmin=1)
+        xmin = np.array(xmin, ndmin=1)
+        xmax = np.array(xmax, ndmin=1)
+        y = np.array(y, ndmin=1)
+        dy = np.array(dy, ndmin=1)
+        ew = np.array(ew, ndmin=1)
+        t = Table()
+        t['X'] = Column(x, dtype=dtype, unit=xunit)
+        t['XMIN'] = Column(xmin, dtype=dtype, unit=xunit)
+        t['XMAX'] = Column(xmax, dtype=dtype, unit=xunit)
+        t['Y'] = Column(y, dtype=dtype, unit=yunit)
+        t['DY'] = Column(dy, dtype=dtype, unit=yunit)
+        t['EW'] = Column(ew, dtype=dtype, unit=xunit)
+
+        return t
+
     def create_z(self, series='Ly_ab'):
         """ Create a list of redshifts from a list of lines """
 
@@ -258,7 +285,7 @@ class Line(Spec1D):
         ion = np.array([])
         z = np.array([])
         for i in ion_in:
-            x_temp = self.x
+            x_temp = self.t['X']
             wave = dict_wave[i]
             x = np.append(x, x_temp.to(xunit_def).value)
             ion = np.append(ion, np.full(len(self.t), i))
@@ -269,6 +296,30 @@ class Line(Spec1D):
         self._z['X'] = Column(x, dtype=float, unit=xunit_def)
         self._z['ION'] = Column(ion) 
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
+
+
+    def ew(self, l):
+        """ @brief Estimate an equivalent width
+        @param l A row from a line table
+        """
+        xmin = l['XMIN']
+        xmax = l['XMAX']
+        spec_reg = self._spec.extract_reg(xmin, xmax) 
+        cont_reg = self._cont.extract_reg(xmin, xmax)
+        print len(spec_reg.t['Y']), len(spec_reg.t['Y'])
+        ew = np.sum((1-spec_reg.t['Y']/cont_reg.t['Y'])\
+                    *(spec_reg.t['XMAX']-spec_reg.t['XMIN']))\
+                    *spec_reg.t['X'].unit
+        l['EW'] = ew.value
+
+
+    def ew_all(self):
+        """ @brief Estimate all equivalent widths
+        """
+
+        for l in self.t:
+            print l
+            self.ew(l)
         
     def map_z(self):
         """ Map lines to redshifts """

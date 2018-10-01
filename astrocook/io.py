@@ -186,8 +186,9 @@ class IO():
         xmax = data['XMAX']
         y = data['Y']            
         dy = data['DY']
+        ew = data['EW']
         
-        line = Line(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy, xunit=xunit,
+        line = Line(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy, ew=ew, xunit=xunit,
                     yunit=yunit)
 
         # Extrema
@@ -211,7 +212,6 @@ class IO():
         line._mins.write(name[:-10]+'_mins.fits', overwrite=overwrite)
         line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
         """
-        print line._exts
         line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
 
     
