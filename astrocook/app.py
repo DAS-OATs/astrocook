@@ -718,12 +718,10 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(
-                    self.syst._model, cont=self.cont.t,
-                    ion=self.syst_frame.ions[p])
-                self.syst_frame.plot[p].model(
-                    self.syst._model_norm, replace=False, cont=self.cont.t,
-                    ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(self.syst._model,
+                                              cont=self.cont.t)
+                self.syst_frame.plot[p].model(self.syst._model_norm,
+                                              replace=False, cont=self.cont.t)
                 self.syst_frame.plot_fig.draw()
 
     def on_proc_syst_N_all(self, event):
@@ -802,6 +800,7 @@ class MainFrame(wx.Frame):
 
             # On selection, define group and chunks for the system
             self.syst.group(self.z_sel)
+            print self.syst._group
             self.syst.chunk(self.z_sel)
             self.syst.N(self.syst_sel)
 
@@ -1164,7 +1163,8 @@ class SystFrame(wx.Frame):
             ylabel = ""
             if p == 1:
                 xlabel = "Redshift" 
-            self.plot.append(Plot(self.ax[p], xlabel=xlabel, ylabel=ylabel))
+            self.plot.append(Plot(self.ax[p], ion=self.ions[p], xlabel=xlabel,
+                                  ylabel=ylabel))
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
@@ -1340,19 +1340,15 @@ class SystFrame(wx.Frame):
         for p in range(self.pn):
             self.plot[p].clear()
             self.plot[p].spec(self.p.spec.t, cont=self.p.cont.t,
-                              ion=self.ions[p], xmin=self.z/1.002,
-                              xmax=self.z*1.002)
-            self.plot[p].line(self.p.line.t, cont=self.p.cont.t,
-                              ion=self.ions[p])
-            self.plot[p].cont(self.p.cont.t, cont=self.p.cont.t,
-                              ion=self.ions[p])
-            self.plot[p].sel(self.p.line, self.p.syst_rows, ion=self.ions[p],
-                             extra_width=0.0)
+                              xmin=self.z/1.002, xmax=self.z*1.002)
+            self.plot[p].line(self.p.line.t, cont=self.p.cont.t)
+            self.plot[p].cont(self.p.cont.t, cont=self.p.cont.t)
+            self.plot[p].sel(self.p.line, self.p.syst_rows, extra_width=0.0)
 
             self.plot[p].spec(self.p.syst._chunk, replace=False,
-                              cont=self.p.cont.t, ion=self.ions[p], lw=2.0)
-            self.plot[p].line(self.p.syst._group, cont=self.p.cont.t,
-                              ion=self.ions[p], marker="o")
+                              cont=self.p.cont.t, lw=2.0)
+            self.plot[p].line(self.p.syst._group, replace=False,
+                              cont=self.p.cont.t, marker="o")
             
         #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()

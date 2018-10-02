@@ -239,16 +239,15 @@ class System(Spec1D, Line, Cont):
         z = s['Z']
         series = s['SERIES']
         cond_z = self._map['Z'] == z
-        print z
         
         # Lyman-type series
         if series[0:2] == 'Ly':
             cond_x = self._line.t['X'] == np.max(self._map[cond_z]['X'])
             ew = np.array(self._line.t[cond_x]['EW'])[0]
 
+            # Parametrization of the curve of growth for Lyman-alpha, b=20
+            # To be generalized
             logN_arr = range(12,22)
-            #logew_arr = [-3.25, -2.3, -1.7, -1.4, -1.3, -1.2, -1, -0.6, -0.1,
-            #            0.4]
             lnew_arr = [-2.25, -1.3, -0.7, -0.4, -0.3, -0.2, 0, 0.4, 0.9,\
                          1.4]
             ew_arr = np.exp(lnew_arr)*0.1
@@ -517,7 +516,7 @@ class System(Spec1D, Line, Cont):
         #self._line._t[self._group_line] = new_line
         #self._line._t.sort('X')
         
-    def group(self, z, dx=0.0, **kwargs):
+    def group(self, z, dz=0.0, **kwargs):
         """ Extract the lines needed for fitting (both from systems and not)
         and setup the fitting parameters """
 
@@ -553,8 +552,8 @@ class System(Spec1D, Line, Cont):
         join_zc = join_t['Z']
         cond_zc = np.full(len(join_t), False)
         for j in join_t[np.where(cond_z)[0]]:
-            zmin = j['Z']-0.002
-            zmax = j['Z']+0.002
+            zmin = j['Z']-dz
+            zmax = j['Z']+dz
             cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
         
         group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
@@ -591,8 +590,49 @@ class System(Spec1D, Line, Cont):
             group['VARY'][w] = [False, False, False, False]
             group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
 
+        # Add unidentified lines close to lines in the system
+        """
+        group_xmin = group['XMIN']
+        group_xmax = group['XMAX']
+        cond_un = np.full(len(self._line.t), False)
+        print group.columns
+        for g in group:
+            x = g['X']
+            xmin = g['XMIN']
+            xmax = g['XMAX']
+            cond_un += np.logical_and(
+                self._line.t['XMIN']!=xmin,
+                np.logical_and(self._line.t['XMAX']>=xmin,
+                               self._line.t['XMIN']<=xmax))
+        for i, l in enumerate(self._line.t[cond_un]):
+            x = l['X']
+            xmin = l['XMIN']
+            xmax = l['XMAX']            
+            y = l['Y']
+            dy = l['DY']
+            ew = l['EW']
+            z = 0.0
+            zmin = xmin/x-1
+            zmax = xmax/x-1
+            ion = 'unknown'
+            pref = None
+            N = N_def
+            b = b_def
+            btur = btur_def
+            dz = None
+            dN = None
+            db = None
+            dbtur = None
+            vary = None
+            expr = 'voigt_'+str(i+2)
+            series = 'unknown'
+            group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
+                           dbtur, vary, expr, series, x, xmin, xmax, y, dy, ew])
+        """    
         self._group = group
 
+
+        
         self._t.sort('Z')
         self._map.sort('Z')
         self._group_t = np.in1d(self._t['Z'], group['Z'])
@@ -685,6 +725,7 @@ class System(Spec1D, Line, Cont):
 
     def plot(self, z=None, ax=None, dz=0.008, ions=None):
         """ Plot a system """
+        """ Deprecated """
 
         if (hasattr(self, '_chunk') == False):
             self.chunk(z, **kwargs)

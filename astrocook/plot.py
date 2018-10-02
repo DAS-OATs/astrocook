@@ -3,9 +3,11 @@ import numpy as np
 
 class Plot():
 
-    def __init__(self, ax, xlabel=None, ylabel=None):
+    def __init__(self, ax, ion=None, xlabel=None, ylabel=None):
         self.ax = ax
 
+        self.ion = ion
+        
         # Axis labels
         if xlabel == None:
             try:
@@ -23,7 +25,13 @@ class Plot():
             self.ax.set_ylabel(ylabel)
         
         (self.xmin, self.xmax) = self.ax.get_xlim()
-        
+
+        """
+        if self.ion != None:
+            ax2 = self.ax.twiny()
+            ax2.set_xlim(self.xmin, self.xmax)
+            ax2.set_xlabel("Wavelength [" + str(xunit_def) + "]")
+        """
         # Lists of all previously plotted data, to clear them selectively
         self.cont_p = []
         self.model_p = []
@@ -49,35 +57,33 @@ class Plot():
         self.ax.set_xlabel(xlabel)
         self.ax.set_ylabel(ylabel)
         
-    def cont(self, tab, replace=True, cont=None, ion=None, c='C2', lw=1.0,
-             **kwargs):
+    def cont(self, tab, replace=True, cont=None, c='C2', lw=1.0, **kwargs):
         if replace:
             self.clean('cont_p')
         
-        (p, p_other) = self.spec(tab, replace=False, cont=cont, ion=ion,
-                                 dy=False, c=c, lw=lw, **kwargs)
+        (p, p_other) = self.spec(tab, replace=False, cont=cont, dy=False,
+                                 c=c, lw=lw, **kwargs)
         self.cont_p.append(p)
 
         return p
 
-    def model(self, tab, replace=True, cont=None, ion=None, c='C5', lw=1.0,
+    def model(self, tab, replace=True, cont=None, c='C5', lw=1.0,
               linestyle='--', **kwargs):
         if replace:
             self.clean('model_p')
         
-        (p, p_other) = self.spec(tab, replace=False, cont=cont, ion=ion,
-                                 dy=False, c=c, lw=lw, linestyle=linestyle,
-                                 **kwargs)
+        (p, p_other) = self.spec(tab, replace=False, cont=cont, dy=False, c=c,
+                                 lw=lw, linestyle=linestyle, **kwargs)
         self.model_p.append(p)
 
         return p
         
-    def line(self, tab, replace=True, cont=None, ion=None, s=100, c='C3',
+    def line(self, tab, replace=True, cont=None, s=100, c='C3',
              marker='+', fill=False, **kwargs):
         if replace:
             self.clean('line_p')
 
-        tab_x = self.x_mode(tab['X'], ion)
+        tab_x = self.x_mode(tab['X'], self.ion)
         (tab_y, tab_dy) = self.y_mode(tab, cont)
         if marker == 'o':
             if fill:
@@ -92,13 +98,13 @@ class Plot():
 
         self.line_p.append(p)
 
-        if ion:
-            self.ax.text(0.05, 0.5, ion, transform=self.ax.transAxes,
+        if self.ion:
+            self.ax.text(0.05, 0.5, self.ion, transform=self.ax.transAxes,
                          fontsize=13)
         
         return p
 
-    def sel(self, obj, rows, replace=True, ion=None, extra_width=1.0, c='C3',
+    def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3',
             **kwargs):
         if replace:
             self.clean('sel_p')
@@ -106,9 +112,9 @@ class Plot():
         xmins = []
         xmaxs = []
         for r in rows:
-            x = self.x_mode(obj.t['X'][r], ion)
-            xmin = self.x_mode(obj.t['XMIN'][r], ion)
-            xmax = self.x_mode(obj.t['XMAX'][r], ion)
+            x = self.x_mode(obj.t['X'][r], self.ion)
+            xmin = self.x_mode(obj.t['XMIN'][r], self.ion)
+            xmax = self.x_mode(obj.t['XMAX'][r], self.ion)
             #xmins.append(xmin.value)
             #xmaxs.append(xmax.value)
             xmins.append(xmin)
@@ -132,8 +138,8 @@ class Plot():
         else:
             self.ax.set_xlim(self.xmin, self.xmax)
         
-    def spec(self, tab, replace=True, dy=True, cont=None, ion=None, xmin=None,
-             xmax=None, c='C0', c_other='C1', lw=1.0, **kwargs):
+    def spec(self, tab, replace=True, dy=True, cont=None, xmin=None, xmax=None,
+             c='C0', c_other='C1', lw=1.0, **kwargs):
         if replace:
             self.clean('spec_p')
 
@@ -142,7 +148,8 @@ class Plot():
             self.xmax = xmax
             self.ax.set_xlim(xmin, xmax)
             
-        tab_x = self.x_mode(tab['X'], ion)
+        tab_x = self.x_mode(tab['X'], self.ion)
+            #axt.set_xlabel
         (tab_y, tab_dy) = self.y_mode(tab, cont)
         p, = self.ax.plot(tab_x, tab_y, c=c, lw=lw, **kwargs)
         self.spec_p.append(p)

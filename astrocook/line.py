@@ -302,11 +302,10 @@ class Line(Spec1D):
         """ @brief Estimate an equivalent width
         @param l A row from a line table
         """
-        xmin = l['XMIN']
-        xmax = l['XMAX']
+        xmin = float(round(l['XMIN'],3))
+        xmax = float(round(l['XMAX'],3))
         spec_reg = self._spec.extract_reg(xmin, xmax) 
         cont_reg = self._cont.extract_reg(xmin, xmax)
-        print len(spec_reg.t['Y']), len(spec_reg.t['Y'])
         ew = np.sum((1-spec_reg.t['Y']/cont_reg.t['Y'])\
                     *(spec_reg.t['XMAX']-spec_reg.t['XMIN']))\
                     *spec_reg.t['X'].unit
@@ -318,7 +317,6 @@ class Line(Spec1D):
         """
 
         for l in self.t:
-            print l
             self.ew(l)
         
     def map_z(self):
