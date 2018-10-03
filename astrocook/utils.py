@@ -112,7 +112,8 @@ dict_wave = {'Ly_a': 121.567 * u.nm,
              'CaII_3934': 393.4775 * u.nm,             
              'CaII_3969': 396.95901 * u.nm,             
              'neb': 10.0 * u.nm,
-             'unknown': 10.0 * u.nm}
+             #'unknown': 10.0 * u.nm}
+             'unknown': 314.220 * u.nm}
 
 # Ionic oscillator strengths
 dict_f = {'Ly_a': 0.416,
@@ -149,10 +150,10 @@ dict_f = {'Ly_a': 0.416,
           'CaII_3934': 0.6267,             
           'CaII_3969': 0.3116,             
           'neb': 0.1,
-          'unknown': 0.1} 
+          'unknown': 0.416} 
 
 # Ionic damping lengths
-dict_gamma = {'Ly_a': 6.265e8,
+dict_gamma = {'Ly_a': 6.265e+08,
               'Ly_b': 1.8970e+08,
               'Ly_g': 8.1260e+07,
               'Ly_d': 4.2040e+07,
@@ -186,7 +187,7 @@ dict_gamma = {'Ly_a': 6.265e8,
               'CaII_3934': 1.444e+08,             
               'CaII_3969': 1.409e+08,             
               'neb': 5e8,
-              'unknown': 5e+08} 
+              'unknown': 6.265e+08} 
 
 unabs_fact = {'slope': 1 + 5e-2, 'norm': 1 + 5e-2}
 z_fact = 1 + 1e-4

@@ -64,19 +64,18 @@ class MainFrame(wx.Frame):
             self.on_file_open(None, targ=targ, **kwargs)
         except:
             pass
-
         
     def dialog_proc(self, obj, proc):
         """ Run a procedure through a dialog window """
 
-        #self.obj = obj
+        wait = wx.BusyCursor()
         self.objs = [obj]
         self.procs = [proc]
         self.descr = proc_descr[proc]
         self.dialog_type = 'proc'
         dialog = ParamDialog(self)
         dialog.ShowModal()
-        dialog.Destroy()
+        dialog.Destroy()        
         self.params = dialog.params
         self.proc_dict[proc] = dialog.execute
         if dialog.execute == True:
@@ -84,8 +83,10 @@ class MainFrame(wx.Frame):
             self.log[proc] = self.params
         else:
             out = None
+        del wait
         return out
 
+    
     def dialog_rec(self, acs, rec):
         """ Run a recipe through a dialog window """
 
@@ -682,25 +683,21 @@ class MainFrame(wx.Frame):
         if self.proc_dict[proc]:
             new_z = (np.abs(self.syst._t['Z']-self.z_sel)).argmin()
             self.z_sel = self.syst._t['Z'][new_z]
-            #self.ax.plot(self.syst._chunk['X'],
-            #             self.syst._chunk['MODEL'])
-            #self.update_syst()
-            self.plot.model(self.syst._model)
-            self.plot.model(self.syst._model_norm, replace=False)
+            self.update_syst()
+
+            self.plot.model(self.syst._model, dy=True)
             self.plot_fig.draw()
+
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
                 self.syst_frame.Show()
             else:
                 self.syst_frame.z = self.z_sel
+                self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(
-                    self.syst._model, cont=self.cont.t,
-                    ion=self.syst_frame.ions[p])
-                self.syst_frame.plot[p].model(
-                    self.syst._model_norm, replace=False, cont=self.cont.t,
-                    ion=self.syst_frame.ions[p])
+                self.syst_frame.plot[p].model(self.syst._model,
+                                              cont=self.cont.t, dy=True)
                 self.syst_frame.plot_fig.draw()
 
     def on_proc_syst_model(self, event):
@@ -708,8 +705,8 @@ class MainFrame(wx.Frame):
         proc = 'model'
         self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
-            self.plot.model(self.syst._model)
-            self.plot.model(self.syst._model_norm, replace=False)
+            self.plot.model(self.syst._model, dy=True)
+            #self.plot.model(self.syst._model_norm, replace=False)
             self.plot_fig.draw()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
@@ -719,9 +716,9 @@ class MainFrame(wx.Frame):
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
                 self.syst_frame.plot[p].model(self.syst._model,
-                                              cont=self.cont.t)
-                self.syst_frame.plot[p].model(self.syst._model_norm,
-                                              replace=False, cont=self.cont.t)
+                                              cont=self.cont.t, dy=True)
+                #self.syst_frame.plot[p].model(self.syst._model_norm,
+                #                              replace=False, cont=self.cont.t)
                 self.syst_frame.plot_fig.draw()
 
     def on_proc_syst_N_all(self, event):
@@ -740,7 +737,8 @@ class MainFrame(wx.Frame):
             self.cont_dict[self.targ] = self.cont
             self.plot.cont(self.cont.t)
             self.plot_fig.draw()
-
+            self.update_acs()
+            
     def on_rec_line_find(self, event):
         rec = 'line_find'
         run = self.dialog_rec(self.acs, rec)
@@ -800,7 +798,6 @@ class MainFrame(wx.Frame):
 
             # On selection, define group and chunks for the system
             self.syst.group(self.z_sel)
-            print self.syst._group
             self.syst.chunk(self.z_sel)
             self.syst.N(self.syst_sel)
 
@@ -812,6 +809,7 @@ class MainFrame(wx.Frame):
             if self.syst_frame != None:
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
+                self.syst_frame.update_tab()                
             
             
     def on_util_log_view(self, event):
@@ -1043,6 +1041,8 @@ class ParamDialog(wx.Dialog):
         """
         super(ParamDialog, self).__init__(parent=self.p, title=self.p.descr)
         self.init_UI()
+        myCursor= wx.Cursor(wx.CURSOR_ARROW)
+        self.SetCursor(myCursor)
         
     def init_UI(self):
         """ Initialize the main frame """
@@ -1104,6 +1104,7 @@ class ParamDialog(wx.Dialog):
         self.Close()
 
     def on_run(self, e):
+
         for p, t, ctrl in zip(self.par, self.type, self.ctrl):
             try:
                 self.params[p] = t(ctrl.GetValue())
@@ -1136,7 +1137,6 @@ class SystFrame(wx.Frame):
         self.ions = np.unique(np.ravel(self.group['ION']))
         self.ions = self.ions[np.where(self.ions != 'unknown')]
         self.init_UI()
-
     
     def init_buttons(self, panel):
         self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
@@ -1147,7 +1147,7 @@ class SystFrame(wx.Frame):
         
     def init_plot(self, panel):
         """ Create the spectrum panel """
-        self.fig = Figure()
+        self.fig = Figure((8,15))
         rown = 5.
         self.pn = len(self.ions)
         row = int(min(self.pn,rown))

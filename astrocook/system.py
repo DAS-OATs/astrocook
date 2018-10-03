@@ -67,107 +67,11 @@ class System(Spec1D, Line, Cont):
                 self.create_z(ion)
 
 
-
-        """
-        # Line list -- Deprecated!
-        self._line = None
-        if (line != None):
-            self._line = dc(line)
-            # Continuum 
-            if (hasattr(line, '_cont')):
-                self._precont = dc(line._precont)
-                self._cont = dc(line._cont)
-            if (hasattr(line, '_minima')):
-                self._minima = dc(line._minima)
-            if (hasattr(line, '_maxima')):
-                self._maxima = dc(line._maxima)
-        #else:
-        #    self._line = Line(spec=spec, x=x, y=y, xmin=xmin, xmax=xmax, dy=dy)
-            
-        # Spectrum -- Deprecated!
-        self._spec = None
-        if (spec is not None):
-            #if (hasattr(spec, '_orig')):
-            #    self._spec = dc(spec._orig)
-            #else:
-            #    self._spec = dc(spec)
-            self._spec = dc(spec)
-            
-        # Ion list
-        if (line is not None):
-            len_ion = len(line._t)
-        if (x != []):
-            print("here")
-            len_ion = len(x)
-        #print(x, x.value, x is not [])
-
-        if ((ion == []) and (doubl != [])):
-            ion = [dict_doubl[doubl]]
-            for i in range(1, len_ion):
-                ion = np.append(ion, [dict_doubl[doubl]], 0)
-            #ion = np.stack((np.full(len_ion, dict_doubl[doubl][0]),
-            #                np.full(len_ion, dict_doubl[doubl][1]))).T
-                           
-        if ((ion is []) or (ion is 'Ly_a')):
-            ion = np.full(len_ion, 'Ly_a')           
-
-        if (N == []):
-            N = np.full(len_ion, float('nan')) 
-            b = np.full(len_ion, float('nan')) 
-            btur = np.full(len_ion, float('nan'))
-        dN = np.full(len_ion, float('nan')) 
-        db = np.full(len_ion, float('nan')) 
-        dbtur = np.full(len_ion, float('nan'))
-        
-        self._ion = ion
-
-        # System list
-        data = ()
-        if (x != []):
-            col_x = Column(np.asarray(dc(x), dtype=dtype), name='X')
-            col_y = Column(np.asarray(dc(y)), name='Y', unit=yunit)
-            data = (col_x, col_y)
-            if yunit is None:
-                try:
-                    yunit = y.unit
-                except:
-                    raise Exception("Y unit not provided.")
-        if (xmin != []):
-            col_xmin = Column(np.asarray(dc(xmin), dtype=dtype), name='XMIN')
-            col_xmax = Column(np.asarray(dc(xmax), dtype=dtype), name='XMAX')
-            data += (col_xmin, col_xmax)
-        if (dy != []):
-            col_dy = Column(np.asarray(dc(dy)), name='DY', unit=yunit)
-            data += (col_dy,)
-        if ((x != []) and (ion != [])):
-            col_ion = Column(np.asarray(dc(ion)), name='ION')
-            data += (col_ion,)
-        if ((x != []) and (ion != [])):
-            col_N = Column(np.asarray(dc(N)), name='N', unit=1/u.cm**2)
-            col_b = Column(np.asarray(dc(b)), name='B', unit=u.km/u.s)
-            col_btur = Column(np.asarray(dc(btur)), name='BTUR',
-                              unit=u.km/u.s)
-            col_dN = Column(np.asarray(dc(dN)), name='DN', unit=1/u.cm**2)
-            col_db = Column(np.asarray(dc(db)), name='DB', unit=u.km/u.s)
-            col_dbtur = Column(np.asarray(dc(dbtur)), name='DBTUR',
-                               unit=u.km/u.s)
-            data += (col_N, col_b, col_btur, col_dN, col_db, col_dbtur)
-
-        if data is ():
-            data = None
-            
-        if (meta is None):
-            meta = {}
-
-        self._t = Table(data=data, masked=True, meta=meta)
-        if (y != []):
-            self._t['Y'].unit = yunit
-        if (dy != []):
-            self._t['DY'].unit = yunit
-        """    
-            
         self._use_good = False
 
+        # Model and residuals
+        #self._model = dc(self._spec)
+        #self._res = dc(self._spec)
 
     def _acs(self, acs):
         self._spec = acs.spec
@@ -480,11 +384,10 @@ class System(Spec1D, Line, Cont):
         
         fun = self._fun
         par = self._par
-        par.pretty_print()
         fit = fun.fit(y/cont, par, x=x, weights=cont/dy)
         par = fit.params
-        par.pretty_print()
         model = fit.eval(par, x=x) * cont
+        model_norm = fit.eval_components()['norm_'] * cont
         #self._model = fit.eval(par, x=self._spec.t['X']) * self._spec.t['CONT']
         #model = fit.best_fit * cont
         
@@ -505,16 +408,20 @@ class System(Spec1D, Line, Cont):
         chunk['MODEL'] = model
 
         # Temporary
-        self._model = dc(self._chunk)
-        self._model['Y'][self._model['X'].mask == False] = chunk['MODEL']
+        #self._model = dc(self._chunk)
+        self._model['Y'][self._model['X'].mask == False] = model
+        self._model['DY'][self._model['X'].mask == False] = y-model
+        self._model['NORM'][self._model['X'].mask == False] = model_norm
 
-        new_t = unique(self._group[self._t.colnames], keys='Z')
-        new_map = self._group[self._map.colnames]
+        # Save fitted lines in the group
+        cond = self._group['Z'] > 0
+        new_t = unique(self._group[self._t.colnames][cond], keys='Z')
+        new_map = self._group[self._map.colnames][cond]
         new_line = self._group[self._line.t.colnames]
-        self._t[self._group_t] = new_t
+        self._t[self._group_t] = new_t#[new_t['Z']>0]
         self._map[self._group_map] = new_map
-        #self._line._t[self._group_line] = new_line
-        #self._line._t.sort('X')
+        self._line._t[self._group_line] = new_line
+        self._line._t.sort('X')
         
     def group(self, z, dz=0.0, **kwargs):
         """ Extract the lines needed for fitting (both from systems and not)
@@ -565,9 +472,9 @@ class System(Spec1D, Line, Cont):
             series = dict_series[g['SERIES']]
             xs = (1+g['Z'])*np.array([dict_wave[i].value for i in series])
             ion = np.append(ion, series[np.abs(xs - g['X']).argmin()])
-        pref = np.array(['voigt_'+str(i) for i in range(len(group))])
+        pref = np.array(['voigt_%03d' % i for i in range(len(group))])
         group.add_column(Column(ion, name='ION'), index=1)
-        group.add_column(Column(pref, name='PREF'), index=2)
+        group.add_column(Column(pref, name='PREF', format='20s'), index=2)
         zlist = np.array(group['Z'])
 
         # Define the mininimum- and maximum-redshift columns
@@ -591,44 +498,48 @@ class System(Spec1D, Line, Cont):
             group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
 
         # Add unidentified lines close to lines in the system
-        """
+        #"""
         group_xmin = group['XMIN']
         group_xmax = group['XMAX']
         cond_un = np.full(len(self._line.t), False)
-        print group.columns
         for g in group:
             x = g['X']
             xmin = g['XMIN']
             xmax = g['XMAX']
-            cond_un += np.logical_and(
-                self._line.t['XMIN']!=xmin,
-                np.logical_and(self._line.t['XMAX']>=xmin,
-                               self._line.t['XMIN']<=xmax))
-        for i, l in enumerate(self._line.t[cond_un]):
+            cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
+                                      self._line.t['XMIN']<=xmax)        
+        i = len(group)
+        for l in self._line.t[cond_un]:
             x = l['X']
-            xmin = l['XMIN']
-            xmax = l['XMAX']            
-            y = l['Y']
-            dy = l['DY']
-            ew = l['EW']
-            z = 0.0
-            zmin = xmin/x-1
-            zmax = xmax/x-1
-            ion = 'unknown'
-            pref = None
-            N = N_def
-            b = b_def
-            btur = btur_def
-            dz = None
-            dN = None
-            db = None
-            dbtur = None
-            vary = None
-            expr = 'voigt_'+str(i+2)
-            series = 'unknown'
-            group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
-                           dbtur, vary, expr, series, x, xmin, xmax, y, dy, ew])
-        """    
+            if np.all(x != group['X']):
+                xmin = l['XMIN']
+                xmax = l['XMAX']            
+                y = l['Y']
+                dy = l['DY']
+                ew = l['EW']
+                z = 0.0
+                zmin = xmin/x-1
+                zmax = xmax/x-1
+                #z = x/dict_wave['unknown'].value-1
+                #zmin = xmin/dict_wave['unknown'].value-1
+                #zmax = xmax/dict_wave['unknown'].value-1
+                ion = 'unknown'
+                pref = 'voigt_%03d' %i
+                N = N_def
+                b = b_def
+                btur = btur_def
+                dz = None
+                dN = None
+                db = None
+                dbtur = None
+                vary = [True, True, True, True]
+                expr = [None, None, None, None]
+                series = 'unknown'
+                group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
+                               dbtur, vary, expr, series, x, xmin, xmax, y, dy,
+                               ew])
+                i += 1
+        #"""    
         self._group = group
 
 
@@ -656,10 +567,8 @@ class System(Spec1D, Line, Cont):
     def model(self, z=None, norm=True, prof=True, psf=True, **kwargs):
         """ Create a model to fit, including normalization, profile and PSF """
 
-        if (hasattr(self, '_group') == False  or True):
-            self.group(z, **kwargs)
-        if (hasattr(self, '_chunk') == False  or True):
-            self.chunk(z, **kwargs)
+        self.group(z, **kwargs)
+        self.chunk(z, **kwargs)
 
         # Extract non-masked lines and limits of the masked region
         nz = self._chunk['X'].mask.nonzero()[0]
@@ -676,6 +585,7 @@ class System(Spec1D, Line, Cont):
         cont = chunk['CONT']
         mods = Model(self._spec, syst=self)
 
+        
         if (norm == True):
             mods.norm_new()#vary=[False])
             fun = mods._norm_fun
@@ -688,9 +598,13 @@ class System(Spec1D, Line, Cont):
         if (prof == True):
             # The only available profile shape is Voigt
             for (i, l) in enumerate(self._group):
-                mods.voigt_new(ion=l['ION'],
-                               z=l['Z'], N=l['N'], b=l['B'], btur=l['BTUR'],
-                               vary=l['VARY'], expr=l['EXPR'], pref=l['PREF'])
+                if l['ION'] == 'unknown':
+                    wave = l['X']
+                else:
+                    wave = 0.0
+                mods.voigt_new(ion=l['ION'], z=l['Z'], N=l['N'], b=l['B'],
+                               btur=l['BTUR'], wave=wave, vary=l['VARY'],
+                               expr=l['EXPR'], pref=l['PREF'])
                 fun *= mods._prof_fun
                 par.update(mods._prof_par)
 
@@ -708,6 +622,8 @@ class System(Spec1D, Line, Cont):
                     psf_par.update(mods._psf_par)
             fun = lmc(fun, psf_fun, conv)
             par.update(psf_par)
+
+        
         model = fun.eval(par, x=x) * cont
         try:
             chunk.add_column(Column(model, name='MODEL', dtype=float))
@@ -715,8 +631,12 @@ class System(Spec1D, Line, Cont):
             chunk['MODEL'] = model            
 
         self._model = dc(self._chunk)
-        self._model['Y'][self._model['X'].mask == False] = chunk['MODEL']
-
+        self._model['Y'][self._model['X'].mask == False] = model #chunk['MODEL']
+        self._model['DY'][self._model['X'].mask == False] = y-model #chunk['Y']\
+                                                            #-chunk['MODEL']
+        self._model['NORM'] = np.zeros(len(self._model))
+        self._model['NORM'][self._model['X'].mask == False] = model_norm #chunk['Y']
+        
         self._model_norm = dc(self._chunk)
         self._model_norm['Y'][self._model_norm['X'].mask == False] = model_norm
 

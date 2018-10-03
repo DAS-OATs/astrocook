@@ -67,14 +67,23 @@ class Plot():
 
         return p
 
-    def model(self, tab, replace=True, cont=None, c='C5', lw=1.0,
+    def model(self, tab, replace=True, cont=None, dy=False, c='C5', lw=1.0,
               linestyle='--', **kwargs):
         if replace:
             self.clean('model_p')
-        
-        (p, p_other) = self.spec(tab, replace=False, cont=cont, dy=False, c=c,
+        #print tab
+        #print dy
+        (p, p_res) = self.spec(tab, replace=False, cont=cont, dy=dy, c=c,
                                  lw=lw, linestyle=linestyle, **kwargs)
         self.model_p.append(p)
+        self.model_p.append(p_res)
+
+        # Normalization component
+        tab_x = self.x_mode(tab['X'], self.ion)
+        (tab_norm, tab_dy) = self.y_mode(tab, cont, y='NORM')
+        p_norm = self.ax.plot(tab_x, tab_norm, c=c, lw=lw, linestyle=':',
+                              **kwargs) 
+        self.model_p.append(p_norm)
 
         return p
         
@@ -104,8 +113,7 @@ class Plot():
         
         return p
 
-    def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3',
-            **kwargs):
+    def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3', **kwargs):
         if replace:
             self.clean('sel_p')
 
@@ -166,9 +174,9 @@ class Plot():
             x = x/dict_wave[ion].value-1
         return x
 
-    def y_mode(self, tab, cont):
-        tab_y = tab['Y']
-        tab_dy = tab['DY']
+    def y_mode(self, tab, cont, y='Y', dy='DY'):
+        tab_y = tab[y]
+        tab_dy = tab[dy]
         if cont != None:
             if (len(cont) == len(tab_y)):
                 cont_y = cont['Y']

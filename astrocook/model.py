@@ -49,9 +49,12 @@ def psf_func(x, c_min, c_max, center, resol):
     """
     return ret
     
-def voigt_func(x, z, N, b, btur, ion='Ly_a', tab=None):
+def voigt_func(x, z, N, b, btur, wave, ion='Ly_a', tab=None):
     """ Compute the Voigt function """
-    wave = dict_wave[ion].value * 1e-9
+    if wave == 0.0:
+        wave = dict_wave[ion].value*1e-9
+    else:
+        wave = wave*1e-9
     f = dict_f[ion]
     gamma = dict_gamma[ion]
     x_si = x * 1e-9
@@ -466,23 +469,27 @@ class Model():
 
         return ret
 
-    def voigt_new(self, ion, z, N, b, btur,
+    def voigt_new(self, ion, z, N, b, btur, wave,
                   vary=[True, True, True, False],
                   expr=[None, None, None, None], pref='voigt'):
         """ Voigt profile """
 
         self._prof_fun = lmm(voigt_func, prefix=pref+'_', ion=ion)
         self._prof_par = self._prof_fun.make_params()
+        #self._prof_par.pretty_print()
         #self._prof_par[pref+'_chunk_lim'].set(chunk_lim, vary=False)
         self._prof_par[pref+'_z'].set(z, vary=vary[0], min=0, expr=expr[0])
         self._prof_par[pref+'_N'].set(N, vary=vary[1], min=0, expr=expr[1])
         self._prof_par[pref+'_b'].set(b, vary=vary[2], min=0, expr=expr[2])
         self._prof_par[pref+'_btur'].set(btur, vary=vary[3], min=0,
                                          expr=expr[3])
+        self._prof_par[pref+'_wave'].set(wave, vary=False)
+        #self._prof_par.pretty_print()            
 
     def voigt(self, z, N, b, btur, z_vary=True, N_vary=True, b_vary=True,
               btur_vary=False, ion=['Ly_a']):
         """ Create a Voigt model for a line """
+        """ Deprecated! """
 
         self._z = dc(z)
         self._N = dc(N)
