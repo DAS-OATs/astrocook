@@ -330,13 +330,24 @@ class Line(Spec1D):
 
         
     def mask(self):
-        """ Remove the spectral regions between XMIN and XMAX """
+        """ @brief Remove the spectral regions between XMIN and XMAX """
 
+        """ Check why this doesn't work...
+        where = np.zeros(len(self._spec.t), dtype=bool)
+        for l in self.t:
+            where += np.logical_and(self._spec.t['X']>l['XMIN'],
+                                    self._spec.t['X']<l['XMAX'])
+        out = self._spec.apply_mask(['Y', 'DY'], [where, where], [True, True])
+        print np.sum(out.t['Y'].mask)
+        return out
+        """
         mask = np.array(self._spec.t.mask)
+        
         out = dc(self._spec)
         where = np.zeros(len(out.t), dtype=bool)
         for l in self.t:
-            where += np.logical_and(out.t['X']>l['XMIN'], out.t['X']<l['XMAX'])
+            where += np.logical_and(out.t['X']>l['XMIN'],
+                                    out.t['X']<l['XMAX'])
             
         out.t.mask['Y'][where] = True
         out.t.mask['DY'][where] = True
@@ -345,7 +356,9 @@ class Line(Spec1D):
         # restore the original spectrum to unmasked state. Bug in Astropy?
         out.t['Y'] = out.t['Y']*-1*-1
         self._spec.t.mask = mask
+        print np.sum(out.t['Y'].mask)
         return out
+        #"""
 
     def match_z(self, ztol=1e-4):
         """ Match redshifts to find coincidences """

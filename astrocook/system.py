@@ -69,19 +69,30 @@ class System(Spec1D, Line, Cont):
 
         self._use_good = False
 
-        # Model and residuals
-        #self._model = dc(self._spec)
-        #self._res = dc(self._spec)
-
     def _acs(self, acs):
         self._spec = acs.spec
         self._line = acs.line
         self._cont = acs.cont
+        self._model = acs.model
         try:
             self._map = acs.line._map  # When loading from a current session
         except:
             pass  # When loading from a saved session
-            
+
+        # Model and residuals
+        """
+        mask = dc(np.array(self._spec.t.mask))
+        self._model = dc(self._spec.t)
+        self._res = dc(self._spec.t)
+        self._model.mask['X'] = True
+        self._res.mask['X'] = True
+        # This trick is needed to make the tables independent objects and
+        # restore the original spectrum to unmasked state. Bug in Astropy?
+        self._model['X'] = self._model['X']*-1*-1
+        self._res['X'] = self._res['X']*-1*-1
+        self._spec.t.mask = mask
+        """
+        
 # Properties
 
     @property
@@ -132,6 +143,338 @@ class System(Spec1D, Line, Cont):
     
 # Methods
 
+    def chunk(self): #, z, dx=0.0, **kwargs):
+        """ @brief Extract a spectral chunk to fit a previously extracted group
+        of lines
+        """
+
+        # Create a spectrum with attached continuum
+        spec = dc(self._spec)
+        spec.t.add_column(Column(self._cont.t['Y'], name='CONT'))
+
+        # Regions around lines in the group are selected
+        x = spec.t['X']
+        where = np.array([], dtype=int)
+        for l in self._group:
+            xmin = l['XMIN']
+            xmax = l['XMAX']
+            cond_temp = np.logical_and(x>=xmin, x<=xmax)
+            where_temp = np.where(cond_temp)[0]
+            if (len(where_temp) % 2 == 0):
+                where_temp = where_temp[:-1]
+            where = np.append(where, where_temp)
+        where = np.unique(where)
+
+        # Chunk is created as copy of the spectrum, completely masked apart
+        # from the regions around lines
+        self._chunk = spec.apply_mask(
+            ['X', 'X'], [range(len(spec.t)), where], [True, False]).t
+
+        
+    def fit(self, s=None, **kwargs):
+        """ @brief Fit a model on a group of lines 
+        
+        @param s A row from a system table
+        """
+
+        if s == None:
+            s = self._syst_sel
+        
+        self.model(s, **kwargs)
+        
+        where = self._chunk['X'].mask == False
+        x_c = self._chunk['X'][where]
+        y_c = self._chunk['Y'][where]
+        dy_c = self._chunk['DY'][where]
+        cont_c = self._chunk['CONT'][where]
+
+        fun = self._fun
+        par = self._par
+        fit = fun.fit(y_c/cont_c, par, x=x_c, weights=cont_c/dy_c)
+        par = fit.params
+        y = fit.eval(par, x=x_c) * cont_c
+        yresid = y_c-y
+        yadj = fit.eval_components()['adj_'] * cont_c
+        self._model.t['Y'][where] = y
+        self._model.t['YRESID'][where] = yresid
+        self._model.t['YADJ'][where] = yadj        
+        self._fun = fun
+        self._par = par
+        self._fit = fit
+        for l in self._group:
+            pref = l['PREF']
+            l['Z'] = par[pref+'_z'].value
+            l['N'] = par[pref+'_N'].value
+            l['B'] = par[pref+'_b'].value
+            l['BTUR'] = par[pref+'_btur'].value
+            l['DZ'] = par[pref+'_z'].stderr
+            l['DN'] = par[pref+'_N'].stderr
+            l['DB'] = par[pref+'_b'].stderr
+            l['DBTUR'] = par[pref+'_btur'].stderr
+        
+
+        # Save fitted lines in the group
+        cond = self._group['Z'] > 0
+        new_t = unique(self._group[self._t.colnames][cond], keys='Z')
+        new_map = self._group[self._map.colnames][cond]
+        new_line = self._group[self._line.t.colnames]
+        self._t[self._group_t] = new_t#[new_t['Z']>0]
+        self._map[self._group_map] = new_map
+        self._line._t[self._group_line] = new_line
+        self._line._t.sort('X')
+
+        
+    def group(self, s, **kwargs):
+        """ @brief Crete a group of lines to be fitted together
+        
+        A group of line includes:
+        1. Lines of the selected system;
+        2. Lines of other systems with overlapping wavelength range;
+        3. Lines of systems close in redshift with those at point 2.
+        4. Other non-identified lines lines with overlapping wavelength range.
+        A group of lines includes information about the guess fitting parameters
+        of the lines and their constraints
+
+        @param s A row from a system table
+        """
+
+        self._line.t.sort('X')
+
+        # Join systems and lines
+        join_t = join(join(self._t, self._map), self._line.t)
+
+        # Select the system redshift 
+        join_z = join_t['Z']
+        cond_z = s['Z']==join_z
+        
+        # Select lines close in wavelength to the previously selected ones
+        join_xmin = join_t['XMIN']
+        join_xmax = join_t['XMAX']
+        cond_x = np.full(len(join_t), False)
+        for j in join_t[cond_z]:
+            xmin = j['XMIN']
+            xmax = j['XMAX']
+            cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+
+        # Select doublet companions of the previously selected ones
+        join_xc = join_t['Z']
+        cond_xc = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_x)[0]]:
+            z = j['Z']
+            cond_xc += z==join_xc
+
+        # Select lines close in redshift to the previously selected ones
+        join_zc = join_t['Z']
+        cond_zc = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_z)[0]]:
+            zmin = j['Z']#-dz
+            zmax = j['Z']#+dz
+            cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
+        
+        group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
+        group.sort(['Z', 'X'])
+
+        # Define the ion and prefix columns
+        ion = np.array([])
+        for ig, g in enumerate(group):
+            series = dict_series[g['SERIES']]
+            xs = (1+g['Z'])*np.array([dict_wave[i].value for i in series])
+            ion = np.append(ion, series[np.abs(xs - g['X']).argmin()])
+        pref = np.array(['voigt_%03d' % i for i in range(len(group))])
+        group.add_column(Column(ion, name='ION'), index=1)
+        group.add_column(Column(pref, name='PREF', format='20s'), index=2)
+        zlist = np.array(group['Z'])
+
+        # Define the mininimum- and maximum-redshift columns
+        zmin = np.array([group['XMIN'][i]/dict_wave[group['ION'][i]].value-1
+                         for i in range(len(group))])
+        zmax = np.array([group['XMAX'][i]/dict_wave[group['ION'][i]].value-1
+                         for i in range(len(group))])
+        group.add_column(Column(zmin, name='ZMIN'), index=1)
+        group.add_column(Column(zmax, name='ZMAX'), index=2)
+    
+        # Find rows with duplicate redshift values
+        diff1d = np.append(zlist[0], np.ediff1d(zlist))  
+        where = np.where(diff1d == 0)[0]
+
+        # Associate each duplicate row to its companion, to link parameters 
+        for (l, w) in enumerate(where):
+
+            # Change the expression used in fit
+            p = group['PREF'][w-1]
+            group['VARY'][w] = [False, False, False, False]
+            group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
+
+        # Add unidentified lines close to lines in the system
+        group_xmin = group['XMIN']
+        group_xmax = group['XMAX']
+        cond_un = np.full(len(self._line.t), False)
+        for g in group:
+            x = g['X']
+            xmin = g['XMIN']
+            xmax = g['XMAX']
+            cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
+                                      self._line.t['XMIN']<=xmax)        
+        i = len(group)
+        for l in self._line.t[cond_un]:
+            x = l['X']
+            if np.all(x != group['X']):
+                xmin = l['XMIN']
+                xmax = l['XMAX']            
+                y = l['Y']
+                dy = l['DY']
+                ew = l['EW']
+                z = 0.0
+                zmin = xmin/x-1
+                zmax = xmax/x-1
+                #z = x/dict_wave['unknown'].value-1
+                #zmin = xmin/dict_wave['unknown'].value-1
+                #zmax = xmax/dict_wave['unknown'].value-1
+                ion = 'unknown'
+                pref = 'voigt_%03d' %i
+                N = N_def
+                b = b_def
+                btur = btur_def
+                dz = None
+                dN = None
+                db = None
+                dbtur = None
+                vary = [True, True, True, True]
+                expr = [None, None, None, None]
+                series = 'unknown'
+                group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
+                               dbtur, vary, expr, series, x, xmin, xmax, y, dy,
+                               ew])
+                i += 1
+        self._group = group
+        
+        self._t.sort('Z')
+        self._map.sort('Z')
+        self._group_t = np.in1d(self._t['Z'], group['Z'])
+        self._group_map = np.in1d(self._map['Z'], group['Z'])
+        self._group_line = np.in1d(self._line.t['X'], group['X'])
+
+        
+    def model(self, s=None,
+              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, True],
+              adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],
+              prof='voigt', psf='psf_gauss', psf_resol_value=-1.0,
+              psf_resol_vary=False, psf_resol_min=None, psf_resol_max=None,
+              psf_resol_expr=None, **kwargs):
+        """ @brief Create a model for a group of lines, including continuum 
+        adjustment, line profile and instrument PSF 
+
+        @param s A row from a system table
+        @param adj Type of continuum adjustment ('linear')
+        @param adj_value Array of guess values for the parameters of adj
+        @param adj_vary Array of constraint on variability for the parameters of
+                        adj
+        @param adj_min Array of minimum values for the parameters of adj
+        @param adj_max Array of maximum values for the parameters of adj
+        @param adj_expr Array of constraining expression for the parameters
+        @param prof Type of line profile ('voigt')
+        @param psf Type of instrument PSF ('psf_gauss')
+        @param psf_resol_value Guess value for the PSF resolution
+        @param psf_resol_vary Constraint on variability for the PSF resolution
+        @param psf_resol_min Minimum value for the PSF resolution
+        @param psf_resol_max Maximum value for the PSF resolution
+        @param psf_resol_expr Constraining expression for the PSF resolution
+        """
+
+        if s == None:
+            s = self._syst_sel
+        
+        # Determine group and chunk
+        self.group(s)
+        self.chunk()
+        
+        mod = Model()#self._chunk)
+
+        # Continuum adjustment
+        getattr(mod, adj)(adj_value, adj_vary, adj_min, adj_max, adj_expr)
+        fun_adj = getattr(mod, '_'+adj+'_fun')
+        par_adj = getattr(mod, '_'+adj+'_par')
+        fun = fun_adj
+        par = par_adj
+
+        # Line profile
+        for l in self._group:
+            ion = l['ION']
+            if ion == 'unknown':
+                wave = l['X']
+            else:
+                wave = 0.0
+            prof_value = [l['Z'], l['N'], l['B'], l['BTUR']]
+            prof_vary = l['VARY']
+            prof_expr = l['EXPR']
+            prof_pref = l['PREF']
+            getattr(mod, prof)(ion, wave, value=prof_value, vary=prof_vary,
+                               expr=prof_expr, pref=prof_pref)        
+            fun *= getattr(mod, '_'+prof+'_fun')
+            par.update(getattr(mod, '_'+prof+'_par'))
+
+        # Instrument PSF
+        # The PSF cannot be convoluted on the masked spectrum; a spectrum with
+        # only the non masked regions should be created, and the PSF should be
+        # convoluted on each region at a time
+        nz = self._chunk['X'].mask.nonzero()[0]
+        cs = np.append(0, np.cumsum(nz[np.where(np.ediff1d(nz)>1)[0]+1]\
+                                    -nz[np.where(np.ediff1d(nz)>1)[0]]-1))
+        imin = cs[:-1]
+        imax = cs[1:]
+        imean = (imax+imin)//2
+        rem = dc(self._chunk)
+        rem.remove_rows(self._chunk['X'].mask.nonzero()[0])
+        for i, (c_min, c_max, c_mean) in enumerate(zip(imin, imax, imean)):
+            if psf_resol_value < 0.0:
+                psf_resol_value = rem['RESOL'][c_mean]
+            psf_value = [c_min, c_max, rem['X'][c_mean], psf_resol_value]
+            psf_vary = [False, False, False, psf_resol_vary]
+            psf_min = [None, None, None, psf_resol_min]
+            psf_max = [None, None, None, psf_resol_max]
+            psf_expr = [None, None, None, psf_resol_expr]
+            psf_pref = 'psf_'+str(i) 
+            getattr(mod, psf)(psf_value, psf_vary, psf_min, psf_max, psf_expr,
+                               psf_pref)
+            if i == 0:
+                psf_fun = getattr(mod, '_'+psf+'_fun')
+                psf_par = getattr(mod, '_'+psf+'_par')
+            else:
+                psf_fun += getattr(mod, '_'+psf+'_fun')
+                psf_par.update(getattr(mod, '_'+psf+'_par'))
+
+        fun = lmc(fun, psf_fun, conv)
+        par.update(psf_par)
+
+        # Update the model table
+        where = self._chunk['X'].mask == False
+        x_c = self._chunk['X'][where]
+        y_c = self._chunk['Y'][where]
+        cont_c = self._chunk['CONT'][where]
+        if len(self._model.t) == 0:
+            x_t = self._chunk['X']
+            y_t = np.empty(len(x_t))
+            y_t[:] = np.nan
+            yresid_t = np.empty(len(x_t))
+            yresid_t[:] = np.nan
+            yadj_t = np.empty(len(x_t))
+            yadj_t[:] = np.nan
+            self._model.t = self._model.create_t(x_t, y_t, yresid_t, yadj_t,
+                                                 mask=x_t.mask)
+        else:
+            self._model.t['X'][where] = x_c
+            self._model.t['X'].mask = np.logical_and(
+                self._chunk['X'].mask, np.isnan(self._model.t['X']))
+        y = fun.eval(par, x=x_c)*cont_c
+        yresid = y_c-y
+        yadj = fun_adj.eval(par_adj, x=x_c)*cont_c
+        self._model.t['Y'][where] = y
+        self._model.t['YRESID'][where] = yresid
+        self._model.t['YADJ'][where] = yadj
+        self._fun = fun
+        self._par = par
+
+
     def N(self, s):
         """ @brief Estimate a column density from an equivalent width 
         @param s A row from a system table
@@ -156,9 +499,10 @@ class System(Spec1D, Line, Cont):
                          1.4]
             ew_arr = np.exp(lnew_arr)*0.1
 
-            logN = np.interp(ew, ew_arr, logN_arr)
+            logN = np.min([np.interp(ew, ew_arr, logN_arr), 15])
             s['N'] = 10**logN
             
+
     def N_all(self):
         """ @brief Estimate column densities from the equivalent widths 
         """
@@ -178,34 +522,6 @@ class System(Spec1D, Line, Cont):
         #self.chunk(z)
         #self.model(z)
         
-    def chunk(self, z, dx=0.0, **kwargs):
-        """ Extract the chunks of spectrum needed for fitting """
-
-        spec = dc(self._spec.t)
-        spec.add_column(Column(self._cont.t['Y'], name='CONT'))
-
-        x = spec['X']
-        where = np.array([], dtype=int)
-        for l in self._group:
-            xmin = l['XMIN']-dx
-            xmax = l['XMAX']+dx
-            cond_temp = np.logical_and(x>=xmin, x<=xmax)
-            where_temp = np.where(cond_temp)[0]
-            if (len(where_temp) % 2 == 0):
-                where_temp = where_temp[:-1]
-            where = np.append(where, where_temp)
-        where = np.unique(where)
-
-        # Using masked spectrum
-        mask = np.array(spec.mask)
-        self._chunk = dc(spec)
-        self._chunk.mask['X'][:] = True
-        self._chunk.mask['X'][where] = False
-        len_mask = len(self._chunk) - len(self._chunk['X'].mask.nonzero()[0])
-        # This trick is needed to make the out table an independent object and
-        # restore the original spectrum to unmasked state. Bug in Astropy?
-        self._chunk['X'] = self._chunk['X']*-1*-1
-        spec.mask = mask
 
     def create_line(self, xmin=None, xmax=None, sigma=0.07):
         """ Create a list of lines from a list of systems """
@@ -364,191 +680,7 @@ class System(Spec1D, Line, Cont):
         self._map['Z'] = np.append(z_sel, z_sel)
         self._map.sort('Z')
 
-    def fit(self, z=None, save=True, **kwargs):
-        """ Fit the model on a system """
-
-        if z is None:
-            z = self._z_sel
         
-        z_old = self._map['Z']
-        
-        #if (hasattr(self, '_fun') == False):# or True):
-        self.model(z, **kwargs)
-
-        chunk = dc(self._chunk)
-        chunk.remove_rows(self._chunk['X'].mask.nonzero()[0])
-        x = chunk['X']
-        y = chunk['Y']
-        dy = chunk['DY']
-        cont = chunk['CONT']
-        
-        fun = self._fun
-        par = self._par
-        fit = fun.fit(y/cont, par, x=x, weights=cont/dy)
-        par = fit.params
-        model = fit.eval(par, x=x) * cont
-        model_norm = fit.eval_components()['norm_'] * cont
-        #self._model = fit.eval(par, x=self._spec.t['X']) * self._spec.t['CONT']
-        #model = fit.best_fit * cont
-        
-        self._fun = fun
-        self._par = par
-        self._fit = fit
-        for l in self._group:
-            pref = l['PREF']
-            l['Z'] = par[pref+'_z'].value
-            l['N'] = par[pref+'_N'].value
-            l['B'] = par[pref+'_b'].value
-            l['BTUR'] = par[pref+'_btur'].value
-            l['DZ'] = par[pref+'_z'].stderr
-            l['DN'] = par[pref+'_N'].stderr
-            l['DB'] = par[pref+'_b'].stderr
-            l['DBTUR'] = par[pref+'_btur'].stderr
-        
-        chunk['MODEL'] = model
-
-        # Temporary
-        #self._model = dc(self._chunk)
-        self._model['Y'][self._model['X'].mask == False] = model
-        self._model['DY'][self._model['X'].mask == False] = y-model
-        self._model['NORM'][self._model['X'].mask == False] = model_norm
-
-        # Save fitted lines in the group
-        cond = self._group['Z'] > 0
-        new_t = unique(self._group[self._t.colnames][cond], keys='Z')
-        new_map = self._group[self._map.colnames][cond]
-        new_line = self._group[self._line.t.colnames]
-        self._t[self._group_t] = new_t#[new_t['Z']>0]
-        self._map[self._group_map] = new_map
-        self._line._t[self._group_line] = new_line
-        self._line._t.sort('X')
-        
-    def group(self, z, dz=0.0, **kwargs):
-        """ Extract the lines needed for fitting (both from systems and not)
-        and setup the fitting parameters """
-
-        if z is None:
-            z = self._z_sel        
-
-        self._line.t.sort('X')
-
-        # Join systems and lines
-        join_t = join(join(self._t, self._map), self._line.t)
-
-        # Select the system redshift 
-        join_z = join_t['Z']
-        cond_z = z==join_z
-        
-        # Select lines close in wavelength to the previously selected ones
-        join_xmin = join_t['XMIN']
-        join_xmax = join_t['XMAX']
-        cond_x = np.full(len(join_t), False)
-        for j in join_t[cond_z]:
-            xmin = j['XMIN']
-            xmax = j['XMAX']
-            cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
-
-        # Select doublet companions of the previously selected ones
-        join_xc = join_t['Z']
-        cond_xc = np.full(len(join_t), False)
-        for j in join_t[np.where(cond_x)[0]]:
-            z = j['Z']
-            cond_xc += z==join_xc
-
-        # Select lines close in redshift to the previously selected ones
-        join_zc = join_t['Z']
-        cond_zc = np.full(len(join_t), False)
-        for j in join_t[np.where(cond_z)[0]]:
-            zmin = j['Z']-dz
-            zmax = j['Z']+dz
-            cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
-        
-        group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
-        group.sort(['Z', 'X'])
-
-        # Define the ion and prefix columns
-        ion = np.array([])
-        for ig, g in enumerate(group):
-            series = dict_series[g['SERIES']]
-            xs = (1+g['Z'])*np.array([dict_wave[i].value for i in series])
-            ion = np.append(ion, series[np.abs(xs - g['X']).argmin()])
-        pref = np.array(['voigt_%03d' % i for i in range(len(group))])
-        group.add_column(Column(ion, name='ION'), index=1)
-        group.add_column(Column(pref, name='PREF', format='20s'), index=2)
-        zlist = np.array(group['Z'])
-
-        # Define the mininimum- and maximum-redshift columns
-        zmin = np.array([group['XMIN'][i]/dict_wave[group['ION'][i]].value-1
-                         for i in range(len(group))])
-        zmax = np.array([group['XMAX'][i]/dict_wave[group['ION'][i]].value-1
-                         for i in range(len(group))])
-        group.add_column(Column(zmin, name='ZMIN'), index=1)
-        group.add_column(Column(zmax, name='ZMAX'), index=2)
-    
-        # Find rows with duplicate redshift values
-        diff1d = np.append(zlist[0], np.ediff1d(zlist))  
-        where = np.where(diff1d == 0)[0]
-
-        # Associate each duplicate row to its companion, to link parameters 
-        for (l, w) in enumerate(where):
-
-            # Change the expression used in fit
-            p = group['PREF'][w-1]
-            group['VARY'][w] = [False, False, False, False]
-            group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
-
-        # Add unidentified lines close to lines in the system
-        #"""
-        group_xmin = group['XMIN']
-        group_xmax = group['XMAX']
-        cond_un = np.full(len(self._line.t), False)
-        for g in group:
-            x = g['X']
-            xmin = g['XMIN']
-            xmax = g['XMAX']
-            cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
-                                      self._line.t['XMIN']<=xmax)        
-        i = len(group)
-        for l in self._line.t[cond_un]:
-            x = l['X']
-            if np.all(x != group['X']):
-                xmin = l['XMIN']
-                xmax = l['XMAX']            
-                y = l['Y']
-                dy = l['DY']
-                ew = l['EW']
-                z = 0.0
-                zmin = xmin/x-1
-                zmax = xmax/x-1
-                #z = x/dict_wave['unknown'].value-1
-                #zmin = xmin/dict_wave['unknown'].value-1
-                #zmax = xmax/dict_wave['unknown'].value-1
-                ion = 'unknown'
-                pref = 'voigt_%03d' %i
-                N = N_def
-                b = b_def
-                btur = btur_def
-                dz = None
-                dN = None
-                db = None
-                dbtur = None
-                vary = [True, True, True, True]
-                expr = [None, None, None, None]
-                series = 'unknown'
-                group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
-                               dbtur, vary, expr, series, x, xmin, xmax, y, dy,
-                               ew])
-                i += 1
-        #"""    
-        self._group = group
-
-
-        
-        self._t.sort('Z')
-        self._map.sort('Z')
-        self._group_t = np.in1d(self._t['Z'], group['Z'])
-        self._group_map = np.in1d(self._map['Z'], group['Z'])
-        self._group_line = np.in1d(self._line.t['X'], group['X'])
         
     def merge(self, syst):
         """ Merge two systems """
@@ -564,85 +696,9 @@ class System(Spec1D, Line, Cont):
         except:
             pass
 
-    def model(self, z=None, norm=True, prof=True, psf=True, **kwargs):
-        """ Create a model to fit, including normalization, profile and PSF """
 
-        self.group(z, **kwargs)
-        self.chunk(z, **kwargs)
-
-        # Extract non-masked lines and limits of the masked region
-        nz = self._chunk['X'].mask.nonzero()[0]
-        cs = np.append(0, np.cumsum(nz[np.where(np.ediff1d(nz)>1)[0]+1]\
-                                    -nz[np.where(np.ediff1d(nz)>1)[0]]-1))
-        imin = cs[:-1]
-        imax = cs[1:]
-        imean = (imax+imin)//2
-        chunk = dc(self._chunk)
-        chunk.remove_rows(self._chunk['X'].mask.nonzero()[0])
-        x = chunk['X']
-        y = chunk['Y']
-        dy = chunk['DY']
-        cont = chunk['CONT']
-        mods = Model(self._spec, syst=self)
-
+####
         
-        if (norm == True):
-            mods.norm_new()#vary=[False])
-            fun = mods._norm_fun
-            par = mods._norm_par
-            model_norm = fun.eval(par, x=x) * cont
-        else:
-            mods.norm_new(vary=[False])
-            fun = mods._norm_fun
-            par = mods._norm_par
-        if (prof == True):
-            # The only available profile shape is Voigt
-            for (i, l) in enumerate(self._group):
-                if l['ION'] == 'unknown':
-                    wave = l['X']
-                else:
-                    wave = 0.0
-                mods.voigt_new(ion=l['ION'], z=l['Z'], N=l['N'], b=l['B'],
-                               btur=l['BTUR'], wave=wave, vary=l['VARY'],
-                               expr=l['EXPR'], pref=l['PREF'])
-                fun *= mods._prof_fun
-                par.update(mods._prof_par)
-
-        if (psf == True):
-            for i, (c_min, c_max, c_mean) in enumerate(zip(imin, imax, imean)):
-                center = chunk['X'][c_mean]
-                resol = chunk['RESOL'][c_mean]
-                mods.psf_new2(c_min, c_max, center, resol, vary=False,
-                              pref='psf_'+str(i))
-                if i == 0:
-                    psf_fun = mods._psf_fun
-                    psf_par = mods._psf_par
-                else:
-                    psf_fun += mods._psf_fun
-                    psf_par.update(mods._psf_par)
-            fun = lmc(fun, psf_fun, conv)
-            par.update(psf_par)
-
-        
-        model = fun.eval(par, x=x) * cont
-        try:
-            chunk.add_column(Column(model, name='MODEL', dtype=float))
-        except:
-            chunk['MODEL'] = model            
-
-        self._model = dc(self._chunk)
-        self._model['Y'][self._model['X'].mask == False] = model #chunk['MODEL']
-        self._model['DY'][self._model['X'].mask == False] = y-model #chunk['Y']\
-                                                            #-chunk['MODEL']
-        self._model['NORM'] = np.zeros(len(self._model))
-        self._model['NORM'][self._model['X'].mask == False] = model_norm #chunk['Y']
-        
-        self._model_norm = dc(self._chunk)
-        self._model_norm['Y'][self._model_norm['X'].mask == False] = model_norm
-
-        self._fun = fun
-        self._par = par
-
     def plot(self, z=None, ax=None, dz=0.008, ions=None):
         """ Plot a system """
         """ Deprecated """
@@ -799,7 +855,6 @@ class System(Spec1D, Line, Cont):
         #hdu.writeto(filename, overwrite=True)
         self._t.write(filename, format='fits', overwrite=True)
             
-####
         
     def add_comp(self, cont_corr):
         """ Add a component to a line group

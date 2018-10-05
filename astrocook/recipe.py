@@ -28,9 +28,9 @@ class Recipe():
         self.params = None
         
         if name == 'line_cont':
-            self.objs = ['line', 'spec']
-            self.procs = ['mask', 'smooth_lowess']
-            self.modes = ['pass', 'pass']
+            self.objs = ['line', 'spec']#, 'spec']
+            self.procs = ['mask', 'smooth_lowess']##'extract_mask', 'smooth_lowess']
+            self.modes = ['pass', 'pass']#, 'pass']
             self.defaults = {}
             self.omits = {}
 
@@ -48,6 +48,13 @@ class Recipe():
             self.defaults = {}
             self.omits = {'l'}
 
+        if name == 'resid_find':
+            self.objs = ['model', 'model', 'model']
+            self.procs = ['convolve', 'find_extrema', 'select_extrema']
+            self.modes = ['pass', None, None]
+            self.defaults = {}
+            self.omits = {'l'}
+            
         if name == 'spec_cont':
             self.objs = ['spec']
             self.procs = ['convolve']
@@ -67,46 +74,29 @@ class Recipe():
             self.procs = ['fit']
             self.modes = [None]
             self.defaults = {}
-            self.omits = {'z'}
+            self.omits = {'s'}
             
-        """
-        if name == 'syst_def':
-            self.params = {'forest': 'Ly',
-                           'zem': 0.0,
-                           'prox_vel': 0.0,
-                           'xmin': 0.0,
-                           'xmax': 0.0}
-            self.dialog = od([('Ion:', 'forest'),
-                              ('Emission redshift:', 'zem'),
-                              ('Prox. velocity:', 'prox_vel'),
-                              ('Min. wavelength:', 'xmin'),
-                              ('Max. wavelength:', 'xmax')])
-            self.procs = ['syst_def']
-            
-        if name == 'syst_find':
-            self.params = {'series': 'CIV',
-                           'ztol': 3e-4}
-            self.dialog = od([('Series:', 'series'),
-                              ('Redshift tolerance:', 'ztol')])
-            self.procs = ['find']
-        """
-        
     def execute(self, **kwargs):
 
-        acs = dc(self.acs)
+        #acs = dc(self.acs)
+        acs = self.acs
+        pf = False
         for o, p, m in zip(self.objs, self.procs, self.modes):
+            if pf:
+                setattr(acs, o, out)
             obj = getattr(acs, o)
             method = getattr(obj, p)
             try:
-                ok
-            except:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(method)[0][1:]}
                 out = method(**param)
-            #except:
-            #    out = method()
+            except:
+                out = method()
             if m != None:
+                pf = True
                 setattr(acs, o, out)
+            else:
+                pf = False
         return acs
 
     def line_cont(self, **kwargs):

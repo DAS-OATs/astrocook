@@ -1,4 +1,4 @@
-from . import Cont, Line, Spec1D, Spec1DReader, System
+from . import Cont, Line, Spec1D, Spec1DReader, System, Model
 from astropy.io import fits
 from astropy.table import Column, Table
 import difflib
@@ -14,6 +14,7 @@ class IO():
         self.line = Line()
         self.cont = Cont()
         self.syst = System()
+        self.model = Model()
 
     def acs_read(self, name, path='.'):
         """ Read an astrocook session from a tar.gz archive """
@@ -51,13 +52,20 @@ class IO():
             except:
                 pass
 
-
             # System list
             try:
                 acs.syst_name = name[:-4]+'_syst.fits'
                 acs.syst = acs.syst_read(acs.syst_name)
                 os.remove(acs.syst_name)
                 os.remove(acs.syst_name[:-10]+'_map.fits')
+            except:
+                pass
+
+            # System model
+            try:
+                acs.model_name = name[:-4]+'_model.fits'
+                acs.model = acs.model_read(acs.model_name)
+                os.remove(acs.model_name)
             except:
                 pass
 
@@ -137,6 +145,16 @@ class IO():
             except:
                 pass
 
+            # System model
+            try:
+                model_name = name[:-4] + '_model.fits'
+                model_arcname = diff[:-4] + '_model.fits'
+                self.model_write(acs.model, model_name)
+                arch.add(model_name, arcname=model_arcname)
+                os.remove(model_name)
+            except:
+                pass
+
             # Log
             try:
                 log_name = name[:-4] + '.log'
@@ -213,7 +231,30 @@ class IO():
         line._maxs.write(name[:-10]+'_maxs.fits', overwrite=overwrite)
         """
         line._exts.write(name[:-10]+'_exts.fits', overwrite=overwrite)
+    
+    def model_read(self, name):
+        """ Read an astrocook system model from a FITS frame """
+        
+        hdul = fits.open(name)
+        data = hdul[1].data
+        names = np.array(hdul[1].columns.names)
+        units = np.array(hdul[1].columns.units)
+        xunit = units[np.where(names == 'X')][0]
+        yunit = units[np.where(names == 'Y')][0]
+        x = data['X']
+        y = data['Y']            
+        yresid = data['YRESID']
+        yadj = data['YADJ']        
+        
+        model = Model(x=x, y=y, yresid=yresid, yadj=yadj, xunit=xunit,
+                      yunit=yunit)
 
+        return model
+        
+    def model_write(self, model, name, overwrite=True):
+        """ Write an astrocook system model onto a FITS frame """
+
+        model.t.write(name, format='fits', overwrite=overwrite)
     
     def spec_read(self, name):
         """ Read a spectrum from a FITS frame """

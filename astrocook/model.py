@@ -2,6 +2,7 @@ from . import Spec1D
 from .utils import *
 from astropy import units as u
 from astropy.constants import c, e, m_e
+from astropy.table import Table, Column
 from copy import deepcopy as dc
 from lmfit import Model as lmm
 from lmfit import Parameters as lmp
@@ -12,13 +13,86 @@ import sys
 
 yunit = u.erg / (u.Angstrom * u.cm**2 * u.s)
 
-def fadd_func(a, u):
-    """ Compute the real part of the Faddeeva function """
+def fadd_f(a, u):
+    """ @brief Real part of the Faddeeva function Re(F)
+    @param a First abstract variable
+    @param u Second abstrac variable
+    @return Re(F(a, u))
+    """
+    
     return np.real(wofz(u + 1j * a))
 
-def linear_func(x, slope, norm):
+def gauss_psf(x, c_min, c_max, center, resol):
+    """ @brief Gaussian PSF
+
+    The function returns a gaussian array for each element of a selected region
+    in the wavelength domain
+
+    @param x Wavelength domain (in nm)
+    @param c_min Starting pixel of the region
+    @param c_max Ending pixel of the region
+    @param center Center wavelength of the region
+    @param resol Resolution
+    @return Gaussian PSF over x
+    """
+
+    sigma = center / resol * 4.246609001e-1
+    psf = np.exp(-(0.5 * (x-center) / sigma)**2)
+    psf[np.where(psf < 1e-4)] = 0.0
+    ret = [np.array(psf)[c_min:c_max]]
+    return ret
+    
+
+def linear_f(x, norm, slope):
+    """ @brief Linear function
+    
+    @param x Wavelength domain 
+    @param norm Normalization
+    @param slope Slope
+    @return Linear function over x, with value norm at the center
+    """
+    
     return norm + (x - np.mean(x)) * slope
 
+def voigt_f(x, z, N, b, btur, ion='Ly_a', wave=0.0, tab=None):
+    """ @brief Voigt function (real part of the Faddeeva function, after a 
+    change of variables)
+
+    @param x Wavelength domain (in nm)
+    @param z Redshift
+    @param N Column density (in cm^-2)
+    @param b Doppler broadening (in km s^-1)
+    @param btur Turbulent broadening (in km s^-1)
+    @param ion Ionic transition
+    @param wave Wavelength of the line (in nm)
+    @param tab Table with the Faddeeva function
+    @return Voigt function over x
+    """
+    
+    if wave == 0.0:
+        wave = dict_wave[ion].value*1e-9
+        wave_z = wave*(1+z)
+    else:  # For unknown species, Ly-alpha rest-frame wavelength is assumed
+        wave_z = wave*1e-9
+        wave = dict_wave['Ly_a']*1e-9
+    f = dict_f[ion]
+    gamma = dict_gamma[ion]
+    x_si = x * 1e-9
+    N_si = N * 1e4
+    b_si = np.sqrt(b**2 + btur**2) * 1e3
+    tau0 = N_si * np.sqrt(np.pi) * f * e.esu**2 / (m_e * c) \
+           * 1e-9 * wave / b_si
+    a = 0.25 * gamma * wave / (np.pi * b_si)
+    u = c.value / b_si * (x_si / wave_z - 1)
+    if tab == None:
+        model = np.exp(-tau0.value * fadd_f(a, u)) #* yunit
+    else:
+        model = np.exp(-tau0.value * tab(a, u).flatten()) #* yunit
+    ret = np.array(model)
+    return ret
+
+
+"""
 def linear_step_func(x, xmin, xmax, slope, norm):
     where = np.where(np.logical_and(x>=xmin, x<=xmax))[0]
     ret = x * 0.0
@@ -34,46 +108,8 @@ def norm_step_func(x, xmin, xmax, norm):
     ret = x * 0.0
     ret[where] = norm
     return ret
-
-def psf_func(x, c_min, c_max, center, resol):
-#def psf_func(x, c_min, c_max, c_tot, center, resol):
-    sigma = center / resol * 4.246609001e-1
-    psf = np.exp(-(0.5 * (x-center) / sigma)**2)
-    psf[np.where(psf < 1e-4)] = 0.0
-    ret = [np.array(psf)[c_min:c_max]]
-    """
-    psf_all = np.append(np.append(np.zeros(c_min),
-                                  np.array(psf)[c_min:c_max]),
-                        np.zeros(c_tot-c_max))
-    ret = [psf_all]
-    """
-    return ret
-    
-def voigt_func(x, z, N, b, btur, wave, ion='Ly_a', tab=None):
-    """ Compute the Voigt function """
-    if wave == 0.0:
-        wave = dict_wave[ion].value*1e-9
-    else:
-        wave = wave*1e-9
-    f = dict_f[ion]
-    gamma = dict_gamma[ion]
-    x_si = x * 1e-9
-    N_si = N * 1e4
-    b_si = np.sqrt(b**2 + btur**2) * 1e3
-    tau0 = N_si * np.sqrt(np.pi) * f * e.esu**2 / (m_e * c) \
-           * 1e-9 * wave / b_si
-    a = 0.25 * gamma * wave / (np.pi * b_si)
-    u = c.value / b_si * (x_si / (wave * (1 + z)) - 1)
-    if tab == None:
-        model = np.exp(-tau0.value * fadd_func(a, u)) #* yunit
-    else:
-        model = np.exp(-tau0.value * tab(a, u).flatten()) #* yunit
-    ret = np.array(model)
-    return ret
-
+"""
 def voigt_params(syst, **kwargs):
-    """ Read voigt parameters, provided as kwargs, and format them as arrays
-    of the same length of the system to be fitted """
 
     try:
         z = kwargs['z']
@@ -111,16 +147,23 @@ def voigt_params(syst, **kwargs):
     ret = {'z': z_arr, 'N': N_arr, 'b': b_arr, 'btur': btur_arr}
     return ret
 
-class Model():
 
-    def __init__(self,
-                 spec=None,
-                 line=None,
-                 syst=None,
-                 group=None,
-                 chunk=None):
-        """ Constructor for the Fit class """
+    
+class Model(Spec1D):
 
+    def __init__(self, x=None, y=None, yresid=None, yadj=None,
+                 xunit=xunit_def, yunit=yunit_def):
+                 #spec=None,
+                 #line=None,
+                 #syst=None,
+                 #group=None,
+                 #chunk=None):
+        """ @brief Constructor for the Model class 
+        """
+
+        self._t = self.create_t(x, y, yresid, yadj)
+        
+        """
         #if ((syst is None) and (line is None)):
         #    raise Exception("syst or line must be provided.")
         
@@ -147,8 +190,113 @@ class Model():
                 self._group = group
             if (hasattr(self._spec, '_chunk')):            
                 self._chunk = chunk
+        """
+        #if chunk is not None:
+        #    self._model = dc(chunk)
+        self._use_good = False
         
 # Methods
+
+    def create_t(self, x=None, y=None, yresid=None, yadj=None, xunit=xunit_def,
+                 yunit=yunit_def, mask=None, dtype=float):
+        """ @brief Create a model table
+
+        @param x Domain
+        @param y Model
+        @param norm Normalization component of the model
+        @return Table
+        """
+
+        t = Table(masked=True)
+        if x is not None:
+            t['X'] = Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)
+        if y is not None:
+            t['Y'] = Column(np.array(y, ndmin=1), dtype=dtype, unit=yunit)
+        if yresid is not None:
+            t['YRESID'] = Column(np.array(yresid, ndmin=1), dtype=dtype,
+                                 unit=yunit)
+        if yadj is not None:
+            t['YADJ'] = Column(np.array(yadj, ndmin=1), dtype=dtype, unit=yunit)
+        if mask is not None:
+            t['X'].mask = mask
+
+        return t
+        
+    def linear(self, value=[1.0, 0.0], vary=[True, False], min=[0.9, 0.0],
+               max=[1.1, 0.0], expr=[None, None], pref='adj'):
+        """ @brief Linear adjustment to continuum 
+
+        The model has two parameters, norm and slope, and is multiplied to the
+        continuum to correct it.
+
+        @param value Array of guess values for the parameters
+        @param vary Array of constraint on variability for the parameters
+        @param min Array of minimum values for the parameters
+        @param max Array of maximum values for the parameters
+        @param expr Array of constraining expressions for the parameters
+        @param pref Prefix to be used in composite models
+        """
+        
+        self._linear_fun = lmm(linear_f, prefix=pref+'_')
+        self._linear_par = self._linear_fun.make_params()
+        for i, k in enumerate(self._linear_par.keys()):
+            self._linear_par[k].set(value=value[i], vary=vary[i], min=min[i],
+                                    max=max[i], expr=expr[i])
+        
+
+    def psf_gauss(self, value, vary=[False, False, False, False],
+                  min=[None, None, None, None], max=[None, None, None, None],
+                  expr=[None, None, None, None], pref='psf_gauss'):
+        """ @brief Instrument PSF with gaussian profile
+
+        The instrument PSF is defined over a spectral region and has four 
+        parameters: c_min (starting pixel of the region), c_max (ending pixel of
+        the region), center (center wavelength of the region), and resol
+
+        @param value Array of guess values for the parameters
+        @param vary Array of constraint on variability for the parameters
+        @param min Array of minimum values for the parameters
+        @param max Array of maximum values for the parameters
+        @param expr Array of constraining expressions for the parameters
+        @param pref Prefix to be used in composite models        
+        """
+        self._psf_gauss_fun = lmm(gauss_psf, prefix=pref+'_')
+        self._psf_gauss_par = self._psf_gauss_fun.make_params()
+        for i, k in enumerate(self._psf_gauss_par.keys()):
+            self._psf_gauss_par[k].set(value=value[i], vary=vary[i], min=min[i],
+                                       max=max[i], expr=expr[i])
+                
+
+    def voigt(self, ion, wave, value=[z_def, N_def, b_def, btur_def],
+              vary=[True, True, True, False], min=[None, 1e10, 0.0, None],
+              max=[None, 1e23, 200.0, None], expr=[None, None, None, None],
+              pref='voigt'):
+        """ @brief Voigt profile for a single line 
+
+        The Voigt profile has four parameters: z, N, b, btur
+
+        @param ion Name of the ionic transition
+        @param wave Wavelength of the ionic transition
+        @param value Array of guess values for the parameters
+        @param vary Array of constraint on variability for the parameters
+        @param min Array of minimum values for the parameters
+        @param max Array of maximum values for the parameters
+        @param expr Array of constraining expressions for the parameters
+        @param pref Prefix to be used in composite models        
+        """
+
+        self._voigt_fun = lmm(voigt_f, prefix=pref+'_', ion=ion)
+        self._voigt_par = self._voigt_fun.make_params()
+        for i, k in enumerate(self._voigt_par.keys()):
+            if i < 4:
+                self._voigt_par[k].set(value=value[i], vary=vary[i], min=min[i],
+                                       max=max[i], expr=expr[i])
+            else:
+                self._voigt_par[k].set(value=wave, vary=False)
+
+
+# Deprecated
+
 
     def N_guess(self, unabs, ion='Ly_a'):
         """ Guess the column density, given the line peak """
@@ -203,37 +351,6 @@ class Model():
                 
         return ret
 
-    def norm(self, value=1.0, vary=False):
-
-        #if (self._chunk is None):
-        #    raise Exception("Chunk must be provided.")
-
-        if (self._cont is None):
-            raise Exception("Continuum must be provided.")
-        pref = 'cont_'
-        model = lmm(norm_func, prefix=pref)
-        param = model.make_params()
-        cont = self._cont.y.value
-        norm = value #np.mean(cont)
-            
-        #param[pref+'chunk_sum'].set(chunk_sum, vary=False)
-        if (vary == False):
-            param[pref+'norm'].set(norm, vary=False)
-        else:
-            param[pref+'norm'].set(norm, min=0.95)#, max=1.05, min=0.95)
-
-        ret = (model, param)
-
-        return ret
-
-    def norm_new(self, level=1.0, vary=[True], expr=[None], pref='norm'):
-        """ Normalization of the continuum """
-        
-        self._norm_fun = lmm(norm_func, prefix=pref+'_')
-        self._norm_par = self._norm_fun.make_params()
-        self._norm_par[pref+'_norm'].set(level, vary=vary[0], expr=expr[0])
-        
-            
     def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.2 * u.nm, #0.03*u.nm,
              prof='voigt', ion_mask=None, **kwargs):
         """Create a window with a model profile of a line or multiplet"""
@@ -377,19 +494,6 @@ class Model():
         self._psf_par[pref+'_center'].set(center, vary=vary[0], expr=expr[0])
         self._psf_par[pref+'_sigma'].set(sigma, vary=vary[1], expr=expr[1])
         
-    def psf_new2(self, c_min, c_max, center, resol, vary=False, expr=None,
-                 pref='psf'):
-#    def psf_new2(self, c_min, c_max, c_tot, center, resol, vary=False,
-#                 expr=None, pref='psf'):
-        self._psf_fun = lmm(psf_func, prefix=pref+'_')
-        self._psf_par = self._psf_fun.make_params()
-        self._psf_par[pref+'_c_min'].set(c_min, vary=False)
-        self._psf_par[pref+'_c_max'].set(c_max, vary=False)
-        #self._psf_par[pref+'_c_tot'].set(c_tot, vary=False)
-        self._psf_par[pref+'_center'].set(center, vary=False)
-        self._psf_par[pref+'_resol'].set(resol, vary=vary,
-                                         min=resol/1.1, max=resol*1.1,
-                                         expr=expr)
    
     def psf2(self):
         pref = 'psf_'
@@ -469,100 +573,5 @@ class Model():
 
         return ret
 
-    def voigt_new(self, ion, z, N, b, btur, wave,
-                  vary=[True, True, True, False],
-                  expr=[None, None, None, None], pref='voigt'):
-        """ Voigt profile """
 
-        self._prof_fun = lmm(voigt_func, prefix=pref+'_', ion=ion)
-        self._prof_par = self._prof_fun.make_params()
-        #self._prof_par.pretty_print()
-        #self._prof_par[pref+'_chunk_lim'].set(chunk_lim, vary=False)
-        self._prof_par[pref+'_z'].set(z, vary=vary[0], min=0, expr=expr[0])
-        self._prof_par[pref+'_N'].set(N, vary=vary[1], min=0, expr=expr[1])
-        self._prof_par[pref+'_b'].set(b, vary=vary[2], min=0, expr=expr[2])
-        self._prof_par[pref+'_btur'].set(btur, vary=vary[3], min=0,
-                                         expr=expr[3])
-        self._prof_par[pref+'_wave'].set(wave, vary=False)
-        #self._prof_par.pretty_print()            
-
-    def voigt(self, z, N, b, btur, z_vary=True, N_vary=True, b_vary=True,
-              btur_vary=False, ion=['Ly_a']):
-        """ Create a Voigt model for a line """
-        """ Deprecated! """
-
-        self._z = dc(z)
-        self._N = dc(N)
-        self._b = dc(b)
-        self._btur = dc(btur)        
-        
-        z_list = []
-        pref_list = []
-        expr_dict = {}
-        mult_old = ''
-        i = 0
-        ran = 1
-        #if (hasattr(self, '_syst')):
-        if (len(ion) > 1 or 1==1):
-            #ran = len(self._syst.t[self._group[1]])
-            ran = len(z)
-        for l in range(ran):
-            try:
-                ion = np.sort(self._syst.ion[self._group[1]][l])
-            except:
-                pass
-            for c in range(len(ion)):
-                mult = ion[c].split('_')[0]
-                pref = 'voigt' + str(c) + '_z' \
-                       + str(z[l]).replace('.', '').replace('-', 'm') + '_'
-                if (z[l] in z_list):
-                    expr = np.asarray(pref_list)[
-                        np.where(np.asarray(z_list)==z[l])][0]
-                    i += 1
-                    pref = pref + str(i) + '_'
-                    z_expr = expr + 'z'
-                    N_expr = expr + 'N'
-                    b_expr = expr + 'b'
-                    btur_expr = expr + 'btur'
-                else:
-                    z_list.append(z[l])
-                    pref_list.append(pref)                    
-                    z_expr = ''
-                    N_expr = ''
-                    b_expr = ''
-                    btur_expr = ''
-                expr_dict[pref+'z'] = z_expr 
-                expr_dict[pref+'N'] = N_expr 
-                expr_dict[pref+'b'] = b_expr 
-                expr_dict[pref+'btur'] = btur_expr 
-                if (type(ion) is str):
-                    model_l = lmm(voigt_func, prefix=pref, ion=ion)
-                else:
-                    model_l = lmm(voigt_func, prefix=pref, ion=ion[c-1])
-                if ((l == 0) and (c == 0)):
-                    model = model_l
-                    param = model_l.make_params()
-                else:
-                    model *= model_l
-                    param.update(model_l.make_params())
-                N_min = 0 if N[l].value == 0 else voigt_min['N']
-                param[pref+'z'].set(z[l].value, min=z[l].value/z_fact,
-                                    max=z[l].value*z_fact)#, vary=z_vary)#, expr=str(z_expr))
-                param[pref+'N'].set(N[l].value, min=N_min, #min=voigt_min['N'],
-                                    max=voigt_max['N'])#, vary=N_vary)#, expr=N_expr)
-                param[pref+'b'].set(b[l].value, min=voigt_min['b'],
-                                    max=voigt_max['b'])#, vary=b_vary)#, expr=b_expr)
-                param[pref+'btur'].set(btur[l].value, min=voigt_min['btur'],
-                                       max=voigt_max['btur'], vary=False)
-                #, expr=btur_expr)
-                
-                if (mult == mult_old):
-                    for k in expr_dict:
-                        param[k].set(expr=expr_dict[k])    
-                mult_old = mult
-
-        ret = (model, param)
-
-
-        return ret
 

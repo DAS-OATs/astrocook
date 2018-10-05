@@ -11,11 +11,12 @@ from scipy.special import wofz
 # Menu description
 proc_descr = {'convolve': "Convolve with a custom profile",
               'extract_forest': "Extract forest",
+              'extract_mask': "Extract non masked regions into new spectrum",
               'extract_reg': "Extract spectral region",
               'ew_all': "Estimate all equivalent widths",
               'fit': "Fit selected system",
               'mask': "Mask lines",
-              'mask_to_spec': "Create new spectrum from mask",
+              #'mask_to_spec': "Create new spectrum from mask",
               'model': "Model selected system",
               'N_all': "Estimate all column densities",
               'select_extrema': "Select the most prominent extrema",
@@ -61,7 +62,7 @@ dict_series = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
                        'Ly_b', 'Ly_a'],
                #'Ly': [['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
-              #         'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
+              #         'Ly_9', 'Ly_8'x, 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
               #         'Ly_b', 'Ly_a']],
                'Ly_abg': ['Ly_g', 'Ly_b', 'Ly_a'],
                'Ly_ab': ['Ly_b', 'Ly_a'],
@@ -110,10 +111,7 @@ dict_wave = {'Ly_a': 121.567 * u.nm,
              'MgII_2796': 279.63543 * u.nm,
              'MgII_2803': 280.35315 * u.nm,
              'CaII_3934': 393.4775 * u.nm,             
-             'CaII_3969': 396.95901 * u.nm,             
-             'neb': 10.0 * u.nm,
-             #'unknown': 10.0 * u.nm}
-             'unknown': 314.220 * u.nm}
+             'CaII_3969': 396.95901 * u.nm}
 
 # Ionic oscillator strengths
 dict_f = {'Ly_a': 0.416,

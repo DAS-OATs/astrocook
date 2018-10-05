@@ -67,26 +67,6 @@ class Plot():
 
         return p
 
-    def model(self, tab, replace=True, cont=None, dy=False, c='C5', lw=1.0,
-              linestyle='--', **kwargs):
-        if replace:
-            self.clean('model_p')
-        #print tab
-        #print dy
-        (p, p_res) = self.spec(tab, replace=False, cont=cont, dy=dy, c=c,
-                                 lw=lw, linestyle=linestyle, **kwargs)
-        self.model_p.append(p)
-        self.model_p.append(p_res)
-
-        # Normalization component
-        tab_x = self.x_mode(tab['X'], self.ion)
-        (tab_norm, tab_dy) = self.y_mode(tab, cont, y='NORM')
-        p_norm = self.ax.plot(tab_x, tab_norm, c=c, lw=lw, linestyle=':',
-                              **kwargs) 
-        self.model_p.append(p_norm)
-
-        return p
-        
     def line(self, tab, replace=True, cont=None, s=100, c='C3',
              marker='+', fill=False, **kwargs):
         if replace:
@@ -112,6 +92,32 @@ class Plot():
                          fontsize=13)
         
         return p
+
+    def model(self, tab, replace=True, cont=None, c='C5', lw=1.0, **kwargs):
+        if replace:
+            self.clean('model_p')
+
+        (p, p_other) = self.spec(tab, replace=False, cont=cont, dy=False, c=c,
+                                 lw=lw, linestyle='--', **kwargs)
+        (p_resid, p_other) = self.spec(
+            tab, replace=False, cont=cont, y='YRESID', dy=False, c=c, lw=lw,
+            linestyle=':', **kwargs)
+        (p_adj, p_other) = self.spec(
+            tab, replace=False, cont=cont, y='YADJ', dy=False, c=c, lw=lw,
+            linestyle='-.', **kwargs)
+        self.model_p.append(p)
+        self.model_p.append(p_resid)
+        self.model_p.append(p_adj)
+
+        # Normalization component
+        #tab_x = self.x_mode(tab['X'], self.ion)
+        #(tab_norm, tab_dy) = self.y_mode(tab, cont, y='NORM')
+        #p_norm = self.ax.plot(tab_x, tab_norm, c=c, lw=lw, linestyle=':',
+        #                      **kwargs) 
+        #self.model_p.append(p_norm)
+
+        return p
+        
 
     def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3', **kwargs):
         if replace:
@@ -146,8 +152,8 @@ class Plot():
         else:
             self.ax.set_xlim(self.xmin, self.xmax)
         
-    def spec(self, tab, replace=True, dy=True, cont=None, xmin=None, xmax=None,
-             c='C0', c_other='C1', lw=1.0, **kwargs):
+    def spec(self, tab, replace=True, y='Y', dy=True, cont=None, xmin=None,
+             xmax=None, c='C0', c_other='C1', lw=1.0, **kwargs):
         if replace:
             self.clean('spec_p')
 
@@ -155,10 +161,10 @@ class Plot():
             self.xmin = xmin
             self.xmax = xmax
             self.ax.set_xlim(xmin, xmax)
-            
+
         tab_x = self.x_mode(tab['X'], self.ion)
-            #axt.set_xlabel
-        (tab_y, tab_dy) = self.y_mode(tab, cont)
+             #axt.set_xlabel
+        (tab_y, tab_dy) = self.y_mode(tab, cont, y, dy)
         p, = self.ax.plot(tab_x, tab_y, c=c, lw=lw, **kwargs)
         self.spec_p.append(p)
         if dy:
@@ -174,15 +180,19 @@ class Plot():
             x = x/dict_wave[ion].value-1
         return x
 
-    def y_mode(self, tab, cont, y='Y', dy='DY'):
+    def y_mode(self, tab, cont, y='Y', dy=True):
         tab_y = tab[y]
-        tab_dy = tab[dy]
+        if dy:
+            tab_dy = tab['DY']
+        else:
+            tab_dy = None
         if cont != None:
             if (len(cont) == len(tab_y)):
                 cont_y = cont['Y']
             else:
                 cont_y = np.interp(tab['X'], cont['X'], cont['Y'])
             tab_y = tab_y/cont_y
-            tab_dy = tab_dy/cont_y
+            if dy:
+                tab_dy = tab_dy/cont_y
         return (tab_y, tab_dy)
 

@@ -1,5 +1,6 @@
 from . import * #Cont, IO, Line, Plot, Recipe, Spec1DReader, System
 from .utils import *
+import ast
 from astropy import units as u
 from astropy.io import ascii, fits
 from astropy.table import Column, vstack
@@ -34,6 +35,7 @@ class MainFrame(wx.Frame):
         self.line = None
         self.cont = None
         self.syst = None
+        self.model = None
 
         self.rec = None
         self.plot = None
@@ -45,6 +47,7 @@ class MainFrame(wx.Frame):
         self.line_dict = {}
         self.cont_dict = {}
         self.syst_dict = {}
+        self.model_dict = {}
         self.proc_dict = {}
         self.rec_dict = {}
 
@@ -277,8 +280,8 @@ class MainFrame(wx.Frame):
             self.proc_menu, 110, proc_descr['ew_all'])
         proc_line_mask = wx.MenuItem(
             self.proc_menu, 111, proc_descr['mask']+"...")
-        proc_mask_to_spec = wx.MenuItem(
-            self.proc_menu, 112, proc_descr['mask_to_spec']+"...")
+        proc_spec_extract_mask = wx.MenuItem(
+            self.proc_menu, 112, proc_descr['extract_mask']+"...")
         #proc_syst_group = wx.MenuItem(
         #    self.proc_menu, 120, proc_descr['group']+"...")
         proc_syst_N_all = wx.MenuItem(
@@ -299,7 +302,7 @@ class MainFrame(wx.Frame):
                   proc_spec_select_extrema)
         self.Bind(wx.EVT_MENU, self.on_proc_line_ew_all, proc_line_ew_all)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
-        self.Bind(wx.EVT_MENU, self.on_proc_mask_to_spec, proc_mask_to_spec)
+        self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_mask, proc_spec_extract_mask)
         #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
@@ -313,7 +316,7 @@ class MainFrame(wx.Frame):
         self.proc_menu.AppendSeparator()
         self.proc_menu.Append(proc_line_ew_all)
         self.proc_menu.Append(proc_line_mask)
-        self.proc_menu.Append(proc_mask_to_spec) 
+        self.proc_menu.Append(proc_spec_extract_mask) 
         self.proc_menu.AppendSeparator()
         #self.proc_menu.Append(proc_syst_group)
         self.proc_menu.Append(proc_syst_N_all)
@@ -488,6 +491,7 @@ class MainFrame(wx.Frame):
                         self.spec_name = acs.spec_name
                     except IOError:
                         wx.LogError("Cannot open archive '%s'." % name)
+                    self.acs = acs
                 else:
                     self.targ = fileDialog.GetFilename()[:-5] 
                     try:
@@ -501,8 +505,9 @@ class MainFrame(wx.Frame):
             acs = self.IO.acs_read(name, path=self.path_chosen)
             self.spec = acs.spec
             self.spec_name = acs.spec_name
+            self.acs = acs
+                
 
-        self.acs = acs
         self.norm = False
     
         if self.spec != None:
@@ -550,6 +555,14 @@ class MainFrame(wx.Frame):
                 self.syst = None
 
             try:
+                self.model = acs.model
+                #self.model._acs(acs)
+                self.model_name = acs.model_name
+                self.model_dict[self.targ] = self.model
+            except:
+                self.model = None
+
+            try:
                 self.log = acs.log
                 self.log_name = acs.log_name
             except:
@@ -560,6 +573,7 @@ class MainFrame(wx.Frame):
             self.update_line()
             self.update_cont()
             self.update_syst()
+            self.update_model()
             self.on_backup_write(None)
                 
     def on_file_save(self, event, path='.'):
@@ -607,14 +621,17 @@ class MainFrame(wx.Frame):
         #self.plot.spec(self.spec.t, replace=False, c='C5', c_other='C4')
         self.plot_fig.draw()
 
-    def on_proc_mask_to_spec(self, event):
-        self.spec = self.mask
-        self.targ = self.targ + '_mask'
-        self.row = self.spec_lc.GetItemCount()
-        self.spec_lc.insert_string_item(self.row, self.targ)
-        self.spec_dict[self.targ] = self.spec
-        self.update_spec()
-            
+    def on_proc_spec_extract_mask(self, event):
+        proc = 'extract_mask'
+        out = self.dialog_proc(self.mask, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
+
     def on_proc_spec_convolve(self, event):
         proc = 'convolve'
         out = self.dialog_proc(self.spec, proc)
@@ -677,7 +694,7 @@ class MainFrame(wx.Frame):
     """        
 
     def on_proc_syst_fit(self, event):
-        self.syst._z_sel = self.z_sel
+        self.syst._syst_sel = self.syst_sel
         proc = 'fit'
         self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
@@ -685,7 +702,7 @@ class MainFrame(wx.Frame):
             self.z_sel = self.syst._t['Z'][new_z]
             self.update_syst()
 
-            self.plot.model(self.syst._model, dy=True)
+            self.plot.model(self.syst._model.t)
             self.plot_fig.draw()
 
             if self.syst_frame == None:
@@ -696,17 +713,20 @@ class MainFrame(wx.Frame):
                 self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model,
-                                              cont=self.cont.t, dy=True)
+                self.syst_frame.plot[p].model(self.syst._model.t,
+                                              cont=self.cont.t)
                 self.syst_frame.plot_fig.draw()
-
+            self.update_acs()
+                
     def on_proc_syst_model(self, event):
-        self.syst._z_sel = self.z_sel
+        self.syst._syst_sel = self.syst_sel
         proc = 'model'
         self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
-            self.plot.model(self.syst._model, dy=True)
-            #self.plot.model(self.syst._model_norm, replace=False)
+            self.model = self.syst._model
+            self.model_dict[self.targ] = self.model
+            self.update_model()
+            self.plot.model(self.syst._model.t)
             self.plot_fig.draw()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
@@ -715,11 +735,10 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
             for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model,
-                                              cont=self.cont.t, dy=True)
-                #self.syst_frame.plot[p].model(self.syst._model_norm,
-                #                              replace=False, cont=self.cont.t)
+                self.syst_frame.plot[p].model(self.syst._model.t,
+                                              cont=self.cont.t)
                 self.syst_frame.plot_fig.draw()
+            self.update_acs()
 
     def on_proc_syst_N_all(self, event):
         proc = 'N_all'
@@ -797,9 +816,9 @@ class MainFrame(wx.Frame):
             map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
 
             # On selection, define group and chunks for the system
-            self.syst.group(self.z_sel)
-            self.syst.chunk(self.z_sel)
-            self.syst.N(self.syst_sel)
+            self.syst.group(self.syst_sel)
+            self.syst.chunk()
+            #self.syst.N(self.syst_sel)
 
             self.syst_rows = []
             for m in self.syst._map[map_w]:
@@ -860,6 +879,7 @@ class MainFrame(wx.Frame):
         self.acs.line = self.line
         self.acs.syst = self.syst
         self.acs.cont = self.cont
+        self.acs.model = self.model
        
 
     def update_all(self, cont=None):
@@ -877,12 +897,16 @@ class MainFrame(wx.Frame):
             self.cont = None
         try:
             self.syst = self.syst_dict[self.targ]
-            self.update_syst()
         except:
             self.syst = None
+        try:
+            self.model = self.model_dict[self.targ]
+        except:
+            self.model = None
 
         self.update_line(cont)
         self.update_cont(cont)
+        self.update_syst()
         self.update_menu()
 
     def update_cont(self, cont=None):
@@ -936,7 +960,14 @@ class MainFrame(wx.Frame):
             self.menu_enable(self.rec_menu, self.id_syst)
 
         self.menu_disable(self.rec_menu, self.id_syst_sel)
-                        
+
+    def update_model(self, cont=None):
+        try:
+            self.plot.model(self.model.t, cont=cont)
+            self.plot_fig.draw()
+        except:
+            pass
+        
     def update_spec(self, cont=None):
         """ Update the spec list """
 
@@ -966,7 +997,7 @@ class MainFrame(wx.Frame):
         self.plot.spec(self.spec.t, cont=cont, xmin=self.xmin, xmax=self.xmax)
         self.plot_fig.draw()
         
-    def update_syst(self):
+    def update_syst(self, cont=None):
         """ Update the system table """
 
         try:
@@ -1019,13 +1050,13 @@ class ParamDialog(wx.Dialog):
                 obj = getattr(self.p.acs, o)
             method = getattr(obj, p)
             try:
-                self.params.update({k: v for (k,v) in
-                                    zip(inspect.getargspec(method)[0][1:],
-                                        inspect.getargspec(method)[3])})
+                defs = inspect.getargspec(method)[3]
+                keys = inspect.getargspec(method)[0][-len(defs):]
+                self.params.update({k: d for (d, k) in zip(defs, keys)})
                 for d in self.p.defaults:
                     self.params[d] = self.p.defaults[d]
-                for o in self.p.omits:
-                    del self.params[o]
+                for om in self.p.omits:
+                    del self.params[om]
             # When the procedure has no parameters
             except:
                 pass  
@@ -1106,10 +1137,17 @@ class ParamDialog(wx.Dialog):
     def on_run(self, e):
 
         for p, t, ctrl in zip(self.par, self.type, self.ctrl):
-            try:
-                self.params[p] = t(ctrl.GetValue())
-            except:
+            par = ctrl.GetValue()
+            if t==type([]):  # To handle list parameters
+                trim = str(''.join(par)[1:-1]).split(', ')
+                lit = [ast.literal_eval(x.title()) for x in trim]
+                self.params[p] = lit
+            elif t==type(None):
                 self.params[p] = None
+            elif t==type(True):
+                self.params[p] = par == "True"
+            else:
+                self.params[p] = t(par)
         self.execute = True
         self.Close()
 

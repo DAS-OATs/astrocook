@@ -290,16 +290,42 @@ class Spec1D():
 
 # Methods
 
-    def convolve(self, col='y', prof=None, gauss_sigma=20, convert=True,
+    def apply_mask(self, columns, rows, values):
+        """@brief Apply a mask on a copied spectrum, while keeping the original
+        unchanged.
+
+        This is needed to avoid a possible bug in Astropy: even if the new 
+        spectrum was deep-copied, applying a mask to it will cause also the 
+        original spectrum to be masked. The trick is to multiply the masked
+        column twice by -1. Reason unknown.
+
+        @param spec The original spectrum
+        @param columns An array with column names
+        @param rows An array of numpy.where-like arrays to tell which rows of
+                    each column should be masked
+        @param values An array of booleans to tell if the rows should be masked/
+                      unmasked
+        @return out The copied and masked spectrum
+        """
+
+        out = dc(self)
+        mask = np.array(self.t.mask)
+        for c, r, v in zip(columns, rows, values):
+            out.t.mask[c][r] = v
+        out.t[c] = out.t[c]*-1*-1  # This works in decoupling out from spec
+        self.t.mask = mask
+        return out
+        
+    def convolve(self, col='Y', prof=None, gauss_sigma=20, convert=True,
                  mode='same'):
-        """Convolve a spectrum with a profile using FFT transform
+        """@brief Convolve a spectrum with a profile using FFT transform
         
         The profile must have the same length of the column X of the spectrum.
         If no profile @a prof is provided, a normalized Gaussian profile with 
         @a gauss_sigma is applied."""
 
         conv = dc(self)
-        conv_col = getattr(conv, col)
+        conv_col = conv.t[col]#getattr(conv, col)
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
@@ -330,6 +356,14 @@ class Spec1D():
 
         return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
 
+    def extract_mask(self, col='Y'):
+        """ @brief Extract non-masked regions
+        """
+        
+        out = dc(self)
+        out.t.remove_rows(out.t[col].mask.nonzero()[0])
+        return out
+    
     def extract_reg(self, xmin=0.0, xmax=0.0):
         """ @brief Extract a spectral region
         @param xmin Minimum wavelength
@@ -348,12 +382,12 @@ class Spec1D():
             
         return reg
     
-    def find_extrema(self):
+    def find_extrema(self, col='Y'):
         """Find the extrema in a spectrum and save them as a spectrum"""
 
         if (len(self.t) > 0):
-            min_idx = np.hstack(argrelmin(self.t['Y']))
-            max_idx = np.hstack(argrelmax(self.t['Y']))
+            min_idx = np.hstack(argrelmin(self.t[col]))
+            max_idx = np.hstack(argrelmax(self.t[col]))
             ext_idx = np.sort(np.append(min_idx, max_idx))
             #self._mins = self.t[min_idx]
             #self._maxs = self.t[max_idx]
@@ -369,15 +403,16 @@ class Spec1D():
             #self._maxs = None
             self._exts = None
         
-    def select_extrema(self, kind='abs', diff='max', kappa=3.0):
+        
+    def select_extrema(self, col='Y', kind='abs', diff='max', kappa=3.0):
         """ Select the most prominent extrema """
 
         self.find_extrema()
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (self._exts['Y'][:-2] - self._exts['Y'][1:-1]) 
-        diff_y_right = (self._exts['Y'][2:] - self._exts['Y'][1:-1]) 
+        diff_y_left = (self._exts[col][:-2] - self._exts[col][1:-1]) 
+        diff_y_right = (self._exts[col][2:] - self._exts[col][1:-1]) 
         if kind is 'em':
             diff_y_left = -diff_y_left
             diff_y_right = -diff_y_right
@@ -396,8 +431,10 @@ class Spec1D():
         """ Smooth the flux using LOWESS method """
 
         out = dc(self)
-        x = self.t['X']
-        y = self.t['Y']
+        nomask = np.logical_not(self.t['X'].mask)
+        x = self.t['X'][nomask]
+        y = self.t['Y'][nomask]
+        print len(x)
         le = lowess(y, x, frac)
         out.t['Y'] = np.interp(x, le[:, 0], le[:, 1]) * y.unit
 
