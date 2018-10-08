@@ -151,8 +151,8 @@ def voigt_params(syst, **kwargs):
     
 class Model(Spec1D):
 
-    def __init__(self, x=None, y=None, yresid=None, yadj=None,
-                 xunit=xunit_def, yunit=yunit_def):
+    def __init__(self, x=None, xmin=None, xmax=None, y=None, dy=None,
+                 yresid=None, yadj=None, xunit=xunit_def, yunit=yunit_def):
                  #spec=None,
                  #line=None,
                  #syst=None,
@@ -161,7 +161,7 @@ class Model(Spec1D):
         """ @brief Constructor for the Model class 
         """
 
-        self._t = self.create_t(x, y, yresid, yadj)
+        self._t = self.create_t(x, xmin, xmax, y, dy, yresid, yadj)
         
         """
         #if ((syst is None) and (line is None)):
@@ -197,8 +197,9 @@ class Model(Spec1D):
         
 # Methods
 
-    def create_t(self, x=None, y=None, yresid=None, yadj=None, xunit=xunit_def,
-                 yunit=yunit_def, mask=None, dtype=float):
+    def create_t(self, x=None, xmin=None, xmax=None, y=None, dy=None,
+                 yresid=None, yadj=None, xunit=xunit_def, yunit=yunit_def,
+                 mask=None, dtype=float):
         """ @brief Create a model table
 
         @param x Domain
@@ -210,8 +211,14 @@ class Model(Spec1D):
         t = Table(masked=True)
         if x is not None:
             t['X'] = Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)
+        if xmin is not None:
+            t['XMIN'] = Column(np.array(xmin, ndmin=1), dtype=dtype, unit=xunit)
+        if xmax is not None:
+            t['XMAX'] = Column(np.array(xmax, ndmin=1), dtype=dtype, unit=xunit)
         if y is not None:
             t['Y'] = Column(np.array(y, ndmin=1), dtype=dtype, unit=yunit)
+        if dy is not None:
+            t['DY'] = Column(np.array(dy, ndmin=1), dtype=dtype, unit=yunit)
         if yresid is not None:
             t['YRESID'] = Column(np.array(yresid, ndmin=1), dtype=dtype,
                                  unit=yunit)

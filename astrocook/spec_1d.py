@@ -325,17 +325,18 @@ class Spec1D():
         @a gauss_sigma is applied."""
 
         conv = dc(self)
-        conv_col = conv.t[col]#getattr(conv, col)
+        good = ~np.isnan(conv.t['X'])
+        conv_col = conv.t[col][good]#getattr(conv, col)
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
-            par = np.stack([[np.median(conv.x.value)], [gauss_sigma], [1]])
+            par = np.stack([[np.median(conv.x[good].value)], [gauss_sigma], [1]])
             par = np.ndarray.flatten(par, order='F')
-            prof = many_gauss(conv.x.value, *par)
+            prof = many_gauss(conv.x[good].value, *par)
             if (len(prof) % 2 == 0):
                 prof = prof[:-1]
             prof = prof / np.sum(prof)
-        conv.t['Y'] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
+        conv.t['Y'][good] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
         if convert == True:
             conv.todo_convert_logx(xunit=self.x.unit)
         return conv
@@ -356,7 +357,7 @@ class Spec1D():
 
         return self.extract_reg(xmin.to(u.nm).value, xmax.to(u.nm).value)
 
-    def extract_mask(self, col='Y'):
+    def extract_mask(self, col='X'):
         """ @brief Extract non-masked regions
         """
         
@@ -364,12 +365,13 @@ class Spec1D():
         out.t.remove_rows(out.t[col].mask.nonzero()[0])
         return out
     
+
     def extract_reg(self, xmin=0.0, xmax=0.0):
         """ @brief Extract a spectral region
         @param xmin Minimum wavelength
         @param xmax Maximum wavelength
         """
-
+        
         reg = dc(self)
         where = np.full(len(reg.t['X']), True)
         s = np.where(np.logical_and(reg.t['X'] > xmin,
@@ -386,9 +388,20 @@ class Spec1D():
         """Find the extrema in a spectrum and save them as a spectrum"""
 
         if (len(self.t) > 0):
-            min_idx = np.hstack(argrelmin(self.t[col]))
-            max_idx = np.hstack(argrelmax(self.t[col]))
+            #good = ~np.isnan(self.t['X'])
+            min_idx = np.hstack(argrelmin(self.t[col]))#[good]))
+            max_idx = np.hstack(argrelmax(self.t[col]))#[good]))
             ext_idx = np.sort(np.append(min_idx, max_idx))
+
+            # Include boundaries of chunks, if defined
+            # Otherwise XMIN and XMAX may be taken from chunks far away
+            nan_idx = np.where(np.logical_and(
+                ~np.isnan(self.t['X'][:-1]),
+                np.isnan(self.t['X'][1:]-self.t['X'][:-1])))[0]+1
+            print ext_idx
+            ext_idx = np.append(ext_idx, nan_idx)
+            ext_idx = np.sort(ext_idx)
+            print ext_idx
             #self._mins = self.t[min_idx]
             #self._maxs = self.t[max_idx]
             self._exts = self._t[ext_idx]
@@ -398,11 +411,12 @@ class Spec1D():
             self._exts['XMIN'][1:] = self._exts['X'][:-1]
             self._exts['XMAX'][-1] = self.t['X'][-1]
             self._exts['XMAX'][:-1] = self._exts['X'][1:]
+            self._exts = self._exts[~np.isnan(self._exts['X'])]
         else:
             #self._mins = None
             #self._maxs = None
             self._exts = None
-        
+        print self._exts
         
     def select_extrema(self, col='Y', kind='abs', diff='max', kappa=3.0):
         """ Select the most prominent extrema """
@@ -426,7 +440,7 @@ class Spec1D():
         else:
             line_pos = np.greater(diff_y_max, thres)
         self._exts_sel = self._exts[1:-1][line_pos]
-
+        
     def smooth_lowess(self, frac=0.03):
         """ Smooth the flux using LOWESS method """
 
@@ -434,9 +448,8 @@ class Spec1D():
         nomask = np.logical_not(self.t['X'].mask)
         x = self.t['X'][nomask]
         y = self.t['Y'][nomask]
-        print len(x)
         le = lowess(y, x, frac)
-        out.t['Y'] = np.interp(x, le[:, 0], le[:, 1]) * y.unit
+        out.t['Y'] = np.interp(out.t['X'], le[:, 0], le[:, 1]) * y.unit
 
         return out
         

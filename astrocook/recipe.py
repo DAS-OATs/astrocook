@@ -28,12 +28,12 @@ class Recipe():
         self.params = None
         
         if name == 'line_cont':
-            self.objs = ['line', 'spec']#, 'spec']
-            self.procs = ['mask', 'smooth_lowess']##'extract_mask', 'smooth_lowess']
-            self.modes = ['pass', 'pass']#, 'pass']
+            self.objs = ['line', 'spec']
+            self.procs = ['mask', 'smooth_lowess']
+            self.modes = ['pass', 'pass']
             self.defaults = {}
             self.omits = {}
-
+            
         if name == 'line_ew':
             self.objs = ['line']
             self.procs = ['ew']
@@ -47,6 +47,14 @@ class Recipe():
             self.modes = ['pass', None, None]
             self.defaults = {}
             self.omits = {'l'}
+
+        if name == 'line_resid':
+            self.objs = ['syst', 'spec', 'spec', 'line']
+            self.procs = ['extract_resid', 'convolve', 'select_extrema',
+                          'exts_merge']
+            self.modes = ['pass', 'pass', None, None]
+            self.defaults = {}
+            self.omits = {}
 
         if name == 'resid_find':
             self.objs = ['model', 'model', 'model']
@@ -75,6 +83,7 @@ class Recipe():
             self.modes = [None]
             self.defaults = {}
             self.omits = {'s'}
+
             
     def execute(self, **kwargs):
 
@@ -116,7 +125,6 @@ class Recipe():
         return out
     
     def line_find(self, **kwargs):
-
         out = self.execute(**kwargs)
         spec = out.spec
         self.line = Line(acs=out, x=spec._exts_sel['X'],
@@ -124,6 +132,9 @@ class Recipe():
                          xmax=spec._exts_sel['XMAX'], dy=spec._exts_sel['DY'])
         self.__dict__.update(self.line.__dict__)        
         return out
+
+    def line_resid(self, **kwargs):
+        out = self.execute(**kwargs)
 
     def spec_cont(self, **kwargs):
 

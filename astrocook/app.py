@@ -71,7 +71,7 @@ class MainFrame(wx.Frame):
     def dialog_proc(self, obj, proc):
         """ Run a procedure through a dialog window """
 
-        wait = wx.BusyCursor()
+        #wait = wx.BusyCursor()
         self.objs = [obj]
         self.procs = [proc]
         self.descr = proc_descr[proc]
@@ -86,7 +86,7 @@ class MainFrame(wx.Frame):
             self.log[proc] = self.params
         else:
             out = None
-        del wait
+        #del wait
         return out
 
     
@@ -279,7 +279,7 @@ class MainFrame(wx.Frame):
         proc_line_ew_all = wx.MenuItem(
             self.proc_menu, 110, proc_descr['ew_all'])
         proc_line_mask = wx.MenuItem(
-            self.proc_menu, 111, proc_descr['mask']+"...")
+            self.proc_menu, 111, proc_descr['mask'])
         proc_spec_extract_mask = wx.MenuItem(
             self.proc_menu, 112, proc_descr['extract_mask']+"...")
         #proc_syst_group = wx.MenuItem(
@@ -290,6 +290,8 @@ class MainFrame(wx.Frame):
             self.proc_menu, 121, proc_descr['model']+"...")
         proc_syst_fit = wx.MenuItem(
             self.proc_menu, 122, proc_descr['fit']+"...")
+        proc_syst_extract_resid = wx.MenuItem(
+            self.proc_menu, 123, proc_descr['extract_resid']+"...")
         
         self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve, proc_spec_convolve)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
@@ -307,6 +309,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
+        self.Bind(wx.EVT_MENU, self.on_proc_syst_extract_resid,
+                  proc_syst_extract_resid)
         
         self.proc_menu.Append(proc_spec_convolve)
         self.proc_menu.Append(proc_spec_smooth_lowess)
@@ -322,6 +326,7 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_syst_N_all)
         self.proc_menu.Append(proc_syst_model)
         self.proc_menu.Append(proc_syst_fit)
+        self.proc_menu.Append(proc_syst_extract_resid)
        
         # Recipes menu
         self.rec_menu = wx.Menu()
@@ -334,11 +339,14 @@ class MainFrame(wx.Frame):
                                     rec_descr['line_cont']+"...")
         rec_syst_find = wx.MenuItem(self.rec_menu, 24,
                                     rec_descr['syst_find']+"...")
+        rec_line_resid = wx.MenuItem(self.rec_menu, 24,
+                                    rec_descr['line_resid']+"...")
 
         self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
         self.Bind(wx.EVT_MENU, self.on_rec_line_cont, rec_line_cont)
         self.Bind(wx.EVT_MENU, self.on_rec_syst_find, rec_syst_find)
+        self.Bind(wx.EVT_MENU, self.on_rec_line_resid, rec_line_resid)
         
         self.rec_menu.Append(rec_spec_cont)
         self.rec_menu.Append(rec_line_find)
@@ -346,6 +354,7 @@ class MainFrame(wx.Frame):
         self.rec_menu.Append(rec_line_cont)
         self.rec_menu.AppendSeparator()
         self.rec_menu.Append(rec_syst_find)
+        self.rec_menu.Append(rec_line_resid)
         
         """
         rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
@@ -670,7 +679,7 @@ class MainFrame(wx.Frame):
         proc = 'select_extrema'
         self.dialog_proc(self.spec, proc)
         if self.proc_dict[proc]:
-            self.plot.line(self.spec._exts_sel, c='g')
+            self.plot.line(self.spec._exts_sel, c='r')
             self.plot_fig.draw()
             
     def on_proc_spec_smooth_lowess(self, event):
@@ -693,6 +702,17 @@ class MainFrame(wx.Frame):
             print "ciao"
     """        
 
+    def on_proc_syst_extract_resid(self, event):
+        proc = 'extract_resid'
+        out = self.dialog_proc(self.syst, proc)
+        if self.proc_dict[proc]:
+            self.spec = out
+            self.targ = self.targ + '_' + proc
+            self.row = self.spec_lc.GetItemCount()
+            self.spec_lc.insert_string_item(self.row, self.targ)
+            self.spec_dict[self.targ] = self.spec
+            self.update_spec()
+            
     def on_proc_syst_fit(self, event):
         self.syst._syst_sel = self.syst_sel
         proc = 'fit'
@@ -768,6 +788,17 @@ class MainFrame(wx.Frame):
             self.update_line()
             self.update_acs()
             
+    def on_rec_line_resid(self, event):
+        rec = 'line_resid'
+        run = self.dialog_rec(self.acs, rec)
+        if self.rec_dict[rec]:            
+            self.line = self.rec.line
+            self.line_dict[self.targ] = self.line
+            self.line_num = len(self.line.t)
+            self.update_line()
+            self.update_syst()
+            self.update_acs()
+
     def on_rec_spec_cont(self, event):
         rec = 'spec_cont'
         run = self.dialog_rec(self.acs, rec)
@@ -978,8 +1009,9 @@ class MainFrame(wx.Frame):
         except:
             pass
 
-        self.xmin = self.spec.t['X'][0]
-        self.xmax = self.spec.t['X'][-1]
+        x = self.spec.t['X']
+        self.xmin = x[~np.isnan(x)][0]
+        self.xmax = x[~np.isnan(x)][-1]
         self.spec_lc.SetItem(self.row, 3, "[%3.2f, %3.2f]"
                              % (self.xmin, self.xmax))
 

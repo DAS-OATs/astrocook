@@ -155,6 +155,7 @@ class System(Spec1D, Line, Cont):
         # Regions around lines in the group are selected
         x = spec.t['X']
         where = np.array([], dtype=int)
+        print len(self._group)
         for l in self._group:
             xmin = l['XMIN']
             xmax = l['XMAX']
@@ -163,12 +164,15 @@ class System(Spec1D, Line, Cont):
             if (len(where_temp) % 2 == 0):
                 where_temp = where_temp[:-1]
             where = np.append(where, where_temp)
+            print xmin, xmax, len(where_temp)
         where = np.unique(where)
-
+        print len(where)
+        
         # Chunk is created as copy of the spectrum, completely masked apart
         # from the regions around lines
         self._chunk = spec.apply_mask(
             ['X', 'X'], [range(len(spec.t)), where], [True, False]).t
+
 
         
     def fit(self, s=None, **kwargs):
@@ -195,7 +199,11 @@ class System(Spec1D, Line, Cont):
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
         yadj = fit.eval_components()['adj_'] * cont_c
+        self._model.t['X'][:] = np.nan  # Otherwise they are converted into 1.0
+                                        # when saving
+        self._model.t['X'][where] = x_c
         self._model.t['Y'][where] = y
+        self._model.t['DY'][where] = dy_c
         self._model.t['YRESID'][where] = yresid
         self._model.t['YADJ'][where] = yadj        
         self._fun = fun
@@ -345,8 +353,11 @@ class System(Spec1D, Line, Cont):
                 group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
                                dbtur, vary, expr, series, x, xmin, xmax, y, dy,
                                ew])
+                for s in group[-1:]:
+                    self.N(s)
                 i += 1
         self._group = group
+        
         
         self._t.sort('Z')
         self._map.sort('Z')
@@ -356,7 +367,7 @@ class System(Spec1D, Line, Cont):
 
         
     def model(self, s=None,
-              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, True],
+              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, False],
               adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],
               prof='voigt', psf='psf_gauss', psf_resol_value=-1.0,
               psf_resol_vary=False, psf_resol_min=None, psf_resol_max=None,
@@ -450,17 +461,22 @@ class System(Spec1D, Line, Cont):
         where = self._chunk['X'].mask == False
         x_c = self._chunk['X'][where]
         y_c = self._chunk['Y'][where]
+        dy_c = self._chunk['DY'][where]
         cont_c = self._chunk['CONT'][where]
         if len(self._model.t) == 0:
             x_t = self._chunk['X']
+            xmin_t = self._chunk['XMIN']
+            xmax_t = self._chunk['XMAX']
             y_t = np.empty(len(x_t))
             y_t[:] = np.nan
+            dy_t = np.empty(len(x_t))
+            dy_t[:] = np.nan
             yresid_t = np.empty(len(x_t))
             yresid_t[:] = np.nan
             yadj_t = np.empty(len(x_t))
             yadj_t[:] = np.nan
-            self._model.t = self._model.create_t(x_t, y_t, yresid_t, yadj_t,
-                                                 mask=x_t.mask)
+            self._model.t = self._model.create_t(
+                x_t, xmin_t, xmax_t, y_t, dy_t, yresid_t, yadj_t, mask=x_t.mask)
         else:
             self._model.t['X'][where] = x_c
             self._model.t['X'].mask = np.logical_and(
@@ -469,6 +485,7 @@ class System(Spec1D, Line, Cont):
         yresid = y_c-y
         yadj = fun_adj.eval(par_adj, x=x_c)*cont_c
         self._model.t['Y'][where] = y
+        self._model.t['DY'][where] = dy_c
         self._model.t['YRESID'][where] = yresid
         self._model.t['YADJ'][where] = yadj
         self._fun = fun
@@ -487,11 +504,18 @@ class System(Spec1D, Line, Cont):
         series = s['SERIES']
         cond_z = self._map['Z'] == z
         
-        # Lyman-type series
-        if series[0:2] == 'Ly':
-            cond_x = self._line.t['X'] == np.max(self._map[cond_z]['X'])
-            ew = np.array(self._line.t[cond_x]['EW'])[0]
 
+        if series[0:2] == 'Ly' or 'un':
+
+            # Lyman-type series: take Lyman-alpha EW
+            if series[0:2] == 'Ly':
+                cond_x = self._line.t['X'] == np.max(self._map[cond_z]['X'])
+                ew = np.array(self._line.t[cond_x]['EW'])[0]
+
+            # Unknown species: take EW as it were Lyman-alpha's
+            else:
+                ew = s['EW']
+                
             # Parametrization of the curve of growth for Lyman-alpha, b=20
             # To be generalized
             logN_arr = range(12,22)
@@ -509,7 +533,27 @@ class System(Spec1D, Line, Cont):
 
         for s in self.t:
             self.N(s)
-            
+
+    def extract_resid(self, col='X'):
+        """ @brief Extract residuals
+
+        @param col Column used for masking regions where models is not defined
+        """
+        out = dc(self._model)
+        out.t['Y'] = out.t['YRESID']
+        out.t.remove_rows(out.t[col].mask.nonzero()[0])
+        out.t.remove_columns(['YRESID', 'YADJ'])
+        return out
+
+    """
+    def extract_residuals(self, kind='abs', diff='max', kappa=3.0):
+
+        spec = dc(self._model)
+        print spec.t
+        spec.select_extrema(col='YRESID', kind=kind, diff=diff, kappa=kappa)
+        print spec._exts_sel
+        self._resid_sel = spec._exts_sel
+    """        
 # To be checked
 
     def add(self, series, z, **kwargs):

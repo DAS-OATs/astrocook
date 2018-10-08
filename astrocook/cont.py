@@ -35,8 +35,8 @@ class Cont(Spec1D, Line):
 
     def _acs(self, acs):
         self._spec = acs.spec
-        self._line = acs.line
-        self._syst = acs.syst
+        #self._line = acs.line
+        #self._syst = acs.syst
         
     def create_t(self, x, y, dy=None,
                  xunit=xunit_def, yunit=yunit_def, dtype=float):

@@ -99,8 +99,6 @@ class IO():
 
             # Line list
             try:
-                oky
-            except:
                 line_name = name[:-4] + '_line.fits'
                 line_arcname = diff[:-4] + '_line.fits'
                 self.line_write(acs.line, line_name)
@@ -119,8 +117,8 @@ class IO():
                 os.remove(line_name[:-10]+'_maxs.fits')
                 """
                 os.remove(line_name[:-10]+'_exts.fits')
-            #except:
-            #    pass
+            except:
+                pass
 
             # Continuum
             try:
@@ -242,12 +240,15 @@ class IO():
         xunit = units[np.where(names == 'X')][0]
         yunit = units[np.where(names == 'Y')][0]
         x = data['X']
+        xmin = data['XMIN']
+        xmax = data['XMAX']
         y = data['Y']            
+        dy = data['DY']            
         yresid = data['YRESID']
         yadj = data['YADJ']        
-        
-        model = Model(x=x, y=y, yresid=yresid, yadj=yadj, xunit=xunit,
-                      yunit=yunit)
+
+        model = Model(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy, yresid=yresid,
+                      yadj=yadj, xunit=xunit, yunit=yunit)
 
         return model
         

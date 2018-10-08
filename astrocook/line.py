@@ -1,7 +1,7 @@
 from . import Spec1D, Model
 from .utils import *
-from astropy.table import Column, Table
 from astropy.stats import sigma_clip
+from astropy.table import Column, Table, vstack
 from astropy import units as u
 from astropy.io import fits
 from copy import deepcopy as dc
@@ -129,6 +129,7 @@ class Line(Spec1D):
 
 
     def _acs(self, acs):
+        self._acs = acs
         self._spec = acs.spec
         self._cont = acs.cont
         try:
@@ -245,6 +246,16 @@ class Line(Spec1D):
         
 # Methods
 
+    def create_t_from_exts(self, spec):
+        """ @brief Create a line table from extrema selected in a spectrum
+        
+        @param spec A spectrum
+        """
+
+        pass
+        #self.create_t
+
+
     def create_t(self, x=None, xmin=None, xmax=None, y=None, dy=None, ew=None,
                  xunit=xunit_def, yunit=yunit_def, dtype=float):
         """ @brief Create a line table 
@@ -317,7 +328,8 @@ class Line(Spec1D):
         """
 
         for l in self.t:
-            self.ew(l)
+            if np.isnan(l['EW']):
+                self.ew(l)
         
     def map_z(self):
         """ Map lines to redshifts """
@@ -349,14 +361,13 @@ class Line(Spec1D):
             where += np.logical_and(out.t['X']>l['XMIN'],
                                     out.t['X']<l['XMAX'])
             
-        out.t.mask['Y'][where] = True
-        out.t.mask['DY'][where] = True
+        out.t.mask['X'][where] = True
+        #out.t.mask['DY'][where] = True
 
         # This trick is needed to make the out table an independent object and
         # restore the original spectrum to unmasked state. Bug in Astropy?
-        out.t['Y'] = out.t['Y']*-1*-1
+        out.t['X'] = out.t['X']*-1*-1
         self._spec.t.mask = mask
-        print np.sum(out.t['Y'].mask)
         return out
         #"""
 
@@ -374,6 +385,19 @@ class Line(Spec1D):
         self._x_match = match
         self._z_match = z_mean[match]
         
+
+    def exts_merge(self):
+        """ @brief Merge extrema selected from a spectrum into a line table 
+        """ 
+
+        e = self._acs.spec._exts_sel
+        print e
+        #y = np.interp(e['X'], self._acs.spec.t['X'], self._acs.spec.t['Y']) 
+        t = self.create_t(x=e['X'], xmin=e['XMIN'], xmax=e['XMAX'], y=e['Y'],
+                          dy=e['DY'])
+        self._t = vstack([self._t, t])
+        self._t.sort('X')
+
     
 # To be checked
 
