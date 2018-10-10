@@ -391,12 +391,24 @@ class Line(Spec1D):
         """ @brief Merge extrema selected from a spectrum into a line table 
         """ 
 
+        """
         e = self.acs.spec._exts_sel
         t = self.create_t(x=e['X'], xmin=e['XMIN'], xmax=e['XMAX'], y=e['Y'],
                           dy=e['DY'])
+        """
+        t = self.exts_new().t
         self._t = vstack([self._t, t])
         self._t.sort('X')
 
+    def exts_new(self):
+        """ @brief Use extrema selected from a spectrum to create a line table 
+        """ 
+
+        e = self.acs.spec._exts_sel
+        diff = np.amax([e['X']-e['XMIN'], e['XMAX']-e['X']], axis=0)
+        out = Line(self.acs, x=e['X'], xmin=e['X']-diff, xmax=e['X']+diff,
+                    y=e['Y'], dy=e['DY'])
+        return out
     
 # To be checked
 

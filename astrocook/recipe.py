@@ -42,9 +42,9 @@ class Recipe():
             self.omits = {}
 
         if name == 'line_find':
-            self.objs = ['spec', 'spec', 'spec']
-            self.procs = ['convolve', 'find_extrema', 'select_extrema']
-            self.modes = ['pass', None, None]
+            self.objs = ['spec', 'spec', 'line']
+            self.procs = ['convolve', 'select_extrema', 'exts_new']
+            self.modes = ['pass', None, 'pass']
             self.defaults = {}
             self.omits = {'l'}
 
@@ -128,16 +128,19 @@ class Recipe():
         return out
     
     def line_find(self, **kwargs):
-        out = self.execute(**kwargs)
+        acs = self.execute(**kwargs)
+        self.line = acs.line
+        """
         spec = out.spec
         self.line = Line(acs=out, x=spec._exts_sel['X'],
                          y=spec._exts_sel['Y'], xmin=spec._exts_sel['XMIN'],
                          xmax=spec._exts_sel['XMAX'], dy=spec._exts_sel['DY'])
         self.__dict__.update(self.line.__dict__)        
-        return out
+        """
+        return acs
 
     def line_resid(self, **kwargs):
-        out = self.execute(**kwargs)
+        self.execute(**kwargs)
 
     def spec_cont(self, **kwargs):
 

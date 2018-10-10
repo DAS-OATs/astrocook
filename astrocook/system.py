@@ -70,15 +70,17 @@ class System(Spec1D, Line, Cont):
         self._use_good = False
 
     def _acs(self, acs):
+        self.acs = acs
         self._spec = acs.spec
         self._line = acs.line
         self._cont = acs.cont
         self._model = acs.model
+        #self._model._t['X'].mask = np.isnan(self._model._t['X'])
         try:
             self._map = acs.line._map  # When loading from a current session
         except:
             pass  # When loading from a saved session
-
+        
         # Model and residuals
         """
         mask = dc(np.array(self._spec.t.mask))
@@ -155,7 +157,6 @@ class System(Spec1D, Line, Cont):
         # Regions around lines in the group are selected
         x = spec.t['X']
         where = np.array([], dtype=int)
-        print len(self._group)
         for l in self._group:
             xmin = l['XMIN']
             xmax = l['XMAX']
@@ -164,15 +165,30 @@ class System(Spec1D, Line, Cont):
             if (len(where_temp) % 2 == 0):
                 where_temp = where_temp[:-1]
             where = np.append(where, where_temp)
-            print xmin, xmax, len(where_temp)
-        where = np.unique(where)
-        print len(where)
+
+        self._chunk_rows = np.unique(where)
         
         # Chunk is created as copy of the spectrum, completely masked apart
         # from the regions around lines
         self._chunk = spec.apply_mask(
-            ['X', 'X'], [range(len(spec.t)), where], [True, False]).t
+            ['X', 'X'], [range(len(spec.t)), self._chunk_rows], [True, False]).t
 
+        
+    def extract_resid(self, s=None):
+        """ @brief Extract residuals
+
+        @param col Column used for masking regions where models is not defined
+        """
+
+        #out = dc(self.acs.model)
+        out = self._model.apply_mask(
+            ['X', 'X'], [range(len(self._model.t)), self._chunk_rows],
+            [True, False])
+        out.t['Y'] = out.t['YRESID']
+        #out.t.remove_rows(out.t['X'].mask.nonzero()[0])
+        out.t['Y'][out.t['X'].mask] = np.nan
+        out.t.remove_columns(['YRESID', 'YADJ'])
+        return out
 
         
     def fit(self, s=None, **kwargs):
@@ -185,7 +201,7 @@ class System(Spec1D, Line, Cont):
             s = self._syst_sel
         
         self.model(s, **kwargs)
-        
+                
         where = self._chunk['X'].mask == False
         x_c = self._chunk['X'][where]
         y_c = self._chunk['Y'][where]
@@ -194,12 +210,14 @@ class System(Spec1D, Line, Cont):
 
         fun = self._fun
         par = self._par
+        #par.pretty_print()
         fit = fun.fit(y_c/cont_c, par, x=x_c, weights=cont_c/dy_c)
         par = fit.params
+        #par.pretty_print()
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
         yadj = fit.eval_components()['adj_'] * cont_c
-        self._model.t['X'][:] = np.nan  # Otherwise they are converted into 1.0
+        #self._model.t['X'][:] = np.nan  # Otherwise they are converted into 1.0
                                         # when saving
         self._model.t['X'][where] = x_c
         self._model.t['Y'][where] = y
@@ -231,6 +249,7 @@ class System(Spec1D, Line, Cont):
         self._line._t[self._group_line] = new_line
         self._line._t.sort('X')
 
+        self.acs.model = self._model
         
     def group(self, s, **kwargs):
         """ @brief Crete a group of lines to be fitted together
@@ -254,33 +273,53 @@ class System(Spec1D, Line, Cont):
         # Select the system redshift 
         join_z = join_t['Z']
         cond_z = s['Z']==join_z
+        #group = join_t[cond_z]
         
-        # Select lines close in wavelength to the previously selected ones
+        # Select other systems close in redshift
+        # First find the lines whose fitting ranges overlap with those of the
+        # system lines, then select the whole systems those lines belong to
         join_xmin = join_t['XMIN']
         join_xmax = join_t['XMAX']
         cond_x = np.full(len(join_t), False)
         for j in join_t[cond_z]:
             xmin = j['XMIN']
             xmax = j['XMAX']
-            cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+            #cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+            cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
 
-        # Select doublet companions of the previously selected ones
         join_xc = join_t['Z']
         cond_xc = np.full(len(join_t), False)
         for j in join_t[np.where(cond_x)[0]]:
             z = j['Z']
             cond_xc += z==join_xc
-
+        group = join_t[cond_xc]
+        
         # Select lines close in redshift to the previously selected ones
+        """
         join_zc = join_t['Z']
         cond_zc = np.full(len(join_t), False)
         for j in join_t[np.where(cond_z)[0]]:
             zmin = j['Z']#-dz
             zmax = j['Z']#+dz
             cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
-        
         group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
+        """
+
+        # Find wavelength duplicates (it may happen that a line may be
+        # associated to two systems as the same ion) and remove them from group
+        # and map
+        group.sort('X')
+        #print np.where(np.ediff1d(group['X']) == 0.0)[0]
+        group_where = np.where(np.ediff1d(group['X']) == 0.0)[0]
+        map_where = np.where(np.logical_and(
+            self._map['X'] == group['X'][group_where],
+            self._map['Z'] == group['Z'][group_where]))
+        group.remove_rows(group_where)
+        self._map.remove_rows(map_where)
+
+        # Sort by ascending redshift
         group.sort(['Z', 'X'])
+
 
         # Define the ion and prefix columns
         ion = np.array([])
@@ -314,48 +353,61 @@ class System(Spec1D, Line, Cont):
             group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
 
         # Add unidentified lines close to lines in the system
-        group_xmin = group['XMIN']
-        group_xmax = group['XMAX']
-        cond_un = np.full(len(self._line.t), False)
-        for g in group:
-            x = g['X']
-            xmin = g['XMIN']
-            xmax = g['XMAX']
-            cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
-                                      self._line.t['XMIN']<=xmax)        
-        i = len(group)
-        for l in self._line.t[cond_un]:
-            x = l['X']
-            if np.all(x != group['X']):
-                xmin = l['XMIN']
-                xmax = l['XMAX']            
-                y = l['Y']
-                dy = l['DY']
-                ew = l['EW']
-                z = 0.0
-                zmin = xmin/x-1
-                zmax = xmax/x-1
-                #z = x/dict_wave['unknown'].value-1
-                #zmin = xmin/dict_wave['unknown'].value-1
-                #zmax = xmax/dict_wave['unknown'].value-1
-                ion = 'unknown'
-                pref = 'voigt_%03d' %i
-                N = N_def
-                b = b_def
-                btur = btur_def
-                dz = None
-                dN = None
-                db = None
-                dbtur = None
-                vary = [True, True, True, True]
-                expr = [None, None, None, None]
-                series = 'unknown'
-                group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
-                               dbtur, vary, expr, series, x, xmin, xmax, y, dy,
-                               ew])
-                for s in group[-1:]:
-                    self.N(s)
-                i += 1
+        # Addition is iterative: also lines close to added lines are added,
+        # until no new lines are found
+        #iter_flag = True
+        #sel_un = 0
+        #while iter_flag:
+        for iter in [0, 1]:
+            group_xmin = group['XMIN']
+            group_xmax = group['XMAX']
+            cond_un = np.full(len(self._line.t), False)
+            for g in group:
+                x = g['X']
+                xmin = g['XMIN']
+                xmax = g['XMAX']
+                #cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
+                #                          self._line.t['XMIN']<=xmax)        
+                cond_un += np.logical_and(self._line.t['XMAX']>xmin,
+                                          self._line.t['XMIN']<xmax)
+            i = len(group)
+            for l in self._line.t[cond_un]:
+                x = l['X']
+                if np.all(x != group['X']):
+                    xmin = l['XMIN']
+                    xmax = l['XMAX']            
+                    y = l['Y']
+                    dy = l['DY']
+                    ew = l['EW']
+                    z = 0.0
+                    zmin = xmin/x-1
+                    zmax = xmax/x-1
+                    ion = 'unknown'
+                    pref = 'voigt_%03d' %i
+                    N = N_def
+                    b = b_def
+                    btur = btur_def
+                    dz = None
+                    dN = None
+                    db = None
+                    dbtur = None
+                    vary = [True, True, True, True]
+                    expr = [None, None, None, None]
+                    series = 'unknown'
+                    group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
+                                   dbtur, vary, expr, series, x, xmin, xmax, y, dy,
+                                   ew])
+                    for s in group[-1:]:
+                        self.N(s)
+                    i += 1
+            #iter_flag = np.sum(cond_un) != sel_un
+            #if np.sum(cond_un) == sel_un:
+            #    print "ciao"
+            #    break
+            #sel_un = np.sum(cond_un)
+            #print len(self._line.t[cond_un])
+
+            
         self._group = group
         
         
@@ -367,7 +419,7 @@ class System(Spec1D, Line, Cont):
 
         
     def model(self, s=None,
-              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, False],
+              adj='linear', adj_value=[1.0, 0.0], adj_vary=[False, False],
               adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],
               prof='voigt', psf='psf_gauss', psf_resol_value=-1.0,
               psf_resol_vary=False, psf_resol_min=None, psf_resol_max=None,
@@ -463,7 +515,7 @@ class System(Spec1D, Line, Cont):
         y_c = self._chunk['Y'][where]
         dy_c = self._chunk['DY'][where]
         cont_c = self._chunk['CONT'][where]
-        if len(self._model.t) == 0:
+        if len(self._model._t) == 0:
             x_t = self._chunk['X']
             xmin_t = self._chunk['XMIN']
             xmax_t = self._chunk['XMAX']
@@ -475,21 +527,25 @@ class System(Spec1D, Line, Cont):
             yresid_t[:] = np.nan
             yadj_t = np.empty(len(x_t))
             yadj_t[:] = np.nan
-            self._model.t = self._model.create_t(
+            self._model._t = self._model.create_t(
                 x_t, xmin_t, xmax_t, y_t, dy_t, yresid_t, yadj_t, mask=x_t.mask)
         else:
-            self._model.t['X'][where] = x_c
-            self._model.t['X'].mask = np.logical_and(
-                self._chunk['X'].mask, np.isnan(self._model.t['X']))
+            self._model._t['X'][where] = x_c
+            self._model._t['X'].mask = np.logical_and(
+                self._chunk['X'].mask,
+                #np.isnan(self._model._t['X']))
+                self._model._t['X'].mask)
         y = fun.eval(par, x=x_c)*cont_c
         yresid = y_c-y
         yadj = fun_adj.eval(par_adj, x=x_c)*cont_c
-        self._model.t['Y'][where] = y
-        self._model.t['DY'][where] = dy_c
-        self._model.t['YRESID'][where] = yresid
-        self._model.t['YADJ'][where] = yadj
+        self._model._t['Y'][where] = y
+        self._model._t['DY'][where] = dy_c
+        self._model._t['YRESID'][where] = yresid
+        self._model._t['YADJ'][where] = yadj
         self._fun = fun
         self._par = par
+
+        #self.acs.model = self._model
 
 
     def N(self, s):
@@ -525,7 +581,6 @@ class System(Spec1D, Line, Cont):
 
             logN = np.min([np.interp(ew, ew_arr, logN_arr), 15])
             s['N'] = 10**logN
-            
 
     def N_all(self):
         """ @brief Estimate column densities from the equivalent widths 
@@ -533,17 +588,6 @@ class System(Spec1D, Line, Cont):
 
         for s in self.t:
             self.N(s)
-
-    def extract_resid(self, col='X'):
-        """ @brief Extract residuals
-
-        @param col Column used for masking regions where models is not defined
-        """
-        out = dc(self._model)
-        out.t['Y'] = out.t['YRESID']
-        out.t.remove_rows(out.t[col].mask.nonzero()[0])
-        out.t.remove_columns(['YRESID', 'YADJ'])
-        return out
 
     """
     def extract_residuals(self, kind='abs', diff='max', kappa=3.0):

@@ -18,7 +18,6 @@ from specutils import extinction
 #import statsmodels.api as sm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import time
-#import tkinter as tk
 
 class Spec1D():
     """Class for generic spectra

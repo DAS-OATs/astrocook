@@ -496,11 +496,11 @@ class MainFrame(wx.Frame):
                         self.targ = self.targ[:-4]
                     try:
                         acs = self.IO.acs_read(name, self.path_chosen)
+                        self.acs = acs
                         self.spec = acs.spec
                         self.spec_name = acs.spec_name
                     except IOError:
                         wx.LogError("Cannot open archive '%s'." % name)
-                    self.acs = acs
                 else:
                     self.targ = fileDialog.GetFilename()[:-5] 
                     try:
@@ -752,6 +752,7 @@ class MainFrame(wx.Frame):
                 self.syst_frame.Show()
             else:
                 self.syst_frame.z = self.z_sel
+                self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
             #for p in range(self.syst_frame.pn):
             #    self.syst_frame.plot[p].model(self.syst._model.t,
@@ -763,6 +764,10 @@ class MainFrame(wx.Frame):
         proc = 'N_all'
         getattr(self.syst, proc)()
         self.update_syst()
+        if self.syst_frame != None:
+            self.syst_frame.z = self.z_sel
+            self.syst_frame.update_plot()
+            self.syst_frame.update_tab()
 
     def on_quit(self, event):
         self.Close()
@@ -784,6 +789,7 @@ class MainFrame(wx.Frame):
             self.line = self.rec.line
             self.line_dict[self.targ] = self.line
             self.line_num = len(self.line.t)
+            self.update_spec()
             self.update_line()
             self.update_acs()
             
@@ -824,6 +830,7 @@ class MainFrame(wx.Frame):
             self.syst = self.rec.syst
             self.syst_dict[self.targ] = self.syst
             self.syst_num = len(self.syst.t)
+            self.update_spec()
             self.update_syst()
             if self.syst_frame != None:
                 self.syst_frame.z = self.z_sel
@@ -863,7 +870,6 @@ class MainFrame(wx.Frame):
             self.syst.group(self.syst_sel)
             self.syst.chunk()
             #self.syst.N(self.syst_sel)
-            print self.syst._group
             
             self.syst_rows = []
             for m in self.syst._map[map_w]:
@@ -1067,6 +1073,11 @@ class MainFrame(wx.Frame):
         except:
             pass
 
+        try:
+            self.syst.group(self.syst_sel)
+        except:
+            pass
+            
 
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
     def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
@@ -1331,7 +1342,8 @@ class SystFrame(wx.Frame):
             row = event.GetTopRow()
             self.group_rows = [row]
             for p in range(self.pn):
-                self.plot[p].sel(self.group, self.group_rows, extra_width=0.0)
+                self.plot[p].sel(self.p.syst._group, self.group_rows,
+                                 extra_width=0.0)
             self.plot_fig.draw()
             #self.update_line()
 
