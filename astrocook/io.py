@@ -54,12 +54,14 @@ class IO():
 
             # System list
             try:
+                ok
+            except:
                 acs.syst_name = name[:-4]+'_syst.fits'
                 acs.syst = acs.syst_read(acs.syst_name)
                 os.remove(acs.syst_name)
                 os.remove(acs.syst_name[:-10]+'_map.fits')
-            except:
-                pass
+            #except:
+            #    pass
 
             # System model
             try:

@@ -119,16 +119,16 @@ class Plot():
         return p
         
 
-    def sel(self, obj, rows, replace=True, extra_width=1.0, c='C3', **kwargs):
+    def sel(self, tab, rows, replace=True, extra_width=1.0, c='C3', **kwargs):
         if replace:
             self.clean('sel_p')
 
         xmins = []
         xmaxs = []
         for r in rows:
-            x = self.x_mode(obj.t['X'][r], self.ion)
-            xmin = self.x_mode(obj.t['XMIN'][r], self.ion)
-            xmax = self.x_mode(obj.t['XMAX'][r], self.ion)
+            x = self.x_mode(tab['X'][r], self.ion)
+            xmin = self.x_mode(tab['XMIN'][r], self.ion)
+            xmax = self.x_mode(tab['XMAX'][r], self.ion)
             #xmins.append(xmin.value)
             #xmaxs.append(xmax.value)
             xmins.append(xmin)

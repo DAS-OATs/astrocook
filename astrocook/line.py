@@ -129,7 +129,7 @@ class Line(Spec1D):
 
 
     def _acs(self, acs):
-        self._acs = acs
+        self.acs = acs
         self._spec = acs.spec
         self._cont = acs.cont
         try:
@@ -339,6 +339,7 @@ class Line(Spec1D):
                                    self._z['X'][:-1][self._x_match])
         self._map['Z'] = np.append(self._z_match, self._z_match)
         self._map.sort('Z')
+        print self._map
 
         
     def mask(self):
@@ -390,9 +391,7 @@ class Line(Spec1D):
         """ @brief Merge extrema selected from a spectrum into a line table 
         """ 
 
-        e = self._acs.spec._exts_sel
-        print e
-        #y = np.interp(e['X'], self._acs.spec.t['X'], self._acs.spec.t['Y']) 
+        e = self.acs.spec._exts_sel
         t = self.create_t(x=e['X'], xmin=e['XMIN'], xmax=e['XMAX'], y=e['Y'],
                           dy=e['DY'])
         self._t = vstack([self._t, t])

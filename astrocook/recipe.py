@@ -56,13 +56,14 @@ class Recipe():
             self.defaults = {}
             self.omits = {}
 
+        """
         if name == 'resid_find':
             self.objs = ['model', 'model', 'model']
             self.procs = ['convolve', 'find_extrema', 'select_extrema']
             self.modes = ['pass', None, None]
             self.defaults = {}
             self.omits = {'l'}
-            
+        """    
         if name == 'spec_cont':
             self.objs = ['spec']
             self.procs = ['convolve']
@@ -96,6 +97,8 @@ class Recipe():
             obj = getattr(acs, o)
             method = getattr(obj, p)
             try:
+            #    ok
+            #except:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(method)[0][1:]}
                 out = method(**param)
@@ -148,6 +151,7 @@ class Recipe():
         out = self.execute(**kwargs)
         line = out.line
         self.syst = System(acs=out, series=kwargs['series'], z=line._z_match)
+        print self.syst._map
         return out
 
     def syst_fit(self, **kwargs):

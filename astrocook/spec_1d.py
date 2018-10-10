@@ -325,7 +325,7 @@ class Spec1D():
         @a gauss_sigma is applied."""
 
         conv = dc(self)
-        good = ~np.isnan(conv.t['X'])
+        good = ~np.isnan(conv.t[col])
         conv_col = conv.t[col][good]#getattr(conv, col)
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
@@ -336,6 +336,7 @@ class Spec1D():
             if (len(prof) % 2 == 0):
                 prof = prof[:-1]
             prof = prof / np.sum(prof)
+        conv.t['Y'][:] = np.nan
         conv.t['Y'][good] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
         if convert == True:
             conv.todo_convert_logx(xunit=self.x.unit)
@@ -388,22 +389,11 @@ class Spec1D():
         """Find the extrema in a spectrum and save them as a spectrum"""
 
         if (len(self.t) > 0):
-            #good = ~np.isnan(self.t['X'])
+            good = ~np.isnan(self.t['Y'])
             min_idx = np.hstack(argrelmin(self.t[col]))#[good]))
             max_idx = np.hstack(argrelmax(self.t[col]))#[good]))
             ext_idx = np.sort(np.append(min_idx, max_idx))
 
-            # Include boundaries of chunks, if defined
-            # Otherwise XMIN and XMAX may be taken from chunks far away
-            nan_idx = np.where(np.logical_and(
-                ~np.isnan(self.t['X'][:-1]),
-                np.isnan(self.t['X'][1:]-self.t['X'][:-1])))[0]+1
-            print ext_idx
-            ext_idx = np.append(ext_idx, nan_idx)
-            ext_idx = np.sort(ext_idx)
-            print ext_idx
-            #self._mins = self.t[min_idx]
-            #self._maxs = self.t[max_idx]
             self._exts = self._t[ext_idx]
             self._exts.meta = None  # Needed, otherwise the Astropy fails when
                                     # trying to save the table
@@ -412,11 +402,29 @@ class Spec1D():
             self._exts['XMAX'][-1] = self.t['X'][-1]
             self._exts['XMAX'][:-1] = self._exts['X'][1:]
             self._exts = self._exts[~np.isnan(self._exts['X'])]
+
+            
+            # Include boundaries of chunks, if defined
+            # Otherwise XMIN and XMAX may be taken from chunks far away
+            nan_start_idx = np.where(np.logical_and(
+                np.isnan(self.t['Y'][:-1]), ~np.isnan(self.t['Y'][1:])))[0]+1
+            nan_end_idx = np.where(np.logical_and(
+                ~np.isnan(self.t['Y'][:-1]), np.isnan(self.t['Y'][1:])))[0]
+
+            if len(nan_start_idx) > 0 and len(nan_end_idx) > 0:
+                i = 0
+                self._exts['XMIN'][0] = self.t['X'][nan_start_idx[0]]
+                self._exts['XMAX'][-1] = self.t['X'][nan_end_idx[-1]]
+                for e in self._exts:
+                    if e['X'] > self.t['X'][nan_end_idx[i]]:
+                        i += 1
+                    e['XMIN'] = max(e['XMIN'], self.t['X'][nan_start_idx[i]])
+                    e['XMAX'] = min(e['XMAX'], self.t['X'][nan_end_idx[i]])
+                
         else:
             #self._mins = None
             #self._maxs = None
             self._exts = None
-        print self._exts
         
     def select_extrema(self, col='Y', kind='abs', diff='max', kappa=3.0):
         """ Select the most prominent extrema """
@@ -707,8 +715,6 @@ class Spec1D():
         #ax.plot(spec.x, spec.dy, c='r', lw=1.0)
         if (hasattr(self, '_cont')):
             where = np.where(self.y != self._cont.y)
-            #print(self.y, self._cont.y)
-            #print(where)
             ax.plot(self._cont.x[where], self._cont.y[where], c='y')
             ax.plot(self.x, self._cont.y, c='y')
 
@@ -815,7 +821,6 @@ class Spec1D():
                                   for i in range(len(ion))]) 
             ion = np.array(ion)[np.argsort(wave_list)]
             prof = model.prof_mult(self, ion, b=b, N=N, plot=plot)
-            #print(prof.x)
             redchi = np.zeros((len(self.x), len(prof)))
             # Not working with Python 2.7
             #if (verbose == True):
@@ -853,7 +858,6 @@ class Spec1D():
             mins_redchi = np.append(mins_redchi,
                                       np.interp(mins['X'], self.x, redchi[:, 0]))
 
-            #print(mins_x, mins_redchi)
             
             if (verbose == True):
                 print("%i new matches found, %i in total." \
@@ -879,9 +883,7 @@ class Spec1D():
                     ax.scatter(mins['X'], mins['Y'], c='b')
                 plt.show()    
 
-            #print(np.asarray(mins.x))
 
-        #print(mimima_x, mins_redchi)
         x = np.array([])
         for p in range(len(ion)):
             x = np.append(x, np.asarray(mins['X']) \
@@ -1046,21 +1048,15 @@ class Spec1D():
             # jumps in the x array
             mod_xmin = prof.xmin * (1 + spec_temp.x[i])
             mod_xmax = prof.xmax * (1 + spec_temp.x[i])
-            #print(prof.xmin, prof.xmax)
             mod_xmin_l = np.append(mod_xmin, float("inf"))
             mod_xmax_l = np.append(0, mod_xmax)
-            #print(mod_xmin, mod_xmax)
             where = np.abs(mod_xmin_l.value-mod_xmax_l.value) \
                     > (mod_xmax[1].value-mod_xmin[0].value)
             xmin = mod_xmin_l[where][::2].value
             xmax = mod_xmax_l[where][1::2].value
-            #print(mod_xmin_l[where], mod_xmax_l[where])
-            #print(xmin, xmax)
             
-            #print(prof.t)
             #xmin = np.min(mod_x).value
             #xmax = np.max(mod_x).value
-            #print(np.min(mod_x).value, np.max(mod_x).value)
             
             #"""
             chunk_i = np.full(len(self.x), False)
@@ -1109,7 +1105,6 @@ class Spec1D():
             spec = self
         model = model_param[0]
         param = model_param[1]
-        #param.pretty_print()
         if (chunk is None):
             x = spec.x
             y = spec.y      

@@ -331,15 +331,15 @@ class MainFrame(wx.Frame):
         # Recipes menu
         self.rec_menu = wx.Menu()
 
-        rec_spec_cont = wx.MenuItem(self.rec_menu, 21,
+        rec_spec_cont = wx.MenuItem(self.rec_menu, 200,
                                     rec_descr['spec_cont']+"...")
-        rec_line_find = wx.MenuItem(self.rec_menu, 22,
+        rec_line_find = wx.MenuItem(self.rec_menu, 201,
                                     rec_descr['line_find']+"...")
-        rec_line_cont = wx.MenuItem(self.rec_menu, 23,
+        rec_line_cont = wx.MenuItem(self.rec_menu, 202,
                                     rec_descr['line_cont']+"...")
-        rec_syst_find = wx.MenuItem(self.rec_menu, 24,
+        rec_syst_find = wx.MenuItem(self.rec_menu, 203,
                                     rec_descr['syst_find']+"...")
-        rec_line_resid = wx.MenuItem(self.rec_menu, 24,
+        rec_line_resid = wx.MenuItem(self.rec_menu, 204,
                                     rec_descr['line_resid']+"...")
 
         self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
@@ -699,7 +699,6 @@ class MainFrame(wx.Frame):
         self.defaults = {'z': self.z_sel}
         out = self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
-            print "ciao"
     """        
 
     def on_proc_syst_extract_resid(self, event):
@@ -732,10 +731,10 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
-            for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model.t,
-                                              cont=self.cont.t)
-                self.syst_frame.plot_fig.draw()
+            #for p in range(self.syst_frame.pn):
+            #    self.syst_frame.plot[p].model(self.syst._model.t,
+            #                                  cont=self.cont.t)
+            #    self.syst_frame.plot_fig.draw()
             self.update_acs()
                 
     def on_proc_syst_model(self, event):
@@ -754,10 +753,10 @@ class MainFrame(wx.Frame):
             else:
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
-            for p in range(self.syst_frame.pn):
-                self.syst_frame.plot[p].model(self.syst._model.t,
-                                              cont=self.cont.t)
-                self.syst_frame.plot_fig.draw()
+            #for p in range(self.syst_frame.pn):
+            #    self.syst_frame.plot[p].model(self.syst._model.t,
+            #                                  cont=self.cont.t)
+            #    self.syst_frame.plot_fig.draw()
             self.update_acs()
 
     def on_proc_syst_N_all(self, event):
@@ -797,6 +796,16 @@ class MainFrame(wx.Frame):
             self.line_num = len(self.line.t)
             self.update_line()
             self.update_syst()
+            if self.syst_frame == None:
+                self.syst_frame = SystFrame(self, title="Selected system")
+                self.syst_frame.Show()
+            else:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+            #for p in range(self.syst_frame.pn):
+            #    self.syst_frame.plot[p].model(self.syst._model.t,
+            #                                  cont=self.cont.t)
+            #    self.syst_frame.plot_fig.draw()
             self.update_acs()
 
     def on_rec_spec_cont(self, event):
@@ -811,11 +820,15 @@ class MainFrame(wx.Frame):
     def on_rec_syst_find(self, event):
         rec = 'syst_find'
         run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
+        if self.rec_dict[rec]:
             self.syst = self.rec.syst
             self.syst_dict[self.targ] = self.syst
             self.syst_num = len(self.syst.t)
             self.update_syst()
+            if self.syst_frame != None:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_plot()
+                self.syst_frame.update_tab()                
 
 
     def on_sel_line(self, event):
@@ -824,7 +837,7 @@ class MainFrame(wx.Frame):
             self.line_rows = [row]
             self.line_sel = self.line.t[row]
             #self.line.ew(self.line_sel)
-            self.plot.sel(self.line, self.line_rows, extra_width=3.0)
+            self.plot.sel(self.line.t, self.line_rows, extra_width=3.0)
             self.plot_fig.draw()
             #self.update_line()
             
@@ -850,11 +863,12 @@ class MainFrame(wx.Frame):
             self.syst.group(self.syst_sel)
             self.syst.chunk()
             #self.syst.N(self.syst_sel)
-
+            print self.syst._group
+            
             self.syst_rows = []
             for m in self.syst._map[map_w]:
                 self.syst_rows.append(np.where(m['X']==self.line.t['X'])[0][0])
-            self.plot.sel(self.line, self.syst_rows, extra_width=0)
+            self.plot.sel(self.line.t, self.syst_rows, extra_width=0)
             self.plot_fig.draw()
             if self.syst_frame != None:
                 self.syst_frame.z = self.z_sel
@@ -878,7 +892,6 @@ class MainFrame(wx.Frame):
             self.syst_frame = SystFrame(self, title="Selected system")
             self.syst_frame.Show()
         #else:
-        #    print "ciao"
         #    self.syst_frame.update_plot()
 
         
@@ -1217,7 +1230,7 @@ class SystFrame(wx.Frame):
         
     def init_plot(self, panel):
         """ Create the spectrum panel """
-        self.fig = Figure((8,15))
+        self.fig = Figure((9,15))
         rown = 5.
         self.pn = len(self.ions)
         row = int(min(self.pn,rown))
@@ -1242,38 +1255,38 @@ class SystFrame(wx.Frame):
     def init_tab(self, panel):
         """ Create the system list panel """
 
-        gr = gridlib.Grid(panel)
-        gr.CreateGrid(0, 11)
-        gr.SetColLabelValue(0, "X")
-        gr.SetColLabelValue(1, "XMIN")
-        gr.SetColLabelValue(2, "XMAX")
-        gr.SetColLabelValue(3, "ION")
-        gr.SetColLabelValue(4, "Z")
-        gr.SetColLabelValue(5, "N")
-        gr.SetColLabelValue(6, "B")
-        gr.SetColLabelValue(7, "BTUR")
-        gr.SetColLabelValue(8, "VARY")
-        gr.SetColLabelValue(9, "EXPR")
-        gr.SetColLabelValue(10, "#")
-        gr.Bind(gridlib.EVT_GRID_CELL_CHANGED,
-                lambda e: self.on_tab_edit(e, gr))
-        #self.focus_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_line_select)
+        self.gr = gridlib.Grid(panel)
+        self.gr.CreateGrid(0, 11)
+        self.gr.SetColLabelValue(0, "X")
+        self.gr.SetColLabelValue(1, "XMIN")
+        self.gr.SetColLabelValue(2, "XMAX")
+        self.gr.SetColLabelValue(3, "ION")
+        self.gr.SetColLabelValue(4, "Z")
+        self.gr.SetColLabelValue(5, "N")
+        self.gr.SetColLabelValue(6, "B")
+        self.gr.SetColLabelValue(7, "BTUR")
+        self.gr.SetColLabelValue(8, "VARY")
+        self.gr.SetColLabelValue(9, "EXPR")
+        self.gr.SetColLabelValue(10, "#")
+        self.gr.Bind(gridlib.EVT_GRID_CELL_CHANGED,
+                lambda e: self.on_tab_edit(e, self.gr))
+        self.gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_line)
 
-        return gr
+        #return self.gr
 
     def init_UI(self):
         """ Initialize the main frame """
 
         panel = wx.Panel(self)
 
-        self.add_gr = self.init_tab(panel)
+        self.init_tab(panel)
         self.init_plot(panel)
 
         self.box_main = wx.BoxSizer(wx.VERTICAL)
 
         # Table panel
         box_focus = wx.BoxSizer(wx.VERTICAL)
-        box_focus.Add(self.add_gr, 1, wx.BOTTOM, border=10)
+        box_focus.Add(self.gr, 1, wx.BOTTOM, border=10)
 
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
@@ -1312,6 +1325,15 @@ class SystFrame(wx.Frame):
     def on_run(self, event):
         self.execute = True
         self.Close()
+
+    def on_sel_line(self, event):
+        if event.GetTopRow() == event.GetBottomRow():            
+            row = event.GetTopRow()
+            self.group_rows = [row]
+            for p in range(self.pn):
+                self.plot[p].sel(self.group, self.group_rows, extra_width=0.0)
+            self.plot_fig.draw()
+            #self.update_line()
 
     def on_tab_add(self, event, series=None):
 
@@ -1410,15 +1432,19 @@ class SystFrame(wx.Frame):
         for p in range(self.pn):
             self.plot[p].clear()
             self.plot[p].spec(self.p.spec.t, cont=self.p.cont.t,
-                              xmin=self.z/1.002, xmax=self.z*1.002)
+                              xmin=self.z/1.0025, xmax=self.z*1.0025)
             self.plot[p].line(self.p.line.t, cont=self.p.cont.t)
             self.plot[p].cont(self.p.cont.t, cont=self.p.cont.t)
-            self.plot[p].sel(self.p.line, self.p.syst_rows, extra_width=0.0)
+            #self.plot[p].sel(self.p.line.t, self.p.syst_rows, extra_width=0.0)
 
             self.plot[p].spec(self.p.syst._chunk, replace=False,
                               cont=self.p.cont.t, lw=2.0)
             self.plot[p].line(self.p.syst._group, replace=False,
                               cont=self.p.cont.t, marker="o")
+            try:
+                self.plot[p].model(self.p.syst._model.t, cont=self.p.cont.t)
+            except:
+                pass
             
         #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()
@@ -1428,13 +1454,7 @@ class SystFrame(wx.Frame):
         """ Update the system table """
 
         try:
-            self.focus_gr.DeleteRows(pos=0,
-                                     numRows=self.focus_gr.GetNumberRows())
-        except:
-            pass
-        try:
-            self.add_gr.DeleteRows(pos=0,
-                                   numRows=self.add_gr.GetNumberRows())
+            self.gr.DeleteRows(pos=0, numRows=self.gr.GetNumberRows())
         except:
             pass
 
@@ -1445,19 +1465,19 @@ class SystFrame(wx.Frame):
             #    tab = self.focus_gr
             #else:
             #    tab = self.add_gr
-            tab = self.add_gr
-            r = tab.GetNumberRows()
-            tab.AppendRows(1)
-            tab.SetCellValue(r, 0, "%3.3f" % g['X'])
-            tab.SetCellValue(r, 1, "%3.3f" % g['XMIN'])
-            tab.SetCellValue(r, 2, "%3.3f" % g['XMAX'])
-            tab.SetCellValue(r, 3, str(g['ION']))
-            tab.SetCellValue(r, 4, "%3.5f" % g['Z'])
-            tab.SetCellValue(r, 5, "%3.3e" % g['N'])
-            tab.SetCellValue(r, 6, "%3.3f" % g['B'])
-            tab.SetCellValue(r, 7, "%3.3f" % g['BTUR'])
-            tab.SetCellValue(r, 8, str(g['VARY']))
-            tab.SetCellValue(r, 9, str(g['EXPR']))
-            tab.SetCellValue(r, 10, str(i))
+            tab = self.gr
+            r = self.gr.GetNumberRows()
+            self.gr.AppendRows(1)
+            self.gr.SetCellValue(r, 0, "%3.3f" % g['X'])
+            self.gr.SetCellValue(r, 1, "%3.3f" % g['XMIN'])
+            self.gr.SetCellValue(r, 2, "%3.3f" % g['XMAX'])
+            self.gr.SetCellValue(r, 3, str(g['ION']))
+            self.gr.SetCellValue(r, 4, "%3.5f" % g['Z'])
+            self.gr.SetCellValue(r, 5, "%3.3e" % g['N'])
+            self.gr.SetCellValue(r, 6, "%3.3f" % g['B'])
+            self.gr.SetCellValue(r, 7, "%3.3f" % g['BTUR'])
+            self.gr.SetCellValue(r, 8, str(g['VARY']))
+            self.gr.SetCellValue(r, 9, str(g['EXPR']))
+            self.gr.SetCellValue(r, 10, str(i))
         
         self.box_main.Fit(self)

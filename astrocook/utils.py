@@ -30,7 +30,8 @@ proc_descr = {'convolve': "Convolve with a custom profile",
 rec_descr = {'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'line_ew': "Estimate all equivalent widths",
-             'line_resid': "Add lines from model residuals",
+             'line_resid': "Add lines from model residuals to the selected "\
+                           "system",
              'spec_cont': "Estimate continuum by smoothing spectrum",
              'syst_find': "Find systems",             
              }
