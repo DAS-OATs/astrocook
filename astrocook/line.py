@@ -127,7 +127,6 @@ class Line(Spec1D):
 
         self._use_good = False
 
-
     def _acs(self, acs):
         self.acs = acs
         self._spec = acs.spec
@@ -136,7 +135,6 @@ class Line(Spec1D):
             self._exts = acs.spec._exts  # When loading from a current session
         except:
             pass  # When loading from a saved session
-        
         
 # Properties
         
@@ -401,13 +399,14 @@ class Line(Spec1D):
         self._t.sort('X')
 
     def exts_new(self):
-        """ @brief Use extrema selected from a spectrum to create a line table 
+        """ @brief Use extrema selected from a spectrum to create a list of 
+        lines
         """ 
 
-        e = self.acs.spec._exts_sel
-        diff = np.amax([e['X']-e['XMIN'], e['XMAX']-e['X']], axis=0)
-        out = Line(self.acs, x=e['X'], xmin=e['X']-diff, xmax=e['X']+diff,
-                    y=e['Y'], dy=e['DY'])
+        t = self.acs.spec._exts_sel
+        diff = np.amax([t['X']-t['XMIN'], t['XMAX']-t['X']], axis=0)
+        out = Line(self.acs, x=t['X'], xmin=t['X']-diff, xmax=t['X']+diff,
+                    y=t['Y'], dy=t['DY'])
         return out
     
 # To be checked

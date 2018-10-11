@@ -43,7 +43,7 @@ class System(Spec1D, Line, Cont):
 
             
         # "is not" works also with arrays
-        if (z is not None):            
+        if (z is not None):
             if (btur is None):
                 btur = 0.0 * bunit_def
             self._t = self.create_t(series, z, N, b, btur,
@@ -417,7 +417,16 @@ class System(Spec1D, Line, Cont):
         self._group_map = np.in1d(self._map['Z'], group['Z'])
         self._group_line = np.in1d(self._line.t['X'], group['X'])
 
-        
+    def line_new(self, series='Ly_ab'):
+        """ @brief Use matching redshift from a list of lines to create a list
+        of systems
+        """ 
+
+        line = self.acs.line
+        out = System(acs=self.acs, series=series, z=line._z_match)
+        return out
+
+    
     def model(self, s=None,
               adj='linear', adj_value=[1.0, 0.0], adj_vary=[False, False],
               adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],

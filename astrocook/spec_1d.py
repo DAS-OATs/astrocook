@@ -459,7 +459,8 @@ class Spec1D():
         out.t['Y'] = np.interp(out.t['X'], le[:, 0], le[:, 1]) * y.unit
 
         return out
-        
+
+
 # To be checked
     
     def cont(self, smooth=20.0, flux_corr=1.0):

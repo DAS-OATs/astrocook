@@ -10,13 +10,16 @@ from scipy.signal import savgol_filter
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 class Cont(Spec1D, Line):
-    def __init__(self, spec=None, line=None,
+    def __init__(self, acs=None, spec=None, line=None,
                  x=None, y=None, dy=None,
                  xunit=xunit_def, yunit=yunit_def,
                  meta=None, dtype=float):
         
         """ Constructor for the Cont class """ 
+        if acs != None:
+            self._acs(acs)
 
+            
         self._spec = spec
         self._line = line
         if (x is not None):
@@ -34,6 +37,7 @@ class Cont(Spec1D, Line):
         self._use_good = False
 
     def _acs(self, acs):
+        self.acs = acs
         self._spec = acs.spec
         #self._line = acs.line
         #self._syst = acs.syst
@@ -51,7 +55,18 @@ class Cont(Spec1D, Line):
         t['DY'] = Column(dy, dtype=dtype, unit=yunit)
 
         return t
-        
+
+    def spec_new(self):
+        """ @brief Use a spectrum to create a continuum
+        """ 
+
+        spec = self.acs.spec
+        out = Cont(spec=spec, x=spec.t['X'], y=spec.t['Y'], dy=spec.t['DY'])
+        return out
+    
+
+## Deprecated
+    
     def line_rem(self, frac=0.03):
         x = copy(self._spec._t['X'])
         y = copy(self._spec._t['Y'])
@@ -101,3 +116,4 @@ class Cont(Spec1D, Line):
         y = np.interp(x, le[:, 0], le[:, 1]) * self._spec.y.unit
 
         self._t = self.create_t(x, y)
+

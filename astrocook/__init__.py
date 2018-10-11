@@ -13,5 +13,6 @@ from .system import System
 from .voigt import Voigt
 from .io import IO
 from .recipe import Recipe
+from .workflow import Workflow
 from .plot import Plot
 from .app import MainFrame

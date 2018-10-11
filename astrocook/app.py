@@ -113,6 +113,35 @@ class MainFrame(wx.Frame):
         else:
             out = None
         return out
+
+    def on_dialog_rec(self, event, RecipeClass):
+
+        self.rec = RecipeClass(self.acs)
+        dlg = RecipeDialog(self, self.rec.title)
+        dlg.ShowModal()
+        dlg.Destroy()
+        if dlg.execute:
+            out = self.rec.ex(**dlg.params)
+            self.log[self.rec.title] = dlg.params
+
+            self.spec_dict[self.targ] = self.acs.spec
+            self.line_dict[self.targ] = self.acs.line            
+            self.cont_dict[self.targ] = self.acs.cont            
+            self.syst_dict[self.targ] = self.acs.syst
+            self.model_dict[self.targ] = self.acs.model
+            #self.line_num = len(self.line.t)
+            #self.update_spec()
+            self.update_all()
+            #self.update_acs()
+        else:
+            out = None
+        return (dlg.execute, out)
+            
+    def dialog_wkf(self, WorkflowClass):
+        self.wkf = WorkflowClass(self.acs)
+        dialog = WorkflowDialog(self)
+        dialog.ShowModal()
+        dialog.Destroy()
     
     def init_line(self, panel):
         """ Create the Lines panel """
@@ -330,48 +359,14 @@ class MainFrame(wx.Frame):
        
         # Recipes menu
         self.rec_menu = wx.Menu()
-
-        rec_spec_cont = wx.MenuItem(self.rec_menu, 200,
-                                    rec_descr['spec_cont']+"...")
-        rec_line_find = wx.MenuItem(self.rec_menu, 201,
-                                    rec_descr['line_find']+"...")
-        rec_line_cont = wx.MenuItem(self.rec_menu, 202,
-                                    rec_descr['line_cont']+"...")
-        rec_syst_find = wx.MenuItem(self.rec_menu, 203,
-                                    rec_descr['syst_find']+"...")
-        rec_line_resid = wx.MenuItem(self.rec_menu, 204,
-                                    rec_descr['line_resid']+"...")
-
-        self.Bind(wx.EVT_MENU, self.on_rec_spec_cont, rec_spec_cont)
-        self.Bind(wx.EVT_MENU, self.on_rec_line_find, rec_line_find)
-        self.Bind(wx.EVT_MENU, self.on_rec_line_cont, rec_line_cont)
-        self.Bind(wx.EVT_MENU, self.on_rec_syst_find, rec_syst_find)
-        self.Bind(wx.EVT_MENU, self.on_rec_line_resid, rec_line_resid)
-        
-        self.rec_menu.Append(rec_spec_cont)
-        self.rec_menu.Append(rec_line_find)
+        self.menu_append(self.rec_menu, 200, recipe.RecipeSpecCont)
+        self.menu_append(self.rec_menu, 201, recipe.RecipeLineFind)
         self.rec_menu.AppendSeparator()
-        self.rec_menu.Append(rec_line_cont)
+        self.menu_append(self.rec_menu, 202, recipe.RecipeLineCont)
         self.rec_menu.AppendSeparator()
-        self.rec_menu.Append(rec_syst_find)
-        self.rec_menu.Append(rec_line_resid)
+        self.menu_append(self.rec_menu, 203, recipe.RecipeSystFind)
+        self.menu_append(self.rec_menu, 204, recipe.RecipeLineResid)
         
-        """
-        rec_cont_max_smooth = wx.MenuItem(self.rec_menu, self.id_line+1,
-                                    "Find Continuum by Smoothing the "
-                                    "Flux Maxima...")
-        rec_syst_def = wx.MenuItem(self.rec_menu, self.id_cont+1,
-                                    "&Define System...")
-        rec_syst_fit = wx.MenuItem(self.rec_menu, self.id_syst_sel,
-                                   "&Fit Selected System...")
-        self.Bind(wx.EVT_MENU, self.on_cont_max_smooth, rec_cont_max_smooth)
-        self.Bind(wx.EVT_MENU, self.on_syst_def, rec_syst_def)
-        self.Bind(wx.EVT_MENU, self.on_syst_fit, rec_syst_fit)
-        
-        self.rec_menu.Append(rec_cont_max_smooth)
-        self.rec_menu.Append(rec_syst_def)
-        self.rec_menu.Append(rec_syst_fit)
-        """
 
         # Workflows menu
         self.wkf_menu = wx.Menu()
@@ -414,6 +409,12 @@ class MainFrame(wx.Frame):
         menu_bar.Append(self.info_menu, '&Info')
         self.SetMenuBar(menu_bar)        
 
+    def menu_append(self, menu, item_id, ItemClass, descr_add="..."):
+        descr = ItemClass().title
+        item = wx.MenuItem(menu, item_id, descr+descr_add)
+        self.Bind(wx.EVT_MENU, lambda e: self.on_dialog_rec(e, ItemClass), item)
+        menu.Append(item)
+
         
     def menu_disable(self, menu, id):
         for i in range(10):
@@ -429,6 +430,8 @@ class MainFrame(wx.Frame):
             except:
                 pass
 
+
+            
     def on_backup_write(self, event):
         bck = open("astrocook_app.bck", "wb")
         bck.write(self.path_chosen+'\n')
@@ -772,6 +775,7 @@ class MainFrame(wx.Frame):
     def on_quit(self, event):
         self.Close()
 
+    """
     def on_rec_line_cont(self, event):
         rec = 'line_cont'
         run = self.dialog_rec(self.acs, rec)
@@ -780,17 +784,6 @@ class MainFrame(wx.Frame):
             self.cont_dict[self.targ] = self.cont
             self.plot.cont(self.cont.t)
             self.plot_fig.draw()
-            self.update_acs()
-            
-    def on_rec_line_find(self, event):
-        rec = 'line_find'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.line = self.rec.line
-            self.line_dict[self.targ] = self.line
-            self.line_num = len(self.line.t)
-            self.update_spec()
-            self.update_line()
             self.update_acs()
             
     def on_rec_line_resid(self, event):
@@ -836,7 +829,7 @@ class MainFrame(wx.Frame):
                 self.syst_frame.z = self.z_sel
                 self.syst_frame.update_plot()
                 self.syst_frame.update_tab()                
-
+    """
 
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
@@ -974,7 +967,7 @@ class MainFrame(wx.Frame):
         except:
             pass
         try:
-            self.line_gr.AppendRows(len(self.line.t))
+            self.line_gr.AppendRows(len(self.acs.line.t))
             for i, l in enumerate(self.line.t):
                 self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
                 self.line_gr.SetCellValue(i, 1, "%3.3f" % l['XMIN'])
@@ -982,7 +975,7 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 3, "%3.3f" % l['Y'])
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
                 self.line_gr.SetCellValue(i, 5, "%3.3f" % l['EW'])
-            self.line_dict[self.targ] = self.line
+            self.line_dict[self.targ] = self.acs.line
             self.plot.line(self.line.t, cont=cont, c='g')
             self.plot_fig.draw()
         except:
@@ -1035,12 +1028,12 @@ class MainFrame(wx.Frame):
                              % (self.xmin, self.xmax))
 
         try:
-            self.spec_lc.SetItem(self.row, 4, str(len(self.line.t)))
+            self.spec_lc.SetItem(self.row, 4, str(len(self.acs.line.t)))
         except:
             pass
             
         try:
-            self.spec_lc.SetItem(self.row, 5, str(len(self.syst.t)))
+            self.spec_lc.SetItem(self.row, 5, str(len(self.acs.syst.t)))
         except:
             pass
 
@@ -1058,8 +1051,10 @@ class MainFrame(wx.Frame):
             pass
 
         try:
-            self.syst_gr.AppendRows(len(self.syst.t))
-            for i, s in enumerate(self.syst.t):
+            ok
+        except:
+            self.syst_gr.AppendRows(len(self.acs.syst.t))
+            for i, s in enumerate(self.acs.syst.t):
                 self.syst_gr.SetCellValue(i, 0, str(s['SERIES']))
                 self.syst_gr.SetCellValue(i, 1, "%3.5f" % s['Z'])
                 self.syst_gr.SetCellValue(i, 2, "%3.3e" % s['N'])
@@ -1069,8 +1064,8 @@ class MainFrame(wx.Frame):
                 self.syst_gr.SetCellValue(i, 6, "%3.3e" % s['DN'])
                 self.syst_gr.SetCellValue(i, 7, "%3.3f" % s['DB'])
                 self.syst_gr.SetCellValue(i, 8, "%3.3f" % s['DBTUR'])
-            self.syst_dict[self.targ] = self.syst
-        except:
+            self.syst_dict[self.targ] = self.acs.syst
+        #except:
             pass
 
         try:
@@ -1090,6 +1085,123 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
     def insert_string_item(self, *args):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
+
+class ParamDialog2(wx.Dialog):
+    def __init__(self, parent=None, title=None, **kwargs):
+        """ @brief Constructor for the abstract parameter dialog """
+
+        super(ParamDialog2, self).__init__(parent=parent, title=title)
+        self.init_UI()
+        myCursor= wx.Cursor(wx.CURSOR_ARROW)
+        self.SetCursor(myCursor)
+        
+    def init_UI(self):
+        """ Initialize the main frame """
+        
+        panel = wx.Panel(self)
+        box_main = wx.BoxSizer(wx.VERTICAL)
+
+        box_params = wx.BoxSizer(wx.VERTICAL)
+        self.par = []
+        self.dial = []
+        self.ctrl = []
+        self.type = []
+        #for d, v in self.p.rec.dialog.iteritems():
+        #for d in self.dialog:
+        for p in self.params:
+            box_param = wx.BoxSizer(wx.HORIZONTAL)
+            #p = self.dialog[d]
+            v = self.params[p]
+            self.par.append(p)
+            self.dial.append(p)
+            self.type.append(type(v))
+            if type(v) == bool and 1==0:
+                rb = wx.RadioButton(panel, -1, label=p)
+                box_param.Add(rb, 1, 0)
+                self.ctrl.append(rb)
+            else:
+                st = wx.StaticText(panel, -1, label=p)
+                tc = wx.TextCtrl(panel, -1, value=str(v), size=(200,25))
+                box_param.Add(st, 1, 0)
+                box_param.Add(tc, 1, 0)
+                self.ctrl.append(tc)
+
+
+            box_params.Add(box_param, 1, 0, 0)
+        panel.SetSizer(box_params)
+        
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        cancel_button = wx.Button(self, label='Cancel')
+        run_button = wx.Button(self, label='Run')
+        run_button.SetDefault()
+        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+        buttons.Add(run_button, 0)
+ 
+        box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
+        box_main.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        box_main.SetSizeHints(self)
+
+        self.SetSizer(box_main)
+        
+        cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
+        run_button.Bind(wx.EVT_BUTTON, self.on_run)
+
+        self.Centre()
+        self.Show()
+        
+    def on_cancel(self, e):
+        self.execute = False
+        self.Close()
+
+    def on_run(self, e):
+
+        for p, t, ctrl in zip(self.par, self.type, self.ctrl):
+            par = ctrl.GetValue()
+            if t==type([]):  # To handle list parameters
+                trim = str(''.join(par)[1:-1]).split(', ')
+                lit = [ast.literal_eval(x.title()) for x in trim]
+                self.params[p] = lit
+            elif t==type(None):
+                self.params[p] = None
+            elif t==type(True):
+                self.params[p] = par == "True"
+            else:
+                self.params[p] = t(par)
+        self.execute = True
+        self.Close()
+
+        
+class RecipeDialog(ParamDialog2):
+    def __init__(self, parent=None, title=None, **kwargs):
+        """ @brief Constructor for the recipe parameter dialog """
+
+        acs = parent.acs
+        objs = parent.rec.objs
+        procs = parent.rec.procs
+        defaults = parent.rec.defaults
+        omits = parent.rec.omits
+        self.params = {}
+        for o, p in zip(objs, procs):
+            obj = getattr(acs, o)
+            proc = getattr(obj, p)
+            try:
+                defs = inspect.getargspec(proc)[3]
+                keys = inspect.getargspec(proc)[0][-len(defs):]
+                self.params.update({k: d for (d, k) in zip(defs, keys)})
+                for d in defaults:
+                    self.params[d] = defaults[d] 
+            #for om in omits:
+            #    del self.params[om]
+            except:
+                pass
+        self.dialog = self.params
+        super(RecipeDialog, self).__init__(parent=parent, title=title, **kwargs)
+        
+class WorkflowDialog(wx.Dialog):
+    def __init__(self, parent=None, size=(250,500), **kwargs):
+        """ @brief Constructor for the workflow dialog """
+        self.p = parent
         
 class ParamDialog(wx.Dialog):
 

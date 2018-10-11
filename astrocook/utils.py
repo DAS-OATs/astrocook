@@ -8,6 +8,9 @@ from astropy.constants import c
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 
+# Main classes
+dict_class = ['spec', 'line', 'cont', 'syst', 'model']
+
 # Menu description
 proc_descr = {'convolve': "Convolve with a custom profile",
               'extract_forest': "Extract forest",
