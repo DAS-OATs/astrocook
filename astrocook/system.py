@@ -198,7 +198,10 @@ class System(Spec1D, Line, Cont):
         """
 
         if s == None:
-            s = self._syst_sel
+            try:
+                s = self._syst_sel
+            except:
+                s = self.acs._syst_sel
         
         self.model(s, **kwargs)
                 

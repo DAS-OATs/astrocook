@@ -1,5 +1,8 @@
 from . import * #Cont, IO, Line, Plot, Recipe, Spec1DReader, System
 from .utils import *
+from .procedure import *
+from .recipe import *
+from .workflow import *
 import ast
 from astropy import units as u
 from astropy.io import ascii, fits
@@ -89,10 +92,8 @@ class MainFrame(wx.Frame):
         #del wait
         return out
 
-    
+    """
     def dialog_rec(self, acs, rec):
-        """ Run a recipe through a dialog window """
-
         self.acs = acs
         self.rec = Recipe(acs, rec)
         self.objs = self.rec.objs
@@ -113,35 +114,12 @@ class MainFrame(wx.Frame):
         else:
             out = None
         return out
-
-    def on_dialog_rec(self, event, RecipeClass):
-
-        self.rec = RecipeClass(self.acs)
-        dlg = RecipeDialog(self, self.rec.title)
-        dlg.ShowModal()
-        dlg.Destroy()
-        if dlg.execute:
-            out = self.rec.ex(**dlg.params)
-            self.log[self.rec.title] = dlg.params
-
-            self.spec_dict[self.targ] = self.acs.spec
-            self.line_dict[self.targ] = self.acs.line            
-            self.cont_dict[self.targ] = self.acs.cont            
-            self.syst_dict[self.targ] = self.acs.syst
-            self.model_dict[self.targ] = self.acs.model
-            #self.line_num = len(self.line.t)
-            #self.update_spec()
-            self.update_all()
-            #self.update_acs()
-        else:
-            out = None
-        return (dlg.execute, out)
-            
     def dialog_wkf(self, WorkflowClass):
         self.wkf = WorkflowClass(self.acs)
         dialog = WorkflowDialog(self)
         dialog.ShowModal()
         dialog.Destroy()
+    """
     
     def init_line(self, panel):
         """ Create the Lines panel """
@@ -317,8 +295,8 @@ class MainFrame(wx.Frame):
             self.proc_menu, 120, proc_descr['N_all'])
         proc_syst_model = wx.MenuItem(
             self.proc_menu, 121, proc_descr['model']+"...")
-        proc_syst_fit = wx.MenuItem(
-            self.proc_menu, 122, proc_descr['fit']+"...")
+        #proc_syst_fit = wx.MenuItem(
+        #    self.proc_menu, 122, proc_descr['fit']+"...")
         proc_syst_extract_resid = wx.MenuItem(
             self.proc_menu, 123, proc_descr['extract_resid']+"...")
         
@@ -337,7 +315,7 @@ class MainFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
-        self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
+        #self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_extract_resid,
                   proc_syst_extract_resid)
         
@@ -354,22 +332,31 @@ class MainFrame(wx.Frame):
         #self.proc_menu.Append(proc_syst_group)
         self.proc_menu.Append(proc_syst_N_all)
         self.proc_menu.Append(proc_syst_model)
-        self.proc_menu.Append(proc_syst_fit)
+        #self.proc_menu.Append(proc_syst_fit)
+        self.menu_append(self.proc_menu, 122, ProcSystSelFit, ProcDialog,
+                         ['syst', 'model'])
         self.proc_menu.Append(proc_syst_extract_resid)
        
         # Recipes menu
         self.rec_menu = wx.Menu()
-        self.menu_append(self.rec_menu, 200, recipe.RecipeSpecCont)
-        self.menu_append(self.rec_menu, 201, recipe.RecipeLineFind)
+        self.menu_append(self.rec_menu, 200, RecSpecCont, RecDialog,
+                         ['cont'])
+        self.menu_append(self.rec_menu, 201, RecLineFind, RecDialog,
+                         ['line'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 202, recipe.RecipeLineCont)
+        self.menu_append(self.rec_menu, 202, RecLineCont, RecDialog,
+                         ['cont'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 203, recipe.RecipeSystFind)
-        self.menu_append(self.rec_menu, 204, recipe.RecipeLineResid)
+        self.menu_append(self.rec_menu, 203, RecSystFind, RecDialog,
+                         ['syst'])
+        self.menu_append(self.rec_menu, 204, RecLineResid, RecDialog,
+                         ['syst', 'model'])
         
 
         # Workflows menu
         self.wkf_menu = wx.Menu()
+        self.menu_append(self.wkf_menu, 300, WkfSystAllFit, WkfDialog,
+                         ['syst', 'model'])
 
         # Utilities menu
         self.util_menu = wx.Menu()
@@ -409,10 +396,12 @@ class MainFrame(wx.Frame):
         menu_bar.Append(self.info_menu, '&Info')
         self.SetMenuBar(menu_bar)        
 
-    def menu_append(self, menu, item_id, ItemClass, descr_add="..."):
-        descr = ItemClass().title
+    def menu_append(self, menu, item_id, item_class, item_dialog, item_update,
+                    descr_add="..."):
+        descr = item_class().title
         item = wx.MenuItem(menu, item_id, descr+descr_add)
-        self.Bind(wx.EVT_MENU, lambda e: self.on_dialog_rec(e, ItemClass), item)
+        self.Bind(wx.EVT_MENU, lambda e: self.on_dialog(
+            e, item_class, item_dialog, item_update), item)
         menu.Append(item)
 
         
@@ -437,6 +426,42 @@ class MainFrame(wx.Frame):
         bck.write(self.path_chosen+'\n')
         bck.write(self.targ)
         bck.close()
+
+        
+    def on_dialog(self, event, obj_class, obj_dialog,
+                  obj_update=['spec', 'line', 'cont', 'syst']):
+        """ @brief Open dialog when recipe is called
+        
+        @param event Calling event
+        @param class Class (Recipe, Workflow and subclasses)
+        @param class Dialog (RecipeDialog, WorkflowDialog)
+        """
+
+        print self.acs
+        self.op = obj_class(self.acs)
+        #print self.op.params
+        dlg = obj_dialog(self, self.op.title)
+        dlg.ShowModal()
+        dlg.Destroy()
+        if dlg.execute:
+            out = self.op.ex(**dlg.params)
+            self.log[self.op.title] = dlg.params
+            """
+            self.spec_dict[self.targ] = self.acs.spec
+            self.line_dict[self.targ] = self.acs.line            
+            self.cont_dict[self.targ] = self.acs.cont            
+            self.syst_dict[self.targ] = self.acs.syst
+            self.model_dict[self.targ] = self.acs.model
+            """
+            for u in obj_update:
+                if self.norm:
+                    self.update(u, self.acs.cont.t)
+                else:
+                    self.update(u)
+        else:
+            out = None
+        return (dlg.execute, out)
+            
 
     def on_edit_line(self, event):
         row = event.GetRow()
@@ -714,7 +739,8 @@ class MainFrame(wx.Frame):
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.spec_dict[self.targ] = self.spec
             self.update_spec()
-            
+
+    """
     def on_proc_syst_fit(self, event):
         self.syst._syst_sel = self.syst_sel
         proc = 'fit'
@@ -739,7 +765,7 @@ class MainFrame(wx.Frame):
             #                                  cont=self.cont.t)
             #    self.syst_frame.plot_fig.draw()
             self.update_acs()
-                
+    """            
     def on_proc_syst_model(self, event):
         self.syst._syst_sel = self.syst_sel
         proc = 'model'
@@ -775,61 +801,6 @@ class MainFrame(wx.Frame):
     def on_quit(self, event):
         self.Close()
 
-    """
-    def on_rec_line_cont(self, event):
-        rec = 'line_cont'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.cont = self.rec.cont
-            self.cont_dict[self.targ] = self.cont
-            self.plot.cont(self.cont.t)
-            self.plot_fig.draw()
-            self.update_acs()
-            
-    def on_rec_line_resid(self, event):
-        rec = 'line_resid'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.line = self.rec.line
-            self.line_dict[self.targ] = self.line
-            self.line_num = len(self.line.t)
-            self.update_line()
-            self.update_syst()
-            if self.syst_frame == None:
-                self.syst_frame = SystFrame(self, title="Selected system")
-                self.syst_frame.Show()
-            else:
-                self.syst_frame.z = self.z_sel
-                self.syst_frame.update_plot()
-            #for p in range(self.syst_frame.pn):
-            #    self.syst_frame.plot[p].model(self.syst._model.t,
-            #                                  cont=self.cont.t)
-            #    self.syst_frame.plot_fig.draw()
-            self.update_acs()
-
-    def on_rec_spec_cont(self, event):
-        rec = 'spec_cont'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:            
-            self.cont = self.rec.cont
-            self.cont_dict[self.targ] = self.cont
-            self.plot.cont(self.cont.t)
-            self.plot_fig.draw()
-
-    def on_rec_syst_find(self, event):
-        rec = 'syst_find'
-        run = self.dialog_rec(self.acs, rec)
-        if self.rec_dict[rec]:
-            self.syst = self.rec.syst
-            self.syst_dict[self.targ] = self.syst
-            self.syst_num = len(self.syst.t)
-            self.update_spec()
-            self.update_syst()
-            if self.syst_frame != None:
-                self.syst_frame.z = self.z_sel
-                self.syst_frame.update_plot()
-                self.syst_frame.update_tab()                
-    """
 
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
@@ -855,17 +826,18 @@ class MainFrame(wx.Frame):
     def on_sel_syst(self, event):
         if event.GetTopRow() == event.GetBottomRow():  
             row = event.GetTopRow()
-            self.z_sel = self.syst.t['Z'][row]
-            self.syst_sel = self.syst.t[row]
-            map_w = np.where(self.z_sel==self.syst._map['Z'])[0]
+            self.z_sel = self.acs.syst.t['Z'][row]
+            self.syst_sel = self.acs.syst.t[row]
+            self.acs._syst_sel = self.syst_sel
+            map_w = np.where(self.z_sel==self.acs.syst._map['Z'])[0]
 
             # On selection, define group and chunks for the system
-            self.syst.group(self.syst_sel)
-            self.syst.chunk()
+            self.acs.syst.group(self.syst_sel)
+            self.acs.syst.chunk()
             #self.syst.N(self.syst_sel)
             
             self.syst_rows = []
-            for m in self.syst._map[map_w]:
+            for m in self.acs.syst._map[map_w]:
                 self.syst_rows.append(np.where(m['X']==self.line.t['X'])[0][0])
             self.plot.sel(self.line.t, self.syst_rows, extra_width=0)
             self.plot_fig.draw()
@@ -882,7 +854,7 @@ class MainFrame(wx.Frame):
     def on_util_plot_norm(self, event):
         self.norm = ~self.norm
         if self.norm:
-            self.update_all(self.cont.t)
+            self.update_all(self.acs.cont.t)
         else:
             self.update_all()
 
@@ -916,6 +888,18 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
         self.update_syst()
     """
+
+    def update(self, obj, cont=None):
+        if obj == 'spec':
+            self.update_spec(cont)
+        if obj == 'line':
+            self.update_line(cont)
+        if obj == 'cont':
+            self.update_cont(cont)
+        if obj == 'syst':
+            self.update_syst()
+        if obj == 'model':
+            self.update_model()
     
     def update_acs(self):
         self.acs.spec = self.spec
@@ -954,21 +938,21 @@ class MainFrame(wx.Frame):
 
     def update_cont(self, cont=None):
         try:
-            self.plot.cont(self.cont.t, cont=cont)
+            self.cont_dict[self.targ] = self.acs.cont
+            self.plot.cont(self.acs.cont.t, cont=cont)
             self.plot_fig.draw()
         except:
-            pass
+            raise Exception("Can't update continuum plot!")            
         
     def update_line(self, cont=None):
         """ Update the line table """
-        
         try:
             self.line_gr.DeleteRows(pos=0, numRows=self.line_gr.GetNumberRows())
         except:
             pass
         try:
             self.line_gr.AppendRows(len(self.acs.line.t))
-            for i, l in enumerate(self.line.t):
+            for i, l in enumerate(self.acs.line.t):
                 self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
                 self.line_gr.SetCellValue(i, 1, "%3.3f" % l['XMIN'])
                 self.line_gr.SetCellValue(i, 2, "%3.3f" % l['XMAX'])
@@ -976,10 +960,11 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
                 self.line_gr.SetCellValue(i, 5, "%3.3f" % l['EW'])
             self.line_dict[self.targ] = self.acs.line
-            self.plot.line(self.line.t, cont=cont, c='g')
+            print cont
+            self.plot.line(self.acs.line.t, cont=cont, c='g')
             self.plot_fig.draw()
         except:
-            pass
+            raise Exception("Can't update line table and line plot!")
 
     def update_menu(self):
         """ Update the menus """
@@ -1005,8 +990,9 @@ class MainFrame(wx.Frame):
         self.menu_disable(self.rec_menu, self.id_syst_sel)
 
     def update_model(self, cont=None):
+        self.model_dict[self.targ] = self.acs.model
         try:
-            self.plot.model(self.model.t, cont=cont)
+            self.plot.model(self.acs.model.t, cont=cont)
             self.plot_fig.draw()
         except:
             pass
@@ -1014,7 +1000,8 @@ class MainFrame(wx.Frame):
     def update_spec(self, cont=None):
         """ Update the spec list """
 
-        self.spec = self.spec_dict[self.targ]
+        self.spec_dict[self.targ] = self.acs.spec
+        #self.spec = self.spec_dict[self.targ]
 
         try:
             self.spec_lc.SetItem(self.row, 2, str(self.z_dict[self.targ]))
@@ -1038,12 +1025,14 @@ class MainFrame(wx.Frame):
             pass
 
         self.plot.clear()
-        self.plot.spec(self.spec.t, cont=cont, xmin=self.xmin, xmax=self.xmax)
+        self.plot.spec(self.acs.spec.t, cont=cont, xmin=self.xmin,
+                       xmax=self.xmax)
         self.plot_fig.draw()
         
     def update_syst(self, cont=None):
         """ Update the system table """
 
+        self.syst_dict[self.targ] = self.acs.syst
         try:
             self.syst_gr.DeleteRows(pos=0,
                                     numRows=self.syst_gr.GetNumberRows())
@@ -1051,8 +1040,6 @@ class MainFrame(wx.Frame):
             pass
 
         try:
-            ok
-        except:
             self.syst_gr.AppendRows(len(self.acs.syst.t))
             for i, s in enumerate(self.acs.syst.t):
                 self.syst_gr.SetCellValue(i, 0, str(s['SERIES']))
@@ -1065,13 +1052,27 @@ class MainFrame(wx.Frame):
                 self.syst_gr.SetCellValue(i, 7, "%3.3f" % s['DB'])
                 self.syst_gr.SetCellValue(i, 8, "%3.3f" % s['DBTUR'])
             self.syst_dict[self.targ] = self.acs.syst
-        #except:
+            try:
+                self.plot.model(self.acs.syst._model.t)
+                self.plot_fig.draw()
+            except:
+                pass
+        except:
             pass
 
         try:
             self.syst.group(self.syst_sel)
         except:
             pass
+
+        if hasattr(self, 'syst_sel'):
+            if self.syst_frame == None:
+                self.syst_frame = SystFrame(self, title="Selected system")
+                self.syst_frame.Show()
+            else:
+                self.syst_frame.z = self.z_sel
+                self.syst_frame.update_tab()
+                self.syst_frame.update_plot()
             
 
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
@@ -1089,6 +1090,10 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
 class ParamDialog2(wx.Dialog):
     def __init__(self, parent=None, title=None, **kwargs):
         """ @brief Constructor for the abstract parameter dialog """
+
+        parent.op.get_params()
+        self.params = parent.op.params
+        self.dialog = self.params
 
         super(ParamDialog2, self).__init__(parent=parent, title=title)
         self.init_UI()
@@ -1171,37 +1176,28 @@ class ParamDialog2(wx.Dialog):
         self.execute = True
         self.Close()
 
+class ProcDialog(ParamDialog2):
+    def __init__(self, parent=None, title=None, **kwargs):
+        """ @brief Constructor for the procedure parameter dialog """
+
+        #self.params = parent.rec.get_params()
+        #self.dialog = self.params
+        super(ProcDialog, self).__init__(parent=parent, title=title,
+                                             **kwargs)
         
-class RecipeDialog(ParamDialog2):
+class RecDialog(ParamDialog2):
     def __init__(self, parent=None, title=None, **kwargs):
         """ @brief Constructor for the recipe parameter dialog """
 
-        acs = parent.acs
-        objs = parent.rec.objs
-        procs = parent.rec.procs
-        defaults = parent.rec.defaults
-        omits = parent.rec.omits
-        self.params = {}
-        for o, p in zip(objs, procs):
-            obj = getattr(acs, o)
-            proc = getattr(obj, p)
-            try:
-                defs = inspect.getargspec(proc)[3]
-                keys = inspect.getargspec(proc)[0][-len(defs):]
-                self.params.update({k: d for (d, k) in zip(defs, keys)})
-                for d in defaults:
-                    self.params[d] = defaults[d] 
-            #for om in omits:
-            #    del self.params[om]
-            except:
-                pass
-        self.dialog = self.params
-        super(RecipeDialog, self).__init__(parent=parent, title=title, **kwargs)
+        super(RecDialog, self).__init__(parent=parent, title=title, **kwargs)
         
-class WorkflowDialog(wx.Dialog):
-    def __init__(self, parent=None, size=(250,500), **kwargs):
+class WkfDialog(ParamDialog2):
+    def __init__(self, parent=None, title=None, **kwargs):
         """ @brief Constructor for the workflow dialog """
-        self.p = parent
+
+        #self.params = parent.rec.get_params()
+        #self.dialog = self.params
+        super(WkfDialog, self).__init__(parent=parent, title=title, **kwargs)
         
 class ParamDialog(wx.Dialog):
 
@@ -1330,8 +1326,8 @@ class SystFrame(wx.Frame):
         super(wx.Frame, self).__init__(parent, title=title, size=size) 
 
         self.p = parent
-        self.syst = self.p.syst#_sel
-        self.group = self.p.syst._group
+        self.syst = self.p.acs.syst#_sel
+        self.group = self.p.acs.syst._group
         self.z = self.p.z_sel
         cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
                                    self.syst._t['Z'] < self.z+0.002)
@@ -1454,7 +1450,7 @@ class SystFrame(wx.Frame):
             row = event.GetTopRow()
             self.group_rows = [row]
             for p in range(self.pn):
-                self.plot[p].sel(self.p.syst._group, self.group_rows,
+                self.plot[p].sel(self.p.acs.syst._group, self.group_rows,
                                  extra_width=0.0)
             self.plot_fig.draw()
             #self.update_line()
@@ -1555,18 +1551,18 @@ class SystFrame(wx.Frame):
     def update_plot(self):
         for p in range(self.pn):
             self.plot[p].clear()
-            self.plot[p].spec(self.p.spec.t, cont=self.p.cont.t,
+            self.plot[p].spec(self.p.acs.spec.t, cont=self.p.acs.cont.t,
                               xmin=self.z/1.0025, xmax=self.z*1.0025)
-            self.plot[p].line(self.p.line.t, cont=self.p.cont.t)
-            self.plot[p].cont(self.p.cont.t, cont=self.p.cont.t)
+            self.plot[p].line(self.p.acs.line.t, cont=self.p.acs.cont.t)
+            self.plot[p].cont(self.p.acs.cont.t, cont=self.p.acs.cont.t)
             #self.plot[p].sel(self.p.line.t, self.p.syst_rows, extra_width=0.0)
 
-            self.plot[p].spec(self.p.syst._chunk, replace=False,
-                              cont=self.p.cont.t, lw=2.0)
-            self.plot[p].line(self.p.syst._group, replace=False,
-                              cont=self.p.cont.t, marker="o")
+            self.plot[p].spec(self.p.acs.syst._chunk, replace=False,
+                              cont=self.p.acs.cont.t, lw=2.0)
+            self.plot[p].line(self.p.acs.syst._group, replace=False,
+                              cont=self.p.acs.cont.t, marker="o")
             try:
-                self.plot[p].model(self.p.syst._model.t, cont=self.p.cont.t)
+                self.plot[p].model(self.p.acs.syst._model.t, cont=self.p.acs.cont.t)
             except:
                 pass
             
