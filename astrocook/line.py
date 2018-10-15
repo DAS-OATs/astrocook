@@ -313,8 +313,8 @@ class Line(Spec1D):
         """
         xmin = float(round(l['XMIN'],3))
         xmax = float(round(l['XMAX'],3))
-        spec_reg = self._spec.extract_reg(xmin, xmax) 
-        cont_reg = self._cont.extract_reg(xmin, xmax)
+        spec_reg = self.acs.spec.extract_reg(xmin, xmax) 
+        cont_reg = self.acs.cont.extract_reg(xmin, xmax)
         ew = np.sum((1-spec_reg.t['Y']/cont_reg.t['Y'])\
                     *(spec_reg.t['XMAX']-spec_reg.t['XMIN']))\
                     *spec_reg.t['X'].unit
@@ -397,6 +397,12 @@ class Line(Spec1D):
         t = self.exts_new().t
         self._t = vstack([self._t, t])
         self._t.sort('X')
+
+        # Remove duplicates
+        diff1d = np.append(self._t['X'][0], np.ediff1d(self._t['X']))
+        print diff1d
+        where = np.where(diff1d == 0)[0]
+        self._t.remove_rows(where)
 
     def exts_new(self):
         """ @brief Use extrema selected from a spectrum to create a list of 

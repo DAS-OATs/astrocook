@@ -52,7 +52,7 @@ def linear_f(x, norm, slope):
     @return Linear function over x, with value norm at the center
     """
     
-    return norm + (x - np.mean(x)) * slope
+    return np.array(norm + (x - np.mean(x)) * slope)
 
 def voigt_f(x, z, N, b, btur, ion='Ly_a', wave=0.0, tab=None):
     """ @brief Voigt function (real part of the Faddeeva function, after a 
@@ -68,13 +68,12 @@ def voigt_f(x, z, N, b, btur, ion='Ly_a', wave=0.0, tab=None):
     @param tab Table with the Faddeeva function
     @return Voigt function over x
     """
-    
     if wave == 0.0:
         wave = dict_wave[ion].value*1e-9
         wave_z = wave*(1+z)
     else:  # For unknown species, Ly-alpha rest-frame wavelength is assumed
         wave_z = wave*1e-9
-        wave = dict_wave['Ly_a']*1e-9
+        wave = dict_wave['Ly_a'].value*1e-9
     f = dict_f[ion]
     gamma = dict_gamma[ion]
     x_si = x * 1e-9
@@ -172,7 +171,6 @@ class Model(Spec1D):
             self._syst = line
         elif (syst is not None):
             self._syst = syst
-        #print(self._syst.t)    
         if (hasattr(self, '_syst')):
             
             if (hasattr(self._syst, '_cont')):
@@ -428,7 +426,6 @@ class Model(Spec1D):
         for i in range(len(ion)):
             ion_mask_temp = dc(ion_mask)
             ion_mask_temp[f_sort[i]] = True
-            #print(i, ion, ion_mask_temp)
             #ion_mask_temp[i] = True
             prof.append(self.prof(spec, ion, ion_mask=ion_mask_temp, **kwargs))
         prof.append(self.prof(spec, ion, ion_mask=ion_mask, **kwargs))        
@@ -446,14 +443,11 @@ class Model(Spec1D):
             pref = 'psf' + str(c) + '_'
             model = lmm(gaussian, prefix=pref)
             param = model.make_params()
-            #print(np.sum(self._chunk[c]))
             mean = np.mean(self._spec.x[self._chunk[c]].value)
             center = mean
-            print(center)
             sigma = mean / resol * 4.246609001e-1  # Factor to convert FWHM into
                                                    # standard deviation
             param[pref+'amplitude'].set(1.0, vary=False)
-            #print("center", center)
             param[pref+'center'].set(center, vary=False)
             param[pref+'sigma'].set(sigma, vary=False)        
         

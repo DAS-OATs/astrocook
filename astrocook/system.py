@@ -151,8 +151,8 @@ class System(Spec1D, Line, Cont):
         """
 
         # Create a spectrum with attached continuum
-        spec = dc(self._spec)
-        spec.t.add_column(Column(self._cont.t['Y'], name='CONT'))
+        spec = dc(self.acs.spec)
+        spec.t.add_column(Column(self.acs.cont.t['Y'], name='CONT'))
 
         # Regions around lines in the group are selected
         x = spec.t['X']
@@ -214,8 +214,12 @@ class System(Spec1D, Line, Cont):
         fun = self._fun
         par = self._par
         #par.pretty_print()
-        fit = fun.fit(y_c/cont_c, par, x=x_c, weights=cont_c/dy_c)
+        fit = fun.fit(np.array(y_c/cont_c), par, x=np.array(x_c))#,
+                      #weights=np.array(cont_c/dy_c))
+        print fit.fit_report()
         par = fit.params
+        print par
+        print par['voigt_000_N'].stderr
         #par.pretty_print()
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
@@ -231,6 +235,7 @@ class System(Spec1D, Line, Cont):
         self._par = par
         self._fit = fit
         for l in self._group:
+            """
             pref = l['PREF']
             l['Z'] = par[pref+'_z'].value
             l['N'] = par[pref+'_N'].value
@@ -240,7 +245,7 @@ class System(Spec1D, Line, Cont):
             l['DN'] = par[pref+'_N'].stderr
             l['DB'] = par[pref+'_b'].stderr
             l['DBTUR'] = par[pref+'_btur'].stderr
-        
+            """
 
         # Save fitted lines in the group
         cond = self._group['Z'] > 0
@@ -287,8 +292,8 @@ class System(Spec1D, Line, Cont):
         for j in join_t[cond_z]:
             xmin = j['XMIN']
             xmax = j['XMAX']
-            #cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
-            cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
+            cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+            #cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
 
         join_xc = join_t['Z']
         cond_xc = np.full(len(join_t), False)
@@ -369,10 +374,10 @@ class System(Spec1D, Line, Cont):
                 x = g['X']
                 xmin = g['XMIN']
                 xmax = g['XMAX']
-                #cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
-                #                          self._line.t['XMIN']<=xmax)        
-                cond_un += np.logical_and(self._line.t['XMAX']>xmin,
-                                          self._line.t['XMIN']<xmax)
+                cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
+                                          self._line.t['XMIN']<=xmax)        
+                #cond_un += np.logical_and(self._line.t['XMAX']>xmin,
+                #                          self._line.t['XMIN']<xmax)
             i = len(group)
             for l in self._line.t[cond_un]:
                 x = l['X']
@@ -410,7 +415,6 @@ class System(Spec1D, Line, Cont):
             #sel_un = np.sum(cond_un)
             #print len(self._line.t[cond_un])
 
-            
         self._group = group
         
         
@@ -431,7 +435,7 @@ class System(Spec1D, Line, Cont):
 
     
     def model(self, s=None,
-              adj='linear', adj_value=[1.0, 0.0], adj_vary=[False, False],
+              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, False],
               adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],
               prof='voigt', psf='psf_gauss', psf_resol_value=-1.0,
               psf_resol_vary=False, psf_resol_min=None, psf_resol_max=None,
@@ -476,10 +480,11 @@ class System(Spec1D, Line, Cont):
         for l in self._group:
             ion = l['ION']
             if ion == 'unknown':
-                wave = l['X']
+                wave = np.array(l['X'])
             else:
                 wave = 0.0
-            prof_value = [l['Z'], l['N'], l['B'], l['BTUR']]
+            prof_value = np.array([l['Z'], l['N'], l['B'], l['BTUR']])
+            print prof_value
             prof_vary = l['VARY']
             prof_expr = l['EXPR']
             prof_pref = l['PREF']
@@ -547,9 +552,9 @@ class System(Spec1D, Line, Cont):
                 self._chunk['X'].mask,
                 #np.isnan(self._model._t['X']))
                 self._model._t['X'].mask)
-        y = fun.eval(par, x=x_c)*cont_c
+        y = fun.eval(par, x=np.array(x_c))*np.array(cont_c)
         yresid = y_c-y
-        yadj = fun_adj.eval(par_adj, x=x_c)*cont_c
+        yadj = fun_adj.eval(par_adj, x=np.array(x_c))*cont_c
         self._model._t['Y'][where] = y
         self._model._t['DY'][where] = dy_c
         self._model._t['YRESID'][where] = yresid

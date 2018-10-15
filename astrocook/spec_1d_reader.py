@@ -49,7 +49,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        gen = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+        gen = Spec1D(x=x, y=y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
         return gen
     
@@ -91,7 +91,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        gen = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+        gen = Spec1D(x=x, y=y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
         cont = Spec1DCont(gen, abs_fit=abs_fit, em_fit=em_fit, abs_rem=abs_rem, 
                           em_rem=em_rem, cont=cont)
@@ -134,11 +134,11 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        spec = Spec1D(x, y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+        spec = Spec1D(x=x, y=y, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
-        fit = Spec1D(x, y=y_fit, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+        fit = Spec1D(x=x, y=y_fit, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
-        rem = Spec1D(x, y=y_rem, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
+        rem = Spec1D(x=x, y=y_rem, dy=dy, xmin=xmin, xmax=xmax, xunit=x_unit, 
                      yunit=y_unit, group=good, resol=resol, meta=meta)
         
         return (spec, fit, rem)
@@ -173,7 +173,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        s = Spec1D(x, y, dy=dy, 
+        s = Spec1D(x=x, y=y, dy=dy, 
                    xunit=u.Angstrom, 
                    yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
                    group=good, 
@@ -219,7 +219,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        s = Spec1D(x, y, dy=dy, 
+        s = Spec1D(x=x, y=y, dy=dy, 
                    xmin=xmin,
                    xmax=xmax,
                    xunit=u.nm, 
@@ -285,7 +285,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        s = Spec1D(x, y, dy=dy, 
+        s = Spec1D(x=x, y=y, dy=dy, 
                    xunit=u.nm, 
                    yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
                    group=good, 
@@ -345,7 +345,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        s = Spec1D(x, y, dy=dy, 
+        s = Spec1D(x=x, y=y, dy=dy, 
                    xunit=u.nm, 
                    yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
                    group=good, 
@@ -396,7 +396,7 @@ class Spec1DReader:
         good = np.repeat(-1, len(x))
         good[igood] = 1
 
-        s = Spec1D(x, y, dy=dy, 
+        s = Spec1D(x=x, y=y, dy=dy, 
                    xunit=u.nm, 
                    yunit=1.e-17*u.erg / u.second / u.cm**2 / u.Angstrom,
                    group=good, 

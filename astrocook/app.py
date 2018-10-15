@@ -283,8 +283,8 @@ class MainFrame(wx.Frame):
             self.proc_menu, 103, proc_descr['extract_reg']+"...")
         proc_spec_select_extrema = wx.MenuItem(
             self.proc_menu, 104, proc_descr['select_extrema']+"...")
-        proc_line_ew_all = wx.MenuItem(
-            self.proc_menu, 110, proc_descr['ew_all'])
+        #proc_line_ew_all = wx.MenuItem(
+        #    self.proc_menu, 110, proc_descr['ew_all'])
         proc_line_mask = wx.MenuItem(
             self.proc_menu, 111, proc_descr['mask'])
         proc_spec_extract_mask = wx.MenuItem(
@@ -309,7 +309,7 @@ class MainFrame(wx.Frame):
                   proc_spec_extract_reg)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
                   proc_spec_select_extrema)
-        self.Bind(wx.EVT_MENU, self.on_proc_line_ew_all, proc_line_ew_all)
+        #self.Bind(wx.EVT_MENU, self.on_proc_line_ew_all, proc_line_ew_all)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_mask, proc_spec_extract_mask)
         #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
@@ -325,7 +325,9 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_spec_extract_reg)
         self.proc_menu.Append(proc_spec_select_extrema)
         self.proc_menu.AppendSeparator()
-        self.proc_menu.Append(proc_line_ew_all)
+        #self.proc_menu.Append(proc_line_ew_all)
+        self.menu_append(self.proc_menu, 110, ProcLineEwAll, ProcDialog,
+                         ['line'], descr_add="")
         self.proc_menu.Append(proc_line_mask)
         self.proc_menu.Append(proc_spec_extract_mask) 
         self.proc_menu.AppendSeparator()
@@ -356,6 +358,8 @@ class MainFrame(wx.Frame):
         # Workflows menu
         self.wkf_menu = wx.Menu()
         self.menu_append(self.wkf_menu, 300, WkfSystAllFit, WkfDialog,
+                         ['syst', 'model'])
+        self.menu_append(self.wkf_menu, 301, WkfSystFitAdd, WkfDialog,
                          ['syst', 'model'])
 
         # Utilities menu
@@ -437,12 +441,13 @@ class MainFrame(wx.Frame):
         @param class Dialog (RecipeDialog, WorkflowDialog)
         """
 
-        print self.acs
         self.op = obj_class(self.acs)
-        #print self.op.params
         dlg = obj_dialog(self, self.op.title)
-        dlg.ShowModal()
-        dlg.Destroy()
+        if dlg.params != {}:
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            dlg.execute = True
         if dlg.execute:
             out = self.op.ex(**dlg.params)
             self.log[self.op.title] = dlg.params
@@ -468,7 +473,7 @@ class MainFrame(wx.Frame):
         col = event.GetCol()
         label = self.line_gr.GetColLabelValue(col)
         data = self.line_gr.GetCellValue(row, col)
-        self.line._t[label][row] = data
+        self.acs.line._t[label][row] = data
         
     def on_edit_spec_begin(self, event):
         """ Veto the editing of some columns of the spectrum list """
@@ -644,13 +649,14 @@ class MainFrame(wx.Frame):
             "INAF-Astronomical Observatory of Trieste, Italy",
             'About',wx.OK)
         dialog.ShowModal()        
-        
+
+    """
     def on_proc_line_ew_all(self, event):
         proc = 'ew_all'
         self.line._cont = self.cont
         getattr(self.line, proc)()
         self.update_line()
-
+    """
     def on_proc_line_mask(self, event):
         proc = 'mask'
         self.mask = getattr(self.line, proc)()
@@ -838,8 +844,9 @@ class MainFrame(wx.Frame):
             
             self.syst_rows = []
             for m in self.acs.syst._map[map_w]:
-                self.syst_rows.append(np.where(m['X']==self.line.t['X'])[0][0])
-            self.plot.sel(self.line.t, self.syst_rows, extra_width=0)
+                self.syst_rows.append(
+                    np.where(m['X']==self.acs.line.t['X'])[0][0])
+            self.plot.sel(self.acs.line.t, self.syst_rows, extra_width=0)
             self.plot_fig.draw()
             if self.syst_frame != None:
                 self.syst_frame.z = self.z_sel
@@ -912,8 +919,9 @@ class MainFrame(wx.Frame):
     def update_all(self, cont=None):
         """ Update all panels """
         
-        self.spec = self.spec_dict[self.targ]
+        self.acs.spec = self.spec_dict[self.targ]
         self.update_spec(cont)
+        """
         try:
             self.line = self.line_dict[self.targ]
         except:
@@ -930,7 +938,7 @@ class MainFrame(wx.Frame):
             self.model = self.model_dict[self.targ]
         except:
             self.model = None
-
+        """
         self.update_line(cont)
         self.update_cont(cont)
         self.update_syst()
@@ -951,6 +959,8 @@ class MainFrame(wx.Frame):
         except:
             pass
         try:
+            ok
+        except:
             self.line_gr.AppendRows(len(self.acs.line.t))
             for i, l in enumerate(self.acs.line.t):
                 self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
@@ -960,11 +970,10 @@ class MainFrame(wx.Frame):
                 self.line_gr.SetCellValue(i, 4, "%3.3f" % l['DY'])
                 self.line_gr.SetCellValue(i, 5, "%3.3f" % l['EW'])
             self.line_dict[self.targ] = self.acs.line
-            print cont
             self.plot.line(self.acs.line.t, cont=cont, c='g')
             self.plot_fig.draw()
-        except:
-            raise Exception("Can't update line table and line plot!")
+#        except:
+#            raise Exception("Can't update line table and line plot!")
 
     def update_menu(self):
         """ Update the menus """
@@ -1153,7 +1162,7 @@ class ParamDialog2(wx.Dialog):
         run_button.Bind(wx.EVT_BUTTON, self.on_run)
 
         self.Centre()
-        self.Show()
+        #self.Show()
         
     def on_cancel(self, e):
         self.execute = False

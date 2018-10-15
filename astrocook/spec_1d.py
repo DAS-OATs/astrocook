@@ -49,9 +49,11 @@ class Spec1D():
                  exptime=float('nan'), 
                  order=-1,
                  meta=None,
-                 dtype=float):
+                 dtype=float, acs=None):
         ''' Constructor for the Spec1D class. '''
 
+        if acs != None:
+            self._acs(acs)        
         
         if ((xmin == []) != (xmax == [])):
             raise Exception("XMIN and XMAX must be provided together.")
@@ -122,6 +124,10 @@ class Spec1D():
 
         self._use_good = False
 
+
+    def _acs(self, acs):
+        self.acs = acs
+        self._spec = acs.spec
 
     def _getWithMask(self, colName):
         if self._use_good:
@@ -371,7 +377,11 @@ class Spec1D():
         @param xmin Minimum wavelength
         @param xmax Maximum wavelength
         """
-        
+
+        try:
+            del self.acs
+        except:
+            pass
         reg = dc(self)
         where = np.full(len(reg.t['X']), True)
         s = np.where(np.logical_and(reg.t['X'] > xmin,
