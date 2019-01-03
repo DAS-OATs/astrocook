@@ -7,12 +7,14 @@ from copy import deepcopy as dc
 #from copy import copy
 import inspect
 
-rec_descr = {'line_cont': "Estimate continuum by masking lines",
+rec_descr = {'forest_find': "Find forest",
+             'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'line_ew': "Estimate all equivalent widths",
              'line_resid': "Add lines from model residuals to the selected "\
                            "system",
              'spec_cont': "Estimate continuum by smoothing spectrum",
+             'syst_define': "Define systems",
              'syst_find': "Find systems",             
              }
 
@@ -57,7 +59,28 @@ class Recipe(Procedure):
             self.obj = o
             self.proc = p
             super(Recipe, self).get_params()
-                
+
+            
+class RecForestFind(Recipe):
+
+    def __init__(self, acs=None):
+        """ @brief Constructor for the recipe that finds systems
+        
+        @param acs Session
+        """
+
+        super(RecForestFind, self).__init__(acs)
+        self.name = 'forest_find'
+        self.title = rec_descr[self.name]
+        self.objs = ['line', 'line', 'syst']
+        self.procs = ['create_z', 'match_z', 'line_new']
+        self.copy = [None, None, None]
+        self.forw = [None, None, 'syst']
+        self.paste = [None, None, None]
+        self.defaults = {'mode': 'complete'}
+        self.omits = []
+
+            
 class RecLineCont(Recipe):
 
     def __init__(self, acs=None):
@@ -68,7 +91,8 @@ class RecLineCont(Recipe):
         """
         
         super(RecLineCont, self).__init__(acs)
-        self.title = rec_descr['line_cont']
+        self.name = 'line_cont'
+        self.title = rec_descr[self.name]
         self.objs = ['line', 'spec', 'cont']
         self.procs = ['mask', 'smooth_lowess', 'spec_new']
         self.copy = ['spec', None, None]
@@ -87,7 +111,8 @@ class RecLineFind(Recipe):
         """
 
         super(RecLineFind, self).__init__(acs)
-        self.title = rec_descr['line_find']
+        self.name = 'line_find'
+        self.title = rec_descr[self.name]
         self.objs = ['spec', 'spec', 'line']
         self.procs = ['convolve', 'select_extrema', 'exts_new']
         self.copy = ['spec', None, None]
@@ -107,7 +132,8 @@ class RecLineResid(Recipe):
         """
 
         super(RecLineResid, self).__init__(acs)
-        self.title = rec_descr['line_resid']
+        self.name = 'line_resid'
+        self.title = rec_descr[self.name]
         self.objs = ['syst', 'spec', 'spec', 'line']
         self.procs = ['extract_resid', 'convolve', 'select_extrema',
                       'exts_merge']
@@ -115,7 +141,7 @@ class RecLineResid(Recipe):
         self.forw = ['spec', 'spec', None, None]
         self.paste = [None, None, None, 'spec']
         self.defaults = {}
-        self.omits = {}
+        self.omits = []
 
     
 class RecSpecCont(Recipe):
@@ -128,16 +154,36 @@ class RecSpecCont(Recipe):
         """
 
         super(RecSpecCont, self).__init__(acs)
-        self.title = rec_descr['spec_cont']
+        self.name = 'spec_cont'
+        self.title = rec_descr[self.name]
         self.objs = ['spec', 'cont']
         self.procs = ['convolve', 'spec_new']
         self.copy = ['spec', None]
         self.forw = ['spec', 'cont']
         self.paste = [None, 'spec']
         self.defaults = {'gauss_sigma': 1000}
-        self.omits = {}
+        self.omits = []
 
         
+class RecSystDefine(Recipe):
+
+    def __init__(self, acs=None):
+        """ @brief Constructor for the recipe that defines systems
+        
+        @param acs Session
+        """
+
+        super(RecSystDefine, self).__init__(acs)
+        self.name = 'syst_define'
+        self.title = rec_descr[self.name]
+        self.objs = ['line', 'syst']
+        self.procs = ['create_z', 'line_new']
+        self.copy = [None, None]
+        self.forw = [None, 'syst']
+        self.paste = [None, None]
+        self.defaults = {'series': 'Ly_a'}
+        self.omits = ['match']# ['match']
+
 class RecSystFind(Recipe):
 
     def __init__(self, acs=None):
@@ -147,12 +193,13 @@ class RecSystFind(Recipe):
         """
 
         super(RecSystFind, self).__init__(acs)
-        self.title = rec_descr['syst_find']
-        self.objs = ['line', 'line', 'line', 'syst']
-        self.procs = ['create_z', 'match_z', 'map_z', 'line_new']
-        self.copy = [None, None, None, None]
-        self.forw = [None, None, None, 'syst']
-        self.paste = [None, None, None, None]
-        self.defaults = {}
-        self.omits = {}
+        self.name = 'syst_find'
+        self.title = rec_descr[self.name]
+        self.objs = ['line', 'line', 'syst']
+        self.procs = ['create_z', 'match_z', 'line_new']
+        self.copy = [None, None, None]
+        self.forw = [None, None, 'syst']
+        self.paste = [None, None, None]
+        self.defaults = {'mode': 'match'}
+        self.omits = []
     

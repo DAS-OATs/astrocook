@@ -54,6 +54,7 @@ class MainFrame(wx.Frame):
         self.proc_dict = {}
         self.rec_dict = {}
 
+        self.forest_frame = None
         self.syst_frame = None
         
         self.count = 0
@@ -283,20 +284,12 @@ class MainFrame(wx.Frame):
             self.proc_menu, 103, proc_descr['extract_reg']+"...")
         proc_spec_select_extrema = wx.MenuItem(
             self.proc_menu, 104, proc_descr['select_extrema']+"...")
-        #proc_line_ew_all = wx.MenuItem(
-        #    self.proc_menu, 110, proc_descr['ew_all'])
         proc_line_mask = wx.MenuItem(
             self.proc_menu, 111, proc_descr['mask'])
         proc_spec_extract_mask = wx.MenuItem(
             self.proc_menu, 112, proc_descr['extract_mask']+"...")
-        #proc_syst_group = wx.MenuItem(
-        #    self.proc_menu, 120, proc_descr['group']+"...")
         proc_syst_N_all = wx.MenuItem(
             self.proc_menu, 120, proc_descr['N_all'])
-        proc_syst_model = wx.MenuItem(
-            self.proc_menu, 121, proc_descr['model']+"...")
-        #proc_syst_fit = wx.MenuItem(
-        #    self.proc_menu, 122, proc_descr['fit']+"...")
         proc_syst_extract_resid = wx.MenuItem(
             self.proc_menu, 123, proc_descr['extract_resid']+"...")
         
@@ -309,13 +302,9 @@ class MainFrame(wx.Frame):
                   proc_spec_extract_reg)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_select_extrema,
                   proc_spec_select_extrema)
-        #self.Bind(wx.EVT_MENU, self.on_proc_line_ew_all, proc_line_ew_all)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_mask, proc_spec_extract_mask)
-        #self.Bind(wx.EVT_MENU, self.on_proc_syst_group, proc_syst_group)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
-        self.Bind(wx.EVT_MENU, self.on_proc_syst_model, proc_syst_model)
-        #self.Bind(wx.EVT_MENU, self.on_proc_syst_fit, proc_syst_fit)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_extract_resid,
                   proc_syst_extract_resid)
         
@@ -325,16 +314,14 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_spec_extract_reg)
         self.proc_menu.Append(proc_spec_select_extrema)
         self.proc_menu.AppendSeparator()
-        #self.proc_menu.Append(proc_line_ew_all)
         self.menu_append(self.proc_menu, 110, ProcLineEwAll, ProcDialog,
                          ['line'], descr_add="")
         self.proc_menu.Append(proc_line_mask)
         self.proc_menu.Append(proc_spec_extract_mask) 
         self.proc_menu.AppendSeparator()
-        #self.proc_menu.Append(proc_syst_group)
         self.proc_menu.Append(proc_syst_N_all)
-        self.proc_menu.Append(proc_syst_model)
-        #self.proc_menu.Append(proc_syst_fit)
+        self.menu_append(self.proc_menu, 121, ProcSystSelModel, ProcDialog,
+                         ['syst', 'model'])
         self.menu_append(self.proc_menu, 122, ProcSystSelFit, ProcDialog,
                          ['syst', 'model'])
         self.proc_menu.Append(proc_syst_extract_resid)
@@ -346,36 +333,46 @@ class MainFrame(wx.Frame):
         self.menu_append(self.rec_menu, 201, RecLineFind, RecDialog,
                          ['line'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 202, RecLineCont, RecDialog,
+        self.menu_append(self.rec_menu, 210, RecLineCont, RecDialog,
                          ['cont'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 203, RecSystFind, RecDialog,
+        self.menu_append(self.rec_menu, 220, RecForestFind, RecDialog,
                          ['syst'])
-        self.menu_append(self.rec_menu, 204, RecLineResid, RecDialog,
+        self.rec_menu.AppendSeparator()
+        self.menu_append(self.rec_menu, 230, RecSystDefine, RecDialog,
+                         ['syst'])
+        self.menu_append(self.rec_menu, 231, RecSystFind, RecDialog,
+                         ['syst'])
+        self.menu_append(self.rec_menu, 232, RecLineResid, RecDialog,
                          ['syst', 'model'])
         
 
         # Workflows menu
         self.wkf_menu = wx.Menu()
-        self.menu_append(self.wkf_menu, 300, WkfSystAllFit, WkfDialog,
+        self.menu_append(self.wkf_menu, 300, WkfSystAllModel, WkfDialog,
                          ['syst', 'model'])
-        self.menu_append(self.wkf_menu, 301, WkfSystFitAdd, WkfDialog,
+        self.menu_append(self.wkf_menu, 301, WkfSystAllFit, WkfDialog,
+                         ['syst', 'model'])
+        self.menu_append(self.wkf_menu, 302, WkfSystFitAdd, WkfDialog,
                          ['syst', 'model'])
 
         # Utilities menu
         self.util_menu = wx.Menu()
-
-        util_plot_norm = wx.MenuItem(self.util_menu, 41,
+        util_plot_norm = wx.MenuItem(self.util_menu, 40,
                                      "Toggle plot normalization...")
+        util_forest_open = wx.MenuItem(self.util_menu, 41,
+                                     "View matching forests...")
         util_syst_open = wx.MenuItem(self.util_menu, 42,
                                      "View selected system...")
         util_log_view = wx.MenuItem(self.util_menu, 43, "View log")
-
+        
         self.Bind(wx.EVT_MENU, self.on_util_plot_norm, util_plot_norm)
+        self.Bind(wx.EVT_MENU, self.on_util_forest_open, util_forest_open)
         self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
         self.util_menu.Append(util_plot_norm)
+        self.util_menu.Append(util_forest_open)
         self.util_menu.Append(util_syst_open)
         self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
@@ -773,14 +770,14 @@ class MainFrame(wx.Frame):
             self.update_acs()
     """            
     def on_proc_syst_model(self, event):
-        self.syst._syst_sel = self.syst_sel
+        self.acs.syst._syst_sel = self.syst_sel
         proc = 'model'
-        self.dialog_proc(self.syst, proc)
+        self.dialog_proc(self.acs.syst, proc)
         if self.proc_dict[proc]:
-            self.model = self.syst._model
+            self.model = self.acs.syst._model
             self.model_dict[self.targ] = self.model
             self.update_model()
-            self.plot.model(self.syst._model.t)
+            self.plot.model(self.acs.syst._model.t)
             self.plot_fig.draw()
             if self.syst_frame == None:
                 self.syst_frame = SystFrame(self, title="Selected system")
@@ -797,7 +794,8 @@ class MainFrame(wx.Frame):
 
     def on_proc_syst_N_all(self, event):
         proc = 'N_all'
-        getattr(self.syst, proc)()
+        print self.acs.syst.t
+        getattr(self.acs.syst, proc)()
         self.update_syst()
         if self.syst_frame != None:
             self.syst_frame.z = self.z_sel
@@ -811,6 +809,7 @@ class MainFrame(wx.Frame):
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
             row = event.GetTopRow()
+            print row
             self.line_rows = [row]
             self.line_sel = self.line.t[row]
             #self.line.ew(self.line_sel)
@@ -854,6 +853,10 @@ class MainFrame(wx.Frame):
                 self.syst_frame.update_tab()                
             
             
+    def on_util_forest_open(self, event):
+        if self.forest_frame == None:
+            self.forest_frame = ForestFrame(self, title="Forest")
+
     def on_util_log_view(self, event):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
         dialog.ShowModal()
@@ -941,7 +944,7 @@ class MainFrame(wx.Frame):
         """
         self.update_line(cont)
         self.update_cont(cont)
-        self.update_syst()
+        self.update_syst(cont)
         self.update_menu()
 
     def update_cont(self, cont=None):
@@ -950,7 +953,8 @@ class MainFrame(wx.Frame):
             self.plot.cont(self.acs.cont.t, cont=cont)
             self.plot_fig.draw()
         except:
-            raise Exception("Can't update continuum plot!")            
+            pass
+            #raise Exception("Can't update continuum plot!")            
         
     def update_line(self, cont=None):
         """ Update the line table """
@@ -959,8 +963,6 @@ class MainFrame(wx.Frame):
         except:
             pass
         try:
-            ok
-        except:
             self.line_gr.AppendRows(len(self.acs.line.t))
             for i, l in enumerate(self.acs.line.t):
                 self.line_gr.SetCellValue(i, 0, "%3.3f" % l['X'])
@@ -972,8 +974,9 @@ class MainFrame(wx.Frame):
             self.line_dict[self.targ] = self.acs.line
             self.plot.line(self.acs.line.t, cont=cont, c='g')
             self.plot_fig.draw()
-#        except:
-#            raise Exception("Can't update line table and line plot!")
+        except:
+            pass
+            #raise Exception("Can't update line table and line plot!")
 
     def update_menu(self):
         """ Update the menus """
@@ -1017,7 +1020,7 @@ class MainFrame(wx.Frame):
         except:
             pass
 
-        x = self.spec.t['X']
+        x = self.acs.spec.t['X']
         self.xmin = x[~np.isnan(x)][0]
         self.xmax = x[~np.isnan(x)][-1]
         self.spec_lc.SetItem(self.row, 3, "[%3.2f, %3.2f]"
@@ -1062,7 +1065,7 @@ class MainFrame(wx.Frame):
                 self.syst_gr.SetCellValue(i, 8, "%3.3f" % s['DBTUR'])
             self.syst_dict[self.targ] = self.acs.syst
             try:
-                self.plot.model(self.acs.syst._model.t)
+                self.plot.model(self.acs.syst._model.t, cont=cont)
                 self.plot_fig.draw()
             except:
                 pass
@@ -1324,11 +1327,94 @@ class ParamDialog(wx.Dialog):
         self.execute = True
         self.Close()
 
+
+        
+class ForestFrame(wx.Frame):
+    def __init__(self, parent=None, title="Forest", **kwargs):
+        size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)
+        super(wx.Frame, self).__init__(parent, title=title, size=size) 
+
+        self.p = parent
+        self.ions = ['Ly_b', 'Ly_a']
+        self.sn = len(self.ions)
+        self.spec = []
+        self.sel = []
+        xmin = self.p.acs.spec.t['X'][0]/dict_wave[self.ions[0]].value - 1
+        xmax = self.p.acs.spec.t['X'][-1]/dict_wave[self.ions[-1]].value - 1
+        for s, i in enumerate(self.ions):
+            self.spec.append(dc(self.p.acs.spec))
+            self.spec[s].t['X'] = self.spec[s].t['X']/dict_wave[i].value - 1
+            self.sel.append(np.where(np.logical_and(
+                self.spec[s].t['X']>xmin, self.spec[s].t['X']<xmax)))
                 
-#class SystDialog(wx.Dialog):
+            
+        self.init_UI()
+
+    def init_plot(self, panel):
+        """ Create the spectrum panel """
+        self.fig = Figure((15,6))
+        self.ax = []
+        self.plot = []
+        self.pn = [0] 
+        for p in self.pn:
+            self.ax.append(self.fig.add_subplot(len(self.pn),1,p+1))
+            self.plot.append(Plot(self.ax[p], xlabel="Redshift", ylabel=""))
+        self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
+        self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
+        self.plot_tb.Realize()
+        
+    def init_UI(self):
+        """ Initialize the main frame """
+
+        panel = wx.Panel(self)
+
+        self.init_plot(panel)
+
+        self.box_main = wx.BoxSizer(wx.VERTICAL)
+
+        # Plot controls panel
+        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+
+        # Plot panel (including controls)
+        box_plot = wx.BoxSizer(wx.VERTICAL)
+        box_plot.Add(self.plot_fig, 1, wx.EXPAND)
+        box_plot.Add(box_ctrl, 0, wx.TOP, 10)
+
+        # Display panel (table + plot)
+        box_disp = wx.BoxSizer(wx.VERTICAL)
+        box_disp.Add(box_plot, 1, wx.EXPAND)
+        panel.SetSizer(box_disp)
+
+        # Main panel
+        self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
+        #self.box_main.Add(
+        #    buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+        self.box_main.SetSizeHints(self)
+
+        self.SetSizer(self.box_main)
+        
+        self.update_plot()
+        
+        self.Centre()
+        self.Show()
+
+    def update_plot(self):
+        self.plot[0].clear()
+        #self.plot[1].clear()
+        for s in range(self.sn):
+            self.plot[0].spec(self.spec[s].t[self.sel[s]], replace=False,
+                              cont=self.p.acs.cont.t[self.sel[s]])
+            #self.plot[1].spec(self.spec[s].t[self.sel[s]], replace=False,
+            #                  cont=self.p.acs.cont.t[self.sel[s]])
+            
+        #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
+        self.plot_fig.draw()
+        
+        
 class SystFrame(wx.Frame):
 
-    def __init__(self, parent=None, title="Parameters", **kwargs):
+    def __init__(self, parent=None, title="System", **kwargs):
         """ Constructor for the ParamDialog class """
 
         size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)

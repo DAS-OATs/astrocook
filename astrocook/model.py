@@ -161,7 +161,6 @@ class Model(Spec1D):
         """
 
         self._t = self.create_t(x, xmin, xmax, y, dy, yresid, yadj)
-        
         """
         #if ((syst is None) and (line is None)):
         #    raise Exception("syst or line must be provided.")

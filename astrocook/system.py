@@ -213,13 +213,21 @@ class System(Spec1D, Line, Cont):
 
         fun = self._fun
         par = self._par
-        #par.pretty_print()
+        """
+        par.pretty_print()
+        print len(x_c)
+        print len(y_c)
+        print len(cont_c)
+        print len(x_c[np.isnan(x_c)])
+        print len(y_c[np.isnan(y_c)])
+        print len(cont_c[np.isnan(cont_c)])
+        """
         fit = fun.fit(np.array(y_c/cont_c), par, x=np.array(x_c))#,
                       #weights=np.array(cont_c/dy_c))
-        print fit.fit_report()
+        #print fit.fit_report()
         par = fit.params
-        print par
-        print par['voigt_000_N'].stderr
+        #print par
+        #print par['voigt_000_N'].stderr
         #par.pretty_print()
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
@@ -272,7 +280,7 @@ class System(Spec1D, Line, Cont):
 
         @param s A row from a system table
         """
-
+        
         self._line.t.sort('X')
 
         # Join systems and lines
@@ -292,8 +300,8 @@ class System(Spec1D, Line, Cont):
         for j in join_t[cond_z]:
             xmin = j['XMIN']
             xmax = j['XMAX']
-            cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
-            #cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
+            #cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+            cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
 
         join_xc = join_t['Z']
         cond_xc = np.full(len(join_t), False)
@@ -349,6 +357,7 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(zmax, name='ZMAX'), index=2)
     
         # Find rows with duplicate redshift values
+        print zlist
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
 
@@ -374,10 +383,10 @@ class System(Spec1D, Line, Cont):
                 x = g['X']
                 xmin = g['XMIN']
                 xmax = g['XMAX']
-                cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
-                                          self._line.t['XMIN']<=xmax)        
-                #cond_un += np.logical_and(self._line.t['XMAX']>xmin,
-                #                          self._line.t['XMIN']<xmax)
+                #cond_un += np.logical_and(self._line.t['XMAX']>=xmin,
+                #                          self._line.t['XMIN']<=xmax)        
+                cond_un += np.logical_and(self._line.t['XMAX']>xmin,
+                                          self._line.t['XMIN']<xmax)
             i = len(group)
             for l in self._line.t[cond_un]:
                 x = l['X']
@@ -424,18 +433,48 @@ class System(Spec1D, Line, Cont):
         self._group_map = np.in1d(self._map['Z'], group['Z'])
         self._group_line = np.in1d(self._line.t['X'], group['X'])
 
-    def line_new(self, series='Ly_ab'):
+    def line_new(self, series='Ly_ab', mode='all'):
         """ @brief Use matching redshift from a list of lines to create a list
         of systems
+
+        @param series Label of the series of transitions
+        @param mode 'all': all line redshifts are defined as systems;
+                    'match': only matching redshifts are defined as systems;
+                    'complete': matching redshiftd are defined as systems, and
+                    then remaining line redshifts are added to the system list
         """ 
 
         line = self.acs.line
-        out = System(acs=self.acs, series=series, z=line._z_match)
+        line_map = Table()
+        if mode == 'all':
+            z = np.array(line._z['Z'])
+            line_map['X'] = line._z['X']
+            line_map['Z'] = line._z['Z']
+        if mode == 'match' or mode == 'complete':
+            z = line._z_match
+            line_map['X'] = np.append(line._z['X'][1:][line._w_match],
+                                      line._z['X'][:-1][line._w_match])
+            line_map['Z'] = np.append(line._z_match, line._z_match)
+        out = System(acs=self.acs, series=series, z=z)
+        line_map_add = Table()
+
+        # If series is Ly_ab(...), discarded lines are added as Ly_a's
+        if mode == 'complete':
+            z_add = line._z_disc
+            line_map_add['X'] = line._z['X'][line._w_disc]
+            line_map_add['Z'] = line._z_disc
+            line_map = vstack([line_map, line_map_add])
+            out_add = System(acs=self.acs, series=dict_series[series][-1],
+                             z=z_add)
+            out._t = vstack([out._t, out_add._t])
+            out._t.sort('Z')
+        line_map.sort('Z')
+        out._map = line_map 
         return out
 
     
     def model(self, s=None,
-              adj='linear', adj_value=[1.0, 0.0], adj_vary=[True, False],
+              adj='linear', adj_value=[1.0, 0.0], adj_vary=[False, False],
               adj_min=[None, None], adj_max=[None, None], adj_expr=[None, None],
               prof='voigt', psf='psf_gauss', psf_resol_value=-1.0,
               psf_resol_vary=False, psf_resol_min=None, psf_resol_max=None,
@@ -461,7 +500,10 @@ class System(Spec1D, Line, Cont):
         """
 
         if s == None:
-            s = self._syst_sel
+            try:
+                s = self._syst_sel
+            except:
+                s = self.acs._syst_sel
         
         # Determine group and chunk
         self.group(s)
@@ -484,7 +526,7 @@ class System(Spec1D, Line, Cont):
             else:
                 wave = 0.0
             prof_value = np.array([l['Z'], l['N'], l['B'], l['BTUR']])
-            print prof_value
+            #print prof_value
             prof_vary = l['VARY']
             prof_expr = l['EXPR']
             prof_pref = l['PREF']
@@ -500,6 +542,8 @@ class System(Spec1D, Line, Cont):
         nz = self._chunk['X'].mask.nonzero()[0]
         cs = np.append(0, np.cumsum(nz[np.where(np.ediff1d(nz)>1)[0]+1]\
                                     -nz[np.where(np.ediff1d(nz)>1)[0]]-1))
+        if len(cs) == 1:  # Case with a single chunk
+            cs = np.array([0, len(self._chunk)-len(nz)])
         imin = cs[:-1]
         imax = cs[1:]
         imean = (imax+imin)//2

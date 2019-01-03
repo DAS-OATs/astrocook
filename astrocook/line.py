@@ -328,17 +328,19 @@ class Line(Spec1D):
         for l in self.t:
             if np.isnan(l['EW']):
                 self.ew(l)
-        
-    def map_z(self):
-        """ Map lines to redshifts """
-        
-        self._map = Table()
-        self._map['X'] = np.append(self._z['X'][1:][self._x_match],
-                                   self._z['X'][:-1][self._x_match])
-        self._map['Z'] = np.append(self._z_match, self._z_match)
-        self._map.sort('Z')
-        print self._map
 
+    """
+    def map_z(self):
+        self._map = Table()
+        if hasattr(self, '_z_match'):
+            self._map['X'] = np.append(self._z['X'][1:][self._x_match],
+                                       self._z['X'][:-1][self._x_match])
+            self._map['Z'] = np.append(self._z_match, self._z_match)
+        else:
+            self._map['X'] = self._z['X']
+            self._map['Z'] = self._z['Z']
+        self._map.sort('Z')
+    """
         
     def mask(self):
         """ @brief Remove the spectral regions between XMIN and XMAX """
@@ -372,18 +374,30 @@ class Line(Spec1D):
 
     def match_z(self, ztol=1e-4):
         """ Match redshifts to find coincidences """
-        
+
+        ion_ref = np.full(len(self._z), self._z['ION'][-1])
         self._z.sort('Z')
         z_arr = self._z['Z']
         ion_arr = self._z['ION']
-        match = np.isclose(z_arr[1:], z_arr[:-1], atol=ztol) 
-        dec = np.core.defchararray.not_equal(ion_arr[1:], ion_arr[:-1])
-        match = np.logical_and(match, dec)
-        z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
 
-        self._x_match = match
-        self._z_match = z_mean[match]
-        
+        # Conditions:
+        # ...close redshifts
+        match = np.isclose(z_arr[1:], z_arr[:-1], atol=ztol) 
+        # ...different ions 
+        dec = np.core.defchararray.not_equal(ion_arr[1:], ion_arr[:-1])
+        # ...ion equal to the reference (to avoid duplication in the discarded
+        # list)
+        ref = np.core.defchararray.equal(ion_arr, ion_ref)
+
+        self._w_match = np.logical_and(match, dec)
+        w_match_ext = np.logical_or(np.append(self._w_match, False),
+                                    np.append(False, self._w_match))
+        #print w_match_ext
+        self._w_disc = np.logical_and(~w_match_ext, ref)
+        #print self._w_disc
+        z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
+        self._z_match = z_mean[self._w_match]
+        self._z_disc = np.array(z_arr[self._w_disc])
 
     def exts_merge(self):
         """ @brief Merge extrema selected from a spectrum into a line table 
@@ -400,7 +414,6 @@ class Line(Spec1D):
 
         # Remove duplicates
         diff1d = np.append(self._t['X'][0], np.ediff1d(self._t['X']))
-        print diff1d
         where = np.where(diff1d == 0)[0]
         self._t.remove_rows(where)
 
