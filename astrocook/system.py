@@ -285,11 +285,12 @@ class System(Spec1D, Line, Cont):
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
-
+        
         # Select the system redshift 
         join_z = join_t['Z']
         cond_z = s['Z']==join_z
         #group = join_t[cond_z]
+        print join_t[cond_z]
         
         # Select other systems close in redshift
         # First find the lines whose fitting ranges overlap with those of the
@@ -325,6 +326,7 @@ class System(Spec1D, Line, Cont):
         # associated to two systems as the same ion) and remove them from group
         # and map
         group.sort('X')
+        print group
         #print np.where(np.ediff1d(group['X']) == 0.0)[0]
         group_where = np.where(np.ediff1d(group['X']) == 0.0)[0]
         map_where = np.where(np.logical_and(
@@ -336,7 +338,6 @@ class System(Spec1D, Line, Cont):
         # Sort by ascending redshift
         group.sort(['Z', 'X'])
 
-
         # Define the ion and prefix columns
         ion = np.array([])
         for ig, g in enumerate(group):
@@ -347,6 +348,7 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(ion, name='ION'), index=1)
         group.add_column(Column(pref, name='PREF', format='20s'), index=2)
         zlist = np.array(group['Z'])
+        print group
 
         # Define the mininimum- and maximum-redshift columns
         zmin = np.array([group['XMIN'][i]/dict_wave[group['ION'][i]].value-1
@@ -357,7 +359,7 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(zmax, name='ZMAX'), index=2)
     
         # Find rows with duplicate redshift values
-        print zlist
+        #print zlist
         diff1d = np.append(zlist[0], np.ediff1d(zlist))  
         where = np.where(diff1d == 0)[0]
 
