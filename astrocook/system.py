@@ -282,6 +282,8 @@ class System(Spec1D, Line, Cont):
         """
         
         self._line.t.sort('X')
+        #print self._map
+        print join(self._t, self._map)
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
@@ -290,7 +292,7 @@ class System(Spec1D, Line, Cont):
         join_z = join_t['Z']
         cond_z = s['Z']==join_z
         #group = join_t[cond_z]
-        print join_t[cond_z]
+        print join_t#[cond_z]
         
         # Select other systems close in redshift
         # First find the lines whose fitting ranges overlap with those of the
@@ -326,7 +328,7 @@ class System(Spec1D, Line, Cont):
         # associated to two systems as the same ion) and remove them from group
         # and map
         group.sort('X')
-        print group
+        #print group
         #print np.where(np.ediff1d(group['X']) == 0.0)[0]
         group_where = np.where(np.ediff1d(group['X']) == 0.0)[0]
         map_where = np.where(np.logical_and(
@@ -459,12 +461,20 @@ class System(Spec1D, Line, Cont):
             line_map['Z'] = np.append(line._z_match, line._z_match)
         out = System(acs=self.acs, series=series, z=z)
         line_map_add = Table()
-
+        
         # If series is Ly_ab(...), discarded lines are added as Ly_a's
         if mode == 'complete':
-            z_add = line._z_disc
-            line_map_add['X'] = line._z['X'][line._w_disc]
-            line_map_add['Z'] = line._z_disc
+            print line._z['X']
+            print line_map['X']
+            print line._z
+            print dict_series[series][-1]
+            disc = np.logical_and(~np.in1d(line._z['X'], line_map['X']),
+                                  line._z['ION'] == dict_series[series][-1])
+            print line._z['X'][disc]
+            #print line._z['X'][disc][0:460]
+            z_add = line._z['Z'][disc]
+            line_map_add['X'] = line._z['X'][disc]
+            line_map_add['Z'] = line._z['Z'][disc]
             line_map = vstack([line_map, line_map_add])
             out_add = System(acs=self.acs, series=dict_series[series][-1],
                              z=z_add)
@@ -472,6 +482,7 @@ class System(Spec1D, Line, Cont):
             out._t.sort('Z')
         line_map.sort('Z')
         out._map = line_map 
+        print out._t
         return out
 
     

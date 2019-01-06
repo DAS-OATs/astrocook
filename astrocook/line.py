@@ -387,17 +387,17 @@ class Line(Spec1D):
         dec = np.core.defchararray.not_equal(ion_arr[1:], ion_arr[:-1])
         # ...ion equal to the reference (to avoid duplication in the discarded
         # list)
-        ref = np.core.defchararray.equal(ion_arr, ion_ref)
+        #ref = np.core.defchararray.equal(ion_arr, ion_ref)
 
         self._w_match = np.logical_and(match, dec)
-        w_match_ext = np.logical_or(np.append(self._w_match, False),
-                                    np.append(False, self._w_match))
+        #w_match_ext = np.logical_or(np.append(self._w_match, False),
+        #                            np.append(False, self._w_match))
         #print w_match_ext
-        self._w_disc = np.logical_and(~w_match_ext, ref)
+        #self._w_disc = np.logical_and(~w_match_ext, ref)
         #print self._w_disc
         z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
         self._z_match = z_mean[self._w_match]
-        self._z_disc = np.array(z_arr[self._w_disc])
+        #self._z_disc = np.array(z_arr[self._w_disc])
 
     def exts_merge(self):
         """ @brief Merge extrema selected from a spectrum into a line table 
