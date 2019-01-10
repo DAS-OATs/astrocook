@@ -204,6 +204,8 @@ class System(Spec1D, Line, Cont):
                 s = self.acs._syst_sel
         
         self.model(s, **kwargs)
+
+        #print self._group['EXPR', 'PREF']
                 
         where = self._chunk['X'].mask == False
         x_c = self._chunk['X'][where]
@@ -213,8 +215,9 @@ class System(Spec1D, Line, Cont):
 
         fun = self._fun
         par = self._par
+        #par.pretty_print()
+        #print par['voigt_000_N'].value
         """
-        par.pretty_print()
         print len(x_c)
         print len(y_c)
         print len(cont_c)
@@ -227,7 +230,8 @@ class System(Spec1D, Line, Cont):
         #print fit.fit_report()
         par = fit.params
         #print par
-        #print par['voigt_000_N'].stderr
+        #print par['voigt_000_N'].value
+        #print par['voigt_000_N'].stderr        
         #par.pretty_print()
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
@@ -242,28 +246,43 @@ class System(Spec1D, Line, Cont):
         self._fun = fun
         self._par = par
         self._fit = fit
-        for l in self._group:
-            """
+        l_del = []
+        for i, l in enumerate(self._group):
+            #"""
             pref = l['PREF']
-            l['Z'] = par[pref+'_z'].value
-            l['N'] = par[pref+'_N'].value
-            l['B'] = par[pref+'_b'].value
-            l['BTUR'] = par[pref+'_btur'].value
-            l['DZ'] = par[pref+'_z'].stderr
-            l['DN'] = par[pref+'_N'].stderr
-            l['DB'] = par[pref+'_b'].stderr
-            l['DBTUR'] = par[pref+'_btur'].stderr
-            """
-
+            if par[pref+'_z'].value > l['ZMIN'] and \
+               par[pref+'_z'].value < l['ZMAX']:
+                try:
+                    l['Z'] = par[pref+'_z'].value
+                    l['N'] = par[pref+'_N'].value
+                    l['B'] = par[pref+'_b'].value
+                    l['BTUR'] = par[pref+'_btur'].value
+                    l['DZ'] = par[pref+'_z'].stderr
+                    l['DN'] = par[pref+'_N'].stderr
+                    l['DB'] = par[pref+'_b'].stderr
+                    l['DBTUR'] = par[pref+'_btur'].stderr
+                    l['X'] = (1.+l['Z'])*dict_wave[l['ION']].value
+                except:
+                    print "hey"
+                    pass
+            else:
+                l_del.append(i)
+        #self._group.remove_rows(l_del)
+        #"""
+            
         # Save fitted lines in the group
-        cond = self._group['Z'] > 0
-        new_t = unique(self._group[self._t.colnames][cond], keys='Z')
-        new_map = self._group[self._map.colnames][cond]
-        new_line = self._group[self._line.t.colnames]
-        self._t[self._group_t] = new_t#[new_t['Z']>0]
-        self._map[self._group_map] = new_map
-        self._line._t[self._group_line] = new_line
-        self._line._t.sort('X')
+        try:
+            cond = self._group['Z'] > 0
+            new_t = unique(self._group[self._t.colnames][cond], keys='Z')
+            #print new_t
+            new_map = self._group[self._map.colnames][cond]
+            new_line = self._group[self._line.t.colnames]
+            self._t[self._group_t] = new_t#[new_t['Z']>0]
+            self._map[self._group_map] = new_map
+            self._line._t[self._group_line] = new_line
+            self._line._t.sort('X')
+        except:
+            print "big hey"
 
         self.acs.model = self._model
         
@@ -280,10 +299,11 @@ class System(Spec1D, Line, Cont):
 
         @param s A row from a system table
         """
+
+        print np.array(s['Z'])
         
         self._line.t.sort('X')
         #print self._map
-        print join(self._t, self._map)
 
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
@@ -292,38 +312,55 @@ class System(Spec1D, Line, Cont):
         join_z = join_t['Z']
         cond_z = s['Z']==join_z
         #group = join_t[cond_z]
-        print join_t#[cond_z]
         
         # Select other systems close in redshift
-        # First find the lines whose fitting ranges overlap with those of the
-        # system lines, then select the whole systems those lines belong to
-        join_xmin = join_t['XMIN']
-        join_xmax = join_t['XMAX']
-        cond_x = np.full(len(join_t), False)
-        for j in join_t[cond_z]:
+        diff = 1
+        while diff > 0:
+            # First find the lines whose fitting ranges overlap with those of the
+            # system lines..
+            join_xmin = join_t['XMIN']
+            join_xmax = join_t['XMAX']
+            cond_x = np.full(len(join_t), False)
+            for j in join_t[cond_z]:
+                xmin = j['XMIN']
+                xmax = j['XMAX']
+                #cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
+                cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
+
+            diff = np.abs(np.sum(cond_x)-np.sum(cond_z))
+            print diff
+                
+            # ...then select the whole systems those lines belong to...
+            #join_zc = join_t['Z']
+            cond_z = np.full(len(join_t), False)
+            for j in join_t[np.where(cond_x)[0]]:
+                z = j['Z']
+                cond_z += z==join_z
+
+        """
+        # ...then select the lines whose fitting ranges overlap with those of
+        # these systems...
+        cond_xzc = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_zc)[0]]:
             xmin = j['XMIN']
             xmax = j['XMAX']
-            #cond_x += np.logical_and(join_xmax>=xmin, join_xmin<=xmax)
-            cond_x += np.logical_and(join_xmax>xmin, join_xmin<xmax)
+            cond_xzc += np.logical_and(join_xmax>xmin, join_xmin<xmax)
 
-        join_xc = join_t['Z']
-        cond_xc = np.full(len(join_t), False)
-        for j in join_t[np.where(cond_x)[0]]:
+        # ...then select the whole systems those lines belong to
+        cond_zxzc = np.full(len(join_t), False)
+        for j in join_t[np.where(cond_xzc)[0]]:
             z = j['Z']
-            cond_xc += z==join_xc
-        group = join_t[cond_xc]
-        
-        # Select lines close in redshift to the previously selected ones
-        """
-        join_zc = join_t['Z']
-        cond_zc = np.full(len(join_t), False)
-        for j in join_t[np.where(cond_z)[0]]:
-            zmin = j['Z']#-dz
-            zmax = j['Z']#+dz
-            cond_zc += np.logical_and(join_zc>=zmin, join_zc<=zmax)
-        group = join_t[np.where(np.logical_or(cond_xc, cond_zc))[0]]
-        """
+            print z
+            cond_zxzc += z==join_z
 
+        print np.sum(cond_x), np.sum(cond_zc), np.sum(cond_xzc), \
+            np.sum(np.logical_or(cond_zc, cond_xzc)), \
+            np.sum(cond_xzc)==np.sum(np.logical_or(cond_zc, cond_xzc))
+        """
+            
+        group = join_t[cond_z]
+        
+        
         # Find wavelength duplicates (it may happen that a line may be
         # associated to two systems as the same ion) and remove them from group
         # and map
@@ -350,7 +387,6 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(ion, name='ION'), index=1)
         group.add_column(Column(pref, name='PREF', format='20s'), index=2)
         zlist = np.array(group['Z'])
-        print group
 
         # Define the mininimum- and maximum-redshift columns
         zmin = np.array([group['XMIN'][i]/dict_wave[group['ION'][i]].value-1
@@ -379,7 +415,9 @@ class System(Spec1D, Line, Cont):
         #iter_flag = True
         #sel_un = 0
         #while iter_flag:
-        for iter in [0, 1]:
+        #"""
+        for iter in []: #[0, 1]:
+            #print "here"
             group_xmin = group['XMIN']
             group_xmax = group['XMAX']
             cond_un = np.full(len(self._line.t), False)
@@ -395,16 +433,12 @@ class System(Spec1D, Line, Cont):
             for l in self._line.t[cond_un]:
                 x = l['X']
                 if np.all(x != group['X']):
+                    lmap = self._map[self._map['X']==x]
                     xmin = l['XMIN']
                     xmax = l['XMAX']            
                     y = l['Y']
                     dy = l['DY']
                     ew = l['EW']
-                    z = 0.0
-                    zmin = xmin/x-1
-                    zmax = xmax/x-1
-                    ion = 'unknown'
-                    pref = 'voigt_%03d' %i
                     N = N_def
                     b = b_def
                     btur = btur_def
@@ -414,28 +448,72 @@ class System(Spec1D, Line, Cont):
                     dbtur = None
                     vary = [True, True, True, True]
                     expr = [None, None, None, None]
-                    series = 'unknown'
-                    group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz, dN, db,
-                                   dbtur, vary, expr, series, x, xmin, xmax, y, dy,
-                                   ew])
+                    if len(lmap) == 1:
+                        z = lmap['Z']
+                        series = self._t['SERIES'][self._t['Z']==z][0]
+                        wave = np.array([dict_wave[s].value
+                                         for s in dict_series[series]])
+                        """
+                        xs = (1+lmap['Z'])*wave
+                        sel = np.abs(xs - lmap['X']).argmin()
+                        xsel = wave[sel]
+                        ion = dict_series[series][sel]
+                        zmin = xmin/xsel-1
+                        zmax = xmax/xsel-1
+                        """
+                        for c, s in enumerate(dict_series[series]):
+                            pref = 'voigt_%03d' %i
+                            wave_s = (1+lmap['Z']) * dict_wave[s].value
+                            sel = np.abs(wave_s - self.line._t['X']).argmin()
+                            x_s = self.line._t['X'][sel]
+                            xmin_s = self.line._t['XMIN'][sel]
+                            xmax_s = self.line._t['XMAX'][sel]
+                            ion = s #dict_series[series][sel]
+                            zmin = xmin_s/dict_wave[s].value-1
+                            zmax = xmax_s/dict_wave[s].value-1
+                            if c == 0:
+                                p = pref
+                            else:
+                                vary = [False, False, False, False]
+                                expr = [p+'_z', p+'_N', p+'_b', p+'_btur']
+                            group.add_row([z, zmin, zmax, ion, pref, N, b, btur,
+                                           dz, dN, db, dbtur, vary, expr,
+                                           series, x_s, xmin_s, xmax_s, y, dy,
+                                           ew])
+                            i += 1
+                    else:
+                        pref = 'voigt_%03d' %i
+                        series = 'unknown'
+                        ion = 'unknown'
+                        z = 0.0
+                        zmin = xmin/x-1
+                        zmax = xmax/x-1
+                        group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz,
+                                       dN, db, dbtur, vary, expr, series, x,
+                                       xmin, xmax, y, dy, ew])
+                        i += 1
+                    """
+                    group.add_row([z, zmin, zmax, ion, pref, N, b, btur, dz,
+                                   dN, db, dbtur, vary, expr, series, x,
+                                   xmin, xmax, y, dy, ew])
+                    """
                     for s in group[-1:]:
                         self.N(s)
-                    i += 1
             #iter_flag = np.sum(cond_un) != sel_un
             #if np.sum(cond_un) == sel_un:
-            #    print "ciao"
             #    break
             #sel_un = np.sum(cond_un)
-            #print len(self._line.t[cond_un])
-
+        #"""
         self._group = group
-        
+        #print group
         
         self._t.sort('Z')
         self._map.sort('Z')
         self._group_t = np.in1d(self._t['Z'], group['Z'])
         self._group_map = np.in1d(self._map['Z'], group['Z'])
         self._group_line = np.in1d(self._line.t['X'], group['X'])
+        #print self._t[self._group_t]
+        #print self.line._t[self._group_line]
 
     def line_new(self, series='Ly_ab', mode='all'):
         """ @brief Use matching redshift from a list of lines to create a list
@@ -464,13 +542,13 @@ class System(Spec1D, Line, Cont):
         
         # If series is Ly_ab(...), discarded lines are added as Ly_a's
         if mode == 'complete':
-            print line._z['X']
-            print line_map['X']
-            print line._z
-            print dict_series[series][-1]
+            #print line._z['X']
+            #print line_map['X']
+            #print line._z
+            #print dict_series[series][-1]
             disc = np.logical_and(~np.in1d(line._z['X'], line_map['X']),
                                   line._z['ION'] == dict_series[series][-1])
-            print line._z['X'][disc]
+            #print line._z['X'][disc]
             #print line._z['X'][disc][0:460]
             z_add = line._z['Z'][disc]
             line_map_add['X'] = line._z['X'][disc]
@@ -482,7 +560,7 @@ class System(Spec1D, Line, Cont):
             out._t.sort('Z')
         line_map.sort('Z')
         out._map = line_map 
-        print out._t
+        #print out._t
         return out
 
     

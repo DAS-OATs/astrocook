@@ -25,13 +25,20 @@ class Workflow(Procedure):
                 m(op, **param)
 
             
-    def ex_iter_table(self, op, iter_start=0, iter_end=-1):
+    def ex_iter_table(self, op, iter_start=0, iter_end=-1, reverse=False):
 
         self.obj = op.obj
         self.proc = op.proc
         obj, proc = self.get_obj_proc()
-        for r in obj.t[iter_start:iter_end]:
-            proc(s=r)
+        if iter_end == -1:
+            iter_end = len(obj.t)
+        ran = range(iter_start, iter_end)
+        if reverse == True:
+            ran = reversed(ran)
+        for i in ran:
+            
+#        for r in reversed(obj.t[iter_start, iter_end]):
+            proc(s=obj.t[i])
 
                 
     def get_params(self):
@@ -54,7 +61,7 @@ class WkfSystAllFit(Workflow):
         self.title = wkf_descr['syst_all_fit']
         self.ops = [ProcSystSelFit]
         self.modes = [self.ex_iter_table]
-        self.setups = [{}]
+        self.setups = [{'reverse': True}]
         
 
 class WkfSystAllModel(Workflow):    

@@ -307,7 +307,7 @@ class Line(Spec1D):
         self._z['Z'] = Column(z, dtype=float, unit=u.nm/u.nm)
 
 
-    def ew(self, l):
+    def ew(self, l, thres=1e-1):
         """ @brief Estimate an equivalent width
         @param l A row from a line table
         """
@@ -316,9 +316,13 @@ class Line(Spec1D):
         spec_reg = self.acs.spec.extract_reg(xmin, xmax) 
         cont_reg = self.acs.cont.extract_reg(xmin, xmax)
         ew = np.sum((1-spec_reg.t['Y']/cont_reg.t['Y'])\
-                    *(spec_reg.t['XMAX']-spec_reg.t['XMIN']))\
-                    *spec_reg.t['X'].unit
+                        *(spec_reg.t['XMAX']-spec_reg.t['XMIN']))\
+            *spec_reg.t['X'].unit
+        #print ew.value
         l['EW'] = ew.value
+        if ew.value > thres:
+            l['XMIN'] = l['X']-0.5*ew.value
+            l['XMAX'] = l['X']+0.5*ew.value
 
 
     def ew_all(self):
@@ -389,7 +393,14 @@ class Line(Spec1D):
         # list)
         #ref = np.core.defchararray.equal(ion_arr, ion_ref)
 
+        #print match[380:385], dec[380:385], z_arr[380:385], ion_arr[380:385]
+        #print self._z[380:385]
         self._w_match = np.logical_and(match, dec)
+        #print np.array(self._z[1:][match][15:20])
+        #print np.array(self._z[:-1][match][15:20])
+        #print np.array(self._z[1:][self._w_match][10:15])
+        #print np.array(self._z[:-1][self._w_match][10:15])
+        
         #w_match_ext = np.logical_or(np.append(self._w_match, False),
         #                            np.append(False, self._w_match))
         #print w_match_ext

@@ -54,7 +54,9 @@ class MainFrame(wx.Frame):
         self.proc_dict = {}
         self.rec_dict = {}
 
+        self.b_frame = None
         self.forest_frame = None
+        self.N_frame = None
         self.syst_frame = None
         
         self.count = 0
@@ -364,16 +366,24 @@ class MainFrame(wx.Frame):
                                      "View matching forests...")
         util_syst_open = wx.MenuItem(self.util_menu, 42,
                                      "View selected system...")
-        util_log_view = wx.MenuItem(self.util_menu, 43, "View log")
+        util_N_open = wx.MenuItem(self.util_menu, 43,
+                                  "View column density distribution...")
+        util_b_open = wx.MenuItem(self.util_menu, 44,
+                                  "View Doppler parameter distribution...")
+        util_log_view = wx.MenuItem(self.util_menu, 45, "View log")
         
         self.Bind(wx.EVT_MENU, self.on_util_plot_norm, util_plot_norm)
         self.Bind(wx.EVT_MENU, self.on_util_forest_open, util_forest_open)
         self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
+        self.Bind(wx.EVT_MENU, self.on_util_N_open, util_N_open)
+        self.Bind(wx.EVT_MENU, self.on_util_b_open, util_b_open)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
         self.util_menu.Append(util_plot_norm)
         self.util_menu.Append(util_forest_open)
-        self.util_menu.Append(util_syst_open)
+        self.util_menu.Append(util_syst_open) 
+        self.util_menu.Append(util_N_open)
+        self.util_menu.Append(util_b_open)
         self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
 
@@ -447,7 +457,7 @@ class MainFrame(wx.Frame):
             dlg.execute = True
         if dlg.execute:
             out = self.op.ex(**dlg.params)
-            self.log[self.op.title] = dlg.params
+            #self.log[self.op.title] = dlg.params
             """
             self.spec_dict[self.targ] = self.acs.spec
             self.line_dict[self.targ] = self.acs.line            
@@ -633,7 +643,7 @@ class MainFrame(wx.Frame):
             self.path_chosen = fileDialog.GetDirectory()
             try:
                 acs = self
-                self.IO.acs_write(acs, name, self.path_chosen)
+                self.IO.acs_write(self.acs, name, self.path_chosen)
 
             except IOError:
                 wx.LogError("Cannot save session '%s'." % name)
@@ -794,7 +804,6 @@ class MainFrame(wx.Frame):
 
     def on_proc_syst_N_all(self, event):
         proc = 'N_all'
-        print self.acs.syst.t
         getattr(self.acs.syst, proc)()
         self.update_syst()
         if self.syst_frame != None:
@@ -809,7 +818,6 @@ class MainFrame(wx.Frame):
     def on_sel_line(self, event):
         if event.GetTopRow() == event.GetBottomRow():            
             row = event.GetTopRow()
-            print row
             self.line_rows = [row]
             self.line_sel = self.line.t[row]
             #self.line.ew(self.line_sel)
@@ -857,9 +865,19 @@ class MainFrame(wx.Frame):
         if self.forest_frame == None:
             self.forest_frame = ForestFrame(self, title="Forest")
 
+    def on_util_b_open(self, event):
+        if self.b_frame == None:
+            self.b_frame = BFrame(self)
+            self.b_frame.Show()
+
     def on_util_log_view(self, event):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
         dialog.ShowModal()
+
+    def on_util_N_open(self, event):
+        if self.N_frame == None:
+            self.N_frame = NFrame(self)
+            self.N_frame.Show()
 
     def on_util_plot_norm(self, event):
         self.norm = ~self.norm
@@ -907,7 +925,7 @@ class MainFrame(wx.Frame):
         if obj == 'cont':
             self.update_cont(cont)
         if obj == 'syst':
-            self.update_syst()
+            self.update_syst(cont)
         if obj == 'model':
             self.update_model()
     
@@ -1327,8 +1345,87 @@ class ParamDialog(wx.Dialog):
         self.execute = True
         self.Close()
 
-
+class SubFrame(wx.Frame):
+    def __init__(self, parent=None, title=None, figsize=(15,5), pn=1, **kwargs):
+        self.figsize = figsize
+        self.pn = pn
+        super(wx.Frame, self).__init__(parent, title=title, **kwargs)
         
+    def init_plot(self, panel):
+        """ Create the spectrum panel """
+        self.fig = Figure(self.figsize)
+        self.ax = []
+        self.plot = []
+        for p in range(self.pn):
+            self.ax.append(self.fig.add_subplot(1,1,1))
+        self.plot.append(Plot(self.ax[0], xlabel="log N", ylabel=""))
+        self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
+        self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
+        self.plot_tb.Realize()
+
+    def init_UI(self):
+        """ Initialize the frame """
+
+        panel = wx.Panel(self)
+
+        self.init_plot(panel)
+
+        self.box_main = wx.BoxSizer(wx.VERTICAL)
+
+        # Plot controls panel
+        box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+
+        # Plot panel (including controls)
+        box_plot = wx.BoxSizer(wx.VERTICAL)
+        box_plot.Add(self.plot_fig, 1, wx.EXPAND)
+        box_plot.Add(box_ctrl, 0, wx.TOP, 10)
+
+        # Display panel (table + plot)
+        box_disp = wx.BoxSizer(wx.VERTICAL)
+        box_disp.Add(box_plot, 1, wx.EXPAND)
+        panel.SetSizer(box_disp)
+
+        # Main panel
+        self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self.box_main.SetSizeHints(self)
+
+        self.SetSizer(self.box_main)        
+        
+        self.Centre()
+        self.Show()
+        
+
+class HistFrame(SubFrame):
+    def __init__(self, parent=None, title="Histogram", quantity=None,
+                 bins=range(0,10), **kwargs):
+        super(HistFrame, self).__init__(parent, title=title, figsize=(5,5))
+
+        self.q = quantity
+        self.b = bins
+        self.init_UI()
+        self.update_plot()
+
+    def update_plot(self):
+        self.plot[0].clear()
+        self.plot[0].hist(self.q, replace=False, bins=self.b)
+        self.plot_fig.draw()
+        
+class BFrame(HistFrame):
+    def __init__(self, parent=None, title="Doppler parameter", **kwargs):
+        quantity = parent.acs.syst.t['B']
+        bins = range(0, 100)
+        super(BFrame, self).__init__(parent, title=title, quantity=quantity,
+                                     bins=bins, figsize=(5,5))
+
+class NFrame(HistFrame):
+    def __init__(self, parent=None, title="Column density", **kwargs):
+        quantity = np.log10(parent.acs.syst.t['N'])
+        bins = np.arange(10,20,0.3)
+        super(NFrame, self).__init__(parent, title=title, quantity=quantity,
+                                     bins=bins, figsize=(5,5))
+
+    
 class ForestFrame(wx.Frame):
     def __init__(self, parent=None, title="Forest", **kwargs):
         size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)

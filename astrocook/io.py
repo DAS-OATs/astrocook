@@ -132,16 +132,19 @@ class IO():
 
             # System list
             try:
+                ok
+            except:
                 syst_name = name[:-4] + '_syst.fits'
                 syst_arcname = diff[:-4] + '_syst.fits'
+                print acs.syst.t
                 self.syst_write(acs.syst, syst_name)
                 arch.add(syst_name, arcname=syst_arcname)
                 arch.add(syst_name[:-10]+'_map.fits',
                          arcname=syst_arcname[:-10]+'_map.fits')
                 os.remove(syst_name)
                 os.remove(syst_name[:-10]+'_map.fits')
-            except:
-                pass
+            #except:
+            #    pass
 
             # System model
             try:

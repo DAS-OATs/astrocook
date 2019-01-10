@@ -29,16 +29,16 @@ class Procedure(object):
     def ex(self, **kwargs):
         obj, proc = self.get_obj_proc()
         try:
-        #    ok
-        #except:
+            ok
+        except:
             if kwargs != {}:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(proc)[0][1:]}
                 out = proc(**param)
             else:
                 out = proc()            
-        except:
-            raise Exception("Procedure %s failed!" % self.name)
+        #except:
+        #    raise Exception("Procedure %s failed!" % self.name)
 
     def get_obj_proc(self):
         obj = getattr(self.acs, self.obj)
