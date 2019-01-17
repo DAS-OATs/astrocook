@@ -296,15 +296,16 @@ class IO():
         dN = data['DN']
         db = data['DB']
         dbtur = data['DBTUR']
-        vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
-        #expr = [i.split(' ') for i in data['EXPR']]
-        expr = [None, None, None, None]
+        #vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
+        vary = ['True', 'True', 'True', 'True']  # No need to load it from the
+        expr = [None, None, None, None]          # table: dinamically updated
+        chi2r = data['CHI2R']
         syst = System(acs=self,
             #spec=self.spec, line=self.line, cont=self.cont,
             series=series,
             z=z, N=N, b=b, btur=btur,
             dz=dz, dN=dN, db=db, dbtur=dbtur,
-            vary=vary, expr=expr, Nunit=Nunit, bunit=bunit)
+            vary=vary, expr=expr, chi2r=chi2r, Nunit=Nunit, bunit=bunit)
 
         # Extrema
         try:
@@ -340,6 +341,7 @@ class IO():
                          unit=syst.t['DBTUR'].unit.to_string()),
              fits.Column(name='VARY', format='A23', array=vary),
              fits.Column(name='EXPR', format='A500', array=expr),
+             fits.Column(name='CHI2R', format='E', array=syst.t['CHI2R']),
              fits.Column(name='SERIES', format='A500', array=syst.t['SERIES'])])
         hdu.writeto(name, overwrite=overwrite)
         

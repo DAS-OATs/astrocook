@@ -1,0 +1,5 @@
+2019-01-17 - gcupani - Implemented addition of lines to systems, to improve fit.
+2019-01-16 - gcupani - Fixed bug that prevented systems to be plotted at the right redshift.
+2019-01-16 - gcupani - Fixed bug that prevented fitting when lines where loaded
+from a saved table.
+2019-01-15 - gcupani - Removed deprecated methods from system.py.

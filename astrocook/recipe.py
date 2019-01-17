@@ -7,7 +7,8 @@ from copy import deepcopy as dc
 #from copy import copy
 import inspect
 
-rec_descr = {'forest_find': "Find forest",
+rec_descr = {'forest_add': "Add to forest",
+             'forest_define': "Define forest",
              'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'line_ew': "Estimate all equivalent widths",
@@ -44,11 +45,13 @@ class Recipe(Procedure):
             if cp != None:
                 bck = dc(getattr(acs, cp)) 
             try:
+                ok
+            except:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(proc)[0][1:]}
                 out = proc(**param)
-            except:
-                pass
+            #except:
+            #    pass
             if ps != None:
                 setattr(acs, ps, bck)
             if fw != None:
@@ -61,23 +64,43 @@ class Recipe(Procedure):
             super(Recipe, self).get_params()
 
             
-class RecForestFind(Recipe):
+class RecForestAdd(Recipe):
 
     def __init__(self, acs=None):
-        """ @brief Constructor for the recipe that finds systems
+        """ @brief Constructor for the recipe that add systems to a forest
         
         @param acs Session
         """
 
-        super(RecForestFind, self).__init__(acs)
-        self.name = 'forest_find'
+        super(RecForestAdd, self).__init__(acs)
+        self.name = 'forest_add'
+        self.title = rec_descr[self.name]
+        self.objs = ['line', 'line', 'syst']
+        self.procs = ['create_z', 'match_z', 'line_merge']
+        self.copy = [None, None, None]
+        self.forw = [None, None, None]
+        self.paste = [None, None, None]
+        self.defaults = {'keep': 'complete'}
+        self.omits = []
+
+            
+class RecForestDefine(Recipe):
+
+    def __init__(self, acs=None):
+        """ @brief Constructor for the recipe that defines a forest
+        
+        @param acs Session
+        """
+
+        super(RecForestDefine, self).__init__(acs)
+        self.name = 'forest_define'
         self.title = rec_descr[self.name]
         self.objs = ['line', 'line', 'syst']
         self.procs = ['create_z', 'match_z', 'line_new']
         self.copy = [None, None, None]
         self.forw = [None, None, 'syst']
         self.paste = [None, None, None]
-        self.defaults = {'mode': 'complete'}
+        self.defaults = {'keep': 'complete'}
         self.omits = []
 
             
@@ -134,11 +157,11 @@ class RecLineResid(Recipe):
         super(RecLineResid, self).__init__(acs)
         self.name = 'line_resid'
         self.title = rec_descr[self.name]
-        self.objs = ['syst', 'spec', 'spec', 'line']
+        self.objs = ['syst', 'spec', 'spec', 'line']#, 'syst']
         self.procs = ['extract_resid', 'convolve', 'select_extrema',
-                      'exts_merge']
-        self.copy = ['spec', None, None, None]
-        self.forw = ['spec', 'spec', None, None]
+                      'exts_merge']#, 'line_merge']
+        self.copy = ['spec', None, None, None]#, None]
+        self.forw = ['spec', 'spec', None, None]#, 'syst']
         self.paste = [None, None, None, 'spec']
         self.defaults = {}
         self.omits = []
@@ -200,6 +223,6 @@ class RecSystFind(Recipe):
         self.copy = [None, None, None]
         self.forw = [None, None, 'syst']
         self.paste = [None, None, None]
-        self.defaults = {'mode': 'match'}
+        self.defaults = {'keep': 'match'}
         self.omits = []
     

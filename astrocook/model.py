@@ -297,7 +297,11 @@ class Model(Spec1D):
                                        max=max[i], expr=expr[i])
             else:
                 self._voigt_par[k].set(value=wave, vary=False)
-
+        try:
+            #print self._voigt_par
+            pass
+        except:
+            pass
 
 # Deprecated
 
@@ -378,7 +382,8 @@ class Model(Spec1D):
                 btur = kwargs['btur'] 
             except:
                 btur = voigt_def['btur'] * u.km/u.s
-                
+            print z
+            
             max_size = 0
             max_size = np.size(z) if np.size(z) > max_size else max_size
             max_size = np.size(N) if np.size(N) > max_size else max_size

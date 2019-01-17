@@ -331,7 +331,11 @@ class Spec1D():
 
         conv = dc(self)
         good = ~np.isnan(conv.t[col])
+        print conv.t[~np.isnan(conv.t['Y'])]
+        print np.sum(good)
         conv_col = conv.t[col][good]#getattr(conv, col)
+        print len(conv_col)
+        plt.plot(conv.t['X'][good], conv.t['Y'][good])
         if convert == True:
             conv.todo_convert_logx(xunit=u.km/u.s)        
         if prof is None:
@@ -345,6 +349,7 @@ class Spec1D():
         conv.t['Y'][good] = fftconvolve(conv_col, prof, mode=mode) * conv.yunit
         if convert == True:
             conv.todo_convert_logx(xunit=self.x.unit)
+        plt.plot(conv.t['X'][good], conv.t['Y'][good])
         return conv
     
     def extract_forest(self, ion='Ly_a', zem=0.0, prox_vel=0.0):
@@ -398,7 +403,6 @@ class Spec1D():
         """Find the extrema in a spectrum and save them as a spectrum"""
 
         if (len(self.t) > 0):
-            good = ~np.isnan(self.t['Y'])
             min_idx = np.hstack(argrelmin(self.t[col]))#[good]))
             max_idx = np.hstack(argrelmax(self.t[col]))#[good]))
             ext_idx = np.sort(np.append(min_idx, max_idx))
@@ -434,6 +438,7 @@ class Spec1D():
             #self._mins = None
             #self._maxs = None
             self._exts = None
+        plt.scatter(self._exts['X'], self._exts['Y'])    
         
     def select_extrema(self, col='Y', kind='abs', diff='max', kappa=3.0):
         """ Select the most prominent extrema """
@@ -457,6 +462,8 @@ class Spec1D():
         else:
             line_pos = np.greater(diff_y_max, thres)
         self._exts_sel = self._exts[1:-1][line_pos]
+        plt.scatter(self._exts_sel['X'], self._exts_sel['Y'])
+        plt.show()
         
     def smooth_lowess(self, frac=0.03):
         """ Smooth the flux using LOWESS method """

@@ -38,7 +38,7 @@ class Plot():
         self.line_p = []
         self.spec_p = []
         self.sel_p = []
-        self.N_p = []
+        self.hist_p = []
 
     def clean(self, attr):
         """ Clear all previously plotted data from a list, if requested """
@@ -121,8 +121,8 @@ class Plot():
 
     def hist(self, tab, replace=True, **kwargs):
         if replace:
-            self.clean('N_p')
-
+            self.clean('hist_p')
+        print tab
         self.ax.hist(tab, **kwargs)
 
     def sel(self, tab, rows, replace=True, extra_width=1.0, c='C3', **kwargs):

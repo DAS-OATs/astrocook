@@ -57,6 +57,7 @@ class MainFrame(wx.Frame):
         self.b_frame = None
         self.forest_frame = None
         self.N_frame = None
+        self.chi2r_frame = None
         self.syst_frame = None
         
         self.count = 0
@@ -167,7 +168,7 @@ class MainFrame(wx.Frame):
         """ Create the Systems panel """
 
         self.syst_gr = gridlib.Grid(panel)
-        self.syst_gr.CreateGrid(0, 9)
+        self.syst_gr.CreateGrid(0, 10)
         self.syst_gr.SetColLabelValue(0, "SERIES")
         self.syst_gr.SetColLabelValue(1, "Z")
         self.syst_gr.SetColLabelValue(2, "N")
@@ -177,6 +178,7 @@ class MainFrame(wx.Frame):
         self.syst_gr.SetColLabelValue(6, "DN")
         self.syst_gr.SetColLabelValue(7, "DB")
         self.syst_gr.SetColLabelValue(8, "DBTUR")
+        self.syst_gr.SetColLabelValue(9, "CHI2R")
         self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_syst)
         self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_syst)
         #self.syst_gr.Bind(gridlib.EVT_BUTTON, self.on_syst_menu)
@@ -194,7 +196,7 @@ class MainFrame(wx.Frame):
 
         self.spec_lc.SetMaxSize((3000,120))
         self.line_gr.SetMaxSize((582,3000))
-        self.syst_gr.SetMinSize((822,3000))
+        self.syst_gr.SetMinSize((902,3000))
 
         
         # Spectra panel
@@ -338,7 +340,9 @@ class MainFrame(wx.Frame):
         self.menu_append(self.rec_menu, 210, RecLineCont, RecDialog,
                          ['cont'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 220, RecForestFind, RecDialog,
+        self.menu_append(self.rec_menu, 220, RecForestDefine, RecDialog,
+                         ['syst'])
+        self.menu_append(self.rec_menu, 221, RecForestAdd, RecDialog,
                          ['syst'])
         self.rec_menu.AppendSeparator()
         self.menu_append(self.rec_menu, 230, RecSystDefine, RecDialog,
@@ -346,7 +350,7 @@ class MainFrame(wx.Frame):
         self.menu_append(self.rec_menu, 231, RecSystFind, RecDialog,
                          ['syst'])
         self.menu_append(self.rec_menu, 232, RecLineResid, RecDialog,
-                         ['syst', 'model'])
+                         ['line', 'syst', 'model'])
         
 
         # Workflows menu
@@ -370,13 +374,16 @@ class MainFrame(wx.Frame):
                                   "View column density distribution...")
         util_b_open = wx.MenuItem(self.util_menu, 44,
                                   "View Doppler parameter distribution...")
-        util_log_view = wx.MenuItem(self.util_menu, 45, "View log")
+        util_chi2r_open = wx.MenuItem(self.util_menu, 45,
+                                      "View reduced chi-square distribution...")
+        util_log_view = wx.MenuItem(self.util_menu, 46, "View log")
         
         self.Bind(wx.EVT_MENU, self.on_util_plot_norm, util_plot_norm)
         self.Bind(wx.EVT_MENU, self.on_util_forest_open, util_forest_open)
         self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
         self.Bind(wx.EVT_MENU, self.on_util_N_open, util_N_open)
         self.Bind(wx.EVT_MENU, self.on_util_b_open, util_b_open)
+        self.Bind(wx.EVT_MENU, self.on_util_chi2r_open, util_chi2r_open)
         self.Bind(wx.EVT_MENU, self.on_util_log_view, util_log_view)
 
         self.util_menu.Append(util_plot_norm)
@@ -384,6 +391,7 @@ class MainFrame(wx.Frame):
         self.util_menu.Append(util_syst_open) 
         self.util_menu.Append(util_N_open)
         self.util_menu.Append(util_b_open)
+        self.util_menu.Append(util_chi2r_open)
         self.util_menu.AppendSeparator()
         self.util_menu.Append(util_log_view)
 
@@ -855,11 +863,18 @@ class MainFrame(wx.Frame):
                     np.where(m['X']==self.acs.line.t['X'])[0][0])
             self.plot.sel(self.acs.line.t, self.syst_rows, extra_width=0)
             self.plot_fig.draw()
+
+            """ Update doesn't work, need to reopen frame
             if self.syst_frame != None:
-                self.syst_frame.z = self.z_sel
+                #self.syst_frame.group = self.acs.syst._group
+                self.syst_frame.init_attr()
+                self.syst_frame.init_UI()
                 self.syst_frame.update_plot()
-                self.syst_frame.update_tab()                
-            
+                self.syst_frame.update_tab()
+            """
+            if self.syst_frame != None:
+                self.syst_frame.Close()
+            self.syst_frame = SystFrame(self, title="System")
             
     def on_util_forest_open(self, event):
         if self.forest_frame == None:
@@ -869,6 +884,11 @@ class MainFrame(wx.Frame):
         if self.b_frame == None:
             self.b_frame = BFrame(self)
             self.b_frame.Show()
+
+    def on_util_chi2r_open(self, event):
+        if self.chi2r_frame == None:
+            self.chi2r_frame = Chi2RFrame(self)
+            self.chi2r_frame.Show()
 
     def on_util_log_view(self, event):
         dialog = wx.MessageDialog(None, yaml.safe_dump(self.log), 'Log', wx.OK)
@@ -1081,6 +1101,7 @@ class MainFrame(wx.Frame):
                 self.syst_gr.SetCellValue(i, 6, "%3.3e" % s['DN'])
                 self.syst_gr.SetCellValue(i, 7, "%3.3f" % s['DB'])
                 self.syst_gr.SetCellValue(i, 8, "%3.3f" % s['DBTUR'])
+                self.syst_gr.SetCellValue(i, 9, "%3.3f" % s['CHI2R'])
             self.syst_dict[self.targ] = self.acs.syst
             try:
                 self.plot.model(self.acs.syst._model.t, cont=cont)
@@ -1100,7 +1121,7 @@ class MainFrame(wx.Frame):
                 self.syst_frame = SystFrame(self, title="Selected system")
                 self.syst_frame.Show()
             else:
-                self.syst_frame.z = self.z_sel
+                #self.syst_frame.z = self.z_sel
                 self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
             
@@ -1414,9 +1435,17 @@ class HistFrame(SubFrame):
 class BFrame(HistFrame):
     def __init__(self, parent=None, title="Doppler parameter", **kwargs):
         quantity = parent.acs.syst.t['B']
-        bins = range(0, 100)
+        bins = np.arange(0,100,5)
         super(BFrame, self).__init__(parent, title=title, quantity=quantity,
                                      bins=bins, figsize=(5,5))
+
+class Chi2RFrame(HistFrame):
+    def __init__(self, parent=None, title="Reduced chi-squared", **kwargs):
+        quantity = parent.acs.syst.t['CHI2R']
+        quantity = np.unique(quantity[~np.isnan(quantity)])
+        bins = np.arange(0,100,5)
+        super(Chi2RFrame, self).__init__(parent, title=title, quantity=quantity,
+                                         bins=bins, figsize=(5,5))
 
 class NFrame(HistFrame):
     def __init__(self, parent=None, title="Column density", **kwargs):
@@ -1519,18 +1548,33 @@ class SystFrame(wx.Frame):
 
         self.p = parent
         self.syst = self.p.acs.syst#_sel
+        try:
+        #    ok
+        #except:
+            """
+            self.group = self.p.acs.syst._group
+            
+            #self.ions = np.unique([dict_series[i] \
+            #                       for i in self.group['SERIES']])#[self.sel]])
+            # List of ions to be plotted and number of panels
+            self.ions = np.unique(np.ravel(self.group['ION']))
+            self.ions = self.ions[np.where(self.ions != 'unknown')]
+            self.pn = len(self.ions)
+            """
+            self.init_attr()
+        
+        except:
+            pass
+        self.init_UI()
+
+    def init_attr(self):
         self.group = self.p.acs.syst._group
-        self.z = self.p.z_sel
-        cond = np.logical_and(self.syst._t['Z'] > self.z-0.002,
-                                   self.syst._t['Z'] < self.z+0.002)
-        cond = self.syst._t['Z'] == self.z
-        self.sel = np.where(cond)[0]
-        self.zs = self.syst._t['Z'][self.sel]
-        self.ions = np.unique([dict_series[i] \
-                                 for i in self.group['SERIES']])#[self.sel]])
+            
+        #self.ions = np.unique([dict_series[i] \
+        # List of ions to be plotted and number of panels
         self.ions = np.unique(np.ravel(self.group['ION']))
         self.ions = self.ions[np.where(self.ions != 'unknown')]
-        self.init_UI()
+        self.pn = len(self.ions)
     
     def init_buttons(self, panel):
         self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
@@ -1543,7 +1587,7 @@ class SystFrame(wx.Frame):
         """ Create the spectrum panel """
         self.fig = Figure((9,15))
         rown = 5.
-        self.pn = len(self.ions)
+        
         row = int(min(self.pn,rown))
         col = int(np.ceil(self.pn/rown))
         grid = gs(row,col)
@@ -1589,7 +1633,6 @@ class SystFrame(wx.Frame):
         """ Initialize the main frame """
 
         panel = wx.Panel(self)
-
         self.init_tab(panel)
         self.init_plot(panel)
 
@@ -1741,6 +1784,12 @@ class SystFrame(wx.Frame):
         self.update_plot()
 
     def update_plot(self):
+
+        # Redshift of the panels (average redshift of the components which
+        # have all ions in a series)
+        ws = [len(dict_series[i]) == self.pn for i in self.group['SERIES']]
+        self.z = np.mean(self.group['Z'][ws])
+
         for p in range(self.pn):
             self.plot[p].clear()
             self.plot[p].spec(self.p.acs.spec.t, cont=self.p.acs.cont.t,

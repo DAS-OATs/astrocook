@@ -411,7 +411,7 @@ class Line(Spec1D):
         #self._z_disc = np.array(z_arr[self._w_disc])
 
     def exts_merge(self):
-        """ @brief Merge extrema selected from a spectrum into a line table 
+        """ @brief Merge extrema selected from a spectrum into a list of lines
         """ 
 
         """
@@ -419,14 +419,25 @@ class Line(Spec1D):
         t = self.create_t(x=e['X'], xmin=e['XMIN'], xmax=e['XMAX'], y=e['Y'],
                           dy=e['DY'])
         """
-        t = self.exts_new().t
-        self._t = vstack([self._t, t])
-        self._t.sort('X')
+        #t = self.exts_new().t
+        #self._t = vstack([t, self._t])
+        #self._t['NEW'] = np.concatenate((np.ones(len(t)),
+        #                                 np.zeros(len(self.t)-len(t))))
+        try:
+            self._new = self.exts_new().t
+            self._t = vstack([self._t, self._new])
+            self._t.sort('X')
 
-        # Remove duplicates
-        diff1d = np.append(self._t['X'][0], np.ediff1d(self._t['X']))
-        where = np.where(diff1d == 0)[0]
-        self._t.remove_rows(where)
+            # Mask for newly added lines
+            #self._new = self._t['NEW'] > 0
+            #self._t.remove_column('NEW')
+
+            # Remove duplicates
+            diff1d = np.append(self._t['X'][0], np.ediff1d(self._t['X']))
+            where = np.where(diff1d == 0)[0]
+            self._t.remove_rows(where)
+        except:
+            pass
 
     def exts_new(self):
         """ @brief Use extrema selected from a spectrum to create a list of 
@@ -434,10 +445,11 @@ class Line(Spec1D):
         """ 
 
         t = self.acs.spec._exts_sel
-        diff = np.amax([t['X']-t['XMIN'], t['XMAX']-t['X']], axis=0)
-        out = Line(self.acs, x=t['X'], xmin=t['X']-diff, xmax=t['X']+diff,
-                    y=t['Y'], dy=t['DY'])
-        return out
+        if len(t) > 0:
+            diff = np.amax([t['X']-t['XMIN'], t['XMAX']-t['X']], axis=0)
+            out = Line(self.acs, x=t['X'], xmin=t['X']-diff, xmax=t['X']+diff,
+                       y=t['Y'], dy=t['DY'])
+            return out
     
 # To be checked
 
