@@ -6,6 +6,7 @@ proc_descr = {'convolve': "Convolve with a custom profile",
               'extract_resid': "Extract residuals into new spectrum",
               'extract_reg': "Extract spectral region",
               'line_ew_all': "Estimate all equivalent widths",
+              'syst_N_all': "Estimate all column densities",
               'syst_sel_fit': "Fit selected system",
               'mask': "Mask lines",
               #'model': "Model selected system",
@@ -49,6 +50,8 @@ class Procedure(object):
         if obj == None and proc == None:
             obj, proc = self.get_obj_proc()
         try:
+        #    ok
+        #except:
             defs = inspect.getargspec(proc)[3]
             if defs != None:
                 keys = inspect.getargspec(proc)[0][-len(defs):]
@@ -61,7 +64,7 @@ class Procedure(object):
                     del self.params[om]
         except:
             raise Exception("Can't get parameters of %s!" % self.name)
-
+        
 class ProcLineEwAll(Procedure):
     def __init__(self, acs=None):
         """ @brief Constructor for the procedure that estimates all equivalent
@@ -79,7 +82,23 @@ class ProcLineEwAll(Procedure):
         self.omits = {}
     
         
+class ProcSystNAll(Procedure):
+    def __init__(self, acs=None):
+        """ @brief Constructor for the procedure that estimates all column 
+        densities
 
+        @ param acs Session
+        """
+
+        super(ProcSystNAll, self).__init__(acs)
+        self.name = 'syst_N_all'
+        self.title = proc_descr[self.name]
+        self.obj = 'syst'
+        self.proc = 'N_all'
+        self.defaults = {}
+        self.omits = {}
+    
+        
 class ProcSystSelModel(Procedure):
     
     def __init__(self, acs=None):

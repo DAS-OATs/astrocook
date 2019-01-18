@@ -324,7 +324,6 @@ class Line(Spec1D):
             l['XMIN'] = l['X']-0.5*ew.value
             l['XMAX'] = l['X']+0.5*ew.value
 
-
     def ew_all(self):
         """ @brief Estimate all equivalent widths
         """
@@ -425,6 +424,7 @@ class Line(Spec1D):
         #                                 np.zeros(len(self.t)-len(t))))
         try:
             self._new = self.exts_new().t
+
             self._t = vstack([self._t, self._new])
             self._t.sort('X')
 
@@ -438,7 +438,7 @@ class Line(Spec1D):
             self._t.remove_rows(where)
         except:
             pass
-
+        
     def exts_new(self):
         """ @brief Use extrema selected from a spectrum to create a list of 
         lines

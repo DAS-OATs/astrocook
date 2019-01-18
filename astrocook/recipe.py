@@ -7,13 +7,12 @@ from copy import deepcopy as dc
 #from copy import copy
 import inspect
 
-rec_descr = {'forest_add': "Add to forest",
+rec_descr = {'forest_add': "Add new lines to forest",
              'forest_define': "Define forest",
              'line_cont': "Estimate continuum by masking lines",
              'line_find': "Find lines",
              'line_ew': "Estimate all equivalent widths",
-             'line_resid': "Add lines from model residuals to the selected "\
-                           "system",
+             'line_resid': "Add residuals to line list",
              'spec_cont': "Estimate continuum by smoothing spectrum",
              'syst_define': "Define systems",
              'syst_find': "Find systems",             
@@ -45,13 +44,13 @@ class Recipe(Procedure):
             if cp != None:
                 bck = dc(getattr(acs, cp)) 
             try:
-                ok
-            except:
+            #    ok
+            #except:
                 param = {k: kwargs[k] for k in kwargs \
                          if k in inspect.getargspec(proc)[0][1:]}
                 out = proc(**param)
-            #except:
-            #    pass
+            except:
+                pass
             if ps != None:
                 setattr(acs, ps, bck)
             if fw != None:
@@ -75,11 +74,21 @@ class RecForestAdd(Recipe):
         super(RecForestAdd, self).__init__(acs)
         self.name = 'forest_add'
         self.title = rec_descr[self.name]
+
+        """
         self.objs = ['line', 'line', 'syst']
         self.procs = ['create_z', 'match_z', 'line_merge']
         self.copy = [None, None, None]
         self.forw = [None, None, None]
         self.paste = [None, None, None]
+        """
+        self.objs = ['syst', 'spec', 'spec', 'line', 'line', 'line', 'syst']
+        self.procs = ['extract_resid', 'convolve', 'select_extrema',
+                      'exts_merge', 'create_z', 'match_z', 'line_merge']
+        self.copy = ['spec', None, None, None, None, None, None]
+        self.forw = ['spec', 'spec', None, None, None, None, None]
+        self.paste = [None, None, None, 'spec', None, None, None]
+
         self.defaults = {'keep': 'complete'}
         self.omits = []
 
@@ -204,7 +213,7 @@ class RecSystDefine(Recipe):
         self.copy = [None, None]
         self.forw = [None, 'syst']
         self.paste = [None, None]
-        self.defaults = {'series': 'Ly_a'}
+        self.defaults = {'series': 'Ly_a', 'keep': 'all'}
         self.omits = ['match']# ['match']
 
 class RecSystFind(Recipe):
@@ -223,6 +232,6 @@ class RecSystFind(Recipe):
         self.copy = [None, None, None]
         self.forw = [None, None, 'syst']
         self.paste = [None, None, None]
-        self.defaults = {'keep': 'match'}
+        self.defaults = {'keep': 'match', 'keep': 'all'}
         self.omits = []
     

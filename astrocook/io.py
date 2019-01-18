@@ -297,8 +297,8 @@ class IO():
         db = data['DB']
         dbtur = data['DBTUR']
         #vary = [[j == 'True' for j in i.split(' ')] for i in data['VARY']]
-        vary = ['True', 'True', 'True', 'True']  # No need to load it from the
-        expr = [None, None, None, None]          # table: dinamically updated
+        vary = [True, True, True, False]  # No need to load it from the
+        expr = [None, None, None, None]   # table: dinamically updated
         chi2r = data['CHI2R']
         syst = System(acs=self,
             #spec=self.spec, line=self.line, cont=self.cont,

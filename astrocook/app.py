@@ -292,8 +292,8 @@ class MainFrame(wx.Frame):
             self.proc_menu, 111, proc_descr['mask'])
         proc_spec_extract_mask = wx.MenuItem(
             self.proc_menu, 112, proc_descr['extract_mask']+"...")
-        proc_syst_N_all = wx.MenuItem(
-            self.proc_menu, 120, proc_descr['N_all'])
+        #proc_syst_N_all = wx.MenuItem(
+        #    self.proc_menu, 120, proc_descr['N_all'])
         proc_syst_extract_resid = wx.MenuItem(
             self.proc_menu, 123, proc_descr['extract_resid']+"...")
         
@@ -308,7 +308,7 @@ class MainFrame(wx.Frame):
                   proc_spec_select_extrema)
         self.Bind(wx.EVT_MENU, self.on_proc_line_mask, proc_line_mask)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_extract_mask, proc_spec_extract_mask)
-        self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
+        #self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_extract_resid,
                   proc_syst_extract_resid)
         
@@ -323,7 +323,9 @@ class MainFrame(wx.Frame):
         self.proc_menu.Append(proc_line_mask)
         self.proc_menu.Append(proc_spec_extract_mask) 
         self.proc_menu.AppendSeparator()
-        self.proc_menu.Append(proc_syst_N_all)
+        #self.proc_menu.Append(proc_syst_N_all)
+        self.menu_append(self.proc_menu, 120, ProcSystNAll, ProcDialog,
+                         ['syst'])
         self.menu_append(self.proc_menu, 121, ProcSystSelModel, ProcDialog,
                          ['syst', 'model'])
         self.menu_append(self.proc_menu, 122, ProcSystSelFit, ProcDialog,
@@ -340,27 +342,34 @@ class MainFrame(wx.Frame):
         self.menu_append(self.rec_menu, 210, RecLineCont, RecDialog,
                          ['cont'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 220, RecForestDefine, RecDialog,
+        self.menu_append(self.rec_menu, 220, RecSystDefine, RecDialog,
                          ['syst'])
-        self.menu_append(self.rec_menu, 221, RecForestAdd, RecDialog,
+        self.menu_append(self.rec_menu, 221, RecForestDefine, RecDialog,
+                         ['syst'])
+        self.menu_append(self.rec_menu, 222, RecSystFind, RecDialog,
                          ['syst'])
         self.rec_menu.AppendSeparator()
-        self.menu_append(self.rec_menu, 230, RecSystDefine, RecDialog,
-                         ['syst'])
-        self.menu_append(self.rec_menu, 231, RecSystFind, RecDialog,
-                         ['syst'])
-        self.menu_append(self.rec_menu, 232, RecLineResid, RecDialog,
+        self.menu_append(self.rec_menu, 230, RecLineResid, RecDialog,
                          ['line', 'syst', 'model'])
+        self.menu_append(self.rec_menu, 231, RecForestAdd, RecDialog,
+                         ['syst'])
         
 
         # Workflows menu
         self.wkf_menu = wx.Menu()
-        self.menu_append(self.wkf_menu, 300, WkfSystAllModel, WkfDialog,
+        self.menu_append(self.wkf_menu, 300, WkfSystFitAdd, WkfDialog,
                          ['syst', 'model'])
-        self.menu_append(self.wkf_menu, 301, WkfSystAllFit, WkfDialog,
+        self.menu_append(self.wkf_menu, 301, WkfSystModelAll, WkfDialog,
                          ['syst', 'model'])
-        self.menu_append(self.wkf_menu, 302, WkfSystFitAdd, WkfDialog,
+        self.menu_append(self.wkf_menu, 302, WkfSystFitAll, WkfDialog,
                          ['syst', 'model'])
+        #self.menu_append(self.wkf_menu, 303, WkfSystFitAddAll, WkfDialog,
+        #                 ['syst', 'model'])
+        self.wkf_menu.AppendSeparator()
+        self.menu_append(self.wkf_menu, 310, WkfLineResidAll, WkfDialog,
+                         ['line', 'syst', 'model'])
+        self.menu_append(self.wkf_menu, 311, WkfForestAddAll, WkfDialog,
+                         ['syst'])
 
         # Utilities menu
         self.util_menu = wx.Menu()
@@ -1788,7 +1797,7 @@ class SystFrame(wx.Frame):
         # Redshift of the panels (average redshift of the components which
         # have all ions in a series)
         ws = [len(dict_series[i]) == self.pn for i in self.group['SERIES']]
-        self.z = np.mean(self.group['Z'][ws])
+        self.z = np.median(self.group['Z'][ws])
 
         for p in range(self.pn):
             self.plot[p].clear()

@@ -17,7 +17,10 @@ class System(Spec1D, Line, Cont):
 
     def __init__(self, acs=None, spec=None, line=None, cont=None,
                  series=None, ion=None,
-                 z=None, N=N_def, b=b_def, btur=btur_def,  
+                 z=None,
+                 #N=N_def,
+                 N=None,
+                 b=b_def, btur=btur_def,  
                  dz=None, dN=None, db=None, dbtur=None,
                  vary=[True,True,True,False], expr=[None,None,None,None],
                  chi2r=None,
@@ -155,22 +158,28 @@ class System(Spec1D, Line, Cont):
         """
 
         #out = dc(self.acs.model)
+        if s != None:
+            self.group(s)
+            self.chunk()
+        
         out = self._model.apply_mask(
             ['X', 'X'], [range(len(self._model.t)), self._chunk_rows],
             [True, False])
         out.t['Y'] = out.t['YRESID']
         out.t['Y'][out.t['X'].mask] = np.nan
         out.t.remove_columns(['YRESID', 'YADJ'])
-        print out.t[~np.isnan(out.t['Y'])]
         return out
 
         
-    def fit(self, s=None, **kwargs):
+    def fit(self, s=None, z=None, done=False, **kwargs):
         """ @brief Fit a model on a group of lines 
         
         @param s A row from a system table
         """
 
+        if z != None:
+            s = self._t[self._t['Z']==z]
+        
         if s == None:
             try:
                 s = self._syst_sel
@@ -178,6 +187,7 @@ class System(Spec1D, Line, Cont):
                 s = self.acs._syst_sel
         
         self.model(s, **kwargs)
+        #print self._group['DONE']
 
         where = self._chunk['X'].mask == False
         x_c = self._chunk['X'][where]
@@ -216,12 +226,14 @@ class System(Spec1D, Line, Cont):
                     l['DB'] = par[pref+'_b'].stderr
                     l['DBTUR'] = par[pref+'_btur'].stderr
                     l['CHI2R'] = fit.redchi 
+                    l['DONE'] = done 
                     l['X'] = (1.+l['Z'])*dict_wave[l['ION']].value
                 except:
                     print "Group not updated."
             else:
                 l_del.append(i)
-            
+        #print self._group['DONE']
+        
         # Save fitted lines in the group
         try:
             cond = self._group['Z'] > 0
@@ -340,7 +352,7 @@ class System(Spec1D, Line, Cont):
         self._group_map = np.in1d(self._map['Z'], group['Z'])
         self._group_line = np.in1d(self._line.t['X'], group['X'])
 
-    def line_merge(self, series='Ly_ab', keep='all'):
+    def line_merge(self, series='Ly_ab', keep='complete'):
         """ @brief Merge new lines into a list of systems
 
         @param series Label of the series of transitions
@@ -355,29 +367,27 @@ class System(Spec1D, Line, Cont):
         temp._map.sort('X')
 
         # Find only the new lines in the list
-        new = self.acs.line._new
-        
-        # Update the map
-        null1, null2, int_map = np.intersect1d(new['X'], temp._map['X'],
-                                               return_indices=True)
-        print int_map
-        #new_map = temp._map[new]
-        print len(self._map)
-        self._map = vstack([self._map, temp._map[int_map]])
-        self._map.sort('Z')
-        print len(self._map)
+        try:
+            new = self.acs.line._new
 
-        # Update the system list adding only the new systems
-        null1, null2, int_t = np.intersect1d(temp._map['Z'][int_map], temp._t['Z'],
-                                             return_indices=True)
-        print temp._t[int_t]
-        print len(self._t)
-        self._t = vstack([self._t, temp._t[int_t]])
-        print len(self._t)
-        self._t.sort('Z')
-        #return self._t
+            # Update the map
+            null1, null2, int_map = np.intersect1d(new['X'], temp._map['X'],
+                                                   return_indices=True)
+            #new_map = temp._map[new]
+            self._map = vstack([self._map, temp._map[int_map]])
+            self._map.sort('Z')
+
+            # Update the system list adding only the new systems
+            null1, null2, int_t = np.intersect1d(temp._map['Z'][int_map], temp._t['Z'],
+                                                 return_indices=True)
+            #print temp._t[int_t]
+            self._t = vstack([self._t, temp._t[int_t]])
+            self._t.sort('Z')
+            #return self._t
+        except:
+            pass
         
-    def line_new(self, series='Ly_ab', keep='all'):
+    def line_new(self, series='Ly_ab', keep='complete'):
         """ @brief Use matching redshift from a list of lines to create a list
         of systems
 
@@ -588,8 +598,10 @@ class System(Spec1D, Line, Cont):
         """ @brief Estimate column densities from the equivalent widths 
         """
 
+        #print len(self.t)
         for s in self.t:
-            self.N(s)
+            if np.isnan(s['N']):
+                self.N(s)
 
 # To be checked
 
@@ -648,7 +660,10 @@ class System(Spec1D, Line, Cont):
         self._map['Z'] = Column(z_temp, dtype=float, unit=u.nm/u.nm)
 
     def create_t(self, series='unknown',
-                 z=z_def, N=N_def, b=b_def, btur=btur_def, 
+                 z=z_def,
+                 #N=N_def,
+                 N=None,
+                 b=b_def, btur=btur_def,
                  dz=None, dN=None, db=None, dbtur=None,
                  vary=[True, True, True, False], expr=[None,None,None,None],
                  chi2r=None,
@@ -665,6 +680,7 @@ class System(Spec1D, Line, Cont):
         vary = np.array(vary, ndmin=2)
         expr = np.array(expr, ndmin=2)
         chi2r = np.array(chi2r, ndmin=1)
+        done = np.array(False, ndmin=1)
         zunit = u.nm/u.nm
         t = Table()
         t['Z'] = Column(z, dtype=dtype, unit=zunit)
@@ -678,6 +694,7 @@ class System(Spec1D, Line, Cont):
         t['VARY'] = Column(vary, dtype=object)
         t['EXPR'] = Column(expr, dtype=object)  # dtype to avoid truncation
         t['CHI2R'] = Column(chi2r, dtype=dtype)
+        t['DONE'] = Column(done, dtype=bool)
         
         # Needed to have the series column without defined shape
         try:
