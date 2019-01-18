@@ -113,7 +113,7 @@ class WkfForestAddAll(Workflow):
         self.ops = [RecForestAdd]
         self.obj = 'syst'
         self.modes = [self.ex_iter_rec]
-        self.setups = [{}]
+        self.setups = [{'done': True}]
         
                 
 class WkfLineResidAll(Workflow):    
@@ -144,7 +144,7 @@ class WkfSystFitAll(Workflow):
         self.title = wkf_descr['syst_all_fit']
         self.ops = [ProcSystSelFit]
         self.modes = [self.ex_iter_op]
-        self.setups = [{'reverse': True, 'done': True}]
+        self.setups = [{'done': True}]
         
 
 class WkfSystModelAll(Workflow):    

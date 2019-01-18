@@ -236,17 +236,18 @@ class System(Spec1D, Line, Cont):
         
         # Save fitted lines in the group
         try:
+            ok
+        except:
             cond = self._group['Z'] > 0
             new_t = unique(self._group[self._t.colnames][cond], keys='Z')
-            #print new_t
             new_map = self._group[self._map.colnames][cond]
             new_line = self._group[self._line.t.colnames]
             self._t[self._group_t] = new_t#[new_t['Z']>0]
             self._map[self._group_map] = new_map
             self._line._t[self._group_line] = new_line
             self._line._t.sort('X')
-        except:
-            print "Lists not updated."
+        #except:
+        #    print "Lists not updated."
 
         self.acs.model = self._model
         
@@ -375,13 +376,19 @@ class System(Spec1D, Line, Cont):
                                                    return_indices=True)
             #new_map = temp._map[new]
             self._map = vstack([self._map, temp._map[int_map]])
+            #self._map = unique(self._map, keys='Z')
             self._map.sort('Z')
 
             # Update the system list adding only the new systems
-            null1, null2, int_t = np.intersect1d(temp._map['Z'][int_map], temp._t['Z'],
-                                                 return_indices=True)
+            null1, null2, int_t = np.intersect1d(
+                temp._map['Z'][int_map], temp._t['Z'], return_indices=True)
             #print temp._t[int_t]
             self._t = vstack([self._t, temp._t[int_t]])
+
+            self._map = unique(self._map, keys='X')
+            self._map.sort('Z')
+
+            self._t = unique(self._t, keys='Z')
             self._t.sort('Z')
             #return self._t
         except:
