@@ -142,6 +142,7 @@ class System(Spec1D, Line, Cont):
             if (len(where_temp) % 2 == 0):
                 where_temp = where_temp[:-1]
             where = np.append(where, where_temp)
+        #print len(where)
 
         self._chunk_rows = np.unique(where)
         
@@ -149,7 +150,6 @@ class System(Spec1D, Line, Cont):
         # from the regions around lines
         self._chunk = spec.apply_mask(
             ['X', 'X'], [range(len(spec.t)), self._chunk_rows], [True, False]).t
-
         
     def extract_resid(self, s=None):
         """ @brief Extract residuals
@@ -197,9 +197,11 @@ class System(Spec1D, Line, Cont):
 
         fun = self._fun
         par = self._par
+        #par.pretty_print()
         fit = fun.fit(np.array(y_c/cont_c), par, x=np.array(x_c),
                       weights=np.array(cont_c/dy_c))
         par = fit.params
+        #par.pretty_print()
         y = fit.eval(par, x=x_c) * cont_c
         yresid = y_c-y
         yadj = fit.eval_components()['adj_'] * cont_c
@@ -214,8 +216,9 @@ class System(Spec1D, Line, Cont):
         l_del = []
         for i, l in enumerate(self._group):
             pref = l['PREF']
+            #print pref, l['Z'], par[pref+'_z'].value
             if par[pref+'_z'].value > l['ZMIN'] and \
-               par[pref+'_z'].value < l['ZMAX']:
+               par[pref+'_z'].value < l['ZMAX'] or 1==1:
                 try:
                     l['Z'] = par[pref+'_z'].value
                     l['N'] = par[pref+'_N'].value
@@ -238,11 +241,19 @@ class System(Spec1D, Line, Cont):
         try:
             ok
         except:
-            cond = self._group['Z'] > 0
-            new_t = unique(self._group[self._t.colnames][cond], keys='Z')
+            cond = self._group['Z'] > 0 
+            try:
+                new_t = unique(self._group[self._t.colnames][cond], keys='Z')
+                #print new_t
+                #print self._t[self._group_t]
+                self._t[self._group_t] = new_t#[new_t['Z']>0]
+            except:
+                new_t = unique(self._group[self._t.colnames][cond], keys='N')
+                #print new_t
+                #print self._t[self._group_t]
+                self._t[self._group_t] = new_t#[new_t['Z']>0]
             new_map = self._group[self._map.colnames][cond]
             new_line = self._group[self._line.t.colnames]
-            self._t[self._group_t] = new_t#[new_t['Z']>0]
             self._map[self._group_map] = new_map
             self._line._t[self._group_line] = new_line
             self._line._t.sort('X')
@@ -270,12 +281,14 @@ class System(Spec1D, Line, Cont):
         # Join systems and lines
         join_t = join(join(self._t, self._map), self._line.t)
         #print self._map[np.logical_and(self._map['X']>370.862, self._map['X']<372.905)]
-        #print join_t[np.logical_and(join_t['X']>370.862, join_t['X']<372.905)]
+        #print join_t[np.logical_and(join_t['Z']>2.057, join_t['Z']<2.060)]
+        #print self._t[np.logical_and(self._t['Z']>2.057, self._t['Z']<2.060)]
+        #print self._map[np.logical_and(self._map['Z']>2.057, self._map['Z']<2.060)]
         
         # Select the system redshift 
         join_z = join_t['Z']
         cond_z = s['Z']==join_z
-        
+        #print s['Z']
         # Select other systems close in redshift
         diff = 1
         while diff > 0:
@@ -296,7 +309,7 @@ class System(Spec1D, Line, Cont):
                 cond_z += z==join_z
             
         group = join_t[cond_z]
-        
+        #print group
         
         # Find wavelength duplicates (it may happen that a line may be
         # associated to two systems as the same ion) and remove them from group
@@ -332,16 +345,17 @@ class System(Spec1D, Line, Cont):
         group.add_column(Column(zmax, name='ZMAX'), index=2)
     
         # Find rows with duplicate redshift values
-        diff1d = np.append(zlist[0], np.ediff1d(zlist))  
-        where = np.where(diff1d == 0)[0]
+        if len(zlist)>0:
+            diff1d = np.append(zlist[0], np.ediff1d(zlist))  
+            where = np.where(diff1d == 0)[0]
 
-        # Associate each duplicate row to its companion, to link parameters 
-        for (l, w) in enumerate(where):
+            # Associate each duplicate row to its companion, to link parameters 
+            for (l, w) in enumerate(where):
 
-            # Change the expression used in fit
-            p = group['PREF'][w-1]
-            group['VARY'][w] = [False, False, False, False]
-            group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
+                # Change the expression used in fit
+                p = group['PREF'][w-1]
+                group['VARY'][w] = [False, False, False, False]
+                group['EXPR'][w] = [p+'_z', p+'_N', p+'_b', p+'_btur']
 
         self._group = group
         #print self._group
@@ -378,7 +392,8 @@ class System(Spec1D, Line, Cont):
             self._map = vstack([self._map, temp._map[int_map]])
             #self._map = unique(self._map, keys='Z')
             self._map.sort('Z')
-
+            #print "temp_t", np.array(temp._t[np.logical_and(temp._t['Z']>2.32131, temp._t['Z']<2.32133)])
+            
             # Update the system list adding only the new systems
             null1, null2, int_t = np.intersect1d(
                 temp._map['Z'][int_map], temp._t['Z'], return_indices=True)
@@ -393,6 +408,8 @@ class System(Spec1D, Line, Cont):
             #return self._t
         except:
             pass
+
+        #print "self_t", np.array(self._t[np.logical_and(self._t['Z']>2.32131, self._t['Z']<2.32133)])
         
     def line_new(self, series='Ly_ab', keep='complete'):
         """ @brief Use matching redshift from a list of lines to create a list
@@ -414,6 +431,7 @@ class System(Spec1D, Line, Cont):
             line_map['Z'] = line._z['Z']
         if keep == 'match' or keep == 'complete':
             z = line._z_match
+            #print "z", z[np.logical_and(z>2.05875, z<2.058755)]
             line_map['X'] = np.append(line._z['X'][1:][line._w_match],
                                       line._z['X'][:-1][line._w_match])
             line_map['Z'] = np.append(line._z_match, line._z_match)
@@ -425,6 +443,7 @@ class System(Spec1D, Line, Cont):
             disc = np.logical_and(~np.in1d(line._z['X'], line_map['X']),
                                   line._z['ION'] == dict_series[series][-1])
             z_add = line._z['Z'][disc]
+            #print "z_add", np.array(z_add[np.logical_and(z_add>2.32131, z_add<2.32133)])
             line_map_add['X'] = line._z['X'][disc]
             line_map_add['Z'] = line._z['Z'][disc]
             line_map = vstack([line_map, line_map_add])
@@ -492,7 +511,10 @@ class System(Spec1D, Line, Cont):
             prof_vary = l['VARY']
             prof_expr = l['EXPR']
             prof_pref = l['PREF']
-            getattr(mod, prof)(ion, wave, value=prof_value, vary=prof_vary,
+            getattr(mod, prof)(ion, wave, value=prof_value,
+                               min=[l['ZMIN'], 1e10, 0.0, None],
+                               max=[l['ZMAX'], 1e23, 200.0, None],
+                               vary=prof_vary,
                                expr=prof_expr, pref=prof_pref)        
             fun *= getattr(mod, '_'+prof+'_fun')
             par.update(getattr(mod, '_'+prof+'_par'))
@@ -511,17 +533,24 @@ class System(Spec1D, Line, Cont):
         imean = (imax+imin)//2
         rem = dc(self._chunk)
         rem.remove_rows(self._chunk['X'].mask.nonzero()[0])
+        if len(rem) == 0:
+            print "Can't model this system: chunk empty."
+            
         for i, (c_min, c_max, c_mean) in enumerate(zip(imin, imax, imean)):
-            if psf_resol_value < 0.0:
-                psf_resol_value = rem['RESOL'][c_mean]
+            #print i, c_min, c_max, c_mean, rem['X'][c_mean]
+            #print psf_resol_value
+            #if psf_resol_value < 0.0 or 1==1:
+            #if len(rem) > 0:
+            psf_resol_value = rem['RESOL'][c_mean]
+            #print psf_resol_value
             psf_value = [c_min, c_max, rem['X'][c_mean], psf_resol_value]
             psf_vary = [False, False, False, psf_resol_vary]
             psf_min = [None, None, None, psf_resol_min]
             psf_max = [None, None, None, psf_resol_max]
             psf_expr = [None, None, None, psf_resol_expr]
             psf_pref = 'psf_'+str(i) 
-            getattr(mod, psf)(psf_value, psf_vary, psf_min, psf_max, psf_expr,
-                               psf_pref)
+            getattr(mod, psf)(psf_value, psf_vary, psf_min, psf_max,
+                              psf_expr, psf_pref)
             if i == 0:
                 psf_fun = getattr(mod, '_'+psf+'_fun')
                 psf_par = getattr(mod, '_'+psf+'_par')
@@ -578,9 +607,7 @@ class System(Spec1D, Line, Cont):
         z = s['Z']
         series = s['SERIES']
         cond_z = self._map['Z'] == z
-        
-
-        if series[0:2] == 'Ly' or 'un':
+        if (series[0:2] == 'Ly' or 'un') and np.sum(cond_z)>0:
 
             # Lyman-type series: take Lyman-alpha EW
             if series[0:2] == 'Ly':
@@ -600,6 +627,8 @@ class System(Spec1D, Line, Cont):
 
             logN = np.min([np.interp(ew, ew_arr, logN_arr), 15])
             s['N'] = 10**logN
+        else:
+            s['N'] = 1e14
 
     def N_all(self):
         """ @brief Estimate column densities from the equivalent widths 
@@ -689,8 +718,10 @@ class System(Spec1D, Line, Cont):
         chi2r = np.array(chi2r, ndmin=1)
         done = np.array(False, ndmin=1)
         zunit = u.nm/u.nm
+        #print "create_t z", z[np.logical_and(z>2.05875, z<2.058755)]
         t = Table()
         t['Z'] = Column(z, dtype=dtype, unit=zunit)
+        #print "create_t tz", np.array(t['Z'][np.logical_and(t['Z']>2.05875, t['Z']<2.058755)])
         t['N'] = Column(N, dtype=dtype, unit=Nunit)
         t['B'] = Column(b, dtype=dtype, unit=bunit)
         t['BTUR'] = Column(btur, dtype=dtype, unit=bunit)

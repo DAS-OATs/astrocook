@@ -1450,9 +1450,9 @@ class BFrame(HistFrame):
 
 class Chi2RFrame(HistFrame):
     def __init__(self, parent=None, title="Reduced chi-squared", **kwargs):
-        quantity = parent.acs.syst.t['CHI2R']
+        quantity = np.log10(parent.acs.syst.t['CHI2R'])
         quantity = np.unique(quantity[~np.isnan(quantity)])
-        bins = np.arange(0,100,5)
+        bins = np.arange(-2,3,0.1)
         super(Chi2RFrame, self).__init__(parent, title=title, quantity=quantity,
                                          bins=bins, figsize=(5,5))
 
@@ -1558,8 +1558,8 @@ class SystFrame(wx.Frame):
         self.p = parent
         self.syst = self.p.acs.syst#_sel
         try:
-        #    ok
-        #except:
+            ok
+        except:
             """
             self.group = self.p.acs.syst._group
             
@@ -1572,15 +1572,15 @@ class SystFrame(wx.Frame):
             """
             self.init_attr()
         
-        except:
-            pass
+        #except:
+        #    pass
         self.init_UI()
 
     def init_attr(self):
         self.group = self.p.acs.syst._group
             
         #self.ions = np.unique([dict_series[i] \
-        # List of ions to be plotted and number of panels
+        # List of ions to be plotted and number of panels    
         self.ions = np.unique(np.ravel(self.group['ION']))
         self.ions = self.ions[np.where(self.ions != 'unknown')]
         self.pn = len(self.ions)

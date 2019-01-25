@@ -272,7 +272,7 @@ class Model(Spec1D):
                 
 
     def voigt(self, ion, wave, value=[z_def, N_def, b_def, btur_def],
-              vary=[True, True, True, False], min=[None, 1e10, 0.0, None],
+              vary=[True, True, True, False], min=[0.0, 1e10, 0.0, None],
               max=[None, 1e23, 200.0, None], expr=[None, None, None, None],
               pref='voigt'):
         """ @brief Voigt profile for a single line 

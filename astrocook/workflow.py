@@ -1,5 +1,6 @@
 from .procedure import *
 from .recipe import *
+import sys
 
 wkf_descr = {'forest_add_all': "Add new lines of all systems to forest",
              'line_resid_all': "Add residuals of all systems to line list",
@@ -44,14 +45,20 @@ class Workflow(Procedure):
             ran = reversed(ran)
 
         for i in ran:
-            if obj.t[i]['DONE'] == False:
-                proc(s=obj.t[i], done=done)
-                print i+1, obj.t[i]['Z']
+            try:
+                if obj.t[i]['DONE'] == False:
+                    sys.stdout.write("%i %f " % (i+1, obj.t[i]['Z']))
+                    proc(s=obj.t[i], done=done)
+                    print obj.t[i]['CHI2R']
+            except:
+                pass
 
     def ex_iter_rec(self, rec, iter_start=0, iter_end=-1, reverse=False,
                     done=False):
 
         root_obj = getattr(self.acs, self.obj)
+        root_obj_static = dc(root_obj)
+        print root_obj_static.t[0:50]
         if iter_end == -1:
             iter_end = len(root_obj.t)
         ran = range(iter_start, iter_end)
@@ -59,10 +66,13 @@ class Workflow(Procedure):
             ran = reversed(ran)
 
         for i in ran:
-            root_obj.group(s=root_obj.t[i])
-            root_obj.chunk()
-            rec.ex()
-            print i+1, root_obj.t[i]['Z']
+            try:
+                print i+1, root_obj_static.t[i]['Z']
+                root_obj.group(s=root_obj_static.t[i])
+                root_obj.chunk()
+                rec.ex()
+            except:
+                pass
 
                     
     def ex_iter_wkf(self, wkf, iter_start=0, iter_end=-1, reverse=False,

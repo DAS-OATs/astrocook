@@ -403,32 +403,35 @@ class Spec1D():
             ext_idx = np.sort(np.append(min_idx, max_idx))
 
             self._exts = self._t[ext_idx]
-            self._exts.meta = None  # Needed, otherwise the Astropy fails when
-                                    # trying to save the table
-            self._exts['XMIN'][0] = self.t['X'][0]
-            self._exts['XMIN'][1:] = self._exts['X'][:-1]
-            self._exts['XMAX'][-1] = self.t['X'][-1]
-            self._exts['XMAX'][:-1] = self._exts['X'][1:]
-            self._exts = self._exts[~np.isnan(self._exts['X'])]
+            
+            if len(self._exts) > 0:
+                self._exts.meta = None  # Needed, otherwise the Astropy fails
+                                        # when trying to save the table
+                self._exts['XMIN'][0] = self.t['X'][0]
+                self._exts['XMIN'][1:] = self._exts['X'][:-1]
+                self._exts['XMAX'][-1] = self.t['X'][-1]
+                self._exts['XMAX'][:-1] = self._exts['X'][1:]
+                self._exts = self._exts[~np.isnan(self._exts['X'])]
 
             
-            # Include boundaries of chunks, if defined
-            # Otherwise XMIN and XMAX may be taken from chunks far away
-            nan_start_idx = np.where(np.logical_and(
-                np.isnan(self.t['Y'][:-1]), ~np.isnan(self.t['Y'][1:])))[0]+1
-            nan_end_idx = np.where(np.logical_and(
-                ~np.isnan(self.t['Y'][:-1]), np.isnan(self.t['Y'][1:])))[0]
+                # Include boundaries of chunks, if defined
+                # Otherwise XMIN and XMAX may be taken from chunks far away
+                nan_start_idx = np.where(np.logical_and(
+                    np.isnan(self.t['Y'][:-1]),
+                    ~np.isnan(self.t['Y'][1:])))[0]+1
+                nan_end_idx = np.where(np.logical_and(
+                    ~np.isnan(self.t['Y'][:-1]), np.isnan(self.t['Y'][1:])))[0]
 
-            if len(nan_start_idx) > 0 and len(nan_end_idx) > 0:
-                i = 0
-                self._exts['XMIN'][0] = self.t['X'][nan_start_idx[0]]
-                self._exts['XMAX'][-1] = self.t['X'][nan_end_idx[-1]]
-                for e in self._exts:
-                    if e['X'] > self.t['X'][nan_end_idx[i]]:
-                        i += 1
-                    e['XMIN'] = max(e['XMIN'], self.t['X'][nan_start_idx[i]])
-                    e['XMAX'] = min(e['XMAX'], self.t['X'][nan_end_idx[i]])
-                
+                if len(nan_start_idx) > 0 and len(nan_end_idx) > 0:
+                    i = 0
+                    self._exts['XMIN'][0] = self.t['X'][nan_start_idx[0]]
+                    self._exts['XMAX'][-1] = self.t['X'][nan_end_idx[-1]]
+                    for e in self._exts:
+                        if e['X'] > self.t['X'][nan_end_idx[i]]:
+                            i += 1
+                        e['XMIN'] = max(e['XMIN'],
+                                        self.t['X'][nan_start_idx[i]])
+                        e['XMAX'] = min(e['XMAX'], self.t['X'][nan_end_idx[i]])
         else:
             #self._mins = None
             #self._maxs = None
@@ -441,21 +444,22 @@ class Spec1D():
         
         # Compute the difference between each extremum and its neighbours
         # N.B. Negative fluxes give wrong results! To be fixed 
-        diff_y_left = (self._exts[col][:-2] - self._exts[col][1:-1]) 
-        diff_y_right = (self._exts[col][2:] - self._exts[col][1:-1]) 
-        if kind is 'em':
-            diff_y_left = -diff_y_left
-            diff_y_right = -diff_y_right
-        
-        # Check if the difference is above threshold
-        diff_y_min = np.minimum(diff_y_left, diff_y_right)
-        diff_y_max = np.maximum(diff_y_left, diff_y_right)
-        thres = self._exts['DY'][1:-1] * kappa
-        if diff is 'min':
-            line_pos = np.greater(diff_y_min, thres)
-        else:
-            line_pos = np.greater(diff_y_max, thres)
-        self._exts_sel = self._exts[1:-1][line_pos]
+        if len(self._exts) > None:
+            diff_y_left = (self._exts[col][:-2] - self._exts[col][1:-1]) 
+            diff_y_right = (self._exts[col][2:] - self._exts[col][1:-1]) 
+            if kind is 'em':
+                diff_y_left = -diff_y_left
+                diff_y_right = -diff_y_right
+            
+            # Check if the difference is above threshold
+            diff_y_min = np.minimum(diff_y_left, diff_y_right)
+            diff_y_max = np.maximum(diff_y_left, diff_y_right)
+            thres = self._exts['DY'][1:-1] * kappa
+            if diff is 'min':
+                line_pos = np.greater(diff_y_min, thres)
+            else:
+                line_pos = np.greater(diff_y_max, thres)
+            self._exts_sel = self._exts[1:-1][line_pos]
         
     def smooth_lowess(self, frac=0.03):
         """ Smooth the flux using LOWESS method """

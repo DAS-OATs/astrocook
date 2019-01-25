@@ -375,11 +375,12 @@ class Line(Spec1D):
         return out
         #"""
 
-    def match_z(self, ztol=1e-4):
+    def match_z(self, ztol=1e-5):
         """ Match redshifts to find coincidences """
 
-        ion_ref = np.full(len(self._z), self._z['ION'][-1])
-        self._z.sort('Z')
+        #ion_ref = np.full(len(self._z), self._z['ION'][-1])
+        self._z.sort(('Z', 'ION'))
+        #print self._z[np.logical_and(self._z['Z']>2.32130, self._z['Z']<2.32135)]
         z_arr = self._z['Z']
         ion_arr = self._z['ION']
 
@@ -406,6 +407,12 @@ class Line(Spec1D):
         #self._w_disc = np.logical_and(~w_match_ext, ref)
         #print self._w_disc
         z_mean = np.mean([z_arr[1:], z_arr[:-1]], axis=0)
+        #print "z_mean", np.array(z_mean[np.logical_and(z_mean>2.32130, z_mean<2.32135)])
+        #print "ion_arr[1:]", np.array(ion_arr[1:][np.logical_and(z_mean>2.32130, z_mean<2.32135)]) 
+        #print "ion_arr[:-1]", np.array(ion_arr[:-1][np.logical_and(z_mean>2.32130, z_mean<2.32135)]) 
+        #print "z_arr[1:]", np.array(z_arr[1:][np.logical_and(z_mean>2.32130, z_mean<2.32135)]) 
+        #print "z_arr[:-1]", np.array(z_arr[:-1][np.logical_and(z_mean>2.32130, z_mean<2.32135)]) 
+        #print "dec", np.array(dec[np.logical_and(z_mean>2.32130, z_mean<2.32135)]) 
         self._z_match = z_mean[self._w_match]
         #self._z_disc = np.array(z_arr[self._w_disc])
 
