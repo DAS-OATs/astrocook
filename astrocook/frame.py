@@ -3,9 +3,9 @@ from astropy import table as at
 import numpy as np
 
 class Frame():
-    """Class for generic frames
+    """Class for frames.
 
-    A generic frames is a Table with the following columns:
+    A frame is a Table with the following columns:
         -# @x: channels;
         -# @xmin: lower limit for each channel;
         -# @xmax: upper limit for each channel;
@@ -22,7 +22,6 @@ class Frame():
                  xunit=au.nm,
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  dtype=float):
-        """ Constructor """
 
         t = at.Table()
         t['x']  = at.Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)

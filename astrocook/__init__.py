@@ -1,4 +1,5 @@
 from .frame import Frame
+from .spec import Spec
 
 """
 from .list import List  # Deprecated

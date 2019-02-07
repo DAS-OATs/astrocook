@@ -1,27 +1,20 @@
 from astrocook import Frame
-from copy import deepcopy as dc
 import numpy as np
+from test_global import *
 import unittest
 
-x = [1, 2, 3]
-xmin = [0.9, 1.8, 2.7]
-xmax = [1.1, 2.2, 3.3]
-y = [5, 6, 7]
-dy = [0.3, 0.4, 0.5]
-mod1 = [2, 3, 4]
-mod2 = dc(mod1)
-mod2[0] = 3
 obj_empty = Frame()
 obj_full = Frame(x, xmin, xmax, y, dy)
-check_empty = []
-
 
 class FrameTest(unittest.TestCase):
 
     def equal(self, attr, check_full):
         self.assertListEqual(list(getattr(obj_empty, attr)), check_empty)
         self.assertListEqual(list(getattr(obj_full, attr)), check_full)
+    
 
+
+class MainTest():
     def test_read(self):
         self.equal('x', x)
         self.equal('xmin', xmin)
@@ -54,6 +47,10 @@ class FrameTest(unittest.TestCase):
         self.equal('dy', mod1)
         obj_full.dy = mod2
         self.equal('dy', mod2)
+
+class MainTest(unittest.TestCase):
+    ft = FrameTest()
+    ft.test_read()
 
 if __name__ == '__main__':
     unittest.main()
