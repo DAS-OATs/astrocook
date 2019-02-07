@@ -15,6 +15,7 @@ quantity_support()
 
 #Create some fake data
 a = [1,2,3]
+print(a)
 
 #Create a Spec1D object providing x, y, dy and units informations
 s = Spec1D(a, a, dy=a, xunit=u.Angstrom, yunit=1.e-17 * u.erg / u.second / u.cm**2 / u.Angstrom)
@@ -72,7 +73,7 @@ plt.show()
 #Create a powerlaw model
 guess_pl = models.PowerLaw1D(amplitude=10, x_0=s.x.mean(), alpha=0.5)
 
-#Plot data and model 
+#Plot data and model
 plt.plot(s.x, s.y)
 plt.plot(s.x, guess_pl(s.x).value * s.yunit)
 plt.show()
@@ -83,7 +84,7 @@ fit_pl = fit_t(guess_pl, s.x.value, s.y.value)
 print("Fit results:")
 print(fit_pl)
 
-#Plot data and model 
+#Plot data and model
 plt.plot(s.x, s.y)
 plt.plot(s.x, fit_pl(s.x.value) * s.yunit)
 plt.show()
