@@ -2,10 +2,10 @@ from astropy import units as au
 from astropy import table as at
 import numpy as np
 
-class Frame():
+class Frame(object):
     """Class for frames.
 
-    A frame is a Table with the following columns:
+    A Frame is an astropy Table with the following columns:
         -# @x: channels;
         -# @xmin: lower limit for each channel;
         -# @xmax: upper limit for each channel;

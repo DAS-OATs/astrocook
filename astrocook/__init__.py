@@ -1,5 +1,7 @@
 from .frame import Frame
-from .spec import Spec
+from .spectrum import Spectrum
+
+from .session import Session
 
 """
 from .list import List  # Deprecated
