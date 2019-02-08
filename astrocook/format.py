@@ -1,6 +1,8 @@
 from astropy import units as au
 from .spectrum import Spectrum
 
+prefix = "Format:"
+
 class Format(object):
     """ Class for file formats. """
 
@@ -23,7 +25,7 @@ class Format(object):
             meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
         except:
             meta = {'object': ""}
-            print("HIERARCH ESO OBS TARG NAME not defined")
+            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def eso_midas(self, hdul):
@@ -42,5 +44,5 @@ class Format(object):
             meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
         except:
             meta = {'object': ""}
-            print("HIERARCH ESO OBS TARG NAME not defined")
+            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

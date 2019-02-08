@@ -18,17 +18,17 @@ class Session(object):
             instr = hdul[0].header['INSTRUME']
         except:
             instr = None
-            print("INSTRUME not defined")
+            print("Session: INSTRUME not defined.")
         try:
             catg = hdul[0].header['HIERARCH ESO PRO CATG']
         except:
             catg = None
-            print("HIERARCH ESO PRO CATG not defined")
+            print("Session: HIERARCH ESO PRO CATG not defined.")
         try:
             orig = hdul[0].header['ORIGIN']
         except:
             orig = None
-            print("ORIGIN not defined")
+            print("Session: ORIGIN not defined.")
 
         # DAS spectrum
         if instr == 'ESPRESSO' and catg == 'RSPEC':

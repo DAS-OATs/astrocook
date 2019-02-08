@@ -12,14 +12,14 @@ mod1 = [2, 3, 4]
 mod2 = dc(mod1)
 mod2[0] = 3
 check_empty = []
-obj_empty = Frame()
-obj_full = Frame(x, xmin, xmax, y, dy)
+frame_empty = Frame()
+frame_full = Frame(x, xmin, xmax, y, dy)
 
 class FrameTest(unittest.TestCase):
 
     def equal(self, attr, check_full):
-        self.assertListEqual(list(getattr(obj_empty, attr)), check_empty)
-        self.assertListEqual(list(getattr(obj_full, attr)), check_full)
+        self.assertListEqual(list(getattr(frame_empty, attr)), check_empty)
+        self.assertListEqual(list(getattr(frame_full, attr)), check_full)
 
     def test_read(self):
         self.equal('x', x)

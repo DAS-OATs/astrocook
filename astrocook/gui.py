@@ -1,3 +1,4 @@
+from . import version
 from .session import Session
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
@@ -8,13 +9,20 @@ import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 
+prefix = "GUI:"
+
 class GUI(object):
     """ Class for the GUI. """
 
     def __init__(self):
         """ Constructor """
 
+        print("┌────────────────────────────┐")
+        print("│ Welcome to ASTROCOOK v%3s! │" % version)
+        print("└────────────────────────────┘")
+        print(prefix, "Loading...")
         self.sess_list = []#Session()
+        self.sess_sel = None
         GUIPanelSession(self)
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
@@ -36,6 +44,13 @@ class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     def insert_string_item(self, *args):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
+
+class GUIDialogMethod(wx.Dialog):
+    def __init__(self,
+                 parent=None,
+                 title="Dialog"):
+
+        super(GUIDialogMethod, self).__init__(parent=parent, title=title)
 
 class GUIMenu(object):
 
@@ -84,6 +99,7 @@ class GUIMenuFile(GUIMenu):
                 return
             name = fileDialog.GetPath()
             #chosen = fileDialog.GetDirectory()
+            print(prefix, "Loading session %s..." % name)
             sess = Session(name)
             sess.name = name
             self.gui.panel_sess.on_open(event, sess)
@@ -92,7 +108,6 @@ class GUIMenuFile(GUIMenu):
         self.gui.panel_sess.Close()
         self.gui.graph_spec.Close()
         self.gui.tab_spec.Close()
-
 
 class GUIMenuSpectrum(GUIMenu):
 
@@ -109,7 +124,6 @@ class GUIMenuSpectrum(GUIMenu):
 
     def on_view(self, event):
         self.gui.tab_spec.on_view(event)
-
 
 class GUIPanelSession(wx.Frame):
     """ Class for the GUI session panel """
@@ -129,7 +143,6 @@ class GUIPanelSession(wx.Frame):
         self.gui.panel_sess = self
 
         # Create table
-        #self.sess_list = []
         panel = wx.Panel(self)
         self.tab = GUIControlList(panel, 0)
         self.tab.InsertColumn(0, "source", width=200)
@@ -152,23 +165,24 @@ class GUIPanelSession(wx.Frame):
         self.gui.sess_list[self.sel].spec.meta['object'] = event.GetLabel()
 
     def on_open(self, event, sess):
-        self.sel = self.tab.GetItemCount()
-        self.tab.insert_string_item(self.sel, sess.name)
+        sel = self.tab.GetItemCount()
+        self.tab.insert_string_item(sel, sess.name)
         self.gui.sess_list.append(sess)
-        self.gui.sess_list[self.sel].open()
+        self.gui.sess_sel = self.gui.sess_list[sel]
+        self.gui.sess_sel.open()
         x = sess.spec.x
         obj = sess.spec.meta['object']
-        self.tab.SetItem(self.sel, 1, obj)
-        self.tab.SetItem(self.sel, 2, "[%3.2f, %3.2f] %s"
+        self.tab.SetItem(sel, 1, obj)
+        self.tab.SetItem(sel, 2, "[%3.2f, %3.2f] %s"
                          % (x[~np.isnan(x)][0], x[~np.isnan(x)][-1], x.unit))
-        self.tab.SetItem(self.sel, 3, str(len(x)))
-        self.gui.graph_spec.refresh(self.gui.sess_list[self.sel])
+        self.tab.SetItem(sel, 3, str(len(x)))
+        self.gui.graph_spec.refresh(self.gui.sess_sel)
 
     def on_select(self, event):
-        self.sel = event.GetIndex()
+        sel = event.GetIndex()
+        self.gui.sess_sel = self.gui.sess_list[sel]
         name = self.tab.GetItem(self.tab.GetFirstSelected(), 0)
-        #self.gui.sess = self.sess_list[self.sel]
-        self.gui.graph_spec.refresh(self.gui.sess_list[self.sel])
+        self.gui.graph_spec.refresh(self.gui.sess_sel)
 
     def on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
@@ -228,14 +242,21 @@ class GUITable(wx.Frame):
 
         self.gui = gui
         self.attr = attr
-
-    def on_view(self, event):
-        data = getattr(self.gui.sess_list[self.gui.panel_sess.sel], self.attr)
-        coln = len(data.t.colnames)
-        rown = len(data.t)
         self.panel = wx.Panel(self)
         self.tab = gridlib.Grid(self.panel)
-        self.tab.CreateGrid(0, coln)
+        self.tab.CreateGrid(0, 0)
+
+    def on_view(self, event):
+        data = getattr(self.gui.sess_sel, self.attr)
+        try:
+            self.tab.DeleteCols(pos=0, numCols=self.tab.GetNumberCols())
+            #self.tab.DeleteRows(pos=0, numRows=self.tab.GetNumberRows())
+            print(prefix, "Refreshing table...")
+        except:
+            print(prefix, "Loading table...")
+        coln = len(data.t.colnames)
+        rown = len(data.t)
+        self.tab.AppendCols(coln)
         self.tab.AppendRows(rown)
         for j, r in enumerate(data.t):
             for i, n in enumerate(data.t.colnames):

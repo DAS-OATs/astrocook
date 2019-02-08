@@ -4,6 +4,8 @@ from .spectrum import Spectrum
 from .format import Format
 from .session import Session
 
+version = "0.2"
+
 """
 from .list import List  # Deprecated
 from .list_reader import ListReader  # Deprecated
