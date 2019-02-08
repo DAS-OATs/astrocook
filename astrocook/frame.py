@@ -21,6 +21,7 @@ class Frame(object):
                  dy=[],
                  xunit=au.nm,
                  yunit=au.erg/au.cm**2/au.s/au.nm,
+                 meta={},
                  dtype=float):
 
         t = at.Table()
@@ -30,6 +31,7 @@ class Frame(object):
         t['y']  = at.Column(np.array(y, ndmin=1) , dtype=dtype, unit=yunit)
         t['dy'] = at.Column(np.array(dy, ndmin=1), dtype=dtype, unit=yunit)
         self._t = t
+        self._meta=meta
 
     @property
     def t(self):
@@ -74,3 +76,11 @@ class Frame(object):
     @dy.setter
     def dy(self, val, dtype=float):
         self._t['dy'] = np.array(val, dtype=dtype)
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @meta.setter
+    def meta(self, key, val):
+        self._meta[key] = val

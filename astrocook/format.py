@@ -10,6 +10,7 @@ class Format(object):
     def das_spectrum(self, hdul):
         """ DAS FSPEC/RSPEC format """
 
+        hdr = hdul[0].header
         data = hdul[1].data
         x = data['WAVEL']
         xmin = data['WAVEL']-data['PIXSIZE']*0.5
@@ -17,8 +18,13 @@ class Format(object):
         y = data['FLUX']
         dy = data['FLUXERR']
         xunit = au.nm
-        yunit = au.erg/au.cm**2/au.s/au.nm
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
+        yunit = au.electron #erg/au.cm**2/au.s/au.nm
+        try:
+            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+        except:
+            meta = {'object': ""}
+            print("HIERARCH ESO OBS TARG NAME not defined")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def eso_midas(self, hdul):
         """ ESO-MIDAS Table """
@@ -32,4 +38,9 @@ class Format(object):
         dy = data[hdr['TTYPE3']]
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
+        try:
+            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+        except:
+            meta = {'object': ""}
+            print("HIERARCH ESO OBS TARG NAME not defined")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

@@ -8,7 +8,7 @@ class Session(object):
     A Session is a self-sufficient set of analysis operations."""
 
     def __init__(self,
-                 name):
+                 name=None):
         self.name = name
 
     def open(self):
