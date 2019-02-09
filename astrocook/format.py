@@ -1,5 +1,5 @@
-from astropy import units as au
 from .spectrum import Spectrum
+from astropy import units as au
 
 prefix = "Format:"
 

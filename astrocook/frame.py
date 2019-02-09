@@ -1,5 +1,6 @@
 from astropy import units as au
 from astropy import table as at
+from astropy.units import Quantity
 import numpy as np
 
 class Frame(object):
@@ -31,6 +32,8 @@ class Frame(object):
         t['y']  = at.Column(np.array(y, ndmin=1) , dtype=dtype, unit=yunit)
         t['dy'] = at.Column(np.array(dy, ndmin=1), dtype=dtype, unit=yunit)
         self._t = t
+        self._xunit = xunit
+        self._yunit = yunit
         self._meta=meta
 
     @property
@@ -39,43 +42,43 @@ class Frame(object):
 
     @property
     def x(self):
-        return self._t['x']
+        return Quantity(self._t['x'])
 
     @property
     def xmin(self):
-        return self._t['xmin']
+        return Quantity(self._t['xmin'])
 
     @property
     def xmax(self):
-        return self._t['xmax']
+        return Quantity(self._t['xmax'])
 
     @property
     def y(self):
-        return self._t['y']
+        return Quantity(self._t['y'])
 
     @property
     def dy(self):
-        return self._t['dy']
+        return Quantity(self._t['dy'])
 
     @x.setter
     def x(self, val, dtype=float):
-        self._t['x'] = np.array(val, dtype=dtype)
+        self._t['x'] = np.array(val, dtype=dtype, unit=self.xunit)
 
     @xmin.setter
     def xmin(self, val, dtype=float):
-        self._t['xmin'] = np.array(val, dtype=dtype)
+        self._t['xmin'] = np.array(val, dtype=dtype, unit=self.xunit)
 
     @xmax.setter
     def xmax(self, val, dtype=float):
-        self._t['xmax'] = np.array(val, dtype=dtype)
+        self._t['xmax'] = np.array(val, dtype=dtype, unit=self.xunit)
 
     @y.setter
     def y(self, val, dtype=float):
-        self._t['y'] = np.array(val, dtype=dtype)
+        self._t['y'] = np.array(val, dtype=dtype, unit=self.yunit)
 
     @dy.setter
     def dy(self, val, dtype=float):
-        self._t['dy'] = np.array(val, dtype=dtype)
+        self._t['dy'] = np.array(val, dtype=dtype, unit=self.yunit)
 
     @property
     def meta(self):
@@ -84,3 +87,6 @@ class Frame(object):
     @meta.setter
     def meta(self, key, val):
         self._meta[key] = val
+
+    def _safe(self, col):
+        return col[~np.isnan(col.value)]

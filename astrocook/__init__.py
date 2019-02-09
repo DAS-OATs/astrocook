@@ -1,10 +1,11 @@
+version = "0.2"
+
 from .frame import Frame
 from .spectrum import Spectrum
 
 from .format import Format
 from .session import Session
 
-version = "0.2"
 
 """
 from .list import List  # Deprecated

@@ -2,6 +2,8 @@ from .format import Format
 from .spectrum import Spectrum
 from astropy.io import fits
 
+prefix = "Session:"
+
 class Session(object):
     """ Class for sessions.
 
@@ -18,17 +20,17 @@ class Session(object):
             instr = hdul[0].header['INSTRUME']
         except:
             instr = None
-            print("Session: INSTRUME not defined.")
+            print(prefix, "INSTRUME not defined.")
         try:
             catg = hdul[0].header['HIERARCH ESO PRO CATG']
         except:
             catg = None
-            print("Session: HIERARCH ESO PRO CATG not defined.")
+            print(prefix, "HIERARCH ESO PRO CATG not defined.")
         try:
             orig = hdul[0].header['ORIGIN']
         except:
             orig = None
-            print("Session: ORIGIN not defined.")
+            print(prefix, "ORIGIN not defined.")
 
         # DAS spectrum
         if instr == 'ESPRESSO' and catg == 'RSPEC':
