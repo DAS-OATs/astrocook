@@ -1,6 +1,6 @@
 from astropy import units as au
 from astropy import table as at
-from astropy.units import Quantity
+#from astropy.units import au.Quantity
 import numpy as np
 
 class Frame(object):
@@ -42,43 +42,48 @@ class Frame(object):
 
     @property
     def x(self):
-        return Quantity(self._t['x'])
+        return au.Quantity(self._t['x'])
 
     @property
     def xmin(self):
-        return Quantity(self._t['xmin'])
+        return au.Quantity(self._t['xmin'])
 
     @property
     def xmax(self):
-        return Quantity(self._t['xmax'])
+        return au.Quantity(self._t['xmax'])
 
     @property
     def y(self):
-        return Quantity(self._t['y'])
+        return au.Quantity(self._t['y'])
 
     @property
     def dy(self):
-        return Quantity(self._t['dy'])
+        return au.Quantity(self._t['dy'])
 
     @x.setter
     def x(self, val, dtype=float):
-        self._t['x'] = np.array(val, dtype=dtype, unit=self.xunit)
+        self._t['x'] = np.array(val, dtype=dtype)
+        self._t['x'].unit = val.unit
 
     @xmin.setter
     def xmin(self, val, dtype=float):
-        self._t['xmin'] = np.array(val, dtype=dtype, unit=self.xunit)
+        self._t['xmin'] = np.array(val, dtype=dtype)
+        self._t['xmin'].unit = val.unit
 
     @xmax.setter
     def xmax(self, val, dtype=float):
-        self._t['xmax'] = np.array(val, dtype=dtype, unit=self.xunit)
+        self._t['xmax'] = np.array(val, dtype=dtype)
+        self._t['xmax'].unit = val.unit
 
     @y.setter
     def y(self, val, dtype=float):
-        self._t['y'] = np.array(val, dtype=dtype, unit=self.yunit)
+        self._t['y'] = np.array(val, dtype=dtype)
+        self._t['y'].unit = val.unit
 
     @dy.setter
     def dy(self, val, dtype=float):
-        self._t['dy'] = np.array(val, dtype=dtype, unit=self.yunit)
+        self._t['dy'] = np.array(val, dtype=dtype)
+        self._t['dy'].unit = val.unit
 
     @property
     def meta(self):

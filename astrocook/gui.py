@@ -137,9 +137,12 @@ class GUIDialogMethod(wx.Dialog):
             self._params[p] = pmod
         out = self._method(**self._params)
         if out is not None:
-            new_sess = dc(self._gui._sess_sel)
-            setattr(new_sess, self._targ, out)
-            self._gui._panel_sess._on_add(e, new_sess, open=False)
+            if out is 0:
+                self._gui._panel_sess._refresh()
+            else:
+                new_sess = dc(self._gui._sess_sel)
+                setattr(new_sess, self._targ, out)
+                self._gui._panel_sess._on_add(e, new_sess, open=False)
             self.Close()
 
 class GUIMenu(object):
@@ -167,7 +170,6 @@ class GUIMenu(object):
                                  lambda e: self._on_dialog(e, title, targ, attr),
                                  item)
         menu.Append(item)
-        #menu.Enable(id, False)
 
     def _on_dialog(self, event, title, targ, attr):
         dlg = GUIDialogMethod(self._gui, title, targ, attr)
@@ -226,8 +228,12 @@ class GUIMenuSpectrum(GUIMenu):
         # Add items to Spectrum menu here
         tab = self._item(self._menu, start_id, "View table", self._on_view)
         self._menu.AppendSeparator()
-        reg = self._item_method(self._menu, start_id+100, "Extract region",
-                               'spec', 'extract_region')
+        self._item_method(self._menu, start_id+100, "Convert wavelengths",
+                          'spec', 'convert_x')
+        self._item_method(self._menu, start_id+101, "Convolve with gaussian",
+                          'spec', 'convolve_gauss')
+        self._item_method(self._menu, start_id+102, "Extract region",
+                          'spec', 'extract_region')
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
@@ -269,35 +275,47 @@ class GUIPanelSession(wx.Frame):
         self.Show()
 
     def _on_add(self, event, sess, open=True):
-        sel = self._tab.GetItemCount()
-        self._tab.insert_string_item(sel, "%s (%s)" % (sess._name, str(sel)))
+        self._sel = self._tab.GetItemCount()
+        self._tab.insert_string_item(self._sel, "%s (%s)"
+                                     % (sess._name, str(self._sel)))
         self._gui._sess_list.append(sess)
-        self._gui._sess_sel = self._gui._sess_list[sel]
+        self._gui._sess_sel = self._gui._sess_list[self._sel]
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         #xunit = sess.spec.x.unit
-        obj = sess.spec.meta['object']
-        self._tab.SetItem(sel, 1, obj)
-        self._tab.SetItem(sel, 2, "[%3.2f, %3.2f] %s"
+        self._refresh()
+        """
+        self._tab.SetItem(self._sel, 1, obj)
+        self._tab.SetItem(self._sel, 2, "[%3.2f, %3.2f] %s"
                           % (x[0].value, x[-1].value, x.unit))
-        self._tab.SetItem(sel, 3, str(len(x)))
+        self._tab.SetItem(self._sel, 3, str(len(x)))
         self._gui._graph_spec._refresh(self._gui._sess_sel)
-
+        """
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
 
     def _on_select(self, event):
-        sel = event.GetIndex()
-        self._gui._sess_sel = self._gui._sess_list[sel]
+        self._sel = event.GetIndex()
+        self._gui._sess_sel = self._gui._sess_list[self._sel]
         name = self._tab.GetItem(self._tab.GetFirstSelected(), 0)
-        self._gui._graph_spec._refresh(self._gui._sess_sel)
+        self._refresh()#self._gui._sess_sel)
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
             event.Veto()
         else:
             event.Skip()
+
+    def _refresh(self):
+        sess = self._gui._sess_sel
+        obj = sess.spec.meta['object']
+        x = sess.spec._safe(sess.spec.x)
+        self._tab.SetItem(self._sel, 1, obj)
+        self._tab.SetItem(self._sel, 2, "[%3.2f, %3.2f] %s"
+                          % (x[0].value, x[-1].value, x.unit))
+        self._tab.SetItem(self._sel, 3, str(len(x)))
+        self._gui._graph_spec._refresh(self._gui._sess_sel)
 
 class GUIGraphSpectrum(wx.Frame):
     """ Class for the GUI spectrum graph frame """
