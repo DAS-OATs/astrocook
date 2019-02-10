@@ -1,5 +1,6 @@
 from astropy import units as au
 from astropy import table as at
+from copy import deepcopy as dc
 #from astropy.units import au.Quantity
 import numpy as np
 
@@ -34,7 +35,8 @@ class Frame(object):
         self._t = t
         self._xunit = xunit
         self._yunit = yunit
-        self._meta=meta
+        self._meta = meta
+        self._dtype = dtype
 
     @property
     def t(self):
@@ -94,4 +96,21 @@ class Frame(object):
         self._meta[key] = val
 
     def _safe(self, col):
-        return col[~np.isnan(col.value)]
+        if isinstance(col, at.Column):
+            col = au.Quantity(col)
+        self._where_safe = ~np.isnan(col.value)
+        return col[self._where_safe]
+
+    def _copy(self, sel=None):
+        if sel is None:
+            sel = range(len(self.t))
+        x = dc(self.x[sel])
+        xmin = dc(self.xmin[sel])
+        xmax = dc(self.xmax[sel])
+        y = dc(self.y[sel])
+        dy = dc(self.dy[sel])
+        xunit = self._xunit
+        yunit = self._yunit
+        meta = self._meta
+        dtype = self._dtype
+        return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)

@@ -1,12 +1,13 @@
 from . import version
+from .graph import Graph
 from .session import Session
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-    NavigationToolbar2WxAgg
+#from matplotlib import pyplot as plt
+#from matplotlib.figure import Figure
+#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
+#    NavigationToolbar2WxAgg
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -166,9 +167,8 @@ class GUIMenu(object):
 
     def _item_method(self, menu, id, title, targ, attr):
         item = wx.MenuItem(menu, id, title)
-        self._gui._panel_sess.Bind(wx.EVT_MENU,
-                                 lambda e: self._on_dialog(e, title, targ, attr),
-                                 item)
+        self._gui._panel_sess.Bind(wx.EVT_MENU, lambda e: \
+                                   self._on_dialog(e, title, targ, attr), item)
         menu.Append(item)
 
     def _on_dialog(self, event, title, targ, attr):
@@ -234,6 +234,8 @@ class GUIMenuSpectrum(GUIMenu):
                           'spec', 'convolve_gauss')
         self._item_method(self._menu, start_id+102, "Extract region",
                           'spec', 'extract_region')
+        self._item_method(self._menu, start_id+103, "Find peaks",
+                          'spec', 'find_peaks')
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
@@ -322,6 +324,7 @@ class GUIGraphSpectrum(wx.Frame):
 
     def __init__(self,
                  gui,
+                 #sess,
                  title="Spectrum",
                  size_x=wx.DisplaySize()[0]*0.9,
                  size_y=wx.DisplaySize()[1]*0.5):
@@ -332,26 +335,24 @@ class GUIGraphSpectrum(wx.Frame):
         self._gui = gui
         self._gui._graph_spec = self
 
-
         panel = wx.Panel(self)
-        self._fig = Figure()
-        self._ax = self._fig.add_subplot(111)
+        #self._fig = Figure()
+        #self._ax = self._fig.add_subplot(111)
         #self._fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
-        self._plot = FigureCanvasWxAgg(panel, -1, self._fig)
-        self._toolbar = NavigationToolbar2WxAgg(self._plot)
-        self._toolbar.Realize()
+        self._graph = Graph(panel)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-        box_toolbar.Add(self._toolbar, 1, wx.RIGHT, border=5)
+        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT, border=5)
         self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._plot, 1, wx.EXPAND)
+        self._box.Add(self._graph._plot, 1, wx.EXPAND)
         self._box.Add(box_toolbar, 0, wx.TOP, border=5)
         panel.SetSizer(self._box)
         self.Centre()
 
     def _refresh(self, sess):
-        self._ax.clear()
-        self._ax.plot(sess.spec.x, sess.spec.y)
-        self._plot.draw()
+        self._graph._refresh(sess)#.spec.x, sess.spec.y)
+        #self._ax.clear()
+        #self._ax.plot(sess.spec.x, sess.spec.y)
+        #self._plot.draw()
         self.Show()
 
 class GUITable(wx.Frame):
