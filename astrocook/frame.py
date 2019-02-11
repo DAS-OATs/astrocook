@@ -114,3 +114,24 @@ class Frame(object):
         meta = self._meta
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
+
+    def _extract_region(self, xmin, xmax):
+        """ @brief Extract a spectral region as a new frame.
+        @param xmin Minimum wavelength (nm)
+        @param xmax Maximum wavelength (nm)
+        @return Spectral region
+        """
+
+        reg = dc(self)
+        reg.x.unit.to(au.nm)
+        where = np.full(len(reg.x), True)
+        s = np.where(np.logical_and(self._safe(reg.x) > xmin,
+                                    self._safe(reg.x) < xmax))
+        where[s] = False
+        reg._t.remove_rows(where)
+
+        if len(reg.t) == 0:
+            print(prefix, msg_output_fail)
+            return None
+        else:
+            return reg

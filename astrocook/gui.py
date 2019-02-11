@@ -23,7 +23,7 @@ class GUI(object):
         """ Constructor """
 
         print("┌───────────────────┐")
-        print("│ ASTROCOOK 🔭  v%3s │" % version)
+        print("│ ASTROCOOK ☕︎  v%3s │" % version)
         print("└───────────────────┘")
         print("AC: Welcome! Try Session > Open…")
         self._sess_list = []#Session()
@@ -31,6 +31,7 @@ class GUI(object):
         GUIPanelSession(self)
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
+        GUITableLineList(self)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
@@ -55,14 +56,19 @@ class GUIDialogMethod(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
+                 source,
                  targ,
                  attr):
 
         self._gui = gui
         self._gui._dlg_method = self
+        self._source = source
         self._targ = targ
         self._attr = attr
-        self._obj = getattr(self._gui._sess_sel, self._targ)
+        if source == None:
+            self._obj = self._gui._sess_sel
+        else:
+            self._obj = getattr(self._gui._sess_sel, self._source)
         self._method = getattr(self._obj, self._attr)
         super(GUIDialogMethod, self).__init__(parent=None, title=title)
 
@@ -141,8 +147,11 @@ class GUIDialogMethod(wx.Dialog):
             if out is 0:
                 self._gui._panel_sess._refresh()
             else:
-                new_sess = dc(self._gui._sess_sel)
-                setattr(new_sess, self._targ, out)
+                if self._targ == None:
+                    new_sess = out
+                else:
+                    new_sess = dc(self._gui._sess_sel)
+                    setattr(new_sess, self._targ, out)
                 self._gui._panel_sess._on_add(e, new_sess, open=False)
             self.Close()
 
@@ -156,8 +165,10 @@ class GUIMenu(object):
         bar = wx.MenuBar()
         session = GUIMenuSession(self._gui)
         spectrum = GUIMenuSpectrum(self._gui)
+        linelist = GUIMenuLineList(self._gui)
         bar.Append(session._menu, "Session")
         bar.Append(spectrum._menu, "Spectrum")
+        bar.Append(linelist._menu, "Line List")
         return bar
 
     def _item(self, menu, id, label, event):
@@ -165,14 +176,15 @@ class GUIMenu(object):
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
 
-    def _item_method(self, menu, id, title, targ, attr):
+    def _item_method(self, menu, id, title, source, targ, attr):
         item = wx.MenuItem(menu, id, title)
-        self._gui._panel_sess.Bind(wx.EVT_MENU, lambda e: \
-                                   self._on_dialog(e, title, targ, attr), item)
+        self._gui._panel_sess.Bind(
+            wx.EVT_MENU,
+            lambda e: self._on_dialog(e, title, source, targ, attr), item)
         menu.Append(item)
 
-    def _on_dialog(self, event, title, targ, attr):
-        dlg = GUIDialogMethod(self._gui, title, targ, attr)
+    def _on_dialog(self, event, title, source, targ, attr):
+        dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
 
 class GUIMenuSession(GUIMenu):
 
@@ -185,9 +197,11 @@ class GUIMenuSession(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to session menu here
-        open = self._item(self._menu, start_id, "Open",
-                         lambda e: self._on_open(e, **kwargs))
-        quit = self._item(self._menu, start_id+1, "Quit", self._on_quit)
+        self._item(self._menu, start_id, "Open",
+                   lambda e: self._on_open(e, **kwargs))
+        self._item_method(self._menu, start_id+1, "Extract region",
+                          None, None, 'extract_region')
+        self._item(self._menu, start_id+2, "Quit", self._on_quit)
 
     def _on_open(self, event, path='.'):
         """ Behaviour for Session > Open """
@@ -200,20 +214,20 @@ class GUIMenuSession(GUIMenu):
                            as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
-            source = fileDialog.GetPath()
-            #chosen = fileDialog.GetDirectory()
-            print(prefix, "Loading session %s..." % source)
-            sess = Session(source)
-            sess._source = source
-            sess._name = source.split('/')[-1][:-5]
+            path = fileDialog.GetPath()
+            name = path.split('/')[-1][:-5]
+            print(prefix, "I'm loading session %s..." % path)
+            sess = Session(path=path, name=path.split('/')[-1][:-5])
+            #sess._path = path
+            #sess._name = path.split('/')[-1][:-5]
             self._gui._panel_sess._on_add(event, sess, open=True)
-        print("AC: Now try Spectrum…")
 
     def _on_quit(self, event):
         print("AC: Bye!")
         self._gui._panel_sess.Close()
         self._gui._graph_spec.Close()
         self._gui._tab_spec.Close()
+        self._gui._tab_lines.Close()
 
 class GUIMenuSpectrum(GUIMenu):
 
@@ -229,16 +243,32 @@ class GUIMenuSpectrum(GUIMenu):
         tab = self._item(self._menu, start_id, "View table", self._on_view)
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+100, "Convert wavelengths",
-                          'spec', 'convert_x')
+                          'spec', None, 'convert_x')
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
-                          'spec', 'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Extract region",
-                          'spec', 'extract_region')
+                          'spec', None, 'convolve_gauss')
+        #self._item_method(self._menu, start_id+102, "Extract region",
+        #                  'spec', 'extract_region')
         self._item_method(self._menu, start_id+103, "Find peaks",
-                          'spec', 'find_peaks')
+                          'spec', 'lines', 'find_peaks')
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
+
+class GUIMenuLineList(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=3000,
+                 **kwargs):
+        super(GUIMenuLineList, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Spectrum menu here
+        tab = self._item(self._menu, start_id, "View table", self._on_view)
+
+    def _on_view(self, event):
+        self._gui._tab_lines._on_view(event)
 
 class GUIPanelSession(wx.Frame):
     """ Class for the GUI session panel """
@@ -279,7 +309,7 @@ class GUIPanelSession(wx.Frame):
     def _on_add(self, event, sess, open=True):
         self._sel = self._tab.GetItemCount()
         self._tab.insert_string_item(self._sel, "%s (%s)"
-                                     % (sess._name, str(self._sel)))
+                                     % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         if open:
@@ -312,11 +342,16 @@ class GUIPanelSession(wx.Frame):
     def _refresh(self):
         sess = self._gui._sess_sel
         obj = sess.spec.meta['object']
-        x = sess.spec._safe(sess.spec.x)
         self._tab.SetItem(self._sel, 1, obj)
+        x = sess.spec._safe(sess.spec.x)
         self._tab.SetItem(self._sel, 2, "[%3.2f, %3.2f] %s"
                           % (x[0].value, x[-1].value, x.unit))
         self._tab.SetItem(self._sel, 3, str(len(x)))
+        try:#if hasattr(sess, 'line'):
+            x = sess.lines._safe(sess.lines.x)
+            self._tab.SetItem(self._sel, 4, str(len(x)))
+        except:
+            pass
         self._gui._graph_spec._refresh(self._gui._sess_sel)
 
 class GUIGraphSpectrum(wx.Frame):
@@ -413,3 +448,18 @@ class GUITableSpectrum(GUITable):
 
         self._gui = gui
         self._gui._tab_spec = self
+
+class GUITableLineList(GUITable):
+    """ Class for the GUI spectrum table frame """
+
+    def __init__(self,
+                 gui,
+                 title="Spectrum table",
+                 size_x=wx.DisplaySize()[0]*0.5,
+                 size_y=wx.DisplaySize()[1]*0.9):
+
+        super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
+                                               size_y)
+
+        self._gui = gui
+        self._gui._tab_lines = self

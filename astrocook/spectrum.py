@@ -1,4 +1,5 @@
 from .frame import Frame
+from .linelist import LineList
 from .message import *
 from astropy import units as au
 from astropy import constants as aconst
@@ -168,6 +169,7 @@ class Spectrum(Frame):
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
         sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
+        self._peaks = LineList()
         self._peaks = ext._copy(sel)
 
-        return 0
+        return self._peaks
