@@ -20,6 +20,27 @@ class Session(object):
         self.name = name
         self.spec = spec
         self.lines = lines
+        self.seq = ['spec', 'lines']
+
+    def convert_x(self, zem=0, xunit=au.km/au.s):
+        """@brief Convert wavelengths into velocities and vice versa.
+        @param zem Emission redshift
+        @param xunit Unit of velocity or wavelength
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+        except:
+            print(prefix, msg_param_fail)
+        xunit = au.Unit(xunit)
+
+        for s in self.seq:
+            try:
+                getattr(self, s)._convert_x(zem, xunit)
+            except:
+                pass
+        return 0
 
     def extract_region(self, xmin, xmax):
         """ @brief Extract a spectral region as a new frame.
@@ -43,9 +64,16 @@ class Session(object):
 
         path = self.path
         name = self.name
-        spec = self.spec._extract_region(xmin, xmax)
-        lines = self.lines._extract_region(xmin, xmax)
-        new = Session(path, name, spec, lines)
+        kwargs = {'path': path, 'name': name}
+        for s in self.seq:
+            try:
+                kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
+            except:
+                kwargs[s] = None
+        if kwargs['spec'] != None:
+            new = Session(**kwargs)
+        else:
+            new = None
         return new
 
     def open(self):

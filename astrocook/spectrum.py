@@ -2,12 +2,13 @@ from .frame import Frame
 from .linelist import LineList
 from .message import *
 from astropy import units as au
-from astropy import constants as aconst
-from astropy import table as at
+#from astropy import constants as aconst
+#from astropy import table as at
 from copy import deepcopy as dc
 #from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
+from scipy.interpolate import UnivariateSpline as uspline
 
 prefix = "Spectrum:"
 
@@ -37,33 +38,32 @@ class Spectrum(Frame):
             copy._t[c] = self._t[c][sel]
         return copy
 
-    def convert_x(self, zem=0, xunit=au.km/au.s):
-        """@brief Convert wavelengths into velocities and vice versa.
-        @param zem Emission redshift
-        @param xunit Unit of velocity or wavelength
+    def _mask_lines(self):
+        """ @brief Create a mask consisting on the ['xmin', 'xmax'] regions from
+        the associated line list
+        @return 0
         """
 
-        try:
-            zem = float(zem)
-        except:
-            print(prefix, msg_param_fail)
-        xunit = au.Unit(xunit)
-
-        xem = (1+zem) * 121.567*au.nm
-        equiv = [(au.nm, au.km / au.s,
-                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-
-        self._xunit = xunit
-        self.x = self.x.to(xunit, equivalencies=equiv)
-        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
-        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
+        x = self._safe(self.x)
+        mask = np.zeros(len(x), dtype=bool)
+        for (xmin, xmax) in zip(self._lines.xmin, self._lines.xmax):
+            #xmin = l['xmin']*self._lines._xunit
+            #xmax = l['xmin']*self._lines._xunit
+            mask += np.logical_and(x>xmin, x<xmax)
+        if 'lines_mask' in self._t.colnames:
+            print(prefix, "I'm updating column 'lines_mask'.")
+        else:
+            print(prefix, "I'm adding column 'lines_mask'.")
+            self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
+        self._t['lines_mask'][self._where_safe] = mask
+        
         return 0
 
-    def convolve_gauss(self, std=20):
-        """@brief Convolve a spectrum with a profile using FFT transform. The
-        convolution is saved in column 'conv'.
-        @param std Standard deviation of the gaussian
+    def convolve_gauss(self, std=20, input_col='y', output_col='conv'):
+        """@brief Convolve a spectrum colum  with a profile using FFT transform.
+        @param std Standard deviation of the gaussian (km/s)
+        @param input_col Input column
+        @param output_col Output column
         @return 0
         """
 
@@ -74,7 +74,7 @@ class Spectrum(Frame):
 
         # Create profile
         xunit = self.x.unit
-        self.convert_x()
+        self._convert_x()
         x = self._safe(self.x)
         mean = np.median(x)
         prof = np.exp(-((x - mean) / std).value**2)
@@ -83,56 +83,50 @@ class Spectrum(Frame):
         prof = prof / np.sum(prof)
 
         # Convolve
-        if 'conv' not in self._t.colnames:
-            print(prefix, "I'm adding column 'conv'.")
-        yconv = dc(self.y)
-        ysafe = self._safe(yconv)
-        yconv[self._where_safe] = fftconvolve(ysafe, prof, mode='same')\
-                                              *self.y.unit
-        self._t['conv'] = yconv
-        self.convert_x(xunit=xunit)
+        if output_col in self._t.colnames:
+            print(prefix, "I'm updating column '%s'." % output_col)
+        else:
+            print(prefix, "I'm adding column '%s'." % output_col)
+        conv = dc(self._t[input_col])
+        safe = self._safe(conv)
+        conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
+                                              *self._t[input_col].unit
+        self._t[output_col] = conv
+        self._convert_x(xunit=xunit)
 
         return 0
 
-    def extract_region(self, xmin, xmax):
-        """ @brief Extract a spectral region as a new spectrum.
-        @param xmin Minimum wavelength (nm)
-        @param xmax Maximum wavelength (nm)
-        @return Spectral region
+    def interp_emission(self, s=0):
+        """ @brief Estimate the emission level by interpolating across lines.
+        @param s Spline smoothing
+        @return 0
         """
 
-        try:
-            xmin = float(xmin) * au.nm
-            xmax = float(xmax) * au.nm
-        except:
-            print(prefix, msg_param_fail)
+        s = float(s)
+
+        if not hasattr(self, '_lines'):
+            print(prefix, "I need lines to interpolate the emission. Please "
+                  "try Spectrum > Find peaks.")
             return None
-
-        if xmin > xmax:
-            temp = xmin
-            xmin = xmax
-            xmax = temp
-            print(prefix, msg_param_swap)
-
-
-        reg = dc(self)
-        reg.x.unit.to(au.nm)
-        where = np.full(len(reg.x), True)
-        s = np.where(np.logical_and(self._safe(reg.x) > xmin,
-                                    self._safe(reg.x) < xmax))
-        where[s] = False
-        reg._t.remove_rows(where)
-
-        if len(reg.t) == 0:
-            print(prefix, msg_output_fail)
-            return None
+        self._xmask(self._lines)
+        """
+        x = self.x[self._t['xmask']].value
+        y = self.y[self._t['xmask']].value
+        dy = self.dy[self._t['xmask']].value
+        spl = uspline(x, y, w=dy, s=s)
+        self._t['cont'] = spl(self.x)
+        if 'cont' in self._t.colnames:
+            print(prefix, "I'm updating column 'cont'.")
         else:
-            return reg
+            print(prefix, "I'm adding column 'cont'.")
+        print(prefix, "I'm using interpolation as continuum.")
+        """
+        return 0
 
     def find_peaks(self, col='conv', kind='min', kappa=3.0):
         """ @brief Find the peak in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
-        standard deviations.
+        standard deviations. They are saved as a list of lines.
         @param col Column where to look for peaks
         @param kind Kind of extrema ('min' or 'max')
         @param kappa Number of standard deviations
@@ -153,10 +147,8 @@ class Spectrum(Frame):
 
         if len(ext.t) > 0:
             # Set xmin and xmax from adjacent extrema
-            ext.xmin[0] = self.x[0]
-            ext.xmin[1:] = ext.x[:-1]
-            ext.xmax[-1] = self.x[-1]
-            ext.xmax[:-1] = ext.x[1:]
+            ext.xmin = np.append(self.x[0], ext.x[:-1])
+            ext.xmax = np.append(ext.x[1:], self.x[-1])
 
             diff_y_left = (ext._t[col][:-2] - ext._t[col][1:-1])
             diff_y_right = (ext._t[col][2:] - ext._t[col][1:-1])
@@ -169,7 +161,10 @@ class Spectrum(Frame):
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
         sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
-        self._peaks = LineList()
-        self._peaks = ext._copy(sel)
+        self._lines = LineList()
+        self._lines = ext._copy(sel)
+        self._lines_kind = 'peaks'
+        self._mask_lines()
+        print(prefix, "I'm using peaks as lines.")
 
-        return self._peaks
+        return self._lines

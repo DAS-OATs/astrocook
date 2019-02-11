@@ -23,8 +23,9 @@ class GUI(object):
         """ Constructor """
 
         print("┌───────────────────┐")
-        print("│ ASTROCOOK ☕︎  v%3s │" % version)
+        print("│ ASTROCOOK 🍪  v%3s │" % version)
         print("└───────────────────┘")
+        print("Cupani et al. 2017-2019 * INAF-OATs")
         print("AC: Welcome! Try Session > Open…")
         self._sess_list = []#Session()
         self._sess_sel = None
@@ -66,10 +67,10 @@ class GUIDialogMethod(wx.Dialog):
         self._targ = targ
         self._attr = attr
         if source == None:
-            self._obj = self._gui._sess_sel
+            obj = self._gui._sess_sel
         else:
-            self._obj = getattr(self._gui._sess_sel, self._source)
-        self._method = getattr(self._obj, self._attr)
+            obj = getattr(self._gui._sess_sel, self._source)
+        self._method = getattr(obj, self._attr)
         super(GUIDialogMethod, self).__init__(parent=None, title=title)
 
         self._get_params()
@@ -199,9 +200,13 @@ class GUIMenuSession(GUIMenu):
         # Add items to session menu here
         self._item(self._menu, start_id, "Open",
                    lambda e: self._on_open(e, **kwargs))
+        self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+1, "Extract region",
                           None, None, 'extract_region')
-        self._item(self._menu, start_id+2, "Quit", self._on_quit)
+        self._item_method(self._menu, start_id+2, "Convert x axis",
+                          None, None, 'convert_x')
+        self._menu.AppendSeparator()
+        self._item(self._menu, start_id+100, "Quit", self._on_quit)
 
     def _on_open(self, event, path='.'):
         """ Behaviour for Session > Open """
@@ -242,14 +247,13 @@ class GUIMenuSpectrum(GUIMenu):
         # Add items to Spectrum menu here
         tab = self._item(self._menu, start_id, "View table", self._on_view)
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+100, "Convert wavelengths",
-                          'spec', None, 'convert_x')
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
                           'spec', None, 'convolve_gauss')
-        #self._item_method(self._menu, start_id+102, "Extract region",
-        #                  'spec', 'extract_region')
         self._item_method(self._menu, start_id+103, "Find peaks",
                           'spec', 'lines', 'find_peaks')
+        #self._menu.AppendSeparator()
+        #self._item_method(self._menu, start_id+200, "Interpolate emission",
+        #                  'spec', None, 'interp_emission')
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
@@ -414,9 +418,9 @@ class GUITable(wx.Frame):
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
-            print(prefix, "Refreshing table...")
+            print(prefix, "I'm updating table...")
         except:
-            print(prefix, "Loading table...")
+            print(prefix, "I'm loading table...")
         coln = len(data.t.colnames)
         rown = len(data.t)
         self._tab.AppendCols(coln)

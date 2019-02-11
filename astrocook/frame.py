@@ -1,8 +1,12 @@
+from .message import *
 from astropy import units as au
+from astropy import constants as aconst
 from astropy import table as at
 from copy import deepcopy as dc
 #from astropy.units import au.Quantity
 import numpy as np
+
+prefix = "Frame:"
 
 class Frame(object):
     """Class for frames.
@@ -95,13 +99,11 @@ class Frame(object):
     def meta(self, key, val):
         self._meta[key] = val
 
-    def _safe(self, col):
-        if isinstance(col, at.Column):
-            col = au.Quantity(col)
-        self._where_safe = ~np.isnan(col.value)
-        return col[self._where_safe]
-
     def _copy(self, sel=None):
+        """ @brief Copy a selection from a frame into a new frame.
+        @param sel Selected rows. If 'None', all frame is copied.
+        @return Copied frame
+        """
         if sel is None:
             sel = range(len(self.t))
         x = dc(self.x[sel])
@@ -135,3 +137,27 @@ class Frame(object):
             return None
         else:
             return reg
+
+    def _safe(self, col):
+        if isinstance(col, at.Column):
+            col = au.Quantity(col)
+        self._where_safe = ~np.isnan(col.value)
+        return col[self._where_safe]
+
+    def _convert_x(self, zem=0, xunit=au.km/au.s):
+        """@brief Convert wavelengths into velocities and vice versa.
+        @param zem Emission redshift
+        @param xunit Unit of velocity or wavelength
+        @return 0
+        """
+
+        xem = (1+zem) * 121.567*au.nm
+        equiv = [(au.nm, au.km / au.s,
+                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+
+        self._xunit = xunit
+        self.x = self.x.to(xunit, equivalencies=equiv)
+        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
+        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
+        return 0
