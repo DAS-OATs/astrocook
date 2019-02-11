@@ -63,9 +63,17 @@ class GUIDialogMethod(wx.Dialog):
 
         self._gui = gui
         self._gui._dlg_method = self
+        """
         self._source = source
         self._targ = targ
         self._attr = attr
+        """
+        self._source = list(np.array(source, ndmin=1))
+        print(self._source)
+        self._targ = list(np.array(targ, ndmin=1))
+        self._attr = list(np.array(attr, ndmin=1))
+
+        """
         if source == None:
             obj = self._gui._sess_sel
         else:
@@ -75,28 +83,57 @@ class GUIDialogMethod(wx.Dialog):
 
         self._get_params()
         self._get_doc()
+        """
+        self._methods = []
+        self._params = []
+        self._brief = []
+        self._doc = []
+        for s, a in zip(self._source, self._attr):
+            if s == None:
+                obj = self._gui._sess_sel
+            else:
+                obj = getattr(self._gui._sess_sel, s)
+            self._method = getattr(obj, a)
+            self._methods.append(self._method)
+            super(GUIDialogMethod, self).__init__(parent=None, title=title)
+            self._get_params()
+            self._get_doc()
+
         panel = wx.Panel(self)
         box = wx.BoxSizer(wx.VERTICAL)
         core = wx.BoxSizer(wx.VERTICAL)
 
         # Description
         hdr = wx.BoxSizer(wx.HORIZONTAL)
-        st = wx.StaticText(panel, 1, label=self._brief)
+        st = wx.StaticText(panel, 1, label=self._brief[0])
         hdr.Add(st, 1, 0, border=15)
         core.Add(hdr, flag=wx.BOTTOM, border=15)
 
         # Parameters
         static = wx.StaticBox(panel, label="Parameters")
         sizer = wx.StaticBoxSizer(static, wx.VERTICAL)
-        fgs = wx.FlexGridSizer(len(self._params), 2, 5, 5)
+        #fgs = wx.FlexGridSizer(len(self._params), 2, 5, 5)
+        len_params = np.sum([len(i) for i in self._params])
+        fgs = wx.FlexGridSizer(len_params, 2, 5, 5)
         fgs_add = []
         self._ctrl = []
+        """
         for p, d in zip(self._params, self._doc):
             stat = wx.StaticText(panel, -1, label=d+':')
             ctrl = wx.TextCtrl(panel, -1, value=str(self._params[p]))
             fgs_add.append((stat))
             fgs_add.append((ctrl, 1, wx.EXPAND))
             self._ctrl.append(ctrl)
+        """
+        for p_l, d_l in zip(self._params, self._doc):
+            ctrl_l = []
+            for p, d in zip(p_l, d_l):
+                stat = wx.StaticText(panel, -1, label=d+':')
+                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
+                fgs_add.append((stat))
+                fgs_add.append((ctrl, 1, wx.EXPAND))
+                ctrl_l.append(ctrl)
+            self._ctrl.append(ctrl_l)
         fgs.AddMany(fgs_add)
         sizer.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=5)
         #core.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=5)
@@ -125,8 +162,10 @@ class GUIDialogMethod(wx.Dialog):
     def _get_doc(self):
         full = inspect.getdoc(self._method)
         split = full.split('@')
-        self._brief = [s[6:-1] for s in split if s[0:5]=='brief'][0]
-        self._doc = [s[6:-1].split(' ', 1)[1] for s in split if s[0:5]=='param']
+        #self._brief = [s[6:-1] for s in split if s[0:5]=='brief'][0]
+        #self._doc = [s[6:-1].split(' ', 1)[1] for s in split if s[0:5]=='param']
+        self._brief.append([s[6:-1] for s in split if s[0:5]=='brief'][0])
+        self._doc.append([s[6:-1].split(' ', 1)[1] for s in split if s[0:5]=='param'])
 
     def _get_params(self):
         keys = inspect.getargspec(self._method)[0][1:]
@@ -134,12 +173,17 @@ class GUIDialogMethod(wx.Dialog):
         if defs == None:
             defs = []
         values = np.append(['']*(len(keys)-len(defs)), defs)
-        self._params = OrderedDict(zip(keys, values))
+        #self._params = OrderedDict(zip(keys, values))
+        print(self._params)
+        self._params.append(OrderedDict(zip(keys, values)))
+        print(self._params)
+
 
     def _on_cancel(self, e):
         self.Close()
 
     def _on_run(self, e):
+        """
         for p, c in zip(self._params, self._ctrl):
             pmod = c.GetValue()
             self._params[p] = pmod
@@ -155,6 +199,24 @@ class GUIDialogMethod(wx.Dialog):
                     setattr(new_sess, self._targ, out)
                 self._gui._panel_sess._on_add(e, new_sess, open=False)
             self.Close()
+        """
+        for m, t, p_l, c_l in zip(self._methods, self._targ, self._params, self._ctrl):
+            for p, c in zip(p_l, c_l):
+                pmod = c.GetValue()
+                p_l[p] = pmod
+            out = m(**p_l)
+            if out is not None:
+                if out is 0:
+                    self._gui._panel_sess._refresh()
+                else:
+                    if t == None:
+                        new_sess = out
+                    else:
+                        new_sess = dc(self._gui._sess_sel)
+                        setattr(new_sess, t, out)
+                    self._gui._panel_sess._on_add(e, new_sess, open=False)
+                self.Close()
+
 
 class GUIMenu(object):
 
@@ -249,8 +311,10 @@ class GUIMenuSpectrum(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
                           'spec', None, 'convolve_gauss')
-        self._item_method(self._menu, start_id+103, "Find peaks",
+        self._item_method(self._menu, start_id+102, "Find peaks",
                           'spec', 'lines', 'find_peaks')
+        self._item_method(self._menu, start_id+103, "Convolve with gaussian and find peaks",
+                          ['spec', 'spec'], [None, 'lines'], ['convolve_gauss', 'find_peaks'])
         #self._menu.AppendSeparator()
         #self._item_method(self._menu, start_id+200, "Interpolate emission",
         #                  'spec', None, 'interp_emission')
