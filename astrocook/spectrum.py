@@ -47,8 +47,6 @@ class Spectrum(Frame):
         x = self._safe(self.x)
         mask = np.zeros(len(x), dtype=bool)
         for (xmin, xmax) in zip(self._lines.xmin, self._lines.xmax):
-            #xmin = l['xmin']*self._lines._xunit
-            #xmax = l['xmin']*self._lines._xunit
             mask += np.logical_and(x>xmin, x<xmax)
         if 'lines_mask' in self._t.colnames:
             print(prefix, "I'm updating column 'lines_mask'.")
@@ -56,11 +54,11 @@ class Spectrum(Frame):
             print(prefix, "I'm adding column 'lines_mask'.")
             self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
         self._t['lines_mask'][self._where_safe] = mask
-        
+
         return 0
 
     def convolve_gauss(self, std=20, input_col='y', output_col='conv'):
-        """@brief Convolve a spectrum colum  with a profile using FFT transform.
+        """@brief Convolve a spectrum column with a profile using FFT transform.
         @param std Standard deviation of the gaussian (km/s)
         @param input_col Input column
         @param output_col Output column
@@ -124,7 +122,7 @@ class Spectrum(Frame):
         return 0
 
     def find_peaks(self, col='conv', kind='min', kappa=3.0):
-        """ @brief Find the peak in a spectrum column. Peaks are the extrema
+        """ @brief Find the peaks in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
         standard deviations. They are saved as a list of lines.
         @param col Column where to look for peaks
@@ -135,7 +133,7 @@ class Spectrum(Frame):
 
         if col not in self.t.colnames:
             print(prefix, "The spectrum has not a column named '%s'. Please "\
-                  "pick another one" % col)
+                  "pick another one." % col)
             return None
         kappa = float(kappa)
 

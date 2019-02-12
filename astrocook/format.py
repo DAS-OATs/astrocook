@@ -1,5 +1,6 @@
 from .spectrum import Spectrum
 from astropy import units as au
+import numpy as np
 
 prefix = "Format:"
 
@@ -9,18 +10,42 @@ class Format(object):
     def __init__(self):
         pass
 
-    def das_spectrum(self, hdul):
-        """ DAS FSPEC/RSPEC format """
+    def _create_xmin_xmax(self, x):
+        mean = 0.5*(x[1:]+x[:-1])
+        xmin = np.append(x[0], mean)
+        xmax = np.append(mean, x[-1])
+        return xmin, xmax
+
+    def espresso_das_spectrum(self, hdul):
+        """ ESPRESSO DAS FSPEC/RSPEC format """
 
         hdr = hdul[0].header
         data = hdul[1].data
         x = data['WAVEL']
-        xmin = data['WAVEL']-data['PIXSIZE']*0.5
-        xmax = data['WAVEL']+data['PIXSIZE']*0.5
+        xmin = x-data['PIXSIZE']*0.5
+        xmax = x+data['PIXSIZE']*0.5
         y = data['FLUX']
         dy = data['FLUXERR']
         xunit = au.nm
-        yunit = au.electron #erg/au.cm**2/au.s/au.nm
+        yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
+        try:
+            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+        except:
+            meta = {'object': ""}
+            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+    def espresso_drs_spectrum(self, hdul):
+        """ ESPRESSO DRS S1D format """
+
+        hdr = hdul[0].header
+        data = hdul[1].data
+        x = data['wavelength']
+        xmin, xmax = self._create_xmin_xmax(x)
+        y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
+        dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         try:
             meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
         except:

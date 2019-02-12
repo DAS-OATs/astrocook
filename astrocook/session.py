@@ -23,9 +23,9 @@ class Session(object):
         self.seq = ['spec', 'lines']
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
-        """@brief Convert wavelengths into velocities and vice versa.
-        @param zem Emission redshift
-        @param xunit Unit of velocity or wavelength
+        """ @brief Convert the x axis to wavelength or velocity units.
+        @param zem Emission redshift, to use as a 0-point for velocities
+        @param xunit Unit of wavelength or velocity
         @return 0
         """
 
@@ -38,6 +38,22 @@ class Session(object):
         for s in self.seq:
             try:
                 getattr(self, s)._convert_x(zem, xunit)
+            except:
+                pass
+        return 0
+
+    def convert_y(self, yunit=au.electron/au.nm):
+        """ @brief Convert the x axis to wavelength or velocity units.
+        @param zem Emission redshift, to use as a 0-point for velocities
+        @param xunit Unit of wavelength or velocity
+        @return 0
+        """
+
+        yunit = au.Unit(yunit)
+
+        for s in self.seq:
+            try:
+                getattr(self, s)._convert_y(yunit=yunit)
             except:
                 pass
         return 0
@@ -95,8 +111,14 @@ class Session(object):
             orig = None
             print(prefix, "ORIGIN not defined.")
 
+        # DRS spectrum
+        if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
+            self.spec = format.espresso_drs_spectrum(hdul)
+
         # DAS spectrum
-        if instr == 'ESPRESSO' and catg == 'RSPEC':
-            self.spec = format.das_spectrum(hdul)
+        if instr == 'ESPRESSO' and catg[1:5] == 'SPEC':
+            self.spec = format.espresso_das_spectrum(hdul)
+
+        # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
             self.spec = format.eso_midas(hdul)
