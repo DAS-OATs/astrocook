@@ -49,16 +49,20 @@ class GUIDialogMethod(wx.Dialog):
         core = wx.BoxSizer(wx.VERTICAL)
 
         # Description
-        hdr = wx.BoxSizer(wx.HORIZONTAL)
-        st = wx.StaticText(panel, 1, label='\n'.join(self._brief))
-        hdr.Add(st, 1, 0, border=15)
-        core.Add(hdr, flag=wx.BOTTOM, border=15)
+        sb = wx.StaticBox(panel, label="Description")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        st = wx.StaticText(sb, 1, label='\n'.join(self._brief))
+        st.Wrap(400)
+        sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
+        core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        panel.SetSizer(core)
+
 
         # Parameters
-        static = wx.StaticBox(panel, label="Parameters")
-        sizer = wx.StaticBoxSizer(static, wx.VERTICAL)
+        sb = wx.StaticBox(panel, label="Parameters")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
         len_params = np.sum([len(i) for i in self._params])
-        fgs = wx.FlexGridSizer(len_params, 2, 5, 5)
+        fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
         fgs_add = []
         self._ctrl = []
         for p_l, d_l in zip(self._params, self._doc):
@@ -66,13 +70,13 @@ class GUIDialogMethod(wx.Dialog):
             for p, d in zip(p_l, d_l):
                 stat = wx.StaticText(panel, -1, label=d+':')
                 ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
-                fgs_add.append((stat))
+                fgs_add.append((stat, 1, wx.EXPAND))
                 fgs_add.append((ctrl, 1, wx.EXPAND))
                 ctrl_l.append(ctrl)
             self._ctrl.append(ctrl_l)
         fgs.AddMany(fgs_add)
-        sizer.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=5)
-        core.Add(sizer)
+        sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
+        core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
         panel.SetSizer(core)
 
         # Buttons
@@ -97,7 +101,7 @@ class GUIDialogMethod(wx.Dialog):
     def _get_doc(self, method):
         full = inspect.getdoc(method)
         split = full.split('@')
-        self._brief.append([s[6:-1] for s in split if s[0:5]=='brief'][0])
+        self._brief.append([s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
@@ -127,7 +131,7 @@ class GUIDialogMethod(wx.Dialog):
                     if t == None:
                         new_sess = out
                     else:
-                        new_sess = dc(self._gui._sess_sel)
+                        new_sess = self._gui._sess_sel
                         setattr(new_sess, t, out)
                     self._gui._panel_sess._on_add(e, new_sess, open=False)
                 self.Close()

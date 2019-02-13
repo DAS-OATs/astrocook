@@ -1,4 +1,6 @@
 from .message import *
+from astropy import units as au
+#from copy import deepcopy as dc
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
@@ -22,7 +24,8 @@ class Graph(object):
     def _check_units(self, sess, axis='x'):
         unit = axis+'unit'
         _unit = '_'+unit
-        if getattr(getattr(sess, 'spec'), _unit) != getattr(self, _unit):
+        if getattr(getattr(sess, 'spec'), _unit) != getattr(self, _unit) \
+            and getattr(self, _unit) != au.dimensionless_unscaled:
             print(prefix, "I'm converting the %s unit of %s to plot it over the "
                   "data already present." % (axis, sess.name))
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
@@ -97,6 +100,8 @@ class GraphSpectrumNodesXY(object):
         self._type = 'plot'
         self._x = sess.nodes.x
         self._y = sess.nodes.y
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.nodes._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", nodes"}
 
 class GraphSpectrumXY(object):
@@ -137,7 +142,7 @@ class GraphSpectrumXDy(GraphSpectrumXY):
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         super(GraphSpectrumXYMask, self).__init__(sess)
         self._type = 'scatter'
         self._x[sess.spec._t['lines_mask']] = np.nan

@@ -161,16 +161,14 @@ class Spectrum(Frame):
         dy = np.array(dy_ave) * self._yunit
 
         self._nodes = Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
-        print(self.__dict__)
         return self._nodes
 
     def interp_nodes(self, smooth=0):
-        """ @brief Interpolate nodes with a univariate spline to estimate the "
-        "emission level.
+        """ @brief Interpolate nodes with a univariate spline to estimate the
+        emission level.
         @param smooth Smoothing of the spline
         @return 0
         """
-        print(self.__dict__)
         if not hasattr(self, '_nodes'):
             print(prefix, "I need nodes to interpolate. Please try Spectrum > "
                   "Extract nodes first.")
@@ -192,8 +190,8 @@ class Spectrum(Frame):
         else:
             print(prefix, "I'm adding column 'cont'.")
         self._t['cont'] = cont #spl(self.x)
-        self._lines._t['cont'] = np.interp(self._lines.x, self.x, cont)#spl(self.x))
-        self._nodes._t['cont'] = np.interp(self._nodes.x, self.x, cont)#spl(self.x))
+        self._lines._t['cont'] = np.interp(self._lines.x, self.x, cont)
+        self._nodes._t['cont'] = np.interp(self._nodes.x, self.x, cont)
         return 0
 
     def find_peaks(self, col='conv', kind='min', kappa=3.0):
@@ -217,7 +215,6 @@ class Spectrum(Frame):
         max_idx = np.hstack(argrelmax(y))
         ext_idx = np.sort(np.append(min_idx, max_idx))
         ext = self._copy(ext_idx)
-
         if len(ext.t) > 0:
             # Set xmin and xmax from adjacent extrema
             ext.xmin = np.append(self.x[0], ext.x[:-1])
@@ -234,8 +231,10 @@ class Spectrum(Frame):
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
         sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
-        self._lines = LineList()
-        self._lines = ext._copy(sel)
+        lines = ext._copy(sel)
+        self._lines = LineList(lines.x, lines.xmin, lines.xmax, lines.y,
+                               lines.dy, self._xunit, self._yunit, self._meta)
+        #self._lines = ext._copy(sel)
         self._lines_kind = 'peaks'
         self._mask_lines()
         print(prefix, "I'm using peaks as lines.")

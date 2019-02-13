@@ -30,7 +30,7 @@ class GUIMenu(object):
     def _item_graph(self, menu, id, title, key):
         item = wx.MenuItem(menu, id, title)
         self._gui._panel_sess.Bind(wx.EVT_MENU,
-                                   lambda e: self._on_graph(e, key), item)
+                                   lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
 
     def _item_method(self, menu, id, title, source, targ, attr):
@@ -43,12 +43,14 @@ class GUIMenu(object):
     def _on_dialog(self, event, title, source, targ, attr):
         dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
 
-    def _on_graph(self, event, key):
+    def _on_graph(self, event, key, item):
         sel = self._gui._graph_spec._sel
         if key in sel:
             sel.remove(key)
+            #item.Check(False)
         else:
             sel.append(key)
+            #item.Check(True)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
@@ -66,9 +68,10 @@ class GUIMenuCookbook(GUIMenu):
                           ['spec', 'spec'], [None, 'lines'],
                           ['convolve_gauss', 'find_peaks'])
         self._item_method(self._menu, start_id+1, "Guess continuum",
-                          ['spec', 'spec', 'spec'],
-                          [None, 'lines', 'nodes'],
-                          ['convolve_gauss', 'find_peaks', 'extract_nodes'])
+                          ['spec', 'spec', 'spec', 'spec'],
+                          [None, 'lines', 'nodes', None],
+                          ['convolve_gauss', 'find_peaks', 'extract_nodes',
+                           'interp_nodes'])
 
 class GUIMenuLineList(GUIMenu):
 
@@ -104,22 +107,26 @@ class GUIMenuSession(GUIMenu):
         self._item(self._menu, start_id+100, "Toggle log x axis", self._on_logx)
         self._item(self._menu, start_id+101, "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
-        self._item_graph(self._menu, start_id+200, "Toggle spectrum",
+        self._submenu = wx.Menu()
+        self._item_graph(self._submenu, start_id+201, "Spectrum",
                          'spec_x_y')
-        self._item_graph(self._menu, start_id+200, "Toggle spectrum error",
+        self._item_graph(self._submenu, start_id+202, "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._menu, start_id+202, "Toggle convolved spectrum",
+        self._item_graph(self._submenu, start_id+203, "Convolved spectrum",
                          'spec_x_conv')
-        self._item_graph(self._menu, start_id+203, "Toggle line list",
+        self._item_graph(self._submenu, start_id+204, "Line list",
                          'lines_x_y')
-        self._item_graph(self._menu, start_id+204, "Toggle masked spectrum",
+        self._item_graph(self._submenu, start_id+205, "Masked spectrum",
                          'spec_x_ymask')
-        self._item_graph(self._menu, start_id+205, "Toggle nodes",
+        self._item_graph(self._submenu, start_id+206, "Nodes",
                          'spec_nodes_x_y')
-        self._item_graph(self._menu, start_id+206, "Toggle continuum",
+        self._item_graph(self._submenu, start_id+207, "Continuum",
                          'spec_x_cont')
-        self._item_graph(self._menu, start_id+201, "Toggle spectral format",
+        self._item_graph(self._submenu, start_id+208, "Spectral format",
                          'spec_form_x')
+        self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")
+        self._item(self._menu, start_id+210, "Toggle normalization",
+                   self._on_norm)
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+300, "Extract region",
                           None, None, 'extract_region')
@@ -127,8 +134,6 @@ class GUIMenuSession(GUIMenu):
                           None, None, 'convert_x')
         self._item_method(self._menu, start_id+302, "Convert y axis",
                           None, None, 'convert_y')
-        self._item(self._menu, start_id+303, "Normalize to continuum",
-                   self._on_norm)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, "Quit", self._on_quit)
 
