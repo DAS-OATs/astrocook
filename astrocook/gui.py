@@ -181,9 +181,11 @@ class GUIMenu(object):
         session = GUIMenuSession(self._gui)
         spectrum = GUIMenuSpectrum(self._gui)
         linelist = GUIMenuLineList(self._gui)
+        cookbook = GUIMenuCookbook(self._gui)
         bar.Append(session._menu, "Session")
         bar.Append(spectrum._menu, "Spectrum")
         bar.Append(linelist._menu, "Line List")
+        bar.Append(cookbook._menu, "Cookbook")
         return bar
 
     def _item(self, menu, id, label, event):
@@ -192,7 +194,7 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _item_method(self, menu, id, title, source, targ, attr):
-        item = wx.MenuItem(menu, id, title)
+        item = wx.MenuItem(menu, id, title+'…')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_dialog(e, title, source, targ, attr), item)
@@ -200,6 +202,37 @@ class GUIMenu(object):
 
     def _on_dialog(self, event, title, source, targ, attr):
         dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
+
+class GUIMenuCookbook(GUIMenu):
+    def __init__(self,
+                 gui,
+                 start_id=5000,
+                 **kwargs):
+        super(GUIMenuCookbook, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Spectrum menu here
+        self._item_method(self._menu, start_id+103, "Find lines",
+                          ['spec', 'spec'], [None, 'lines'],
+                          ['convolve_gauss', 'find_peaks'])
+
+class GUIMenuLineList(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=3000,
+                 **kwargs):
+        super(GUIMenuLineList, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Spectrum menu here
+        self._item(self._menu, start_id, "View table", self._on_view)
+
+    def _on_view(self, event):
+        self._gui._tab_lines._on_view(event)
+
 
 class GUIMenuSession(GUIMenu):
 
@@ -212,17 +245,19 @@ class GUIMenuSession(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to session menu here
-        self._item(self._menu, start_id, "Open",
+        self._item(self._menu, start_id, "Open…",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+100, "Toggle log x axis", self._on_logx)
         self._item(self._menu, start_id+101, "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+200, "Extract region",
+        self._item(self._menu, start_id+200, "Toggle spectral format",
+                   self._on_spec_form)
+        self._item_method(self._menu, start_id+201, "Extract region",
                           None, None, 'extract_region')
-        self._item_method(self._menu, start_id+201, "Convert x axis",
+        self._item_method(self._menu, start_id+202, "Convert x axis",
                           None, None, 'convert_x')
-        self._item_method(self._menu, start_id+202, "Convert y axis",
+        self._item_method(self._menu, start_id+203, "Convert y axis",
                           None, None, 'convert_y')
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+300, "Quit", self._on_quit)
@@ -252,6 +287,15 @@ class GUIMenuSession(GUIMenu):
             sess = Session(path=path, name=path.split('/')[-1][:-5])
             self._gui._panel_sess._on_add(event, sess, open=True)
 
+    def _on_spec_form(self, event):
+        sel = self._gui._graph_spec._sel
+        key = 'spec_form_x'
+        if key in sel:
+            sel.remove(key)
+        else:
+            sel.append(key)
+        self._gui._graph_spec._refresh(self._gui._sess_items)
+
     def _on_quit(self, event):
         print("AC: Bye!")
         self._gui._panel_sess.Close()
@@ -276,30 +320,14 @@ class GUIMenuSpectrum(GUIMenu):
                           'spec', None, 'convolve_gauss')
         self._item_method(self._menu, start_id+102, "Find peaks",
                           'spec', 'lines', 'find_peaks')
-        self._item_method(self._menu, start_id+103, "Convolve with gaussian and find peaks",
-                          ['spec', 'spec'], [None, 'lines'], ['convolve_gauss', 'find_peaks'])
-        #self._menu.AppendSeparator()
-        #self._item_method(self._menu, start_id+200, "Interpolate emission",
-        #                  'spec', None, 'interp_emission')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+200, "Extract nodes",
+                          'spec', 'nodes', 'extract_nodes')
+        self._item_method(self._menu, start_id+201, "Interpolate nodes",
+                          'spec', None, 'interp_nodes')
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
-
-class GUIMenuLineList(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=3000,
-                 **kwargs):
-        super(GUIMenuLineList, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Spectrum menu here
-        tab = self._item(self._menu, start_id, "View table", self._on_view)
-
-    def _on_view(self, event):
-        self._gui._tab_lines._on_view(event)
 
 class GUIPanelSession(wx.Frame):
     """ Class for the GUI session panel """
@@ -325,8 +353,9 @@ class GUIPanelSession(wx.Frame):
         self._tab.InsertColumn(1, "object", width=150)
         self._tab.InsertColumn(2, "active range", width=200)
         self._tab.InsertColumn(3, "# rows", width=100)
-        self._tab.InsertColumn(4, "# lines", width=100)
-        self._tab.InsertColumn(5, "# systems", width=100)
+        self._tab.InsertColumn(4, "# nodes", width=100)
+        self._tab.InsertColumn(5, "# lines", width=100)
+        self._tab.InsertColumn(6, "# systems", width=100)
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
@@ -387,8 +416,13 @@ class GUIPanelSession(wx.Frame):
                               % (x[0].value, x[-1].value, x.unit))
             self._tab.SetItem(i, 3, str(len(x)))
             try:
-                x = s.lines._safe(s.lines.x)
+                x = s.nodes._safe(s.nodes.x)
                 self._tab.SetItem(i, 4, str(len(x)))
+            except:
+                pass
+            try:
+                x = s.lines._safe(s.lines.x)
+                self._tab.SetItem(i, 5, str(len(x)))
             except:
                 pass
 
@@ -407,12 +441,14 @@ class GUIGraphSpectrum(wx.Frame):
                                               size=(size_x, size_y))
         self._gui = gui
         self._gui._graph_spec = self
+        self._sel = ['spec_x_y', 'spec_x_conv', 'lines_x_y', 'spec_nodes_x_y',
+                     'spec_x_cont']
 
         self._logx = False
         self._logy = False
 
         panel = wx.Panel(self)
-        self._graph = Graph(panel, gui)
+        self._graph = Graph(panel, gui, self._sel)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
         box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT, border=5)
         self._box = wx.BoxSizer(wx.VERTICAL)

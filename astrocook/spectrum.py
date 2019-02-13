@@ -9,6 +9,7 @@ from copy import deepcopy as dc
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.interpolate import UnivariateSpline as uspline
+from scipy.stats import sem
 
 prefix = "Spectrum:"
 
@@ -57,6 +58,25 @@ class Spectrum(Frame):
 
         return 0
 
+    def _slice(self, delta_x=1000, xunit=au.km/au.s):
+        """ @brief Create 'slice' columns. 'slice' columns contains an
+        increasing counter to split 'x' values into evenly-sized slices
+        (typically defined in velocity space).
+        @param delta_x Size of slices
+        @param xunit Unit of wavelength or velocity
+        @return 0
+        """
+
+        xunit_orig = self._xunit
+        self._convert_x(xunit=xunit)
+        x = self._safe(self.x)
+        self._t['slice'] = np.empty(len(self.x), dtype=int)
+        self._t['slice'][self._where_safe] = np.array(x//delta_x)
+        self._slice_range = range(self._t['slice'][self._where_safe][0],
+                                  self._t['slice'][self._where_safe][-1])
+        self._convert_x(xunit=xunit_orig)
+        return 0
+
     def convolve_gauss(self, std=20, input_col='y', output_col='conv'):
         """@brief Convolve a spectrum column with a profile using FFT transform.
         @param std Standard deviation of the gaussian (km/s)
@@ -94,31 +114,81 @@ class Spectrum(Frame):
 
         return 0
 
-    def interp_emission(self, s=0):
-        """ @brief Estimate the emission level by interpolating across lines.
-        @param s Spline smoothing
+    def extract_nodes(self, delta_x=1000, xunit=au.km/au.s):
+        """ @brief Extract nodes from a spectrum. Nodes are averages of x and y
+        in slices, computed after masking lines.
+        @param delta_x Size of slices
+        @param xunit Unit of wavelength or velocity
+        @return Spectrum with nodes
+        """
+        try:
+            xunit = au.Unit(xunit)
+            delta_x = float(delta_x)*xunit
+        except:
+            print(prefix, msg_param_fail)
+
+        self._slice(delta_x, xunit)
+
+        x_ave = []
+        xmin_ave = []
+        xmax_ave = []
+        y_ave = []
+        dy_ave = []
+        if 'lines_mask' not in self._t.colnames:
+            print(prefix, "Lines weren't masked. I'm taking all spectrum.")
+
+        for s in self._slice_range:
+            try:
+                where_s = np.where(np.logical_and(self._t['slice']==s,
+                                                  self._t['lines_mask']==0))
+            except:
+                where_s = np.where(self._t['slice']==s)
+
+            if len(where_s[0])>0:
+                x_where_s = self.x[where_s].value
+                y_where_s = self.y[where_s].value
+                dy_where_s = self.dy[where_s].value
+                x_ave.append(np.average(x_where_s))
+                xmin_ave.append(x_where_s[0])
+                xmax_ave.append(x_where_s[-1])
+                y_ave.append(np.average(y_where_s, weights=dy_where_s))
+                dy_ave.append(sem(y_where_s))
+        x = np.array(x_ave) * self._xunit
+        xmin = np.array(xmin_ave) * self._xunit
+        xmax = np.array(xmax_ave) * self._xunit
+        y = np.array(y_ave) * self._yunit
+        dy = np.array(dy_ave) * self._yunit
+
+        self._nodes = Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
+        return self._nodes
+
+    def interp_nodes(self, smooth=0):
+        """ @brief Interpolate nodes with a univariate spline to estimate the "
+        "emission level.
+        @param smooth Smoothing of the spline
         @return 0
         """
 
-        s = float(s)
-
-        if not hasattr(self, '_lines'):
-            print(prefix, "I need lines to interpolate the emission. Please "
-                  "try Spectrum > Find peaks.")
+        if not hasattr(self, '_nodes'):
+            print(prefix, "I need nodes to interpolate. Please try Spectrum > "
+                  "Extract nodes first.")
             return None
-        self._xmask(self._lines)
-        """
-        x = self.x[self._t['xmask']].value
-        y = self.y[self._t['xmask']].value
-        dy = self.dy[self._t['xmask']].value
-        spl = uspline(x, y, w=dy, s=s)
+
+        try:
+            smooth = float(smooth)
+        except:
+            print(prefix, msg_param_fail)
+
+        x = self._nodes.x.value
+        y = self._nodes.y.value
+        dy = self._nodes.dy.value
+        spl = uspline(x, y, w=dy, s=smooth)
         self._t['cont'] = spl(self.x)
         if 'cont' in self._t.colnames:
             print(prefix, "I'm updating column 'cont'.")
         else:
             print(prefix, "I'm adding column 'cont'.")
         print(prefix, "I'm using interpolation as continuum.")
-        """
         return 0
 
     def find_peaks(self, col='conv', kind='min', kappa=3.0):

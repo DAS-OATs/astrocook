@@ -28,10 +28,11 @@ class Format(object):
         dy = data['FLUXERR']
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'ESPRESSO'}
         try:
-            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
-            meta = {'object': ""}
+            meta['object'] = ''
             print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
@@ -46,11 +47,23 @@ class Format(object):
         dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'ESPRESSO'}
         try:
-            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
-            meta = {'object': ""}
+            meta['object'] = ''
             print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+    def espresso_spectrum_format(self, data):
+        x = data['col2']
+        xmin = data['col8']
+        xmax = data['col9']
+        y = np.zeros(len(x))
+        dy = np.zeros(len(x))
+        xunit = au.nm
+        yunit = None
+        meta = {}
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def eso_midas(self, hdul):
@@ -65,9 +78,10 @@ class Format(object):
         dy = data[hdr['TTYPE3']]
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {'instr': ''}
         try:
-            meta = {'object': hdr['HIERARCH ESO OBS TARG NAME']}
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
-            meta = {'object': ""}
+            meta['object'] = ''
             print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

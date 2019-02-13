@@ -9,8 +9,9 @@ prefix = "Graph:"
 
 class Graph(object):
 
-    def __init__(self, panel, gui):
+    def __init__(self, panel, gui, sel):
         self._gui = gui
+        self._sel = sel
         self._fig = Figure()
         self._ax = self._fig.add_subplot(111)
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
@@ -30,12 +31,15 @@ class Graph(object):
     def _refresh(self, sess, logx=False, logy=False):
         sess = np.array(sess, ndmin=1)
         self._ax.clear()
-        self._plot_list = [GraphSpectrumXY,
-                           #GraphSpectrumXDy,
-                           GraphSpectrumXConv,
-                           GraphLineListXY,
-                           #GraphSpectrumXYMask,
-                           GraphSpectrumXCont]
+        self._plot_dict = {'spec_x_y': GraphSpectrumXY,
+                           'spec_x_dy': GraphSpectrumXDy,
+                           'spec_x_conv': GraphSpectrumXConv,
+                           'lines_x_y': GraphLineListXY,
+                           'spec_x_ymask': GraphSpectrumXYMask,
+                           'spec_nodes_x_y': GraphSpectrumNodesXY,
+                           'spec_x_cont': GraphSpectrumXCont,
+                           'spec_form_x': GraphSpectrumFormX}
+        self._plot_list = [self._plot_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
@@ -54,27 +58,20 @@ class Graph(object):
         self._plot.draw()
 
     def _seq(self, sess):
-        """
-        if sess.spec._xunit != self._xunit:
-            print(prefix, "I'm converting the x unit of %s to plot it over the "
-                  "data already present." % sess.name)
-            sess.convert_x(xunit=self._xunit)
-            self._gui._panel_sess._refresh()
-        if sess.spec._xunit != self._xunit:
-            print(prefix, "I'm converting the y unit of %s to plot it over the "
-                  "data already present." % sess.name)
-            sess.convert_y(yunit=self._yunit)
-            refresh = 1
-            self._gui._panel_sess._refresh()
-        """
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, s in enumerate(self._plot_list):
             try:
                 gs = s(sess)
-                graph = getattr(self._ax, gs._type)
-                graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),
-                      **gs._kwargs)
+                if gs._type == 'axvline':
+                    for x in gs._x:
+                        self._ax.axvline(x.to(self._xunit).value,
+                                         color='C'+str(self._c), **gs._kwargs)
+                        gs._kwargs.pop('label', None)
+                else:
+                    graph = getattr(self._ax, gs._type)
+                    graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),
+                          **gs._kwargs)
                 self._c += 1
             except:
                 pass
@@ -86,8 +83,21 @@ class GraphLineListXY(object):
         self._y = sess.lines.y
         self._kwargs = {'marker':'+', 'label':sess.name+", lines"}
 
-class GraphSpectrumXY(object):
+class GraphSpectrumFormX(object):
+    def __init__(self, sess):
+        self._type = 'axvline'
+        self._x = sess.spec_form.x
+        self._kwargs = {'lw':1.0, 'linestyle': ':',
+                        'label':sess.spec._meta['instr']+" spectral format"}
 
+class GraphSpectrumNodesXY(object):
+    def __init__(self, sess):
+        self._type = 'plot'
+        self._x = sess.nodes.x
+        self._y = sess.nodes.y
+        self._kwargs = {'lw':1.0, 'label':sess.name+", nodes"}
+
+class GraphSpectrumXY(object):
     def __init__(self, sess):
         self._type = 'plot'
         self._x = sess.spec.x

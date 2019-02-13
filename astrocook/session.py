@@ -2,7 +2,7 @@ from .format import Format
 from .message import *
 from .spectrum import Spectrum
 from astropy import units as au
-from astropy.io import fits
+from astropy.io import ascii, fits
 
 prefix = "Session:"
 
@@ -15,12 +15,16 @@ class Session(object):
                  path=None,
                  name=None,
                  spec=None,
+                 spec_form=None,
+                 nodes=None,
                  lines=None):
         self.path = path
         self.name = name
         self.spec = spec
+        self.spec_form = spec_form
+        self.nodes = nodes
         self.lines = lines
-        self.seq = ['spec', 'lines']
+        self.seq = ['spec', 'nodes', 'lines']
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -81,9 +85,12 @@ class Session(object):
         path = self.path
         name = self.name
         kwargs = {'path': path, 'name': name}
+        print(self.__dict__)
         for s in self.seq:
             try:
+                print(s)
                 kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
+                print(s)
             except:
                 kwargs[s] = None
         if kwargs['spec'] != None:
@@ -114,10 +121,14 @@ class Session(object):
         # DRS spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
             self.spec = format.espresso_drs_spectrum(hdul)
+            self.spec_form = format.espresso_spectrum_format(
+                ascii.read('espr_spec_form.dat'))
 
         # DAS spectrum
         if instr == 'ESPRESSO' and catg[1:5] == 'SPEC':
             self.spec = format.espresso_das_spectrum(hdul)
+            self.spec_form = format.espresso_spectrum_format(
+                ascii.read('espr_spec_form.dat'))
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
