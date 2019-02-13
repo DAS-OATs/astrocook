@@ -1,17 +1,11 @@
 from . import version
 from .graph import Graph
-from .session import Session
-from collections import OrderedDict
-from copy import deepcopy as dc
-import inspect
-#from matplotlib import pyplot as plt
-#from matplotlib.figure import Figure
-#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-#    NavigationToolbar2WxAgg
+#from .gui_dialog import *
+from .gui_menu import *
+from .gui_table import *
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
-import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 
 prefix = "GUI:"
@@ -27,7 +21,7 @@ class GUI(object):
         print("└───────────────────┘")
         print("Cupani et al. 2017-2019 * INAF-OATs")
         print("AC: Welcome! Try Session > Open…")
-        self._sess_list = []#Session()
+        self._sess_list = []
         self._sess_sel = None
         GUIPanelSession(self)
         GUIGraphSpectrum(self)
@@ -52,282 +46,6 @@ class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
 
-class GUIDialogMethod(wx.Dialog):
-
-    def __init__(self,
-                 gui,
-                 title,
-                 source,
-                 targ,
-                 attr):
-
-        self._gui = gui
-        self._gui._dlg_method = self
-        self._source = np.array(source, ndmin=1)
-        self._targ = np.array(targ, ndmin=1)
-        self._attr = np.array(attr, ndmin=1)
-        self._methods = []
-        self._params = []
-        self._brief = []
-        self._doc = []
-        for s, a in zip(self._source, self._attr):
-            if s == None:
-                obj = self._gui._sess_sel
-            else:
-                obj = getattr(self._gui._sess_sel, s)
-            method = getattr(obj, a)
-            self._methods.append(method)
-            super(GUIDialogMethod, self).__init__(parent=None, title=title)
-            self._get_params(method)
-            self._get_doc(method)
-
-        panel = wx.Panel(self)
-        box = wx.BoxSizer(wx.VERTICAL)
-        core = wx.BoxSizer(wx.VERTICAL)
-
-        # Description
-        hdr = wx.BoxSizer(wx.HORIZONTAL)
-        st = wx.StaticText(panel, 1, label='\n'.join(self._brief))
-        hdr.Add(st, 1, 0, border=15)
-        core.Add(hdr, flag=wx.BOTTOM, border=15)
-
-        # Parameters
-        static = wx.StaticBox(panel, label="Parameters")
-        sizer = wx.StaticBoxSizer(static, wx.VERTICAL)
-        len_params = np.sum([len(i) for i in self._params])
-        fgs = wx.FlexGridSizer(len_params, 2, 5, 5)
-        fgs_add = []
-        self._ctrl = []
-        for p_l, d_l in zip(self._params, self._doc):
-            ctrl_l = []
-            for p, d in zip(p_l, d_l):
-                stat = wx.StaticText(panel, -1, label=d+':')
-                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
-                fgs_add.append((stat))
-                fgs_add.append((ctrl, 1, wx.EXPAND))
-                ctrl_l.append(ctrl)
-            self._ctrl.append(ctrl_l)
-        fgs.AddMany(fgs_add)
-        sizer.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=5)
-        core.Add(sizer)
-        panel.SetSizer(core)
-
-        # Buttons
-        buttons = wx.BoxSizer(wx.HORIZONTAL)
-        cancel_button = wx.Button(self, label='Cancel')
-        cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
-        run_button = wx.Button(self, label='Run')
-        run_button.Bind(wx.EVT_BUTTON, self._on_run)
-        run_button.SetDefault()
-        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
-        buttons.Add(run_button, 0)
-
-        box.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
-        box.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
-                     border=10)
-        box.SetSizeHints(self)
-
-        self.SetSizer(box)
-        self.Centre()
-        self.Show()
-
-    def _get_doc(self, method):
-        full = inspect.getdoc(method)
-        split = full.split('@')
-        self._brief.append([s[6:-1] for s in split if s[0:5]=='brief'][0])
-        self._doc.append([s[6:-1].split(' ', 1)[1] \
-                          for s in split if s[0:5]=='param'])
-
-    def _get_params(self, method):
-        keys = inspect.getargspec(method)[0][1:]
-        defs = inspect.getargspec(method)[-1]
-        if defs == None:
-            defs = []
-        values = np.append(['']*(len(keys)-len(defs)), defs)
-        self._params.append(OrderedDict(zip(keys, values)))
-
-    def _on_cancel(self, e):
-        self.Close()
-
-    def _on_run(self, e):
-        for m, t, p_l, c_l in zip(self._methods, self._targ, self._params,
-                                  self._ctrl):
-            for p, c in zip(p_l, c_l):
-                pmod = c.GetValue()
-                p_l[p] = pmod
-            out = m(**p_l)
-            if out is not None:
-                if out is 0:
-                    self._gui._panel_sess._refresh()
-                    self._gui._graph_spec._refresh(self._gui._sess_items)
-                else:
-                    if t == None:
-                        new_sess = out
-                    else:
-                        new_sess = dc(self._gui._sess_sel)
-                        setattr(new_sess, t, out)
-                    self._gui._panel_sess._on_add(e, new_sess, open=False)
-                self.Close()
-
-
-class GUIMenu(object):
-
-    def __init__(self,
-                 gui):
-        self._gui = gui
-
-    def bar(self):
-        bar = wx.MenuBar()
-        session = GUIMenuSession(self._gui)
-        spectrum = GUIMenuSpectrum(self._gui)
-        linelist = GUIMenuLineList(self._gui)
-        cookbook = GUIMenuCookbook(self._gui)
-        bar.Append(session._menu, "Session")
-        bar.Append(spectrum._menu, "Spectrum")
-        bar.Append(linelist._menu, "Line List")
-        bar.Append(cookbook._menu, "Cookbook")
-        return bar
-
-    def _item(self, menu, id, label, event):
-        item = wx.MenuItem(menu, id, label)
-        self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
-        menu.Append(item)
-
-    def _item_method(self, menu, id, title, source, targ, attr):
-        item = wx.MenuItem(menu, id, title+'…')
-        self._gui._panel_sess.Bind(
-            wx.EVT_MENU,
-            lambda e: self._on_dialog(e, title, source, targ, attr), item)
-        menu.Append(item)
-
-    def _on_dialog(self, event, title, source, targ, attr):
-        dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
-
-class GUIMenuCookbook(GUIMenu):
-    def __init__(self,
-                 gui,
-                 start_id=5000,
-                 **kwargs):
-        super(GUIMenuCookbook, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Spectrum menu here
-        self._item_method(self._menu, start_id+103, "Find lines",
-                          ['spec', 'spec'], [None, 'lines'],
-                          ['convolve_gauss', 'find_peaks'])
-
-class GUIMenuLineList(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=3000,
-                 **kwargs):
-        super(GUIMenuLineList, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Spectrum menu here
-        self._item(self._menu, start_id, "View table", self._on_view)
-
-    def _on_view(self, event):
-        self._gui._tab_lines._on_view(event)
-
-
-class GUIMenuSession(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=1000,
-                 **kwargs):
-        super(GUIMenuSession, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to session menu here
-        self._item(self._menu, start_id, "Open…",
-                   lambda e: self._on_open(e, **kwargs))
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+100, "Toggle log x axis", self._on_logx)
-        self._item(self._menu, start_id+101, "Toggle log y axis", self._on_logy)
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+200, "Toggle spectral format",
-                   self._on_spec_form)
-        self._item_method(self._menu, start_id+201, "Extract region",
-                          None, None, 'extract_region')
-        self._item_method(self._menu, start_id+202, "Convert x axis",
-                          None, None, 'convert_x')
-        self._item_method(self._menu, start_id+203, "Convert y axis",
-                          None, None, 'convert_y')
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+300, "Quit", self._on_quit)
-
-    def _on_logx(self, event):
-        self._gui._graph_spec._logx = ~self._gui._graph_spec._logx
-        self._gui._graph_spec._refresh(self._gui._sess_items)
-
-    def _on_logy(self, event):
-        self._gui._graph_spec._logy = ~self._gui._graph_spec._logy
-        self._gui._graph_spec._refresh(self._gui._sess_items)
-
-    def _on_open(self, event, path='.'):
-        """ Behaviour for Session > Open """
-
-        wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                   "FITS files (*.fits)|*.fits"
-        with wx.FileDialog(self._gui._panel_sess, "Open file", path,
-                           wildcard=wildcard,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
-                           as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return
-            path = fileDialog.GetPath()
-            name = path.split('/')[-1][:-5]
-            print(prefix, "I'm loading session %s..." % path)
-            sess = Session(path=path, name=path.split('/')[-1][:-5])
-            self._gui._panel_sess._on_add(event, sess, open=True)
-
-    def _on_spec_form(self, event):
-        sel = self._gui._graph_spec._sel
-        key = 'spec_form_x'
-        if key in sel:
-            sel.remove(key)
-        else:
-            sel.append(key)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
-
-    def _on_quit(self, event):
-        print("AC: Bye!")
-        self._gui._panel_sess.Close()
-        self._gui._graph_spec.Close()
-        self._gui._tab_spec.Close()
-        self._gui._tab_lines.Close()
-
-class GUIMenuSpectrum(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=2000,
-                 **kwargs):
-        super(GUIMenuSpectrum, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Spectrum menu here
-        tab = self._item(self._menu, start_id, "View table", self._on_view)
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+101, "Convolve with gaussian",
-                          'spec', None, 'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Find peaks",
-                          'spec', 'lines', 'find_peaks')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+200, "Extract nodes",
-                          'spec', 'nodes', 'extract_nodes')
-        self._item_method(self._menu, start_id+201, "Interpolate nodes",
-                          'spec', None, 'interp_nodes')
-
-    def _on_view(self, event):
-        self._gui._tab_spec._on_view(event)
 
 class GUIPanelSession(wx.Frame):
     """ Class for the GUI session panel """
@@ -441,11 +159,11 @@ class GUIGraphSpectrum(wx.Frame):
                                               size=(size_x, size_y))
         self._gui = gui
         self._gui._graph_spec = self
-        self._sel = ['spec_x_y', 'spec_x_conv', 'lines_x_y', 'spec_nodes_x_y',
-                     'spec_x_cont']
+        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont']
 
         self._logx = False
         self._logy = False
+        self._norm = False
 
         panel = wx.Panel(self)
         self._graph = Graph(panel, gui, self._sel)
@@ -458,79 +176,5 @@ class GUIGraphSpectrum(wx.Frame):
         self.Centre()
 
     def _refresh(self, sess):
-        self._graph._refresh(sess, self._logx, self._logy)
+        self._graph._refresh(sess, self._logx, self._logy, self._norm)
         self.Show()
-
-class GUITable(wx.Frame):
-    """ Class for the GUI table frame """
-
-    def __init__(self,
-                 gui,
-                 attr,
-                 title="Table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.9):
-
-        super(GUITable, self).__init__(parent=None, title=title,
-                                       size=(size_x, size_y))
-
-        self._gui = gui
-        self._attr = attr
-        self._panel = wx.Panel(self)
-        self._tab = gridlib.Grid(self._panel)
-        self._tab.CreateGrid(0, 0)
-
-    def _on_view(self, event):
-        data = getattr(self._gui._sess_sel, self._attr)
-        try:
-            self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
-            #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
-            print(prefix, "I'm updating table...")
-        except:
-            print(prefix, "I'm loading table...")
-        coln = len(data.t.colnames)
-        rown = len(data.t)
-        self._tab.AppendCols(coln)
-        self._tab.AppendRows(rown)
-        for j, r in enumerate(data.t):
-            for i, n in enumerate(data.t.colnames):
-                if j == 0:
-                    self._tab.SetColSize(i, 150)
-                    self._tab.SetColLabelValue(i, "%s\n%s" \
-                                              % (n, str(data.t[n].unit)))
-                self._tab.SetCellValue(j, i, "%3.5f" % r[n])
-        self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._tab, 1, wx.EXPAND)
-        self._panel.SetSizer(self._box)
-        self.Centre()
-        self.Show()
-
-class GUITableSpectrum(GUITable):
-    """ Class for the GUI spectrum table frame """
-
-    def __init__(self,
-                 gui,
-                 title="Spectrum table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.9):
-
-        super(GUITableSpectrum, self).__init__(gui, 'spec', title, size_x,
-                                               size_y)
-
-        self._gui = gui
-        self._gui._tab_spec = self
-
-class GUITableLineList(GUITable):
-    """ Class for the GUI spectrum table frame """
-
-    def __init__(self,
-                 gui,
-                 title="Spectrum table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.9):
-
-        super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
-                                               size_y)
-
-        self._gui = gui
-        self._gui._tab_lines = self

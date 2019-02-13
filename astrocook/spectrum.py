@@ -48,7 +48,7 @@ class Spectrum(Frame):
         x = self._safe(self.x)
         mask = np.zeros(len(x), dtype=bool)
         for (xmin, xmax) in zip(self._lines.xmin, self._lines.xmax):
-            mask += np.logical_and(x>xmin, x<xmax)
+            mask += np.logical_and(x>=xmin, x<=xmax)
         if 'lines_mask' in self._t.colnames:
             print(prefix, "I'm updating column 'lines_mask'.")
         else:
@@ -114,7 +114,7 @@ class Spectrum(Frame):
 
         return 0
 
-    def extract_nodes(self, delta_x=1000, xunit=au.km/au.s):
+    def extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
         """ @brief Extract nodes from a spectrum. Nodes are averages of x and y
         in slices, computed after masking lines.
         @param delta_x Size of slices
@@ -144,6 +144,7 @@ class Spectrum(Frame):
             except:
                 where_s = np.where(self._t['slice']==s)
 
+            #print(self.x[np.where(self._t['slice']==s)][0], len(where_s[0]))
             if len(where_s[0])>0:
                 x_where_s = self.x[where_s].value
                 y_where_s = self.y[where_s].value
@@ -160,6 +161,7 @@ class Spectrum(Frame):
         dy = np.array(dy_ave) * self._yunit
 
         self._nodes = Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
+        print(self.__dict__)
         return self._nodes
 
     def interp_nodes(self, smooth=0):
@@ -168,7 +170,7 @@ class Spectrum(Frame):
         @param smooth Smoothing of the spline
         @return 0
         """
-
+        print(self.__dict__)
         if not hasattr(self, '_nodes'):
             print(prefix, "I need nodes to interpolate. Please try Spectrum > "
                   "Extract nodes first.")
@@ -183,12 +185,15 @@ class Spectrum(Frame):
         y = self._nodes.y.value
         dy = self._nodes.dy.value
         spl = uspline(x, y, w=dy, s=smooth)
-        self._t['cont'] = spl(self.x)
+        cont = spl(self.x)*self._yunit
+        print(prefix, "I'm using interpolation as continuum.")
         if 'cont' in self._t.colnames:
             print(prefix, "I'm updating column 'cont'.")
         else:
             print(prefix, "I'm adding column 'cont'.")
-        print(prefix, "I'm using interpolation as continuum.")
+        self._t['cont'] = cont #spl(self.x)
+        self._lines._t['cont'] = np.interp(self._lines.x, self.x, cont)#spl(self.x))
+        self._nodes._t['cont'] = np.interp(self._nodes.x, self.x, cont)#spl(self.x))
         return 0
 
     def find_peaks(self, col='conv', kind='min', kappa=3.0):

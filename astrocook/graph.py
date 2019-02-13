@@ -28,7 +28,7 @@ class Graph(object):
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
-    def _refresh(self, sess, logx=False, logy=False):
+    def _refresh(self, sess, logx=False, logy=False, norm=False):
         sess = np.array(sess, ndmin=1)
         self._ax.clear()
         self._plot_dict = {'spec_x_y': GraphSpectrumXY,
@@ -43,7 +43,7 @@ class Graph(object):
 
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
-        self._yunit = GraphSpectrumXY(sess[0])._y.unit
+        self._yunit = GraphSpectrumXY(sess[0], norm)._y.unit
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
         self._c = 0  # Color
@@ -53,16 +53,16 @@ class Graph(object):
             self._ax.set_yscale('log')
 
         for s in sess:
-            self._seq(s)
+            self._seq(s, norm)
         self._ax.legend()
         self._plot.draw()
 
-    def _seq(self, sess):
+    def _seq(self, sess, norm):
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, s in enumerate(self._plot_list):
             try:
-                gs = s(sess)
+                gs = s(sess, norm)
                 if gs._type == 'axvline':
                     for x in gs._x:
                         self._ax.axvline(x.to(self._xunit).value,
@@ -77,10 +77,12 @@ class Graph(object):
                 pass
 
 class GraphLineListXY(object):
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         self._type = 'scatter'
         self._x = sess.lines.x
         self._y = sess.lines.y
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.lines._t['cont']
         self._kwargs = {'marker':'+', 'label':sess.name+", lines"}
 
 class GraphSpectrumFormX(object):
@@ -91,43 +93,52 @@ class GraphSpectrumFormX(object):
                         'label':sess.spec._meta['instr']+" spectral format"}
 
 class GraphSpectrumNodesXY(object):
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         self._type = 'plot'
         self._x = sess.nodes.x
         self._y = sess.nodes.y
         self._kwargs = {'lw':1.0, 'label':sess.name+", nodes"}
 
 class GraphSpectrumXY(object):
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         self._type = 'plot'
         self._x = sess.spec.x
         self._y = sess.spec.y
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name}
 
 class GraphSpectrumXCont(GraphSpectrumXY):
 
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         super(GraphSpectrumXCont, self).__init__(sess)
         self._y = sess.spec._t['cont']
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", continuum"}
 
 class GraphSpectrumXConv(GraphSpectrumXY):
 
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         super(GraphSpectrumXConv, self).__init__(sess)
         self._y = sess.spec._t['conv']
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", convolved"}
 
 class GraphSpectrumXDy(GraphSpectrumXY):
 
-    def __init__(self, sess):
+    def __init__(self, sess, norm=False):
         super(GraphSpectrumXDy, self).__init__(sess)
         self._y = sess.spec.dy
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", error"}
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 
     def __init__(self, sess):
         super(GraphSpectrumXYMask, self).__init__(sess)
+        self._type = 'scatter'
         self._x[sess.spec._t['lines_mask']] = np.nan
-        self._kwargs = {'lw':1.0, 'label':sess.name+", masked"}
+        self._kwargs = {'label':sess.name+", masked"}

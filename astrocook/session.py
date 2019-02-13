@@ -88,9 +88,7 @@ class Session(object):
         print(self.__dict__)
         for s in self.seq:
             try:
-                print(s)
                 kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
-                print(s)
             except:
                 kwargs[s] = None
         if kwargs['spec'] != None:
@@ -102,34 +100,52 @@ class Session(object):
     def open(self):
         format = Format()
         hdul = fits.open(self.path)
+        hdr = hdul[0].header
         try:
-            instr = hdul[0].header['INSTRUME']
+            instr = hdr['INSTRUME']
         except:
             instr = None
-            print(prefix, "INSTRUME not defined.")
         try:
-            catg = hdul[0].header['HIERARCH ESO PRO CATG']
-        except:
-            catg = None
-            print(prefix, "HIERARCH ESO PRO CATG not defined.")
-        try:
-            orig = hdul[0].header['ORIGIN']
+            orig = hdr['ORIGIN']
         except:
             orig = None
+        try:
+            catg = hdr['HIERARCH ESO PRO CATG']
+        except:
+            catg = None
+
+        try:
+            hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
+            hist = [i for j in hist for i in j]
+            if 'UVES_popler:' in hist:
+                instr = 'UVES'
+                orig = 'POPLER'
+        except:
+            pass
+
+        if instr == None:
+            print(prefix, "INSTRUME not defined.")
+        if catg == None:
+            print(prefix, "HIERARCH ESO PRO CATG not defined.")
+        if orig == None:
             print(prefix, "ORIGIN not defined.")
 
-        # DRS spectrum
+        # ESO-MIDAS spectrum
+        if orig == 'ESO-MIDAS':
+            self.spec = format.eso_midas(hdul)
+
+        # ESPRESSO DRS spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
             self.spec = format.espresso_drs_spectrum(hdul)
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read('espr_spec_form.dat'))
 
-        # DAS spectrum
+        # ESPRESSO DAS spectrum
         if instr == 'ESPRESSO' and catg[1:5] == 'SPEC':
             self.spec = format.espresso_das_spectrum(hdul)
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read('espr_spec_form.dat'))
 
-        # ESO-MIDAS spectrum
-        if orig == 'ESO-MIDAS':
-            self.spec = format.eso_midas(hdul)
+        # UVES POPLER spectrum
+        if instr == 'UVES' and orig == 'POPLER':
+            self.spec = format.uves_popler_spectrum(hdul)

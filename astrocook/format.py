@@ -16,6 +16,26 @@ class Format(object):
         xmax = np.append(mean, x[-1])
         return xmin, xmax
 
+    def eso_midas(self, hdul):
+        """ ESO-MIDAS Table """
+
+        hdr = hdul[1].header
+        data = hdul[1].data
+        x = data[hdr['TTYPE1']]
+        xmin = data[hdr['TTYPE1']]
+        xmax = data[hdr['TTYPE1']]
+        y = data[hdr['TTYPE2']]
+        dy = data[hdr['TTYPE3']]
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {'instr': ''}
+        try:
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+        except:
+            meta['object'] = ''
+            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
     def espresso_das_spectrum(self, hdul):
         """ ESPRESSO DAS FSPEC/RSPEC format """
 
@@ -56,6 +76,8 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def espresso_spectrum_format(self, data):
+        """ ESPRESSO spectrum format """
+
         x = data['col2']
         xmin = data['col8']
         xmax = data['col9']
@@ -66,22 +88,24 @@ class Format(object):
         meta = {}
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
-    def eso_midas(self, hdul):
-        """ ESO-MIDAS Table """
+    def uves_popler_spectrum(self, hdul):
+        """ UVES POPLER format """
 
-        hdr = hdul[1].header
-        data = hdul[1].data
-        x = data[hdr['TTYPE1']]
-        xmin = data[hdr['TTYPE1']]
-        xmax = data[hdr['TTYPE1']]
-        y = data[hdr['TTYPE2']]
-        dy = data[hdr['TTYPE3']]
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        data = hdul[0].data
+        y = data[:][0]*data[:][3]
+        dy = data[:][1]*data[:][3]
+        x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
         xunit = au.Angstrom
-        yunit = au.erg/au.cm**2/au.s/au.Angstrom
-        meta = {'instr': ''}
+        yunit = au.electron/au.Angstrom
+        meta = {'instr': 'UVES'}
         try:
-            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+            meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
-            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            print(prefix, "OBJECT not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
