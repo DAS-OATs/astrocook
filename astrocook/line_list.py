@@ -4,7 +4,7 @@ from astropy import units as au
 class LineList(Frame):
     """Class for line lists
 
-    A Line List is a Frame with methods for handling spectral lines."""
+    A LineList is a Frame with methods for handling spectral lines."""
 
     def __init__(self,
                  x=[],

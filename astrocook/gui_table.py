@@ -48,6 +48,36 @@ class GUITable(wx.Frame):
         self.Centre()
         self.Show()
 
+class GUITableLineList(GUITable):
+    """ Class for the GUI spectrum table frame """
+
+    def __init__(self,
+                 gui,
+                 title="Line table",
+                 size_x=wx.DisplaySize()[0]*0.5,
+                 size_y=wx.DisplaySize()[1]*0.9):
+
+        super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
+                                               size_y)
+
+        self._gui = gui
+        self._gui._tab_lines = self
+
+class GUITableModel(GUITable):
+    """ Class for the GUI spectrum table frame """
+
+    def __init__(self,
+                 gui,
+                 title="Model table",
+                 size_x=wx.DisplaySize()[0]*0.5,
+                 size_y=wx.DisplaySize()[1]*0.9):
+
+        super(GUITableModel, self).__init__(gui, 'model', title,
+                                            size_x, size_y)
+
+        self._gui = gui
+        self._gui._tab_model = self
+
 class GUITableSpectrum(GUITable):
     """ Class for the GUI spectrum table frame """
 
@@ -63,17 +93,17 @@ class GUITableSpectrum(GUITable):
         self._gui = gui
         self._gui._tab_spec = self
 
-class GUITableLineList(GUITable):
+class GUITableSystemList(GUITable):
     """ Class for the GUI spectrum table frame """
 
     def __init__(self,
                  gui,
-                 title="Spectrum table",
+                 title="System table",
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.9):
 
-        super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
-                                               size_y)
+        super(GUITableSystemList, self).__init__(gui, 'systems', title, size_x,
+                                                 size_y)
 
         self._gui = gui
-        self._gui._tab_lines = self
+        self._gui._tab_systems = self

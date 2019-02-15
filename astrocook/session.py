@@ -1,6 +1,7 @@
 from .format import Format
 from .message import *
-from .spectrum import Spectrum
+from .model import Model
+#from .spectrum import Spectrum
 from astropy import units as au
 from astropy.io import ascii, fits
 
@@ -17,14 +18,18 @@ class Session(object):
                  spec=None,
                  spec_form=None,
                  nodes=None,
-                 lines=None):
+                 lines=None,
+                 systems=None,
+                 model=None):
         self.path = path
         self.name = name
         self.spec = spec
         self.spec_form = spec_form
         self.nodes = nodes
         self.lines = lines
-        self.seq = ['spec', 'nodes', 'lines']
+        self.systems = systems
+        self.model = model
+        self.seq = ['spec', 'nodes', 'lines', 'systems', 'model']
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -85,12 +90,15 @@ class Session(object):
         path = self.path
         name = self.name
         kwargs = {'path': path, 'name': name}
-        print(self.__dict__)
         for s in self.seq:
             try:
                 kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
             except:
-                kwargs[s] = None
+                try: # For Model
+                    getattr(self, s)._spec = self.spec
+                    kwargs[s] = getattr(self, s) # For Model
+                except:
+                    kwargs[s] = None
         if kwargs['spec'] != None:
             new = Session(**kwargs)
         else:
@@ -149,3 +157,5 @@ class Session(object):
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+
+        self.model = Model(self.spec)

@@ -41,7 +41,8 @@ class Graph(object):
                            'spec_x_ymask': GraphSpectrumXYMask,
                            'spec_nodes_x_y': GraphSpectrumNodesXY,
                            'spec_x_cont': GraphSpectrumXCont,
-                           'spec_form_x': GraphSpectrumFormX}
+                           'spec_form_x': GraphSpectrumFormX,
+                           'spec_x_model': GraphSpectrumXModel}
         self._plot_list = [self._plot_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
@@ -139,6 +140,15 @@ class GraphSpectrumXDy(GraphSpectrumXY):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", error"}
+
+class GraphSpectrumXModel(GraphSpectrumXY):
+
+    def __init__(self, sess, norm=False):
+        super(GraphSpectrumXModel, self).__init__(sess)
+        self._y = sess.spec._t['model']
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
+        self._kwargs = {'lw':1.0, 'label':sess.name+", model"}
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 

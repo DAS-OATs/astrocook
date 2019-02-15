@@ -1,6 +1,5 @@
 from . import version
 from .graph import Graph
-#from .gui_dialog import *
 from .gui_menu import *
 from .gui_table import *
 import numpy as np
@@ -27,6 +26,7 @@ class GUI(object):
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
+        GUITableSystemList(self)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
@@ -159,7 +159,7 @@ class GUIGraphSpectrum(wx.Frame):
                                               size=(size_x, size_y))
         self._gui = gui
         self._gui._graph_spec = self
-        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont']
+        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model']
 
         self._logx = False
         self._logy = False

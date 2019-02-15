@@ -12,13 +12,17 @@ class GUIMenu(object):
 
     def bar(self):
         bar = wx.MenuBar()
-        session = GUIMenuSession(self._gui)
-        spectrum = GUIMenuSpectrum(self._gui)
-        linelist = GUIMenuLineList(self._gui)
+        sess = GUIMenuSession(self._gui)
+        spec = GUIMenuSpectrum(self._gui)
+        line_list = GUIMenuLineList(self._gui)
+        syst_list = GUIMenuSystemList(self._gui)
+        model = GUIMenuModel(self._gui)
         cookbook = GUIMenuCookbook(self._gui)
-        bar.Append(session._menu, "Session")
-        bar.Append(spectrum._menu, "Spectrum")
-        bar.Append(linelist._menu, "Line List")
+        bar.Append(sess._menu, "Session")
+        bar.Append(spec._menu, "Spectrum")
+        bar.Append(line_list._menu, "Line List")
+        bar.Append(syst_list._menu, "System List")
+        bar.Append(model._menu, "Model")
         bar.Append(cookbook._menu, "Cookbook")
         return bar
 
@@ -57,7 +61,7 @@ class GUIMenu(object):
 class GUIMenuCookbook(GUIMenu):
     def __init__(self,
                  gui,
-                 start_id=5000,
+                 start_id=6000,
                  **kwargs):
         super(GUIMenuCookbook, self).__init__(gui)
         self._gui = gui
@@ -88,6 +92,24 @@ class GUIMenuLineList(GUIMenu):
 
     def _on_view(self, event):
         self._gui._tab_lines._on_view(event)
+
+
+class GUIMenuModel(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=5000,
+                 **kwargs):
+        super(GUIMenuModel, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Model menu here
+        self._item_method(self._menu, start_id, "Single voigt",
+                          'model', None, 'single_voigt')
+
+    def _on_view(self, event):
+        self._gui._tab_model._on_view(event)
 
 
 class GUIMenuSession(GUIMenu):
@@ -123,6 +145,8 @@ class GUIMenuSession(GUIMenu):
         self._item_graph(self._submenu, start_id+207, "Continuum",
                          'spec_x_cont')
         self._item_graph(self._submenu, start_id+208, "Spectral format",
+                         'spec_x_model')
+        self._item_graph(self._submenu, start_id+209, "Spectral format",
                          'spec_form_x')
         self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")
         self._item(self._menu, start_id+210, "Toggle normalization",
@@ -173,6 +197,7 @@ class GUIMenuSession(GUIMenu):
         self._gui._tab_spec.Close()
         self._gui._tab_lines.Close()
 
+
 class GUIMenuSpectrum(GUIMenu):
 
     def __init__(self,
@@ -198,3 +223,19 @@ class GUIMenuSpectrum(GUIMenu):
 
     def _on_view(self, event):
         self._gui._tab_spec._on_view(event)
+
+class GUIMenuSystemList(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=4000,
+                 **kwargs):
+        super(GUIMenuSystemList, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Spectrum menu here
+        self._item(self._menu, start_id, "View table", self._on_view)
+
+    def _on_view(self, event):
+        self._gui._tab_systems._on_view(event)
