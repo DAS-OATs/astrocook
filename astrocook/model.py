@@ -16,11 +16,11 @@ class Model(object):
     continuum adjustment, and system profile."""
 
     def __init__(self,
-                 spec):
-        self._spec = spec
+                 sess):
+        self._sess = sess
 
-    def _create_comp(self, ion):
-        lines = ModelLines(self._lines_func, ion=ion)
+    def _create_comp(self, series):
+        lines = ModelLines(self._lines_func, series=series)
         psf = ModelPSF(self._psf_func)
         comp = LMComposite(lines, psf, convolve)
         comp._params = lines._params
@@ -28,7 +28,7 @@ class Model(object):
         return comp
         #line = LMModel(getattr(f, self._line_func), prefix='line_', ion=ion)
 
-    def single_voigt(self, series='Lya', z=2.0, N=1e14, b=20, btur=0,
+    def single_voigt(self, series='Ly_a', z=2.0, N=1e14, b=20, btur=0,
                      resol=35000):
         """ @brief Create a voigt model of a single series
         @param series Series of transitions
@@ -40,39 +40,69 @@ class Model(object):
         @return 0
         """
 
+        z = float(z)
+        N = float(N)
+        b = float(b)
+        btur = float(btur)
+        resol = float(resol)
+
+        spec = self._sess.spec
+
         self._lines_func = voigt
         self._psf_func = gaussian
         self._comp = self._create_comp(series)
 
-        x = np.array(self._spec._safe(self._spec.x).to(au.nm))
-        chunk = np.where(np.logical_and(x > 413.5,
-                                        x < 413.7))
-        xc = np.array(x[chunk])# * self._spec.x.unit
-        yc = np.array(self._spec.y[chunk]/self._spec._t['cont'][chunk])
-        weights = np.array(self._spec._t['cont'][chunk]/self._spec.dy[chunk])
+        trans = series_d[series]
+
+        x = np.array(spec._safe(spec.x).to(au.nm))
+        s = spec._where_safe
+        c = np.array([], dtype=int)
+        centers = []
+        resols = []
+        """
+        for t in series_d[series]:
+            c = np.append(c, np.where(np.logical_and(x > (0.999+z)*xem_d[t].value,
+                                                     x < (1.001+z)*xem_d[t].value))[0])
+            centers.append((1+z)*xem_d[t].value)
+            resols.append(resol)
+        """
+        c = np.where(np.logical_and(x > (0.999+z)*xem_d[trans[0]].value,
+                                    x < (1.001+z)*xem_d[trans[-1]].value))
+        xc = np.array(x[c])# * spec.x.unit
+        if 'noabs' in spec._t.colnames:
+            yc = np.array(spec._t['noabs'][c]/spec._t['cont'][c])
+        else:
+            yc = np.array(spec.y[c]/spec._t['cont'][c])
+        w = np.array(spec._t['cont'][c]/spec.dy[c])
 
         self._comp._params.add_many(
-            #('gaussian_c_min', int(0), False),
-            #('gaussian_c_max', int(-1), False),
+            #('gaussian_centers', float(np.median(xc)), False),
+            #('gaussian_resols', float(resol), False),
             ('gaussian_center', float(np.median(xc)), False),
             ('gaussian_resol', float(resol), False),
-            ('voigt_z', float(z)),
-            ('voigt_N', float(N)),
-            ('voigt_b', float(b)),
-            ('voigt_btur', float(btur)))
-        self._comp._params.pretty_print()
+            ('voigt_z', z, True),
+            ('voigt_N', N, True),
+            ('voigt_b', b, True),
+            ('voigt_btur', btur, True))
         guess = self._comp.eval(self._comp._params, x=x)
-        print(len(guess), np.sum(self._spec._where_safe))
-        self._spec.t['model'] = self._spec.y
-        self._spec.t['model'][self._spec._where_safe] = guess * self._spec._t['cont'][self._spec._where_safe]
-        print("guess done")
-        xc = np.array(self._spec.x[chunk].to(au.nm))# * self._spec.x.unit
-        yc = np.array(self._spec.y[chunk]/self._spec._t['cont'][chunk])
-        weights = np.array(self._spec._t['cont'][chunk]/self._spec.dy[chunk])
+
+        if 'model' in spec._t.colnames:
+            print(prefix, "I'm updating column 'model'.")
+        else:
+            print(prefix, "I'm adding column 'model'.")
+            spec._t['model'] = np.empty(len(spec.x), dtype=float)*spec.y.unit
+            spec._t['model'][s] = spec._t['cont'][s]
+
+
+
         fit = self._comp.fit(yc, self._comp._params, x=xc)
-        print("fit done")
-        self._spec.t['model'][chunk] = fit.best_fit * self._spec._t['cont'][chunk]
-        print(fit.fit_report())
+        spec._t['model'][c] = fit.best_fit * spec._t['model'][c]#spec._t['cont'][c]
+        if 'noabs' in spec._t.colnames:
+            print(prefix, "I'm updating column 'noabs'.")
+        else:
+            print(prefix, "I'm adding column 'noabs'.")
+            spec._t['noabs'] = spec.y
+            spec._t['noabs'][c] = spec._t['cont'][c]+spec.y[c]-spec._t['model'][c]
         return 0
 
 class ModelLines(LMModel):

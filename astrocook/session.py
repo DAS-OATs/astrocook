@@ -158,4 +158,4 @@ class Session(object):
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
 
-        self.model = Model(self.spec)
+        self.model = Model(self)

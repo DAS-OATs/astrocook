@@ -53,7 +53,7 @@ def gaussian(x,
     return ret
 
 
-def voigt(x, z, N, b, btur, trans='Ly_a', xem=0.0, tab=None):
+def voigt(x, z, N, b, btur, series='Ly_a', xem=0.0, tab=None):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 
@@ -62,7 +62,7 @@ def voigt(x, z, N, b, btur, trans='Ly_a', xem=0.0, tab=None):
     @param N Column density (in cm^-2)
     @param b Doppler broadening (in km s^-1)
     @param btur Turbulent broadening (in km s^-1)
-    @param trans Ionic transition
+    @param series Series of ionic transition
     @param xem Wavelength of the line (in nm)
     @param tab Table with the Faddeeva function
     @return Voigt function over x
@@ -74,21 +74,19 @@ def voigt(x, z, N, b, btur, trans='Ly_a', xem=0.0, tab=None):
     b = b * au.km/au.s
     btur = btur * au.km/au.s
 
+    model = np.ones(len(x))
+    for t in series_d[series]:
 
-    if xem < 1e8:
-        xem = xem_d[trans]#.to(au.m)
+        xem = xem_d[t]
         xobs = xem*(1+z)
-    else:  # For unknown species, Ly-alpha rest-frame wavelength is assumed
-        print("xem", xem)
-        xobs = xem
-        xem = xem_d['Ly_a']
-    fosc = fosc_d[trans]
-    gamma = gamma_d[trans]/au.s
-    b_qs = np.sqrt(b**2 + btur**2)
-    atom = fosc * e.esu**2 / (m_e * c)
-    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
-    a = 0.25 * gamma * xem / (np.pi * b_qs)
-    u = c / b_qs * ((x / xobs).to(au.dimensionless_unscaled) - 1)
+        fosc = fosc_d[t]
+        gamma = gamma_d[t]/au.s
+        b_qs = np.sqrt(b**2 + btur**2)
+        atom = fosc * e.esu**2 / (m_e * c)
+        tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+        a = 0.25 * gamma * xem / (np.pi * b_qs)
+        u = c / b_qs * ((x / xobs).to(au.dimensionless_unscaled) - 1)
 
-    model = np.exp(-tau0.to(au.dimensionless_unscaled) * fadd(a, u)) #* yunit
-    return np.array(model)
+        model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) * fadd(a, u)))
+
+    return model

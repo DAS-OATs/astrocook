@@ -118,7 +118,7 @@ class GraphSpectrumXCont(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXCont, self).__init__(sess)
-        self._y = sess.spec._t['cont']
+        self._y = sess.spec._t['noabs']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", continuum"}
