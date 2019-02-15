@@ -57,17 +57,14 @@ class Model(object):
         x = np.array(spec._safe(spec.x).to(au.nm))
         s = spec._where_safe
         c = np.array([], dtype=int)
-        centers = []
-        resols = []
-        """
+        #"""
         for t in series_d[series]:
-            c = np.append(c, np.where(np.logical_and(x > (0.999+z)*xem_d[t].value,
-                                                     x < (1.001+z)*xem_d[t].value))[0])
-            centers.append((1+z)*xem_d[t].value)
-            resols.append(resol)
+            c = np.append(c, np.where(np.logical_and(x > (0.995+z)*xem_d[t].value,
+                                                     x < (1.005+z)*xem_d[t].value))[0])
         """
-        c = np.where(np.logical_and(x > (0.999+z)*xem_d[trans[0]].value,
-                                    x < (1.001+z)*xem_d[trans[-1]].value))
+        c = np.where(np.logical_and(x > (0.995+z)*xem_d[trans[0]].value,
+                                    x < (1.005+z)*xem_d[trans[-1]].value))
+        """
         xc = np.array(x[c])# * spec.x.unit
         if 'noabs' in spec._t.colnames:
             yc = np.array(spec._t['noabs'][c]/spec._t['cont'][c])
@@ -76,14 +73,14 @@ class Model(object):
         w = np.array(spec._t['cont'][c]/spec.dy[c])
 
         self._comp._params.add_many(
-            #('gaussian_centers', float(np.median(xc)), False),
-            #('gaussian_resols', float(resol), False),
-            ('gaussian_center', float(np.median(xc)), False),
-            ('gaussian_resol', float(resol), False),
+            #('gaussian_center', float(np.median(xc)), False),
+            ('gaussian_resol', resol, False),
+            ('gaussian_z', z, False),
             ('voigt_z', z, True),
             ('voigt_N', N, True),
             ('voigt_b', b, True),
             ('voigt_btur', btur, True))
+
         guess = self._comp.eval(self._comp._params, x=x)
 
         if 'model' in spec._t.colnames:

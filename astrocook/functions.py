@@ -30,9 +30,8 @@ def convolve(data, kernel):
     return ret
 
 
-def gaussian(x,
-             #c_min, c_max,
-             center, resol):
+def gaussian(x, #center, resol):
+             resol, z, series='Ly_a'):
     """ @brief Gaussian PSF
 
     The function returns a gaussian array for each element of a selected region
@@ -46,10 +45,21 @@ def gaussian(x,
     @return Gaussian PSF over x
     """
 
+    """
     sigma = center / resol * 4.246609001e-1
     psf = np.exp(-(0.5 * (x-center) / sigma)**2)
     psf[np.where(psf < 1e-4)] = 0.0
     ret = [np.array(psf)]#[c_min:c_max]]
+    return ret
+    """
+
+    ret = []
+    for t in series_d[series]:
+        c = (1+z)*xem_d[t].value
+        sigma = c / resol * 4.246609001e-1
+        psf = np.exp(-(0.5 * (x-c) / sigma)**2)
+        psf[np.where(psf < 1e-4)] = 0.0
+        ret.append(psf)#[c_min:c_max]]
     return ret
 
 
