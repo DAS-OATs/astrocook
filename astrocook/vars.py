@@ -7,10 +7,21 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
-z_def = 0.0
-N_def = 1e14
-b_def = 20.0
-btur_def = 0.0
+# Default values for line Voigt parameters
+lines_voigt_d = {
+    'z': 0.0, 'N': 1.e13, 'b': 10.0, 'btur': 0.0,
+    'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
+    'z_min': None, 'N_min': 1.e10, 'b_min': 0.0, 'btur_min': None,
+    'z_max': None, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': None,
+    'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
+
+# Default values for PSF gaussian Parameters
+psf_gauss_d = {
+    'z': 0.0, 'resol': 35000,
+    'z_vary': False, 'resol_vary': False,
+    'z_min': None, 'resol_min': None,
+    'z_max': None, 'resol_max': None,
+    'z_expr': None, 'resol_expr': None}
 
 series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',

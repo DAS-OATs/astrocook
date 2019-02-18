@@ -25,6 +25,7 @@ class GUITable(wx.Frame):
 
     def _on_view(self, event):
         data = getattr(self._gui._sess_sel, self._attr)
+        print("table", data)
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
@@ -41,7 +42,10 @@ class GUITable(wx.Frame):
                     self._tab.SetColSize(i, 150)
                     self._tab.SetColLabelValue(i, "%s\n%s" \
                                               % (n, str(data.t[n].unit)))
-                self._tab.SetCellValue(j, i, "%3.5f" % r[n])
+                try:
+                    self._tab.SetCellValue(j, i, r[n])
+                except:
+                    self._tab.SetCellValue(j, i, "%3.5f" % r[n])
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
@@ -102,8 +106,8 @@ class GUITableSystemList(GUITable):
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.9):
 
-        super(GUITableSystemList, self).__init__(gui, 'systems', title, size_x,
+        super(GUITableSystemList, self).__init__(gui, 'systs', title, size_x,
                                                  size_y)
 
         self._gui = gui
-        self._gui._tab_systems = self
+        self._gui._tab_systs = self

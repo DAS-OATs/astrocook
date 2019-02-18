@@ -66,6 +66,10 @@ class Frame(object):
     def dy(self):
         return au.Quantity(self._t['dy'])
 
+    @property
+    def meta(self):
+        return self._meta
+
     @x.setter
     def x(self, val, dtype=float):
         self._t['x'] = np.array(val, dtype=dtype)
@@ -90,10 +94,6 @@ class Frame(object):
     def dy(self, val, dtype=float):
         self._t['dy'] = np.array(val, dtype=dtype)
         self._t['dy'].unit = val.unit
-
-    @property
-    def meta(self):
-        return self._meta
 
     @meta.setter
     def meta(self, key, val):

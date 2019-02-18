@@ -30,7 +30,7 @@ class Spectrum(Frame):
                  dtype=float):
         super(Spectrum, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
-        
+
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
         cols = [c for c in self._t.colnames \

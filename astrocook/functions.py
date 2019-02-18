@@ -34,7 +34,7 @@ def convolve(data, kernel):
 def cont_gauss(x, amplitude, sigma):
     return 1+gauss(x, amplitude, sigma)
 
-def gaussian(x, #center, resol):
+def psf_gauss(x, #center, resol):
              resol, z, series='Ly_a'):
     """ @brief Gaussian PSF
 
@@ -67,7 +67,7 @@ def gaussian(x, #center, resol):
     return ret
 
 
-def voigt(x, z, N, b, btur, series='Ly_a', xem=0.0, tab=None):
+def lines_voigt(x, z, N, b, btur, series='Ly_a', tab=None):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 

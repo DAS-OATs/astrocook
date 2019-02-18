@@ -1,5 +1,7 @@
+from . import *
 from .gui_dialog import *
-from .session import Session
+#from .session import Session
+from .model import Model
 import wx
 
 prefix = "GUI:"
@@ -37,14 +39,16 @@ class GUIMenu(object):
                                    lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
 
-    def _item_method(self, menu, id, title, source, targ, attr):
+    def _item_method(self, menu, id, title, source, targ, attr, cl=None):
         item = wx.MenuItem(menu, id, title+'…')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_dialog(e, title, source, targ, attr), item)
+            lambda e: self._on_dialog(e, title, source, targ, attr, cl), item)
         menu.Append(item)
 
-    def _on_dialog(self, event, title, source, targ, attr):
+    def _on_dialog(self, event, title, source, targ, attr, cl=None):
+        if cl is not None:
+            setattr(self._gui._sess_sel, source, cl(sess=self._gui._sess_sel))
         dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
 
     def _on_graph(self, event, key, item):
@@ -162,16 +166,17 @@ class GUIMenuSnacks(GUIMenu):
         # Add items to Snacks menu here
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
                           'spec', None, 'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Find peaks",
-                          'spec', 'lines', 'find_peaks')
+        self._item_method(self._menu, start_id+102, "Find peaks", 'spec',
+                          'lines', 'find_peaks')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, "Extract nodes",
-                          'spec', 'nodes', 'extract_nodes')
-        self._item_method(self._menu, start_id+202, "Interpolate nodes",
-                          'spec', None, 'interp_nodes')
-
-    def _on_view(self, event):
-        self._gui._tab_spec._on_view(event)
+        self._item_method(self._menu, start_id+201, "Extract nodes", 'spec',
+                          'nodes', 'extract_nodes')
+        self._item_method(self._menu, start_id+202, "Interpolate nodes", 'spec',
+                          None, 'interp_nodes')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+301, "Fit a single system",
+                         'systs', None, 'fit_single', SystList)
+                         #'model', None, 'single_voigt', Model)
 
 class GUIMenuView(GUIMenu):
 
@@ -184,12 +189,12 @@ class GUIMenuView(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to View menu here
-        self._item(self._menu, start_id+1, "View spectrum table",
+        self._item(self._menu, start_id+1, "Spectrum table",
                    lambda e: self._on_view(e, 'spec'))
-        self._item(self._menu, start_id+2, "View line table",
+        self._item(self._menu, start_id+2, "Line table",
                    lambda e: self._on_view(e, 'lines'))
-        self._item(self._menu, start_id+3, "View system table",
-                   lambda e: self._on_view(e, 'systems'))
+        self._item(self._menu, start_id+3, "System table",
+                   lambda e: self._on_view(e, 'systs'))
         self._menu.AppendSeparator()
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, "Toggle log x axis", self._on_logx)
@@ -210,8 +215,10 @@ class GUIMenuView(GUIMenu):
                          'spec_nodes_x_y')
         self._item_graph(self._submenu, start_id+207, "Continuum",
                          'spec_x_cont')
-        self._item_graph(self._submenu, start_id+208, "Spectral format",
+        self._item_graph(self._submenu, start_id+208, "Model",
                          'spec_x_model')
+        self._item_graph(self._submenu, start_id+208, "De-absorbed",
+                         'spec_x_deabs')
         self._item_graph(self._submenu, start_id+209, "Spectral format",
                          'spec_form_x')
         self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")

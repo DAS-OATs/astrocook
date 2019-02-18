@@ -42,7 +42,8 @@ class Graph(object):
                            'spec_nodes_x_y': GraphSpectrumNodesXY,
                            'spec_x_cont': GraphSpectrumXCont,
                            'spec_form_x': GraphSpectrumFormX,
-                           'spec_x_model': GraphSpectrumXModel}
+                           'spec_x_model': GraphSpectrumXModel,
+                           'spec_x_deabs': GraphSpectrumXDeabs}
         self._plot_list = [self._plot_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
@@ -118,7 +119,7 @@ class GraphSpectrumXCont(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXCont, self).__init__(sess)
-        self._y = sess.spec._t['noabs']
+        self._y = sess.spec._t['cont']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", continuum"}
@@ -149,6 +150,15 @@ class GraphSpectrumXModel(GraphSpectrumXY):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", model"}
+
+class GraphSpectrumXDeabs(GraphSpectrumXY):
+
+    def __init__(self, sess, norm=False):
+        super(GraphSpectrumXDeabs, self).__init__(sess)
+        self._y = sess.spec._t['deabs']
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
+        self._kwargs = {'lw':1.0, 'label':sess.name+", de-absorbed"}
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 

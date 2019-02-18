@@ -20,7 +20,7 @@ class Session(object):
                  spec_form=None,
                  nodes=None,
                  lines=None,
-                 systems=None,
+                 systs=None,
                  model=None):
         self.path = path
         self.name = name
@@ -28,9 +28,9 @@ class Session(object):
         self.spec_form = spec_form
         self.nodes = nodes
         self.lines = lines
-        self.systems = systems
+        self.systs = systs
         self.model = model
-        self.seq = ['spec', 'nodes', 'lines', 'systems', 'model']
+        self.seq = ['spec', 'nodes', 'lines', 'systs', 'model']
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -159,4 +159,4 @@ class Session(object):
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
 
-        self.model = Model(self)
+        #self.model = Model(self)

@@ -44,6 +44,7 @@ class GUIDialogMethod(wx.Dialog):
             self._get_params(method)
             self._get_doc(method)
 
+
         panel = wx.Panel(self)
         box = wx.BoxSizer(wx.VERTICAL)
         core = wx.BoxSizer(wx.VERTICAL)
@@ -117,8 +118,14 @@ class GUIDialogMethod(wx.Dialog):
         self.Close()
 
     def _on_run(self, e):
-        for m, t, p_l, c_l in zip(self._methods, self._targ, self._params,
-                                  self._ctrl):
+        for s, t, a, p_l, c_l in zip(self._source, self._targ, self._attr,
+                                     self._params, self._ctrl):
+            if s == None:
+                obj = self._gui._sess_sel
+            else:
+                obj = getattr(self._gui._sess_sel, s)
+            m = getattr(obj, a)
+
             for p, c in zip(p_l, c_l):
                 pmod = c.GetValue()
                 p_l[p] = pmod
