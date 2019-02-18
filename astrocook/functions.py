@@ -1,5 +1,6 @@
 from .vars import *
 from scipy.special import wofz
+from lmfit.lineshapes import gaussian as gauss
 import numpy as np
 
 def fadd(a, u):
@@ -29,6 +30,9 @@ def convolve(data, kernel):
         ret = np.append(ret, conv)
     return ret
 
+
+def cont_gauss(x, amplitude, sigma):
+    return 1+gauss(x, amplitude, sigma)
 
 def gaussian(x, #center, resol):
              resol, z, series='Ly_a'):

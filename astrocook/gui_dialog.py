@@ -131,7 +131,7 @@ class GUIDialogMethod(wx.Dialog):
                     if t == None:
                         new_sess = out
                     else:
-                        new_sess = self._gui._sess_sel
+                        new_sess = dc(self._gui._sess_sel)
                         setattr(new_sess, t, out)
                     self._gui._panel_sess._on_add(e, new_sess, open=False)
                 self.Close()

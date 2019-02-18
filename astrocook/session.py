@@ -4,6 +4,7 @@ from .model import Model
 #from .spectrum import Spectrum
 from astropy import units as au
 from astropy.io import ascii, fits
+from copy import deepcopy as dc
 
 prefix = "Session:"
 
@@ -92,17 +93,17 @@ class Session(object):
         kwargs = {'path': path, 'name': name}
         for s in self.seq:
             try:
-                kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
+                kwargs[s] = dc(getattr(self, s)._extract_region(xmin, xmax))
             except:
                 try: # For Model
-                    getattr(self, s)._spec = self.spec
-                    kwargs[s] = getattr(self, s) # For Model
+                    kwargs[s] = dc(getattr(self, s)) # For Model
                 except:
                     kwargs[s] = None
         if kwargs['spec'] != None:
             new = Session(**kwargs)
         else:
             new = None
+
         return new
 
     def open(self):

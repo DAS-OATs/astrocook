@@ -4,7 +4,7 @@ from astropy import units as au
 from lmfit import CompositeModel as LMComposite
 from lmfit import Model as LMModel
 from lmfit import Parameters as LMParameters
-#from lmfit.lineshapes import gaussian
+#from lmfit.lineshapes import gaussian as gauss
 import numpy as np
 
 prefix = "Model:"
@@ -20,16 +20,20 @@ class Model(object):
         self._sess = sess
 
     def _create_comp(self, series):
+        #cont = ModelCont(self._cont_func)
         lines = ModelLines(self._lines_func, series=series)
         psf = ModelPSF(self._psf_func)
+        #cont_lines = cont * lines
+        #comp = LMComposite(cont_lines, psf, convolve)
         comp = LMComposite(lines, psf, convolve)
         comp._params = lines._params
+        #comp._params.update(cont._params)
         comp._params.update(psf._params)
         return comp
         #line = LMModel(getattr(f, self._line_func), prefix='line_', ion=ion)
 
     def single_voigt(self, series='Ly_a', z=2.0, N=1e14, b=20, btur=0,
-                     resol=35000):
+                     resol=35000, cont_ampl=0.1):
         """ @brief Create a voigt model of a single series
         @param series Series of transitions
         @param z Redshift
@@ -45,9 +49,11 @@ class Model(object):
         b = float(b)
         btur = float(btur)
         resol = float(resol)
+        cont_ampl = float(cont_ampl)
 
         spec = self._sess.spec
 
+        #self._cont_func = cont_gauss
         self._lines_func = voigt
         self._psf_func = gaussian
         self._comp = self._create_comp(series)
@@ -74,12 +80,14 @@ class Model(object):
 
         self._comp._params.add_many(
             #('gaussian_center', float(np.median(xc)), False),
-            ('gaussian_resol', resol, False),
-            ('gaussian_z', z, False),
-            ('voigt_z', z, True),
-            ('voigt_N', N, True),
-            ('voigt_b', b, True),
-            ('voigt_btur', btur, True))
+            #('cont_gauss_amplitude', cont_ampl, True),
+            #('cont_gauss_sigma', 100, True),
+            ('lines_voigt_z', z, True),
+            ('lines_voigt_N', N, True),
+            ('lines_voigt_b', b, True),
+            ('lines_voigt_btur', btur, True),
+            ('psf_gaussian_resol', resol, False),
+            ('psf_gaussian_z', z, False))
 
         guess = self._comp.eval(self._comp._params, x=x)
 
@@ -102,6 +110,22 @@ class Model(object):
             spec._t['noabs'][c] = spec._t['cont'][c]+spec.y[c]-spec._t['model'][c]
         return 0
 
+class ModelCont(LMModel):
+    """ Class for continuum models
+
+    A ModelCont is a model for the local continuum."""
+
+    def __init__(self,
+                 func,
+                 **kwargs):
+
+        if func.__name__ != 'gaussian':
+            print(prefix, "Only 'gaussian' function supported for lines.")
+            return None
+        prefix = 'cont_'+func.__name__+'_'
+        super(ModelCont, self).__init__(func, prefix=prefix, **kwargs)
+        self._params = self.make_params()
+
 class ModelLines(LMModel):
     """ Class for line models
 
@@ -114,7 +138,7 @@ class ModelLines(LMModel):
         if func.__name__ != 'voigt':
             print(prefix, "Only 'voigt' function supported for lines.")
             return None
-        prefix = func.__name__+'_'
+        prefix = 'lines_'+func.__name__+'_'
         super(ModelLines, self).__init__(func, prefix=prefix, **kwargs)
         self._params = self.make_params()
 
@@ -130,6 +154,6 @@ class ModelPSF(LMModel):
         if func.__name__ != 'gaussian':
             print(prefix, "Only 'gaussian' function supported for lines.")
             return None
-        prefix = func.__name__+'_'
+        prefix = 'psf_'+func.__name__+'_'
         super(ModelPSF, self).__init__(func, prefix=prefix, **kwargs)
         self._params = self.make_params()
