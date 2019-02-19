@@ -21,7 +21,8 @@ class GUIDialogMethod(wx.Dialog):
                  title,
                  source,
                  targ,
-                 attr):
+                 attr,
+                 cl=None):
 
         self._gui = gui
         self._gui._dlg_method = self
@@ -29,11 +30,23 @@ class GUIDialogMethod(wx.Dialog):
         self._source = np.array(source, ndmin=1)
         self._targ = np.array(targ, ndmin=1)
         self._attr = np.array(attr, ndmin=1)
+        if cl != None:
+            self._cl = np.array(cl, ndmin=1)
+        else:
+            self._cl = np.array([None]*len(self._source))
         self._methods = []
         self._params = []
         self._brief = []
         self._doc = []
-        for s, a in zip(self._source, self._attr):
+
+#        if cl is not None:
+#            setattr(self._gui._sess_sel, source, cl(sess=self._gui._sess_sel))
+
+
+        for s, a, c in zip(self._source, self._attr, self._cl):
+            if c != None and getattr(self._gui._sess_sel, s) == None:
+                setattr(self._gui._sess_sel, s, c(sess=self._gui._sess_sel))
+
             if s == None:
                 obj = self._gui._sess_sel
             else:

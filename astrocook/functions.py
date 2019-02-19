@@ -90,7 +90,6 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a', tab=None):
 
     model = np.ones(len(x))
     for t in series_d[series]:
-
         xem = xem_d[t]
         xobs = xem*(1+z)
         fosc = fosc_d[t]

@@ -1,4 +1,4 @@
-version = "0.2"
+version = "0.3"
 
 from .session import Session
 from .syst_list import SystList

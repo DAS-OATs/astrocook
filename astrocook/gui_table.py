@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -25,7 +27,6 @@ class GUITable(wx.Frame):
 
     def _on_view(self, event):
         data = getattr(self._gui._sess_sel, self._attr)
-        print("table", data)
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
@@ -33,7 +34,7 @@ class GUITable(wx.Frame):
         except:
             print(prefix, "I'm loading table...")
         coln = len(data.t.colnames)
-        rown = len(data.t)
+        rown = len(data.t)-self._tab.GetNumberRows()
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
         for j, r in enumerate(data.t):
@@ -43,9 +44,15 @@ class GUITable(wx.Frame):
                     self._tab.SetColLabelValue(i, "%s\n%s" \
                                               % (n, str(data.t[n].unit)))
                 try:
-                    self._tab.SetCellValue(j, i, r[n])
-                except:
                     self._tab.SetCellValue(j, i, "%3.5f" % r[n])
+                except:
+                    if type(r[n]) == str:
+                        self._tab.SetCellValue(j, i, r[n])
+                    if type(r[n]) == OrderedDict:
+                        self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                    if type(r[n]) == dict:
+                        self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+        self._tab.AutoSizeColumns(True)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)

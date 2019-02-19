@@ -47,9 +47,7 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _on_dialog(self, event, title, source, targ, attr, cl=None):
-        if cl is not None:
-            setattr(self._gui._sess_sel, source, cl(sess=self._gui._sess_sel))
-        dlg = GUIDialogMethod(self._gui, title, source, targ, attr)
+        dlg = GUIDialogMethod(self._gui, title, source, targ, attr, cl)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_spec._sel
@@ -175,8 +173,10 @@ class GUIMenuSnacks(GUIMenu):
                           None, 'interp_nodes')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+301, "Fit a single system",
-                         'systs', None, 'fit_single', SystList)
+                          'systs', None, 'fit_single', SystList)
                          #'model', None, 'single_voigt', Model)
+        self._item_method(self._menu, start_id+302, "Fit many systems",
+                          'systs', None, 'fit_many', SystList)
 
 class GUIMenuView(GUIMenu):
 
