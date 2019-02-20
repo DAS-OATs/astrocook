@@ -1,11 +1,20 @@
 from astropy import units as au
-from astropy.constants import c, e, m_e
+ #c, e, m_e
 
 xunit_def = au.nm
 yunit_def = au.erg / (au.Angstrom * au.cm**2 * au.s)
 zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
+
+# Default values for continuum adjustment parameters
+adj_gauss_d = {
+    'z': 0.0, 'ampl': 0.0, 'sigma': 0.01,
+    'z_vary': False, 'ampl_vary': False, 'sigma_vary': False,
+    'z_min': None, 'ampl_min': -0.05, 'sigma_min': 0.0,
+    'z_max': None, 'ampl_max': 0.05, 'sigma_max': 1.0,
+    'z_expr': None, 'ampl_expr': None, 'sigma_expr': None}
+
 
 # Default values for line Voigt parameters
 lines_voigt_d = {

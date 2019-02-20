@@ -173,10 +173,9 @@ class GUIMenuSnacks(GUIMenu):
                           None, 'interp_nodes')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+301, "Fit a single system",
-                          'systs', None, 'fit_single', SystList)
-                         #'model', None, 'single_voigt', Model)
+                          'systs', None, 'fit', SystList)
         self._item_method(self._menu, start_id+302, "Fit many systems",
-                          'systs', None, 'fit_many', SystList)
+                          'systs', None, 'fit', SystList)
 
 class GUIMenuView(GUIMenu):
 
