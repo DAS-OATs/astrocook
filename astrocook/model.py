@@ -111,9 +111,14 @@ class ModelLines(LMModel):
 
     A ModelLines is a model for spectral line."""
 
-    def __init__(self, call, count, series,
-                 **kwargs):
-        func = call._lines_func
+    #def __init__(self, call, count, series,
+    #             **kwargs):
+    #    func = call._lines_func
+    def __init__(self, func, series, z, zmin, zmax, count, **kwargs):
+        self._z = z
+        self._zmin = zmin
+        self._zmax = zmax
+        self._count = count
         func_name = func.__name__
         if func_name != 'lines_voigt':
             print(prefix, "Only 'lines_voigt' function supported for lines.")
@@ -121,10 +126,22 @@ class ModelLines(LMModel):
         self._prefix = func_name+'_'+str(count)+'_'
         super(ModelLines, self).__init__(func, prefix=self._prefix,
                                          series=series)#, **kwargs)
-        getattr(self, '_pars_'+func_name)(call)
+        #getattr(self, '_pars_'+func_name)(call)
+        getattr(self, '_pars_'+func_name)(**kwargs)
 
-    def _pars_lines_voigt(self, call):
-        d = call._lines_d
+    #def _pars_lines_voigt(self, call):
+    #    d = call._lines_d
+    def _pars_lines_voigt(self, **kwargs):
+
+        # Line defaults
+        d = lines_voigt_d
+        d['z'] = self._z
+        d['z_min'] = self._zmin
+        d['z_max'] = self._zmax
+        if kwargs is not None:
+            for p in kwargs:
+                if p in d:
+                    d[p] = kwargs[p]
         self._pars = self.make_params()
         self._pars.add_many(
             (self._prefix+'z', d['z'], d['z_vary'], d['z_min'], d['z_max'],
@@ -135,6 +152,9 @@ class ModelLines(LMModel):
              d['b_expr']),
             (self._prefix+'btur', d['btur'], d['btur_vary'], d['btur_min'],
              d['btur_max'], d['btur_expr']))
+
+
+
 
 class ModelPSF(LMModel):
     """ Class for psf models

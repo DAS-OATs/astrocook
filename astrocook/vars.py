@@ -20,8 +20,8 @@ adj_gauss_d = {
 lines_voigt_d = {
     'z': 0.0, 'N': 1.e13, 'b': 10.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
-    'z_min': None, 'N_min': 1.e10, 'b_min': 0.0, 'btur_min': None,
-    'z_max': None, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': None,
+    'z_min': None, 'N_min': 1.e11, 'b_min': 5.0, 'btur_min': None,
+    'z_max': None, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': None,
     'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
 
 # Default values for PSF gaussian Parameters

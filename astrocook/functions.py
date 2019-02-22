@@ -77,25 +77,6 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a'):
 
     return model
 
-def nfwhm_voigt(N=0, b=20, btur=0, series='Ly_a'):
-    """ @brief FWHM of the Voigt function normalized to the speed of light.
-    """
-
-    nfwhm = []
-    for t in series_d[series]:
-        xem = xem_d[t]
-        gamma = gamma_d[t]/au.s
-        b_qs = np.sqrt(b**2 + btur**2)
-        a = 0.25 * gamma * xem / (np.pi * b_qs)
-
-
-        nfwhm.append(0.5346*a.value+np.sqrt(0.2166*a.value**2+1))
-    ret = 2*b/ac.c.to(au.km/au.s).value
-    print(nfwhm, ret)
-    return ret
-
-
-
 def psf_gauss(x, #center, resol):
               z, resol, series='Ly_a'):
     """ @brief Gaussian PSF

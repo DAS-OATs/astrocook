@@ -172,10 +172,14 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+202, "Interpolate nodes", 'spec',
                           None, 'interp_nodes')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, "Fit a single system",
+        self._item_method(self._menu, start_id+301, "Fit a system",
                           'systs', None, 'fit', SystList)
-        self._item_method(self._menu, start_id+302, "Fit many systems",
-                          'systs', None, 'fit', SystList)
+        self._item_method(self._menu, start_id+303, "Fit systems from a line "
+                          "list", 'systs', None, 'fit_from_lines', SystList)
+        self._item_method(self._menu, start_id+302, "Fit systems from fitting "
+                          "residuals", 'systs', None, 'fit_from_deabs',
+                          SystList)
+
 
 class GUIMenuView(GUIMenu):
 
