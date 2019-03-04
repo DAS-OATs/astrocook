@@ -103,7 +103,7 @@ class GUIMenuFile(GUIMenu):
             name = path.split('/')[-1][:-5]
             print(prefix, "I'm loading session %s..." % path)
             sess = Session(path=path, name=path.split('/')[-1][:-5])
-            self._gui._panel_sess._on_add(event, sess, open=True)
+            self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_quit(self, event):
         print("AC: Bye!")

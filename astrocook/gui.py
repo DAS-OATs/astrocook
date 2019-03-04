@@ -1,4 +1,4 @@
-from . import version
+from . import * #version
 from .graph import Graph
 from .gui_menu import *
 from .gui_table import *
@@ -12,21 +12,24 @@ prefix = "GUI:"
 class GUI(object):
     """ Class for the GUI. """
 
-    def __init__(self):
+    def __init__(self, path=None):
         """ Constructor """
 
         print("┌───────────────────┐")
         print("│ ASTROCOOK 🍪  v%3s │" % version)
         print("└───────────────────┘")
         print("Cupani et al. 2017-2019 * INAF-OATs")
-        print("AC: Welcome! Try Session > Open…")
         self._sess_list = []
         self._sess_sel = None
-        GUIPanelSession(self)
+        panel_sess = GUIPanelSession(self)
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
         GUITableSystemList(self)
+        if path == None:
+            print("AC: Welcome! Try Session > Open…")
+        else:
+            panel_sess._on_open(path)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
@@ -84,7 +87,7 @@ class GUIPanelSession(wx.Frame):
         self.SetMenuBar(self._menu.bar())
         self.Show()
 
-    def _on_add(self, event, sess, open=True):
+    def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
         self._items = [self._sel]
@@ -105,6 +108,14 @@ class GUIPanelSession(wx.Frame):
 
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
+
+    def _on_open(self, path):
+        """ Behaviour for Session > Open """
+
+        name = path.split('/')[-1][:-5]
+        print(prefix, "I'm loading session %s..." % path)
+        sess = Session(path=path, name=path.split('/')[-1][:-5])
+        self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_select(self, event):
         self._sel = event.GetIndex()

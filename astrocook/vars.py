@@ -7,6 +7,7 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
+
 # Default values for continuum adjustment parameters
 adj_gauss_d = {
     'z': 0.0, 'ampl': 0.0, 'sigma': 0.01,
@@ -31,6 +32,8 @@ psf_gauss_d = {
     'z_min': None, 'resol_min': None,
     'z_max': None, 'resol_max': None,
     'z_expr': None, 'resol_expr': None}
+
+pars_d = {'lines_voigt_d': lines_voigt_d}
 
 series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',

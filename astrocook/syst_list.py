@@ -1,4 +1,4 @@
-from .model import Model, ModelLines, ModelPSF
+from .model import Model, ModelLines#, ModelPSF
 from .spectrum import Spectrum
 from .vars import *
 from .functions import convolve, lines_voigt, psf_gauss
@@ -43,7 +43,7 @@ class SystList(object):
         t['zmin'] = at.Column(np.array(zmin, ndmin=1), dtype=dtype, unit=zunit)
         t['zmax'] = at.Column(np.array(zmax, ndmin=1), dtype=dtype, unit=zunit)
         self._t = t
-        self._t['comp'] = np.empty(len(self.z), dtype=object)
+        self._t['mod'] = np.empty(len(self.z), dtype=object)
         self._t['pars'] = np.empty(len(self.z), dtype=object)
         self._t['dpars'] = np.empty(len(self.z), dtype=object)
         self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
@@ -99,12 +99,12 @@ class SystList(object):
         self._t['zmax'].unit = val.unit
 
 
-    #def _domain(self, comp, pars, thres=1e-3): #series, z, zmin, zmax):
+    #def _domain(self, mod, pars, thres=1e-3): #series, z, zmin, zmax):
     def _domain(self, ys, thres=1e-3): #series, z, zmin, zmax):
         """ @brief Define domain for fitting. """
 
         spec = self._spec
-        #m = comp.eval(x=self._xs, params=pars)
+        #m = mod.eval(x=self._xs, params=pars)
         #c = np.where(m<1-thres)
         c = np.where(ys<1-thres)
         xc = np.array(self._xs[c])
@@ -116,17 +116,17 @@ class SystList(object):
         wc = np.array(spec._t['cont'][c]/spec.dy[c])
         return xc, yc, wc
 
-    def _fit_voigt(self, comp, pars, xc, yc, wc):
+    def _fit_voigt(self, mod, pars, xc, yc, wc):
 
-        fit = comp.fit(yc, pars, x=xc, weights=wc)
-        comp = fit
+        fit = mod.fit(yc, pars, x=xc, weights=wc)
+        mod = fit
         pars = fit.params
-        self._ys = comp.eval(x=self._xs, params=pars)
-        return comp, pars
+        self._ys = mod.eval(x=self._xs, params=pars)
+        return mod, pars
 
-    def _group_voigt(self, comp, pars, ys, thres=1.e-3):
+    def _group_voigt(self, mod, pars, ys, thres=1.e-3):
         """ @brief Define group of systems. A group is the set of systems with
-        at list one line within the footprint of the system described by the
+        at least one line within the footprint of the system described by the
         model in input.
         """
 
@@ -138,21 +138,21 @@ class SystList(object):
                 group.append(i)
                 #m = Model(series=s['series'], z=s['z'], zmin=s['zmin'],
                 #          zmax=s['zmax'], pars=s['pars'], count=c+1)
-                m = ModelLines(lines_voigt, s['series'], s['z'], s['zmin'],
-                               s['zmax'], c+1, **s['pars'])
-                #comp *= m._comp
-                #pars.update(m._comp._pars)
-                comp *= m
+                m = ModelLines(lines_voigt, c+1, s['series'], s['z'], s['zmin'],
+                               s['zmax'], **s['pars'])
+                #mod *= m._mod
+                #pars.update(m._mod._pars)
+                mod *= m
                 pars.update(m._pars)
 
                 c += 1
 
         group = np.array(group)
-        ys = comp.eval(x=self._xs, params=pars)
-        return comp, pars, ys, group
+        ys = mod.eval(x=self._xs, params=pars)
+        return mod, pars, ys, group
 
     def _single_voigt(self, series='Ly_a', z=2.0, N=1e13, b=10, btur=0,
-                      resol=35000, add=True):
+                      add=True):
 
         # Create model
         func = 'voigt'
@@ -160,24 +160,33 @@ class SystList(object):
         z_tol = 1e-3
         zmin = z-z_tol
         zmax = z+z_tol
-        pars = {'N': N, 'b': b, 'b_tur': btur, 'resol': resol}#, 'ampl': ampl}
-        dpars = {'N': None, 'b': None, 'b_tur': None, 'resol': None}#,
-#                 'ampl': None}
+        pars = {'N': N, 'b': b, 'b_tur': btur}
+        dpars = {'N': None, 'b': None, 'b_tur': None}
         chi2r = None
 
         #m = Model(series=series, z=z, zmin=zmin, zmax=zmax, pars=pars)
-        m = ModelLines(lines_voigt, series, z, zmin, zmax, 0, **pars)
-        #comp = m._comp
-        comp = m
-        pars = comp._pars
-        ys = comp.eval(x=self._xs, params=pars)
+        m = ModelLines(lines_voigt, 0, series, z, zmin, zmax, **pars)
+        #mod = m._mod
+        mod = m
+        pars = mod._pars
+        ys = mod.eval(x=self._xs, params=pars)
 
         if add:
-            self._t.add_row([series, func, z, dz, zmin, zmax, comp, pars, dpars,
+            self._t.add_row([series, func, z, dz, zmin, zmax, mod, pars, dpars,
                              chi2r, ys])
 
-        return comp, pars, ys
+        return mod, pars, ys
 
+    """
+    def _psf_gauss(self, series='Ly_a', z=2.0, resol=35000):
+
+        # Create model
+        pars = {'resol': resol}
+        dpars = {'resol': None}
+
+        m
+    """
+    
     def _update_spec(self, fit=None):#, fit):
         """ @brief Update spectrum after fitting """
 
@@ -198,22 +207,21 @@ class SystList(object):
         for i, r in enumerate(self._t):
             #m = Model(series=r['series'], z=r['z'], zmin=r['zmin'],
             #          zmax=r['zmax'], pars=r['pars'])
-            print(r['pars'])
-            m = ModelLines(lines_voigt, r['series'], r['z'], r['zmin'],
-                           r['zmax'], i, **r['pars'])
-            #model[s] = m._comp.eval(x=self._xs, params=m._comp._pars) * model[s]
+            m = ModelLines(lines_voigt, i, r['series'], r['z'], r['zmin'],
+                           r['zmax'], **r['pars'])
+            #model[s] = m._mod.eval(x=self._xs, params=m._mod._pars) * model[s]
             model[s] = m.eval(x=self._xs, params=m._pars) * model[s]
         deabs[s] = cont[s] + y[s] - model[s]
 
 
-    def _update_systs(self, comp, pars, ys, group=None):
+    def _update_systs(self, mod, pars, ys, group=None):
         """ @brief Update system list after fitting """
 
         #pars = fit.params
         if group is None:
             group = [len(self._t)-1]
         for i, w in enumerate(group):
-            self._t[w]['comp'] = comp
+            self._t[w]['mod'] = mod
             self._t[w]['z'] = pars['lines_voigt_'+str(i)+'_z'].value \
                          #*au.dimensionless_unscaled
             self._t[w]['dz'] = pars['lines_voigt_'+str(i)+'_z'].stderr\
@@ -230,7 +238,7 @@ class SystList(object):
                           #'resol': pars['psf_gauss_'+str(i)+'_resol'].stderr}
                           #'ampl': pars['adj_gauss_'+str(i)+'_ampl'].stderr}
             #"""
-            self._t[w]['chi2r'] = comp.redchi
+            self._t[w]['chi2r'] = mod.redchi
 
     def fit_from_lines(self, series='Ly_a', z_start=2.5, z_end=2.0, N=1e14,
                        b=10, thres=1e-3):
@@ -374,14 +382,12 @@ class SystList(object):
         group_thres = float(group_thres)
         domain_thres = float(domain_thres)
 
-        comp, pars, ys = self._single_voigt(series, z, N, b, btur, resol)
-        comp, pars, ys, group = self._group_voigt(comp, pars, ys, group_thres)
-        #xc, yc, wc = self._domain(comp, pars, domain_thres)
+        mod, pars, ys = self._single_voigt(series, z, N, b, btur, resol)
+        mod, pars, ys, group = self._group_voigt(mod, pars, ys, group_thres)
         xc, yc, wc = self._domain(ys, domain_thres)
-        #comp, pars = self._conv_psf(comp, pars)
-        comp, pars = self._fit_voigt(comp, pars, xc, yc, wc)
-        self._update_systs(comp, pars, group)
+        mod, pars = self._fit_voigt(mod, pars, xc, yc, wc)
+        self._update_systs(mod, pars, group)
         if update:
-            self._update_spec(comp)
+            self._update_spec(mod)
 
         return 0
