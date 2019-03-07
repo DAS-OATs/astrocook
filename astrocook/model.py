@@ -38,6 +38,7 @@ class Model(LMModel):
                 if p in d:
                     d[p] = kwargs[p]
         self._pars = self.make_params()
+        self._pars.pretty_print()
         getattr(self, '_make_pars_'+func.__name__)(d, **kwargs)
 
     def _make_pars_lines_voigt(self, d, **kwargs):
@@ -52,7 +53,13 @@ class Model(LMModel):
             (self._prefix+'btur', d['btur'], d['btur_vary'], d['btur_min'],
              d['btur_max'], d['btur_expr']))
 
+    def _make_pars_psf_gauss(self, d, **kwargs):
 
+        self._pars.add_many(
+            (self._prefix+'z', d['z'], d['z_vary'], d['z_min'], d['z_max'],
+             d['z_expr']),
+            (self._prefix+'resol', d['resol'], d['resol_vary'], d['resol_min'],
+             d['resol_max'], d['resol_expr']))
 
 class ModelLines(Model):
     """ Class for line models
@@ -64,4 +71,18 @@ class ModelLines(Model):
             print(prefix, "Only 'lines_voigt' function supported for lines.")
             return None
         super(ModelLines, self).__init__(func, count, series, z, zmin, zmax)
+        self._make_pars(func, **kwargs)
+
+
+
+class ModelPSF(Model):
+    """ Class for PSF models
+
+    A ModelLines is a model for the instrument PSF."""
+
+    def __init__(self, func, count, series, z, zmin, zmax, **kwargs):
+        if func.__name__ != 'psf_gauss':
+            print(prefix, "Only 'psf_gauss' function supported for lines.")
+            return None
+        super(ModelPSF, self).__init__(func, count, series, z, zmin, zmax)
         self._make_pars(func, **kwargs)

@@ -74,6 +74,7 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a'):
 
         model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
                           * _fadd(a, u)))
+        #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
 
     return model
 
@@ -108,3 +109,11 @@ def psf_gauss(x, #center, resol):
         psf[np.where(psf < 1e-4)] = 0.0
         ret.append(psf)#[c_min:c_max]]
     return ret
+
+def running_mean(x, h=1):
+    """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
+
+    n = 2*h+1
+    cs = np.cumsum(np.insert(x, 0, 0))
+    rm = (cs[n:] - cs[:-n]) / float(n)
+    return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))

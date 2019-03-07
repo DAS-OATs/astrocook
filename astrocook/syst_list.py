@@ -1,12 +1,14 @@
-from .model import Model, ModelLines#, ModelPSF
+from .model import Model, ModelLines, ModelPSF
 from .spectrum import Spectrum
 from .vars import *
-from .functions import convolve, lines_voigt, psf_gauss
+from .functions import convolve, lines_voigt, psf_gauss, running_mean
 from astropy import table as at
 from astropy import units as au
 from astropy import constants as ac
+from astropy.stats import sigma_clip
 from collections import OrderedDict
 from copy import deepcopy as dc
+from lmfit import CompositeModel as LMComposite
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import argrelmax
@@ -116,7 +118,7 @@ class SystList(object):
         wc = np.array(spec._t['cont'][c]/spec.dy[c])
         return xc, yc, wc
 
-    def _fit_voigt(self, mod, pars, xc, yc, wc):
+    def _fit(self, mod, pars, xc, yc, wc):
 
         fit = mod.fit(yc, pars, x=xc, weights=wc)
         mod = fit
@@ -124,7 +126,7 @@ class SystList(object):
         self._ys = mod.eval(x=self._xs, params=pars)
         return mod, pars
 
-    def _group_voigt(self, mod, pars, ys, thres=1.e-3):
+    def _group(self, mod, pars, ys, thres=1.e-3):
         """ @brief Define group of systems. A group is the set of systems with
         at least one line within the footprint of the system described by the
         model in input.
@@ -132,16 +134,12 @@ class SystList(object):
 
         group = [len(self._t)-1]
         c = 0
-        for i, s in enumerate(self._t[:-1]):
+        for i, s in enumerate(self._t[:-1]):  # All systems except the last
             yn = s['ys']
             if np.amin(np.maximum(ys, yn)) < 1-thres:
                 group.append(i)
-                #m = Model(series=s['series'], z=s['z'], zmin=s['zmin'],
-                #          zmax=s['zmax'], pars=s['pars'], count=c+1)
                 m = ModelLines(lines_voigt, c+1, s['series'], s['z'], s['zmin'],
                                s['zmax'], **s['pars'])
-                #mod *= m._mod
-                #pars.update(m._mod._pars)
                 mod *= m
                 pars.update(m._pars)
 
@@ -151,8 +149,8 @@ class SystList(object):
         ys = mod.eval(x=self._xs, params=pars)
         return mod, pars, ys, group
 
-    def _single_voigt(self, series='Ly_a', z=2.0, N=1e13, b=10, btur=0,
-                      add=True):
+    def _single_std(self, series='Ly_a', z=2.0, N=1e13, b=10, btur=0,
+                    resol=35000, psf=False, eval=True, add=True):
 
         # Create model
         func = 'voigt'
@@ -160,16 +158,31 @@ class SystList(object):
         z_tol = 1e-3
         zmin = z-z_tol
         zmax = z+z_tol
-        pars = {'N': N, 'b': b, 'b_tur': btur}
-        dpars = {'N': None, 'b': None, 'b_tur': None}
+        pars = {'N': N, 'b': b, 'b_tur': btur, 'resol': resol}
+        dpars = {'N': None, 'b': None, 'b_tur': None, 'resol': None}
         chi2r = None
 
-        #m = Model(series=series, z=z, zmin=zmin, zmax=zmax, pars=pars)
-        m = ModelLines(lines_voigt, 0, series, z, zmin, zmax, **pars)
-        #mod = m._mod
-        mod = m
+        lines = ModelLines(lines_voigt, 0, series, z, zmin, zmax, **pars)
+        if psf:
+            psf = ModelPSF(psf_gauss, 0, series, z, zmin, zmax, **pars)
+            mod = LMComposite(lines, psf, convolve)
+            mod._pars = lines._pars
+            mod._pars.update(psf._pars)
+        else:
+            mod = lines
         pars = mod._pars
-        ys = mod.eval(x=self._xs, params=pars)
+        pars.pretty_print()
+
+        if eval:
+            ys = mod.eval(x=self._xs, params=pars)
+        else:
+            ys = None
+
+        plt.plot(self._xs, psf.eval(x=self._xs, params=psf._pars)[0])
+        plt.plot(self._xs, lines.eval(x=self._xs, params=lines._pars))
+        plt.plot(self._xs, mod.eval(x=self._xs, params=mod._pars))
+        plt.plot(self._xs, mod.eval(x=self._xs, params=pars))
+        plt.show()
 
         if add:
             self._t.add_row([series, func, z, dz, zmin, zmax, mod, pars, dpars,
@@ -178,15 +191,15 @@ class SystList(object):
         return mod, pars, ys
 
     """
-    def _psf_gauss(self, series='Ly_a', z=2.0, resol=35000):
+    def _psf(self, mod, pars, ys):
 
-        # Create model
-        pars = {'resol': resol}
-        dpars = {'resol': None}
-
-        m
+        s = self._t[-1]  # Last added system
+        m = ModelLines(lines_voigt, 0, s['series'], s['z'], s['zmin'],
+                       s['zmax'], **s['pars'])
+        mod *= m
+        pars.update(m._pars)
     """
-    
+
     def _update_spec(self, fit=None):#, fit):
         """ @brief Update spectrum after fitting """
 
@@ -357,6 +370,106 @@ class SystList(object):
 
         return 0
 
+    def fit_slide(self, series='CIV', z_start=1.13, z_end=1.71, z_step=5e-4,
+                  logN=14, b=10.0):
+        """ @brief Slide a set of Voigt models across a spectrum and fit them
+        where they suit the spectrum.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param z_step Redshift step
+        @param logN Column density (logarithmic)
+        @param b Doppler parameter
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        z_step = float(z_step)
+        N = 10**float(logN)
+        b = float(b)
+
+        z_range = np.arange(z_start, z_end, z_step)
+
+        xs = self._xs
+        #z_arr = []
+
+        count = 0
+
+        # Candidate model
+        mod, pars, _ = self._single_std(series, 0., N, b, eval=False, add=False)
+
+        # Null model
+
+        chi2_arr = []
+        for z in z_range:
+            print(prefix, "I'm scanning the spectrum: now at redshift %2.4f…" \
+                  % z, end='\r')
+            self._spec._shift_rf(z)
+            self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))
+            ys = mod.eval(x=self._xs, params=pars)
+            xc, yc, wc = self._domain(ys)
+            ym = mod.eval(x=xc, params=pars)
+            chi2 = np.sum(((ym-yc)/wc)**2)
+            chi2_arr.append(chi2)
+
+
+        chi2_sm = running_mean(chi2_arr, 1)
+        #plt.plot(z_range, chi2_arr/chi2_sm)
+        #plt.show()
+        chi2_found = sigma_clip(chi2_arr/chi2_sm, sigma=5)
+        z_found = z_range[chi2_found.mask]
+
+        for z_cen in z_found:
+            print(prefix, "I'm checking a candidate at redshift %2.4f…      " \
+                  % z_cen)#, end='\r')
+            for z in np.arange(z_cen-1e-4, z_cen+1e-4, 1e-5):
+                self._spec._shift_rf(z)
+
+                self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))
+                ys = mod.eval(x=self._xs, params=pars)
+                xc, yc, wc = self._domain(ys)
+                ym = mod.eval(x=xc, params=pars)
+                chi2 = np.sum(((ym-yc)*wc)**2)/len(ym)
+
+                ym_0 = np.ones(len(xc))
+                chi2_0 = np.sum(((ym_0-yc)*wc)**2)/len(ym)
+
+                ym_1 = np.append(ym[:len(ym)//2], np.ones(len(xc)-len(ym)//2))
+                chi2_1 = np.sum(((ym_1-yc)*wc)**2)/len(ym)
+
+                ym_2 = np.append(np.ones(len(ym)//2), ym[len(ym)//2:])
+                chi2_2 = np.sum(((ym_2-yc)*wc)**2)/len(ym)
+
+                #print("%2.3e %2.3e %2.3e %2.3e" % (chi2, chi2_0, chi2_1, chi2_2))
+                if chi2 < chi2_0 and chi2 < chi2_1 and chi2 < chi2_2 :
+                    self._spec._shift_rf(0)
+                    self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))
+                    mod_f, pars_f, ys_f = self._single_std(series, z, N, b)
+                    mod_f, pars_f, ys_f, group_f = self._group(mod_f, pars_f,
+                                                               ys_f)
+                    xc_f, yc_f, wc_f = self._domain(ys_f)
+                    mod_f, pars_f = self._fit(mod_f, pars_f, xc_f, yc_f, wc_f)
+                    self._update_systs(mod_f, pars_f, group_f)
+                    print(prefix, "I've fitted a system at redshift %2.4f."\
+                          "        " % z)
+                    #plt.plot(xc, yc)
+
+                    try:
+                        self._update_spec(mod_f)
+                    except:
+                        pass
+                    plt.plot(xc, ym)
+                    plt.plot(xc, ym_0)
+                    plt.plot(xc, ym_1)
+                    plt.plot(xc, ym_2)
+                    plt.show()
+
+        self._spec._shift_rf(0)
+
+        return 0
+
+
     def fit(self, series='Ly_a', z=2.0, N=1e13, b=10, btur=0, resol=35000,
             ampl=0.0, group_thres=1e-3, domain_thres=1e-3, update=True):
         """ @brief Create and fit a Voigt model for a system.
@@ -382,11 +495,12 @@ class SystList(object):
         group_thres = float(group_thres)
         domain_thres = float(domain_thres)
 
-        mod, pars, ys = self._single_voigt(series, z, N, b, btur, resol)
-        mod, pars, ys, group = self._group_voigt(mod, pars, ys, group_thres)
+        mod, pars, ys = self._single_std(series, z, N, b, btur, resol)
+        mod, pars, ys, group = self._group(mod, pars, ys, group_thres)
+        #mod, pars, ys, group = self._psf(mod, pars, ys)
         xc, yc, wc = self._domain(ys, domain_thres)
-        mod, pars = self._fit_voigt(mod, pars, xc, yc, wc)
-        self._update_systs(mod, pars, group)
+        #mod, pars = self._fit(mod, pars, xc, yc, wc)
+        #self._update_systs(mod, pars, group)
         if update:
             self._update_spec(mod)
 

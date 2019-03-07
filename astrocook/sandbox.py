@@ -1,6 +1,6 @@
 
     # Method of SystList
-    def slide_fit(self, series='Ly_a', z_start=2.5, z_end=2.0, z_step=-1e-3,
+    def fit_slide(self, series='Ly_a', z_start=2.5, z_end=2.0, z_step=-1e-3,
                   logN_start=16, logN_end=13, logN_step=-0.5,
                   b_start=5., b_end=105., b_step=10.):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
@@ -46,18 +46,16 @@
 
                 for j, b in enumerate(b_range):
 
-                    comp, pars = self._model_voigt(series, z, N, b, add=False)
-                    #comp, pars, group = self._group(comp, pars)
-                    xc, yc, wc = self._domain(comp, pars)
-                    ym = comp.eval(x=xc, params=pars)
+                    mod, pars, ys = self._single_std(series, z, N, b, add=False)
+                    xc, yc, wc = self._domain(ys)
+                    ym = mod.eval(x=xc, params=pars)
                     chi2 = np.sum(((ym-yc)/wc)**2)
                     chi2_arr[i, j] = chi2
 
                     # Null model
-                    comp_n, pars_n = self._model_voigt(series, z, 0., add=False)
-                    #comp_n, pars_n, group_n = self._group(comp_n, pars_n)
-                    xc_n, yc_n, wc_n = self._domain(comp_n, pars_n)
-                    ym_n = comp_n.eval(x=xc_n, params=pars_n)
+                    mod_n, pars_n, ys_n = self._single_std(series, z, 0., add=False)
+                    xc_n, yc_n, wc_n = self._domain(ys_n)
+                    ym_n = mod_n.eval(x=xc_n, params=pars_n)
                     chi2_n = np.sum(((ym_n-yc_n)/wc_n)**2)
                     chi2_n_arr[i, j] = chi2_n
 
@@ -67,25 +65,25 @@
             argmin_chi2 = np.unravel_index(np.argmin(chi2_arr, axis=None),
                                            chi2_arr.shape)
             #print(min_chi2)
-            #print(argmin_chi2)
+            #print(chi2_n_arr[argmin_chi2])
 
             if (min_chi2<chi2_n_arr[argmin_chi2]):
                 count += 1
                 N = N_range[argmin_chi2[0]]
                 b = b_range[argmin_chi2[1]]
-                #print(z, chi2, chi2_n, N, b)
+                print(z, chi2, chi2_n, N, b)
                 #plt.plot(xc, yc)
                 #plt.plot(xc, ym)
                 #plt.show()
-                comp_f, pars_f = self._model_voigt(series, z, N, b)
+                mod_f, pars_f, ys_f = self._single_std(series, z, N, b)
                 #pars_f.pretty_print()
-                comp_f, pars_f, group_f = self._group(comp_f, pars_f)
+                mod_f, pars_f, ys_f, group_f = self._group(mod_f, pars_f, ys_f)
                 #pars_f.pretty_print()
-                xc_f, yc_f, wc_f = self._domain(comp_f, pars_f)
-                comp_f, pars_f = self._fit_voigt(comp_f, pars_f, xc_f, yc_f, wc_f)
+                xc_f, yc_f, wc_f = self._domain(ys_f)
+                mod_f, pars_f = self._fit(mod_f, pars_f, xc_f, yc_f, wc_f)
                 #pars_f.pretty_print()
                 #z_arr.append(z)
-                self._update_systs(comp_f, group_f)
+                self._update_systs(mod_f, pars_f, group_f)
         print(prefix, "I've scanned the spectrum between redshift %2.4f and "\
               "%2.4f and fitted %i systems." % (z_start, z_end, count))
             #print(z_arr)
@@ -94,7 +92,7 @@
         #plt.plot(z_range, chi2_n_arr)
         #plt.show()
         try:
-            self._update_spec(comp_f)
+            self._update_spec(mod_f)
         except:
             pass
 

@@ -126,10 +126,16 @@ class GUIMenuEdit(GUIMenu):
         # Add items to Edit menu here
         self._item_method(self._menu, start_id+301, "Extract region",
                           None, None, 'extract_region')
-        self._item_method(self._menu, start_id+302, "Convert x axis",
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+311, "Convert x axis",
                           None, None, 'convert_x')
-        self._item_method(self._menu, start_id+303, "Convert y axis",
+        self._item_method(self._menu, start_id+312, "Convert y axis",
                           None, None, 'convert_y')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+321, "Shift to rest frame",
+                          None, None, 'shift_to_rf')
+        self._item_method(self._menu, start_id+322, "Shift from rest frame",
+                          None, None, 'shift_from_rf')
 
 
 class GUIMenuMeals(GUIMenu):
@@ -174,11 +180,13 @@ class GUIMenuSnacks(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+301, "Fit a system",
                           'systs', None, 'fit', SystList)
-        self._item_method(self._menu, start_id+303, "Fit systems from a line "
+        self._item_method(self._menu, start_id+302, "Fit systems from a line "
                           "list", 'systs', None, 'fit_from_lines', SystList)
-        self._item_method(self._menu, start_id+302, "Fit systems from fitting "
+        self._item_method(self._menu, start_id+303, "Fit systems from fitting "
                           "residuals", 'systs', None, 'fit_from_deabs',
                           SystList)
+        self._item_method(self._menu, start_id+304, "Slide and fit systems",
+                          'systs', None, 'fit_slide', SystList)
 
 
 class GUIMenuView(GUIMenu):

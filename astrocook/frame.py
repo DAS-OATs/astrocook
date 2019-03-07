@@ -41,6 +41,7 @@ class Frame(object):
         self._yunit = yunit
         self._meta = meta
         self._dtype = dtype
+        self._rfz = 0.0
 
     @property
     def t(self):
@@ -178,3 +179,15 @@ class Frame(object):
             col = au.Quantity(col)
         self._where_safe = ~np.isnan(col.value)
         return col[self._where_safe]
+
+    def _shift_rf(self, z):
+        """ @brief Shift to and from rest frame.
+        @param z Redshift to use for shifting
+        @return 0
+        """
+
+        self.x = self.x*(1+self._rfz)/(1+z)
+        self.xmin = self.xmin*(1+self._rfz)/(1+z)
+        self.xmax = self.xmax*(1+self._rfz)/(1+z)
+        self._rfz = z
+        return 0

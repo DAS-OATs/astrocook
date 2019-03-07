@@ -88,9 +88,10 @@ class GUIDialogMethod(wx.Dialog):
                 fgs_add.append((ctrl, 1, wx.EXPAND))
                 ctrl_l.append(ctrl)
             self._ctrl.append(ctrl_l)
-        fgs.AddMany(fgs_add)
-        sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
-        core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        if np.size(self._ctrl) > 0:
+            fgs.AddMany(fgs_add)
+            sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
+            core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
         panel.SetSizer(core)
 
         # Buttons

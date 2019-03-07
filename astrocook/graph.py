@@ -51,6 +51,9 @@ class Graph(object):
         self._yunit = GraphSpectrumXY(sess[0], norm)._y.unit
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
+        if sess[0].spec._rfz != 0.0:
+            self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.2f)"
+                                % sess[0].spec._rfz)
         self._c = 0  # Color
         if logx:
             self._ax.set_xscale('log')

@@ -33,7 +33,8 @@ psf_gauss_d = {
     'z_max': None, 'resol_max': None,
     'z_expr': None, 'resol_expr': None}
 
-pars_d = {'lines_voigt_d': lines_voigt_d}
+pars_d = {'lines_voigt_d': lines_voigt_d,
+          'psf_gauss_d': psf_gauss_d}
 
 series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
@@ -46,6 +47,8 @@ series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                'OI': ['OI_1302'],
                'SiIV': ['SiIV_1393', 'SiIV_1402'],
                'CIV': ['CIV_1548', 'CIV_1550'],
+               'CIV_1548': ['CIV_1548'],
+               'CIV_1550': ['CIV_1550'],
                'FeII': ['FeII_2344', 'FeII_2382', 'FeII_2586', 'FeII_2600'],
                'MgII': ['MgII_2796', 'MgII_2803'],
                'CaII': ['CaII_3934', 'CaII_3969'],

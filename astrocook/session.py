@@ -160,3 +160,38 @@ class Session(object):
             self.spec = format.uves_popler_spectrum(hdul)
 
         #self.model = Model(self)
+
+    def shift_from_rf(self, z=0):
+        """ @brief Shift x axis to the original frame.
+        @return 0
+        """
+
+        try:
+            z = float(z)
+        except:
+            print(prefix, msg_param_fail)
+
+        for s in self.seq:
+            try:
+                getattr(self, s)._shift_rf(z)
+            except:
+                pass
+        return 0
+
+    def shift_to_rf(self, z=0):
+        """ @brief Shift x axis to the rest frame.
+        @param z Redshift to use for shifting
+        @return 0
+        """
+
+        try:
+            z = float(z)
+        except:
+            print(prefix, msg_param_fail)
+
+        for s in self.seq:
+            try:
+                getattr(self, s)._shift_rf(z)
+            except:
+                pass
+        return 0
