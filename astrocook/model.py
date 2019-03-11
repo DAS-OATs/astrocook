@@ -13,8 +13,7 @@ prefix = "Model:"
 class Model(LMModel):
     """ Class for models
 
-    A Model is a combination of Lmfit Models for instrument PSF,
-    continuum adjustment, and system profile."""
+    """
 
     def __init__(self, func, count, series, z, zmin, zmax):
         self._func = func
@@ -38,7 +37,8 @@ class Model(LMModel):
                 if p in d:
                     d[p] = kwargs[p]
         self._pars = self.make_params()
-        self._pars.pretty_print()
+        #self._pars.pretty_print()
+        #print(self._pars)
         getattr(self, '_make_pars_'+func.__name__)(d, **kwargs)
 
     def _make_pars_lines_voigt(self, d, **kwargs):
@@ -72,7 +72,6 @@ class ModelLines(Model):
             return None
         super(ModelLines, self).__init__(func, count, series, z, zmin, zmax)
         self._make_pars(func, **kwargs)
-
 
 
 class ModelPSF(Model):

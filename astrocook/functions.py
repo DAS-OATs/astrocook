@@ -2,6 +2,7 @@ from .vars import *
 from astropy import constants as ac
 from scipy.special import wofz
 #from lmfit.lineshapes import gaussian as gauss
+from matplotlib import pyplot as plt
 import numpy as np
 
 def _fadd(a, u):
@@ -12,7 +13,6 @@ def _fadd(a, u):
     """
 
     return np.real(wofz(u + 1j * a))
-
 
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
@@ -54,13 +54,13 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a'):
     @return Voigt function over x
     """
 
-    x = x * au.nm
+    x = x[0] * au.nm
     z = z * au.dimensionless_unscaled
     N = N / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
-
     model = np.ones(len(x))
+    #print(z)
     for t in series_d[series]:
         xem = xem_d[t]
         xobs = xem*(1+z)
@@ -77,6 +77,18 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a'):
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
 
     return model
+
+def psf_convolve(model, psf):
+    l = len(psf)
+    psf_nonzero = psf[np.where(psf>0)]
+    psf_norm = psf_nonzero/np.sum(psf_nonzero)
+    pad_l = len(psf_norm)#*2
+    plt.plot(range(pad_l), psf_norm)
+    plt.show()
+    pad = np.ones(pad_l)
+    temp = np.concatenate((pad*model[0], model, pad*model[-1]))
+    conv = np.convolve(temp, psf_norm, mode='valid')[pad_l//2+1:][:l]
+    return conv
 
 def psf_gauss(x, #center, resol):
               z, resol, series='Ly_a'):
@@ -101,13 +113,25 @@ def psf_gauss(x, #center, resol):
     return ret
     """
 
+    """
     ret = []
     for t in series_d[series]:
-        c = (1+z)*xem_d[t].value
+        #c = (1+z)*xem_d[t].value
+        c = np.median(x)
         sigma = c / resol * 4.246609001e-1
         psf = np.exp(-(0.5 * (x-c) / sigma)**2)
         psf[np.where(psf < 1e-4)] = 0.0
         ret.append(psf)#[c_min:c_max]]
+    return ret
+    """
+    ret = []
+    for xr in x:
+        c = xr[len(xr)//2]
+        sigma = c / resol * 4.246609001e-1
+        psf = np.exp(-(0.5 * (xr-c) / sigma)**2)
+        psf[np.where(psf < 1e-4)] = 0.0
+        ret.append(psf)
+    #"""
     return ret
 
 def running_mean(x, h=1):

@@ -1,4 +1,5 @@
 from .model import Model, ModelLines, ModelPSF
+from .syst_model import SystModelStd
 from .spectrum import Spectrum
 from .vars import *
 from .functions import convolve, lines_voigt, psf_gauss, running_mean
@@ -108,22 +109,48 @@ class SystList(object):
         spec = self._spec
         #m = mod.eval(x=self._xs, params=pars)
         #c = np.where(m<1-thres)
-        c = np.where(ys<1-thres)
-        xc = np.array(self._xs[c])
+        c = np.where(ys<1-thres)[0]
+        print(c)
+        print(np.ediff1d(c))
+        print(np.where(np.ediff1d(c)>1))
+
+        #"""
+        xt = np.array(self._xs[c])
+        xc = np.split(xt, np.where(np.ediff1d(c)>1)[0])
 
         if 'deabs' in spec._t.colnames:# and 1 == 0:
             yc = np.array(spec._t['deabs'][c]/spec._t['cont'][c])
         else:
             yc = np.array(spec.y[c]/spec._t['cont'][c])
         wc = np.array(spec._t['cont'][c]/spec.dy[c])
+        """
+        xc = self._xs
+        yc = np.full(len(xc), np.nan)
+        wc = np.full(len(xc), np.nan)
+        if 'deabs' in spec._t.colnames:# and 1 == 0:
+            yc[c] = np.array(spec._t['deabs'][c]/spec._t['cont'][c])
+        else:
+            yc[c] = np.array(spec.y[c]/spec._t['cont'][c])
+        wc[c] = np.array(spec._t['cont'][c]/spec.dy[c])
+        #"""
+
         return xc, yc, wc
 
     def _fit(self, mod, pars, xc, yc, wc):
 
-        fit = mod.fit(yc, pars, x=xc, weights=wc)
+
+        #pars.pretty_print()
+        fit = mod.fit(yc, pars, x=xc[0], weights=wc)#, nan_policy='omit')
         mod = fit
+        plt.plot(self._xs, mod.eval(x=[self._xs], params=fit.params))
+        #plt.plot(self._xs, mod._lines[0].eval(x=self._xs, params=fit.params))
+        #plt.plot(self._xs, mod._psf.eval(x=self._xs, params=fit.params))
+        plt.plot(xc, yc)
+        plt.show()
         pars = fit.params
-        self._ys = mod.eval(x=self._xs, params=pars)
+        #pars.pretty_print()
+        self._ys = mod.eval(x=[self._xs], params=pars)
+
         return mod, pars
 
     def _group(self, mod, pars, ys, thres=1.e-3):
@@ -146,7 +173,7 @@ class SystList(object):
                 c += 1
 
         group = np.array(group)
-        ys = mod.eval(x=self._xs, params=pars)
+        ys = mod.eval(x=[self._xs], params=pars)
         return mod, pars, ys, group
 
     def _single_std(self, series='Ly_a', z=2.0, N=1e13, b=10, btur=0,
@@ -155,13 +182,14 @@ class SystList(object):
         # Create model
         func = 'voigt'
         dz = 0.0
-        z_tol = 1e-3
+        z_tol = 1e-4
         zmin = z-z_tol
         zmax = z+z_tol
         pars = {'N': N, 'b': b, 'b_tur': btur, 'resol': resol}
         dpars = {'N': None, 'b': None, 'b_tur': None, 'resol': None}
         chi2r = None
 
+        """
         lines = ModelLines(lines_voigt, 0, series, z, zmin, zmax, **pars)
         if psf:
             psf = ModelPSF(psf_gauss, 0, series, z, zmin, zmax, **pars)
@@ -172,33 +200,24 @@ class SystList(object):
             mod = lines
         pars = mod._pars
         pars.pretty_print()
-
+        """
+        mod = SystModelStd(0, series, z, zmin, zmax, **pars)
+        #"""
         if eval:
-            ys = mod.eval(x=self._xs, params=pars)
+            ys = mod.eval(x=[self._xs], params=mod._pars)
         else:
             ys = None
 
-        plt.plot(self._xs, psf.eval(x=self._xs, params=psf._pars)[0])
-        plt.plot(self._xs, lines.eval(x=self._xs, params=lines._pars))
-        plt.plot(self._xs, mod.eval(x=self._xs, params=mod._pars))
-        plt.plot(self._xs, mod.eval(x=self._xs, params=pars))
+        plt.plot(self._xs, mod.eval(x=[self._xs], params=mod._pars))
+        plt.plot(self._xs, mod._lines[0].eval(x=[self._xs], params=mod._pars))
+        plt.plot(self._xs, mod._psf.eval(x=[self._xs], params=mod._pars)[0])
         plt.show()
 
         if add:
             self._t.add_row([series, func, z, dz, zmin, zmax, mod, pars, dpars,
                              chi2r, ys])
 
-        return mod, pars, ys
-
-    """
-    def _psf(self, mod, pars, ys):
-
-        s = self._t[-1]  # Last added system
-        m = ModelLines(lines_voigt, 0, s['series'], s['z'], s['zmin'],
-                       s['zmax'], **s['pars'])
-        mod *= m
-        pars.update(m._pars)
-    """
+        return mod, mod._pars, ys
 
     def _update_spec(self, fit=None):#, fit):
         """ @brief Update spectrum after fitting """
@@ -223,7 +242,7 @@ class SystList(object):
             m = ModelLines(lines_voigt, i, r['series'], r['z'], r['zmin'],
                            r['zmax'], **r['pars'])
             #model[s] = m._mod.eval(x=self._xs, params=m._mod._pars) * model[s]
-            model[s] = m.eval(x=self._xs, params=m._pars) * model[s]
+            model[s] = m.eval(x=[self._xs], params=m._pars) * model[s]
         deabs[s] = cont[s] + y[s] - model[s]
 
 
@@ -495,12 +514,12 @@ class SystList(object):
         group_thres = float(group_thres)
         domain_thres = float(domain_thres)
 
-        mod, pars, ys = self._single_std(series, z, N, b, btur, resol)
+        mod, pars, ys = self._single_std(series, z, N, b, btur, resol, psf=True)
         mod, pars, ys, group = self._group(mod, pars, ys, group_thres)
         #mod, pars, ys, group = self._psf(mod, pars, ys)
         xc, yc, wc = self._domain(ys, domain_thres)
-        #mod, pars = self._fit(mod, pars, xc, yc, wc)
-        #self._update_systs(mod, pars, group)
+        mod, pars = self._fit(mod, pars, xc, yc, wc)
+        self._update_systs(mod, pars, group)
         if update:
             self._update_spec(mod)
 
