@@ -60,7 +60,7 @@ class GUITable(wx.Frame):
         self.Show()
 
 class GUITableLineList(GUITable):
-    """ Class for the GUI spectrum table frame """
+    """ Class for the GUI line list """
 
     def __init__(self,
                  gui,
@@ -74,8 +74,8 @@ class GUITableLineList(GUITable):
         self._gui = gui
         self._gui._tab_lines = self
 
-class GUITableModel(GUITable):
-    """ Class for the GUI spectrum table frame """
+class GUITableModelList(GUITable):
+    """ Class for the GUI model list """
 
     def __init__(self,
                  gui,
@@ -83,14 +83,14 @@ class GUITableModel(GUITable):
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.9):
 
-        super(GUITableModel, self).__init__(gui, 'model', title,
-                                            size_x, size_y)
+        super(GUITableModelList, self).__init__(gui, 'mods', title,
+                                                size_x, size_y)
 
         self._gui = gui
-        self._gui._tab_model = self
+        self._gui._tab_mods = self
 
 class GUITableSpectrum(GUITable):
-    """ Class for the GUI spectrum table frame """
+    """ Class for the GUI spectrum table """
 
     def __init__(self,
                  gui,
@@ -104,8 +104,8 @@ class GUITableSpectrum(GUITable):
         self._gui = gui
         self._gui._tab_spec = self
 
-class GUITableSystemList(GUITable):
-    """ Class for the GUI spectrum table frame """
+class GUITableSystList(GUITable):
+    """ Class for the GUI system list """
 
     def __init__(self,
                  gui,
@@ -113,8 +113,8 @@ class GUITableSystemList(GUITable):
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.9):
 
-        super(GUITableSystemList, self).__init__(gui, 'systs', title, size_x,
-                                                 size_y)
+        super(GUITableSystList, self).__init__(gui, 'systs', title, size_x,
+                                               size_y)
 
         self._gui = gui
         self._gui._tab_systs = self

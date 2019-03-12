@@ -1,7 +1,8 @@
 from . import *
 from .gui_dialog import *
 #from .session import Session
-from .model import Model
+#from .model import Model
+from .model_list import ModelList
 import wx
 
 prefix = "GUI:"
@@ -111,6 +112,8 @@ class GUIMenuFile(GUIMenu):
         self._gui._graph_spec.Close()
         self._gui._tab_spec.Close()
         self._gui._tab_lines.Close()
+        self._gui._tab_systs.Close()
+        self._gui._tab_mods.Close()
 
 
 class GUIMenuEdit(GUIMenu):
@@ -178,8 +181,8 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+202, "Interpolate nodes", 'spec',
                           None, 'interp_nodes')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, "Add a system", 'systs',
-                          None, 'add', SystList)
+        self._item_method(self._menu, start_id+301, "Fit a system", 'systs',
+                          None, 'fit', SystList)
         #self._item_method(self._menu, start_id+302, "Fit systems from a line "
         #                  "list", 'systs', None, 'fit_from_lines', SystList)
         #self._item_method(self._menu, start_id+303, "Fit systems from fitting "
@@ -206,6 +209,8 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_view(e, 'lines'))
         self._item(self._menu, start_id+3, "System table",
                    lambda e: self._on_view(e, 'systs'))
+        self._item(self._menu, start_id+4, "Model table",
+                   lambda e: self._on_view(e, 'mods'))
         self._menu.AppendSeparator()
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, "Toggle log x axis", self._on_logx)

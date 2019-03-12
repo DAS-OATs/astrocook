@@ -21,7 +21,7 @@ class Session(object):
                  nodes=None,
                  lines=None,
                  systs=None,
-                 model=None):
+                 mods=None):
         self.path = path
         self.name = name
         self.spec = spec
@@ -29,8 +29,8 @@ class Session(object):
         self.nodes = nodes
         self.lines = lines
         self.systs = systs
-        self.model = model
-        self.seq = ['spec', 'nodes', 'lines', 'systs', 'model']
+        self.mods = mods
+        self.seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.

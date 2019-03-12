@@ -21,22 +21,23 @@ def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
         model += ampl*np.exp(-(0.5 * (x-c) / sigma)**2)
     return model
 
-def convolve(data, kernel):
+def convolve(data, psf):
     s = 0
     l = 0
-    ret = np.array([])
-    for k in kernel:
+    for i, k in enumerate(psf):
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
         k_arr = k_arr/np.sum(k_arr)
-        data_arr = data[s:s+l]
+        data_arr = data#[s:s+l]
         pad_l = len(k_arr)#*2
         pad = np.ones(pad_l)
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
         conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
-        #conv = np.convolve(data_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
-        ret = np.append(ret, conv)
+        if i == 0:
+            ret = conv
+        else:
+            ret *= conv
     return ret
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
@@ -61,7 +62,6 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(len(x))
-    #print(z)
     for t in series_d[series]:
         xem = xem_d[t]
         xobs = xem*(1+z)
@@ -79,18 +79,6 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
 
     return model
 
-def psf_convolve(model, psf):
-    l = len(psf)
-    psf_nonzero = psf[np.where(psf>0)]
-    psf_norm = psf_nonzero/np.sum(psf_nonzero)
-    pad_l = len(psf_norm)#*2
-    plt.plot(range(pad_l), psf_norm)
-    plt.show()
-    pad = np.ones(pad_l)
-    temp = np.concatenate((pad*model[0], model, pad*model[-1]))
-    conv = np.convolve(temp, psf_norm, mode='valid')[pad_l//2+1:][:l]
-    return conv
-
 def psf_gauss(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF
@@ -106,32 +94,11 @@ def psf_gauss(x, #center, resol):
     @return Gaussian PSF over x
     """
 
-    #"""
     c = np.median(reg)
     sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-(0.5 * (reg-c) / sigma)**2)
+    psf = np.exp(-(0.5 * (x-c) / sigma)**2)
     psf[np.where(psf < 1e-4)] = 0.0
     ret = [np.array(psf)]
-    return ret
-    """
-
-    ret = []
-    for r in regs:
-        c = np.median(r)
-        sigma = c / resol * 4.246609001e-1
-        psf = np.exp(-(0.5 * (x-c) / sigma)**2)
-        psf[np.where(psf < 1e-4)] = 0.0
-        ret.append(psf)#[c_min:c_max]]
-    return ret
-
-    ret = []
-    for xr in x:
-        c = xr[len(xr)//2]
-        sigma = c / resol * 4.246609001e-1
-        psf = np.exp(-(0.5 * (xr-c) / sigma)**2)
-        psf[np.where(psf < 1e-4)] = 0.0
-        ret.append(psf)
-    #"""
     return ret
 
 def running_mean(x, h=1):

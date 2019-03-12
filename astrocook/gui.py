@@ -25,7 +25,8 @@ class GUI(object):
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
-        GUITableSystemList(self)
+        GUITableSystList(self)
+        GUITableModelList(self)
         if path == None:
             print("AC: Welcome! Try Session > Open…")
         else:
