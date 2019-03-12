@@ -19,7 +19,7 @@ def fadd_f(a, u):
     @param u Second abstrac variable
     @return Re(F(a, u))
     """
-    
+
     return np.real(wofz(u + 1j * a))
 
 def gauss_psf(x, c_min, c_max, center, resol):
@@ -41,21 +41,21 @@ def gauss_psf(x, c_min, c_max, center, resol):
     psf[np.where(psf < 1e-4)] = 0.0
     ret = [np.array(psf)[c_min:c_max]]
     return ret
-    
+
 
 def linear_f(x, norm, slope):
     """ @brief Linear function
-    
-    @param x Wavelength domain 
+
+    @param x Wavelength domain
     @param norm Normalization
     @param slope Slope
     @return Linear function over x, with value norm at the center
     """
-    
+
     return np.array(norm + (x - np.mean(x)) * slope)
 
 def voigt_f(x, z, N, b, btur, ion='Ly_a', wave=0.0, tab=None):
-    """ @brief Voigt function (real part of the Faddeeva function, after a 
+    """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 
     @param x Wavelength domain (in nm)
@@ -115,7 +115,7 @@ def voigt_params(syst, **kwargs):
         try:
             z_arr = [z.value] * len(syst.t) * z.unit
         except:
-            z_arr = [z] * len(syst.t) * u.nm/u.nm            
+            z_arr = [z] * len(syst.t) * u.nm/u.nm
     except:
         z_arr = []
     try:
@@ -123,7 +123,7 @@ def voigt_params(syst, **kwargs):
         try:
             N_arr = [N.value] * len(syst.t) * N.unit
         except:
-            N_arr = [N] * len(syst.t) / u.cm**2            
+            N_arr = [N] * len(syst.t) / u.cm**2
     except:
         N_arr = []
     try:
@@ -131,7 +131,7 @@ def voigt_params(syst, **kwargs):
         try:
             b_arr = [b.value] * len(syst.t) * b.unit
         except:
-            b_arr = [b] * len(syst.t) * u.km/u.s            
+            b_arr = [b] * len(syst.t) * u.km/u.s
     except:
         b_arr = []
     try:
@@ -139,7 +139,7 @@ def voigt_params(syst, **kwargs):
         try:
             btur_arr = [btur.value] * len(syst.t) * btur.unit
         except:
-            btur_arr = [btur] * len(syst.t) * u.km/u.s            
+            btur_arr = [btur] * len(syst.t) * u.km/u.s
     except:
         btur_arr = []
 
@@ -147,7 +147,7 @@ def voigt_params(syst, **kwargs):
     return ret
 
 
-    
+
 class Model(Spec1D):
 
     def __init__(self, x=None, xmin=None, xmax=None, y=None, dy=None,
@@ -157,41 +157,41 @@ class Model(Spec1D):
                  #syst=None,
                  #group=None,
                  #chunk=None):
-        """ @brief Constructor for the Model class 
+        """ @brief Constructor for the Model class
         """
 
         self._t = self.create_t(x, xmin, xmax, y, dy, yresid, yadj)
         """
         #if ((syst is None) and (line is None)):
         #    raise Exception("syst or line must be provided.")
-        
+
         self._spec = spec
         if ((syst is None) and (line is not None)):
             self._syst = line
         elif (syst is not None):
             self._syst = syst
         if (hasattr(self, '_syst')):
-            
+
             if (hasattr(self._syst, '_cont')):
                 self._precont = self._syst.cont
                 self._cont = self._syst._cont
-            if (hasattr(self._syst, '_group')):            
+            if (hasattr(self._syst, '_group')):
                 self._group = group
-            if (hasattr(self._syst, '_chunk')):            
+            if (hasattr(self._syst, '_chunk')):
                 self._chunk = chunk
         else:
             if (hasattr(self._spec, '_cont')):
                 self._precont = self._spec.cont
                 self._cont = self._spec._cont
-            if (hasattr(self._spec, '_group')):            
+            if (hasattr(self._spec, '_group')):
                 self._group = group
-            if (hasattr(self._spec, '_chunk')):            
+            if (hasattr(self._spec, '_chunk')):
                 self._chunk = chunk
         """
         #if chunk is not None:
         #    self._model = dc(chunk)
         self._use_good = False
-        
+
 # Methods
 
     def create_t(self, x=None, xmin=None, xmax=None, y=None, dy=None,
@@ -225,10 +225,10 @@ class Model(Spec1D):
             t['X'].mask = mask
 
         return t
-        
+
     def linear(self, value=[1.0, 0.0], vary=[True, False], min=[0.9, 0.0],
                max=[1.1, 0.0], expr=[None, None], pref='adj'):
-        """ @brief Linear adjustment to continuum 
+        """ @brief Linear adjustment to continuum
 
         The model has two parameters, norm and slope, and is multiplied to the
         continuum to correct it.
@@ -240,20 +240,20 @@ class Model(Spec1D):
         @param expr Array of constraining expressions for the parameters
         @param pref Prefix to be used in composite models
         """
-        
+
         self._linear_fun = lmm(linear_f, prefix=pref+'_')
         self._linear_par = self._linear_fun.make_params()
         for i, k in enumerate(self._linear_par.keys()):
             self._linear_par[k].set(value=value[i], vary=vary[i], min=min[i],
                                     max=max[i], expr=expr[i])
-        
+
 
     def psf_gauss(self, value, vary=[False, False, False, False],
                   min=[None, None, None, None], max=[None, None, None, None],
                   expr=[None, None, None, None], pref='psf_gauss'):
         """ @brief Instrument PSF with gaussian profile
 
-        The instrument PSF is defined over a spectral region and has four 
+        The instrument PSF is defined over a spectral region and has four
         parameters: c_min (starting pixel of the region), c_max (ending pixel of
         the region), center (center wavelength of the region), and resol
 
@@ -262,20 +262,20 @@ class Model(Spec1D):
         @param min Array of minimum values for the parameters
         @param max Array of maximum values for the parameters
         @param expr Array of constraining expressions for the parameters
-        @param pref Prefix to be used in composite models        
+        @param pref Prefix to be used in composite models
         """
         self._psf_gauss_fun = lmm(gauss_psf, prefix=pref+'_')
         self._psf_gauss_par = self._psf_gauss_fun.make_params()
         for i, k in enumerate(self._psf_gauss_par.keys()):
             self._psf_gauss_par[k].set(value=value[i], vary=vary[i], min=min[i],
                                        max=max[i], expr=expr[i])
-                
+
 
     def voigt(self, ion, wave, value=[z_def, N_def, b_def, btur_def],
               vary=[True, True, True, False], min=[0.0, 1e10, 0.0, None],
               max=[None, 1e23, 200.0, None], expr=[None, None, None, None],
               pref='voigt'):
-        """ @brief Voigt profile for a single line 
+        """ @brief Voigt profile for a single line
 
         The Voigt profile has four parameters: z, N, b, btur
 
@@ -286,7 +286,7 @@ class Model(Spec1D):
         @param min Array of minimum values for the parameters
         @param max Array of maximum values for the parameters
         @param expr Array of constraining expressions for the parameters
-        @param pref Prefix to be used in composite models        
+        @param pref Prefix to be used in composite models
         """
 
         self._voigt_fun = lmm(voigt_f, prefix=pref+'_', ion=ion)
@@ -308,11 +308,11 @@ class Model(Spec1D):
 
     def N_guess(self, unabs, ion='Ly_a'):
         """ Guess the column density, given the line peak """
-        
+
         logN_arr = np.arange(20.0, 10.0, -0.1)
 
         logN = []
-        
+
         syst = self._syst.t
         if (self._group is not None):
             syst = self._syst.t[self._group[1]]
@@ -328,14 +328,14 @@ class Model(Spec1D):
                         ion = r['ION']
                     except:
                         ion = self._syst._ion[r_i]
-                    #y = r['Y']                   
+                    #y = r['Y']
                 #x = r['X']
             else:
                 ion = 'Ly_a'
             try:
                 y = r['Y'][0]
             except:
-                y = r['Y']                   
+                y = r['Y']
             x = r['X']
 
             r_i += 1
@@ -356,7 +356,7 @@ class Model(Spec1D):
                 logN = np.append(logN, logN_interp)
 
         ret = np.power(10, logN) / u.cm**2
-                
+
         return ret
 
     def prof(self, spec, ion, wave_step=1e-3*u.nm, width=0.2 * u.nm, #0.03*u.nm,
@@ -377,13 +377,13 @@ class Model(Spec1D):
             try:
                 b = kwargs['b']
             except:
-                b = voigt_def['b'] * u.km/u.s 
+                b = voigt_def['b'] * u.km/u.s
             try:
-                btur = kwargs['btur'] 
+                btur = kwargs['btur']
             except:
                 btur = voigt_def['btur'] * u.km/u.s
             print z
-            
+
             max_size = 0
             max_size = np.size(z) if np.size(z) > max_size else max_size
             max_size = np.size(N) if np.size(N) > max_size else max_size
@@ -391,7 +391,7 @@ class Model(Spec1D):
             max_size = np.size(btur) if np.size(btur) > max_size else max_size
             z = np.full(max_size, z) * z.unit if np.size(z)==1 else z
             N = np.full(max_size, N) * N.unit if np.size(N)==1 else N
-            b = np.full(max_size, b) * b.unit if np.size(b)==1 else b   
+            b = np.full(max_size, b) * b.unit if np.size(b)==1 else b
             btur = np.full(max_size, btur) * btur.unit if np.size(btur)==1 \
                    else btur
 
@@ -404,42 +404,42 @@ class Model(Spec1D):
                 else:
                     ion_prof = np.array(ion)[ion_mask]
 
-            temp._prof_guess = self.voigt(z, N, b, btur, ion=ion_prof)    
+            temp._prof_guess = self.voigt(z, N, b, btur, ion=ion_prof)
             voigt = temp.model(psf=False)
-            
+
             x = np.array([])
             for p in range(len(ion)):
                 wave_min = dict_wave[ion[p]] * (1 + z[0]) - width
                 wave_max = dict_wave[ion[p]] * (1 + z[-1]) + width
-            
+
                 x = np.append(x, np.arange(wave_min.value, wave_max.value,
                                            wave_step.value))
             y = voigt[0].eval(voigt[1], x=x)
             ret = Spec1D(x, y, xunit=temp.x.unit, yunit=temp.y.unit)
         else:
             raise Exception("Only Voigt profile is supported.")
-        
+
         return ret
-    
+
     def prof_mult(self, spec, ion, plot=False, **kwargs):
         ion_mask = np.full(len(ion), False)
         prof = []
-        prof.append(self.prof(spec, ion, **kwargs))       
-        f_list = np.array([dict_f[ion[i]] for i in range(len(ion))]) 
+        prof.append(self.prof(spec, ion, **kwargs))
+        f_list = np.array([dict_f[ion[i]] for i in range(len(ion))])
         f_sort = np.argsort(f_list)[::-1]
         for i in range(len(ion)):
             ion_mask_temp = dc(ion_mask)
             ion_mask_temp[f_sort[i]] = True
             #ion_mask_temp[i] = True
             prof.append(self.prof(spec, ion, ion_mask=ion_mask_temp, **kwargs))
-        prof.append(self.prof(spec, ion, ion_mask=ion_mask, **kwargs))        
+        prof.append(self.prof(spec, ion, ion_mask=ion_mask, **kwargs))
 
         if (plot == True):
             for p in range(len(prof)):
-                prof[p].plot()        
+                prof[p].plot()
 
         return prof
-    
+
     def psf(self): #, center, sigma):
 
         """
@@ -453,8 +453,8 @@ class Model(Spec1D):
                                                    # standard deviation
             param[pref+'amplitude'].set(1.0, vary=False)
             param[pref+'center'].set(center, vary=False)
-            param[pref+'sigma'].set(sigma, vary=False)        
-        
+            param[pref+'sigma'].set(sigma, vary=False)
+
             if (c == 1):
                 ret = (model, param)
             else:
@@ -463,9 +463,9 @@ class Model(Spec1D):
         for c in range(1, len(self._chunk)):
             if (c == 1):
                 chunk_sum = dc(self._chunk[c])
-            else: 
-                chunk_sum += self._chunk[c]    
-                   
+            else:
+                chunk_sum += self._chunk[c]
+
         pref = 'psf_'
         model = lmm(gaussian, prefix=pref)
         param = model.make_params()
@@ -482,9 +482,9 @@ class Model(Spec1D):
                                                    # standard deviation
         param[pref+'amplitude'].set(1.0, vary=False)
         param[pref+'center'].set(center, vary=False)
-        param[pref+'sigma'].set(sigma, vary=False)        
-        
-        ret = (model, param)    
+        param[pref+'sigma'].set(sigma, vary=False)
+
+        ret = (model, param)
         #"""
         return ret
 
@@ -498,20 +498,20 @@ class Model(Spec1D):
         self._psf_par[pref+'_amplitude'].set(1.0, vary=False)
         self._psf_par[pref+'_center'].set(center, vary=vary[0], expr=expr[0])
         self._psf_par[pref+'_sigma'].set(sigma, vary=vary[1], expr=expr[1])
-        
-   
+
+
     def psf2(self):
         pref = 'psf_'
         model = lmm(psf_func, prefix=pref)
-        param = model.make_params() 
-        #param[pref+'resol'].set(resol, vary=False)        
-        ret = (model, param)    
+        param = model.make_params()
+        #param[pref+'resol'].set(resol, vary=False)
+        ret = (model, param)
 
         return ret
 
     def unabs(self):
         """ Create a model of the unabsorbed continuum level for a line """
-        
+
         if (self._chunk is None):
             raise Exception("Chunk must be provided.")
 
@@ -543,16 +543,16 @@ class Model(Spec1D):
             bestsort = np.argsort(x_2best)
             x_2sort = x_2best[bestsort]
             y_2sort = y_2best[bestsort]
-            
+
             xi = self._spec.x[self._chunk[c]][0].value
             xf = self._spec.x[self._chunk[c]][-1].value
             #xi = self._syst.xmin[self._group[c]][0].value
-            #xf = self._syst.xmax[self._group[c]][-1].value            
+            #xf = self._syst.xmax[self._group[c]][-1].value
             xm = np.mean(self._spec.x[self._chunk[c]].value)
             yi = self._spec.y[self._chunk[c]][0].value
             yf = self._spec.y[self._chunk[c]][-1].value
             #xi = self._syst.xmin[self._group[c]][0].value
-            #xf = self._syst.xmax[self._group[c]][-1].value            
+            #xf = self._syst.xmax[self._group[c]][-1].value
             yi = np.interp(xi, self._spec.x.value,
                            self._spec.y.value)
             yf = np.interp(xf, self._spec.x.value,
@@ -577,6 +577,3 @@ class Model(Spec1D):
                 ret += (model, param)
 
         return ret
-
-
-

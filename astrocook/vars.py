@@ -8,11 +8,11 @@ Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
 pars_std_d =  {
-    'z': 0.0, 'N': 1.e13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
-    'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': None, 'N_min': 1.e11, 'b_min': 5.0, 'btur_min': None, 'resol_min': None,
-    'z_max': None, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': None, 'resol_max': None,
-    'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
+    'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
+    'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
+    'z_min': None, 'logN_min': 11, 'b_min': 5.0, 'btur_min': None, 'resol_min': None,
+    'z_max': None, 'logN_max': 17, 'b_max': 100.0, 'btur_max': None, 'resol_max': None,
+    'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
 

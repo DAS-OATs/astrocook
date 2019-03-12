@@ -39,7 +39,7 @@ def convolve(data, kernel):
         ret = np.append(ret, conv)
     return ret
 
-def lines_voigt(x, z, N, b, btur, series='Ly_a'):
+def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 
@@ -54,9 +54,10 @@ def lines_voigt(x, z, N, b, btur, series='Ly_a'):
     @return Voigt function over x
     """
 
-    x = x[0] * au.nm
+    #x = x[0] * au.nm
+    x = x * au.nm
     z = z * au.dimensionless_unscaled
-    N = N / au.cm**2
+    N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(len(x))
@@ -91,7 +92,7 @@ def psf_convolve(model, psf):
     return conv
 
 def psf_gauss(x, #center, resol):
-              z, resol, series='Ly_a'):
+              resol, reg=None):
     """ @brief Gaussian PSF
 
     The function returns a gaussian array for each element of a selected region
@@ -105,25 +106,24 @@ def psf_gauss(x, #center, resol):
     @return Gaussian PSF over x
     """
 
-    """
-    sigma = center / resol * 4.246609001e-1
-    psf = np.exp(-(0.5 * (x-center) / sigma)**2)
+    #"""
+    c = np.median(reg)
+    sigma = c / resol * 4.246609001e-1
+    psf = np.exp(-(0.5 * (reg-c) / sigma)**2)
     psf[np.where(psf < 1e-4)] = 0.0
-    ret = [np.array(psf)]#[c_min:c_max]]
+    ret = [np.array(psf)]
     return ret
     """
 
-    """
     ret = []
-    for t in series_d[series]:
-        #c = (1+z)*xem_d[t].value
-        c = np.median(x)
+    for r in regs:
+        c = np.median(r)
         sigma = c / resol * 4.246609001e-1
         psf = np.exp(-(0.5 * (x-c) / sigma)**2)
         psf[np.where(psf < 1e-4)] = 0.0
         ret.append(psf)#[c_min:c_max]]
     return ret
-    """
+
     ret = []
     for xr in x:
         c = xr[len(xr)//2]
