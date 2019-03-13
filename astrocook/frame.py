@@ -100,12 +100,12 @@ class Frame(object):
     def meta(self, key, val):
         self._meta[key] = val
 
+    def _append(self, frame):
+        vstack = at.vstack([self._t, frame._t])
+        self._t = at.unique(vstack, keys=['x'])
+        return 0
+
     def _convert_x(self, zem=0, xunit=au.km/au.s):
-        """ @brief Convert the x axis to wavelength or velocity units.
-        @param zem Emission redshift, to use as a 0-point for velocities
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
 
         xem = (1+zem) * 121.567*au.nm
         equiv = [(au.nm, au.km/au.s,
@@ -186,8 +186,9 @@ class Frame(object):
         @return 0
         """
 
-        self.x = self.x*(1+self._rfz)/(1+z)
-        self.xmin = self.xmin*(1+self._rfz)/(1+z)
-        self.xmax = self.xmax*(1+self._rfz)/(1+z)
+        fact = (1+self._rfz)/(1+z)
+        self.x = self.x*fact
+        self.xmin = self.xmin*fact
+        self.xmax = self.xmax*fact
         self._rfz = z
         return 0

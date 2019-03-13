@@ -7,7 +7,7 @@ class ModelList(object):
     A SystList is a list of models. """
 
     def __init__(self,
-                 sess,
+                 #sess,
                  mod=[],
                  chi2r=[],
 #                 systs=[],

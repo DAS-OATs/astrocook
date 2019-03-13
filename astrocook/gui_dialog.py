@@ -45,7 +45,6 @@ class GUIDialogMethod(wx.Dialog):
 
         for s, a, c in zip(self._source, self._attr, self._cl):
             if c != None and getattr(self._gui._sess_sel, s) == None:
-                print(s, c)
                 setattr(self._gui._sess_sel, s, c(sess=self._gui._sess_sel))
 
             if s == None:

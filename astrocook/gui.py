@@ -106,6 +106,7 @@ class GUIPanelSession(wx.Frame):
         x = sess.spec._safe(sess.spec.x)#.value
         self._refresh()
         self._gui._graph_spec._refresh(self._gui._sess_items)
+        #print(self._gui._sess_sel.__dict__)
 
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
@@ -153,6 +154,11 @@ class GUIPanelSession(wx.Frame):
             try:
                 x = s.lines._safe(s.lines.x)
                 self._tab.SetItem(i, 5, str(len(x)))
+            except:
+                pass
+            try:
+                x = s.systs.z
+                self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
 

@@ -152,11 +152,11 @@ class GUIMenuMeals(GUIMenu):
 
         # Add items to Meals menu here
         self._item_method(self._menu, start_id, "Find lines",
-                          ['spec', 'spec'], [None, 'lines'],
+                          [None, None], [None, None],
                           ['convolve_gauss', 'find_peaks'])
         self._item_method(self._menu, start_id+1, "Guess continuum",
-                          ['spec', 'spec', 'spec', 'spec'],
-                          [None, 'lines', 'nodes', None],
+                          [None, None, None, None],
+                          [None, None, None, None],
                           ['convolve_gauss', 'find_peaks', 'extract_nodes',
                            'interp_nodes'])
 
@@ -172,24 +172,24 @@ class GUIMenuSnacks(GUIMenu):
 
         # Add items to Snacks menu here
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
-                          'spec', None, 'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Find peaks", 'spec',
-                          'lines', 'find_peaks')
+                          None, None, 'convolve_gauss')
+        self._item_method(self._menu, start_id+102, "Find peaks", None,
+                          None, 'find_peaks')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, "Extract nodes", 'spec',
-                          'nodes', 'extract_nodes')
-        self._item_method(self._menu, start_id+202, "Interpolate nodes", 'spec',
+        self._item_method(self._menu, start_id+201, "Extract nodes", None,
+                          None, 'extract_nodes')
+        self._item_method(self._menu, start_id+202, "Interpolate nodes", None,
                           None, 'interp_nodes')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, "Fit a system", 'systs',
-                          None, 'fit', SystList)
-        #self._item_method(self._menu, start_id+302, "Fit systems from a line "
-        #                  "list", 'systs', None, 'fit_from_lines', SystList)
-        #self._item_method(self._menu, start_id+303, "Fit systems from fitting "
-        #                  "residuals", 'systs', None, 'fit_from_deabs',
-        #                  SystList)
-        #self._item_method(self._menu, start_id+304, "Slide and fit systems",
-        #                  'systs', None, 'fit_slide', SystList)
+        #self._item_method(self._menu, start_id+301, "Fit a system", 'systs',
+        #                  'systs', 'fit', SystList)
+        self._item_method(self._menu, start_id+301, "Add and fit a system",
+                          None, None, 'add_fit')
+        self._item_method(self._menu, start_id+302, "Add and fit systems from "
+                          "line list", None, None, 'add_fit_from_lines')
+        self._item_method(self._menu, start_id+303, "Test and fit systems "
+                          "by sliding along spectrum", None, None,
+                          'test_fit_slide')
 
 
 class GUIMenuView(GUIMenu):

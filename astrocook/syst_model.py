@@ -30,9 +30,10 @@ class SystModel(LMComposite):
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve)
-        print(self._group_list)
-        if self._group_list == []:
+        if self._group_sel == -1:
             self._systs._mods._t.add_row([self, None])
+        else:
+            self._systs._mods._t[self._group_sel]['mod'] = self
 
     def _make_defs(self):
         self._defs = pars_std_d
@@ -41,6 +42,9 @@ class SystModel(LMComposite):
                 self._defs[v] = self._vars[v]
 
     def _make_group(self, thres=1e-3):
+        """ @brief Group lines that must be fitted together into a single model.
+        """
+
         spec = self._systs._spec
         mods = self._systs._mods
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
@@ -54,7 +58,13 @@ class SystModel(LMComposite):
                 self._group *= mod._lines
                 self._pars.update(mod._pars)
                 self._group_list.append(i)
-                s['mod'] = self
+                #s['mod'] = self
+        if len(self._group_list) > 1:
+            mods._t.remove_rows(self._group_list[1:])
+        if self._group_list == []:
+            self._group_sel = -1
+        else:
+            self._group_sel = self._group_list[0]
 
     def _make_lines(self):
         count = str(len(self._systs._t))
@@ -66,7 +76,7 @@ class SystModel(LMComposite):
         self._pars.add_many(
             #(self._lines_pref+'z', d['z'], d['z_vary'], d['z_min'], d['z_max'],
             # d['z_expr']),
-            (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-1e-3, d['z']+1e-3,
+            (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-5e-4, d['z']+5e-4,
              d['z_expr']),
             (self._lines_pref+'logN', d['logN'], d['logN_vary'], d['logN_min'],
              d['logN_max'], d['logN_expr']),
@@ -102,8 +112,6 @@ class SystModel(LMComposite):
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
         self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
-        plt.plot(self._xf, self._yf)
-        plt.show()
 
     def _new(self):
         self._make_defs()
@@ -118,3 +126,4 @@ class SystModel(LMComposite):
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf)
         self._pars = fit.params
+        self._systs._mods._t[self._group_sel]['chi2r'] = fit.redchi
