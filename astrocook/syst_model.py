@@ -31,7 +31,7 @@ class SystModel(LMComposite):
 
 
     def _make_comp(self, add=True):
-        print(self._group)
+        #print(self._group)
         super(SystModel, self).__init__(self._group, self._psf, convolve)
         if add:
             if self._group_sel == -1:
@@ -60,9 +60,11 @@ class SystModel(LMComposite):
         self._group_list = []
         for i, s in enumerate(mods._t):
             mod = s['mod']
-            print(mod)
+            #print(mod)
             ys_s = mod.eval(x=self._xs, params=mod._pars)
             if np.amin(np.maximum(ys, ys_s)) < 1-thres:
+                #print(self._systs._t)
+                #print(self._group, mod._group)
                 self._group *= mod._group
                 self._pars.update(mod._pars)
                 self._group_list.append(i)
@@ -76,7 +78,7 @@ class SystModel(LMComposite):
 
     def _make_lines(self):
         count = str(len(self._systs._t))
-        self._lines_pref = self._lines_func.__name__+'_'+count+'_'
+        self._lines_pref = self._lines_func.__name__+'_'+str(self._systs._count)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
                        series=self._series)
         d = self._defs
@@ -134,7 +136,7 @@ class SystModel(LMComposite):
     def fit(self):
 
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf)#, fit_kws={'maxfev': 100})
+                                         weights=self._wf, fit_kws={'maxfev': 300})
         self._pars = fit.params
         self._chi2r = fit.redchi
         self._systs._mods._t[self._group_sel]['chi2r'] = fit.redchi

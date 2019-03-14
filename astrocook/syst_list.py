@@ -43,6 +43,7 @@ class SystList(object):
         self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))  # Full x array, without NaNs
         self._ys = np.ones(len(self._xs))
         self._s = self._spec._where_safe
+        self._count = 0
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -110,7 +111,7 @@ class SystList(object):
         count = len(self._t)
 
         self._mod = SystModel(self, series, vars, z0=z)
-        self._t.add_row(['voigt_func', series, z, z, logN, b, None, count])
+        self._t.add_row(['voigt_func', series, z, z, logN, b, None, self._count])
 
         return 0
 
@@ -153,22 +154,27 @@ class SystList(object):
             chi2r_thres = np.inf
 
         self._mod.fit()
-        self._mod._pars.pretty_print()
+        #self._mod._pars.pretty_print()
         for row in range(len(self._t)):
             try:
-                if self._mod._chi2r < chi2r_thres:
-                    count = self._t[row]['count']
-                    pref = 'lines_voigt_'+str(count)
-                    self._t[row]['z'] = self._mod._pars[pref+'_z']
-                    self._t[row]['logN'] = self._mod._pars[pref+'_logN']
-                    self._t[row]['b'] = self._mod._pars[pref+'_b']
-                    self._t[row]['chi2r'] = self._mod._chi2r
-                else:
+                #self._count += 1 #self._t[row]['count']
+                #print(self._count)
+                pref = 'lines_voigt_'+str(self._count)
+                #print(self._mod._pars)
+                self._t[row]['z'] = self._mod._pars[pref+'_z']
+                self._t[row]['logN'] = self._mod._pars[pref+'_logN']
+                self._t[row]['b'] = self._mod._pars[pref+'_b']
+                self._t[row]['chi2r'] = self._mod._chi2r
+                #print(self._mod._chi2r, chi2r_thres)
+                if self._mod._chi2r > chi2r_thres:
                     where = np.where(self._mods._t['z0'] == self._t[row]['z0'])
                     self._mods._t.remove_rows(where)
+                    #print(self._t)
                     self._t.remove_row(row)
+                    #print(self._t)
             except:
                 pass
+        self._count += 1 #self._t[row]['count']
 
         #print(self._t)
         return 0
