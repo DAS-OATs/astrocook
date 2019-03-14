@@ -87,6 +87,9 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id+1, "Open…",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
+        self._item(self._menu, start_id+101, "Save…",
+                   lambda e: self._on_save(e, **kwargs))
+        self._menu.AppendSeparator()
         self._item(self._menu, start_id+401, "Quit", self._on_quit)
 
     def _on_open(self, event, path='.'):
@@ -106,6 +109,29 @@ class GUIMenuFile(GUIMenu):
             sess = Session(path=path, name=path.split('/')[-1][:-5])
             self._gui._panel_sess._on_add(sess, open=True)
 
+    def _on_save(self, event, path='.'):
+        """ Behaviour for Session > Save """
+
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save session", path, name,
+                           wildcard="Astrocook session (*.acs)|*.acs",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            print(prefix, "I'm saving session %s..." % path)
+            self._gui._sess_sel.save(path)
+            """
+            try:
+                acs = self
+                self.IO.acs_write(self.acs, name, dir)
+
+            except IOError:
+                wx.LogError("Cannot save session '%s'." % name)
+            """
     def _on_quit(self, event):
         print("AC: Bye!")
         self._gui._panel_sess.Close()

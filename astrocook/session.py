@@ -9,6 +9,7 @@ from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
 import numpy as np
+import tarfile
 
 prefix = "Session:"
 
@@ -42,6 +43,86 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
+
+    def add_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
+                chi2r_thres=None, append=True):
+        """ @brief Add and fit a Voigt model for a system.
+        @param series Series of transitions
+        @param z Guess redshift
+        @param N Guess column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param append Append system to existing system list
+        @return 0
+        """
+
+        z = float(z)
+        logN = float(logN)
+        b = float(b)
+        resol = float(resol)
+        if chi2r_thres == 'None':
+            chi2r_thres = np.inf
+        else:
+            chi2r_thres = float(chi2r_thres)
+
+        systs = SystList(sess=self)
+        if append and self.systs != None:
+            self.systs._append(systs)
+            self.systs._mods._append(systs._mods)
+        else:
+            self.systs = systs
+
+        self.systs._add_fit(series, z, logN, b, resol, chi2r_thres)
+        self.systs._update_spec()
+
+        return 0
+
+    def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
+                           dz=1e-4, logN=14, b=10, chi2r_thres=None,
+                           append=True):
+        """ @brief Add and fit Voigt models to a line list, given a redshift
+        range.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param N Guess column density
+        @param b Guess doppler broadening
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        dz = float(dz)
+        logN = float(logN)
+        b = float(b)
+        if chi2r_thres == 'None':
+            chi2r_thres = np.inf
+        else:
+            chi2r_thres = float(chi2r_thres)
+
+        z_range = self.lines._syst_cand(series, z_start, z_end, dz)
+
+        self.systs = SystList(sess=self)
+        self.systs._add_fit(series, z_range, logN, b, 70000, chi2r_thres,
+                            verb=True)
+        """
+        #print(systs._t)
+        #print(systs._mods._t)
+        if append and self.systs != None and 1==0:
+            self.systs._append(systs)
+            self.systs._mods._append(systs._mods)
+        else:
+            self.systs = systs
+        #print(self.systs._t)
+        #print(self.systs._mods._t)
+        """
+        self.systs._update_spec()
+
+        return 0
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -114,7 +195,6 @@ class Session(object):
 
         return 0
 
-
     def extract_region(self, xmin, xmax):
         """ @brief Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
@@ -153,23 +233,6 @@ class Session(object):
 
         return new
 
-    def interp_nodes(self, smooth=0):
-        """ @brief Interpolate nodes with a univariate spline to estimate the
-        emission level.
-        @param smooth Smoothing of the spline
-        @return 0
-        """
-        if not hasattr(self, 'nodes'):
-            print(prefix, "I need nodes to interpolate. Please try Spectrum > "
-                  "Extract nodes first.")
-            return None
-
-        smooth = float(smooth)
-
-        self.spec._interp_nodes(self.lines, self.nodes)
-        return 0
-
-
     def find_peaks(self, col='conv', kind='min', kappa=3.0, append=True):
         """ @brief Find the peaks in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
@@ -204,69 +267,26 @@ class Session(object):
 
         return 0
 
-    def add_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=45000,
-                append=True):
-        """ @brief Add and fit a Voigt model for a system.
-        @param series Series of transitions
-        @param z Guess redshift
-        @param N Guess column density
-        @param b Guess Doppler broadening
-        @param resol Resolution
-        @param append Append system to existing system list
+    def interp_nodes(self, smooth=0):
+        """ @brief Interpolate nodes with a univariate spline to estimate the
+        emission level.
+        @param smooth Smoothing of the spline
         @return 0
         """
+        if not hasattr(self, 'nodes'):
+            print(prefix, "I need nodes to interpolate. Please try Spectrum > "
+                  "Extract nodes first.")
+            return None
 
-        z = float(z)
-        logN = float(logN)
-        b = float(b)
-        resol = float(resol)
+        smooth = float(smooth)
 
-        systs = SystList(sess=self)
-        if append and self.systs != None:
-            self.systs._append(systs)
-        else:
-            self.systs = systs
-
-        self.systs._add_fit(series, z, logN, b, resol)
-
+        self.spec._interp_nodes(self.lines, self.nodes)
         return 0
 
-    def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
-                           dz=1e-4, logN=14, b=10, append=True):
-        """ @brief Add and fit Voigt models to a line list, given a redshift
-        range.
-        @param series Series of transitions
-        @param z_start Start redshift
-        @param z_end End redshift
-        @param dz Threshold for redshift coincidence
-        @param N Guess column density
-        @param b Guess doppler broadening
-        @param append Append systems to existing system list
-        @return 0
-        """
 
-        z_start = float(z_start)
-        z_end = float(z_end)
-        dz = float(dz)
-        logN = float(logN)
-        b = float(b)
-
-        z_range = self.lines._syst_cand(series, z_start, z_end, dz)
-
-        systs = SystList(sess=self)
-        systs._add_fit(series, z_range, logN, b, 45000, verb=True)
-        if append and self.systs != None:
-            #print(self.systs._t)
-            #print(systs)
-            self.systs._append(systs)
-            #print(self.systs._t)
-        else:
-            self.systs = systs
-
-        return 0
-
-    def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71, z_step=5e-4,
-                       logN=14, b=10.0, append=True):
+    def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71,
+                       z_step=5e-4, logN=14, b=10.0, col='deabs', chi2_fact=1.0,
+                       chi2r_thres=2.0, append=True):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -275,6 +295,10 @@ class Session(object):
         @param z_step Redshift step
         @param logN Column density (logarithmic)
         @param b Doppler parameter
+        @param col Column where to test the models
+        @param chi2_fact Maximum ratio between the chi2 of model and null case
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param append Append systems to existing system list
         @return 0
         """
 
@@ -283,20 +307,23 @@ class Session(object):
         z_step = float(z_step)
         logN = float(logN)
         b = float(b)
+        chi2_fact = float(chi2_fact)
+        if chi2r_thres == 'None':
+            chi2r_thres = np.inf
+        else:
+            chi2r_thres = float(chi2r_thres)
 
         z_range = np.arange(z_start, z_end, z_step)
 
         systs = SystList(sess=self)
-        systs._test_fit(self.spec, series, z_range, logN, b, 45000, verb=True)
-        """
+        systs._test_fit(self.spec, series, z_range, logN, b, 70000, col,
+                        chi2_fact, chi2r_thres, verb=True)
         if append and self.systs != None:
-            #print(self.systs._t)
-            #print(systs)
             self.systs._append(systs)
-            #print(self.systs._t)
+            self.systs._mods._append(systs._mods)
         else:
             self.systs = systs
-        """
+        self.systs._update_spec()
         return 0
 
     def open(self):
@@ -353,6 +380,18 @@ class Session(object):
             self.spec = format.uves_popler_spectrum(hdul)
 
         #self.model = Model(self)
+
+    def save(self, path):
+        for s in self.seq:
+            try:
+                name = path[:-4]+'_'+s+'.fits'
+                t = dc(getattr(self, s).t)
+                for c in t.colnames:
+                    t[c].unit = au.dimensionless_unscaled
+                t.write(name, format='fits', overwrite=True)
+            except:
+                pass
+
 
     def shift_from_rf(self, z=0):
         """ @brief Shift x axis to the original frame.
