@@ -43,7 +43,7 @@ class SystList(object):
         self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))  # Full x array, without NaNs
         self._ys = np.ones(len(self._xs))
         self._s = self._spec._where_safe
-        self._count = 0
+        self._id = 0
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -59,7 +59,7 @@ class SystList(object):
         self._t = t
         #self._t['mod'] = np.empty(len(self.z), dtype=object)
         self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
-        self._t['count'] = np.empty(len(self.z), dtype=int)
+        self._t['id'] = np.empty(len(self.z), dtype=int)
         self._dtype = dtype
 
 
@@ -108,15 +108,15 @@ class SystList(object):
         resol = float(resol)
 
         vars = {'z': z, 'logN': logN, 'b': b, 'resol': resol}
-        count = len(self._t)
+        id = len(self._t)
 
         self._mod = SystModel(self, series, vars, z0=z)
-        self._t.add_row(['voigt_func', series, z, z, logN, b, None, self._count])
+        self._t.add_row(['voigt_func', series, z, z, logN, b, None, self._id])
 
         return 0
 
     def _add_fit(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
-                 chi2r_thres=None, verb=False):
+                 chi2r_thres=None, fit_kws={}, verb=False):
         """ @brief Add a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
@@ -132,10 +132,14 @@ class SystList(object):
                 print(prefix, "I'm fitting a %s system at redshift %2.4f "\
                       "(%i/%i)…" % (series, z, i+1, len(z_range)), end='\r')
             self._add(series, z, logN, b, resol)
-            self._fit(chi2r_thres)
+            self._fit(chi2r_thres, fit_kws)
+        if chi2r_thres != np.inf:
+            z_rem = self._clean(chi2r_thres)
+        else:
+            z_rem = []
         if verb:
             print(prefix, "I've fitted %i %s systems between redshift %2.4f "\
-                  "and %2.4f." % (len(z_range), series, z_range[0],
+                  "and %2.4f." % (len(z_range)-len(z_rem), series, z_range[0],
                                   z_range[-1]))
         return 0
 
@@ -144,7 +148,25 @@ class SystList(object):
         self._t = at.unique(vstack, keys=['z0'])
         return 0
 
-    def _fit(self, chi2r_thres=None):
+    def _clean(self, chi2r_thres=None):
+
+        #print(self._t)
+        #print(self._mods._t)
+        rem = np.where(self._t['chi2r'] > chi2r_thres)[0]
+        mods_rem = np.where(self._mods._t['chi2r'] > chi2r_thres)[0]
+        z_rem = self._t['z'][rem]
+        #print(rem, mods_rem)
+        if rem != []:
+            self._t.remove_rows(rem)
+        if mods_rem != []:
+            self._mods._t.remove_rows(mods_rem)
+        #print(self._t)
+        #print(self._mods._t)
+        #print(self._mods._t['chi2r'])
+        return z_rem
+
+
+    def _fit(self, chi2r_thres=None, fit_kws={}):
         """ @brief Fit a Voigt model for a system.
         @param mod Model
         @return 0
@@ -153,30 +175,20 @@ class SystList(object):
         if chi2r_thres == None:
             chi2r_thres = np.inf
 
-        self._mod.fit()
-        #self._mod._pars.pretty_print()
-        for row in range(len(self._t)):
-            try:
-                #self._count += 1 #self._t[row]['count']
-                #print(self._count)
-                pref = 'lines_voigt_'+str(self._count)
-                #print(self._mod._pars)
-                self._t[row]['z'] = self._mod._pars[pref+'_z']
-                self._t[row]['logN'] = self._mod._pars[pref+'_logN']
-                self._t[row]['b'] = self._mod._pars[pref+'_b']
-                self._t[row]['chi2r'] = self._mod._chi2r
-                #print(self._mod._chi2r, chi2r_thres)
-                if self._mod._chi2r > chi2r_thres:
-                    where = np.where(self._mods._t['z0'] == self._t[row]['z0'])
-                    self._mods._t.remove_rows(where)
-                    #print(self._t)
-                    self._t.remove_row(row)
-                    #print(self._t)
-            except:
-                pass
-        self._count += 1 #self._t[row]['count']
+        self._mod.fit(fit_kws)
 
-        #print(self._t)
+        mod = np.where(self._mod == self._mods._t['mod'])[0][0]
+        id = self._mods._t['id'][mod]
+        for i in id:
+            iw = np.where(self._t['id']==i)[0][0]
+            pref = 'lines_voigt_'+str(i)
+            self._t[iw]['z'] = self._mod._pars[pref+'_z'].value
+            self._t[iw]['logN'] = self._mod._pars[pref+'_logN'].value
+            self._t[iw]['b'] = self._mod._pars[pref+'_b'].value
+            self._t[iw]['chi2r'] = self._mod._chi2r
+
+        self._id += 1
+
         return 0
 
     def _test(self, spec, xm, ym, ym_0, ym_1, ym_2, col='y', chi2_fact=0.8):
@@ -195,7 +207,8 @@ class SystList(object):
             return False, chi2, chi2_0
 
     def _test_fit(self, spec, series='Ly_a', z=2.0, logN=14, b=10, resol=75000,
-                  col='y', chi2_fact=1.0, chi2r_thres=2.0, verb=False):
+                  col='y', chi2_fact=1.0, chi2r_thres=2.0, fit_kws={},
+                  verb=False):
 
         z_range = z if np.size(z) > 1 else [z]
 
@@ -245,7 +258,8 @@ class SystList(object):
         #self._update_spec()
         if len(z_true) > 0:
             self._add_fit(series, np.array(z_true), logN, b, resol,
-                          chi2r_thres=chi2r_thres, verb=True)
+                          chi2r_thres=chi2r_thres, fit_kws=fit_kws,
+                          verb=True)
         return 0
 
     def _update_spec(self):

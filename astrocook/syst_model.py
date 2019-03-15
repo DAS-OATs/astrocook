@@ -36,7 +36,7 @@ class SystModel(LMComposite):
         if add:
             if self._group_sel == -1:
                 #print("hey")
-                self._systs._mods._t.add_row([self._z0, self, None])
+                self._systs._mods._t.add_row([self._z0, self, None, []])
             else:
                 self._systs._mods._t[self._group_sel]['mod'] = self
         #print(self._systs._mods)
@@ -77,8 +77,8 @@ class SystModel(LMComposite):
             self._group_sel = self._group_list[0]
 
     def _make_lines(self):
-        count = str(len(self._systs._t))
-        self._lines_pref = self._lines_func.__name__+'_'+str(self._systs._count)+'_'
+        id = str(len(self._systs._t))
+        self._lines_pref = self._lines_func.__name__+'_'+str(self._systs._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
                        series=self._series)
         d = self._defs
@@ -133,10 +133,11 @@ class SystModel(LMComposite):
         self._make_psf()
         self._make_comp(add)
 
-    def fit(self):
+    def fit(self, fit_kws={}):
 
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, fit_kws={'maxfev': 300})
+                                         weights=self._wf, fit_kws=fit_kws)
         self._pars = fit.params
         self._chi2r = fit.redchi
         self._systs._mods._t[self._group_sel]['chi2r'] = fit.redchi
+        self._systs._mods._t[self._group_sel]['id'].append(self._systs._id)

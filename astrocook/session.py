@@ -45,7 +45,7 @@ class Session(object):
 
 
     def add_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
-                chi2r_thres=None, append=True):
+                chi2r_thres=None, maxfev=100, append=True):
         """ @brief Add and fit a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
@@ -53,6 +53,7 @@ class Session(object):
         @param b Guess Doppler broadening
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
         @param append Append system to existing system list
         @return 0
         """
@@ -61,10 +62,11 @@ class Session(object):
         logN = float(logN)
         b = float(b)
         resol = float(resol)
-        if chi2r_thres == 'None':
+        if chi2r_thres == None or chi2r_thres == 'None':
             chi2r_thres = np.inf
         else:
             chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
 
         systs = SystList(sess=self)
         if append and self.systs != None:
@@ -73,14 +75,15 @@ class Session(object):
         else:
             self.systs = systs
 
-        self.systs._add_fit(series, z, logN, b, resol, chi2r_thres)
+        self.systs._add_fit(series, z, logN, b, resol, chi2r_thres,
+                            fit_kws={'maxfev': maxfev})
         self.systs._update_spec()
 
         return 0
 
     def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
                            dz=1e-4, logN=14, b=10, chi2r_thres=None,
-                           append=True):
+                           maxfev=100, append=True):
         """ @brief Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
@@ -90,6 +93,7 @@ class Session(object):
         @param N Guess column density
         @param b Guess doppler broadening
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
         @param append Append systems to existing system list
         @return 0
         """
@@ -99,16 +103,17 @@ class Session(object):
         dz = float(dz)
         logN = float(logN)
         b = float(b)
-        if chi2r_thres == 'None':
+        if chi2r_thres == None or chi2r_thres == 'None':
             chi2r_thres = np.inf
         else:
             chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
 
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
         self.systs = SystList(sess=self)
         self.systs._add_fit(series, z_range, logN, b, 70000, chi2r_thres,
-                            verb=True)
+                            fit_kws={'maxfev': maxfev}, verb=True)
         """
         #print(systs._t)
         #print(systs._mods._t)
@@ -286,7 +291,7 @@ class Session(object):
 
     def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71,
                        z_step=5e-4, logN=14, b=10.0, col='deabs', chi2_fact=1.0,
-                       chi2r_thres=2.0, append=True):
+                       chi2r_thres=2.0, maxfev=100, append=True):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -298,6 +303,7 @@ class Session(object):
         @param col Column where to test the models
         @param chi2_fact Maximum ratio between the chi2 of model and null case
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
         @param append Append systems to existing system list
         @return 0
         """
@@ -308,16 +314,18 @@ class Session(object):
         logN = float(logN)
         b = float(b)
         chi2_fact = float(chi2_fact)
-        if chi2r_thres == 'None':
+        if chi2r_thres == None or chi2r_thres == 'None':
             chi2r_thres = np.inf
         else:
             chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
 
         z_range = np.arange(z_start, z_end, z_step)
 
         systs = SystList(sess=self)
         systs._test_fit(self.spec, series, z_range, logN, b, 70000, col,
-                        chi2_fact, chi2r_thres, verb=True)
+                        chi2_fact, chi2r_thres, fit_kws={'maxfev': maxfev},
+                        verb=True)
         if append and self.systs != None:
             self.systs._append(systs)
             self.systs._mods._append(systs._mods)

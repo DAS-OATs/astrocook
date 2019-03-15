@@ -52,6 +52,7 @@ class LineList(Frame):
         # Compute all possible redshifts
         z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
                             for x in self.x] for t in series_d[series]])
+        #print(z_all)
 
         # Select values within [z_start, z_end]
         (z_min, z_max) = (z_start, z_end) if z_start < z_end \
@@ -61,6 +62,7 @@ class LineList(Frame):
         # Find coincidences
         z_sort = np.sort(np.ravel(z_sel))
         z_range = z_sort[np.where(np.ediff1d(z_sort)<dz)]
+        #print(z_range)
         z_range = z_range if z_start < z_end else z_range[::-1]
 
         return z_range

@@ -11,14 +11,14 @@ class ModelList(object):
                  z=[],
                  mod=[],
                  chi2r=[],
-#                 systs=[],
+                 id=[],
                  dtype=float):
 
         t = at.Table()
         t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
         t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
         t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
-#        t['systs'] = at.Column(np.array(mod, ndmin=1), dtype=object)
+        t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
         self._t = t
         self._dtype = dtype
 

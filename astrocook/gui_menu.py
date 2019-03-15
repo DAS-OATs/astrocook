@@ -71,7 +71,21 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        pass
+        self._item(self._menu, start_id+1, "My recipe…", self._on_my_recipe)
+
+    def _on_my_recipe(self, event):
+        sess = self._gui._sess_sel
+        """
+        sess.convolve_gauss()
+        sess.find_peaks()
+        sess.extract_nodes()
+        sess.interp_nodes()
+        sess = sess.extract_region(xmin=330, xmax=420)
+        """
+        sess.add_fit_from_lines()
+        sess.test_fit_slide(logN=11.5)
+
+
 
 class GUIMenuFile(GUIMenu):
 
