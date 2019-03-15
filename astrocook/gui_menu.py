@@ -36,19 +36,19 @@ class GUIMenu(object):
 
     def _item_graph(self, menu, id, title, key):
         item = wx.MenuItem(menu, id, title)
-        self._gui._panel_sess.Bind(wx.EVT_MENU,
-                                   lambda e: self._on_graph(e, key, item), item)
+        self._gui._panel_sess.Bind(
+            wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
 
-    def _item_method(self, menu, id, title, source, targ, attr, cl=None):
+    def _item_method(self, menu, id, title, targ):
         item = wx.MenuItem(menu, id, title+'…')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_dialog(e, title, source, targ, attr, cl), item)
+            lambda e: self._on_dialog(e, title, targ), item)
         menu.Append(item)
 
-    def _on_dialog(self, event, title, source, targ, attr, cl=None):
-        dlg = GUIDialogMethod(self._gui, title, source, targ, attr, cl)
+    def _on_dialog(self, event, title, attr):
+        dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_spec._sel
@@ -75,16 +75,14 @@ class GUIMenuCook(GUIMenu):
 
     def _on_my_recipe(self, event):
         sess = self._gui._sess_sel
-        """
         sess.convolve_gauss()
         sess.find_peaks()
         sess.extract_nodes()
         sess.interp_nodes()
-        sess = sess.extract_region(xmin=330, xmax=420)
-        """
-        sess.add_fit_from_lines()
-        sess.test_fit_slide(logN=11.5)
-
+        new_sess = sess.extract_region(xmin=400, xmax=420)
+        self._gui._panel_sess._on_add(new_sess, open=False)
+        new_sess.add_fit_from_lines(resol=140000)
+        new_sess.test_fit_slide(logN=11.5)
 
 
 class GUIMenuFile(GUIMenu):
@@ -168,17 +166,17 @@ class GUIMenuEdit(GUIMenu):
 
         # Add items to Edit menu here
         self._item_method(self._menu, start_id+301, "Extract region",
-                          None, None, 'extract_region')
+                          'extract_region')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+311, "Convert x axis",
-                          None, None, 'convert_x')
+                          'convert_x')
         self._item_method(self._menu, start_id+312, "Convert y axis",
-                          None, None, 'convert_y')
+                          'convert_y')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+321, "Shift to rest frame",
-                          None, None, 'shift_to_rf')
+                          'shift_to_rf')
         self._item_method(self._menu, start_id+322, "Shift from rest frame",
-                          None, None, 'shift_from_rf')
+                          'shift_from_rf')
 
 
 class GUIMenuMeals(GUIMenu):
@@ -192,11 +190,8 @@ class GUIMenuMeals(GUIMenu):
 
         # Add items to Meals menu here
         self._item_method(self._menu, start_id, "Find lines",
-                          [None, None], [None, None],
                           ['convolve_gauss', 'find_peaks'])
         self._item_method(self._menu, start_id+1, "Guess continuum",
-                          [None, None, None, None],
-                          [None, None, None, None],
                           ['convolve_gauss', 'find_peaks', 'extract_nodes',
                            'interp_nodes'])
 
@@ -212,24 +207,20 @@ class GUIMenuSnacks(GUIMenu):
 
         # Add items to Snacks menu here
         self._item_method(self._menu, start_id+101, "Convolve with gaussian",
-                          None, None, 'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Find peaks", None,
-                          None, 'find_peaks')
+                          'convolve_gauss')
+        self._item_method(self._menu, start_id+102, "Find peaks", 'find_peaks')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, "Extract nodes", None,
-                          None, 'extract_nodes')
-        self._item_method(self._menu, start_id+202, "Interpolate nodes", None,
-                          None, 'interp_nodes')
+        self._item_method(self._menu, start_id+201, "Extract nodes",
+                          'extract_nodes')
+        self._item_method(self._menu, start_id+202, "Interpolate nodes",
+                          'interp_nodes')
         self._menu.AppendSeparator()
-        #self._item_method(self._menu, start_id+301, "Fit a system", 'systs',
-        #                  'systs', 'fit', SystList)
         self._item_method(self._menu, start_id+301, "Add and fit a system",
-                          None, None, 'add_fit')
+                          'add_fit')
         self._item_method(self._menu, start_id+302, "Add and fit systems from "
-                          "line list", None, None, 'add_fit_from_lines')
+                          "line list", 'add_fit_from_lines')
         self._item_method(self._menu, start_id+303, "Test and fit systems "
-                          "by sliding along spectrum", None, None,
-                          'test_fit_slide')
+                          "by sliding along spectrum", 'test_fit_slide')
 
 
 class GUIMenuView(GUIMenu):

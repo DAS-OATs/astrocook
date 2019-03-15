@@ -19,44 +19,23 @@ class GUIDialogMethod(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
-                 source,
-                 targ,
-                 attr,
-                 cl=None):
+                 attr):
 
         self._gui = gui
         self._gui._dlg_method = self
         super(GUIDialogMethod, self).__init__(parent=None, title=title)
-        self._source = np.array(source, ndmin=1)
-        self._targ = np.array(targ, ndmin=1)
         self._attr = np.array(attr, ndmin=1)
-        if cl != None:
-            self._cl = np.array(cl, ndmin=1)
-        else:
-            self._cl = np.array([None]*len(self._source))
         self._methods = []
         self._params = []
         self._brief = []
         self._doc = []
 
-#        if cl is not None:
-#            setattr(self._gui._sess_sel, source, cl(sess=self._gui._sess_sel))
-
-
-        for s, a, c in zip(self._source, self._attr, self._cl):
-            if c != None and getattr(self._gui._sess_sel, s) == None:
-                setattr(self._gui._sess_sel, s, c(sess=self._gui._sess_sel))
-
-            if s == None:
-                obj = self._gui._sess_sel
-            else:
-                obj = getattr(self._gui._sess_sel, s)
+        for a in self._attr:
+            obj = self._gui._sess_sel
             method = getattr(obj, a)
             self._methods.append(method)
-            #super(GUIDialogMethod, self).__init__(parent=None, title=title)
             self._get_params(method)
             self._get_doc(method)
-
 
         panel = wx.Panel(self)
         box = wx.BoxSizer(wx.VERTICAL)
@@ -70,7 +49,6 @@ class GUIDialogMethod(wx.Dialog):
         sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
         core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
         panel.SetSizer(core)
-
 
         # Parameters
         sb = wx.StaticBox(panel, label="Parameters")
@@ -116,7 +94,8 @@ class GUIDialogMethod(wx.Dialog):
     def _get_doc(self, method):
         full = inspect.getdoc(method)
         split = full.split('@')
-        self._brief.append([s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' '))
+        self._brief.append([s[6:-1] for s in split \
+                           if s[0:5]=='brief'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
@@ -132,12 +111,8 @@ class GUIDialogMethod(wx.Dialog):
         self.Close()
 
     def _on_run(self, e):
-        for s, t, a, p_l, c_l in zip(self._source, self._targ, self._attr,
-                                     self._params, self._ctrl):
-            if s == None:
-                obj = self._gui._sess_sel
-            else:
-                obj = getattr(self._gui._sess_sel, s)
+        for a, p_l, c_l in zip(self._attr, self._params, self._ctrl):
+            obj = self._gui._sess_sel
             m = getattr(obj, a)
 
             for p, c in zip(p_l, c_l):
@@ -149,10 +124,5 @@ class GUIDialogMethod(wx.Dialog):
                     self._gui._panel_sess._refresh()
                     self._gui._graph_spec._refresh(self._gui._sess_items)
                 else:
-                    if t == None:
-                        new_sess = out
-                    else:
-                        new_sess = dc(self._gui._sess_sel)
-                        setattr(new_sess, t, out)
-                    self._gui._panel_sess._on_add(new_sess, open=False)
+                    self._gui._panel_sess._on_add(out, open=False)
                 self.Close()

@@ -206,7 +206,7 @@ class SystList(object):
         else:
             return False, chi2, chi2_0
 
-    def _test_fit(self, spec, series='Ly_a', z=2.0, logN=14, b=10, resol=75000,
+    def _test_fit(self, spec, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                   col='y', chi2_fact=1.0, chi2r_thres=2.0, fit_kws={},
                   verb=False):
 
@@ -248,14 +248,11 @@ class SystList(object):
             chi2a_0.append(chi2_0)
         spec_temp._shift_rf(0)
 
-        #plt.plot(z_range, np.log(chi2a))
-        #plt.plot(z_range, np.log(chi2a_0))
-        #plt.show()
         if verb:
             print(prefix, "I've tested a %s system (logN=%2.2f, b=%2.2f) "\
                   "between redshifts %2.4f and %2.4f and found %i coincidences."\
                   % (series, logN, b, z_range[0], z_range[-1], len(z_true)))
-        #self._update_spec()
+
         if len(z_true) > 0:
             self._add_fit(series, np.array(z_true), logN, b, resol,
                           chi2r_thres=chi2r_thres, fit_kws=fit_kws,

@@ -4,6 +4,7 @@ from .model import Model
 from .line_list import LineList
 from .spectrum import Spectrum
 from .syst_list import SystList
+from .model_list import ModelList
 from .vars import *
 from astropy import units as au
 from astropy.io import ascii, fits
@@ -69,6 +70,7 @@ class Session(object):
         maxfev = int(maxfev)
 
         systs = SystList(sess=self)
+        mods = ModelList()
         if append and self.systs != None:
             self.systs._append(systs)
             self.systs._mods._append(systs._mods)
@@ -82,8 +84,8 @@ class Session(object):
         return 0
 
     def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
-                           dz=1e-4, logN=14, b=10, chi2r_thres=None,
-                           maxfev=100, append=True):
+                           dz=1e-4, logN=14, b=10, resol=70000,
+                           chi2r_thres=None, maxfev=100, append=True):
         """ @brief Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
@@ -92,6 +94,7 @@ class Session(object):
         @param dz Threshold for redshift coincidence
         @param N Guess column density
         @param b Guess doppler broadening
+        @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param maxfev Maximum number of function evaluation
         @param append Append systems to existing system list
@@ -112,19 +115,9 @@ class Session(object):
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
         self.systs = SystList(sess=self)
-        self.systs._add_fit(series, z_range, logN, b, 70000, chi2r_thres,
+        mods = ModelList()
+        self.systs._add_fit(series, z_range, logN, b, resol, chi2r_thres,
                             fit_kws={'maxfev': maxfev}, verb=True)
-        """
-        #print(systs._t)
-        #print(systs._mods._t)
-        if append and self.systs != None and 1==0:
-            self.systs._append(systs)
-            self.systs._mods._append(systs._mods)
-        else:
-            self.systs = systs
-        #print(self.systs._t)
-        #print(self.systs._mods._t)
-        """
         self.systs._update_spec()
 
         return 0
@@ -288,10 +281,9 @@ class Session(object):
         self.spec._interp_nodes(self.lines, self.nodes)
         return 0
 
-
     def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71,
-                       z_step=5e-4, logN=14, b=10.0, col='deabs', chi2_fact=1.0,
-                       chi2r_thres=2.0, maxfev=100, append=True):
+                       z_step=5e-4, logN=14, b=10.0, col='deabs', resol=70000,
+                       chi2_fact=1.0, chi2r_thres=2.0, maxfev=100, append=True):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -301,6 +293,7 @@ class Session(object):
         @param logN Column density (logarithmic)
         @param b Doppler parameter
         @param col Column where to test the models
+        @param resol Resolution
         @param chi2_fact Maximum ratio between the chi2 of model and null case
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param maxfev Maximum number of function evaluation
@@ -323,7 +316,8 @@ class Session(object):
         z_range = np.arange(z_start, z_end, z_step)
 
         systs = SystList(sess=self)
-        systs._test_fit(self.spec, series, z_range, logN, b, 70000, col,
+        mods = ModelList()
+        systs._test_fit(self.spec, series, z_range, logN, b, resol, col,
                         chi2_fact, chi2r_thres, fit_kws={'maxfev': maxfev},
                         verb=True)
         if append and self.systs != None:
