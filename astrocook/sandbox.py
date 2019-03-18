@@ -1,3 +1,99 @@
+
+    def add_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
+                chi2r_thres=None, maxfev=100, append=True):
+        """ @brief Add and fit a Voigt model for a system.
+        @param series Series of transitions
+        @param z Guess redshift
+        @param N Guess column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
+        @param append Append system to existing system list
+        @return 0
+        """
+
+        z = float(z)
+        logN = float(logN)
+        b = float(b)
+        resol = float(resol)
+        if chi2r_thres == None or chi2r_thres == 'None':
+            chi2r_thres = np.inf
+        else:
+            chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
+
+        systs = SystList(sess=self)
+        #mods = ModelList()
+        if append and self.systs != None:
+            self.systs._append(systs)
+            #self.systs._mods._append(systs._mods)
+        else:
+            self.systs = systs
+
+        #"""
+        self.systs._add_fit(series, z, logN, b, resol, chi2r_thres,
+                            fit_kws={'maxfev': maxfev})
+        """
+        mod = SystModel2(self.systs)
+
+        self.systs._t.add_row(['voigt_func', series, z, z, logN, b, None, self.systs._id])
+        mod.new_voigt(series, z, logN, b, resol)
+        mod.fit(fit_kws={'maxfev': maxfev})
+        self.systs._fit_save(mod)
+        print(self.systs._t)
+        #"""
+
+        if chi2r_thres != np.inf:
+            z_rem = self.systs._clean(chi2r_thres)
+        else:
+            z_rem = []
+
+        self._update_spec()
+
+        return 0
+
+    def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
+                           dz=1e-4, logN=14, b=10, resol=70000,
+                           chi2r_thres=None, maxfev=100, append=True):
+        """ @brief Add and fit Voigt models to a line list, given a redshift
+        range.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param N Guess column density
+        @param b Guess doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        dz = float(dz)
+        logN = float(logN)
+        b = float(b)
+        resol = float(resol)
+        if chi2r_thres == None or chi2r_thres == 'None':
+            chi2r_thres = np.inf
+        else:
+            chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
+
+        z_range = self.lines._syst_cand(series, z_start, z_end, dz)
+
+        self.systs = SystList(sess=self)
+        #mods = ModelList()
+        self.systs._add_fit(series, z_range, logN, b, resol, chi2r_thres,
+                            fit_kws={'maxfev': maxfev}, verb=True)
+        self._update_spec()
+
+        return 0
+
+
 # syst_list 2019-03-11
 
     def _domain(self, ys, thres=1e-3): #series, z, zmin, zmax):

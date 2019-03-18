@@ -3,8 +3,9 @@ from .message import *
 from .model import Model
 from .line_list import LineList
 from .spectrum import Spectrum
-from .syst_list import SystList
-from .model_list import ModelList
+from .syst_list import SystList, SystList2
+from .syst_model import SystModel, SystModel2
+#from .model_list import ModelList
 from .vars import *
 from astropy import units as au
 from astropy.io import ascii, fits
@@ -44,9 +45,52 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
+    def _update_spec(self):
 
-    def add_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
-                chi2r_thres=None, maxfev=100, append=True):
+        spec = self.spec
+
+        self.systs._xs = np.array(spec._safe(spec.x).to(au.nm))
+        s = spec._where_safe
+
+        y = spec.y
+        if 'model' not in spec._t.colnames:
+            print(prefix, "I'm adding column 'model'.")
+            spec._t['model'] = np.empty(len(spec.x), dtype=float)*y.unit
+        if 'deabs' not in spec._t.colnames:
+            spec._t['deabs'] = y
+
+        #s = self.systs._s
+        cont = spec._t['cont']
+        model = spec._t['model']
+        deabs = spec._t['deabs']
+
+        model[s] = cont[s]
+        for i, r in enumerate(self.systs._mods_t):
+            mod = r['mod']
+            model[s] = mod.eval(x=self.systs._xs, params=mod._pars) * model[s]
+        deabs[s] = cont[s] + y[s] - model[s]
+
+
+    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
+                  maxfev=100):
+
+        self.systs._add2(series, z, logN, b, resol)
+        mod = self._new_syst(series, z, logN, b, resol)
+        mod._fit(fit_kws={'maxfev': maxfev}, update=False)
+        self.systs._update(mod)
+
+        return 0
+
+
+    def _new_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000):
+
+        mod = SystModel2(self.spec, self.systs)
+        mod._new_voigt(series, z, logN, b, resol)
+        return mod
+
+
+    def add_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
+                 chi2r_thres=np.inf, maxfev=100):
         """ @brief Add and fit a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
@@ -55,7 +99,6 @@ class Session(object):
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param maxfev Maximum number of function evaluation
-        @param append Append system to existing system list
         @return 0
         """
 
@@ -63,29 +106,25 @@ class Session(object):
         logN = float(logN)
         b = float(b)
         resol = float(resol)
-        if chi2r_thres == None or chi2r_thres == 'None':
-            chi2r_thres = np.inf
-        else:
-            chi2r_thres = float(chi2r_thres)
+        chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        systs = SystList(sess=self)
-        mods = ModelList()
-        if append and self.systs != None:
+        systs = SystList2()
+        if self.systs != None:
             self.systs._append(systs)
-            self.systs._mods._append(systs._mods)
         else:
             self.systs = systs
+        self._fit_syst(series, z, logN, b, resol, maxfev)
+        self.systs._clean(chi2r_thres)
 
-        self.systs._add_fit(series, z, logN, b, resol, chi2r_thres,
-                            fit_kws={'maxfev': maxfev})
-        self.systs._update_spec()
+        self._update_spec()
 
         return 0
 
-    def add_fit_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
-                           dz=1e-4, logN=14, b=10, resol=70000,
-                           chi2r_thres=None, maxfev=100, append=True):
+
+    def add_syst_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
+                            dz=1e-4, logN=14, b=10, resol=70000,
+                            chi2r_thres=np.inf, maxfev=100):
         """ @brief Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
@@ -97,7 +136,6 @@ class Session(object):
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param maxfev Maximum number of function evaluation
-        @param append Append systems to existing system list
         @return 0
         """
 
@@ -106,21 +144,25 @@ class Session(object):
         dz = float(dz)
         logN = float(logN)
         b = float(b)
-        if chi2r_thres == None or chi2r_thres == 'None':
-            chi2r_thres = np.inf
-        else:
-            chi2r_thres = float(chi2r_thres)
+        chi2r_thres = float(chi2r_thres)
+        resol = float(resol)
         maxfev = int(maxfev)
 
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
-        self.systs = SystList(sess=self)
-        mods = ModelList()
-        self.systs._add_fit(series, z_range, logN, b, resol, chi2r_thres,
-                            fit_kws={'maxfev': maxfev}, verb=True)
-        self.systs._update_spec()
+        systs = SystList2()
+        if self.systs != None:
+            self.systs._append(systs)
+        else:
+            self.systs = systs
+
+        for z in z_range:
+            self._fit_syst(series, z, logN, b, resol, maxfev)
+        self.systs._clean(chi2r_thres)
+        self._update_spec()
 
         return 0
+
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -306,6 +348,7 @@ class Session(object):
         z_step = float(z_step)
         logN = float(logN)
         b = float(b)
+        resol = float(resol)
         chi2_fact = float(chi2_fact)
         if chi2r_thres == None or chi2r_thres == 'None':
             chi2r_thres = np.inf
@@ -315,17 +358,19 @@ class Session(object):
 
         z_range = np.arange(z_start, z_end, z_step)
 
+        #"""
         systs = SystList(sess=self)
-        mods = ModelList()
+        #mods = ModelList()
         systs._test_fit(self.spec, series, z_range, logN, b, resol, col,
                         chi2_fact, chi2r_thres, fit_kws={'maxfev': maxfev},
                         verb=True)
         if append and self.systs != None:
             self.systs._append(systs)
-            self.systs._mods._append(systs._mods)
+            #self.systs._mods._append(systs._mods)
         else:
             self.systs = systs
-        self.systs._update_spec()
+        self._update_spec()
+
         return 0
 
     def open(self):

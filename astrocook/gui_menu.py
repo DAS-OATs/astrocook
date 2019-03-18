@@ -81,8 +81,10 @@ class GUIMenuCook(GUIMenu):
         sess.interp_nodes()
         new_sess = sess.extract_region(xmin=400, xmax=420)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_fit_from_lines(resol=140000)
+        new_sess.add_syst_from_lines(resol=140000)
         new_sess.test_fit_slide(logN=11.5)
+        new_sess.add_syst(z=1.6967)
+        self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
 class GUIMenuFile(GUIMenu):
@@ -194,6 +196,8 @@ class GUIMenuMeals(GUIMenu):
         self._item_method(self._menu, start_id+1, "Guess continuum",
                           ['convolve_gauss', 'find_peaks', 'extract_nodes',
                            'interp_nodes'])
+        self._item_method(self._menu, start_id+2, "Fit systems",
+                          ['add_fit_from_lines', 'test_fit_slide'])
 
 class GUIMenuSnacks(GUIMenu):
 
@@ -216,9 +220,9 @@ class GUIMenuSnacks(GUIMenu):
                           'interp_nodes')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+301, "Add and fit a system",
-                          'add_fit')
+                          'add_syst')
         self._item_method(self._menu, start_id+302, "Add and fit systems from "
-                          "line list", 'add_fit_from_lines')
+                          "line list", 'add_syst_from_lines')
         self._item_method(self._menu, start_id+303, "Test and fit systems "
                           "by sliding along spectrum", 'test_fit_slide')
 
