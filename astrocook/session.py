@@ -45,6 +45,36 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
+
+    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
+                  maxfev=100, verb=True):
+
+        self.systs._add2(series, z, logN, b, resol)
+        mod = SystModel2(self.spec, self.systs, z0=z)
+        mod._new_voigt(series, z, logN, b, resol)
+        mod._fit(fit_kws={'maxfev': maxfev}, update=False)
+        self.systs._update(mod)
+
+        return 0
+
+
+    def _test_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
+                    resol=70000):
+
+        spec = self.spec
+        spec._shift_rf(z_mean)
+        mod = SystModel2(self.spec, self.systs, z0=0)
+        mod._new_voigt(series, 0, logN, b, resol)
+        spec._shift_rf(0.0)
+        xm = mod._xf
+        hlenm = len(xm)//2
+        ym = mod.eval(x=xm, params=mod._pars)
+        ym_0 = np.ones(len(xm))
+        ym_1 = np.concatenate([ym[:-hlenm], np.ones(hlenm)])
+        ym_2 = np.concatenate([np.ones(hlenm), ym[hlenm:]])
+
+        return xm, ym, ym_0, ym_1, ym_2
+
     def _update_spec(self):
 
         spec = self.spec
@@ -69,24 +99,6 @@ class Session(object):
             mod = r['mod']
             model[s] = mod.eval(x=self.systs._xs, params=mod._pars) * model[s]
         deabs[s] = cont[s] + y[s] - model[s]
-
-
-    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
-                  maxfev=100):
-
-        self.systs._add2(series, z, logN, b, resol)
-        mod = self._new_syst(series, z, logN, b, resol)
-        mod._fit(fit_kws={'maxfev': maxfev}, update=False)
-        self.systs._update(mod)
-
-        return 0
-
-
-    def _new_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000):
-
-        mod = SystModel2(self.spec, self.systs)
-        mod._new_voigt(series, z, logN, b, resol)
-        return mod
 
 
     def add_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
@@ -116,6 +128,8 @@ class Session(object):
             self.systs = systs
         self._fit_syst(series, z, logN, b, resol, maxfev)
         self.systs._clean(chi2r_thres)
+        print(prefix, "I've fitted a %s systems between at redshift %2.4f."\
+              % (series, z))
 
         self._update_spec()
 
@@ -156,10 +170,100 @@ class Session(object):
         else:
             self.systs = systs
 
-        for z in z_range:
+        for i, z in enumerate(z_range):
             self._fit_syst(series, z, logN, b, resol, maxfev)
+            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
+                  % (series, z, i+1, len(z_range)), end='\r')
+        print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
+              "%2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
+
         self.systs._clean(chi2r_thres)
         self._update_spec()
+
+        return 0
+
+
+    def add_syst_slide(self, series='CIV',
+                       z_start=1.13, z_end=1.71, z_step=5e-4,
+                       logN_start=14, logN_end=14.1, logN_step=0.1,
+                       b_start=10, b_end=15, b_step=5,
+                       resol=70000, col='deabs',
+                       chi2_fact=1.0, chi2r_thres=2.0, maxfev=100):
+        """ @brief Slide a set of Voigt models across a spectrum and fit them
+        where they suit the spectrum.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param z_step Redshift step
+        @param logN_start Start column density (logarithmic)
+        @param logN_end End column density (logarithmic)
+        @param logN_step Column density step (logarithmic)
+        @param b_start Start Doppler parameter
+        @param b_end End Doppler parameter
+        @param b_step Doppler parameter step
+        @param resol Resolution
+        @param col Column where to test the models
+        @param chi2_fact Maximum ratio between the chi2 of model and null case
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        z_step = float(z_step)
+        logN_start = float(logN_start)
+        logN_end = float(logN_end)
+        logN_step = float(logN_step)
+        b_start = float(b_start)
+        b_end = float(b_end)
+        b_step = float(b_step)
+        resol = float(resol)
+        chi2_fact = float(chi2_fact)
+        chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
+
+        z_range = np.arange(z_start, z_end, z_step)
+        z_min = np.min([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_max = np.max([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_range = z_range[np.where(np.logical_and(z_range > z_min,
+                                                  z_range < z_max))]
+        z_mean = 0.5*(z_min+z_max)
+        logN_range = np.arange(logN_start, logN_end, logN_step)
+        b_range = np.arange(b_start, b_end, b_step)
+
+        # Previously fitted systems are left fixed...
+        systs_old = dc(self.systs)
+
+        self.systs = SystList2()
+        for logN in logN_range:
+            for b in b_range:
+                xm, ym, ym_0, ym_1, ym_2 = self._test_doubl(series, z_mean, logN, b, resol)
+                z_true = []
+                for z in z_range:
+                    self.spec._shift_rf(z)
+                    systs = SystList2()
+                    cond, chi2, chi2_0 = \
+                        systs._test(self.spec, xm, ym, ym_0, ym_1, ym_2,
+                                    col, chi2_fact)
+                    if cond:
+                        z_true.append(z)
+
+        self.spec._shift_rf(0)
+
+        #self.systs = SystList2()
+        for z in z_true:
+            self._fit_syst(series, z, logN_start, b_start, resol, maxfev)
+            #print(self.systs._mods_t)
+        self.systs._clean(chi2r_thres)
+
+        # ...and then appended
+        self.systs._append(systs_old)
+
+        self._update_spec()
+
 
         return 0
 
@@ -323,25 +427,10 @@ class Session(object):
         self.spec._interp_nodes(self.lines, self.nodes)
         return 0
 
+    """
     def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71,
                        z_step=5e-4, logN=14, b=10.0, col='deabs', resol=70000,
                        chi2_fact=1.0, chi2r_thres=2.0, maxfev=100, append=True):
-        """ @brief Slide a set of Voigt models across a spectrum and fit them
-        where they suit the spectrum.
-        @param series Series of transitions
-        @param z_start Start redshift
-        @param z_end End redshift
-        @param z_step Redshift step
-        @param logN Column density (logarithmic)
-        @param b Doppler parameter
-        @param col Column where to test the models
-        @param resol Resolution
-        @param chi2_fact Maximum ratio between the chi2 of model and null case
-        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
-        @param maxfev Maximum number of function evaluation
-        @param append Append systems to existing system list
-        @return 0
-        """
 
         z_start = float(z_start)
         z_end = float(z_end)
@@ -358,7 +447,6 @@ class Session(object):
 
         z_range = np.arange(z_start, z_end, z_step)
 
-        #"""
         systs = SystList(sess=self)
         #mods = ModelList()
         systs._test_fit(self.spec, series, z_range, logN, b, resol, col,
@@ -372,6 +460,7 @@ class Session(object):
         self._update_spec()
 
         return 0
+    """
 
     def open(self):
         format = Format()

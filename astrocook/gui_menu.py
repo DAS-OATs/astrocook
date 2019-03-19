@@ -82,7 +82,8 @@ class GUIMenuCook(GUIMenu):
         new_sess = sess.extract_region(xmin=400, xmax=420)
         self._gui._panel_sess._on_add(new_sess, open=False)
         new_sess.add_syst_from_lines(resol=140000)
-        new_sess.test_fit_slide(logN=11.5)
+        #new_sess.test_fit_slide(logN=11.5)
+        new_sess.add_syst_slide(logN_start=11.5, logN_end=11.6)
         new_sess.add_syst(z=1.6967)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
@@ -224,7 +225,7 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+302, "Add and fit systems from "
                           "line list", 'add_syst_from_lines')
         self._item_method(self._menu, start_id+303, "Test and fit systems "
-                          "by sliding along spectrum", 'test_fit_slide')
+                          "by sliding along spectrum", 'add_syst_slide')
 
 
 class GUIMenuView(GUIMenu):

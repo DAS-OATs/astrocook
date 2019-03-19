@@ -97,15 +97,8 @@ class SystList(object):
         self._t['z'] = np.array(val, dtype=dtype)
         self._t['z'].unit = val.unit
 
+    """
     def _add(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
-        """ @brief Add a Voigt model for a system.
-        @param series Series of transitions
-        @param z Guess redshift
-        @param N Guess column density
-        @param b Guess Doppler broadening
-        @param resol Resolution
-        @return 0
-        """
 
         z = float(z)
         logN = float(logN)
@@ -119,6 +112,7 @@ class SystList(object):
         self._t.add_row(['voigt_func', series, z, z, logN, b, None, self._id])
 
         return 0
+    """
 
     def _add2(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
         """ @brief Add a system to a system list.
@@ -128,6 +122,7 @@ class SystList(object):
 
         return 0
 
+    """
     def _add_fit(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                  chi2r_thres=None, fit_kws={}, verb=False):
 
@@ -147,6 +142,7 @@ class SystList(object):
             print(prefix, "I've fitted %i %s systems between redshift %2.4f "\
                   "and %2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
         return 0
+    """
 
     def _append(self, frame):
         vstack_t = at.vstack([self._t, frame._t])
@@ -167,19 +163,14 @@ class SystList(object):
             self._mods_t.remove_rows(mods_rem)
         return 0
 
-
+    """
     def _fit(self, chi2r_thres=None, fit_kws={}):
-        """ @brief Fit a Voigt model for a system.
-        @param mod Model
-        @return 0
-        """
 
         if chi2r_thres == None:
             chi2r_thres = np.inf
 
         self._mod._fit(fit_kws)
 
-        #"""
         #mod = np.where(self._mod == self._mods._t['mod'])[0][0]
         mod = np.where(self._mod == self._mods_t['mod'])[0][0]
         #id = self._mods._t['id'][mod]
@@ -191,11 +182,10 @@ class SystList(object):
             self._t[iw]['logN'] = self._mod._pars[pref+'_logN'].value
             self._t[iw]['b'] = self._mod._pars[pref+'_b'].value
             self._t[iw]['chi2r'] = self._mod._chi2r
-        #"""
         self._id += 1
 
         return 0
-
+    """
 
     def _update(self, mod):
 
@@ -233,6 +223,7 @@ class SystList(object):
         else:
             return False, chi2, chi2_0
 
+    """
     def _test_fit(self, spec, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                   col='y', chi2_fact=1.0, chi2r_thres=2.0, fit_kws={},
                   verb=False):
@@ -280,13 +271,13 @@ class SystList(object):
                   "between redshifts %2.4f and %2.4f and found %i coincidences."\
                   % (series, logN, b, z_range[0], z_range[-1], len(z_true)))
 
-        #"""
         if len(z_true) > 0:
             self._add_fit(series, np.array(z_true), logN, b, resol,
                           chi2r_thres=chi2r_thres, fit_kws=fit_kws,
                           verb=True)
+
         return 0
-        #"""
+    """
 
 
 class SystList2(SystList):
