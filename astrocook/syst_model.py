@@ -4,25 +4,18 @@ from astropy import table as at
 from lmfit import CompositeModel as LMComposite
 from lmfit import Model as LMModel
 from lmfit import Parameters as LMParameters
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import numpy as np
 
 prefix = "System model:"
 
-
 class SystModel(LMComposite):
-    """ Class for composite models
 
-    A composite model is a combination of Lmfit Models for instrument PSF,
-    continuum adjustment, and system profile."""
-    def __init__(self, systs, series, vars, z0=None,
+    def __init__(self, spec, systs, series=[], vars=[], z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
-                 cont_func=None,
-                 add=True):
-
-        self._systs = systs
-        self._spec = systs._spec
+                 cont_func=None):
+        self._spec = spec
         self._mods_t = systs._mods_t
         self._id = systs._id
         self._series = series
@@ -30,18 +23,11 @@ class SystModel(LMComposite):
         self._z0 = z0
         self._lines_func = lines_func
         self._psf_func = psf_func
-        self._new(add)
 
-    def _make_comp(self, add=True):
+
+    def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve)
 
-        if add:
-            if self._group_sel == -1:
-#                self._systs._mods_t.add_row([self._z0, self, None, []])
-                self._mods_t.add_row([self._z0, self, None, []])
-            else:
-#                self._systs._mods_t[self._group_sel]['mod'] = self
-                self._mods_t[self._group_sel]['mod'] = self
 
     def _make_defs(self):
         self._defs = pars_std_d
@@ -53,19 +39,15 @@ class SystModel(LMComposite):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
-        #spec = self._systs._spec
         spec = self._spec
 
-#        mods_t = self._systs._mods_t
         mods_t = self._mods_t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
         ys = self._lines.eval(x=self._xs, params=self._pars)
         self._group = self._lines
         self._group_list = []
-        #for i, s in enumerate(mods._t):
         for i, s in enumerate(mods_t):
             mod = s['mod']
-            #print(mod)
             ys_s = mod.eval(x=self._xs, params=mod._pars)
             if np.amin(np.maximum(ys, ys_s)) < 1-thres:
                 self._group *= mod._group
@@ -79,8 +61,6 @@ class SystModel(LMComposite):
             self._group_sel = self._group_list[0]
 
     def _make_lines(self):
-        #id = str(len(self._systs._t))
-#        self._lines_pref = self._lines_func.__name__+'_'+str(self._systs._id)+'_'
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
                        series=self._series)
@@ -99,6 +79,7 @@ class SystModel(LMComposite):
              d['btur_max'], d['btur_expr']))
         self._lines = line
 
+
     def _make_psf(self):
         d = self._defs
         for i, r in enumerate(self._xr):
@@ -115,7 +96,6 @@ class SystModel(LMComposite):
 
 
     def _make_regs(self, thres=1e-6):
-        #spec = self._systs._spec
         spec = self._spec
 
         ys = self._group.eval(x=self._xs, params=self._pars)
@@ -126,47 +106,22 @@ class SystModel(LMComposite):
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
         self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
-        #plt.plot(self._xf, self._yf)
-        #plt.show()
 
-    def _new(self, add=True):
+
+    def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
+        self._series = series
+        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': resol}
         self._make_defs()
         self._make_lines()
         self._make_group()
         self._make_regs()
         self._make_psf()
-        self._make_comp(add)
+        self._make_comp()
 
-    def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
-        self._series = series
-        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': resol}
-        self._new(False)
 
-    def _fit(self, fit_kws={}, update=True):
+    def _fit(self, fit_kws={}):
 
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws)
         self._pars = fit.params
         self._chi2r = fit.redchi
-#        self._systs._mods_t[self._group_sel]['chi2r'] = fit.redchi
-#        self._systs._mods_t[self._group_sel]['id'].append(self._systs._id)
-        if update:
-            self._mods_t[self._group_sel]['chi2r'] = self._chi2r #fit.redchi
-            self._mods_t[self._group_sel]['id'].append(self._id)
-
-
-class SystModel2(SystModel):
-
-    def __init__(self, spec, systs, series=[], vars=[], z0=None,
-                 lines_func=lines_voigt,
-                 psf_func=psf_gauss,
-                 cont_func=None,
-                 add=True):
-        self._spec = spec
-        self._mods_t = systs._mods_t
-        self._id = systs._id
-        self._series = series
-        self._vars = vars
-        self._z0 = z0
-        self._lines_func = lines_func
-        self._psf_func = psf_func

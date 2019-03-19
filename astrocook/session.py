@@ -3,8 +3,8 @@ from .message import *
 from .model import Model
 from .line_list import LineList
 from .spectrum import Spectrum
-from .syst_list import SystList, SystList2
-from .syst_model import SystModel, SystModel2
+from .syst_list import SystList
+from .syst_model import SystModel
 #from .model_list import ModelList
 from .vars import *
 from astropy import units as au
@@ -46,24 +46,12 @@ class Session(object):
             setattr(self, frame.__name__, frame)
 
 
-    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
-                  maxfev=100, verb=True):
-
-        self.systs._add2(series, z, logN, b, resol)
-        mod = SystModel2(self.spec, self.systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
-        mod._fit(fit_kws={'maxfev': maxfev}, update=False)
-        self.systs._update(mod)
-
-        return 0
-
-
-    def _test_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
-                    resol=70000):
+    def _create_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
+                      resol=70000):
 
         spec = self.spec
         spec._shift_rf(z_mean)
-        mod = SystModel2(self.spec, self.systs, z0=0)
+        mod = SystModel(self.spec, self.systs, z0=0)
         mod._new_voigt(series, 0, logN, b, resol)
         spec._shift_rf(0.0)
         xm = mod._xf
@@ -74,6 +62,34 @@ class Session(object):
         ym_2 = np.concatenate([np.ones(hlenm), ym[hlenm:]])
 
         return xm, ym, ym_0, ym_1, ym_2
+
+
+    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
+                  maxfev=100, verb=True):
+
+        self.systs._add(series, z, logN, b, resol)
+        mod = SystModel(self.spec, self.systs, z0=z)
+        mod._new_voigt(series, z, logN, b, resol)
+        mod._fit(fit_kws={'maxfev': maxfev})
+        self.systs._update(mod)
+
+        return 0
+
+
+    def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y', chi2_fact=0.8):
+
+        spec = self.spec
+        ys = np.interp(xm, spec.x.to(au.nm), spec._t[col]/spec._t['cont'])
+        dys = np.interp(xm, spec.x.to(au.nm), spec.dy/spec._t['cont'])
+        chi2 = np.sum(((ys-ym)/dys)**2)
+        chi2_0 = np.sum(((ys-ym_0)/dys)**2)
+        chi2_1 = np.sum(((ys-ym_1)/dys)**2)
+        chi2_2 = np.sum(((ys-ym_2)/dys)**2)
+        if chi2 < chi2_fact*np.min([chi2_0, chi2_1, chi2_2]):
+            return True, chi2, chi2_0
+        else:
+            return False, chi2, chi2_0
+
 
     def _update_spec(self):
 
@@ -121,15 +137,15 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        systs = SystList2()
+        systs = SystList()
         if self.systs != None:
             self.systs._append(systs)
         else:
             self.systs = systs
         self._fit_syst(series, z, logN, b, resol, maxfev)
-        self.systs._clean(chi2r_thres)
         print(prefix, "I've fitted a %s systems between at redshift %2.4f."\
               % (series, z))
+        self.systs._clean(chi2r_thres)
 
         self._update_spec()
 
@@ -164,7 +180,7 @@ class Session(object):
 
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
-        systs = SystList2()
+        systs = SystList()
         if self.systs != None:
             self.systs._append(systs)
         else:
@@ -237,26 +253,33 @@ class Session(object):
         # Previously fitted systems are left fixed...
         systs_old = dc(self.systs)
 
-        self.systs = SystList2()
+        self.systs = SystList()
         for logN in logN_range:
             for b in b_range:
-                xm, ym, ym_0, ym_1, ym_2 = self._test_doubl(series, z_mean, logN, b, resol)
+                xm, ym, ym_0, ym_1, ym_2 = self._create_doubl(series, z_mean,
+                                                              logN, b, resol)
                 z_true = []
-                for z in z_range:
+                for i, z in enumerate(z_range):
+                    print(prefix, "I'm testing a %s system (logN=%2.2f, "
+                          "b=%2.2f) at redshift %2.4f (%i/%i)…" \
+                          % (series, logN, b, z, i+1, len(z_range)), end='\r')
                     self.spec._shift_rf(z)
-                    systs = SystList2()
+                    systs = SystList()
                     cond, chi2, chi2_0 = \
-                        systs._test(self.spec, xm, ym, ym_0, ym_1, ym_2,
-                                    col, chi2_fact)
+                        self._test_doubl(xm, ym, ym_0, ym_1, ym_2, col,
+                                         chi2_fact)
                     if cond:
                         z_true.append(z)
+                print("")
 
         self.spec._shift_rf(0)
 
-        #self.systs = SystList2()
-        for z in z_true:
+        for i, z in enumerate(z_true):
             self._fit_syst(series, z, logN_start, b_start, resol, maxfev)
-            #print(self.systs._mods_t)
+            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
+                  % (series, z, i+1, len(z_true)), end='\r')
+        print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
+              "%2.4f." % (len(z_true), series, z_true[0], z_true[-1]))
         self.systs._clean(chi2r_thres)
 
         # ...and then appended
@@ -427,40 +450,6 @@ class Session(object):
         self.spec._interp_nodes(self.lines, self.nodes)
         return 0
 
-    """
-    def test_fit_slide(self, series='CIV', z_start=1.13, z_end=1.71,
-                       z_step=5e-4, logN=14, b=10.0, col='deabs', resol=70000,
-                       chi2_fact=1.0, chi2r_thres=2.0, maxfev=100, append=True):
-
-        z_start = float(z_start)
-        z_end = float(z_end)
-        z_step = float(z_step)
-        logN = float(logN)
-        b = float(b)
-        resol = float(resol)
-        chi2_fact = float(chi2_fact)
-        if chi2r_thres == None or chi2r_thres == 'None':
-            chi2r_thres = np.inf
-        else:
-            chi2r_thres = float(chi2r_thres)
-        maxfev = int(maxfev)
-
-        z_range = np.arange(z_start, z_end, z_step)
-
-        systs = SystList(sess=self)
-        #mods = ModelList()
-        systs._test_fit(self.spec, series, z_range, logN, b, resol, col,
-                        chi2_fact, chi2r_thres, fit_kws={'maxfev': maxfev},
-                        verb=True)
-        if append and self.systs != None:
-            self.systs._append(systs)
-            #self.systs._mods._append(systs._mods)
-        else:
-            self.systs = systs
-        self._update_spec()
-
-        return 0
-    """
 
     def open(self):
         format = Format()
