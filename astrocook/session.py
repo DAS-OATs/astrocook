@@ -1,7 +1,9 @@
+from .cookbook import Cookbook
 from .format import Format
+from .functions import detect_local_minima
+from .line_list import LineList
 from .message import *
 from .model import Model
-from .line_list import LineList
 from .spectrum import Spectrum
 from .syst_list import SystList
 from .syst_model import SystModel
@@ -11,6 +13,7 @@ from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
 import numpy as np
+from scipy.signal import argrelmin
 import tarfile
 
 prefix = "Session:"
@@ -38,58 +41,13 @@ class Session(object):
         self.systs = systs
         self.mods = mods
         self.seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+        self.cb = Cookbook(self)
 
     def _append(self, frame, append=True):
         if append and hasattr(self, frame.__name__):
             getattr(self, frame.__name__)._append(frame)
         else:
             setattr(self, frame.__name__, frame)
-
-
-    def _create_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
-                      resol=70000):
-
-        spec = self.spec
-        spec._shift_rf(z_mean)
-        mod = SystModel(self.spec, self.systs, z0=0)
-        mod._new_voigt(series, 0, logN, b, resol)
-        spec._shift_rf(0.0)
-        xm = mod._xf
-        hlenm = len(xm)//2
-        ym = mod.eval(x=xm, params=mod._pars)
-        ym_0 = np.ones(len(xm))
-        ym_1 = np.concatenate([ym[:-hlenm], np.ones(hlenm)])
-        ym_2 = np.concatenate([np.ones(hlenm), ym[hlenm:]])
-
-        return xm, ym, ym_0, ym_1, ym_2
-
-
-    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
-                  maxfev=100, verb=True):
-
-        self.systs._add(series, z, logN, b, resol)
-        mod = SystModel(self.spec, self.systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
-        mod._fit(fit_kws={'maxfev': maxfev})
-        self.systs._update(mod)
-
-        return 0
-
-
-    def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y', chi2_fact=0.8):
-
-        spec = self.spec
-        ys = np.interp(xm, spec.x.to(au.nm), spec._t[col]/spec._t['cont'])
-        dys = np.interp(xm, spec.x.to(au.nm), spec.dy/spec._t['cont'])
-        chi2 = np.sum(((ys-ym)/dys)**2)
-        chi2_0 = np.sum(((ys-ym_0)/dys)**2)
-        chi2_1 = np.sum(((ys-ym_1)/dys)**2)
-        chi2_2 = np.sum(((ys-ym_2)/dys)**2)
-        if chi2 < chi2_fact*np.min([chi2_0, chi2_1, chi2_2]):
-            return True, chi2, chi2_0
-        else:
-            return False, chi2, chi2_0
-
 
     def _update_spec(self):
 
@@ -137,13 +95,13 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        systs = SystList()
+        #systs = SystList()
         if self.systs != None:
-            self.systs._append(systs)
+            self.systs._append(SystList(id_start=len(self.systs._t)))
         else:
-            self.systs = systs
-        self._fit_syst(series, z, logN, b, resol, maxfev)
-        print(prefix, "I've fitted a %s systems between at redshift %2.4f."\
+            self.systs = SystList()
+        self.cb._fit_syst(series, z, logN, b, resol, maxfev)
+        print(prefix, "I've fitted a %s systems at redshift %2.4f."\
               % (series, z))
         self.systs._clean(chi2r_thres)
 
@@ -180,14 +138,14 @@ class Session(object):
 
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
-        systs = SystList()
+        #systs = SystList()
         if self.systs != None:
-            self.systs._append(systs)
+            self.systs._append(SystList(id_start=len(self.systs._t)))
         else:
-            self.systs = systs
+            self.systs = SystList()
 
         for i, z in enumerate(z_range):
-            self._fit_syst(series, z, logN, b, resol, maxfev)
+            self.cb._fit_syst(series, z, logN, b, resol, maxfev)
             print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
                   % (series, z, i+1, len(z_range)), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
@@ -199,12 +157,101 @@ class Session(object):
         return 0
 
 
+    def add_syst_from_resids(self, z_start=1.71, z_end=1.18, dz=5e-5,
+                             resol=70000, logN=13, b=5, chi2r_thres=2.0,
+                             maxfev=100):
+        """ @brief Add and fit Voigt models from residuals of previously
+        fitted models.
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param N Guess column density
+        @param b Guess doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to find models to improve
+        @param maxfev Maximum number of function evaluation
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        dz = float(dz)
+        logN = float(logN)
+        b = float(b)
+        chi2r_thres = float(chi2r_thres)
+        resol = float(resol)
+        maxfev = int(maxfev)
+
+        systs = self.systs
+
+        old = systs._t[np.where(systs._t['chi2r'] > chi2r_thres)]
+
+        for i, o in enumerate(old):
+            o_z = o['z']
+            o_series = o['series']
+            o_id = o['id']
+            zmin = o_z-1e-3
+            zmax = o_z+1e-3
+            xmin = (1.+zmin)*xem_d[series_d[o_series][0]]
+            xmax = (1.+zmax)*xem_d[series_d[o_series][-1]]
+
+
+            chi2r_old = np.inf
+            count = 0
+            while True:
+
+                spec = dc(self.spec)
+                spec._convolve_gauss(std=10, input_col='deabs', verb=False)
+                reg = spec._extract_region(xmin, xmax)
+                peaks = reg._find_peaks()
+                resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
+                                  peaks.dy, reg._xunit, reg._yunit, reg._meta)
+                z_sel = resids._syst_cand(o_series, z_start, z_end, dz)
+
+                # If no residuals are found, add a system at the init. redshift
+                if len(z_sel)==0:
+                    z_cand = o_z
+                else:
+                    z_cand = z_sel[0]
+
+                print(prefix, "I'm improving a %s system at redshift %2.4f "\
+                      "(%i/%i): trying to add a component at redshift %2.4f…"\
+                      % (o_series, o_z, i+1, len(old), z_cand), end='\r')
+                t_old = dc(systs._t)
+                mods_t_old = dc(systs._mods_t)
+                systs._append(SystList(id_start=len(self.systs._t)),
+                              unique=False)
+                self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+
+                if systs._t['chi2r'][systs._t['id']==o_id]>chi2r_old:
+                    systs._t = t_old
+                    systs._mods_t = mods_t_old
+                    break
+
+                chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
+                self._update_spec()
+                count += 1
+
+                if systs._t['chi2r'][systs._t['id']==o_id]<chi2r_thres: break
+
+            if count == 0:
+                print(prefix, "I've not improved the %s system at redshift "\
+                      "%2.4f (%i/%i): I was unable to add useful components."\
+                      % (o_series, o_z, i+1, len(old)))
+            else:
+                print(prefix, "I've improved a %s system at redshift %2.4f "\
+                      "(%i/%i) by adding %i components.                     "\
+                      % (o_series, o_z, i+1, len(old), count))
+
+
+        return 0
+
+
     def add_syst_slide(self, series='CIV',
                        z_start=1.13, z_end=1.71, z_step=5e-4,
                        logN_start=14, logN_end=14.1, logN_step=0.1,
                        b_start=10, b_end=15, b_step=5,
-                       resol=70000, col='deabs',
-                       chi2_fact=1.0, chi2r_thres=2.0, maxfev=100):
+                       resol=70000, col='deabs', chi2r_thres=2.0, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -219,7 +266,6 @@ class Session(object):
         @param b_step Doppler parameter step
         @param resol Resolution
         @param col Column where to test the models
-        @param chi2_fact Maximum ratio between the chi2 of model and null case
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param maxfev Maximum number of function evaluation
         @return 0
@@ -235,7 +281,6 @@ class Session(object):
         b_end = float(b_end)
         b_step = float(b_step)
         resol = float(resol)
-        chi2_fact = float(chi2_fact)
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
@@ -253,33 +298,52 @@ class Session(object):
         # Previously fitted systems are left fixed...
         systs_old = dc(self.systs)
 
-        self.systs = SystList()
-        for logN in logN_range:
-            for b in b_range:
-                xm, ym, ym_0, ym_1, ym_2 = self._create_doubl(series, z_mean,
-                                                              logN, b, resol)
-                z_true = []
-                for i, z in enumerate(z_range):
+        self.systs = SystList(id_start=len(systs_old._t))
+        chi2a = np.full((len(logN_range),len(b_range),len(z_range)), np.inf)
+        for ilogN, logN in enumerate(logN_range):
+            for ib, b in enumerate(b_range):
+                xm, ym, ym_0, ym_1, ym_2 = self.cb._create_doubl(series, z_mean,
+                                                                 logN, b, resol)
+                cond_c = 0
+                for iz, z in enumerate(z_range):
                     print(prefix, "I'm testing a %s system (logN=%2.2f, "
                           "b=%2.2f) at redshift %2.4f (%i/%i)…" \
-                          % (series, logN, b, z, i+1, len(z_range)), end='\r')
+                          % (series, logN, b, z, iz+1, len(z_range)), end='\r')
                     self.spec._shift_rf(z)
                     systs = SystList()
                     cond, chi2, chi2_0 = \
-                        self._test_doubl(xm, ym, ym_0, ym_1, ym_2, col,
-                                         chi2_fact)
+                        self.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
                     if cond:
-                        z_true.append(z)
-                print("")
-
+                        chi2a[ilogN, ib, iz] = chi2
+                        cond_c += 1
+                    """
+                    if iz < len(z_range)-1:
+                        print("", end='\r')
+                    else:
+                        print("found %i coincidences." % cond_c)
+                    """
+                print(prefix, "I've tested a %s system (logN=%2.2f, "\
+                      "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
+                      "coincidences."
+                      % (series, logN, b, z_range[0], z_range[-1], cond_c))
         self.spec._shift_rf(0)
 
-        for i, z in enumerate(z_true):
-            self._fit_syst(series, z, logN_start, b_start, resol, maxfev)
+        # Find candidates choosing the local minima of chi2r at coincidences
+        lm = np.logical_and(chi2a < np.inf, detect_local_minima(chi2a))
+        chi2m = np.where(lm)
+
+        print(prefix, "I've selected %i candidates among the coincidences."\
+              % len(chi2m[0]))
+        for i in range(len(chi2m[0])):
+            z = z_range[chi2m[2][i]]
+            logN = logN_range[chi2m[0][i]]
+            b = b_range[chi2m[1][i]]
+            #print(z, logN, b)
+            self.cb._fit_syst(series, z, logN, b, resol, maxfev)
             print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
-                  % (series, z, i+1, len(z_true)), end='\r')
+                  % (series, z, i+1, len(chi2m[0])), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
-              "%2.4f." % (len(z_true), series, z_true[0], z_true[-1]))
+              "%2.4f." % (len(chi2m[0]), series, z_range[chi2m[2][0]], z_range[chi2m[2][-1]]))
         self.systs._clean(chi2r_thres)
 
         # ...and then appended

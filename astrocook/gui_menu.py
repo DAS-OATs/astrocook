@@ -71,20 +71,38 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, "My recipe…", self._on_my_recipe)
+        self._item(self._menu, start_id+1, "Full…", self._on_full)
+        self._item(self._menu, start_id+2, "Test…", self._on_test)
 
-    def _on_my_recipe(self, event):
+    def _on_full(self, event):
         sess = self._gui._sess_sel
         sess.convolve_gauss()
         sess.find_peaks()
-        sess.extract_nodes()
+        sess.extract_nodes(delta_x=800)
         sess.interp_nodes()
-        new_sess = sess.extract_region(xmin=400, xmax=420)
+        new_sess = sess.extract_region(xmin=330, xmax=420)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(resol=140000)
-        #new_sess.test_fit_slide(logN=11.5)
-        new_sess.add_syst_slide(logN_start=11.5, logN_end=11.6)
-        new_sess.add_syst(z=1.6967)
+        new_sess.add_syst_from_lines(resol=70000)
+        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
+                                b_start=2, b_end=10, b_step=2,
+                                maxfev=100)
+        #new_sess.add_syst(z=1.6967)
+        self._gui._graph_spec._refresh(self._gui._sess_items)
+
+    def _on_test(self, event):
+        sess = self._gui._sess_sel
+        sess.convolve_gauss()
+        sess.find_peaks()
+        sess.extract_nodes(delta_x=800)
+        sess.interp_nodes()
+        new_sess = sess.extract_region(xmin=415, xmax=420)
+        self._gui._panel_sess._on_add(new_sess, open=False)
+        new_sess.add_syst_from_lines(resol=70000)
+        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
+                                b_start=2, b_end=10, b_step=2,
+                                maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
@@ -224,7 +242,9 @@ class GUIMenuSnacks(GUIMenu):
                           'add_syst')
         self._item_method(self._menu, start_id+302, "Add and fit systems from "
                           "line list", 'add_syst_from_lines')
-        self._item_method(self._menu, start_id+303, "Test and fit systems "
+        self._item_method(self._menu, start_id+303, "Add and fit systems from "
+                          "residuals", 'add_syst_from_resids')
+        self._item_method(self._menu, start_id+304, "Test and fit systems "
                           "by sliding along spectrum", 'add_syst_slide')
 
 
@@ -245,8 +265,6 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_view(e, 'lines'))
         self._item(self._menu, start_id+3, "System table",
                    lambda e: self._on_view(e, 'systs'))
-        self._item(self._menu, start_id+4, "Model table",
-                   lambda e: self._on_view(e, 'mods'))
         self._menu.AppendSeparator()
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, "Toggle log x axis", self._on_logx)

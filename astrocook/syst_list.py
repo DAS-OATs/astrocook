@@ -14,6 +14,7 @@ class SystList(object):
     spectral lines. """
 
     def __init__(self,
+                 id_start=0,
                  series=[],
                  func=[],
                  z=[],
@@ -24,7 +25,7 @@ class SystList(object):
                  id=[],
                  dtype=float):
 
-        self._id = 0
+        self._id = id_start
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -89,11 +90,12 @@ class SystList(object):
         return 0
 
 
-    def _append(self, frame):
+    def _append(self, frame, unique=True):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
-        self._t = at.unique(vstack_t, keys=['z0'])
-        self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+        if unique:
+            self._t = at.unique(vstack_t, keys=['z0'])
+            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
         return 0
 
 
@@ -102,13 +104,17 @@ class SystList(object):
         rem = np.where(self._t['chi2r'] > chi2r_thres)[0]
         #mods_rem = np.where(self._mods._t['chi2r'] > chi2r_thres)[0]
         mods_rem = np.where(self._mods_t['chi2r'] > chi2r_thres)[0]
+        #print(rem, mods_rem)
         z_rem = self._t['z'][rem]
-        if rem != []:
+        if len(rem) > 0:
             self._t.remove_rows(rem)
             print(prefix, "I removed %i systems because they had a "\
-                  "chi-squared below %2.2f." % (len(rem), chi2r_thres))
-        if mods_rem != []:
+                  "chi-squared above %2.2f." % (len(rem), chi2r_thres))
+        #print(rem, mods_rem)
+        if len(mods_rem) > 0:
+            #print("ecco")
             self._mods_t.remove_rows(mods_rem)
+        #print(self._mods_t['z0', 'chi2r', 'id'])
         return 0
 
 

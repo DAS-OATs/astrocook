@@ -41,7 +41,8 @@ class Spectrum(Frame):
             copy._t[c] = self._t[c][sel]
         return copy
 
-    def _convolve_gauss(self, std=20, input_col='y', output_col='conv'):
+    def _convolve_gauss(self, std=20, input_col='y', output_col='conv',
+                        verb=True):
 
         # Create profile
         xunit = self.x.unit
@@ -54,10 +55,11 @@ class Spectrum(Frame):
         prof = prof / np.sum(prof)
 
         # Convolve
-        if output_col in self._t.colnames:
-            print(prefix, "I'm updating column '%s'." % output_col)
-        else:
-            print(prefix, "I'm adding column '%s'." % output_col)
+        if verb:
+            if output_col in self._t.colnames:
+                print(prefix, "I'm updating column '%s'." % output_col)
+            else:
+                print(prefix, "I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = self._safe(conv)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\

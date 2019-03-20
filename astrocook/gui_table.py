@@ -3,6 +3,7 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import numpy as np
 
 prefix = "GUI:"
 
@@ -43,6 +44,7 @@ class GUITable(wx.Frame):
                     self._tab.SetColSize(i, 150)
                     self._tab.SetColLabelValue(i, "%s\n%s" \
                                               % (n, str(data.t[n].unit)))
+                """
                 try:
                     self._tab.SetCellValue(j, i, "%3.5f" % r[n])
                 except:
@@ -52,6 +54,18 @@ class GUITable(wx.Frame):
                         self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                     if type(r[n]) == dict:
                         self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                """
+                if type(r[n]) == np.int64:
+                    self._tab.SetCellValue(j, i, "%4i" % r[n])
+                elif type(r[n]) == str:
+                    self._tab.SetCellValue(j, i, r[n])
+                elif type(r[n]) == OrderedDict:
+                    self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                elif type(r[n]) == dict:
+                    self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                else:
+                    self._tab.SetCellValue(j, i, "%3.5f" % r[n])
+
         self._tab.AutoSizeColumns(True)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
