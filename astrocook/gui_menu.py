@@ -87,7 +87,6 @@ class GUIMenuCook(GUIMenu):
         new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
                                 b_start=2, b_end=10, b_step=2,
                                 maxfev=100)
-        #new_sess.add_syst(z=1.6967)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
     def _on_test(self, event):
@@ -100,9 +99,13 @@ class GUIMenuCook(GUIMenu):
         self._gui._panel_sess._on_add(new_sess, open=False)
         new_sess.add_syst_from_lines(resol=70000)
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        print(new_sess.systs._t)
+        print(new_sess.systs._mods_t)
         new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
                                 b_start=2, b_end=10, b_step=2,
                                 maxfev=100)
+        print(new_sess.systs._t)
+        print(new_sess.systs._mods_t)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

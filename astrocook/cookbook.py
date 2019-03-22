@@ -1,3 +1,4 @@
+from .syst_list import SystList
 from .syst_model import SystModel
 from astropy import units as au
 import numpy as np
@@ -37,12 +38,12 @@ class Cookbook(object):
 
         spec = self.sess.spec
         systs = self.sess.systs
+        print(systs)
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
         mod._fit(fit_kws={'maxfev': maxfev})
         systs._update(mod)
-
         return 0
 
     def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y'):
@@ -58,3 +59,27 @@ class Cookbook(object):
             return True, chi2, chi2_0
         else:
             return False, chi2, chi2_0
+
+    def _update_spec(self):
+        spec = self.spec
+        systs = self.systs
+
+        systs._xs = np.array(spec._safe(spec.x).to(au.nm))
+        s = spec._where_safe
+
+        y = spec.y
+        if 'model' not in spec._t.colnames:
+            print(prefix, "I'm adding column 'model'.")
+            spec._t['model'] = np.empty(len(spec.x), dtype=float)*y.unit
+        if 'deabs' not in spec._t.colnames:
+            spec._t['deabs'] = y
+
+        cont = spec._t['cont']
+        model = spec._t['model']
+        deabs = spec._t['deabs']
+
+        model[s] = cont[s]
+        for i, r in enumerate(systs._mods_t):
+            mod = r['mod']
+            model[s] = mod.eval(x=systs._xs, params=mod._pars) * model[s]
+        deabs[s] = cont[s] + y[s] - model[s]

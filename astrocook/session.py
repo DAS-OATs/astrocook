@@ -217,15 +217,16 @@ class Session(object):
                 print(prefix, "I'm improving a %s system at redshift %2.4f "\
                       "(%i/%i): trying to add a component at redshift %2.4f…"\
                       % (o_series, o_z, i+1, len(old), z_cand), end='\r')
-                t_old = dc(systs._t)
-                mods_t_old = dc(systs._mods_t)
+
+                t_old, mods_t_old = systs._freeze()
+
+                self._mods_t_old = mods_t_old
                 systs._append(SystList(id_start=len(self.systs._t)),
                               unique=False)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
 
                 if systs._t['chi2r'][systs._t['id']==o_id]>chi2r_old:
-                    systs._t = t_old
-                    systs._mods_t = mods_t_old
+                    systs._unfreeze(t_old, mods_t_old)
                     break
 
                 chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
@@ -344,7 +345,11 @@ class Session(object):
                   % (series, z, i+1, len(chi2m[0])), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
               "%2.4f." % (len(chi2m[0]), series, z_range[chi2m[2][0]], z_range[chi2m[2][-1]]))
+        print(self.systs._t)
+        print(self.systs._mods_t)
         self.systs._clean(chi2r_thres)
+        print(self.systs._t)
+        print(self.systs._mods_t)
 
         # ...and then appended
         self.systs._append(systs_old)

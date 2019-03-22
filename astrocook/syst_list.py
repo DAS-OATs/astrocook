@@ -3,6 +3,7 @@ from .functions import convolve, lines_voigt, psf_gauss, running_mean
 from astropy import table as at
 from astropy import units as au
 #from matplotlib import pyplot as plt
+from copy import deepcopy as dc
 import numpy as np
 
 prefix = "System list:"
@@ -42,11 +43,14 @@ class SystList(object):
         self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
         self._t['id'] = np.empty(len(self.z), dtype=int)
 
-        self._mods_t = at.Table()
-        self._mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
-        self._mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
-        self._mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
-        self._mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
+        mods_t = at.Table()
+        mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
+        mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
+        #mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
+        #mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
+        self._mods_t = mods_t
+        self._mods_t['chi2r'] = np.empty(len(self.z), dtype=dtype)
+        self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
         self._dtype = dtype
 
@@ -54,6 +58,10 @@ class SystList(object):
     @property
     def t(self):
         return self._t
+
+    @property
+    def mods_t(self):
+        return self._mods_t
 
     @property
     def series(self):
@@ -94,7 +102,7 @@ class SystList(object):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
         if unique:
-            self._t = at.unique(vstack_t, keys=['z0'])
+            self._t = at.unique(vstack_t, keys=['z0', 'z'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
         return 0
 
@@ -117,20 +125,55 @@ class SystList(object):
         #print(self._mods_t['z0', 'chi2r', 'id'])
         return 0
 
+    def _freeze(self):
+        """ Create a frozen copy of the tables self._t and self._mods_t
+        """
+        t = dc(self._t)
+        mods_t = dc(self._mods_t)
+
+        # Needed, otherwise the id objects are not copied
+        for i, m in enumerate(mods_t):
+            m['id'] = dc(self._mods_t['id'][i])
+
+        return t, mods_t
+
+    def _unfreeze(self, t, mods_t):
+        """ Restore from a frozen copy of the tables self._t and self._mods_t
+        """
+
+        self._t = t
+        self._mods_t = mods_t
+
 
     def _update(self, mod):
 
+        #print("inside")
         if mod._group_sel == -1:
             self._mods_t.add_row([mod._z0, mod, None, []])
         else:
             self._mods_t[mod._group_sel]['mod'] = mod
         self._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
+        """
+        try:
+            print(sess._mods_t_old['chi2r','id'])
+            print(hex(id(sess._mods_t_old[mod._group_sel]['id'])))
+            print(hex(id(self._mods_t[mod._group_sel]['id'])))
+            print(hex(id(sess._mods_t_old['id'])))
+            print(hex(id(self._mods_t['id'])))
+        except:
+            pass
+        """
         self._mods_t[mod._group_sel]['id'].append(mod._id)
 
-
+        """
+        try:
+            print(sess._mods_t_old['chi2r','id'])
+        except:
+            pass
+        """
         modw = np.where(mod == self._mods_t['mod'])[0][0]
-        id = self._mods_t['id'][modw]
-        for i in id:
+        ids = self._mods_t['id'][modw]
+        for i in ids:
             iw = np.where(self._t['id']==i)[0][0]
             pref = 'lines_voigt_'+str(i)
             self._t[iw]['z'] = mod._pars[pref+'_z'].value
@@ -138,3 +181,4 @@ class SystList(object):
             self._t[iw]['b'] = mod._pars[pref+'_b'].value
             self._t[iw]['chi2r'] = mod._chi2r
         self._id += 1
+        #print("until here")
