@@ -49,6 +49,7 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
+    """
     def _update_spec(self):
 
         spec = self.spec
@@ -73,9 +74,9 @@ class Session(object):
             mod = r['mod']
             model[s] = mod.eval(x=self.systs._xs, params=mod._pars) * model[s]
         deabs[s] = cont[s] + y[s] - model[s]
+    """
 
-
-    def add_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=70000,
+    def add_syst(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                  chi2r_thres=np.inf, maxfev=100):
         """ @brief Add and fit a Voigt model for a system.
         @param series Series of transitions
@@ -95,22 +96,15 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        #systs = SystList()
-        if self.systs != None:
-            self.systs._append(SystList(id_start=len(self.systs._t)))
-        else:
-            self.systs = SystList()
+        self.cb._append_syst()
         self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-        print(prefix, "I've fitted a %s systems at redshift %2.4f."\
-              % (series, z))
         self.systs._clean(chi2r_thres)
-
-        self._update_spec()
+        self.cb._update_spec()
 
         return 0
 
 
-    def add_syst_from_lines(self, series='CIV', z_start=1.71, z_end=1.18,
+    def add_syst_from_lines(self, series='Lya', z_start=2.0, z_end=2.5,
                             dz=1e-4, logN=14, b=10, resol=70000,
                             chi2r_thres=np.inf, maxfev=100):
         """ @brief Add and fit Voigt models to a line list, given a redshift
@@ -138,11 +132,7 @@ class Session(object):
 
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
-        #systs = SystList()
-        if self.systs != None:
-            self.systs._append(SystList(id_start=len(self.systs._t)))
-        else:
-            self.systs = SystList()
+        self.cb._append_syst()
 
         for i, z in enumerate(z_range):
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
@@ -152,7 +142,7 @@ class Session(object):
               "%2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
 
         self.systs._clean(chi2r_thres)
-        self._update_spec()
+        self.cb._update_spec()
 
         return 0
 
@@ -230,7 +220,7 @@ class Session(object):
                     break
 
                 chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
-                self._update_spec()
+                self.cb._update_spec()
                 count += 1
 
                 if systs._t['chi2r'][systs._t['id']==o_id]<chi2r_thres: break
@@ -241,7 +231,7 @@ class Session(object):
                       % (o_series, o_z, i+1, len(old)))
             else:
                 print(prefix, "I've improved a %s system at redshift %2.4f "\
-                      "(%i/%i) by adding %i components.                     "\
+                      "(%i/%i) by adding %i components.                       "\
                       % (o_series, o_z, i+1, len(old), count))
 
 
@@ -317,12 +307,6 @@ class Session(object):
                     if cond:
                         chi2a[ilogN, ib, iz] = chi2
                         cond_c += 1
-                    """
-                    if iz < len(z_range)-1:
-                        print("", end='\r')
-                    else:
-                        print("found %i coincidences." % cond_c)
-                    """
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences."
@@ -339,23 +323,17 @@ class Session(object):
             z = z_range[chi2m[2][i]]
             logN = logN_range[chi2m[0][i]]
             b = b_range[chi2m[1][i]]
-            #print(z, logN, b)
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
             print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
                   % (series, z, i+1, len(chi2m[0])), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
               "%2.4f." % (len(chi2m[0]), series, z_range[chi2m[2][0]], z_range[chi2m[2][-1]]))
-        print(self.systs._t)
-        print(self.systs._mods_t)
         self.systs._clean(chi2r_thres)
-        print(self.systs._t)
-        print(self.systs._mods_t)
 
         # ...and then appended
         self.systs._append(systs_old)
 
-        self._update_spec()
-
+        self.cb._update_spec()
 
         return 0
 
@@ -543,6 +521,9 @@ class Session(object):
             if 'UVES_popler:' in hist:
                 instr = 'UVES'
                 orig = 'POPLER'
+            if 'XSHOOTER_REDUCE' in hist:
+                instr = 'XSHOOTER'
+                orig = 'REDUCE'
         except:
             pass
 
@@ -572,6 +553,11 @@ class Session(object):
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+
+        # XSHOOTER_REDUCE spectrum
+        if instr == 'XSHOOTER' and orig == 'REDUCE':
+            hdul_e = fits.open(self.path[:-5]+'e.fits')
+            self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
         #self.model = Model(self)
 

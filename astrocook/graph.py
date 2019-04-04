@@ -1,10 +1,12 @@
 from .message import *
+from .vars import *
 from astropy import units as au
 #from copy import deepcopy as dc
 from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
+from matplotlib.figure import Figure
+import matplotlib.transforms as transforms
 import numpy as np
 
 prefix = "Graph:"
@@ -43,7 +45,8 @@ class Graph(object):
                            'spec_x_cont': GraphSpectrumXCont,
                            'spec_form_x': GraphSpectrumFormX,
                            'spec_x_model': GraphSpectrumXModel,
-                           'spec_x_deabs': GraphSpectrumXDeabs}
+                           'spec_x_deabs': GraphSpectrumXDeabs,
+                           'systs_z_series': GraphSystListZSeries}
         self._plot_list = [self._plot_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
@@ -76,6 +79,17 @@ class Graph(object):
                         self._ax.axvline(x.to(self._xunit).value,
                                          color='C'+str(self._c), **gs._kwargs)
                         gs._kwargs.pop('label', None)
+                elif gs._type == 'text':
+                    trans = transforms.blended_transform_factory(
+                                self._ax.transData, self._ax.transAxes)
+                    for (x, t) in zip(gs._x, gs._y):
+                        print(x,t)
+                        self._ax.text(x.to(self._xunit).value, 0.8, t,
+                                      horizontalalignment='center',
+                                      transform=trans)
+                        print("here", x,t)
+                        gs._kwargs.pop('label', None)
+                        print("after", x,t)
                 else:
                     graph = getattr(self._ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),
@@ -170,3 +184,16 @@ class GraphSpectrumXYMask(GraphSpectrumXY):
         self._type = 'scatter'
         self._x[sess.spec._t['lines_mask']] = np.nan
         self._kwargs = {'label':sess.name+", masked"}
+
+class GraphSystListZSeries(object):
+    def __init__(self, sess, norm=False):
+        self._type = 'text'
+        z = sess.systs.z
+        series = sess.systs.series
+        z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
+        series_flat = np.ravel([series_d[s] for s in series])
+        xem_flat = np.array([xem_d[sf].to(au.nm).value for sf in series_flat])\
+                       *au.nm
+        self._x = (1.+z_flat)*xem_flat
+        self._y = series_flat
+        self._kwargs = {'marker':'+', 'label':sess.name+", systs"}

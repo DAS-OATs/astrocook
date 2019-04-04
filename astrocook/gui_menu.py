@@ -82,7 +82,8 @@ class GUIMenuCook(GUIMenu):
         sess.interp_nodes()
         new_sess = sess.extract_region(xmin=330, xmax=420)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(resol=70000)
+        new_sess.add_syst_from_lines(series='CIV', z_start=1.71, z_end=1.18,
+                                     resol=70000)
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
                                 b_start=2, b_end=10, b_step=2,
@@ -95,17 +96,14 @@ class GUIMenuCook(GUIMenu):
         sess.find_peaks()
         sess.extract_nodes(delta_x=800)
         sess.interp_nodes()
-        new_sess = sess.extract_region(xmin=415, xmax=420)
+        new_sess = sess.extract_region(xmin=400, xmax=420)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(resol=70000)
-        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        print(new_sess.systs._t)
-        print(new_sess.systs._mods_t)
-        new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
-                                b_start=2, b_end=10, b_step=2,
-                                maxfev=100)
-        print(new_sess.systs._t)
-        print(new_sess.systs._mods_t)
+        new_sess.add_syst_from_lines(series='CIV', z_start=1.71, z_end=1.18,
+                                     resol=70000)
+        #new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        #new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
+        #                        b_start=2, b_end=10, b_step=2,
+        #                        maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
@@ -294,8 +292,10 @@ class GUIMenuView(GUIMenu):
                          'spec_x_deabs')
         self._item_graph(self._submenu, start_id+209, "Spectral format",
                          'spec_form_x')
+        self._item_graph(self._submenu, start_id+210, "System list",
+                         'systs_z_series')
         self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")
-        self._item(self._menu, start_id+210, "Toggle normalization",
+        self._item(self._menu, start_id+103, "Toggle normalization",
                    self._on_norm)
 
     def _on_logx(self, event):

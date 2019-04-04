@@ -177,7 +177,8 @@ class GUIGraphSpectrum(wx.Frame):
                                               size=(size_x, size_y))
         self._gui = gui
         self._gui._graph_spec = self
-        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model']
+        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model',
+                     'systs_z_series']
 
         self._logx = False
         self._logy = False

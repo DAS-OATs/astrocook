@@ -14,6 +14,12 @@ class Cookbook(object):
         #self.spec = sess.spec
         #self.systs = sess.systs
 
+    def _append_syst(self):
+        systs = self.sess.systs
+        if systs != None:
+            systs._append(SystList(id_start=len(systs._t)))
+        else:
+            setattr(self.sess, 'systs', SystList())
 
     def _create_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
                       resol=70000):
@@ -38,7 +44,6 @@ class Cookbook(object):
 
         spec = self.sess.spec
         systs = self.sess.systs
-        print(systs)
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
@@ -61,15 +66,14 @@ class Cookbook(object):
             return False, chi2, chi2_0
 
     def _update_spec(self):
-        spec = self.spec
-        systs = self.systs
+        spec = self.sess.spec
+        systs = self.sess.systs
 
         systs._xs = np.array(spec._safe(spec.x).to(au.nm))
         s = spec._where_safe
 
         y = spec.y
         if 'model' not in spec._t.colnames:
-            print(prefix, "I'm adding column 'model'.")
             spec._t['model'] = np.empty(len(spec.x), dtype=float)*y.unit
         if 'deabs' not in spec._t.colnames:
             spec._t['deabs'] = y

@@ -109,3 +109,25 @@ class Format(object):
             meta['object'] = ''
             print(prefix, "OBJECT not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+    def xshooter_reduce_spectrum(self, hdul, hdul_e):
+        print(hdul, hdul_e)
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        data = hdul[0].data
+        data_e = hdul_e[0].data
+        y = data
+        dy = data_e
+        x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom
+        meta = {'instr': 'X-shooter'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            print(prefix, "OBJECT not defined.")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

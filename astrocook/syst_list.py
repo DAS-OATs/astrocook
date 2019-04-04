@@ -110,19 +110,14 @@ class SystList(object):
     def _clean(self, chi2r_thres=np.inf, verb=True):
 
         rem = np.where(self._t['chi2r'] > chi2r_thres)[0]
-        #mods_rem = np.where(self._mods._t['chi2r'] > chi2r_thres)[0]
         mods_rem = np.where(self._mods_t['chi2r'] > chi2r_thres)[0]
-        #print(rem, mods_rem)
         z_rem = self._t['z'][rem]
         if len(rem) > 0:
             self._t.remove_rows(rem)
             print(prefix, "I removed %i systems because they had a "\
                   "chi-squared above %2.2f." % (len(rem), chi2r_thres))
-        #print(rem, mods_rem)
         if len(mods_rem) > 0:
-            #print("ecco")
             self._mods_t.remove_rows(mods_rem)
-        #print(self._mods_t['z0', 'chi2r', 'id'])
         return 0
 
     def _freeze(self):
@@ -147,30 +142,13 @@ class SystList(object):
 
     def _update(self, mod):
 
-        #print("inside")
         if mod._group_sel == -1:
             self._mods_t.add_row([mod._z0, mod, None, []])
         else:
             self._mods_t[mod._group_sel]['mod'] = mod
         self._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
-        """
-        try:
-            print(sess._mods_t_old['chi2r','id'])
-            print(hex(id(sess._mods_t_old[mod._group_sel]['id'])))
-            print(hex(id(self._mods_t[mod._group_sel]['id'])))
-            print(hex(id(sess._mods_t_old['id'])))
-            print(hex(id(self._mods_t['id'])))
-        except:
-            pass
-        """
         self._mods_t[mod._group_sel]['id'].append(mod._id)
 
-        """
-        try:
-            print(sess._mods_t_old['chi2r','id'])
-        except:
-            pass
-        """
         modw = np.where(mod == self._mods_t['mod'])[0][0]
         ids = self._mods_t['id'][modw]
         for i in ids:
@@ -181,4 +159,3 @@ class SystList(object):
             self._t[iw]['b'] = mod._pars[pref+'_b'].value
             self._t[iw]['chi2r'] = mod._chi2r
         self._id += 1
-        #print("until here")
