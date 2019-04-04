@@ -111,7 +111,6 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def xshooter_reduce_spectrum(self, hdul, hdul_e):
-        print(hdul, hdul_e)
         hdr = hdul[0].header
         crval1 = hdr['CRVAL1']
         cdelt1 = hdr['CDELT1']
