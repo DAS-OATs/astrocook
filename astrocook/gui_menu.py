@@ -41,7 +41,7 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _item_method(self, menu, id, title, targ):
-        item = wx.MenuItem(menu, id, title+'…')
+        item = wx.MenuItem(menu, id, title+'...')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_dialog(e, title, targ), item)
@@ -71,8 +71,8 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, "Full…", self._on_full)
-        self._item(self._menu, start_id+2, "Test…", self._on_test)
+        self._item(self._menu, start_id+1, "Full...", self._on_full)
+        self._item(self._menu, start_id+2, "Test...", self._on_test)
 
     def _on_full(self, event):
         sess = self._gui._sess_sel
@@ -118,10 +118,10 @@ class GUIMenuFile(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to File menu here
-        self._item(self._menu, start_id+1, "Open…",
+        self._item(self._menu, start_id+1, "Open...",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "Save…",
+        self._item(self._menu, start_id+101, "Save...",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+401, "Quit", self._on_quit)

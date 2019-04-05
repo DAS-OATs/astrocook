@@ -296,7 +296,7 @@
         for z in z_range:
             self.fit(series=series, z=z, N=N, b=b, group_thres=thres,
                      update=False)
-            print(prefix, "I've fitted a system at redshift %2.4f…" % z,
+            print(prefix, "I've fitted a system at redshift %2.4f..." % z,
                   end='\r')
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
@@ -341,7 +341,7 @@
         for z in z_range:
             self.fit(series=series, z=z, N=N, b=b, group_thres=thres,
                      update=False)
-            print(prefix, "I've fitted a system at redshift %2.4f…" % z,
+            print(prefix, "I've fitted a system at redshift %2.4f..." % z,
                   end='\r')
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
@@ -373,7 +373,7 @@
         for z in np.arange(z_start, z_end, z_step):
             self.fit(series=series, z=z, N=N, b=b, group_thres=thres,
                      update=False)
-            print(prefix, "I've fitted a system at redshift %2.4f…" % z,
+            print(prefix, "I've fitted a system at redshift %2.4f..." % z,
                   end='\r')
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
@@ -415,7 +415,7 @@
 
         chi2_arr = []
         for z in z_range:
-            print(prefix, "I'm scanning the spectrum: now at redshift %2.4f…" \
+            print(prefix, "I'm scanning the spectrum: now at redshift %2.4f..." \
                   % z, end='\r')
             self._spec._shift_rf(z)
             self._xs = np.array(self._spec._safe(self._spec.x).to(au.nm))
@@ -433,7 +433,7 @@
         z_found = z_range[chi2_found.mask]
 
         for z_cen in z_found:
-            print(prefix, "I'm checking a candidate at redshift %2.4f…      " \
+            print(prefix, "I'm checking a candidate at redshift %2.4f...      " \
                   % z_cen)#, end='\r')
             for z in np.arange(z_cen-1e-4, z_cen+1e-4, 1e-5):
                 self._spec._shift_rf(z)
