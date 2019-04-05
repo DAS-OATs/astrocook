@@ -136,8 +136,6 @@ class Session(object):
 
         for i, z in enumerate(z_range):
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-#            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
-#                  % (series, z, i+1, len(z_range)), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
               "%2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
 
