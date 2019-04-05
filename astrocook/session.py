@@ -136,6 +136,8 @@ class Session(object):
 
         for i, z in enumerate(z_range):
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
+            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)..."\
+                  % (series, z, i+1, len(z_range)), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
               "%2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
 
@@ -203,7 +205,7 @@ class Session(object):
                     z_cand = z_sel[0]
 
                 print(prefix, "I'm improving a %s system at redshift %2.4f "\
-                      "(%i/%i): trying to add a component at redshift %2.4f…"\
+                      "(%i/%i): trying to add a component at redshift %2.4f..."\
                       % (o_series, o_z, i+1, len(old), z_cand), end='\r')
 
                 t_old, mods_t_old = systs._freeze()
@@ -296,7 +298,7 @@ class Session(object):
                 cond_c = 0
                 for iz, z in enumerate(z_range):
                     print(prefix, "I'm testing a %s system (logN=%2.2f, "
-                          "b=%2.2f) at redshift %2.4f (%i/%i)…" \
+                          "b=%2.2f) at redshift %2.4f (%i/%i)..." \
                           % (series, logN, b, z, iz+1, len(z_range)), end='\r')
                     self.spec._shift_rf(z)
                     systs = SystList()
@@ -322,7 +324,7 @@ class Session(object):
             logN = logN_range[chi2m[0][i]]
             b = b_range[chi2m[1][i]]
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)…"\
+            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)..."\
                   % (series, z, i+1, len(chi2m[0])), end='\r')
         print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
               "%2.4f." % (len(chi2m[0]), series, z_range[chi2m[2][0]], z_range[chi2m[2][-1]]))
