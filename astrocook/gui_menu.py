@@ -80,10 +80,25 @@ class GUIMenuCook(GUIMenu):
         sess.find_peaks()
         sess.extract_nodes(delta_x=800)
         sess.interp_nodes()
-        new_sess = sess.extract_region(xmin=330, xmax=420)
+
+        # J0515
+        xmin = 330
+        xmax = 420
+        z_start = 1.71
+        z_end = 1.18
+        resol = 70000
+
+        # J0100+0211
+        xmin = 360
+        xmax = 460
+        z_start = 1.959
+        z_end = 1.32
+        resol = 45000
+
+        new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(series='CIV', z_start=1.71, z_end=1.18,
-                                     resol=70000)
+        new_sess.add_syst_from_lines(series='CIV', z_start=z_start, z_end=z_end,
+                                     resol=resol)
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
                                 b_start=2, b_end=10, b_step=2,

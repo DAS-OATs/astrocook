@@ -232,7 +232,7 @@ class Session(object):
             else:
                 print(prefix, "I've improved a %s system at redshift %2.4f "\
                       "(%i/%i) by adding %i components.                       "\
-                      % (o_series, o_z, i+1, len(old), count))
+                      "  " % (o_series, o_z, i+1, len(old), count))
 
 
         return 0
