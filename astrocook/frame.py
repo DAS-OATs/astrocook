@@ -8,7 +8,7 @@ import numpy as np
 
 prefix = "Frame:"
 
-class Frame(object):
+class Frame():
     """Class for frames.
 
     A Frame is an astropy Table with the following columns:

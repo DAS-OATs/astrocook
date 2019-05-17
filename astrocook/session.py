@@ -1,3 +1,4 @@
+from . import version
 from .cookbook import Cookbook
 from .format import Format
 from .functions import detect_local_minima
@@ -13,6 +14,7 @@ from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
 import numpy as np
+import os
 from scipy.signal import argrelmin
 import tarfile
 
@@ -499,9 +501,18 @@ class Session(object):
 
 
     def open(self):
+
         format = Format()
-        hdul = fits.open(self.path)
-        hdr = hdul[0].header
+        if self.path[-3:] == 'acs':
+            root = '/'.join(self.path.split('/')[:-1])
+            with tarfile.open(self.path) as arch:
+                arch.extractall(path=root)
+                hdul = fits.open(self.path[:-4]+'_spec.fits')
+                hdr = hdul[1].header
+        else:
+            hdul = fits.open(self.path)
+            hdr = hdul[0].header
+
         try:
             instr = hdr['INSTRUME']
         except:
@@ -534,6 +545,18 @@ class Session(object):
         if orig == None:
             print(prefix, "ORIGIN not defined.")
 
+        # Astrocook structures
+        if orig == 'Astrocook':
+            for s in self.seq:
+                try:
+                    print(s)
+                    hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
+                    print(hdul)
+                    setattr(self, s, format.astrocook(hdul, s))
+                    print(s)
+                except:
+                    pass
+
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
             self.spec = format.eso_midas(hdul)
@@ -559,18 +582,28 @@ class Session(object):
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
-        #self.model = Model(self)
 
     def save(self, path):
-        for s in self.seq:
-            try:
-                name = path[:-4]+'_'+s+'.fits'
-                t = dc(getattr(self, s).t)
-                for c in t.colnames:
-                    t[c].unit = au.dimensionless_unscaled
-                t.write(name, format='fits', overwrite=True)
-            except:
-                pass
+
+        root = path[:-4]
+        stem = root.split('/')[-1]
+        with tarfile.open(root+'.acs', 'w:gz') as arch:
+            for s in self.seq:
+                try:
+                    name = root+'_'+s+'.fits'
+                    obj = dc(getattr(self, s))
+                    t = obj._t
+                    t.meta = obj._meta
+                    t.meta['ORIGIN'] = 'Astrocook'
+                    t.meta['HIERARCH ASTROCOOK VERSION'] = version
+                    t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                    for c in t.colnames:
+                        t[c].unit = au.dimensionless_unscaled
+                    t.write(name, format='fits', overwrite=True)
+                    arch.add(name, arcname=stem+'_'+s+'.fits')
+                    os.remove(name)
+                except:
+                    pass
 
 
     def shift_from_rf(self, z=0):

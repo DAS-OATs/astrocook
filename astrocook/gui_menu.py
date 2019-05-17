@@ -81,12 +81,14 @@ class GUIMenuCook(GUIMenu):
         sess.extract_nodes(delta_x=800)
         sess.interp_nodes()
 
-        # J0515
+        """
+        # he0515m4414
         xmin = 330
         xmax = 420
         z_start = 1.71
         z_end = 1.18
         resol = 70000
+        """
 
         # J0100+0211
         xmin = 360
@@ -95,12 +97,20 @@ class GUIMenuCook(GUIMenu):
         z_end = 1.32
         resol = 45000
 
+        """
+        # J014333-391700
+        xmin = 360#340
+        xmax = 380#435
+        z_start = 1.32#1.795
+        z_end = 1.453#1.19
+        resol = 48000
+        """
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         new_sess.add_syst_from_lines(series='CIV', z_start=z_start, z_end=z_end,
                                      resol=resol)
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
+        new_sess.add_syst_slide(logN_start=12.0, logN_end=11.5, logN_step=-0.1,
                                 b_start=2, b_end=10, b_step=2,
                                 maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
@@ -153,9 +163,9 @@ class GUIMenuFile(GUIMenu):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             path = fileDialog.GetPath()
-            name = path.split('/')[-1][:-5]
+            name = path.split('/')[-1].split('.')[0]
             print(prefix, "I'm loading session %s..." % path)
-            sess = Session(path=path, name=path.split('/')[-1][:-5])
+            sess = Session(path=path, name=name)
             self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_save(self, event, path='.'):

@@ -16,8 +16,8 @@ class SystList(object):
 
     def __init__(self,
                  id_start=0,
-                 series=[],
                  func=[],
+                 series=[],
                  z=[],
                  logN=[],
                  b=[],
@@ -33,7 +33,7 @@ class SystList(object):
         logNunit = au.dimensionless_unscaled
         bunit = au.km/au.s
         t['func'] = at.Column(np.array(func, ndmin=1), dtype='S5')
-        t['series'] = at.Column(np.array(func, ndmin=1), dtype='S100')
+        t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
         t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,

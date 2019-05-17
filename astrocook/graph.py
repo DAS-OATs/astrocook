@@ -87,9 +87,9 @@ class Graph(object):
                         self._ax.text(x.to(self._xunit).value, 0.8, t,
                                       horizontalalignment='center',
                                       transform=trans)
-                        print("here", x,t)
+                        #print("here", x,t)
                         gs._kwargs.pop('label', None)
-                        print("after", x,t)
+                        #print("after", x,t)
                 else:
                     graph = getattr(self._ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),

@@ -28,7 +28,7 @@ import yaml
 
 class MainFrame(wx.Frame):
     def __init__(self, parent=None, title="Astrocook", **kwargs):
-        """ Constructor for the Frame class """ 
+        """ Constructor for the Frame class """
 
         size = (wx.DisplaySize()[0]*0.75, wx.DisplaySize()[1]*0.9)
         self.pad = 10
@@ -42,7 +42,7 @@ class MainFrame(wx.Frame):
 
         self.rec = None
         self.plot = None
-        
+
         self.targ_list = []
         self.spec_dict = {}
         self.z_dict = {}
@@ -59,10 +59,10 @@ class MainFrame(wx.Frame):
         self.N_frame = None
         self.chi2r_frame = None
         self.syst_frame = None
-        
+
         self.count = 0
         self.norm = False
-        
+
         self.init_UI(**kwargs)
         self.IO = IO()
 
@@ -74,7 +74,7 @@ class MainFrame(wx.Frame):
             self.on_file_open(None, targ=targ, **kwargs)
         except:
             pass
-        
+
     def dialog_proc(self, obj, proc):
         """ Run a procedure through a dialog window """
 
@@ -85,7 +85,7 @@ class MainFrame(wx.Frame):
         self.dialog_type = 'proc'
         dialog = ParamDialog(self)
         dialog.ShowModal()
-        dialog.Destroy()        
+        dialog.Destroy()
         self.params = dialog.params
         self.proc_dict[proc] = dialog.execute
         if dialog.execute == True:
@@ -124,7 +124,7 @@ class MainFrame(wx.Frame):
         dialog.ShowModal()
         dialog.Destroy()
     """
-    
+
     def init_line(self, panel):
         """ Create the Lines panel """
 
@@ -138,10 +138,10 @@ class MainFrame(wx.Frame):
         self.line_gr.SetColLabelValue(5, "EW")
         self.line_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_line)
         self.line_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_line)
-       
+
     def init_plot(self, panel):
         """ Create the Plot panel """
-        
+
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
         self.fig.tight_layout(rect=[-0.03, 0.02, 1.03, 1])
@@ -149,7 +149,7 @@ class MainFrame(wx.Frame):
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
-        
+
     def init_spec(self, panel):
         """ Create the Spectra panel """
 
@@ -163,7 +163,7 @@ class MainFrame(wx.Frame):
         self.spec_lc.InsertColumn(3, 'active range [nm]', width=150)
         self.spec_lc.InsertColumn(4, '# lines', width=150)
         self.spec_lc.InsertColumn(5, '# systems', width=150)
-        
+
     def init_syst(self, panel):
         """ Create the Systems panel """
 
@@ -182,10 +182,10 @@ class MainFrame(wx.Frame):
         self.syst_gr.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.on_sel_syst)
         self.syst_gr.Bind(gridlib.EVT_GRID_CELL_CHANGED, self.on_edit_syst)
         #self.syst_gr.Bind(gridlib.EVT_BUTTON, self.on_syst_menu)
-        
+
     def init_UI(self, **kwargs):
         """ Initialize the main frame """
-        
+
         self.menu(**kwargs)
 
         panel = wx.Panel(self)
@@ -198,7 +198,7 @@ class MainFrame(wx.Frame):
         self.line_gr.SetMaxSize((582,3000))
         self.syst_gr.SetMinSize((902,3000))
 
-        
+
         # Spectra panel
         box_spec = wx.BoxSizer(wx.VERTICAL)
         box_spec.Add(wx.StaticText(panel, label="Spectra"))
@@ -239,7 +239,7 @@ class MainFrame(wx.Frame):
         box_main.Add(box_plot, 1, wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,
                      self.pad)
         panel.SetSizer(box_main)
-        
+
         self.Centre()
         self.Show()
 
@@ -252,10 +252,10 @@ class MainFrame(wx.Frame):
         self.id_cont = 300
         self.id_syst = 400
         self.id_syst_sel = 500
-        
+
         # File menu
         self.file_menu = wx.Menu()
-        
+
         file_open = wx.MenuItem(self.file_menu, wx.ID_OPEN, "&Open\tCtrl+O")
         file_save = wx.MenuItem(self.file_menu, 01, "&Save\tCtrl+S")
         file_quit = wx.MenuItem(self.file_menu, wx.ID_EXIT, "&Quit\tCtrl+Q")
@@ -296,7 +296,7 @@ class MainFrame(wx.Frame):
         #    self.proc_menu, 120, proc_descr['N_all'])
         proc_syst_extract_resid = wx.MenuItem(
             self.proc_menu, 123, proc_descr['extract_resid']+"...")
-        
+
         self.Bind(wx.EVT_MENU, self.on_proc_spec_convolve, proc_spec_convolve)
         self.Bind(wx.EVT_MENU, self.on_proc_spec_smooth_lowess,
                   proc_spec_smooth_lowess)
@@ -311,7 +311,7 @@ class MainFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.on_proc_syst_N_all, proc_syst_N_all)
         self.Bind(wx.EVT_MENU, self.on_proc_syst_extract_resid,
                   proc_syst_extract_resid)
-        
+
         self.proc_menu.Append(proc_spec_convolve)
         self.proc_menu.Append(proc_spec_smooth_lowess)
         self.proc_menu.Append(proc_spec_extract_forest)
@@ -321,7 +321,7 @@ class MainFrame(wx.Frame):
         self.menu_append(self.proc_menu, 110, ProcLineEwAll, ProcDialog,
                          ['line'], descr_add="")
         self.proc_menu.Append(proc_line_mask)
-        self.proc_menu.Append(proc_spec_extract_mask) 
+        self.proc_menu.Append(proc_spec_extract_mask)
         self.proc_menu.AppendSeparator()
         #self.proc_menu.Append(proc_syst_N_all)
         self.menu_append(self.proc_menu, 120, ProcSystNAll, ProcDialog,
@@ -331,7 +331,7 @@ class MainFrame(wx.Frame):
         self.menu_append(self.proc_menu, 122, ProcSystSelFit, ProcDialog,
                          ['syst', 'model'])
         self.proc_menu.Append(proc_syst_extract_resid)
-       
+
         # Recipes menu
         self.rec_menu = wx.Menu()
         self.menu_append(self.rec_menu, 200, RecSpecCont, RecDialog,
@@ -353,7 +353,7 @@ class MainFrame(wx.Frame):
                          ['line', 'syst', 'model'])
         self.menu_append(self.rec_menu, 231, RecForestAdd, RecDialog,
                          ['syst'])
-        
+
 
         # Workflows menu
         self.wkf_menu = wx.Menu()
@@ -386,7 +386,7 @@ class MainFrame(wx.Frame):
         util_chi2r_open = wx.MenuItem(self.util_menu, 45,
                                       "View reduced chi-square distribution...")
         util_log_view = wx.MenuItem(self.util_menu, 46, "View log")
-        
+
         self.Bind(wx.EVT_MENU, self.on_util_plot_norm, util_plot_norm)
         self.Bind(wx.EVT_MENU, self.on_util_forest_open, util_forest_open)
         self.Bind(wx.EVT_MENU, self.on_util_syst_open, util_syst_open)
@@ -397,7 +397,7 @@ class MainFrame(wx.Frame):
 
         self.util_menu.Append(util_plot_norm)
         self.util_menu.Append(util_forest_open)
-        self.util_menu.Append(util_syst_open) 
+        self.util_menu.Append(util_syst_open)
         self.util_menu.Append(util_N_open)
         self.util_menu.Append(util_b_open)
         self.util_menu.Append(util_chi2r_open)
@@ -410,7 +410,7 @@ class MainFrame(wx.Frame):
         info_about_view = wx.MenuItem(self.proc_menu, 51, "About")
 
         self.Bind(wx.EVT_MENU, self.on_info_about_view, info_about_view)
-        
+
         self.info_menu.Append(info_about_view)
 
         # Menu bar
@@ -422,7 +422,7 @@ class MainFrame(wx.Frame):
         menu_bar.Append(self.wkf_menu, '&Workflows')
         menu_bar.Append(self.util_menu, '&Utilities')
         menu_bar.Append(self.info_menu, '&Info')
-        self.SetMenuBar(menu_bar)        
+        self.SetMenuBar(menu_bar)
 
     def menu_append(self, menu, item_id, item_class, item_dialog, item_update,
                     descr_add="..."):
@@ -432,7 +432,7 @@ class MainFrame(wx.Frame):
             e, item_class, item_dialog, item_update), item)
         menu.Append(item)
 
-        
+
     def menu_disable(self, menu, id):
         for i in range(10):
             try:
@@ -448,18 +448,18 @@ class MainFrame(wx.Frame):
                 pass
 
 
-            
+
     def on_backup_write(self, event):
         bck = open("astrocook_app.bck", "wb")
         bck.write(self.path_chosen+'\n')
         bck.write(self.targ)
         bck.close()
 
-        
+
     def on_dialog(self, event, obj_class, obj_dialog,
                   obj_update=['spec', 'line', 'cont', 'syst']):
         """ @brief Open dialog when recipe is called
-        
+
         @param event Calling event
         @param class Class (Recipe, Workflow and subclasses)
         @param class Dialog (RecipeDialog, WorkflowDialog)
@@ -477,8 +477,8 @@ class MainFrame(wx.Frame):
             #self.log[self.op.title] = dlg.params
             """
             self.spec_dict[self.targ] = self.acs.spec
-            self.line_dict[self.targ] = self.acs.line            
-            self.cont_dict[self.targ] = self.acs.cont            
+            self.line_dict[self.targ] = self.acs.line
+            self.cont_dict[self.targ] = self.acs.cont
             self.syst_dict[self.targ] = self.acs.syst
             self.model_dict[self.targ] = self.acs.model
             """
@@ -490,7 +490,7 @@ class MainFrame(wx.Frame):
         else:
             out = None
         return (dlg.execute, out)
-            
+
 
     def on_edit_line(self, event):
         row = event.GetRow()
@@ -498,7 +498,7 @@ class MainFrame(wx.Frame):
         label = self.line_gr.GetColLabelValue(col)
         data = self.line_gr.GetCellValue(row, col)
         self.acs.line._t[label][row] = data
-        
+
     def on_edit_spec_begin(self, event):
         """ Veto the editing of some columns of the spectrum list """
         if event.GetColumn() in [0,3,4,5]:
@@ -508,7 +508,7 @@ class MainFrame(wx.Frame):
 
     def on_edit_spec_end(self, event):
         """ Behaviour when spectrum is edited on list """
-        
+
         index = self.spec_lc.GetFocusedItem()
         row = event.GetIndex()
         col = event.GetColumn()
@@ -518,7 +518,7 @@ class MainFrame(wx.Frame):
             self.z_dict[self.targ] = self.spec_lc.GetItem(index, 2).GetText()
         except:
             pass
-        
+
     def on_edit_syst(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -559,7 +559,7 @@ class MainFrame(wx.Frame):
                     except IOError:
                         wx.LogError("Cannot open archive '%s'." % name)
                 else:
-                    self.targ = fileDialog.GetFilename()[:-5] 
+                    self.targ = fileDialog.GetFilename().split('.')[0] 
                     try:
                         self.spec = self.IO.spec_read(name)
                         self.spec_name = name
@@ -572,10 +572,10 @@ class MainFrame(wx.Frame):
             self.spec = acs.spec
             self.spec_name = acs.spec_name
             self.acs = acs
-                
+
 
         self.norm = False
-    
+
         if self.spec != None:
             #self.ax.clear()
             #self.plot_fig.draw()
@@ -583,13 +583,13 @@ class MainFrame(wx.Frame):
                 self.count = self.count + 1
                 self.targ = self.targ + '_%i' % self.count
             self.targ_list.append(self.targ)
-                    
+
             self.spec_dict[self.targ] = self.spec
             self.row = self.spec_lc.GetItemCount()
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.menu_enable(self.file_menu, self.id_spec)
             self.menu_enable(self.rec_menu, self.id_spec)
-            
+
             try:
                 self.line = acs.line
                 self.line._acs(acs)
@@ -609,7 +609,7 @@ class MainFrame(wx.Frame):
                 self.menu_enable(self.rec_menu, self.id_cont)
             except:
                 self.cont = None
-                
+
             try:
                 self.syst = acs.syst
                 self.syst._acs(acs)
@@ -641,7 +641,7 @@ class MainFrame(wx.Frame):
             self.update_syst()
             self.update_model()
             self.on_backup_write(None)
-                
+
     def on_file_save(self, event, path='.'):
         """ Behaviour for File > Save """
 
@@ -672,7 +672,7 @@ class MainFrame(wx.Frame):
             "2018 - G. Cupani, G. Calderone, S. Cristiani\n"
             "INAF-Astronomical Observatory of Trieste, Italy",
             'About',wx.OK)
-        dialog.ShowModal()        
+        dialog.ShowModal()
 
     """
     def on_proc_line_ew_all(self, event):
@@ -720,7 +720,7 @@ class MainFrame(wx.Frame):
             self.spec_lc.insert_string_item(self.row, self.targ)
             self.spec_dict[self.targ] = self.spec
             self.update_spec()
-        
+
     def on_proc_spec_extract_reg(self, event):
         proc = 'extract_reg'
         out = self.dialog_proc(self.spec, proc)
@@ -739,7 +739,7 @@ class MainFrame(wx.Frame):
         if self.proc_dict[proc]:
             self.plot.line(self.spec._exts_sel, c='r')
             self.plot_fig.draw()
-            
+
     def on_proc_spec_smooth_lowess(self, event):
         proc = 'smooth_lowess'
         out = self.dialog_proc(self.spec, proc)
@@ -757,7 +757,7 @@ class MainFrame(wx.Frame):
         self.defaults = {'z': self.z_sel}
         out = self.dialog_proc(self.syst, proc)
         if self.proc_dict[proc]:
-    """        
+    """
 
     def on_proc_syst_extract_resid(self, event):
         proc = 'extract_resid'
@@ -795,7 +795,7 @@ class MainFrame(wx.Frame):
             #                                  cont=self.cont.t)
             #    self.syst_frame.plot_fig.draw()
             self.update_acs()
-    """            
+    """
     def on_proc_syst_model(self, event):
         self.acs.syst._syst_sel = self.syst_sel
         proc = 'model'
@@ -833,7 +833,7 @@ class MainFrame(wx.Frame):
 
 
     def on_sel_line(self, event):
-        if event.GetTopRow() == event.GetBottomRow():            
+        if event.GetTopRow() == event.GetBottomRow():
             row = event.GetTopRow()
             self.line_rows = [row]
             self.line_sel = self.line.t[row]
@@ -841,7 +841,7 @@ class MainFrame(wx.Frame):
             self.plot.sel(self.line.t, self.line_rows, extra_width=3.0)
             self.plot_fig.draw()
             #self.update_line()
-            
+
     def on_sel_spec(self, event):
         item = self.spec_lc.GetItem(self.spec_lc.GetFirstSelected(), 0)
         self.norm = False
@@ -854,7 +854,7 @@ class MainFrame(wx.Frame):
         self.on_backup_write(None)
 
     def on_sel_syst(self, event):
-        if event.GetTopRow() == event.GetBottomRow():  
+        if event.GetTopRow() == event.GetBottomRow():
             row = event.GetTopRow()
             self.z_sel = self.acs.syst.t['Z'][row]
             self.syst_sel = self.acs.syst.t[row]
@@ -865,7 +865,7 @@ class MainFrame(wx.Frame):
             self.acs.syst.group(self.syst_sel)
             self.acs.syst.chunk()
             #self.syst.N(self.syst_sel)
-            
+
             self.syst_rows = []
             for m in self.acs.syst._map[map_w]:
                 self.syst_rows.append(
@@ -884,7 +884,7 @@ class MainFrame(wx.Frame):
             if self.syst_frame != None:
                 self.syst_frame.Close()
             self.syst_frame = SystFrame(self, title="System")
-            
+
     def on_util_forest_open(self, event):
         if self.forest_frame == None:
             self.forest_frame = ForestFrame(self, title="Forest")
@@ -922,11 +922,11 @@ class MainFrame(wx.Frame):
         #else:
         #    self.syst_frame.update_plot()
 
-        
-    """    
+
+    """
     def on_syst_fit(self, event):
         self.syst = self.syst_dict[self.targ]
-        
+
         dialog = SystDialog(self, title="Fit selected system")
         dialog.ShowModal()
         dialog.Close()
@@ -957,18 +957,18 @@ class MainFrame(wx.Frame):
             self.update_syst(cont)
         if obj == 'model':
             self.update_model()
-    
+
     def update_acs(self):
         self.acs.spec = self.spec
         self.acs.line = self.line
         self.acs.syst = self.syst
         self.acs.cont = self.cont
         self.acs.model = self.model
-       
+
 
     def update_all(self, cont=None):
         """ Update all panels """
-        
+
         self.acs.spec = self.spec_dict[self.targ]
         self.update_spec(cont)
         """
@@ -1001,8 +1001,8 @@ class MainFrame(wx.Frame):
             self.plot_fig.draw()
         except:
             pass
-            #raise Exception("Can't update continuum plot!")            
-        
+            #raise Exception("Can't update continuum plot!")
+
     def update_line(self, cont=None):
         """ Update the line table """
         try:
@@ -1027,7 +1027,7 @@ class MainFrame(wx.Frame):
 
     def update_menu(self):
         """ Update the menus """
-        
+
         #if (hasattr(self, 'spec') == False):
         if (self.spec is None):
             self.menu_disable(self.rec_menu, self.id_spec)
@@ -1042,7 +1042,7 @@ class MainFrame(wx.Frame):
         else:
             self.menu_enable(self.rec_menu, self.id_cont)
         if (self.syst is None):
-            self.menu_disable(self.rec_menu, self.id_syst)            
+            self.menu_disable(self.rec_menu, self.id_syst)
         else:
             self.menu_enable(self.rec_menu, self.id_syst)
 
@@ -1055,7 +1055,7 @@ class MainFrame(wx.Frame):
             self.plot_fig.draw()
         except:
             pass
-        
+
     def update_spec(self, cont=None):
         """ Update the spec list """
 
@@ -1077,7 +1077,7 @@ class MainFrame(wx.Frame):
             self.spec_lc.SetItem(self.row, 4, str(len(self.acs.line.t)))
         except:
             pass
-            
+
         try:
             self.spec_lc.SetItem(self.row, 5, str(len(self.acs.syst.t)))
         except:
@@ -1087,7 +1087,7 @@ class MainFrame(wx.Frame):
         self.plot.spec(self.acs.spec.t, cont=cont, xmin=self.xmin,
                        xmax=self.xmax)
         self.plot_fig.draw()
-        
+
     def update_syst(self, cont=None):
         """ Update the system table """
 
@@ -1133,7 +1133,7 @@ class MainFrame(wx.Frame):
                 #self.syst_frame.z = self.z_sel
                 self.syst_frame.update_tab()
                 self.syst_frame.update_plot()
-            
+
 
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
     def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
@@ -1159,10 +1159,10 @@ class ParamDialog2(wx.Dialog):
         self.init_UI()
         myCursor= wx.Cursor(wx.CURSOR_ARROW)
         self.SetCursor(myCursor)
-        
+
     def init_UI(self):
         """ Initialize the main frame """
-        
+
         panel = wx.Panel(self)
         box_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -1194,27 +1194,27 @@ class ParamDialog2(wx.Dialog):
 
             box_params.Add(box_param, 1, 0, 0)
         panel.SetSizer(box_params)
-        
+
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
         run_button = wx.Button(self, label='Run')
         run_button.SetDefault()
         buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
         buttons.Add(run_button, 0)
- 
+
         box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
         box_main.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
         box_main.SetSizeHints(self)
 
         self.SetSizer(box_main)
-        
+
         cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
         run_button.Bind(wx.EVT_BUTTON, self.on_run)
 
         self.Centre()
         #self.Show()
-        
+
     def on_cancel(self, e):
         self.execute = False
         self.Close()
@@ -1244,13 +1244,13 @@ class ProcDialog(ParamDialog2):
         #self.dialog = self.params
         super(ProcDialog, self).__init__(parent=parent, title=title,
                                              **kwargs)
-        
+
 class RecDialog(ParamDialog2):
     def __init__(self, parent=None, title=None, **kwargs):
         """ @brief Constructor for the recipe parameter dialog """
 
         super(RecDialog, self).__init__(parent=parent, title=title, **kwargs)
-        
+
 class WkfDialog(ParamDialog2):
     def __init__(self, parent=None, title=None, **kwargs):
         """ @brief Constructor for the workflow dialog """
@@ -1258,7 +1258,7 @@ class WkfDialog(ParamDialog2):
         #self.params = parent.rec.get_params()
         #self.dialog = self.params
         super(WkfDialog, self).__init__(parent=parent, title=title, **kwargs)
-        
+
 class ParamDialog(wx.Dialog):
 
     def __init__(self, parent=None, size=(250,500), **kwargs):
@@ -1283,7 +1283,7 @@ class ParamDialog(wx.Dialog):
                     del self.params[om]
             # When the procedure has no parameters
             except:
-                pass  
+                pass
         self.dialog = self.params
         """
         except:
@@ -1298,10 +1298,10 @@ class ParamDialog(wx.Dialog):
         self.init_UI()
         myCursor= wx.Cursor(wx.CURSOR_ARROW)
         self.SetCursor(myCursor)
-        
+
     def init_UI(self):
         """ Initialize the main frame """
-        
+
         panel = wx.Panel(self)
         box_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -1333,27 +1333,27 @@ class ParamDialog(wx.Dialog):
 
             box_params.Add(box_param, 1, 0, 0)
         panel.SetSizer(box_params)
-        
+
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
         run_button = wx.Button(self, label='Run')
         run_button.SetDefault()
         buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
         buttons.Add(run_button, 0)
- 
+
         box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
         box_main.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
         box_main.SetSizeHints(self)
 
         self.SetSizer(box_main)
-        
+
         cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
         run_button.Bind(wx.EVT_BUTTON, self.on_run)
 
         self.Centre()
         self.Show()
-        
+
     def on_cancel(self, e):
         self.execute = False
         self.Close()
@@ -1380,7 +1380,7 @@ class SubFrame(wx.Frame):
         self.figsize = figsize
         self.pn = pn
         super(wx.Frame, self).__init__(parent, title=title, **kwargs)
-        
+
     def init_plot(self, panel):
         """ Create the spectrum panel """
         self.fig = Figure(self.figsize)
@@ -1404,7 +1404,7 @@ class SubFrame(wx.Frame):
 
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
-        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)
 
         # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
@@ -1420,11 +1420,11 @@ class SubFrame(wx.Frame):
         self.box_main.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
         self.box_main.SetSizeHints(self)
 
-        self.SetSizer(self.box_main)        
-        
+        self.SetSizer(self.box_main)
+
         self.Centre()
         self.Show()
-        
+
 
 class HistFrame(SubFrame):
     def __init__(self, parent=None, title="Histogram", quantity=None,
@@ -1440,7 +1440,7 @@ class HistFrame(SubFrame):
         self.plot[0].clear()
         self.plot[0].hist(self.q, replace=False, bins=self.b)
         self.plot_fig.draw()
-        
+
 class BFrame(HistFrame):
     def __init__(self, parent=None, title="Doppler parameter", **kwargs):
         quantity = parent.acs.syst.t['B']
@@ -1463,11 +1463,11 @@ class NFrame(HistFrame):
         super(NFrame, self).__init__(parent, title=title, quantity=quantity,
                                      bins=bins, figsize=(5,5))
 
-    
+
 class ForestFrame(wx.Frame):
     def __init__(self, parent=None, title="Forest", **kwargs):
         size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)
-        super(wx.Frame, self).__init__(parent, title=title, size=size) 
+        super(wx.Frame, self).__init__(parent, title=title, size=size)
 
         self.p = parent
         self.ions = ['Ly_b', 'Ly_a']
@@ -1481,8 +1481,8 @@ class ForestFrame(wx.Frame):
             self.spec[s].t['X'] = self.spec[s].t['X']/dict_wave[i].value - 1
             self.sel.append(np.where(np.logical_and(
                 self.spec[s].t['X']>xmin, self.spec[s].t['X']<xmax)))
-                
-            
+
+
         self.init_UI()
 
     def init_plot(self, panel):
@@ -1490,14 +1490,14 @@ class ForestFrame(wx.Frame):
         self.fig = Figure((15,6))
         self.ax = []
         self.plot = []
-        self.pn = [0] 
+        self.pn = [0]
         for p in self.pn:
             self.ax.append(self.fig.add_subplot(len(self.pn),1,p+1))
             self.plot.append(Plot(self.ax[p], xlabel="Redshift", ylabel=""))
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
-        
+
     def init_UI(self):
         """ Initialize the main frame """
 
@@ -1509,7 +1509,7 @@ class ForestFrame(wx.Frame):
 
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
-        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)
 
         # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
@@ -1528,9 +1528,9 @@ class ForestFrame(wx.Frame):
         self.box_main.SetSizeHints(self)
 
         self.SetSizer(self.box_main)
-        
+
         self.update_plot()
-        
+
         self.Centre()
         self.Show()
 
@@ -1542,18 +1542,18 @@ class ForestFrame(wx.Frame):
                               cont=self.p.acs.cont.t[self.sel[s]])
             #self.plot[1].spec(self.spec[s].t[self.sel[s]], replace=False,
             #                  cont=self.p.acs.cont.t[self.sel[s]])
-            
+
         #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()
-        
-        
+
+
 class SystFrame(wx.Frame):
 
     def __init__(self, parent=None, title="System", **kwargs):
         """ Constructor for the ParamDialog class """
 
         size = (wx.DisplaySize()[0]*0.6, wx.DisplaySize()[1]*0.8)
-        super(wx.Frame, self).__init__(parent, title=title, size=size) 
+        super(wx.Frame, self).__init__(parent, title=title, size=size)
 
         self.p = parent
         self.syst = self.p.acs.syst#_sel
@@ -1562,7 +1562,7 @@ class SystFrame(wx.Frame):
         except:
             """
             self.group = self.p.acs.syst._group
-            
+
             #self.ions = np.unique([dict_series[i] \
             #                       for i in self.group['SERIES']])#[self.sel]])
             # List of ions to be plotted and number of panels
@@ -1571,32 +1571,32 @@ class SystFrame(wx.Frame):
             self.pn = len(self.ions)
             """
             self.init_attr()
-        
+
         #except:
         #    pass
         self.init_UI()
 
     def init_attr(self):
         self.group = self.p.acs.syst._group
-            
+
         #self.ions = np.unique([dict_series[i] \
-        # List of ions to be plotted and number of panels    
+        # List of ions to be plotted and number of panels
         self.ions = np.unique(np.ravel(self.group['ION']))
         self.ions = self.ions[np.where(self.ions != 'unknown')]
         self.pn = len(self.ions)
-    
+
     def init_buttons(self, panel):
         self.syst_b = wx.Button(panel, label="Add system", size=(100,38))
         self.line_b = wx.Button(panel, label="Add line", size=(100,38))
         self.syst_b.Bind(wx.EVT_BUTTON, self.on_tab_add)
         self.line_b.Bind(wx.EVT_BUTTON, lambda e: self.on_tab_add(e, 'unknown'))
 
-        
+
     def init_plot(self, panel):
         """ Create the spectrum panel """
         self.fig = Figure((9,15))
         rown = 5.
-        
+
         row = int(min(self.pn,rown))
         col = int(np.ceil(self.pn/rown))
         grid = gs(row,col)
@@ -1609,13 +1609,13 @@ class SystFrame(wx.Frame):
             xlabel = ""
             ylabel = ""
             if p == 1:
-                xlabel = "Redshift" 
+                xlabel = "Redshift"
             self.plot.append(Plot(self.ax[p], ion=self.ions[p], xlabel=xlabel,
                                   ylabel=ylabel))
         self.plot_fig = FigureCanvasWxAgg(panel, -1, self.fig)
         self.plot_tb = NavigationToolbar2WxAgg(self.plot_fig)
         self.plot_tb.Realize()
-        
+
     def init_tab(self, panel):
         """ Create the system list panel """
 
@@ -1653,7 +1653,7 @@ class SystFrame(wx.Frame):
 
         # Plot controls panel
         box_ctrl = wx.BoxSizer(wx.HORIZONTAL)
-        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)        
+        box_ctrl.Add(self.plot_tb, 0, wx.RIGHT)
 
         # Plot panel (including controls)
         box_plot = wx.BoxSizer(wx.VERTICAL)
@@ -1673,10 +1673,10 @@ class SystFrame(wx.Frame):
         self.box_main.SetSizeHints(self)
 
         self.SetSizer(self.box_main)
-        
+
         self.update_tab()
         self.update_plot()
-        
+
         self.Centre()
         self.Show()
 
@@ -1684,13 +1684,13 @@ class SystFrame(wx.Frame):
         self.execute = False
         self.Close()
 
-        
+
     def on_run(self, event):
         self.execute = True
         self.Close()
 
     def on_sel_line(self, event):
-        if event.GetTopRow() == event.GetBottomRow():            
+        if event.GetTopRow() == event.GetBottomRow():
             row = event.GetTopRow()
             self.group_rows = [row]
             for p in range(self.pn):
@@ -1702,13 +1702,13 @@ class SystFrame(wx.Frame):
     def on_tab_add(self, event, series=None):
 
         dx = 0.5
-        
+
         chunk = self.syst._chunk
         group = self.syst._group
 
         # Minimum X
         x_min = chunk['X'][(chunk['Y']-chunk['MODEL']).argmin()]
-    
+
         # Minimum positions in system list and in group
         group_min = np.abs(x_min-self.group['X']).argmin()
         syst_min = np.abs(self.group['Z'][group_min]\
@@ -1722,14 +1722,14 @@ class SystFrame(wx.Frame):
         elif series == 'unknown':
             ion_min = dict_series[series][0]
             ions = [ion_min]
-        z_add = x_min/dict_wave[ion_min].value - 1     
-        
+        z_add = x_min/dict_wave[ion_min].value - 1
+
         # Create a duplicate of the system
         dupl = dc(self.syst._t[syst_min])
         dupl['Z'] = z_add
         if series is not None:
             dupl['SERIES'] = series
-        
+
         # Update line and map tables
         match_z = np.where(self.syst._map['Z'] == z_min)[0]
         x_add = [(1+z_add)*dict_wave[i].value for i in ions]
@@ -1745,7 +1745,7 @@ class SystFrame(wx.Frame):
         for i, r in enumerate(self.syst._line.t[match_x]):
             self.syst._line._t.add_row(r)
             self.syst._line._t['X'][-1] = x_add[i]
-        
+
         self.syst._map.sort('Z')
         self.syst._line._t.sort('X')
 
@@ -1754,10 +1754,10 @@ class SystFrame(wx.Frame):
         self.syst.model(self.z, dx)
         self.update_tab()
         self.update_plot()
-        
+
     def on_tab_edit(self, event, tab):
         """ Behaviour when table is edited """
-        
+
         row = event.GetRow()
         col = event.GetCol()
         label = tab.GetColLabelValue(col)
@@ -1767,7 +1767,7 @@ class SystFrame(wx.Frame):
         t = self.syst._t
         line = self.syst._line._t
         map = self.syst._map
-        
+
         x = group['X'][idx]
         z = group['Z'][idx]
         dx = 0.5
@@ -1815,11 +1815,11 @@ class SystFrame(wx.Frame):
                 self.plot[p].model(self.p.acs.syst._model.t, cont=self.p.acs.cont.t)
             except:
                 pass
-            
+
         #self.syst.plot(z=self.z, ax=self.ax, ions=self.ions)
         self.plot_fig.draw()
-        
-        
+
+
     def update_tab(self):
         """ Update the system table """
 
@@ -1849,5 +1849,5 @@ class SystFrame(wx.Frame):
             self.gr.SetCellValue(r, 8, str(g['VARY']))
             self.gr.SetCellValue(r, 9, str(g['EXPR']))
             self.gr.SetCellValue(r, 10, str(i))
-        
+
         self.box_main.Fit(self)

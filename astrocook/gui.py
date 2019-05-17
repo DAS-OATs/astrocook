@@ -15,12 +15,12 @@ class GUI(object):
     def __init__(self, path=None):
         """ Constructor """
 
-        #print("┌───────────────────┐")
-        #print("│ ASTROCOOK 🍪  v%3s │" % version)
-        #print("└───────────────────┘")
-        print("-----------------")
-        print(" ASTROCOOK  v%3s " % version)
-        print("-----------------")
+        print("┌───────────────────┐")
+        print("│ ASTROCOOK 🍪  v%3s │" % version)
+        print("└───────────────────┘")
+        #print("-----------------")
+        #print(" ASTROCOOK  v%3s " % version)
+        #print("-----------------")
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
@@ -117,9 +117,10 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        name = path.split('/')[-1][:-5]
+        #name = path.split('/')[-1][:-5]
+        name = path.split('/')[-1].split('.')[0]
         print(prefix, "I'm loading session %s..." % path)
-        sess = Session(path=path, name=path.split('/')[-1][:-5])
+        sess = Session(path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_select(self, event):

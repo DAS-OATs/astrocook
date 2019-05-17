@@ -1,4 +1,6 @@
 from .spectrum import Spectrum
+from .line_list import LineList
+from .syst_list import SystList
 from astropy import units as au
 import numpy as np
 
@@ -15,6 +17,41 @@ class Format(object):
         xmin = np.append(x[0], mean)
         xmax = np.append(mean, x[-1])
         return xmin, xmax
+
+    def astrocook(self, hdul, struct):
+        hdr = hdul[1].header
+        data = hdul[1].data
+
+        if struct in ['spec', 'nodes', 'lines']:
+
+            x = data['x']
+            xmin = data['xmin']
+            xmax = data['xmax']
+            y = data['y']
+            dy = data['dy']
+            xunit = au.nm
+            yunit = au.erg/au.cm**2/au.s/au.Angstrom
+            meta = hdr
+            try:
+                meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+            except:
+                meta['object'] = ''
+                print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            if struct in ['spec', 'nodes']:
+                return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+            if struct in ['lines']:
+                return LineList(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+        if struct in ['systs']:
+            series = data['series']
+            func = data['func']
+            z = data['z']
+            logN = data['logN']
+            b = data['b']
+            chi2r = data['chi2r']
+            id = data['id']
+            return SystList(series, func, z, logN, b, chi2r, id)
+
 
     def eso_midas(self, hdul):
         """ ESO-MIDAS Table """
