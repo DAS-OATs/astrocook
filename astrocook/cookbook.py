@@ -39,7 +39,7 @@ class Cookbook(object):
 
         return xm, ym, ym_0, ym_1, ym_2
 
-    def _fit_syst(self, series='CIV', z=2, logN=13, b=10, resol=70000,
+    def _fit_syst(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0,
                   maxfev=100):
 
         spec = self.sess.spec
@@ -51,19 +51,44 @@ class Cookbook(object):
         systs._update(mod)
         return 0
 
-    def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y'):
+    def _simul_syst(self, series='Ly_a', z=2.0, logN=13.0, b=10.0,
+                    resol=70000.0, col='y'):
 
         spec = self.sess.spec
-        ys = np.interp(xm, spec.x.to(au.nm), spec._t[col]/spec._t['cont'])
-        dys = np.interp(xm, spec.x.to(au.nm), spec.dy/spec._t['cont'])
+        systs = self.sess.systs
+        s = spec._where_safe
+
+        systs._add(series, z, logN, b, resol)
+        mod = SystModel(spec, systs, z0=z)
+        mod._new_voigt(series, z, logN, b, resol)
+
+        systs._xs = np.array(spec._safe(spec.x).to(au.nm))
+        y = spec._t[col]
+        dy = spec._t[col]
+        eval = mod.eval(x=systs._xs, params=mod._pars)
+        y[s] = eval * y[s]
+        dy[s] = np.sqrt(eval) * dy[s]
+
+        return 0
+
+
+    def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y'):
+        spec = self.sess.spec
+        sort = np.argsort(spec.x.to(au.nm))
+        ys = np.interp(xm, spec.x.to(au.nm)[sort], (spec._t[col]/spec._t['cont'])[sort])
+        dys = np.interp(xm, spec.x.to(au.nm)[sort], (spec.dy/spec._t['cont'])[sort])
         chi2 = np.sum(((ys-ym)/dys)**2)
+        chi2r = chi2/(len(ys)-3)
         chi2_0 = np.sum(((ys-ym_0)/dys)**2)
         chi2_1 = np.sum(((ys-ym_1)/dys)**2)
         chi2_2 = np.sum(((ys-ym_2)/dys)**2)
-        if chi2 < np.min([chi2_0-3, chi2_1, chi2_2]):
+        if chi2 < 0.8*np.min([chi2_0-3, chi2_1, chi2_2]):
             return True, chi2, chi2_0
         else:
             return False, chi2, chi2_0
+
+        return 0
+
 
     def _update_spec(self):
         spec = self.sess.spec

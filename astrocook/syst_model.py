@@ -25,6 +25,14 @@ class SystModel(LMComposite):
         self._psf_func = psf_func
 
 
+    def _fit(self, fit_kws={}):
+
+        fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                         weights=self._wf, fit_kws=fit_kws)
+        self._pars = fit.params
+        self._chi2r = fit.redchi
+
+
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve)
 
@@ -117,11 +125,3 @@ class SystModel(LMComposite):
         self._make_regs()
         self._make_psf()
         self._make_comp()
-
-
-    def _fit(self, fit_kws={}):
-
-        fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, fit_kws=fit_kws)
-        self._pars = fit.params
-        self._chi2r = fit.redchi

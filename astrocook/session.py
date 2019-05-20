@@ -13,6 +13,7 @@ from .vars import *
 from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
+from matplotlib import pyplot as plt
 import numpy as np
 import os
 from scipy.signal import argrelmin
@@ -244,7 +245,7 @@ class Session(object):
                        z_start=1.13, z_end=1.71, z_step=5e-4,
                        logN_start=14, logN_end=14.1, logN_step=0.1,
                        b_start=10, b_end=15, b_step=5,
-                       resol=70000, col='deabs', chi2r_thres=2.0, maxfev=100):
+                       resol=70000, col='y', chi2r_thres=2.0, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -288,31 +289,51 @@ class Session(object):
         logN_range = np.arange(logN_start, logN_end, logN_step)
         b_range = np.arange(b_start, b_end, b_step)
 
+        # Create x-swapped spectrum to monitor correctness
+        sess = dc(self)
+        sess.spec._t['x'] = sess.spec._t['x'][::-1]
+
         # Previously fitted systems are left fixed...
         systs_old = dc(self.systs)
 
-        self.systs = SystList(id_start=len(systs_old._t))
+        if hasattr(systs_old, '_t'):
+            self.systs = SystList(id_start=len(systs_old._t))
+        else:
+            self.systs = SystList()
         chi2a = np.full((len(logN_range),len(b_range),len(z_range)), np.inf)
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
                 xm, ym, ym_0, ym_1, ym_2 = self.cb._create_doubl(series, z_mean,
                                                                  logN, b, resol)
                 cond_c = 0
+                cond_swap_c = 0
                 for iz, z in enumerate(z_range):
                     print(prefix, "I'm testing a %s system (logN=%2.2f, "
                           "b=%2.2f) at redshift %2.4f (%i/%i)..." \
                           % (series, logN, b, z, iz+1, len(z_range)), end='\r')
                     self.spec._shift_rf(z)
-                    systs = SystList()
+                    sess.spec._shift_rf(z)
+                    #systs = SystList()
                     cond, chi2, chi2_0 = \
                         self.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
+                    cond_swap, _, _ = \
+                        sess.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
                     if cond:
                         chi2a[ilogN, ib, iz] = chi2
                         cond_c += 1
+                    if cond_swap:
+                        cond_swap_c += 1
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
-                      "coincidences."
-                      % (series, logN, b, z_range[0], z_range[-1], cond_c))
+                      "coincidences"
+                      % (series, logN, b, z_range[0], z_range[-1], cond_c),
+                      end='')
+                if cond_c != 0:
+                    #print(cond_c, cond_swap_c)
+                    print(" (estimated correctness=%2.0f%%)."
+                          % (100*max(1-cond_swap_c/cond_c, 0)))
+                else:
+                    print(".")
         self.spec._shift_rf(0)
 
         # Find candidates choosing the local minima of chi2r at coincidences
@@ -321,24 +342,146 @@ class Session(object):
 
         print(prefix, "I've selected %i candidates among the coincidences."\
               % len(chi2m[0]))
-        for i in range(len(chi2m[0])):
-            z = z_range[chi2m[2][i]]
-            logN = logN_range[chi2m[0][i]]
-            b = b_range[chi2m[1][i]]
-            self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)..."\
-                  % (series, z, i+1, len(chi2m[0])), end='\r')
-        print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
-              "%2.4f." % (len(chi2m[0]), series, z_range[chi2m[2][0]], z_range[chi2m[2][-1]]))
-        self.systs._clean(chi2r_thres)
+        if maxfev > 0:
+            for i in range(len(chi2m[0])):
+                z = z_range[chi2m[2][i]]
+                logN = logN_range[chi2m[0][i]]
+                b = b_range[chi2m[1][i]]
+                self.cb._fit_syst(series, z, logN, b, resol, maxfev)
+                print(prefix, "I've fitted a %s system at redshift %2.4f "
+                      "(%i/%i)..." % (series, z, i+1, len(chi2m[0])), end='\r')
+            if len(chi2m[0]) > 0:
+                print(prefix, "I've fitted %i %s systems between redshift "
+                      "%2.4f and %2.4f."
+                      % (len(chi2m[0]), series, z_range[chi2m[2][0]],
+                         z_range[chi2m[2][-1]]))
+                self.systs._clean(chi2r_thres)
 
         # ...and then appended
-        self.systs._append(systs_old)
+        if hasattr(systs_old, '_t'):
+            if len(self.systs._t) > 0:
+                self.systs._append(systs_old)
+            else:
+                self.systs = systs_old
 
         self.cb._update_spec()
 
         return 0
 
+    def corr_syst(self, series='CIV',
+                  z_start=1.13, z_end=1.71, z_step=5e-4,
+                  logN_start=14, logN_end=14.1, logN_step=0.1,
+                  b_start=10, b_end=15, b_step=5,
+                  resol=70000, col='deabs', chi2r_thres=2.0):
+        """ @brief Estimate the correctness of system detection by sliding Voigt
+        models on a swapped spectrum
+        @param series Series of transitions
+        @param n Number of simulated realizations
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param z_step Redshift step
+        @param logN_start Start column density (logarithmic)
+        @param logN_end End column density (logarithmic)
+        @param logN_step Column density step (logarithmic)
+        @param b_start Start Doppler parameter
+        @param b_end End Doppler parameter
+        @param b_step Doppler parameter step
+        @param resol Resolution
+        @param col Column where to test the models
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @return 0
+        """
+
+        sess = dc(self)
+
+        sess.spec._t['x'] = sess.spec._t['x'][::-1]
+        sess.add_syst_slide(series,
+                            z_start, z_end, z_step,
+                            logN_start, logN_end, logN_step,
+                            b_start, b_end, b_step,
+                            resol, col, chi2r_thres, maxfev=0)
+        #sess.spec._t['x'] = sess.spec._t['x'][::-1]
+
+        #self = dc(sess_old)
+
+    def compl_syst(self, series='CIV', n=100,
+                   z_start=1.13, z_end=1.71, z_step=5e-4,
+                   logN_start=14, logN_end=14.1, logN_step=0.1,
+                   b_start=10, b_end=15, b_step=5,
+                   resol=70000, col='y', chi2r_thres=2.0, maxfev=100):
+        """ @brief Estimate the completeness of system detection by simulating
+        systems at random redshifts and sliding Voigt models to fit them
+        @param series Series of transitions
+        @param n Number of simulated realizations
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param z_step Redshift step
+        @param logN_start Start column density (logarithmic)
+        @param logN_end End column density (logarithmic)
+        @param logN_step Column density step (logarithmic)
+        @param b_start Start Doppler parameter
+        @param b_end End Doppler parameter
+        @param b_step Doppler parameter step
+        @param resol Resolution
+        @param col Column where to test the models
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param maxfev Maximum number of function evaluation
+        @return 0
+        """
+
+        n = int(n)
+        z_start = float(z_start)
+        z_end = float(z_end)
+        logN_start = float(logN_start)
+        logN_end = float(logN_end)
+        logN_step = float(logN_step)
+        b_start = float(b_start)
+        b_end = float(b_end)
+        b_step = float(b_step)
+        resol = float(resol)
+        chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
+
+        logN_range = np.arange(logN_start, logN_end, logN_step)
+        b_range = np.arange(b_start, b_end, b_step)
+
+        # Previously fitted systems are left fixed...
+        sess = dc(self)
+
+        z_mean = 0.5*(z_start+z_end)
+        for ilogN, logN in enumerate(logN_range):
+            for ib, b in enumerate(b_range):
+
+                cond_c = 0
+                for r in range(n):
+                    print(prefix, "I'm estimating completeness of %s system "
+                          "detection logN=%2.2f, b=%2.2f (realization %i/%i)..."
+                          % (series, logN, b, r+1, n), end='\r')
+                    z_rand = np.random.rand()*(z_end-z_start)+z_start
+                    sess.spec = dc(sess_old.spec)
+                    sess.systs = dc(sess_old.systs)
+                    sess.cb._append_syst()
+                    sess.cb._simul_syst(series, z_rand, logN, b, resol, col)
+                    z_round = round(z_rand, 4)
+                    xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(series, z_mean,
+                                                                     logN, b, resol)
+                    for iz, z in enumerate(np.arange(z_round-1*z_step,
+                                                     z_round+1*z_step, z_step)):
+                        sess.spec._shift_rf(z)
+                        systs = SystList()
+                        cond, chi2, chi2_0 = \
+                            sess.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
+                        if cond and np.abs(z-z_rand)<z_step:
+                            cond_c += 1
+                    sess.spec._shift_rf(0)
+
+                compl = 100*cond_c/n
+                print(prefix, "I've estimated completeness of %s system "
+                      "detection at logN=%2.2f, b=%2.2f as %2.0f%%.            "
+                      % (series, logN, b, compl))
+
+        #self = dc(sess_old)
+        return 0
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert the x axis to wavelength or velocity units.
@@ -549,11 +692,8 @@ class Session(object):
         if orig == 'Astrocook':
             for s in self.seq:
                 try:
-                    print(s)
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
-                    print(hdul)
                     setattr(self, s, format.astrocook(hdul, s))
-                    print(s)
                 except:
                     pass
 
@@ -623,6 +763,7 @@ class Session(object):
                 pass
         return 0
 
+
     def shift_to_rf(self, z=0):
         """ @brief Shift x axis to the rest frame.
         @param z Redshift to use for shifting
@@ -639,4 +780,25 @@ class Session(object):
                 getattr(self, s)._shift_rf(z)
             except:
                 pass
+        return 0
+
+    def simul_syst(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
+                   col='y'):
+        """ @brief Simulate a system by adding Voigt model onto a spectrum.
+        @param series Series of transitions
+        @param z Guess redshift
+        @param N Guess column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @return 0
+        """
+
+        z = float(z)
+        logN = float(logN)
+        b = float(b)
+        resol = float(resol)
+
+        self.cb._append_syst()
+        self.cb._simul_syst(series, z, logN, b, resol, col)
+
         return 0

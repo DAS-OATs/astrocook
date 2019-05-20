@@ -83,7 +83,7 @@ class Graph(object):
                     trans = transforms.blended_transform_factory(
                                 self._ax.transData, self._ax.transAxes)
                     for (x, t) in zip(gs._x, gs._y):
-                        print(x,t)
+                        #print(x,t)
                         self._ax.text(x.to(self._xunit).value, 0.8, t,
                                       horizontalalignment='center',
                                       transform=trans)
