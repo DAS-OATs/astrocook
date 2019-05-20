@@ -458,8 +458,8 @@ class Session(object):
                           "detection logN=%2.2f, b=%2.2f (realization %i/%i)..."
                           % (series, logN, b, r+1, n), end='\r')
                     z_rand = np.random.rand()*(z_end-z_start)+z_start
-                    sess.spec = dc(sess_old.spec)
-                    sess.systs = dc(sess_old.systs)
+                    sess.spec = dc(self.spec)
+                    sess.systs = dc(self.systs)
                     sess.cb._append_syst()
                     sess.cb._simul_syst(series, z_rand, logN, b, resol, col)
                     z_round = round(z_rand, 4)
@@ -567,7 +567,7 @@ class Session(object):
         except:
             print(prefix, msg_param_fail)
             return None
-
+        
         if xmin > xmax:
             temp = xmin
             xmin = xmax
