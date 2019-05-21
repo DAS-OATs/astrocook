@@ -1,5 +1,6 @@
 from . import * #version
 from .graph import Graph
+from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
 import numpy as np
@@ -30,6 +31,8 @@ class GUI(object):
         GUITableLineList(self)
         GUITableSystList(self)
         GUITableModelList(self)
+        GUIImageCompleteness(self)
+        GUIImageCorrectness(self)
         if path == None:
             print("AC: Welcome! Try Session > Open...")
         else:
