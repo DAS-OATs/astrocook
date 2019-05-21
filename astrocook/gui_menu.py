@@ -100,8 +100,8 @@ class GUIMenuCook(GUIMenu):
         # J0100+0211
         xmin = 360
         xmax = 460
-        z_start = 1.959
-        z_end = 1.32
+        z_start = 1.32
+        z_end = 1.959
         resol = 45000
 
         """
@@ -135,8 +135,8 @@ class GUIMenuCook(GUIMenu):
         z_start = 1.32
         z_end = 1.959
         logN_start = 12.0
-        logN_end = 10.0
-        logN_step = -0.2
+        logN_end = 11.0
+        logN_step = -0.5
         b_start = 5
         b_end = 6
         b_step = 2
@@ -334,42 +334,50 @@ class GUIMenuView(GUIMenu):
 
         # Add items to View menu here
         self._item(self._menu, start_id+1, "Spectrum table",
-                   lambda e: self._on_view(e, 'spec'))
+                   lambda e: self._on_tab(e, 'spec'))
         self._item(self._menu, start_id+2, "Line table",
-                   lambda e: self._on_view(e, 'lines'))
+                   lambda e: self._on_tab(e, 'lines'))
         self._item(self._menu, start_id+3, "System table",
-                   lambda e: self._on_view(e, 'systs'))
+                   lambda e: self._on_tab(e, 'systs'))
         self._menu.AppendSeparator()
+        self._item(self._menu, start_id+101, "System detection correctness",
+                   lambda e: self._on_ima(e, 'corr'))
+        self._item(self._menu, start_id+101, "System detection completeness",
+                   lambda e: self._on_ima(e, 'compl'))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "Toggle log x axis", self._on_logx)
-        self._item(self._menu, start_id+102, "Toggle log y axis", self._on_logy)
+        self._item(self._menu, start_id+201, "Toggle log x axis", self._on_logx)
+        self._item(self._menu, start_id+202, "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
-        self._item_graph(self._submenu, start_id+201, "Spectrum",
+        self._item_graph(self._submenu, start_id+301, "Spectrum",
                          'spec_x_y')
-        self._item_graph(self._submenu, start_id+202, "Spectrum error",
+        self._item_graph(self._submenu, start_id+302, "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._submenu, start_id+203, "Convolved spectrum",
+        self._item_graph(self._submenu, start_id+303, "Convolved spectrum",
                          'spec_x_conv')
-        self._item_graph(self._submenu, start_id+204, "Line list",
+        self._item_graph(self._submenu, start_id+304, "Line list",
                          'lines_x_y')
-        self._item_graph(self._submenu, start_id+205, "Masked spectrum",
+        self._item_graph(self._submenu, start_id+305, "Masked spectrum",
                          'spec_x_ymask')
-        self._item_graph(self._submenu, start_id+206, "Nodes",
+        self._item_graph(self._submenu, start_id+306, "Nodes",
                          'spec_nodes_x_y')
-        self._item_graph(self._submenu, start_id+207, "Continuum",
+        self._item_graph(self._submenu, start_id+307, "Continuum",
                          'spec_x_cont')
-        self._item_graph(self._submenu, start_id+208, "Model",
+        self._item_graph(self._submenu, start_id+308, "Model",
                          'spec_x_model')
-        self._item_graph(self._submenu, start_id+208, "De-absorbed",
+        self._item_graph(self._submenu, start_id+309, "De-absorbed",
                          'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+209, "Spectral format",
+        self._item_graph(self._submenu, start_id+310, "Spectral format",
                          'spec_form_x')
-        self._item_graph(self._submenu, start_id+210, "System list",
+        self._item_graph(self._submenu, start_id+311, "System list",
                          'systs_z_series')
         self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")
-        self._item(self._menu, start_id+103, "Toggle normalization",
+        self._item(self._menu, start_id+401, "Toggle normalization",
                    self._on_norm)
+
+    def _on_ima(self, event, obj):
+        method = '_ima_'+obj
+        getattr(self._gui, method)._on_view(event)
 
     def _on_logx(self, event):
         self._gui._graph_spec._logx = ~self._gui._graph_spec._logx
@@ -383,6 +391,6 @@ class GUIMenuView(GUIMenu):
         self._gui._graph_spec._norm = ~self._gui._graph_spec._norm
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
-    def _on_view(self, event, obj):
+    def _on_tab(self, event, obj):
         method = '_tab_'+obj
         getattr(self._gui, method)._on_view(event)

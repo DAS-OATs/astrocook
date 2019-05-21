@@ -301,6 +301,11 @@ class Session(object):
         else:
             self.systs = SystList()
         chi2a = np.full((len(logN_range),len(b_range),len(z_range)), np.inf)
+        self.corr = np.empty((len(logN_range),len(b_range)))
+        self.corr_logN = logN_range
+        self.corr_b = b_range
+        self.corr_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
+                       logN_range[0]-logN_step*0.5,logN_range[-1]+logN_step*0.5)
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
                 xm, ym, ym_0, ym_1, ym_2 = self.cb._create_doubl(series, z_mean,
@@ -323,6 +328,7 @@ class Session(object):
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
+                self.corr[ilogN, ib] = 1-np.array(cond_swap_c)/np.array(cond_c)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences"
@@ -331,7 +337,7 @@ class Session(object):
                 if cond_c != 0:
                     #print(cond_c, cond_swap_c)
                     print(" (estimated correctness=%2.0f%%)."
-                          % (100*max(1-cond_swap_c/cond_c, 0)))
+                          % (100*max(self.corr[ilogN, ib], 0)))
                 else:
                     print(".")
         self.spec._shift_rf(0)
@@ -366,43 +372,14 @@ class Session(object):
 
         self.cb._update_spec()
 
+        # Save the correctness as a two-entry table - to be modified
+        self.corr_save = np.concatenate((np.array([logN_range]).T, self.corr),
+                                         axis=-1)
+        self.corr_save = np.concatenate((np.array([np.append(['nan'], b_range)]),
+                                         self.corr_save), axis=0)
+
         return 0
 
-    def corr_syst(self, series='CIV',
-                  z_start=1.13, z_end=1.71, z_step=5e-4,
-                  logN_start=14, logN_end=14.1, logN_step=0.1,
-                  b_start=10, b_end=15, b_step=5,
-                  resol=70000, col='deabs', chi2r_thres=2.0):
-        """ @brief Estimate the correctness of system detection by sliding Voigt
-        models on a swapped spectrum
-        @param series Series of transitions
-        @param n Number of simulated realizations
-        @param z_start Start redshift
-        @param z_end End redshift
-        @param z_step Redshift step
-        @param logN_start Start column density (logarithmic)
-        @param logN_end End column density (logarithmic)
-        @param logN_step Column density step (logarithmic)
-        @param b_start Start Doppler parameter
-        @param b_end End Doppler parameter
-        @param b_step Doppler parameter step
-        @param resol Resolution
-        @param col Column where to test the models
-        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
-        @return 0
-        """
-
-        sess = dc(self)
-
-        sess.spec._t['x'] = sess.spec._t['x'][::-1]
-        sess.add_syst_slide(series,
-                            z_start, z_end, z_step,
-                            logN_start, logN_end, logN_step,
-                            b_start, b_end, b_step,
-                            resol, col, chi2r_thres, maxfev=0)
-        #sess.spec._t['x'] = sess.spec._t['x'][::-1]
-
-        #self = dc(sess_old)
 
     def compl_syst(self, series='CIV', n=100,
                    z_start=1.13, z_end=1.71, z_step=5e-4,
@@ -449,13 +426,17 @@ class Session(object):
         sess = dc(self)
 
         z_mean = 0.5*(z_start+z_end)
+        self.compl = np.empty((len(logN_range),len(b_range)))
+        self.compl_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
+                        logN_range[0]-logN_step*0.5,
+                        logN_range[-1]+logN_step*0.5)
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
 
                 cond_c = 0
                 for r in range(n):
                     print(prefix, "I'm estimating completeness of %s system "
-                          "detection logN=%2.2f, b=%2.2f (realization %i/%i)..."
+                          "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
                           % (series, logN, b, r+1, n), end='\r')
                     z_rand = np.random.rand()*(z_end-z_start)+z_start
                     sess.spec = dc(self.spec)
@@ -475,12 +456,17 @@ class Session(object):
                             cond_c += 1
                     sess.spec._shift_rf(0)
 
-                compl = 100*cond_c/n
+                self.compl[ilogN, ib] = cond_c/n
                 print(prefix, "I've estimated completeness of %s system "
-                      "detection at logN=%2.2f, b=%2.2f as %2.0f%%.            "
-                      % (series, logN, b, compl))
+                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.              "
+                      % (series, logN, b, 100*self.compl[ilogN, ib]))
 
         #self = dc(sess_old)
+        # Save the completeness as a two-entry table - to be modified
+        self.compl_save = np.concatenate((np.array([logN_range]).T, self.compl),
+                                         axis=-1)
+        self.compl_save = np.concatenate((np.array([np.append(['nan'], b_range)]),
+                                          self.compl_save), axis=0)
         return 0
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
@@ -567,7 +553,7 @@ class Session(object):
         except:
             print(prefix, msg_param_fail)
             return None
-        
+
         if xmin > xmax:
             temp = xmin
             xmin = xmax
@@ -730,6 +716,9 @@ class Session(object):
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
                 try:
+                    if s=='systs':
+                        np.savetxt(root+'_compl.dat', self.compl_save, fmt='%s')
+                        np.savetxt(root+'_corr.dat', self.corr_save, fmt='%s')
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t
@@ -742,6 +731,7 @@ class Session(object):
                     t.write(name, format='fits', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
                     os.remove(name)
+
                 except:
                     pass
 

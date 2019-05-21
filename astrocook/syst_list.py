@@ -24,6 +24,7 @@ class SystList(object):
                  mod=[],
                  chi2r=[],
                  id=[],
+                 meta={},
                  dtype=float):
 
         self._id = id_start
@@ -52,8 +53,8 @@ class SystList(object):
         self._mods_t['chi2r'] = np.empty(len(self.z), dtype=dtype)
         self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
+        self._meta = meta
         self._dtype = dtype
-
 
     @property
     def t(self):
