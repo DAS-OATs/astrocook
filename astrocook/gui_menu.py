@@ -100,8 +100,8 @@ class GUIMenuCook(GUIMenu):
         # J0100+0211
         xmin = 360
         xmax = 460
-        z_start = 1.959
-        z_end = 1.32
+        z_start = 1.32
+        z_end = 1.959
         resol = 45000
 
         """
@@ -122,7 +122,7 @@ class GUIMenuCook(GUIMenu):
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100, col='deabs')
-        new_sess.compl_syst(n=10, z_start=z_start, z_end=z_end,
+        new_sess.compl_syst(n=100, z_start=z_start, z_end=z_end,
                             logN_start=logN_start, logN_end=logN_end,
                             logN_step=logN_step,
                             b_start=b_start, b_end=b_end, b_step=b_step)
