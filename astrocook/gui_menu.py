@@ -157,11 +157,13 @@ class GUIMenuCook(GUIMenu):
         #                        maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
         """
+        """
         new_sess.add_syst_slide(z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100)
+        """
         """
         new_sess.corr_syst(z_start=z_start, z_end=z_end,
                            logN_start=logN_start, logN_end=logN_end,

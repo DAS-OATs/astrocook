@@ -66,10 +66,17 @@ class Cookbook(object):
         y = spec._t[col]
         dy = spec._t[col]
         eval = mod.eval(x=systs._xs, params=mod._pars)
-        y[s] = eval * y[s]
-        dy[s] = np.sqrt(eval) * dy[s]
 
-        return 0
+        # If the simulated system is falls by more than a HWHM over a masked
+        # line, it is discarded 
+        ymin = np.min(eval)
+        ysel = np.where(eval < 0.5*(ymin+1))
+        if np.sum(spec.t['lines_mask'][ysel]) == 0:
+            y[s] = eval * y[s]
+            dy[s] = np.sqrt(eval) * dy[s]
+            return 0
+        else:
+            return 1
 
 
     def _test_doubl(self, xm, ym, ym_0, ym_1, ym_2, col='y'):

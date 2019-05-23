@@ -9,3 +9,6 @@ test_data/J0100+0211.acs
 *.upl
 *.acs
 *.pyc
+*.dat
+*.pyc
+*.pyc

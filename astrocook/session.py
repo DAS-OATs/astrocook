@@ -434,6 +434,7 @@ class Session(object):
             for ib, b in enumerate(b_range):
 
                 cond_c = 0
+                n_ok = 0
                 for r in range(n):
                     print(prefix, "I'm estimating completeness of %s system "
                           "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
@@ -442,24 +443,28 @@ class Session(object):
                     sess.spec = dc(self.spec)
                     sess.systs = dc(self.systs)
                     sess.cb._append_syst()
-                    sess.cb._simul_syst(series, z_rand, logN, b, resol, col)
-                    z_round = round(z_rand, 4)
-                    xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(series, z_mean,
-                                                                     logN, b, resol)
-                    for iz, z in enumerate(np.arange(z_round-1*z_step,
-                                                     z_round+1*z_step, z_step)):
-                        sess.spec._shift_rf(z)
-                        systs = SystList()
-                        cond, chi2, chi2_0 = \
-                            sess.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
-                        if cond and np.abs(z-z_rand)<z_step:
-                            cond_c += 1
-                    sess.spec._shift_rf(0)
+                    fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
+                                             col)
+                    if not fail:
+                        n_ok += 1
+                        z_round = round(z_rand, 4)
+                        xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
+                            series, z_mean, logN, b, resol)
+                        for iz, z in enumerate(np.arange(
+                            z_round-1*z_step, z_round+1*z_step, z_step)):
+                            sess.spec._shift_rf(z)
+                            systs = SystList()
+                            cond, chi2, chi2_0 = sess.cb._test_doubl(
+                                xm, ym, ym_0, ym_1, ym_2, col)
+                            if cond and np.abs(z-z_rand)<z_step:
+                                cond_c += 1
+                        sess.spec._shift_rf(0)
 
-                self.compl[ilogN, ib] = cond_c/n
+                self.compl[ilogN, ib] = cond_c/n_ok
                 print(prefix, "I've estimated completeness of %s system "
-                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.              "
-                      % (series, logN, b, 100*self.compl[ilogN, ib]))
+                      "(logN=%2.2f, b=%2.2f) as %2.0f%% (%i/%i realizations "
+                      "accepted)."
+                      % (series, logN, b, 100*self.compl[ilogN, ib], n_ok, n))
 
         #self = dc(sess_old)
         # Save the completeness as a two-entry table - to be modified
