@@ -214,7 +214,8 @@ class Session(object):
                 t_old, mods_t_old = systs._freeze()
 
                 self._mods_t_old = mods_t_old
-                systs._append(SystList(id_start=len(self.systs._t)),
+                #systs._append(SystList(id_start=len(self.systs._t)),
+                systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
 
@@ -297,7 +298,8 @@ class Session(object):
         systs_old = dc(self.systs)
 
         if hasattr(systs_old, '_t'):
-            self.systs = SystList(id_start=len(systs_old._t))
+            #self.systs = SystList(id_start=len(systs_old._t))
+            self.systs = SystList(id_start=np.max(systs_old._t['id'])+1)
         else:
             self.systs = SystList()
         chi2a = np.full((len(logN_range),len(b_range),len(z_range)), np.inf)
@@ -446,7 +448,7 @@ class Session(object):
                     sess.systs = dc(self.systs)
                     sess.cb._append_syst()
                     fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
-                                             col)
+                                               col)
                     if not fail:
                         n_ok += 1
                         z_round = round(z_rand, 4)

@@ -17,7 +17,8 @@ class Cookbook(object):
     def _append_syst(self):
         systs = self.sess.systs
         if systs != None:
-            systs._append(SystList(id_start=len(systs._t)))
+            #systs._append(SystList(id_start=len(systs._t)))
+            systs._append(SystList(id_start=np.max(systs._t['id'])+1))
         else:
             setattr(self.sess, 'systs', SystList())
 
@@ -68,7 +69,7 @@ class Cookbook(object):
         eval = mod.eval(x=systs._xs, params=mod._pars)
 
         # If the simulated system is falls by more than a HWHM over a masked
-        # line, it is discarded 
+        # line, it is discarded
         ymin = np.min(eval)
         ysel = np.where(eval < 0.5*(ymin+1))
         if np.sum(spec.t['lines_mask'][ysel]) == 0:

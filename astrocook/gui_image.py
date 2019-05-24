@@ -28,8 +28,8 @@ class GUIImage(wx.Frame):
         fig.canvas.set_window_title(self._title)
         im = ax.imshow(data, aspect='auto', extent=extent)
         fig.colorbar(im)
-        ax.set_xlabel('b', str(au.km/au.s))
-        ax.set_ylabel('log N/'+str(au.cm**2))
+        #ax.set_xlabel('b', str(au.km/au.s))
+        #ax.set_ylabel('log N/'+str(au.cm**2))
         plt.show()
 
 
