@@ -50,7 +50,8 @@ class Format(object):
             b = data['b']
             chi2r = data['chi2r']
             id = data['id']
-            return SystList(series, func, z, logN, b, chi2r, id)
+            return SystList(series, func, z=z, logN=logN, b=b, chi2r=chi2r,
+                            id=id)
 
 
     def eso_midas(self, hdul):

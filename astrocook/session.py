@@ -330,7 +330,8 @@ class Session(object):
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
-                self.corr[ilogN, ib] = 1-np.array(cond_swap_c)/np.array(cond_c)
+                self.corr[ilogN, ib] = \
+                    max(1-np.array(cond_swap_c)/np.array(cond_c), 0)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences"
@@ -339,7 +340,7 @@ class Session(object):
                 if cond_c != 0:
                     #print(cond_c, cond_swap_c)
                     print(" (estimated correctness=%2.0f%%)."
-                          % (100*max(self.corr[ilogN, ib], 0)))
+                          % (100*self.corr[ilogN, ib]))
                 else:
                     print(".")
         self.spec._shift_rf(0)

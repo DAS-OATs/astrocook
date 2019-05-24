@@ -19,8 +19,11 @@ class SystList(object):
                  func=[],
                  series=[],
                  z=[],
+                 dz=[],
                  logN=[],
+                 dlogN=[],
                  b=[],
+                 db=[],
                  mod=[],
                  chi2r=[],
                  id=[],
@@ -37,9 +40,13 @@ class SystList(object):
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
         t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        t['dz'] = at.Column(np.array(dz, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,
                               unit=logNunit)
+        t['dlogN'] = at.Column(np.array(dlogN, ndmin=1), dtype=dtype,
+                               unit=logNunit)
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
+        t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
         self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
         self._t['id'] = np.empty(len(self.z), dtype=int)
@@ -94,7 +101,8 @@ class SystList(object):
         """ @brief Add a system to a system list.
         """
 
-        self._t.add_row(['voigt_func', series, z, z, logN, b, None, self._id])
+        self._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
+                         None, self._id])
 
         return 0
 
@@ -156,7 +164,10 @@ class SystList(object):
             iw = np.where(self._t['id']==i)[0][0]
             pref = 'lines_voigt_'+str(i)
             self._t[iw]['z'] = mod._pars[pref+'_z'].value
+            self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
             self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+            self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
             self._t[iw]['b'] = mod._pars[pref+'_b'].value
+            self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
             self._t[iw]['chi2r'] = mod._chi2r
         self._id += 1
