@@ -25,7 +25,7 @@ class GUI(object):
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
-        panel_sess = GUIPanelSession(self)
+        self._panel_sess = GUIPanelSession(self)
         GUIGraphSpectrum(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -36,7 +36,7 @@ class GUI(object):
         if path == None:
             print("AC: Welcome! Try Session > Open...")
         else:
-            panel_sess._on_open(path)
+            self._panel_sess._on_open(path)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """

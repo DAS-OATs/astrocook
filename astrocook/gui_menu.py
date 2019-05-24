@@ -76,8 +76,6 @@ class GUIMenuCook(GUIMenu):
         self._item(self._menu, start_id+2, "Test...", self._on_test)
 
     def _on_full(self, event):
-        sess = self._gui._sess_sel
-
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
@@ -89,24 +87,34 @@ class GUIMenuCook(GUIMenu):
                          'J2123-0050': 2.26902,
                          }
 
-        zem = test_data_zem[sess.spec.meta['object']]
-        xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
-        xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
+        if self._gui._sess_sel != None:
+            targ = [self._gui._sess_sel.spec.meta['object']]
+        else:
+            targ = [t for t in test_data_zem]
+        for t in targ:
 
-        sess.convolve_gauss()
-        sess.find_peaks()
+            if self._gui._sess_sel == None:
+                self._gui._panel_sess._on_open('test_data/'+t+'.fits')
+            sess = self._gui._sess_sel
 
-        if 'cont' not in sess.spec._t.colnames:
-            sess.extract_nodes(delta_x=800)
-            sess.interp_nodes()
-        new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
-        self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(series='CIV')
-        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        new_sess.add_syst_slide(col='deabs')
-        new_sess.compl_syst()
+            zem = test_data_zem[sess.spec.meta['object']]
+            xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
+            xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
 
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+            sess.convolve_gauss()
+            sess.find_peaks()
+
+            if 'cont' not in sess.spec._t.colnames:
+                sess.extract_nodes(delta_x=800)
+                sess.interp_nodes()
+            new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
+            self._gui._panel_sess._on_add(new_sess, open=False)
+            new_sess.add_syst_from_lines(series='CIV')
+            new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+            new_sess.add_syst_slide(col='deabs')
+            new_sess.compl_syst()
+
+            self._gui._graph_spec._refresh(self._gui._sess_items)
 
     def _on_test(self, event):
         xmin = 360
