@@ -435,10 +435,12 @@ class Session(object):
 
                 cond_c = 0
                 n_ok = 0
-                for r in range(n):
+                #for r in range(n):
+                while n_ok < n:
                     print(prefix, "I'm estimating completeness of %s system "
                           "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
-                          % (series, logN, b, r+1, n), end='\r')
+                          #% (series, logN, b, r+1, n), end='\r')
+                          % (series, logN, b, n_ok+1, n), end='\r')
                     z_rand = np.random.rand()*(z_end-z_start)+z_start
                     sess.spec = dc(self.spec)
                     sess.systs = dc(self.systs)
@@ -462,9 +464,8 @@ class Session(object):
 
                 self.compl[ilogN, ib] = cond_c/n_ok
                 print(prefix, "I've estimated completeness of %s system "
-                      "(logN=%2.2f, b=%2.2f) as %2.0f%% (%i/%i realizations "
-                      "accepted)."
-                      % (series, logN, b, 100*self.compl[ilogN, ib], n_ok, n))
+                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.                       "
+                      % (series, logN, b, 100*self.compl[ilogN, ib]))
 
         #self = dc(sess_old)
         # Save the completeness as a two-entry table - to be modified
