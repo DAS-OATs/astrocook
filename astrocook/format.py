@@ -59,20 +59,28 @@ class Format(object):
 
         hdr = hdul[1].header
         data = hdul[1].data
-        x = data[hdr['TTYPE1']]
-        xmin = data[hdr['TTYPE1']]
-        xmax = data[hdr['TTYPE1']]
-        y = data[hdr['TTYPE2']]
-        dy = data[hdr['TTYPE3']]
+        x = data['wave']
+        xmin = x-data['wpix']*0.5
+        xmax = x+data['wpix']*0.5
+        y = data['flux']
+        dy = data['sigma']
+        try:
+            cont = data['cont']
+        except:
+            try:
+                cont = data['CONT']
+            except:
+                cont = []
+
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
         meta = {'instr': ''}
         try:
-            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+            meta['object'] = hdr['FILENAME'][:-4]
         except:
             meta['object'] = ''
             print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def espresso_das_spectrum(self, hdul):
         """ ESPRESSO DAS FSPEC/RSPEC format """

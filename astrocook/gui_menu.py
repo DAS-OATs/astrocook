@@ -1,4 +1,5 @@
 from . import *
+from .vars import *
 from .gui_dialog import *
 #from .session import Session
 #from .model import Model
@@ -76,56 +77,34 @@ class GUIMenuCook(GUIMenu):
 
     def _on_full(self, event):
         sess = self._gui._sess_sel
+
+        test_data_zem = {'J0003-2323': 2.280,
+                         'J0100+0211': 1.959,
+                         'J0124-3744': 2.190,
+                         'J0240-2309': 2.225,
+                         'J1124-1705': 2.39723,
+                         'J1344-1035': 2.134,
+                         'J1451-2329': 2.208,
+                         'J1626+6426': 2.320,
+                         'J2123-0050': 2.26902,
+                         }
+
+        zem = test_data_zem[sess.spec.meta['object']]
+        xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
+        xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
+
         sess.convolve_gauss()
         sess.find_peaks()
-        sess.extract_nodes(delta_x=800)
-        sess.interp_nodes()
 
-        logN_start = 12.0
-        logN_end = 11.0
-        logN_step = -0.1
-        b_start = 2
-        b_end = 13
-        b_step = 3
-
-        """
-        # he0515m4414
-        xmin = 330
-        xmax = 420
-        z_start = 1.71
-        z_end = 1.18
-        resol = 70000
-        """
-
-        # J0100+0211
-        xmin = 360
-        xmax = 460
-        z_start = 1.32
-        z_end = 1.959
-        resol = 45000
-
-        """
-        # J014333-391700
-        xmin = 360#340
-        xmax = 380#435
-        z_start = 1.32#1.795
-        z_end = 1.453#1.19
-        resol = 48000
-        """
+        if 'cont' not in sess.spec._t.colnames:
+            sess.extract_nodes(delta_x=800)
+            sess.interp_nodes()
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(series='CIV', z_start=z_start, z_end=z_end,
-                                     resol=resol)
+        new_sess.add_syst_from_lines(series='CIV')
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        new_sess.add_syst_slide(z_start=z_start, z_end=z_end,
-                                logN_start=logN_start, logN_end=logN_end,
-                                logN_step=logN_step,
-                                b_start=b_start, b_end=b_end, b_step=b_step,
-                                maxfev=100, col='deabs')
-        new_sess.compl_syst(n=100, z_start=z_start, z_end=z_end,
-                            logN_start=logN_start, logN_end=logN_end,
-                            logN_step=logN_step,
-                            b_start=b_start, b_end=b_end, b_step=b_step)
+        new_sess.add_syst_slide(col='deabs')
+        new_sess.compl_syst()
 
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
@@ -144,8 +123,8 @@ class GUIMenuCook(GUIMenu):
         sess = self._gui._sess_sel
         sess.convolve_gauss()
         sess.find_peaks()
-        sess.extract_nodes(delta_x=800)
-        sess.interp_nodes()
+        #sess.extract_nodes(delta_x=800)
+        #sess.interp_nodes()
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         """
@@ -157,13 +136,13 @@ class GUIMenuCook(GUIMenu):
         #                        maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
         """
-        #"""
+        """
         new_sess.add_syst_slide(z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100)
-        #"""
+        """
         """
         new_sess.corr_syst(z_start=z_start, z_end=z_end,
                            logN_start=logN_start, logN_end=logN_end,
@@ -287,7 +266,8 @@ class GUIMenuMeals(GUIMenu):
                           ['convolve_gauss', 'find_peaks', 'extract_nodes',
                            'interp_nodes'])
         self._item_method(self._menu, start_id+2, "Fit systems",
-                          ['add_fit_from_lines', 'test_fit_slide'])
+                          ['add_syst_from_lines', 'add_syst_from_resids',
+                           'add_syst_slide', 'compl_syst'])
 
 class GUIMenuSnacks(GUIMenu):
 

@@ -107,8 +107,8 @@ class Session(object):
         return 0
 
 
-    def add_syst_from_lines(self, series='Lya', z_start=2.0, z_end=2.5,
-                            dz=1e-4, logN=14, b=10, resol=70000,
+    def add_syst_from_lines(self, series='Ly_a', z_start=0, z_end=6,
+                            dz=1e-4, logN=13, b=10, resol=45000,
                             chi2r_thres=np.inf, maxfev=100):
         """ @brief Add and fit Voigt models to a line list, given a redshift
         range.
@@ -151,7 +151,7 @@ class Session(object):
 
 
     def add_syst_from_resids(self, z_start=1.71, z_end=1.18, dz=5e-5,
-                             resol=70000, logN=13, b=5, chi2r_thres=2.0,
+                             resol=45000, logN=13, b=5, chi2r_thres=2.0,
                              maxfev=100):
         """ @brief Add and fit Voigt models from residuals of previously
         fitted models.
@@ -243,10 +243,10 @@ class Session(object):
 
 
     def add_syst_slide(self, series='CIV',
-                       z_start=1.13, z_end=1.71, z_step=5e-4,
-                       logN_start=14, logN_end=14.1, logN_step=0.1,
-                       b_start=10, b_end=15, b_step=5,
-                       resol=70000, col='y', chi2r_thres=2.0, maxfev=100):
+                       z_start=0, z_end=6, z_step=5e-4,
+                       logN_start=12, logN_end=11, logN_step=-0.1,
+                       b_start=2, b_end=22, b_step=2,
+                       resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
@@ -385,10 +385,10 @@ class Session(object):
 
 
     def compl_syst(self, series='CIV', n=100,
-                   z_start=1.13, z_end=1.71, z_step=5e-4,
-                   logN_start=14, logN_end=14.1, logN_step=0.1,
-                   b_start=10, b_end=15, b_step=5,
-                   resol=70000, col='y', chi2r_thres=2.0, maxfev=100):
+                   z_start=0, z_end=6, z_step=5e-4,
+                   logN_start=12, logN_end=11, logN_step=-0.1,
+                   b_start=2, b_end=22, b_step=2,
+                   resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Estimate the completeness of system detection by simulating
         systems at random redshifts and sliding Voigt models to fit them
         @param series Series of transitions
