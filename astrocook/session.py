@@ -428,11 +428,19 @@ class Session(object):
         # Previously fitted systems are left fixed...
         sess = dc(self)
 
-        z_mean = 0.5*(z_start+z_end)
+        z_min = np.min([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_max = np.max([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_mean = 0.5*(z_min+z_max)
         self.compl = np.empty((len(logN_range),len(b_range)))
         self.compl_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
                         logN_range[0]-logN_step*0.5,
                         logN_range[-1]+logN_step*0.5)
+        import cProfile
+        import pstats
+        pr = cProfile.Profile()
+        pr.enable()
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
 
@@ -448,6 +456,7 @@ class Session(object):
                     sess.spec = dc(self.spec)
                     sess.systs = dc(self.systs)
                     sess.cb._append_syst()
+                    sess.spec._shift_rf(z_rand)
                     fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
                                                col)
                     if not fail:
@@ -470,6 +479,9 @@ class Session(object):
                       "(logN=%2.2f, b=%2.2f) as %2.0f%%.                       "
                       % (series, logN, b, 100*self.compl[ilogN, ib]))
 
+        pr.disable()
+        ps = pstats.Stats(pr)
+        ps.sort_stats('cumulative').print_stats(10)
         #self = dc(sess_old)
         # Save the completeness as a two-entry table - to be modified
         self.compl_save = np.concatenate((np.array([logN_range]).T, self.compl),

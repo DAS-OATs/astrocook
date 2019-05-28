@@ -76,7 +76,7 @@ class GUIMenuCook(GUIMenu):
         self._item(self._menu, start_id+2, "Test...", self._on_test)
 
     def _on_full(self, event):
-        test_data_zem = {'J0003-2323': 2.280,
+        test_data_zem = {#'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
                          'J0240-2309': 2.225,
@@ -84,7 +84,7 @@ class GUIMenuCook(GUIMenu):
                          'J1344-1035': 2.134,
                          'J1451-2329': 2.208,
                          'J1626+6426': 2.320,
-                         'J2123-0050': 2.26902,
+                         #'J2123-0050': 2.26902,
                          }
 
         if self._gui._sess_sel != None:
@@ -127,8 +127,20 @@ class GUIMenuCook(GUIMenu):
         b_start = 5
         b_end = 6
         b_step = 2
-
+        test_data_zem = {'J0003-2323': 2.280,
+                         'J0100+0211': 1.959,
+                         'J0124-3744': 2.190,
+                         'J0240-2309': 2.225,
+                         'J1124-1705': 2.39723,
+                         'J1344-1035': 2.134,
+                         'J1451-2329': 2.208,
+                         'J1626+6426': 2.320,
+                         'J2123-0050': 2.26902,
+                         }
         sess = self._gui._sess_sel
+        zem = test_data_zem[sess.spec.meta['object']]
+        xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
+        xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
         sess.convolve_gauss()
         sess.find_peaks()
         #sess.extract_nodes(delta_x=800)
