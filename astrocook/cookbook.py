@@ -2,6 +2,7 @@ from .syst_list import SystList
 from .syst_model import SystModel
 from astropy import units as au
 import numpy as np
+from matplotlib import pyplot as plt
 
 class Cookbook(object):
     """ Class for cookbook.
@@ -32,14 +33,19 @@ class Cookbook(object):
         # If the simulated system is falls by more than a HWHM over a masked
         # line, it is discarded
         ymin = np.min(ym)
-        ysel = np.where(ym < 0.5*(ymin+1))
-        if np.sum(spec.t['lines_mask'][ysel]) == 0:
-            sort = np.argsort(spec.x.to(au.nm))
-            ys = np.interp(spec.x.to(au.nm)[sort], xm, ym)
+        sort = np.argsort(spec.x.to(au.nm))
+        ys = np.interp(spec.x.to(au.nm)[sort], xm, ym)
+        ysel = np.where(ys < 0.5*(ymin+1))
+        #print(0.5*(ymin+1), np.sum(spec._t['lines_mask'][ysel]))
+        if np.sum(spec._t['lines_mask'][ysel]) == 0:
             y[s] = ys * y[s]
             dy[s] = np.sqrt(ys) * dy[s]
             return 0
         else:
+            #print(spec._t[ysel])
+            #plt.plot(xm, ym)
+            #plt.plot(spec.x.to(au.nm), spec.y)
+            #plt.plot(spec.x.to(au.nm)[spec._t['lines_mask']==1], spec.y[spec._t['lines_mask']==1])
             return 1
 
 
@@ -111,7 +117,8 @@ class Cookbook(object):
         chi2_0 = np.sum(((ys-ym_0)/dys)**2)
         chi2_1 = np.sum(((ys-ym_1)/dys)**2)
         chi2_2 = np.sum(((ys-ym_2)/dys)**2)
-        if chi2 < 0.8*np.min([chi2_0-3, chi2_1, chi2_2]):
+        fact = 1.0
+        if chi2 < fact*np.min([chi2_0-3, chi2_1, chi2_2]):
             return True, chi2, chi2_0
         else:
             return False, chi2, chi2_0

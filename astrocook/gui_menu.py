@@ -122,10 +122,10 @@ class GUIMenuCook(GUIMenu):
         z_start = 1.32
         z_end = 1.959
         logN_start = 12.0
-        logN_end = 11.0
+        logN_end = 11.5
         logN_step = -0.5
-        b_start = 5
-        b_end = 6
+        b_start = 2
+        b_end = 16
         b_step = 2
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
@@ -170,10 +170,11 @@ class GUIMenuCook(GUIMenu):
                            logN_step=logN_step,
                            b_start=b_start, b_end=b_end, b_step=b_step)
         """
-        new_sess.compl_syst(n=100, z_start=z_start, z_end=z_end,
-                            logN_start=logN_start, logN_end=logN_end,
-                            logN_step=logN_step,
-                            b_start=b_start, b_end=b_end, b_step=b_step)
+        new_sess.compl_syst(n=100)#,
+                            #z_start=z_start, z_end=z_end,
+                            #logN_start=logN_start, logN_end=logN_end,
+                            #logN_step=logN_step,
+                            #b_start=b_start, b_end=b_end, b_step=b_step)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
