@@ -336,9 +336,6 @@ class Session(object):
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
-                plt.plot(z_range, chi2_arr)
-                plt.plot(z_range, chi2_0_arr)
-                plt.show()
                 self.corr[ilogN, ib] = \
                     max(1-np.array(cond_swap_c)/np.array(cond_c), 0)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
