@@ -456,7 +456,6 @@ class Session(object):
                     sess.spec = dc(self.spec)
                     sess.systs = dc(self.systs)
                     sess.cb._append_syst()
-                    sess.spec._shift_rf(z_rand)
                     fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
                                                col)
                     if not fail:

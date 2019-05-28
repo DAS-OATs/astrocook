@@ -143,8 +143,9 @@ class GUIMenuCook(GUIMenu):
         xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
         sess.convolve_gauss()
         sess.find_peaks()
-        #sess.extract_nodes(delta_x=800)
-        #sess.interp_nodes()
+        if 'cont' not in sess.spec._t.colnames:
+            sess.extract_nodes(delta_x=800)
+            sess.interp_nodes()
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         """
