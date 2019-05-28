@@ -385,7 +385,7 @@ class Session(object):
 
 
     def compl_syst(self, series='CIV', n=100,
-                   z_start=0, z_end=6, z_step=1e-4,
+                   z_start=0, z_end=6, z_step=5e-4,
                    logN_start=12, logN_end=11, logN_step=-0.1,
                    b_start=2, b_end=22, b_step=2,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
