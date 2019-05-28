@@ -117,7 +117,7 @@ class Cookbook(object):
         chi2_0 = np.sum(((ys-ym_0)/dys)**2)
         chi2_1 = np.sum(((ys-ym_1)/dys)**2)
         chi2_2 = np.sum(((ys-ym_2)/dys)**2)
-        fact = 1.0
+        fact = 0.8
         if chi2 < fact*np.min([chi2_0-3, chi2_1, chi2_2]):
             return True, chi2, chi2_0
         else:

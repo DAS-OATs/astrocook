@@ -121,12 +121,12 @@ class GUIMenuCook(GUIMenu):
         xmax = 460
         z_start = 1.32
         z_end = 1.959
-        logN_start = 12.0
-        logN_end = 11.5
-        logN_step = -0.5
-        b_start = 2
-        b_end = 16
-        b_step = 2
+        logN_start = 12.5
+        logN_end = 12.0
+        logN_step = -0.1
+        b_start = 20
+        b_end = 25
+        b_step = 5
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
@@ -146,35 +146,27 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=800)
             sess.interp_nodes()
+        #xmin=430
+        #xmax=450
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         """
-        new_sess.add_syst_from_lines(series='CIV', z_start=1.71, z_end=1.18,
-                                     resol=70000)
-        #new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        #new_sess.add_syst_slide(logN_start=12.0, logN_end=11.0, logN_step=-0.1,
-        #                        b_start=2, b_end=10, b_step=2,
-        #                        maxfev=100)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        new_sess.add_syst_from_lines('CIV')
         """
         """
-        new_sess.add_syst_slide(z_start=z_start, z_end=z_end,
+        new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100)
         """
-        """
-        new_sess.corr_syst(z_start=z_start, z_end=z_end,
-                           logN_start=logN_start, logN_end=logN_end,
-                           logN_step=logN_step,
-                           b_start=b_start, b_end=b_end, b_step=b_step)
-        """
-        new_sess.compl_syst(n=100)#,
+        #"""
+        new_sess.compl_syst(n=100,
                             #z_start=z_start, z_end=z_end,
-                            #logN_start=logN_start, logN_end=logN_end,
-                            #logN_step=logN_step,
-                            #b_start=b_start, b_end=b_end, b_step=b_step)
+                            logN_start=logN_start, logN_end=logN_end,
+                            logN_step=logN_step,
+                            b_start=b_start, b_end=b_end, b_step=b_step)
+        #"""
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

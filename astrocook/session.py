@@ -243,9 +243,9 @@ class Session(object):
 
 
     def add_syst_slide(self, series='CIV',
-                       z_start=0, z_end=6, z_step=5e-4,
-                       logN_start=12, logN_end=11, logN_step=-0.1,
-                       b_start=2, b_end=22, b_step=2,
+                       z_start=0, z_end=6, z_step=2e-4,
+                       logN_start=13, logN_end=11, logN_step=-0.1,
+                       b_start=5, b_end=30, b_step=5,
                        resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
@@ -280,6 +280,8 @@ class Session(object):
         maxfev = int(maxfev)
 
         z_range = np.arange(z_start, z_end, z_step)
+        #z_range = self.spec.x/xem_d[series_d[series][0]]-1
+        #print(z_range)
         z_min = np.min([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
         z_max = np.max([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
@@ -314,6 +316,8 @@ class Session(object):
                                                                  logN, b, resol)
                 cond_c = 0
                 cond_swap_c = 0
+                chi2_arr = []
+                chi2_0_arr = []
                 for iz, z in enumerate(z_range):
                     print(prefix, "I'm testing a %s system (logN=%2.2f, "
                           "b=%2.2f) at redshift %2.4f (%i/%i)..." \
@@ -325,11 +329,16 @@ class Session(object):
                         self.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
                     cond_swap, _, _ = \
                         sess.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
+                    chi2_arr.append(chi2)
+                    chi2_0_arr.append(chi2_0)
                     if cond:
                         chi2a[ilogN, ib, iz] = chi2
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
+                plt.plot(z_range, chi2_arr)
+                plt.plot(z_range, chi2_0_arr)
+                plt.show()
                 self.corr[ilogN, ib] = \
                     max(1-np.array(cond_swap_c)/np.array(cond_c), 0)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
@@ -346,7 +355,7 @@ class Session(object):
         self.spec._shift_rf(0)
 
         # Find candidates choosing the local minima of chi2r at coincidences
-        lm = np.logical_and(chi2a < np.inf, detect_local_minima(chi2a))
+        lm = np.logical_and(chi2a < np.inf, 1==1)#detect_local_minima(chi2a))
         chi2m = np.where(lm)
 
         print(prefix, "I've selected %i candidates among the coincidences."\
@@ -364,7 +373,7 @@ class Session(object):
                       "%2.4f and %2.4f."
                       % (len(chi2m[0]), series, z_range[chi2m[2][0]],
                          z_range[chi2m[2][-1]]))
-                self.systs._clean(chi2r_thres)
+                #self.systs._clean(chi2r_thres)
 
         # ...and then appended
         if hasattr(systs_old, '_t'):
@@ -385,9 +394,9 @@ class Session(object):
 
 
     def compl_syst(self, series='CIV', n=100,
-                   z_start=0, z_end=6, z_step=5e-4,
-                   logN_start=12, logN_end=11, logN_step=-0.1,
-                   b_start=2, b_end=22, b_step=2,
+                   z_start=0, z_end=6, z_step=2e-4,
+                   logN_start=13, logN_end=11, logN_step=-0.1,
+                   b_start=5, b_end=30, b_step=5,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Estimate the completeness of system detection by simulating
         systems at random redshifts and sliding Voigt models to fit them
@@ -450,8 +459,18 @@ class Session(object):
                 sess.systs = dc(self.systs)
                 sess.cb._append_syst()
                 sess.systs._add(series, z_mean, logN, b, resol)
+
+                # The doublet used for sliding has the input parameter...
                 xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
                     series, z_mean, logN, b, resol)
+
+                # While the simulated one has slightly different parameters
+                xm2, ym2, _, _, _ = sess.cb._create_doubl(
+                    series,
+                    z_mean+(np.random.rand()-0.5)*z_step,
+                    logN+(np.random.rand()-0.5)*logN_step,
+                    b+(np.random.rand()-0.5)*b_step, resol)
+
                 while n_ok < n:
                     print(prefix, "I'm estimating completeness of %s system "
                           "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
@@ -466,10 +485,8 @@ class Session(object):
                                                col)
                     """
                     sess.spec._shift_rf(z_rand)
-                    #plt.plot(sess.spec.x, sess.spec.y, zorder=9)
-                    fail = sess.cb._apply_doubl(xm, ym)
-                    #plt.plot(sess.spec.x, sess.spec.y)
-                    #plt.show()
+                    fail = sess.cb._apply_doubl(xm2, ym2)
+                    #"""
                     if not fail:
                         n_ok += 1
                         z_round = round(z_rand, 4)
@@ -489,7 +506,7 @@ class Session(object):
                         sess.spec._shift_rf(0)
                     #else:
                     #    n_ok += 1
-                    sess.spec._shift_rf(0.0)
+                    #sess.spec._shift_rf(0.0)
 
                 self.compl[ilogN, ib] = cond_c/n_ok
                 print(prefix, "I've estimated completeness of %s system "
