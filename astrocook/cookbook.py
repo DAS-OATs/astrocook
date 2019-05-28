@@ -22,7 +22,28 @@ class Cookbook(object):
         else:
             setattr(self.sess, 'systs', SystList())
 
-    def _create_doubl(self, series='Ly_a', z_mean=2.0, logN=14, b=10,
+    def _apply_doubl(self, xm, ym, col='y'):
+
+        spec = self.sess.spec
+        y = spec._t[col]
+        dy = spec._t[col]
+        s = spec._where_safe
+
+        # If the simulated system is falls by more than a HWHM over a masked
+        # line, it is discarded
+        ymin = np.min(ym)
+        ysel = np.where(ym < 0.5*(ymin+1))
+        if np.sum(spec.t['lines_mask'][ysel]) == 0:
+            sort = np.argsort(spec.x.to(au.nm))
+            ys = np.interp(spec.x.to(au.nm)[sort], xm, ym)
+            y[s] = ys * y[s]
+            dy[s] = np.sqrt(ys) * dy[s]
+            return 0
+        else:
+            return 1
+
+
+    def _create_doubl(self, series='CIV', z_mean=2.0, logN=14, b=10,
                       resol=70000):
 
         spec = self.sess.spec
@@ -65,7 +86,7 @@ class Cookbook(object):
 
         systs._xs = np.array(spec._safe(spec.x).to(au.nm))
         y = spec._t[col]
-        dy = spec._t[col]
+        dy = spec._t['dy']
         eval = mod.eval(x=systs._xs, params=mod._pars)
 
         # If the simulated system is falls by more than a HWHM over a masked

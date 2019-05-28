@@ -447,6 +447,11 @@ class Session(object):
                 cond_c = 0
                 n_ok = 0
                 #for r in range(n):
+                sess.systs = dc(self.systs)
+                sess.cb._append_syst()
+                sess.systs._add(series, z_mean, logN, b, resol)
+                xm, ym, _, _, _ = sess.cb._create_doubl(series, z_mean, logN, b,
+                                                        resol)
                 while n_ok < n:
                     print(prefix, "I'm estimating completeness of %s system "
                           "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
@@ -454,10 +459,14 @@ class Session(object):
                           % (series, logN, b, n_ok+1, n), end='\r')
                     z_rand = np.random.rand()*(z_end-z_start)+z_start
                     sess.spec = dc(self.spec)
+                    """
                     sess.systs = dc(self.systs)
                     sess.cb._append_syst()
                     fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
                                                col)
+                    """
+                    sess.spec._shift_rf(z_rand)
+                    fail = sess.cb._apply_doubl(xm, ym)
                     if not fail:
                         n_ok += 1
                         z_round = round(z_rand, 4)
