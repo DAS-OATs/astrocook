@@ -244,8 +244,8 @@ class Session(object):
 
     def add_syst_slide(self, series='CIV',
                        z_start=0, z_end=6, z_step=2e-4,
-                       logN_start=13, logN_end=11, logN_step=-0.1,
-                       b_start=5, b_end=30, b_step=5,
+                       logN_start=12, logN_end=10, logN_step=-0.2,
+                       b_start=5, b_end=16, b_step=2.5,
                        resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
@@ -279,12 +279,11 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        z_range = np.arange(z_start, z_end, z_step)
-        #z_range = self.spec.x/xem_d[series_d[series][0]]-1
-        #print(z_range)
-        z_min = np.min([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+        #z_range = np.arange(z_start, z_end, z_step)
+        z_range = np.array(self.spec.x/xem_d[series_d[series][0]]-1)
+        z_min = np.max([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
-        z_max = np.max([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+        z_max = np.min([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
         z_range = z_range[np.where(np.logical_and(z_range > z_min,
                                                   z_range < z_max))]
@@ -300,7 +299,6 @@ class Session(object):
         systs_old = dc(self.systs)
 
         if hasattr(systs_old, '_t'):
-            #self.systs = SystList(id_start=len(systs_old._t))
             self.systs = SystList(id_start=np.max(systs_old._t['id'])+1)
         else:
             self.systs = SystList()
@@ -322,13 +320,10 @@ class Session(object):
                     print(prefix, "I'm testing a %s system (logN=%2.2f, "
                           "b=%2.2f) at redshift %2.4f (%i/%i)..." \
                           % (series, logN, b, z, iz+1, len(z_range)), end='\r')
-                    self.spec._shift_rf(z)
-                    sess.spec._shift_rf(z)
-                    #systs = SystList()
                     cond, chi2, chi2_0 = \
-                        self.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
+                        self.cb._test_doubl(xm*(1+z), ym, ym_0, ym_1, ym_2, col)
                     cond_swap, _, _ = \
-                        sess.cb._test_doubl(xm, ym, ym_0, ym_1, ym_2, col)
+                        sess.cb._test_doubl(xm*(1+z), ym, ym_0, ym_1, ym_2, col)
                     chi2_arr.append(chi2)
                     chi2_0_arr.append(chi2_0)
                     if cond:
@@ -337,23 +332,28 @@ class Session(object):
                     if cond_swap:
                         cond_swap_c += 1
                 self.corr[ilogN, ib] = \
-                    max(1-np.array(cond_swap_c)/np.array(cond_c), 0)
+                    1-np.array(cond_swap_c)/np.array(cond_c)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences"
                       % (series, logN, b, z_range[0], z_range[-1], cond_c),
                       end='')
                 if cond_c != 0:
-                    #print(cond_c, cond_swap_c)
                     print(" (estimated correctness=%2.0f%%)."
                           % (100*self.corr[ilogN, ib]))
                 else:
                     print(".")
-        self.spec._shift_rf(0)
 
         # Find candidates choosing the local minima of chi2r at coincidences
-        lm = np.logical_and(chi2a < np.inf, 1==1)#detect_local_minima(chi2a))
+        lm = np.logical_and(chi2a < np.inf, detect_local_minima(chi2a))
         chi2m = np.where(lm)
+
+        # ...and then appended
+        if hasattr(systs_old, '_t'):
+            if len(self.systs._t) > 0:
+                self.systs._append(systs_old)
+            else:
+                self.systs = systs_old
 
         print(prefix, "I've selected %i candidates among the coincidences."\
               % len(chi2m[0]))
@@ -370,14 +370,7 @@ class Session(object):
                       "%2.4f and %2.4f."
                       % (len(chi2m[0]), series, z_range[chi2m[2][0]],
                          z_range[chi2m[2][-1]]))
-                #self.systs._clean(chi2r_thres)
 
-        # ...and then appended
-        if hasattr(systs_old, '_t'):
-            if len(self.systs._t) > 0:
-                self.systs._append(systs_old)
-            else:
-                self.systs = systs_old
 
         self.cb._update_spec()
 
@@ -392,8 +385,8 @@ class Session(object):
 
     def compl_syst(self, series='CIV', n=100,
                    z_start=0, z_end=6, z_step=2e-4,
-                   logN_start=13, logN_end=11, logN_step=-0.1,
-                   b_start=5, b_end=30, b_step=5,
+                   logN_start=12, logN_end=10, logN_step=-0.2,
+                   b_start=5, b_end=16, b_step=2.5,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Estimate the completeness of system detection by simulating
         systems at random redshifts and sliding Voigt models to fit them
@@ -428,25 +421,24 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
+        z_range = np.array(self.spec.x/xem_d[series_d[series][0]]-1)
         logN_range = np.arange(logN_start, logN_end, logN_step)
         b_range = np.arange(b_start, b_end, b_step)
 
         # Previously fitted systems are left fixed...
         sess = dc(self)
-
-        z_min = np.min([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+        print([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
-        z_max = np.max([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+        z_min = np.max([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_max = np.min([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
         z_mean = 0.5*(z_min+z_max)
         self.compl = np.empty((len(logN_range),len(b_range)))
         self.compl_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
                         logN_range[0]-logN_step*0.5,
                         logN_range[-1]+logN_step*0.5)
-        import cProfile
-        import pstats
-        pr = cProfile.Profile()
-        pr.enable()
+
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
 
@@ -455,65 +447,44 @@ class Session(object):
                 #for r in range(n):
                 sess.systs = dc(self.systs)
                 sess.cb._append_syst()
-                sess.systs._add(series, z_mean, logN, b, resol)
+                sess.systs._add(series, z_mean, logN, b+0.5*b_step, resol)
 
-                # The doublet used for sliding has the input parameter...
                 xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
                     series, z_mean, logN, b, resol)
+                xm_e, ym_e, ym_0_e, ym_1_e, ym_2_e = sess.cb._create_doubl(
+                    series, z_mean, logN, b+0.0*b_step, resol)
 
-                # While the simulated one has slightly different parameters
-                xm2, ym2, _, _, _ = sess.cb._create_doubl(
-                    series,
-                    z_mean+(np.random.rand()-0.5)*z_step,
-                    logN+(np.random.rand()-0.5)*logN_step,
-                    b+(np.random.rand()-0.5)*b_step, resol)
-
+                n_fail = 0
                 while n_ok < n:
                     print(prefix, "I'm estimating completeness of %s system "
                           "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
-                          #% (series, logN, b, r+1, n), end='\r')
                           % (series, logN, b, n_ok+1, n), end='\r')
                     z_rand = np.random.rand()*(z_max-z_min)+z_min
                     sess.spec = dc(self.spec)
-                    """
-                    sess.systs = dc(self.systs)
-                    sess.cb._append_syst()
-                    fail = sess.cb._simul_syst(series, z_rand, logN, b, resol,
-                                               col)
-                    """
-                    sess.spec._shift_rf(z_rand)
-                    fail = sess.cb._apply_doubl(xm2, ym2)
-                    #"""
+                    fail = sess.cb._apply_doubl(xm_e*(1+z_rand), ym_e)
                     if not fail:
                         n_ok += 1
                         z_round = round(z_rand, 4)
-                        """
-                        xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
-                            series, z_mean, logN, b, resol)
-                        """
-                        for iz, z in enumerate(np.arange(
-                            z_round-1.5*z_step, z_round+1.5*z_step, z_step)):
-                            sess.spec._shift_rf(z)
+                        z_sel = np.where(np.logical_and(
+                            z_range > z_round-1.5*z_step,
+                            z_range < z_round+1.5*z_step))
+                        for iz, z in enumerate(z_range[z_sel]):
                             systs = SystList()
                             cond, chi2, chi2_0 = sess.cb._test_doubl(
-                                xm, ym, ym_0, ym_1, ym_2, col)
+                                xm*(1+z), ym, ym_0, ym_1, ym_2, col)
                             if cond and np.abs(z-z_rand)<z_step:
                                 cond_c += 1
                                 break
-                        sess.spec._shift_rf(0)
-                    #else:
-                    #    n_ok += 1
-                    #sess.spec._shift_rf(0.0)
+                        if cond == False:
+                            pass
+                    else:
+                        n_fail += 1
 
                 self.compl[ilogN, ib] = cond_c/n_ok
                 print(prefix, "I've estimated completeness of %s system "
-                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.                       "
-                      % (series, logN, b, 100*self.compl[ilogN, ib]))
-        plt.show()
-        pr.disable()
-        ps = pstats.Stats(pr)
-        ps.sort_stats('cumulative').print_stats(10)
-        #self = dc(sess_old)
+                      "(logN=%2.2f, b=%2.2f) as %2.0f%% [%i].                       "
+                      % (series, logN, b, 100*self.compl[ilogN, ib], n_fail))
+
         # Save the completeness as a two-entry table - to be modified
         self.compl_save = np.concatenate((np.array([logN_range]).T, self.compl),
                                          axis=-1)

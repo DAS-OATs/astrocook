@@ -115,6 +115,8 @@ class SystModel(LMComposite):
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
         self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
 
+        self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
+                                   for x in self._xr])
 
     def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
         self._series = series

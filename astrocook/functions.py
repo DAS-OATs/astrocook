@@ -109,7 +109,6 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
-
         model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
                           * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))

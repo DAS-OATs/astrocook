@@ -10,7 +10,7 @@ bunit_def = au.km / au.s
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': None, 'logN_min': 11, 'b_min': 1.0, 'btur_min': None, 'resol_min': None,
+    'z_min': None, 'logN_min': 10, 'b_min': 1.0, 'btur_min': None, 'resol_min': None,
     'z_max': None, 'logN_max': 17, 'b_max': 100.0, 'btur_max': None, 'resol_max': None,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 

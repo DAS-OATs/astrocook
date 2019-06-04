@@ -27,7 +27,7 @@ class Cookbook(object):
 
         spec = self.sess.spec
         y = spec._t[col]
-        dy = spec._t[col]
+        dy = spec._t['dy']
         s = spec._where_safe
 
         # If the simulated system is falls by more than a HWHM over a masked
@@ -40,6 +40,9 @@ class Cookbook(object):
         if np.sum(spec._t['lines_mask'][ysel]) == 0:
             y[s] = ys * y[s]
             dy[s] = np.sqrt(ys) * dy[s]
+            #plt.plot(spec.x[s], y[s]/spec.t['cont'][s])
+            #plt.plot(xm*10, ym)
+            #plt.show()
             return 0
         else:
             #print(spec._t[ysel])
@@ -58,7 +61,7 @@ class Cookbook(object):
         mod = SystModel(spec, systs, z0=0)
         mod._new_voigt(series, 0, logN, b, resol)
         spec._shift_rf(0.0)
-        xm = mod._xf
+        xm = mod._xm
         hlenm = len(xm)//2
         ym = mod.eval(x=xm, params=mod._pars)
         ym_0 = np.ones(len(xm))
@@ -117,7 +120,7 @@ class Cookbook(object):
         chi2_0 = np.sum(((ys-ym_0)/dys)**2)
         chi2_1 = np.sum(((ys-ym_1)/dys)**2)
         chi2_2 = np.sum(((ys-ym_2)/dys)**2)
-        fact = 0.8
+        fact = 0.7
         if chi2 < fact*np.min([chi2_0-3, chi2_1, chi2_2]):
             return True, chi2, chi2_0
         else:

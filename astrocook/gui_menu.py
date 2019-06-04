@@ -76,7 +76,7 @@ class GUIMenuCook(GUIMenu):
         self._item(self._menu, start_id+2, "Test...", self._on_test)
 
     def _on_full(self, event):
-        test_data_zem = {#'J0003-2323': 2.280,
+        test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
                          'J0240-2309': 2.225,
@@ -84,7 +84,7 @@ class GUIMenuCook(GUIMenu):
                          'J1344-1035': 2.134,
                          'J1451-2329': 2.208,
                          'J1626+6426': 2.320,
-                         #'J2123-0050': 2.26902,
+                         'J2123-0050': 2.26902,
                          }
 
         if self._gui._sess_sel != None:
@@ -100,7 +100,6 @@ class GUIMenuCook(GUIMenu):
             zem = test_data_zem[sess.spec.meta['object']]
             xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
             xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
-
             sess.convolve_gauss()
             sess.find_peaks()
 
@@ -121,11 +120,11 @@ class GUIMenuCook(GUIMenu):
         xmax = 460
         z_start = 1.32
         z_end = 1.959
-        logN_start = 12.5
-        logN_end = 12.0
-        logN_step = -0.1
-        b_start = 20
-        b_end = 25
+        logN_start = 12.0
+        logN_end = 10.0
+        logN_step = -0.5
+        b_start = 7.5
+        b_end = 10
         b_step = 5
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
@@ -146,27 +145,24 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=800)
             sess.interp_nodes()
-        #xmin=430
-        #xmax=450
+        xmin=515
+        xmax=528
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         """
         new_sess.add_syst_from_lines('CIV')
-        """
-        """
+        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
-                                maxfev=100)
+                                maxfev=100, col='deabs')
         """
-        #"""
         new_sess.compl_syst(n=100,
                             #z_start=z_start, z_end=z_end,
                             logN_start=logN_start, logN_end=logN_end,
-                            logN_step=logN_step,
-                            b_start=b_start, b_end=b_end, b_step=b_step)
-        #"""
+                            logN_step=logN_step)
+                            #b_start=b_start, b_end=b_end, b_step=b_step)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 
