@@ -136,7 +136,6 @@ class Session(object):
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
         self.cb._append_syst()
-
         for i, z in enumerate(z_range):
             self.cb._fit_syst(series, z, logN, b, resol, maxfev)
             print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)..."\
@@ -331,16 +330,17 @@ class Session(object):
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
-                self.corr[ilogN, ib] = \
-                    1-np.array(cond_swap_c)/np.array(cond_c)
+                self.corr[ilogN, ib] = (cond_c, cond_swap_c)
+                    #1-np.array(cond_swap_c)/np.array(cond_c)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences"
                       % (series, logN, b, z_range[0], z_range[-1], cond_c),
                       end='')
                 if cond_c != 0:
-                    print(" (estimated correctness=%2.0f%%)."
-                          % (100*self.corr[ilogN, ib]))
+                    #print(" (estimated correctness=%2.0f%%)."
+                    #      % (100*self.corr[ilogN, ib]))
+                    print(" (%i in the swapped spectrum)." % cond_swap_c)
                 else:
                     print(".")
 
@@ -375,17 +375,17 @@ class Session(object):
         self.cb._update_spec()
 
         # Save the correctness as a two-entry table - to be modified
-        self.corr_save = np.concatenate((np.array([logN_range]).T, self.corr),
-                                         axis=-1)
-        self.corr_save = np.concatenate((np.array([np.append(['nan'], b_range)]),
-                                         self.corr_save), axis=0)
+        self.corr_save = np.concatenate(
+            (np.array([logN_range]).T, self.corr), axis=-1)
+        self.corr_save = np.concatenate(
+            (np.array([np.append([np.nan], b_range)]), self.corr_save), axis=0)
 
         return 0
 
 
     def compl_syst(self, series='CIV', n=100,
                    z_start=0, z_end=6, z_step=2e-4,
-                   logN_start=12, logN_end=10, logN_step=-0.2,
+                   logN_start=15, logN_end=10, logN_step=-0.2,
                    b_start=5, b_end=16, b_step=2.5,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Estimate the completeness of system detection by simulating
@@ -482,13 +482,13 @@ class Session(object):
 
                 self.compl[ilogN, ib] = cond_c/n_ok
                 print(prefix, "I've estimated completeness of %s system "
-                      "(logN=%2.2f, b=%2.2f) as %2.0f%% [%i].                       "
-                      % (series, logN, b, 100*self.compl[ilogN, ib], n_fail))
+                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.                       "
+                      % (series, logN, b, 100*self.compl[ilogN, ib]))
 
         # Save the completeness as a two-entry table - to be modified
         self.compl_save = np.concatenate((np.array([logN_range]).T, self.compl),
                                          axis=-1)
-        self.compl_save = np.concatenate((np.array([np.append(['nan'], b_range)]),
+        self.compl_save = np.concatenate((np.array([np.append([np.nan], b_range)]),
                                           self.compl_save), axis=0)
         return 0
 
