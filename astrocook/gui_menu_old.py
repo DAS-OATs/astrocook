@@ -76,7 +76,7 @@ class GUIMenuCook(GUIMenu):
         self._item(self._menu, start_id+2, "Test...", self._on_test)
 
     def _on_full(self, event):
-        test_data_zem = {'J0003-2323': 2.280,
+        test_data_zem = {#'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
                          'J0240-2309': 2.225,
@@ -84,7 +84,7 @@ class GUIMenuCook(GUIMenu):
                          'J1344-1035': 2.134,
                          'J1451-2329': 2.208,
                          'J1626+6426': 2.320,
-                         'J2123-0050': 2.26902,
+                         #'J2123-0050': 2.26902,
                          }
 
         if self._gui._sess_sel != None:
@@ -100,6 +100,7 @@ class GUIMenuCook(GUIMenu):
             zem = test_data_zem[sess.spec.meta['object']]
             xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
             xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
+
             sess.convolve_gauss()
             sess.find_peaks()
 
@@ -108,20 +109,10 @@ class GUIMenuCook(GUIMenu):
                 sess.interp_nodes()
             new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(new_sess, open=False)
-
             new_sess.add_syst_from_lines(series='CIV')
             new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+            new_sess.add_syst_slide(col='deabs')
             new_sess.compl_syst()
-
-            compl_num_b = np.shape(new_sess.compl)[1]
-            compl_sum_b = np.sum(new_sess.compl, axis=1)
-            compl_sel = np.where(np.logical_and(compl_sum_b<compl_num_b,
-                                                compl_sum_b>0))[0]
-            logN_start = min(14, new_sess.compl_save[compl_sel[0]+1][0])
-            logN_end = new_sess.compl_save[compl_sel[-1]+2][0]
-
-            new_sess.add_syst_slide(col='deabs', logN_start=logN_start,
-                                    logN_end=logN_end)
 
             self._gui._graph_spec._refresh(self._gui._sess_items)
 
@@ -130,12 +121,12 @@ class GUIMenuCook(GUIMenu):
         xmax = 460
         z_start = 1.32
         z_end = 1.959
-        logN_start = 12.0
-        logN_end = 11.7
-        logN_step = -0.4
-        b_start = 7.5
+        logN_start = 16.0
+        logN_end = 12.0
+        logN_step = -0.2
+        b_start = 5
         b_end = 10
-        b_step = 4
+        b_step = 5
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
@@ -155,32 +146,22 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=800)
             sess.interp_nodes()
-        xmin=515
-        xmax=528
+        #xmin=430
+        #xmax=450
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        #new_sess.add_syst_from_lines(series='CIV')
-        #new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
-        """
+        new_sess.add_syst_from_lines('CIV')
+        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         new_sess.compl_syst(n=10,
                             #z_start=z_start, z_end=z_end,
                             logN_start=logN_start, logN_end=logN_end,
-                            logN_step=logN_step)#,
-                            #b_start=b_start, b_end=b_end, b_step=b_step)
-        compl_num_b = np.shape(new_sess.compl)[1]
-        compl_sum_b = np.sum(new_sess.compl, axis=1)
-        compl_sel = np.where(np.logical_and(compl_sum_b<compl_num_b,
-                                            compl_sum_b>0))[0]
-        logN_start = min(14, new_sess.compl_save[compl_sel[0]+1][0])
-        logN_end = new_sess.compl_save[compl_sel[-1]+2][0]
-        """
-        #"""
+                            logN_step=logN_step,
+                            b_start=b_start, b_end=b_end, b_step=b_step)
         new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
-                                maxfev=100)#, col='deabs')
-        #"""
+                                maxfev=100)
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

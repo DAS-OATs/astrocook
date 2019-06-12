@@ -302,13 +302,17 @@ class Session(object):
         else:
             self.systs = SystList()
         chi2a = np.full((len(logN_range),len(b_range),len(z_range)), np.inf)
-        self.corr = np.empty((len(logN_range),len(b_range)))
+        #self.corr = np.empty((len(logN_range),len(b_range), 2))
+        self.corr = np.empty((len(logN_range)*len(b_range), 4))
+        """
         self.corr_logN = logN_range
         self.corr_b = b_range
         self.corr_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
                        logN_range[0]-logN_step*0.5,logN_range[-1]+logN_step*0.5)
+        """
         for ilogN, logN in enumerate(logN_range):
             for ib, b in enumerate(b_range):
+                icorr = ilogN*len(b_range)+ib
                 xm, ym, ym_0, ym_1, ym_2 = self.cb._create_doubl(series, z_mean,
                                                                  logN, b, resol)
                 cond_c = 0
@@ -330,7 +334,12 @@ class Session(object):
                         cond_c += 1
                     if cond_swap:
                         cond_swap_c += 1
-                self.corr[ilogN, ib] = (cond_c, cond_swap_c)
+                #self.corr[ilogN, ib] = (cond_c, cond_swap_c)
+
+                self.corr[icorr, 0] = logN
+                self.corr[icorr, 1] = b
+                self.corr[icorr, 2] = cond_c
+                self.corr[icorr, 3] = cond_swap_c
                     #1-np.array(cond_swap_c)/np.array(cond_c)
                 print(prefix, "I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
@@ -375,11 +384,16 @@ class Session(object):
         self.cb._update_spec()
 
         # Save the correctness as a two-entry table - to be modified
-        self.corr_save = np.concatenate(
-            (np.array([logN_range]).T, self.corr), axis=-1)
-        self.corr_save = np.concatenate(
-            (np.array([np.append([np.nan], b_range)]), self.corr_save), axis=0)
-
+        """
+        rows = np.array([np.array([logN_range]).T])
+        cols = np.array([np.array([np.append([np.nan], b_range)])])
+        aprint(rows)
+        print(cols)
+        print(self.corr)
+        self.corr_save = np.concatenate((rows, self.corr), axis=-1)
+        self.corr_save = np.concatenate((cols, self.corr_save), axis=0)
+        """
+        self.corr_save = self.corr
         return 0
 
 
@@ -740,8 +754,18 @@ class Session(object):
             for s in self.seq:
                 try:
                     if s=='systs':
-                        np.savetxt(root+'_compl.dat', self.compl_save, fmt='%s')
-                        np.savetxt(root+'_corr.dat', self.corr_save, fmt='%s')
+                        print(self.corr_save)
+                        try:
+                            np.savetxt(root+'_compl.dat', self.compl_save,
+                                       fmt='%s')
+                        except:
+                            pass
+                        try:
+                            np.savetxt(root+'_corr.dat', self.corr_save,
+                                       fmt='%s')
+                        except:
+                            pass
+                        print(root+'_corr.dat')
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t
