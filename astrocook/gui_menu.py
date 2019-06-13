@@ -126,8 +126,6 @@ class GUIMenuCook(GUIMenu):
             self._gui._graph_spec._refresh(self._gui._sess_items)
 
     def _on_test(self, event):
-        xmin = 360
-        xmax = 460
         z_start = 1.32
         z_end = 1.959
         logN_start = 12.0
@@ -155,12 +153,12 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=800)
             sess.interp_nodes()
-        xmin=515
-        xmax=528
+        #xmin=515
+        #xmax=528
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        #new_sess.add_syst_from_lines(series='CIV')
-        #new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        new_sess.add_syst_from_lines(series='CIV')
+        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         """
         new_sess.compl_syst(n=10,
                             #z_start=z_start, z_end=z_end,
@@ -174,13 +172,13 @@ class GUIMenuCook(GUIMenu):
         logN_start = min(14, new_sess.compl_save[compl_sel[0]+1][0])
         logN_end = new_sess.compl_save[compl_sel[-1]+2][0]
         """
-        #"""
+        """
         new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100)#, col='deabs')
-        #"""
+        """
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

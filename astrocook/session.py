@@ -218,7 +218,7 @@ class Session(object):
                               unique=False)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
 
-                if systs._t['chi2r'][systs._t['id']==o_id]>chi2r_old:
+                if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
                     systs._unfreeze(t_old, mods_t_old)
                     break
 
@@ -237,6 +237,7 @@ class Session(object):
                       "(%i/%i) by adding %i components.                       "\
                       "  " % (o_series, o_z, i+1, len(old), count))
 
+        #self.systs._clean(chi2r_thres)
 
         return 0
 
