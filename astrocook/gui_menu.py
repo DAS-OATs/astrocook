@@ -153,11 +153,13 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=800)
             sess.interp_nodes()
-        #xmin=515
-        #xmax=528
+        #xmin=501.5
+        #xmax=503.5
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         new_sess.add_syst_from_lines(series='CIV')
+        #print(new_sess.systs._mods_t['id', 'chi2r'])
+        #print(new_sess.systs._t)
         new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
         """
         new_sess.compl_syst(n=10,

@@ -43,12 +43,12 @@ class SystModel(LMComposite):
             if v in self._defs:
                 self._defs[v] = self._vars[v]
 
-    def _make_group(self, thres=1e-6):
+    def _make_group(self, thres=1e-5):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
         spec = self._spec
-
+        
         mods_t = self._mods_t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
         ys = self._lines.eval(x=self._xs, params=self._pars)
@@ -62,11 +62,16 @@ class SystModel(LMComposite):
                 self._pars.update(mod._pars)
                 self._group_list.append(i)
         if len(self._group_list) > 1:
+            ids = list(np.ravel([np.array(i)
+                                 for i in mods_t['id'][self._group_list[1:]]]))
             mods_t.remove_rows(self._group_list[1:])
+            for i in ids:
+                mods_t['id'][0].append(i)
         if self._group_list == []:
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
+
 
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'

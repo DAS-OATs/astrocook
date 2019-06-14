@@ -171,3 +171,8 @@ class SystList(object):
             self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
             self._t[iw]['chi2r'] = mod._chi2r
         self._id += 1
+
+        #print(self._mods_t['id', 'chi2r'])
+        #print(self._t)
+
+        

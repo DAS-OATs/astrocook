@@ -149,7 +149,7 @@ class Session(object):
         return 0
 
 
-    def add_syst_from_resids(self, z_start=1.71, z_end=1.18, dz=5e-5,
+    def add_syst_from_resids(self, z_start=0, z_end=6, dz=1e-4,
                              resol=45000, logN=13, b=5, chi2r_thres=2.0,
                              maxfev=100):
         """ @brief Add and fit Voigt models from residuals of previously
@@ -176,16 +176,23 @@ class Session(object):
 
         systs = self.systs
 
-        old = systs._t[np.where(systs._t['chi2r'] > chi2r_thres)]
-
+        #old = systs._t[np.where(systs._t['chi2r'] > chi2r_thres)]
+        old = systs._mods_t[np.where(systs._mods_t['chi2r'] > chi2r_thres)]
+        
         for i, o in enumerate(old):
-            o_z = o['z']
-            o_series = o['series']
-            o_id = o['id']
-            zmin = o_z-1e-3
-            zmax = o_z+1e-3
-            xmin = (1.+zmin)*xem_d[series_d[o_series][0]]
-            xmax = (1.+zmax)*xem_d[series_d[o_series][-1]]
+            #o_z = o['z']
+            #o_series = o['series']
+            #o_id = o['id']
+            o_series = 'CIV'
+            o_id = o['id'][0]
+            o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
+            
+            #zmin = o_z-1e-3
+            #zmax = o_z+1e-3
+
+            
+            #xmin = (1.+zmin)*xem_d[series_d[o_series][0]]
+            #xmax = (1.+zmax)*xem_d[series_d[o_series][-1]]
 
 
             chi2r_old = np.inf
@@ -194,12 +201,21 @@ class Session(object):
 
                 spec = dc(self.spec)
                 spec._convolve_gauss(std=10, input_col='deabs', verb=False)
-                reg = spec._extract_region(xmin, xmax)
-                peaks = reg._find_peaks()
+                #reg = spec._extract_region(xmin, xmax)
+                #peaks = reg._find_peaks()
+
+                reg_x = o['mod']._xm
+                reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
+                reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
+                reg_conv = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv'])
+                reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
+                reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_conv, reg_dy)
+                
+                peaks = reg._find_peaks(col='y')
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
                 z_sel = resids._syst_cand(o_series, z_start, z_end, dz)
-
+                
                 # If no residuals are found, add a system at the init. redshift
                 if len(z_sel)==0:
                     z_cand = o_z
@@ -216,8 +232,11 @@ class Session(object):
                 #systs._append(SystList(id_start=len(self.systs._t)),
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
+                #print(o_series, z_cand, logN, b, resol, maxfev)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
 
+                #print(o_id)
+                #print(np.array(systs._t['chi2r'][systs._t['id']==o_id])[0])
                 if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
                     systs._unfreeze(t_old, mods_t_old)
                     break
@@ -442,8 +461,6 @@ class Session(object):
 
         # Previously fitted systems are left fixed...
         sess = dc(self)
-        print([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
-                        for t in series_d[series]])
         z_min = np.max([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
                         for t in series_d[series]])
         z_max = np.min([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
@@ -543,7 +560,7 @@ class Session(object):
                 pass
         return 0
 
-    def convolve_gauss(self, std=20, input_col='y', output_col='conv'):
+    def convolve_gauss(self, std=5, input_col='y', output_col='conv'):
         """@brief Convolve a spectrum column with a profile using FFT transform.
         @param std Standard deviation of the gaussian (km/s)
         @param input_col Input column
@@ -616,7 +633,7 @@ class Session(object):
 
         return new
 
-    def find_peaks(self, col='conv', kind='min', kappa=3.0, append=True):
+    def find_peaks(self, col='conv', kind='min', kappa=5.0, append=True):
         """ @brief Find the peaks in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
         standard deviations. They are saved as a list of lines.
