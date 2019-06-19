@@ -160,19 +160,19 @@ class GUIMenuCook(GUIMenu):
             sess = sess_start
         #self._gui._panel_sess._on_add(sess, open=False)
         sess.convolve_gauss(std=10)
-        sess.find_peaks()
+        sess.find_peaks(kappa=3.0)
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=1000)
             sess.interp_nodes()
-        xmin=460.0
-        xmax=520.0
+        #xmin=460.0
+        #xmax=520.0
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
         #new_sess.add_syst_from_lines(series='MgII', maxfev=0)
         #new_sess.add_syst_from_lines(series='SiIV', maxfev=0)
         #new_sess.add_syst_from_lines(series='FeII', maxfev=0)
-        new_sess.add_syst_from_lines(series='CIV', logN=14.5, dz=3e-5)#, maxfev=0)
-        new_sess.add_syst_from_resids(chi2r_thres=2.0, maxfev=100)
+        new_sess.add_syst_from_lines(series='CIV', logN=14.0, dz=3e-5)#, maxfev=0)
+        new_sess.add_syst_from_resids(chi2r_thres=np.inf, maxfev=100)
         """
         new_sess.compl_syst(n=10,
                             #z_start=z_start, z_end=z_end,

@@ -204,22 +204,12 @@ class Session(object):
             #print(o_series)
             o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
 
-            #zmin = o_z-1e-3
-            #zmax = o_z+1e-3
-
-
-            #xmin = (1.+zmin)*xem_d[series_d[o_series][0]]
-            #xmax = (1.+zmax)*xem_d[series_d[o_series][-1]]
-
-
             chi2r_old = np.inf
             count = 0
             while True:
 
                 spec = dc(self.spec)
                 spec._convolve_gauss(std=10, input_col='deabs', verb=False)
-                #reg = spec._extract_region(xmin, xmax)
-                #peaks = reg._find_peaks()
 
                 reg_x = o['mod']._xm
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
@@ -239,21 +229,17 @@ class Session(object):
                 else:
                     z_cand = z_sel[0]
 
-                print(prefix, "I'm improving a %s system at redshift %2.4f "\
-                      "(%i/%i): trying to add a component at redshift %2.4f..."\
-                      % (o_series, o_z, i+1, len(old), z_cand), end='\r')
+                print(prefix, "I'm improving a model at redshift %2.4f (%i/%i)"\
+                      ": trying to add a %s component at redshift %2.4f..."\
+                      % (o_z, i+1, len(old), o_series, z_cand), end='\r')
 
                 t_old, mods_t_old = systs._freeze()
 
                 self._mods_t_old = mods_t_old
-                #systs._append(SystList(id_start=len(self.systs._t)),
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
-                #print(o_series, z_cand, logN, b, resol, maxfev)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
 
-                #print(o_id)
-                #print(np.array(systs._t['chi2r'][systs._t['id']==o_id])[0])
                 if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
                     systs._unfreeze(t_old, mods_t_old)
                     break
@@ -269,11 +255,11 @@ class Session(object):
                       "%2.4f (%i/%i): I was unable to add useful components."\
                       % (o_series, o_z, i+1, len(old)))
             else:
-                print(prefix, "I've improved a %s system at redshift %2.4f "\
+                print(prefix, "I've improved a model at redshift %2.4f "\
                       "(%i/%i) by adding %i components.                       "\
-                      "  " % (o_series, o_z, i+1, len(old), count))
+                      "  " % (o_z, i+1, len(old), count))
 
-        #self.systs._clean(chi2r_thres)
+        self.systs._clean(chi2r_thres)
 
         return 0
 

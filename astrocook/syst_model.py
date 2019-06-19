@@ -72,7 +72,7 @@ class SystModel(LMComposite):
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
-        
+
 
 
     def _make_lines(self):
@@ -110,7 +110,7 @@ class SystModel(LMComposite):
                  d['resol_min'], d['resol_max'], d['resol_expr']))
 
 
-    def _make_regs(self, thres=1e-6):
+    def _make_regs(self, thres=1e-4):
         spec = self._spec
 
         ys = self._group.eval(x=self._xs, params=self._pars)
