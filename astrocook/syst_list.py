@@ -149,14 +149,18 @@ class SystList(object):
         self._mods_t = mods_t
 
 
-    def _update(self, mod):
+    def _update(self, mod, mod_t=True):
 
-        if mod._group_sel == -1:
-            self._mods_t.add_row([mod._z0, mod, None, []])
-        else:
-            self._mods_t[mod._group_sel]['mod'] = mod
-        self._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
-        self._mods_t[mod._group_sel]['id'].append(mod._id)
+        if mod_t:
+            if mod._group_sel == -1:
+                self._mods_t.add_row([mod._z0, mod, None, []])
+            else:
+                self._mods_t[mod._group_sel]['mod'] = mod
+            try:
+                self._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
+            except:
+                self._mods_t[mod._group_sel]['chi2r'] = np.nan
+            self._mods_t[mod._group_sel]['id'].append(mod._id)
 
         modw = np.where(mod == self._mods_t['mod'])[0][0]
         ids = self._mods_t['id'][modw]
@@ -169,10 +173,11 @@ class SystList(object):
             self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
             self._t[iw]['b'] = mod._pars[pref+'_b'].value
             self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
-            self._t[iw]['chi2r'] = mod._chi2r
+            try:
+                self._t[iw]['chi2r'] = mod._chi2r
+            except:
+                self._t[iw]['chi2r'] = np.nan
         self._id += 1
 
         #print(self._mods_t['id', 'chi2r'])
         #print(self._t)
-
-        

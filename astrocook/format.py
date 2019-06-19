@@ -64,6 +64,7 @@ class Format(object):
         xmax = x+data['wpix']*0.5
         y = data['flux']
         dy = data['sigma']
+        #"""
         try:
             cont = data['cont']
         except:
@@ -71,6 +72,8 @@ class Format(object):
                 cont = data['CONT']
             except:
                 cont = []
+        #"""
+        #cont = []
 
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
@@ -143,7 +146,8 @@ class Format(object):
         naxis1 = hdr['NAXIS1']
         data = hdul[0].data
         y = data[:][0]#*data[:][3]
-        dy = data[:][1]#*data[:][3]
+        #dy = data[:][1]#*data[:][3]
+        dy = data[:][2]#*data[:][3]
         x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
         xunit = au.Angstrom

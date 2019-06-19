@@ -28,7 +28,8 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
 
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, fit_kws=fit_kws)
+                                         weights=self._wf, #fit_kws=fit_kws,
+                                         method='least_squares')#, fit_kws={max_nfev:100})
         self._pars = fit.params
         self._chi2r = fit.redchi
 
@@ -48,7 +49,7 @@ class SystModel(LMComposite):
         """
 
         spec = self._spec
-        
+
         mods_t = self._mods_t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
         ys = self._lines.eval(x=self._xs, params=self._pars)
@@ -71,6 +72,7 @@ class SystModel(LMComposite):
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
+        
 
 
     def _make_lines(self):

@@ -70,6 +70,12 @@ class Cookbook(object):
 
         return xm, ym, ym_0, ym_1, ym_2
 
+    def _fit_mod(self, mod):
+        systs = self.sess.systs
+        mod._fit()
+        systs._update(mod, mod_t=False)
+
+
     def _fit_syst(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0,
                   maxfev=100):
 
@@ -78,9 +84,21 @@ class Cookbook(object):
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
-        mod._fit(fit_kws={'maxfev': maxfev})
+        if maxfev > 0:
+            mod._fit(fit_kws={'maxfev': maxfev})
         systs._update(mod)
         return 0
+
+    def _mod_syst(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0):
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+        systs._add(series, z, logN, b, resol)
+        mod = SystModel(spec, systs, z0=z)
+        mod._new_voigt(series, z, logN, b, resol)
+        systs._update(mod)
+        return 0
+
 
     def _simul_syst(self, series='Ly_a', z=2.0, logN=13.0, b=10.0,
                     resol=70000.0, col='y'):

@@ -136,12 +136,26 @@ class Session(object):
         z_range = self.lines._syst_cand(series, z_start, z_end, dz)
 
         self.cb._append_syst()
+
         for i, z in enumerate(z_range):
-            self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-            print(prefix, "I've fitted a %s system at redshift %2.4f (%i/%i)..."\
-                  % (series, z, i+1, len(z_range)), end='\r')
-        print(prefix, "I've fitted %i %s systems between redshift %2.4f and "\
-              "%2.4f." % (len(z_range), series, z_range[0], z_range[-1]))
+            self.cb._mod_syst(series, z, logN, b, resol)
+
+        mods_t = self.systs._mods_t
+        if len(z_range) > 0:
+            print(prefix, "I've added %i %s system(s) in %i model(s) between "
+                  "redshift %2.4f and %2.4f." % (len(z_range), series,
+                  len(mods_t), z_range[0], z_range[-1]))
+
+        if maxfev > 0:
+            for i,m in enumerate(mods_t):
+                print(prefix, "I'm fitting a %s model at redshift %2.4f "
+                      "(%i/%i)..."\
+                    % (series, m['z0'], i+1, len(mods_t)), end='\r')
+                self.cb._fit_mod(m['mod'])
+            print(prefix, "I've fitted %i %s system(s) in %i model(s) between "
+                  "redshift %2.4f and %2.4f." % (len(z_range), series,
+                  len(mods_t), z_range[0], z_range[-1]))
+
 
         self.systs._clean(chi2r_thres)
         self.cb._update_spec()
@@ -157,9 +171,9 @@ class Session(object):
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
-        @param N Guess column density
-        @param b Guess doppler broadening
         @param resol Resolution
+        @param logN Guess column density
+        @param b Guess doppler broadening
         @param chi2r_thres Reduced chi2 threshold to find models to improve
         @param maxfev Maximum number of function evaluation
         @return 0
@@ -168,29 +182,32 @@ class Session(object):
         z_start = float(z_start)
         z_end = float(z_end)
         dz = float(dz)
+        resol = float(resol)
         logN = float(logN)
         b = float(b)
         chi2r_thres = float(chi2r_thres)
-        resol = float(resol)
         maxfev = int(maxfev)
 
         systs = self.systs
 
         #old = systs._t[np.where(systs._t['chi2r'] > chi2r_thres)]
-        old = systs._mods_t[np.where(systs._mods_t['chi2r'] > chi2r_thres)]
-        
+        old = systs._mods_t[np.where(np.logical_or(
+                systs._mods_t['chi2r'] > chi2r_thres,
+                np.isnan(systs._mods_t['chi2r'])))]
+
         for i, o in enumerate(old):
             #o_z = o['z']
             #o_series = o['series']
             #o_id = o['id']
-            o_series = 'CIV'
             o_id = o['id'][0]
+            o_series = systs._t[systs._t['id'] == o_id]['series'][0]
+            #print(o_series)
             o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
-            
+
             #zmin = o_z-1e-3
             #zmax = o_z+1e-3
 
-            
+
             #xmin = (1.+zmin)*xem_d[series_d[o_series][0]]
             #xmax = (1.+zmax)*xem_d[series_d[o_series][-1]]
 
@@ -210,12 +227,12 @@ class Session(object):
                 reg_conv = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv'])
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_conv, reg_dy)
-                
+
                 peaks = reg._find_peaks(col='y')
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
                 z_sel = resids._syst_cand(o_series, z_start, z_end, dz)
-                
+
                 # If no residuals are found, add a system at the init. redshift
                 if len(z_sel)==0:
                     z_cand = o_z

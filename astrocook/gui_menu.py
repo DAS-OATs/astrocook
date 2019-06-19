@@ -25,8 +25,10 @@ class GUIMenu(object):
         bar.Append(file._menu, "File")
         bar.Append(edit._menu, "Edit")
         bar.Append(view._menu, "View")
-        bar.Append(snacks._menu, "Snacks")
-        bar.Append(meals._menu, "Meals")
+        #bar.Append(snacks._menu, "Snacks")
+        bar.Append(snacks._menu, "Ingredients")
+        #bar.Append(meals._menu, "Meals")
+        bar.Append(meals._menu, "Recipes")
         bar.Append(cook._menu, "Cook")
         return bar
 
@@ -72,8 +74,9 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, "Full CIV search...", self._on_full)
-        self._item(self._menu, start_id+2, "Test...", self._on_test)
+        #self._item(self._menu, start_id+1, "Full CIV search...", self._on_full)
+        #self._item(self._menu, start_id+2, "Test...", self._on_test)
+        self._item(self._menu, start_id+2, "Fit CIV forest...", self._on_test)
 
     def _on_full(self, event):
         test_data_zem = {'J0003-2323': 2.280,
@@ -143,24 +146,33 @@ class GUIMenuCook(GUIMenu):
                          'J1451-2329': 2.208,
                          'J1626+6426': 2.320,
                          'J2123-0050': 2.26902,
+                         'he0515m4414': 1.713,
                          }
-        sess = self._gui._sess_sel
-        zem = test_data_zem[sess.spec.meta['object']]
+        sess_start = self._gui._sess_sel
+        zem = test_data_zem[sess_start.spec.meta['object']]
         xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
         xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
-        sess.convolve_gauss()
+        if sess_start.spec.meta['object'] == 'J2123-0050':
+            xmin=460.0
+            xmax=500.0
+            sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+        else:
+            sess = sess_start
+        #self._gui._panel_sess._on_add(sess, open=False)
+        sess.convolve_gauss(std=10)
         sess.find_peaks()
         if 'cont' not in sess.spec._t.colnames:
-            sess.extract_nodes(delta_x=800)
+            sess.extract_nodes(delta_x=1000)
             sess.interp_nodes()
-        #xmin=501.5
-        #xmax=503.5
+        xmin=460.0
+        xmax=520.0
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        new_sess.add_syst_from_lines(series='CIV')
-        #print(new_sess.systs._mods_t['id', 'chi2r'])
-        #print(new_sess.systs._t)
-        new_sess.add_syst_from_resids(chi2r_thres=1.0, maxfev=100)
+        #new_sess.add_syst_from_lines(series='MgII', maxfev=0)
+        #new_sess.add_syst_from_lines(series='SiIV', maxfev=0)
+        #new_sess.add_syst_from_lines(series='FeII', maxfev=0)
+        new_sess.add_syst_from_lines(series='CIV', logN=14.5, dz=3e-5)#, maxfev=0)
+        new_sess.add_syst_from_resids(chi2r_thres=2.0, maxfev=100)
         """
         new_sess.compl_syst(n=10,
                             #z_start=z_start, z_end=z_end,
@@ -173,8 +185,6 @@ class GUIMenuCook(GUIMenu):
                                             compl_sum_b>0))[0]
         logN_start = min(14, new_sess.compl_save[compl_sel[0]+1][0])
         logN_end = new_sess.compl_save[compl_sel[-1]+2][0]
-        """
-        """
         new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
                                 logN_start=logN_start, logN_end=logN_end,
                                 logN_step=logN_step,

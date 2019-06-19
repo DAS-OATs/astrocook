@@ -104,6 +104,7 @@ class GUIDialogMethod(wx.Dialog):
         defs = inspect.getargspec(method)[-1]
         if defs == None:
             defs = []
+        defs = [str(d) for d in defs]
         values = np.append(['']*(len(keys)-len(defs)), defs)
         self._params.append(OrderedDict(zip(keys, values)))
 

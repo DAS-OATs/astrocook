@@ -59,8 +59,11 @@ class LineList(Frame):
         z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
 
         # Find coincidences
-        z_sort = np.sort(np.ravel(z_sel))
-        z_range = z_sort[np.where(np.ediff1d(z_sort)<dz)]
-        z_range = z_range if z_start < z_end else z_range[::-1]
+        if len(series_d[series]) > 1:
+            z_sort = np.sort(np.ravel(z_sel))
+            z_range = z_sort[np.where(np.ediff1d(z_sort)<dz)]
+            z_range = z_range if z_start < z_end else z_range[::-1]
+        else:
+            z_range = z_sel
 
         return z_range
