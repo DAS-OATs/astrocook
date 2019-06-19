@@ -206,23 +206,21 @@ class Session(object):
 
             chi2r_old = np.inf
             count = 0
+
             while True:
 
                 spec = dc(self.spec)
                 spec._convolve_gauss(std=10, input_col='deabs', verb=False)
-
                 reg_x = o['mod']._xm
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
                 reg_conv = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv'])
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_conv, reg_dy)
-
                 peaks = reg._find_peaks(col='y')
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
                 z_sel = resids._syst_cand(o_series, z_start, z_end, dz)
-
                 # If no residuals are found, add a system at the init. redshift
                 if len(z_sel)==0:
                     z_cand = o_z
@@ -239,16 +237,19 @@ class Session(object):
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                #print(z_cand, systs._t['chi2r'][systs._t['id']==o_id][0])
 
+                #"""
                 if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
                     systs._unfreeze(t_old, mods_t_old)
                     break
-
+                #"""
                 chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
                 self.cb._update_spec()
                 count += 1
 
                 if systs._t['chi2r'][systs._t['id']==o_id]<chi2r_thres: break
+
 
             if count == 0:
                 print(prefix, "I've not improved the %s system at redshift "\
@@ -256,10 +257,10 @@ class Session(object):
                       % (o_series, o_z, i+1, len(old)))
             else:
                 print(prefix, "I've improved a model at redshift %2.4f "\
-                      "(%i/%i) by adding %i components.                       "\
+                      "(%i/%i) by adding %i components.                            "\
                       "  " % (o_z, i+1, len(old), count))
 
-        self.systs._clean(chi2r_thres)
+        #self.systs._clean(chi2r_thres)
 
         return 0
 
