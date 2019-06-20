@@ -1,5 +1,7 @@
+from .vars import *
 from .syst_list import SystList
 from .syst_model import SystModel
+from astropy import constants as ac
 from astropy import units as au
 import numpy as np
 from matplotlib import pyplot as plt
@@ -22,6 +24,16 @@ class Cookbook(object):
             systs._append(SystList(id_start=np.max(systs._t['id'])+1))
         else:
             setattr(self.sess, 'systs', SystList())
+
+    def _adapt_z(self, series, z_start, z_end):
+        spec = self.sess.spec
+        z_min = np.max([(np.min(spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_start = max(z_min, z_start)
+        z_max = np.min([(np.max(spec.x.to(au.nm))/xem_d[t]).value-1.0 \
+                        for t in series_d[series]])
+        z_end = min(z_max, z_end)
+        return z_start, z_end
 
     def _apply_doubl(self, xm, ym, col='y'):
 
@@ -70,9 +82,9 @@ class Cookbook(object):
 
         return xm, ym, ym_0, ym_1, ym_2
 
-    def _fit_mod(self, mod):
+    def _fit_mod(self, mod, maxfev=None):
         systs = self.sess.systs
-        mod._fit()
+        mod._fit(fit_kws={'max_nfev': maxfev})
         systs._update(mod, mod_t=False)
 
 
@@ -85,9 +97,30 @@ class Cookbook(object):
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
         if maxfev > 0:
-            mod._fit(fit_kws={'maxfev': maxfev})
+            mod._fit(fit_kws={'max_nfev': maxfev})
         systs._update(mod)
         return 0
+
+    def _merge_syst(self, merge_t, v_thres):
+
+        dv_t = np.array([[ac.c.to(au.km/au.s).value*(z1-z2)/(1+z1)
+                          for z1 in merge_t['z']]
+                         for z2 in merge_t['z']]) * au.km/au.s
+        dv_t[dv_t<=0] = np.inf
+        if np.min(dv_t) < v_thres:
+            m1, m2 = np.unravel_index(np.argmin(dv_t), np.shape(dv_t))
+            z = np.array([merge_t['z'][m1], merge_t['z'][m2]])
+            logN = np.array([merge_t['logN'][m1], merge_t['logN'][m2]])
+            dlogN = np.array([merge_t['dlogN'][m1], merge_t['dlogN'][m2]])
+            z_ave = np.average(z, weights=logN)
+            logN_ave = np.log10(np.sum(10**logN))
+            dlogN_ave = np.log10(np.sqrt(np.sum(10**(2*dlogN))))
+            merge_t.remove_rows([m1, m2])
+            merge_t.add_row([z_ave, logN_ave, dlogN_ave])
+            self._merge_syst(merge_t, v_thres)
+
+        return 0
+
 
     def _mod_syst(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0):
 

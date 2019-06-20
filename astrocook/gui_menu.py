@@ -129,14 +129,6 @@ class GUIMenuCook(GUIMenu):
             self._gui._graph_spec._refresh(self._gui._sess_items)
 
     def _on_test(self, event):
-        z_start = 1.32
-        z_end = 1.959
-        logN_start = 12.0
-        logN_end = 11.7
-        logN_step = -0.4
-        b_start = 7.5
-        b_end = 10
-        b_step = 4
         test_data_zem = {'J0003-2323': 2.280,
                          'J0100+0211': 1.959,
                          'J0124-3744': 2.190,
@@ -158,39 +150,24 @@ class GUIMenuCook(GUIMenu):
             sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
         else:
             sess = sess_start
-        #self._gui._panel_sess._on_add(sess, open=False)
+
         sess.convolve_gauss(std=10)
         sess.find_peaks(kappa=3.0)
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=1000)
             sess.interp_nodes()
-        #xmin=460.0
-        #xmax=462.0
         new_sess = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(new_sess, open=False)
-        #new_sess.add_syst_from_lines(series='MgII', maxfev=0)
-        #new_sess.add_syst_from_lines(series='SiIV', maxfev=0)
-        #new_sess.add_syst_from_lines(series='FeII', maxfev=0)
+
         new_sess.add_syst_from_lines(series='CIV', logN=14.0, dz=3e-5)#, maxfev=0)
-        new_sess.add_syst_from_resids(chi2r_thres=2.0, maxfev=100)
-        """
-        new_sess.compl_syst(n=10,
-                            #z_start=z_start, z_end=z_end,
-                            logN_start=logN_start, logN_end=logN_end,
-                            logN_step=logN_step)#,
-                            #b_start=b_start, b_end=b_end, b_step=b_step)
-        compl_num_b = np.shape(new_sess.compl)[1]
-        compl_sum_b = np.sum(new_sess.compl, axis=1)
-        compl_sel = np.where(np.logical_and(compl_sum_b<compl_num_b,
-                                            compl_sum_b>0))[0]
-        logN_start = min(14, new_sess.compl_save[compl_sel[0]+1][0])
-        logN_end = new_sess.compl_save[compl_sel[-1]+2][0]
-        new_sess.add_syst_slide(#z_start=z_start, z_end=z_end,
-                                logN_start=logN_start, logN_end=logN_end,
-                                logN_step=logN_step,
-                                b_start=b_start, b_end=b_end, b_step=b_step,
-                                maxfev=100)#, col='deabs')
-        """
+
+        new_sess.add_syst_from_resids(chi2r_thres=2.0, maxfev=10)
+
+        new_sess.compl_syst(n=10)
+
+        new_sess.add_syst_slide(col='deabs')
+
+        new_sess.merge_syst()
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

@@ -10,6 +10,7 @@ from .syst_list import SystList
 from .syst_model import SystModel
 #from .model_list import ModelList
 from .vars import *
+#from astropy import constants as ac
 from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
@@ -164,7 +165,7 @@ class Session(object):
 
 
     def add_syst_from_resids(self, z_start=0, z_end=6, dz=1e-4,
-                             resol=45000, logN=13, b=5, chi2r_thres=2.0,
+                             resol=45000, logN=11, b=5, chi2r_thres=2.0,
                              maxfev=100):
         """ @brief Add and fit Voigt models from residuals of previously
         fitted models.
@@ -210,22 +211,25 @@ class Session(object):
             while True:
 
                 spec = dc(self.spec)
-                spec._convolve_gauss(std=10, input_col='deabs', verb=False)
+                spec._convolve_gauss(std=5, input_col='deabs', verb=False)
                 reg_x = o['mod']._xm
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
-                reg_conv = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv'])
+                reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
+                #plt.plot(reg_x, reg_y)
+                #plt.show()
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
-                reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_conv, reg_dy)
+                reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
                 peaks = reg._find_peaks(col='y')
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
-                z_sel = resids._syst_cand(o_series, z_start, z_end, dz)
+                z_cand = resids._syst_cand(o_series, z_start, z_end, dz, single=True)
                 # If no residuals are found, add a system at the init. redshift
-                if len(z_sel)==0:
+                #if len(z_sel)==0:
+                if z_cand == None:
                     z_cand = o_z
-                else:
-                    z_cand = z_sel[0]
+                #else:
+                #    z_cand = z_single
 
                 print(prefix, "I'm improving a model at redshift %2.4f (%i/%i)"\
                       ": trying to add a %s component at redshift %2.4f..."\
@@ -236,8 +240,12 @@ class Session(object):
                 self._mods_t_old = mods_t_old
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
+
+                #print(np.min(peaks.y).value, logN)
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+
                 #print(z_cand, systs._t['chi2r'][systs._t['id']==o_id][0])
+                #break
 
                 #"""
                 if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
@@ -247,7 +255,7 @@ class Session(object):
                 chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
                 self.cb._update_spec()
                 count += 1
-
+                #if count > 5: break
                 if systs._t['chi2r'][systs._t['id']==o_id]<chi2r_thres: break
 
 
@@ -268,7 +276,7 @@ class Session(object):
     def add_syst_slide(self, series='CIV',
                        z_start=0, z_end=6, z_step=2e-4,
                        logN_start=12, logN_end=10, logN_step=-0.2,
-                       b_start=5, b_end=16, b_step=2.5,
+                       b_start=8, b_end=9, b_step=1.1,
                        resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
@@ -422,9 +430,9 @@ class Session(object):
 
 
     def compl_syst(self, series='CIV', n=100,
-                   z_start=0, z_end=6, z_step=2e-4,
+                   z_start=0, z_end=6, z_step=1e-2,
                    logN_start=15, logN_end=10, logN_step=-0.2,
-                   b_start=5, b_end=16, b_step=2.5,
+                   b_start=8, b_end=9, b_step=1.1,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
         """ @brief Estimate the completeness of system detection by simulating
         systems at random redshifts and sliding Voigt models to fit them
@@ -459,73 +467,83 @@ class Session(object):
         chi2r_thres = float(chi2r_thres)
         maxfev = int(maxfev)
 
-        z_range = np.array(self.spec.x/xem_d[series_d[series][0]]-1)
+        z_start, z_end = self.cb._adapt_z(series, z_start, z_end)
+        z_range = np.arange(z_start, z_end, z_step)
         logN_range = np.arange(logN_start, logN_end, logN_step)
         b_range = np.arange(b_start, b_end, b_step)
 
         # Previously fitted systems are left fixed...
         sess = dc(self)
-        z_min = np.max([(np.min(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
-                        for t in series_d[series]])
-        z_max = np.min([(np.max(self.spec.x.to(au.nm))/xem_d[t]).value-1.0 \
-                        for t in series_d[series]])
-        z_mean = 0.5*(z_min+z_max)
-        self.compl = np.empty((len(logN_range),len(b_range)))
+
+        z_mean = 0.5*(z_start+z_end)
+        #self.compl = np.empty((len(z_range), len(logN_range),len(b_range)))
+        self.compl = np.empty((len(z_range)*len(logN_range)*len(b_range), 4))
         self.compl_e = (b_range[0]-b_step*0.5, b_range[-1]+b_step*0.5,
                         logN_range[0]-logN_step*0.5,
                         logN_range[-1]+logN_step*0.5)
 
-        for ilogN, logN in enumerate(logN_range):
-            for ib, b in enumerate(b_range):
+        z_arr = np.array(self.spec.x/xem_d[series_d[series][0]]-1)
+        dz = 2e-4
+        compl_sum = 0
+        for iz, (zs, ze) in enumerate(zip(z_range[:-1], z_range[1:])):
 
-                cond_c = 0
-                n_ok = 0
-                #for r in range(n):
-                sess.systs = dc(self.systs)
-                sess.cb._append_syst()
-                sess.systs._add(series, z_mean, logN, b+0.5*b_step, resol)
+            for ilogN, logN in enumerate(logN_range):
+                for ib, b in enumerate(b_range):
+                    icompl = (iz*len(logN_range)+ilogN)*len(b_range)+ib
+                    #print(icompl)
 
-                xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
-                    series, z_mean, logN, b, resol)
-                xm_e, ym_e, ym_0_e, ym_1_e, ym_2_e = sess.cb._create_doubl(
-                    series, z_mean, logN, b+0.0*b_step, resol)
+                    cond_c = 0
+                    n_ok = 0
 
-                n_fail = 0
-                while n_ok < n:
-                    print(prefix, "I'm estimating completeness of %s system "
-                          "(logN=%2.2f, b=%2.2f, realization %i/%i)..."
-                          % (series, logN, b, n_ok+1, n), end='\r')
-                    z_rand = np.random.rand()*(z_max-z_min)+z_min
-                    sess.spec = dc(self.spec)
-                    fail = sess.cb._apply_doubl(xm_e*(1+z_rand), ym_e)
-                    if not fail:
+                    sess.systs = dc(self.systs)
+                    sess.cb._append_syst()
+                    sess.systs._add(series, z_mean, logN, b+0.5*b_step, resol)
+
+                    xm, ym, ym_0, ym_1, ym_2 = sess.cb._create_doubl(
+                        series, z_mean, logN, b, resol)
+                    xm_e, ym_e, ym_0_e, ym_1_e, ym_2_e = sess.cb._create_doubl(
+                        series, z_mean, logN, b+0.0*b_step, resol)
+
+                    n_fail = 0
+                    while n_ok < n:
+                        print(prefix, "I'm estimating completeness of %s "
+                              "systems (z=[%2.2f, %2.2f], logN=%2.2f, b=%2.2f, "
+                              "realization %i/%i)..."
+                              % (series, zs, ze, logN, b, n_ok+1, n), end='\r')
+                        z_rand = np.random.rand()*(ze-zs)+zs
+                        sess.spec = dc(self.spec)
+                        fail = sess.cb._apply_doubl(xm_e*(1+z_rand), ym_e)
+                        #if not fail or 1==1:
                         n_ok += 1
                         z_round = round(z_rand, 4)
                         z_sel = np.where(np.logical_and(
-                            z_range > z_round-1.5*z_step,
-                            z_range < z_round+1.5*z_step))
-                        for iz, z in enumerate(z_range[z_sel]):
+                            z_arr > z_round-1.5*dz,
+                            z_arr < z_round+1.5*dz))
+                        for z in z_arr[z_sel]:
                             systs = SystList()
                             cond, chi2, chi2_0 = sess.cb._test_doubl(
                                 xm*(1+z), ym, ym_0, ym_1, ym_2, col)
-                            if cond and np.abs(z-z_rand)<z_step:
+                            if cond and np.abs(z-z_rand)<dz:
                                 cond_c += 1
                                 break
                         if cond == False:
                             pass
-                    else:
-                        n_fail += 1
+                        #else:
+                        #n_fail += 1
 
-                self.compl[ilogN, ib] = cond_c/n_ok
-                print(prefix, "I've estimated completeness of %s system "
-                      "(logN=%2.2f, b=%2.2f) as %2.0f%%.                       "
-                      % (series, logN, b, 100*self.compl[ilogN, ib]))
+                    compl = cond_c/n_ok
+                    compl_sum += compl
+                    self.compl[icompl, 0] = iz
+                    self.compl[icompl, 1] = ilogN
+                    self.compl[icompl, 2] = ib
+                    self.compl[icompl, 3] = compl
 
-        # Save the completeness as a two-entry table - to be modified
-        self.compl_save = np.concatenate((np.array([logN_range]).T, self.compl),
-                                         axis=-1)
-        self.compl_save = np.concatenate((np.array([np.append([np.nan], b_range)]),
-                                          self.compl_save), axis=0)
+        print(prefix, "I've estimated completeness of %s systems "
+              "(z=[%2.2f, %2.2f], logN=[%2.2f, %2.2f], b=[%2.2f, %2.2f]); "
+              "average was %2.0f%%."
+              % (series, z_start, z_end, logN_start, logN_end, b_start, b_end,
+                 100*(compl_sum)/np.shape(self.compl)[0]))
+
         return 0
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
@@ -687,6 +705,20 @@ class Session(object):
         self.spec._interp_nodes(self.lines, self.nodes)
         return 0
 
+    def merge_syst(self, series='CIV', v_thres=100):
+        """ @brief Merge column densities of systems applying a friend-of-friend
+        algorithm.
+        @param series Series of transitions
+        @param v_thres Velocity threshold for merging (km/s)
+        @return 0
+        """
+
+        v_thres = float(v_thres) * au.km/au.s
+
+        sel = np.where(self.systs._t['series'] == series)
+        self.merge = dc(self.systs._t['z', 'logN', 'dlogN'][sel])
+        self.cb._merge_syst(self.merge, v_thres)
+        self.merge.sort('z')
 
     def open(self):
 
@@ -776,18 +808,18 @@ class Session(object):
             for s in self.seq:
                 try:
                     if s=='systs':
-                        print(self.corr_save)
                         try:
-                            np.savetxt(root+'_compl.dat', self.compl_save,
-                                       fmt='%s')
+                            np.savetxt(root+'_compl.dat', self.compl, fmt='%s')
                         except:
                             pass
                         try:
-                            np.savetxt(root+'_corr.dat', self.corr_save,
-                                       fmt='%s')
+                            np.savetxt(root+'_corr.dat', self.corr, fmt='%s')
                         except:
                             pass
-                        print(root+'_corr.dat')
+                        try:
+                            np.savetxt(root+'_merge.dat', self.merge, fmt='%s')
+                        except:
+                            pass
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t

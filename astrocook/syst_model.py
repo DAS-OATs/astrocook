@@ -28,8 +28,8 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
 
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, #fit_kws=fit_kws,
-                                         method='least_squares')#, fit_kws={max_nfev:100})
+                                         weights=self._wf, fit_kws=fit_kws,
+                                         method='least_squares')
         self._pars = fit.params
         self._chi2r = fit.redchi
 

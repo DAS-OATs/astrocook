@@ -47,23 +47,35 @@ class LineList(Frame):
                 l['XMAX'] = l['X']+0.5*ew.value
     """
 
-    def _syst_cand(self, series, z_start, z_end, dz):
+    def _syst_cand(self, series, z_start, z_end, dz, single=False):
 
         # Compute all possible redshifts
         z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
                             for x in self.x] for t in series_d[series]])
+        y_all = np.ravel([[self.y] for t in series_d[series]])
 
         # Select values within [z_start, z_end]
         (z_min, z_max) = (z_start, z_end) if z_start < z_end \
             else (z_end, z_start)
         z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        y_sel = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
 
         # Find coincidences
         if len(series_d[series]) > 1:
             z_sort = np.sort(np.ravel(z_sel))
+            y_sort = y_sel[np.argsort(np.ravel(z_sel))]
             z_range = z_sort[np.where(np.ediff1d(z_sort)<dz)]
+            y_range = y_sort[np.where(np.ediff1d(z_sort)<dz)]
             z_range = z_range if z_start < z_end else z_range[::-1]
+            y_range = y_range if z_start < z_end else y_range[::-1]
         else:
             z_range = z_sel
+            y_range = y_sel
+        if len(z_range) > 0:
+            z_single = z_range[np.argmin(y_range)]
+        else:
+            z_single = None
 
+        if single:
+            return z_single
         return z_range
