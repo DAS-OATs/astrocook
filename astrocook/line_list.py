@@ -50,8 +50,11 @@ class LineList(Frame):
     def _syst_cand(self, series, z_start, z_end, dz, single=False):
 
         # Compute all possible redshifts
-        z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
-                            for x in self.x] for t in series_d[series]])
+        if series == 'unknown':
+            z_all = np.ravel([[self.x.to(au.nm)] for t in series_d[series]])
+        else:
+            z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
+                                for x in self.x] for t in series_d[series]])
         y_all = np.ravel([[self.y] for t in series_d[series]])
 
         # Select values within [z_start, z_end]

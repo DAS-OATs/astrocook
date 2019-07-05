@@ -100,8 +100,12 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     btur = btur * au.km/au.s
     model = np.ones(len(x))
     for t in series_d[series]:
-        xem = xem_d[t]
-        xobs = xem*(1+z)
+        if series == 'unknown':
+            xem = z*au.nm
+            xobs = z*au.nm
+        else:
+            xem = xem_d[t]
+            xobs = xem*(1+z)
         fosc = fosc_d[t]
         gamma = gamma_d[t]/au.s
         b_qs = np.sqrt(b**2 + btur**2)

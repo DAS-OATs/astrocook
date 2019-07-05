@@ -85,6 +85,8 @@ class Cookbook(object):
     def _fit_mod(self, mod, maxfev=None):
         systs = self.sess.systs
         mod._fit(fit_kws={'max_nfev': maxfev})
+        #plt.plot(mod._xf, mod._yf)
+        #plt.show()
         systs._update(mod, mod_t=False)
 
 
@@ -98,6 +100,8 @@ class Cookbook(object):
         mod._new_voigt(series, z, logN, b, resol)
         if maxfev > 0:
             mod._fit(fit_kws={'max_nfev': maxfev})
+        #plt.plot(mod._xf, mod._yf)
+        #plt.show()
         systs._update(mod)
         return 0
 

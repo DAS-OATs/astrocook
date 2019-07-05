@@ -4,10 +4,12 @@ from astropy import table as at
 from lmfit import CompositeModel as LMComposite
 from lmfit import Model as LMModel
 from lmfit import Parameters as LMParameters
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 import numpy as np
 
 prefix = "System model:"
+
+thres = 1e-4
 
 class SystModel(LMComposite):
 
@@ -44,7 +46,7 @@ class SystModel(LMComposite):
             if v in self._defs:
                 self._defs[v] = self._vars[v]
 
-    def _make_group(self, thres=1e-5):
+    def _make_group(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
@@ -110,11 +112,15 @@ class SystModel(LMComposite):
                  d['resol_min'], d['resol_max'], d['resol_expr']))
 
 
-    def _make_regs(self, thres=1e-4):
+    def _make_regs(self, thres=thres):
         spec = self._spec
 
         ys = self._group.eval(x=self._xs, params=self._pars)
         c = np.where(ys<1-thres)[0]
+
+        #plt.plot(self._xs[c], ys[c])
+        #plt.show()
+
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
 

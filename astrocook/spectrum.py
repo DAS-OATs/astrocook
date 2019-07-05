@@ -131,11 +131,11 @@ class Spectrum(Frame):
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
         return 0
 
-    def _find_peaks(self, col='conv', kind='min', kappa=3.0):
+    def _find_peaks(self, col='conv', kind='min', kappa=3.0, **kwargs):
 
         y = self._safe(self._t[col])
-        min_idx = np.hstack(argrelmin(y))
-        max_idx = np.hstack(argrelmax(y))
+        min_idx = np.hstack(argrelmin(y, **kwargs))
+        max_idx = np.hstack(argrelmax(y, **kwargs))
         ext_idx = np.sort(np.append(min_idx, max_idx))
         ext = self._copy(ext_idx)
         if len(ext.t) > 0:

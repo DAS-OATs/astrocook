@@ -127,6 +127,9 @@ class Session(object):
 
         z_start = float(z_start)
         z_end = float(z_end)
+        if series == 'unknown':
+            z_start = 0
+            z_end = np.inf
         dz = float(dz)
         logN = float(logN)
         b = float(b)
@@ -156,7 +159,6 @@ class Session(object):
             print(prefix, "I've fitted %i %s system(s) in %i model(s) between "
                   "redshift %2.4f and %2.4f." % (len(z_range), series,
                   len(mods_t), z_range[0], z_range[-1]))
-
 
         self.systs._clean(chi2r_thres)
         self.cb._update_spec()
@@ -211,7 +213,7 @@ class Session(object):
             while True:
 
                 spec = dc(self.spec)
-                spec._convolve_gauss(std=5, input_col='deabs', verb=False)
+                spec._convolve_gauss(std=0.1, input_col='deabs', verb=False)
                 reg_x = o['mod']._xm
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
@@ -220,43 +222,76 @@ class Session(object):
                 #plt.show()
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
-                peaks = reg._find_peaks(col='y')
+                peaks = reg._find_peaks(col='y')#, mode='wrap')
+                #print(peaks.t)
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
                 z_cand = resids._syst_cand(o_series, z_start, z_end, dz, single=True)
+                z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
                 # If no residuals are found, add a system at the init. redshift
                 #if len(z_sel)==0:
                 if z_cand == None:
-                    z_cand = o_z
+                    #z_cand = o_z
+                    z_cand = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
+                    o_series = 'unknown'
                 #else:
                 #    z_cand = z_single
 
+
+                """
                 print(prefix, "I'm improving a model at redshift %2.4f (%i/%i)"\
                       ": trying to add a %s component at redshift %2.4f..."\
                       % (o_z, i+1, len(old), o_series, z_cand), end='\r')
+                """
 
-                t_old, mods_t_old = systs._freeze()
+                t_old, mods_t_old = self.systs._freeze()
 
                 self._mods_t_old = mods_t_old
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
 
+                cand = dc(self)
+                alt = dc(self)
                 #print(np.min(peaks.y).value, logN)
+
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                """
+                cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                """
 
-                #print(z_cand, systs._t['chi2r'][systs._t['id']==o_id][0])
-                #break
+                chi2r = self.systs._t['chi2r'][self.systs._t['id']==o_id][0]
+                msg = "added a %s component at redshift %2.4f..." \
+                      % (o_series, z_cand)
+                """
+                chi2r_cand = cand.systs._t['chi2r'][cand.systs._t['id']==o_id][0]
+                chi2r_alt = alt.systs._t['chi2r'][alt.systs._t['id']==o_id][0]
+                print(z_cand, (1+z_cand)*xem_d[series_d[o_series][0]], chi2r_cand, chi2r_alt)
 
+                if chi2r_cand > chi2r_alt: #and count > 3:
+                    self.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                    msg = "added an unknown component at wavelength %2.4f..." \
+                          % z_alt
+                    chi2r = chi2r_alt
+                else:
+                    self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                    msg = "added a %s component at redshift %2.4f..." \
+                          % (o_series, z_cand)
+                    chi2r = chi2r_cand
                 #"""
-                if systs._t['chi2r'][systs._t['id']==o_id]>=chi2r_old:
-                    systs._unfreeze(t_old, mods_t_old)
+
+                if chi2r>=chi2r_old:
+                    self.systs._unfreeze(t_old, mods_t_old)
                     break
-                #"""
-                chi2r_old = systs._t['chi2r'][systs._t['id']==o_id]
+                else:
+                    print(prefix, "I'm improving a model at redshift %2.4f "\
+                          "(%i/%i): %s" % (o_z, i+1, len(old), msg))#, end='\r')
+
+                chi2r_old = chi2r
                 self.cb._update_spec()
                 count += 1
-                #if count > 5: break
-                if systs._t['chi2r'][systs._t['id']==o_id]<chi2r_thres: break
+                if count >= 10: break
+                if chi2r<chi2r_thres: break
 
 
             if count == 0:
