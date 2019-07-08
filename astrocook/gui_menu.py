@@ -156,25 +156,30 @@ class GUIMenuCook(GUIMenu):
         if 'cont' not in sess.spec._t.colnames:
             sess.extract_nodes(delta_x=1000)
             sess.interp_nodes()
-        xmin=481
-        xmax=485
+        #xmin=501.5
+        #xmax=503.5
         sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(sess_reg, open=False)
         sess_center = dc(sess_reg)
         sess_center.add_syst_from_lines()#series='unknown')
+        #print(sess_center.systs.t)
 
+        
         sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])*xem_d['Ly_a'].to(sess_reg.spec.x.unit)
+        sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
+        #print(sess_reg.lines.t)
         ##sess_reg.lines.t['x'] = sess_center.systs.t['z']*au.angstrom*10
 
-        sess_reg.add_syst_from_lines(series='CIV', logN=13.5, b=30.0, dz=5e-5)#, maxfev=0)
-        sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0, maxfev=100)
-
-        """
+        sess_reg.add_syst_from_lines(series='CIV', logN=None, b=30.0, dz=5e-5, maxfev=10)
+        sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0, maxfev=10)
+        #print(sess_reg.systs.t)
+        
+        #"""
         sess_reg.compl_syst(n=10)
 
         sess_reg.add_syst_slide(col='deabs')
         sess_reg.merge_syst()
-        """
+        #"""
         self._gui._graph_spec._refresh(self._gui._sess_items)
 
 

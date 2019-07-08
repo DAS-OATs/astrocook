@@ -131,19 +131,29 @@ class Session(object):
             z_start = 0
             z_end = np.inf
         dz = float(dz)
-        logN = float(logN)
+        if logN is not None:
+            logN = float(logN)
         b = float(b)
         chi2r_thres = float(chi2r_thres)
         resol = float(resol)
         maxfev = int(maxfev)
 
-        z_range = self.lines._syst_cand(series, z_start, z_end, dz)
-
-        self.cb._append_syst()
-
-        for i, z in enumerate(z_range):
-            self.cb._mod_syst(series, z, logN, b, resol)
-
+        if logN is None:
+            z_range, logN_range = self.lines._syst_cand(series, z_start, z_end,
+                                                        dz, logN=True)
+            self.cb._append_syst()
+            for i, (z, l) in enumerate(zip(z_range, logN_range)):
+                self.cb._mod_syst(series, z, l, b, resol)
+            #print(z_range)
+            #print(logN_range)
+        else:
+            z_range = self.lines._syst_cand(series, z_start, z_end, dz)
+            self.cb._append_syst()
+            for i, z in enumerate(z_range):
+                self.cb._mod_syst(series, z, logN, b, resol)
+                
+        
+                
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
             print(prefix, "I've added %i %s system(s) in %i model(s) between "
@@ -237,6 +247,8 @@ class Session(object):
                 #else:
                 #    z_cand = z_single
 
+                if z_cand == None:
+                    z_cand = o_z
 
                 """
                 print(prefix, "I'm improving a model at redshift %2.4f (%i/%i)"\
@@ -254,43 +266,47 @@ class Session(object):
                 alt = dc(self)
                 #print(np.min(peaks.y).value, logN)
 
+                """
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
                 """
+                #print(z_cand)
                 cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
                 alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
-                """
+                #"""
 
+                """
                 chi2r = self.systs._t['chi2r'][self.systs._t['id']==o_id][0]
-                msg = "added a %s component at redshift %2.4f..." \
+                msg = "added a %s component at redshift %2.4f" \
                       % (o_series, z_cand)
                 """
                 chi2r_cand = cand.systs._t['chi2r'][cand.systs._t['id']==o_id][0]
                 chi2r_alt = alt.systs._t['chi2r'][alt.systs._t['id']==o_id][0]
-                print(z_cand, (1+z_cand)*xem_d[series_d[o_series][0]], chi2r_cand, chi2r_alt)
+                #print(z_cand, (1+z_cand)*xem_d[series_d[o_series][0]], chi2r_cand, chi2r_alt)
 
-                if chi2r_cand > chi2r_alt: #and count > 3:
+                if chi2r_cand > chi2r_alt*1.1: #and count > 3:
                     self.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
-                    msg = "added an unknown component at wavelength %2.4f..." \
+                    msg = "added an unknown component at wavelength %2.4f" \
                           % z_alt
                     chi2r = chi2r_alt
                 else:
                     self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
-                    msg = "added a %s component at redshift %2.4f..." \
+                    msg = "added a %s component at redshift %2.4f" \
                           % (o_series, z_cand)
                     chi2r = chi2r_cand
                 #"""
 
-                if chi2r>=chi2r_old:
+                if chi2r>=chi2r_old*1.1:
                     self.systs._unfreeze(t_old, mods_t_old)
                     break
                 else:
                     print(prefix, "I'm improving a model at redshift %2.4f "\
-                          "(%i/%i): %s" % (o_z, i+1, len(old), msg))#, end='\r')
+                          "(%i/%i): %s (red. chi-squared: %3.2f)..." \
+                          % (o_z, i+1, len(old), msg, chi2r), end='\r')
 
                 chi2r_old = chi2r
                 self.cb._update_spec()
                 count += 1
-                if count >= 10: break
+                if count >= 7: break
                 if chi2r<chi2r_thres: break
 
 
@@ -300,8 +316,9 @@ class Session(object):
                       % (o_series, o_z, i+1, len(old)))
             else:
                 print(prefix, "I've improved a model at redshift %2.4f "\
-                      "(%i/%i) by adding %i components.                            "\
-                      "  " % (o_z, i+1, len(old), count))
+                      "(%i/%i) by adding %i components (red. chi-squared: "\
+                      "%3.2f).                                                "\
+                      "  " % (o_z, i+1, len(old), count, chi2r))
 
         #self.systs._clean(chi2r_thres)
 

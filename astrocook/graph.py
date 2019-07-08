@@ -18,6 +18,7 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._ax = self._fig.add_subplot(111)
+        self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
         self._plot = FigureCanvasWxAgg(panel, -1, self._fig)
         self._toolbar = NavigationToolbar2WxAgg(self._plot)
@@ -76,6 +77,8 @@ class Graph(object):
                 gs = s(sess, norm)
                 if gs._type == 'axvline':
                     for x in gs._x:
+                        print(x)
+                        print(**gs._kwargs)
                         self._ax.axvline(x.to(self._xunit).value,
                                          color='C'+str(self._c), **gs._kwargs)
                         gs._kwargs.pop('label', None)
@@ -187,7 +190,8 @@ class GraphSpectrumXYMask(GraphSpectrumXY):
 
 class GraphSystListZSeries(object):
     def __init__(self, sess, norm=False):
-        self._type = 'text'
+        #self._type = 'text'
+        self._type = 'axvline'
         #"""
         z = sess.systs.z
         series = sess.systs.series
@@ -196,15 +200,19 @@ class GraphSystListZSeries(object):
         xem_flat = np.array([xem_d[sf].to(au.nm).value for sf in series_flat])\
                        *au.nm
         self._x = (1.+z_flat)*xem_flat
+        self._kwargs = {'lw':1.0, 'linestyle': ':',
+                        'label':sess.name+", systs components"}
+        """
         self._y = series_flat
-        #"""
         series = np.array([sess.systs.series[i[0]]
                            for i in sess.systs._mods_t['id']])
         n = np.array([len(i) for i in sess.systs._mods_t['id']])
         z = np.array(sess.systs._mods_t['z0'])
         xem = np.array([xem_d[s].to(au.nm).value for s in series])*au.nm
         self._x = (1.+z)*xem
+        print(self._x)
         self._y = np.array(["%s (%i)\n%3.5f" % (si,ni,zi)
                            for si,ni,zi in zip(series,n,z)])
 
         self._kwargs = {'marker':'+', 'label':sess.name+", systs"}
+        """
