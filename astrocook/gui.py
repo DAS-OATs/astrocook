@@ -38,6 +38,7 @@ class GUI(object):
         else:
             self._panel_sess._on_open(path)
 
+
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
 

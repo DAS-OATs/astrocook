@@ -209,12 +209,8 @@ class Session(object):
                 np.isnan(systs._mods_t['chi2r'])))]
 
         for i, o in enumerate(old):
-            #o_z = o['z']
-            #o_series = o['series']
-            #o_id = o['id']
             o_id = o['id'][0]
             o_series = systs._t[systs._t['id'] == o_id]['series'][0]
-            #print(o_series)
             o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
 
             chi2r_old = np.inf
@@ -236,20 +232,26 @@ class Session(object):
                 #print(peaks.t)
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
-                z_cand = resids._syst_cand(o_series, z_start, z_end, dz, single=True)
+                z_cand = resids._syst_cand(o_series, z_start, z_end, dz,
+                                           single=True)
                 z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
                 # If no residuals are found, add a system at the init. redshift
                 #if len(z_sel)==0:
                 if z_cand == None:
-                    #z_cand = o_z
+                    z_cand = o_z
+                    """
                     z_cand = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
-                    o_series = 'unknown'
+                    if z_cand == None:
+                        z_cand = o_z
+                    else:
+                        o_series = 'unknown'
+                    """
                 #else:
                 #    z_cand = z_single
 
-                if z_cand == None:
-                    z_cand = o_z
 
+                if z_alt == None:
+                    z_alt = (1.+o_z)*xem_d[series_d[o_series][0]].to(au.nm).value
                 """
                 print(prefix, "I'm improving a model at redshift %2.4f (%i/%i)"\
                       ": trying to add a %s component at redshift %2.4f..."\
@@ -257,21 +259,30 @@ class Session(object):
                 """
 
                 t_old, mods_t_old = self.systs._freeze()
-
-                self._mods_t_old = mods_t_old
+                #self._mods_t_old = mods_t_old
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
-
                 cand = dc(self)
                 alt = dc(self)
+
                 #print(np.min(peaks.y).value, logN)
 
                 """
                 self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
                 """
-                #print(z_cand)
+                #print(o_series, z_cand)
+                #print("before cand")
                 cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                #print(mods_t_old)
+                #print(cand.systs.t)
+                #print(cand.systs._mods_t['z0', 'id'])
+                #print(alt.systs.t)
+                #print(alt.systs._mods_t['z0', 'id'])
+                #print("before alt")
                 alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+
+                #self.systs._t = dc(t_old)
+                self.systs._mods_t = dc(mods_t_old)
                 #"""
 
                 """
@@ -306,7 +317,7 @@ class Session(object):
                 chi2r_old = chi2r
                 self.cb._update_spec()
                 count += 1
-                if count >= 7: break
+                if count >= 10: break
                 if chi2r<chi2r_thres: break
 
 
@@ -585,9 +596,9 @@ class Session(object):
 
                     compl = cond_c/n_ok
                     compl_sum += compl
-                    self.compl[icompl, 0] = iz
-                    self.compl[icompl, 1] = ilogN
-                    self.compl[icompl, 2] = ib
+                    self.compl[icompl, 0] = z_rand
+                    self.compl[icompl, 1] = logN
+                    self.compl[icompl, 2] = b
                     self.compl[icompl, 3] = compl
 
         print(prefix, "I've estimated completeness of %s systems "

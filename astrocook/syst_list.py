@@ -113,6 +113,7 @@ class SystList(object):
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+        #print(self._mods_t['z0', 'id'])
         return 0
 
 
@@ -151,6 +152,7 @@ class SystList(object):
 
     def _update(self, mod, mod_t=True):
 
+        #print(mod._id, mod._group_sel)
         if mod_t:
             if mod._group_sel == -1:
                 self._mods_t.add_row([mod._z0, mod, None, []])
@@ -165,18 +167,21 @@ class SystList(object):
         modw = np.where(mod == self._mods_t['mod'])[0][0]
         ids = self._mods_t['id'][modw]
         for i in ids:
-            iw = np.where(self._t['id']==i)[0][0]
-            pref = 'lines_voigt_'+str(i)
-            self._t[iw]['z'] = mod._pars[pref+'_z'].value
-            self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-            self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-            self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
-            self._t[iw]['b'] = mod._pars[pref+'_b'].value
-            self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
             try:
-                self._t[iw]['chi2r'] = mod._chi2r
+                iw = np.where(self._t['id']==i)[0][0]
+                pref = 'lines_voigt_'+str(i)
+                self._t[iw]['z'] = mod._pars[pref+'_z'].value
+                self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
+                self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                self._t[iw]['b'] = mod._pars[pref+'_b'].value
+                self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                try:
+                    self._t[iw]['chi2r'] = mod._chi2r
+                except:
+                    self._t[iw]['chi2r'] = np.nan
             except:
-                self._t[iw]['chi2r'] = np.nan
+                pass
         self._id += 1
 
         #print(self._mods_t['id', 'chi2r'])

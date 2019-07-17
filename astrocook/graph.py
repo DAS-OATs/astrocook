@@ -48,6 +48,7 @@ class Graph(object):
                            'spec_x_model': GraphSpectrumXModel,
                            'spec_x_deabs': GraphSpectrumXDeabs,
                            'systs_z_series': GraphSystListZSeries}
+        #print(self._sel)
         self._plot_list = [self._plot_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
@@ -75,10 +76,11 @@ class Graph(object):
         for z, s in enumerate(self._plot_list):
             try:
                 gs = s(sess, norm)
+                #print(gs._type)
                 if gs._type == 'axvline':
                     for x in gs._x:
-                        print(x)
-                        print(**gs._kwargs)
+                        #print(x)
+                        #print(**gs._kwargs)
                         self._ax.axvline(x.to(self._xunit).value,
                                          color='C'+str(self._c), **gs._kwargs)
                         gs._kwargs.pop('label', None)
@@ -197,10 +199,13 @@ class GraphSystListZSeries(object):
         series = sess.systs.series
         z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
         series_flat = np.ravel([series_d[s] for s in series])
+        #print(series)
+        #print(series_flat)
         xem_flat = np.array([xem_d[sf].to(au.nm).value for sf in series_flat])\
                        *au.nm
         self._x = (1.+z_flat)*xem_flat
-        self._kwargs = {'lw':1.0, 'linestyle': ':',
+        self._kwargs = {#'lw':1.0,
+            'linestyle': ':',
                         'label':sess.name+", systs components"}
         """
         self._y = series_flat
