@@ -82,8 +82,19 @@ class Graph(object):
                         #print(x)
                         #print(**gs._kwargs)
                         self._ax.axvline(x.to(self._xunit).value,
-                                         color='C'+str(self._c), **gs._kwargs)
+                                         color='C'+str(self._c), linewidth=1.5,
+                                         **gs._kwargs)
                         gs._kwargs.pop('label', None)
+                    try:
+                        for x in gs._xalt:
+                            #print(x)
+                            self._ax.axvline(x.to(self._xunit).value,
+                                             color='C'+str(self._c),
+                                             linewidth=0.5, **gs._kwargs)
+                            gs._kwargs.pop('label', None)
+                            
+                    except:
+                        pass
                 elif gs._type == 'text':
                     trans = transforms.blended_transform_factory(
                                 self._ax.transData, self._ax.transAxes)
@@ -116,7 +127,7 @@ class GraphSpectrumFormX(object):
     def __init__(self, sess):
         self._type = 'axvline'
         self._x = sess.spec_form.x
-        self._kwargs = {'lw':1.0, 'linestyle': ':',
+        self._kwargs = {'linewidth':1.0, 'linestyle': ':',
                         'label':sess.spec._meta['instr']+" spectral format"}
 
 class GraphSpectrumNodesXY(object):
@@ -197,15 +208,33 @@ class GraphSystListZSeries(object):
         #"""
         z = sess.systs.z
         series = sess.systs.series
-        z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
-        series_flat = np.ravel([series_d[s] for s in series])
-        #print(series)
-        #print(series_flat)
-        xem_flat = np.array([xem_d[sf].to(au.nm).value for sf in series_flat])\
-                       *au.nm
-        self._x = (1.+z_flat)*xem_flat
-        self._kwargs = {#'lw':1.0,
-            'linestyle': ':',
+
+        z_list = [[zf]*len(series_d[s]) for zf,s in zip(z,series)]
+        
+        #z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
+        series_list = [series_d[s] for s in series]
+        #series_flat = np.ravel([series_d[s] for s in series])
+
+        z_flat = np.array([z for zl in z_list for z in zl])
+        series_flat = np.array([s for sl in series_list for s in sl])
+
+        kn = np.where(series_flat != 'unknown')
+        unkn = np.where(series_flat == 'unknown')
+        
+        z_kn = z_flat[kn]
+        series_kn = series_flat[kn]
+        z_unkn = z_flat[unkn]
+        series_unkn = series_flat[unkn]
+        #print(z_flat[unkn])
+        #print(series_flat[unkn])
+        xem_kn = np.array([xem_d[sf].to(au.nm).value for sf in series_kn])\
+                   *au.nm
+        #print(xem_kn)
+        self._x = (1.+z_kn)*xem_kn
+        self._xalt = z_unkn * au.nm
+        #print(self._x)
+        #print(self._xalt)
+        self._kwargs = {'linestyle': ':',
                         'label':sess.name+", systs components"}
         """
         self._y = series_flat

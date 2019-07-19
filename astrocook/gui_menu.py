@@ -76,16 +76,18 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, "Fit CIV search in all QSOs...",
-                   self._on_full)
-        #self._item(self._menu, start_id+2, "Test...", self._on_test)
-        self._item(self._menu, start_id+2, "Fit CIV forest...", self._on_test)
+        self._item(self._menu, start_id+1, "Fit CIV forest in all QSOs...",
+                   self._on_civ_full)
+        self._item(self._menu, start_id+2, "Test...", self._on_test)
 
-    def _on_full(self, event):
-        targ_list = ascii.read('CIV_qso_data.csv')
 
-        for l in targ_list[16:20]:
-            t = l['Name']
+    def _on_civ_full(self, event):
+        targ_list = ascii.read('CIV-qso_data.csv')
+
+        for l in targ_list:#[17:19]:
+        #for l in np.append(targ_list[16], targ_list[18:20]):
+            time_start = datetime.datetime.now()
+            t = l['name']
             zem = l['z']
             xmin = l['lambdamin']
             xmax = l['lambdamax']
@@ -100,6 +102,8 @@ class GUIMenuCook(GUIMenu):
 
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
+            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
+                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
                 sess.extract_nodes(delta_x=1000)
                 sess.interp_nodes()
@@ -109,46 +113,48 @@ class GUIMenuCook(GUIMenu):
             sess_center = dc(sess_reg)
             sess_center.add_syst_from_lines()#series='unknown')
 
-        
             sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
                                     *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
             sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
 
-            sess_reg.add_syst_from_lines(series='CIV', logN=None, b=30.0,
-                                         dz=5e-5, maxfev=20)
+            sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
+            sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
+            sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
+            sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
+            sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
             sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
-                                          maxfev=20)
+                                          maxfev=10)
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
             self._gui._graph_spec._refresh(self._gui._sess_items)
-            print(datetime.datetime.now())
+            sess_reg.save(t+'_2019-07-19.xxx')
+            time_end = datetime.datetime.now()
+            print("%s; computation time: %s" \
+                  % (datetime.datetime.now(), time_end-time_start))
             
     def _on_test(self, event):
-        test_data_zem = {'he0515m4414': 1.713,
-                         'J0003-2323': 2.280,
-                         'J0100+0211': 1.959,
-                         'J0103+1316': 2.686,
-                         'J0124-3744': 2.190,
-                         'J0240-2309': 2.225,
-                         'J0745+4734': 3.220,
-                         'J0942-1104': 3.088,
-                         'J1124-1705': 2.39723,
-                         'J1344-1035': 2.134,
-                         'J1424+2256': 3.620,
-                         'J1451-2329': 2.208,
-                         'J1626+6426': 2.320,
-                         'J1701+6412': 2.736,
-                         'J1944+7705': 3.051,
-                         'J2123-0050': 2.26902,
-                         }
         sess_start = self._gui._sess_sel
-        zem = test_data_zem[sess_start.spec.meta['object']]
-        xmin = xem_d[series_d['Ly'][-1]].value*(1+zem)
-        xmax = xem_d[series_d['CIV'][1]].value*(1+zem)
+
+        
+        targ_list = ascii.read('CIV-qso_data.csv')
+        try:
+            targ_sel = np.where(targ_list['name'] == sess_start.spec.meta['object'])
+            zem = targ_list['z'][targ_sel]
+            xmin = targ_list['lambdamin'][targ_sel]
+            xmax = targ_list['lambdamax'][targ_sel]\
+                   *xem_d['MgII_2803']/xem_d['CIV_1550']
+        except:
+            zem = 3.801412
+            xmin = (1+zem)*xem_d['Ly_a']
+            xmax = (1+zem)*xem_d['MgII_2803']
+
         if sess_start.spec.meta['object'] == 'J2123-0050':
-            #xmin=417.0
-            #xmax=420.0
             sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
         else:
             sess = sess_start
@@ -159,25 +165,30 @@ class GUIMenuCook(GUIMenu):
             sess.extract_nodes(delta_x=1000)
             sess.interp_nodes()
 
-        xmin = 473
-        xmax = 476
+        #xmin = 494
+        #xmax = 498
         sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
         self._gui._panel_sess._on_add(sess_reg, open=False)
         sess_center = dc(sess_reg)
         sess_center.add_syst_from_lines()#series='unknown')
-        #print(sess_center.systs.t)
 
         
-        sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])*xem_d['Ly_a'].to(sess_reg.spec.x.unit)
+        sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
+                                *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
         sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
-        #print(sess_reg.lines.t)
-        ##sess_reg.lines.t['x'] = sess_center.systs.t['z']*au.angstrom*10
 
-        sess_reg.add_syst_from_lines(series='CIV', logN=None, b=30.0, dz=5e-5, maxfev=10)
-        sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0, maxfev=10)
-        #print(sess_reg.systs.t)
-        
-        #
+        sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0, dz=5e-5,
+                                     z_end=zem, maxfev=10)
+        sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0, dz=5e-5,
+                                     z_end=zem, maxfev=10)
+        sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0, dz=5e-5,
+                                     z_end=zem, maxfev=10)
+        sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0, dz=5e-5,
+                                     z_end=zem, maxfev=10)
+        sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0, dz=5e-5,
+                                     z_end=zem, maxfev=10)
+        #sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
+        #                              maxfev=10)
         """
         sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
         sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
