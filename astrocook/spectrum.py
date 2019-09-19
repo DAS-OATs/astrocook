@@ -150,7 +150,11 @@ class Spectrum(Frame):
                 diff_y_right = -diff_y_right
 
         # Check if the difference is above threshold
-        diff_y_max = np.maximum(diff_y_left, diff_y_right)
+        #for m,M,l,r in zip(ext.xmin, ext.xmax, diff_y_left, diff_y_right):
+            
+        #    print(m,M,l,r)
+        diff_y_max = np.minimum(diff_y_left, diff_y_right)
+            
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
         sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1

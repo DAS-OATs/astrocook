@@ -178,7 +178,7 @@ class GUIMenuCook(GUIMenu):
         sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
 
         sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0, dz=5e-5,
-                                     z_end=zem, maxfev=10)
+                                    z_end=zem, maxfev=10)
         sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0, dz=5e-5,
                                      z_end=zem, maxfev=10)
         sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0, dz=5e-5,
