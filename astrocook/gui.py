@@ -144,7 +144,6 @@ class GUIPanelSession(wx.Frame):
     def _on_select(self, event):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
-
         item = self._tab.GetFirstSelected()
         self._items = []
         while item != -1:
