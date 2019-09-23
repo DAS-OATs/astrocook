@@ -17,11 +17,15 @@ class GUITable(wx.Frame):
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.9):
 
-        super(GUITable, self).__init__(parent=None, title=title,
-                                       size=(size_x, size_y))
-
         self._gui = gui
         self._attr = attr
+        self._title = title
+        self._size_x = size_x
+        self._size_y = size_y
+
+    def _init(self):
+        super(GUITable, self).__init__(parent=None, title=self._title,
+                                       size=(self._size_x, self._size_y))
         self._panel = wx.Panel(self)
         self._tab = gridlib.Grid(self._panel)
         self._tab.CreateGrid(0, 0)
@@ -35,6 +39,8 @@ class GUITable(wx.Frame):
         except:
             print(prefix, "I'm loading table...")
         coln = len(data.t.colnames)
+        #if not hasattr(self, '_tab'):
+        self._init()
         rown = len(data.t)-self._tab.GetNumberRows()
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
@@ -72,6 +78,10 @@ class GUITable(wx.Frame):
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Show()
+        self.Bind(wx.EVT_CLOSE, self._on_close)
+
+    def _on_close(self, event):
+        self.Destroy()
 
 class GUITableLineList(GUITable):
     """ Class for the GUI line list """

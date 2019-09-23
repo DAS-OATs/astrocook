@@ -94,6 +94,7 @@ class GUIPanelSession(wx.Frame):
         self._menu = GUIMenu(self._gui)
         self.SetMenuBar(self._menu.bar())
         self.Show()
+        self.Bind(wx.EVT_CLOSE, self._on_close)
 
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
@@ -126,6 +127,19 @@ class GUIPanelSession(wx.Frame):
         print(prefix, "I'm loading session %s..." % path)
         sess = Session(path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
+
+    def _on_close(self, event):
+        print("AC: Bye!")
+        self.Destroy()
+        """
+        self._gui._panel_sess.Close()
+        self._gui._graph_spec.Close()
+        self._gui._tab_spec.Close()
+        self._gui._tab_lines.Close()
+        self._gui._tab_systs.Close()
+        self._gui._tab_mods.Close()
+        """
+        exit()
 
     def _on_select(self, event):
         self._sel = event.GetIndex()
@@ -181,9 +195,10 @@ class GUIGraphSpectrum(wx.Frame):
                  size_y=wx.DisplaySize()[1]*0.5):
         """ Constructor """
 
-        super(GUIGraphSpectrum, self).__init__(parent=None, title=title,
-                                              size=(size_x, size_y))
         self._gui = gui
+        self._title = title
+        self._size_x = size_x
+        self._size_y = size_y
         self._gui._graph_spec = self
         self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model',
                      'systs_z_series']
@@ -191,9 +206,15 @@ class GUIGraphSpectrum(wx.Frame):
         self._logx = False
         self._logy = False
         self._norm = False
+        self._closed = False
+        self._init()
+
+    def _init(self):
+        super(GUIGraphSpectrum, self).__init__(parent=None, title=self._title,
+                                               size=(self._size_x, self._size_y))
 
         panel = wx.Panel(self)
-        self._graph = Graph(panel, gui, self._sel)
+        self._graph = Graph(panel, self._gui, self._sel)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
         box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT, border=5)
         self._box = wx.BoxSizer(wx.VERTICAL)
@@ -201,7 +222,14 @@ class GUIGraphSpectrum(wx.Frame):
         self._box.Add(box_toolbar, 0, wx.TOP, border=5)
         panel.SetSizer(self._box)
         self.Centre()
+        self.Bind(wx.EVT_CLOSE, self._on_close)
 
     def _refresh(self, sess):
+        if self._closed:
+            self._init()
         self._graph._refresh(sess, self._logx, self._logy, self._norm)
         self.Show()
+
+    def _on_close(self, event):
+        self._closed = True
+        self.Destroy()

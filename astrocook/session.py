@@ -151,9 +151,9 @@ class Session(object):
             self.cb._append_syst()
             for i, z in enumerate(z_range):
                 self.cb._mod_syst(series, z, logN, b, resol)
-                
-        
-                
+
+
+
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
             print(prefix, "I've added %i %s system(s) in %i model(s) between "
@@ -722,7 +722,19 @@ class Session(object):
         spec._mask_lines(self.lines)
         print(prefix, "I'm using peaks as lines.")
 
-        return 0
+        # Create new session
+        kwargs = {'path': self.path, 'name': self.name}
+        for s in self.seq:
+            try:
+                kwargs[s] = getattr(self, s)
+            except:
+                kwargs[s] = None
+        if kwargs['spec'] != None:
+            new = Session(**kwargs)
+        else:
+            new = None
+
+        return new
 
     def interp_nodes(self, smooth=0):
         """ @brief Interpolate nodes with a univariate spline to estimate the

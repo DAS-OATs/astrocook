@@ -14,6 +14,7 @@ prefix = "Graph:"
 class Graph(object):
 
     def __init__(self, panel, gui, sel):
+        self._panel = panel
         self._gui = gui
         self._sel = sel
         self._fig = Figure()
@@ -68,6 +69,7 @@ class Graph(object):
         for s in sess:
             self._seq(s, norm)
         self._ax.legend()
+
         self._plot.draw()
 
     def _seq(self, sess, norm):
