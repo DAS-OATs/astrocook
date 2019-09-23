@@ -91,9 +91,9 @@ class GUIMenuCook(GUIMenu):
             zem = l['z']
             xmin = l['lambdamin']
             xmax = l['lambdamax']
-            
+
             self._gui._panel_sess._on_open('test_data/'+t+'.fits')
-            
+
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
@@ -137,11 +137,11 @@ class GUIMenuCook(GUIMenu):
             time_end = datetime.datetime.now()
             print("%s; computation time: %s" \
                   % (datetime.datetime.now(), time_end-time_start))
-            
+
     def _on_test(self, event):
         sess_start = self._gui._sess_sel
 
-        
+
         targ_list = ascii.read('CIV-qso_data.csv')
         try:
             targ_sel = np.where(targ_list['name'] == sess_start.spec.meta['object'])
@@ -172,7 +172,7 @@ class GUIMenuCook(GUIMenu):
         sess_center = dc(sess_reg)
         sess_center.add_syst_from_lines()#series='unknown')
 
-        
+
         sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
                                 *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
         sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
@@ -264,6 +264,7 @@ class GUIMenuFile(GUIMenu):
         self._gui._tab_lines.Close()
         self._gui._tab_systs.Close()
         self._gui._tab_mods.Close()
+        exit()
 
 
 class GUIMenuEdit(GUIMenu):

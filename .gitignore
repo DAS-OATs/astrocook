@@ -13,3 +13,8 @@ test_data/J0100+0211.acs
 *.pyc
 *.pyc
 *.pyc
+*.pyc
+QSO_constants/popler_das.py
+*.pyc
+*.png
+*.pyc

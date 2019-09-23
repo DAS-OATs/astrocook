@@ -92,7 +92,7 @@ class Graph(object):
                                              color='C'+str(self._c),
                                              linewidth=0.5, **gs._kwargs)
                             gs._kwargs.pop('label', None)
-                            
+
                     except:
                         pass
                 elif gs._type == 'text':
@@ -210,7 +210,7 @@ class GraphSystListZSeries(object):
         series = sess.systs.series
 
         z_list = [[zf]*len(series_d[s]) for zf,s in zip(z,series)]
-        
+
         #z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
         series_list = [series_d[s] for s in series]
         #series_flat = np.ravel([series_d[s] for s in series])
@@ -220,7 +220,7 @@ class GraphSystListZSeries(object):
 
         kn = np.where(series_flat != 'unknown')
         unkn = np.where(series_flat == 'unknown')
-        
+
         z_kn = z_flat[kn]
         series_kn = series_flat[kn]
         z_unkn = z_flat[unkn]
