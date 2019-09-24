@@ -3,10 +3,12 @@ from .vars import *
 from astropy import units as au
 #from copy import deepcopy as dc
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
+from matplotlib.widgets import Cursor
 import numpy as np
 
 prefix = "Graph:"
@@ -21,8 +23,10 @@ class Graph(object):
         self._ax = self._fig.add_subplot(111)
         self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
-        self._plot = FigureCanvasWxAgg(panel, -1, self._fig)
-        self._toolbar = NavigationToolbar2WxAgg(self._plot)
+        self._canvas = FigureCanvasWxAgg(panel, -1, self._fig)
+        self._toolbar = NavigationToolbar2Wx(self._canvas)
+        self._cursor = Cursor(self._ax, useblit=True, color='red',
+                              linewidth=0.5)
         self._toolbar.Realize()
 
     def _check_units(self, sess, axis='x'):
@@ -35,10 +39,17 @@ class Graph(object):
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
+    def _on_move(self, event):
+        if event.xdata is not None and event.ydata is not None:
+            x = float(event.xdata)
+            y = float(event.ydata)
+            self._gui._statusbar.SetStatusText("%2.4f %s, %2.4f %s"
+                                               % (x,self._xunit,y,self._yunit))
+
     def _refresh(self, sess, logx=False, logy=False, norm=False):
         sess = np.array(sess, ndmin=1)
         self._ax.clear()
-        self._plot_dict = {'spec_x_y': GraphSpectrumXY,
+        self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
                            'spec_x_dy': GraphSpectrumXDy,
                            'spec_x_conv': GraphSpectrumXConv,
                            'lines_x_y': GraphLineListXY,
@@ -50,7 +61,7 @@ class Graph(object):
                            'spec_x_deabs': GraphSpectrumXDeabs,
                            'systs_z_series': GraphSystListZSeries}
         #print(self._sel)
-        self._plot_list = [self._plot_dict[s] for s in self._sel]
+        self._canvas_list = [self._canvas_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
@@ -70,12 +81,12 @@ class Graph(object):
             self._seq(s, norm)
         self._ax.legend()
 
-        self._plot.draw()
+        self._canvas.draw()
 
     def _seq(self, sess, norm):
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
-        for z, s in enumerate(self._plot_list):
+        for z, s in enumerate(self._canvas_list):
             try:
                 gs = s(sess, norm)
                 #print(gs._type)

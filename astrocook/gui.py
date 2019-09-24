@@ -215,13 +215,18 @@ class GUIGraphSpectrum(wx.Frame):
         panel = wx.Panel(self)
         self._graph = Graph(panel, self._gui, self._sel)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT, border=5)
+        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
         self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._graph._plot, 1, wx.EXPAND)
-        self._box.Add(box_toolbar, 0, wx.TOP, border=5)
+        self._box.Add(self._graph._canvas, 1, wx.EXPAND)
+        self._box.Add(box_toolbar, 0, wx.TOP)
         panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
+
+        self._gui._statusbar = self.CreateStatusBar()
+        move_id = self._graph._canvas.mpl_connect('motion_notify_event',
+                                                  self._graph._on_move)
+
 
     def _refresh(self, sess):
         if self._closed:
