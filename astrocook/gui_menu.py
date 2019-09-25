@@ -56,14 +56,14 @@ class GUIMenu(object):
         dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
-        sel = self._gui._graph_spec._sel
+        sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
             #item.Check(False)
         else:
             sel.append(key)
             #item.Check(True)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 class GUIMenuCook(GUIMenu):
 
@@ -132,7 +132,7 @@ class GUIMenuCook(GUIMenu):
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
-            self._gui._graph_spec._refresh(self._gui._sess_items)
+            self._gui._graph_main._refresh(self._gui._sess_items)
             sess_reg.save(t+'_2019-07-19.xxx')
             time_end = datetime.datetime.now()
             print("%s; computation time: %s" \
@@ -194,7 +194,7 @@ class GUIMenuCook(GUIMenu):
         sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
         sess_reg.merge_syst()
         #"""
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 
 class GUIMenuFile(GUIMenu):
@@ -396,16 +396,16 @@ class GUIMenuView(GUIMenu):
         getattr(self._gui, method)._on_view(event)
 
     def _on_logx(self, event):
-        self._gui._graph_spec._logx = ~self._gui._graph_spec._logx
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logx = ~self._gui._graph_main._logx
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_logy(self, event):
-        self._gui._graph_spec._logy = ~self._gui._graph_spec._logy
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logy = ~self._gui._graph_main._logy
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_norm(self, event):
-        self._gui._graph_spec._norm = ~self._gui._graph_spec._norm
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._norm = ~self._gui._graph_main._norm
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

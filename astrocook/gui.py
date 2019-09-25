@@ -1,5 +1,5 @@
 from . import * #version
-from .graph import Graph
+from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
@@ -26,7 +26,7 @@ class GUI(object):
         self._sess_list = []
         self._sess_sel = None
         self._panel_sess = GUIPanelSession(self)
-        GUIGraphSpectrum(self)
+        GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
         GUITableSystList(self)
@@ -113,7 +113,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._refresh()
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
         #print(self._gui._sess_sel.__dict__)
 
     def _on_edit(self, event):
@@ -133,7 +133,7 @@ class GUIPanelSession(wx.Frame):
         self.Destroy()
         """
         self._gui._panel_sess.Close()
-        self._gui._graph_spec.Close()
+        self._gui._graph_main.Close()
         self._gui._tab_spec.Close()
         self._gui._tab_lines.Close()
         self._gui._tab_systs.Close()
@@ -151,7 +151,7 @@ class GUIPanelSession(wx.Frame):
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         self._refresh()
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
@@ -182,58 +182,3 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
-
-class GUIGraphSpectrum(wx.Frame):
-    """ Class for the GUI spectrum graph frame """
-
-    def __init__(self,
-                 gui,
-                 #sess,
-                 title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.9,
-                 size_y=wx.DisplaySize()[1]*0.5):
-        """ Constructor """
-
-        self._gui = gui
-        self._title = title
-        self._size_x = size_x
-        self._size_y = size_y
-        self._gui._graph_spec = self
-        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model',
-                     'systs_z_series']
-
-        self._logx = False
-        self._logy = False
-        self._norm = False
-        self._closed = False
-        self._init()
-
-    def _init(self):
-        super(GUIGraphSpectrum, self).__init__(parent=None, title=self._title,
-                                               size=(self._size_x, self._size_y))
-
-        panel = wx.Panel(self)
-        self._graph = Graph(panel, self._gui, self._sel)
-        box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
-        self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._graph._canvas, 1, wx.EXPAND)
-        self._box.Add(box_toolbar, 0, wx.TOP)
-        panel.SetSizer(self._box)
-        self.Centre()
-        self.Bind(wx.EVT_CLOSE, self._on_close)
-
-        self._gui._statusbar = self.CreateStatusBar()
-        move_id = self._graph._canvas.mpl_connect('motion_notify_event',
-                                                  self._graph._on_move)
-
-
-    def _refresh(self, sess):
-        if self._closed:
-            self._init()
-        self._graph._refresh(sess, self._logx, self._logy, self._norm)
-        self.Show()
-
-    def _on_close(self, event):
-        self._closed = True
-        self.Destroy()

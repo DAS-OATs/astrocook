@@ -1,3 +1,4 @@
+from .gui_graph import GUIGraphDetail
 from collections import OrderedDict
 import pprint
 import wx
@@ -30,26 +31,32 @@ class GUITable(wx.Frame):
         self._tab = gridlib.Grid(self._panel)
         self._tab.CreateGrid(0, 0)
 
+    def _on_close(self, event):
+        self.Destroy()
+
+    def _on_right_click(self, event):
+        self.PopupMenu(GUITablePopup(self._gui, self, event), event.GetPosition())
+
     def _on_view(self, event):
-        data = getattr(self._gui._sess_sel, self._attr)
+        self._data = getattr(self._gui._sess_sel, self._attr)
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
             print(prefix, "I'm updating table...")
         except:
             print(prefix, "I'm loading table...")
-        coln = len(data.t.colnames)
+        coln = len(self._data.t.colnames)
         #if not hasattr(self, '_tab'):
         self._init()
-        rown = len(data.t)-self._tab.GetNumberRows()
+        rown = len(self._data.t)-self._tab.GetNumberRows()
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
-        for j, r in enumerate(data.t):
-            for i, n in enumerate(data.t.colnames):
+        for j, r in enumerate(self._data.t):
+            for i, n in enumerate(self._data.t.colnames):
                 if j == 0:
                     self._tab.SetColSize(i, 150)
                     self._tab.SetColLabelValue(i, "%s\n%s" \
-                                              % (n, str(data.t[n].unit)))
+                                              % (n, str(self._data.t[n].unit)))
                 """
                 try:
                     self._tab.SetCellValue(j, i, "%3.5f" % r[n])
@@ -76,12 +83,12 @@ class GUITable(wx.Frame):
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
+        self._tab.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self._on_right_click)
+        self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
         self.Show()
-        self.Bind(wx.EVT_CLOSE, self._on_close)
 
-    def _on_close(self, event):
-        self.Destroy()
+
 
 class GUITableLineList(GUITable):
     """ Class for the GUI line list """
@@ -98,6 +105,9 @@ class GUITableLineList(GUITable):
         self._gui = gui
         self._gui._tab_lines = self
 
+    def _on_show(self, event):
+        pass
+
 class GUITableModelList(GUITable):
     """ Class for the GUI model list """
 
@@ -113,6 +123,31 @@ class GUITableModelList(GUITable):
         self._gui = gui
         self._gui._tab_mods = self
 
+class GUITablePopup(wx.Menu):
+    """ Class for the GUI table popup menu """
+
+    def __init__(self, gui, parent, event):
+        super(GUITablePopup, self).__init__()
+        self._parent = parent
+        self._event = event
+        self._gui = gui
+        self._gui._tab_popup = self
+        self._parent = parent
+        self._event = event
+
+        show = wx.MenuItem(self, wx.NewId(), 'Show')
+        #try:
+        self.Bind(wx.EVT_MENU, self._parent._on_show, show)
+        #except
+        #    pass
+        self.Append(show)
+
+        delete = wx.MenuItem(self, wx.NewId(), 'Delete')
+        self.Append(delete)
+
+#class GUITableGraph(wx.Frame):
+
+
 class GUITableSpectrum(GUITable):
     """ Class for the GUI spectrum table """
 
@@ -127,6 +162,14 @@ class GUITableSpectrum(GUITable):
 
         self._gui = gui
         self._gui._tab_spec = self
+
+    def _on_show(self, event, span=10):
+        if not hasattr(self._gui, '_graph_det'):
+            GUIGraphDetail(self._gui)
+        row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        xlim, ylim = self._gui._graph_det._define_lim(row, span)
+        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim)
+
 
 class GUITableSystList(GUITable):
     """ Class for the GUI system list """

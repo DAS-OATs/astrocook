@@ -25,9 +25,10 @@ class Graph(object):
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
         self._canvas = FigureCanvasWxAgg(panel, -1, self._fig)
         self._toolbar = NavigationToolbar2Wx(self._canvas)
-        self._cursor = Cursor(self._ax, useblit=True, color='red',
-                              linewidth=0.5)
+        #self._cursor = Cursor(self._ax, useblit=True, color='red',
+        #                      linewidth=0.5)
         self._toolbar.Realize()
+        #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _check_units(self, sess, axis='x'):
         unit = axis+'unit'
@@ -40,13 +41,13 @@ class Graph(object):
             self._gui._panel_sess._refresh()
 
     def _on_move(self, event):
-        if event.xdata is not None and event.ydata is not None:
-            x = float(event.xdata)
-            y = float(event.ydata)
-            self._gui._statusbar.SetStatusText("%2.4f %s, %2.4f %s"
-                                               % (x,self._xunit,y,self._yunit))
+        if not event.inaxes: return
+        x = float(event.xdata)
+        y = float(event.ydata)
+        self._gui._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
 
-    def _refresh(self, sess, logx=False, logy=False, norm=False):
+    def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
+                 ylim=None):
         sess = np.array(sess, ndmin=1)
         self._ax.clear()
         self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
@@ -76,6 +77,12 @@ class Graph(object):
             self._ax.set_xscale('log')
         if logy:
             self._ax.set_yscale('log')
+
+        if xlim is not None:
+            self._ax.set_xlim(xlim)
+        if ylim is not None:
+            self._ax.set_ylim(ylim)
+
 
         for s in sess:
             self._seq(s, norm)
@@ -154,7 +161,7 @@ class GraphSpectrumNodesXY(object):
 
 class GraphSpectrumXY(object):
     def __init__(self, sess, norm=False):
-        self._type = 'plot'
+        self._type = 'step'
         self._x = sess.spec.x
         self._y = sess.spec.y
         if norm and 'cont' in sess.spec._t.colnames:

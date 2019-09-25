@@ -52,14 +52,14 @@ class GUIMenu(object):
         dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
-        sel = self._gui._graph_spec._sel
+        sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
             #item.Check(False)
         else:
             sel.append(key)
             #item.Check(True)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 class GUIMenuCook(GUIMenu):
 
@@ -114,7 +114,7 @@ class GUIMenuCook(GUIMenu):
             new_sess.add_syst_slide(col='deabs')
             new_sess.compl_syst()
 
-            self._gui._graph_spec._refresh(self._gui._sess_items)
+            self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_test(self, event):
         xmin = 360
@@ -162,7 +162,7 @@ class GUIMenuCook(GUIMenu):
                                 logN_step=logN_step,
                                 b_start=b_start, b_end=b_end, b_step=b_step,
                                 maxfev=100)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 
 class GUIMenuFile(GUIMenu):
@@ -227,7 +227,7 @@ class GUIMenuFile(GUIMenu):
     def _on_quit(self, event):
         print("AC: Bye!")
         self._gui._panel_sess.Close()
-        self._gui._graph_spec.Close()
+        self._gui._graph_main.Close()
         self._gui._tab_spec.Close()
         self._gui._tab_lines.Close()
         self._gui._tab_systs.Close()
@@ -371,16 +371,16 @@ class GUIMenuView(GUIMenu):
         getattr(self._gui, method)._on_view(event)
 
     def _on_logx(self, event):
-        self._gui._graph_spec._logx = ~self._gui._graph_spec._logx
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logx = ~self._gui._graph_main._logx
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_logy(self, event):
-        self._gui._graph_spec._logy = ~self._gui._graph_spec._logy
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logy = ~self._gui._graph_main._logy
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_norm(self, event):
-        self._gui._graph_spec._norm = ~self._gui._graph_spec._norm
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._norm = ~self._gui._graph_main._norm
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

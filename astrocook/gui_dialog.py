@@ -123,7 +123,7 @@ class GUIDialogMethod(wx.Dialog):
             if out is not None:
                 if out is 0:
                     self._gui._panel_sess._refresh()
-                    self._gui._graph_spec._refresh(self._gui._sess_items)
+                    self._gui._graph_main._refresh(self._gui._sess_items)
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
