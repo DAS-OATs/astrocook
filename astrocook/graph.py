@@ -44,23 +44,28 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
-        self._gui._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+        if self._panel is self._gui._graph_main._panel:
+            self._gui._graph_main._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None):
         sess = np.array(sess, ndmin=1)
         self._ax.clear()
         self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
-                           'spec_x_dy': GraphSpectrumXDy,
-                           'spec_x_conv': GraphSpectrumXConv,
-                           'lines_x_y': GraphLineListXY,
-                           'spec_x_ymask': GraphSpectrumXYMask,
-                           'spec_nodes_x_y': GraphSpectrumNodesXY,
-                           'spec_x_cont': GraphSpectrumXCont,
-                           'spec_form_x': GraphSpectrumFormX,
-                           'spec_x_model': GraphSpectrumXModel,
-                           'spec_x_deabs': GraphSpectrumXDeabs,
-                           'systs_z_series': GraphSystListZSeries}
+                             'spec_x_y_det': GraphSpectrumXYDetail,
+                             'spec_x_dy': GraphSpectrumXDy,
+                             'spec_x_conv': GraphSpectrumXConv,
+                             'lines_x_y': GraphLineListXY,
+                             'spec_x_ymask': GraphSpectrumXYMask,
+                             'spec_nodes_x_y': GraphSpectrumNodesXY,
+                             'spec_x_cont': GraphSpectrumXCont,
+                             'spec_form_x': GraphSpectrumFormX,
+                             'spec_x_model': GraphSpectrumXModel,
+                             'spec_x_deabs': GraphSpectrumXDeabs,
+                             'systs_z_series': GraphSystListZSeries}
         #print(self._sel)
         self._canvas_list = [self._canvas_dict[s] for s in self._sel]
 
@@ -96,7 +101,6 @@ class Graph(object):
         for z, s in enumerate(self._canvas_list):
             try:
                 gs = s(sess, norm)
-                #print(gs._type)
                 if gs._type == 'axvline':
                     for x in gs._x:
                         #print(x)
@@ -166,7 +170,7 @@ class GraphSpectrumXY(object):
         self._y = sess.spec.y
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
-        self._kwargs = {'lw':1.0, 'label':sess.name}
+        self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
 
 class GraphSpectrumXCont(GraphSpectrumXY):
 
@@ -212,6 +216,15 @@ class GraphSpectrumXDeabs(GraphSpectrumXY):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", de-absorbed"}
+
+class GraphSpectrumXYDetail(object):
+    def __init__(self, sess, norm=False):
+        self._type = 'scatter'
+        self._x = sess._xdet
+        self._y = sess._ydet
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
+        self._kwargs = {'marker':'o'}
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 
