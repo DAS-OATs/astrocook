@@ -73,20 +73,16 @@ class GUIGraphDetail(GUIGraphMain):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False)
         self._gui._graph_det = self
+        
+    def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):
+        if t == None:
+            t = self._gui._sess_sel.spec.t
+        w = np.argmin(np.abs(t['x']-x))
+        xmin = t['x'][w-xspan]
+        xmax = t['x'][w+xspan]
+        ysel = t['y'][np.where(np.logical_and(t['x']>xmin, t['x']<xmax))]
+        yspan = ymargin*(np.max(ysel)-np.min(ysel))
+        xlim = (xmin, xmax)
+        ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
 
-    def _define_lim(self, t, row, xspan=30, margin=0.1):
-        xrow = row['x']
-        xmin = row['xmin']
-        xmax = row['xmax']
-        x = self._gui._sess_sel.spec.t['x']
-        y = self._gui._sess_sel.spec.t['y']
-
-        xmin = xrow+xspan*(xmin-xrow)
-        xmax = xrow+xspan*(xmax-xrow)
-
-        ysel = y[np.where(np.logical_and(x>xmin, x<xmax))]
-        yspan = margin*(np.max(ysel)-np.min(ysel))
-        ymin = np.min(ysel)-yspan
-        ymax = np.max(ysel)+yspan
-
-        return (xmin, xmax), (ymin, ymax)
+        return xlim, ylim

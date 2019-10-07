@@ -153,7 +153,6 @@ class Session(object):
                 self.cb._mod_syst(series, z, logN, b, resol)
 
 
-
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
             print(prefix, "I've added %i %s system(s) in %i model(s) between "
@@ -878,6 +877,9 @@ class Session(object):
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t
+                    t['x'] = t['x'].to(au.nm)
+                    t['xmin'] = t['xmin'].to(au.nm)
+                    t['xmax'] = t['xmax'].to(au.nm)
                     t.meta = obj._meta
                     t.meta['ORIGIN'] = 'Astrocook'
                     t.meta['HIERARCH ASTROCOOK VERSION'] = version

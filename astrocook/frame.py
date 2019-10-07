@@ -43,6 +43,8 @@ class Frame():
         self._dtype = dtype
         self._rfz = 0.0
 
+        self.x = au.Quantity(self._t['x'])
+
     @property
     def t(self):
         return self._t

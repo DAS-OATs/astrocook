@@ -38,21 +38,55 @@ class Format(object):
                 meta['object'] = ''
                 print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
             if struct in ['spec', 'nodes']:
-                return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+                out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
             if struct in ['lines']:
-                return LineList(x, xmin, xmax, y, dy, xunit, yunit, meta)
+                out = LineList(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+            # Additional columns
+            if struct in ['spec']:
+                try:
+                    out._t['cont'] = data['cont']
+                    out._t['cont'].unit = out._t['y'].unit
+                except:
+                    pass
+                try:
+                    out._t['conv'] = data['conv']
+                    out._t['conv'].unit = out._t['y'].unit
+                except:
+                    pass
+                try:
+                    out._t['line_mask'] = data['line_mask']
+                except:
+                    pass
+                try:
+                    out._t['model'] = data['model']
+                    out._t['model'].unit = out._t['y'].unit
+                except:
+                    pass
+                try:
+                    out._t['deabs'] = data['deabs']
+                    out._t['deabs'].unit = out._t['y'].unit
+                except:
+                    pass
+
+
 
         if struct in ['systs']:
             series = data['series']
             func = data['func']
             z = data['z']
+            dz = data['dz']
             logN = data['logN']
+            dlogN = data['dlogN']
             b = data['b']
+            db = data['db']
             chi2r = data['chi2r']
             id = data['id']
-            return SystList(series, func, z=z, logN=logN, b=b, chi2r=chi2r,
-                            id=id)
+            out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
+                           dlogN=dlogN, b=b, db=db, chi2r=chi2r, id=id)
+            out._t['z0'] = data['z0']
 
+        return out
 
     def eso_midas(self, hdul):
         """ ESO-MIDAS Table """

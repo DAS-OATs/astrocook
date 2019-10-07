@@ -1,4 +1,5 @@
 from .gui_graph import GUIGraphDetail
+from .vars import *
 from collections import OrderedDict
 import pprint
 import wx
@@ -25,7 +26,6 @@ class GUITable(wx.Frame):
         self._size_y = size_y
 
     def _fill(self):
-        print(len(self._data.t))
         for j, r in enumerate(self._data.t):
             for i, n in enumerate(self._data.t.colnames):
                 if j == 0:
@@ -63,6 +63,19 @@ class GUITable(wx.Frame):
         self._tab = gridlib.Grid(self._panel)
         self._tab.CreateGrid(0, 0)
 
+    def _on_detail(self, event):
+        if not hasattr(self._gui, '_graph_det'):
+            GUIGraphDetail(self._gui)
+        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        row = self._data.t[event.GetRow()]
+        self._gui._sess_sel._xdet = row['x']
+        self._gui._sess_sel._ydet = row['y']
+        x = row['x']
+        xlim, ylim = self._gui._graph_det._define_lim(x)
+        self._gui._graph_split = False
+        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                      ylim=ylim)
+
     def _on_close(self, event):
         self.Destroy()
 
@@ -82,17 +95,6 @@ class GUITable(wx.Frame):
     def _on_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event),
                        event.GetPosition())
-
-    def _on_detail(self, event, span=30):
-        if not hasattr(self._gui, '_graph_det'):
-            GUIGraphDetail(self._gui)
-        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
-        row = self._data.t[event.GetRow()]
-        self._gui._sess_sel._xdet = row['x']
-        self._gui._sess_sel._ydet = row['y']
-        xlim, ylim = self._gui._graph_det._define_lim(self._data.t, row, span)
-        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                      ylim=ylim)
 
     def _on_view(self, event):
         self._data = getattr(self._gui._sess_sel, self._attr)
@@ -204,3 +206,27 @@ class GUITableSystList(GUITable):
 
         self._gui = gui
         self._gui._tab_systs = self
+
+    def _on_detail(self, event, span=30):
+        if not hasattr(self._gui, '_graph_det'):
+            GUIGraphDetail(self._gui)
+        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        row = self._data.t[event.GetRow()]
+        x = (1+row['z'])*xem_d[series_d[row['series']][0]]
+
+        zem = (1+row['z'])*xem_d[series_d[row['series']][0]]/xem_d['Ly_a']-1
+        #print(zem)
+        #spec = dc(self._gui._sess_sel.spec)
+        self._gui._sess_sel.convert_x(zem=zem)
+        self._gui._sess_sel._xdet = x
+        self._gui._sess_sel._ydet = 0.0
+        #xlim = (x.value-10, x.value+10)
+        #ylim = None
+        xlim, ylim = self._gui._graph_det._define_lim(0)
+        self._gui._graph_split = True
+        for i in range(2):
+            graph = self._gui._graph_det
+            graph._ax = graph._fig.add_subplot(2, 1, i)
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
+        self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)

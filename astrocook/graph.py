@@ -20,6 +20,7 @@ class Graph(object):
         self._gui = gui
         self._sel = sel
         self._fig = Figure()
+
         self._ax = self._fig.add_subplot(111)
         self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
@@ -53,6 +54,7 @@ class Graph(object):
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None):
         sess = np.array(sess, ndmin=1)
+
         self._ax.clear()
         self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
                              'spec_x_y_det': GraphSpectrumXYDetail,
@@ -176,6 +178,7 @@ class GraphSpectrumXCont(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXCont, self).__init__(sess)
+        self._type = 'plot'
         self._y = sess.spec._t['cont']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
@@ -203,6 +206,7 @@ class GraphSpectrumXModel(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXModel, self).__init__(sess)
+        self._type = 'plot'
         self._y = sess.spec._t['model']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
