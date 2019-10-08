@@ -714,25 +714,6 @@ class Session(object):
 
         peaks = spec._find_peaks(col, kind, kappa)
 
-        # Create new session
-        kwargs = {'path': self.path, 'name': self.name}
-        for s in self.seq:
-            try:
-                kwargs[s] = getattr(self, s)
-                if s == 'lines':
-                    kwargs[s] = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                                     spec._xunit, spec._yunit, spec._meta)
-            except:
-                kwargs[s] = None
-        if kwargs['spec'] != None:
-            new = Session(**kwargs)
-        else:
-            new = None
-        new.lines_kind = 'peaks'
-        spec._mask_lines(new.lines)
-        print(prefix, "I'm using peaks as lines.")
-
-        """
         lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
                          spec._xunit, spec._yunit, spec._meta)
 
@@ -740,11 +721,22 @@ class Session(object):
             self.lines._append(lines)
         else:
             self.lines = lines
+
         self.lines_kind = 'peaks'
         spec._mask_lines(self.lines)
         print(prefix, "I'm using peaks as lines.")
-        """
 
+        # Create new session
+        kwargs = {'path': self.path, 'name': self.name}
+        for s in self.seq:
+            try:
+                kwargs[s] = getattr(self, s)
+            except:
+                kwargs[s] = None
+        if kwargs['spec'] != None:
+            new = Session(**kwargs)
+        else:
+            new = None
 
         return new
 
