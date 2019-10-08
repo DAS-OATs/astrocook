@@ -5,6 +5,7 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import matplotlib.pyplot as plt
 import numpy as np
 
 prefix = "GUI:"
@@ -65,7 +66,10 @@ class GUITable(wx.Frame):
 
     def _on_detail(self, event):
         if not hasattr(self._gui, '_graph_det'):
-            GUIGraphDetail(self._gui)
+            GUIGraphDetail(self._gui, init_ax=False)
+        elif len(self._gui._graph_det._graph._fig.axes) > 1:
+            self._gui._graph_det._graph._fig.clear()
+        self._gui._graph_det._graph._init_ax(111)
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         self._gui._sess_sel._xdet = row['x']
@@ -209,24 +213,33 @@ class GUITableSystList(GUITable):
 
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
-            GUIGraphDetail(self._gui)
+            GUIGraphDetail(self._gui, init_ax=False)
+        elif len(self._gui._graph_det._graph._fig.axes) == 1:
+            self._gui._graph_det._graph._fig.clear()
+
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
-        x = (1+row['z'])*xem_d[series_d[row['series']][0]]
+        graph = self._gui._graph_det._graph
+        for i, s in enumerate(series_d[row['series']]):
+            x = (1+row['z'])*xem_d[s]
+            zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
+            self._gui._sess_sel.convert_x(zem=zem)
+            self._gui._sess_sel._xdet = x
+            self._gui._sess_sel._ydet = 0.0
+            _, ylim = self._gui._graph_det._define_lim(0)
 
-        zem = (1+row['z'])*xem_d[series_d[row['series']][0]]/xem_d['Ly_a']-1
-        #print(zem)
-        #spec = dc(self._gui._sess_sel.spec)
-        self._gui._sess_sel.convert_x(zem=zem)
-        self._gui._sess_sel._xdet = x
-        self._gui._sess_sel._ydet = 0.0
-        #xlim = (x.value-10, x.value+10)
-        #ylim = None
-        xlim, ylim = self._gui._graph_det._define_lim(0)
-        self._gui._graph_split = True
-        for i in range(2):
-            graph = self._gui._graph_det
-            graph._ax = graph._fig.add_subplot(2, 1, i)
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
-        self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+            if i == 0:
+                graph._ax = graph._fig.add_subplot(2, 1, i+1)
+                title = row['series']
+                graph._ax.tick_params(labelbottom=False)
+            else:
+                title = None
+                graph._ax = graph._fig.add_subplot(2, 1, i+1, sharex=graph._ax)
+            graph._ax.tick_params(top=True, right=True, direction='in')
+            graph._fig.subplots_adjust(hspace=0.)
+            self._gui._graph_det._refresh(
+                self._gui._sess_items, title=title, text=s[-4:],
+                xlim=(-100, 100), ylim=ylim)
+
+            self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+        #print("here", graph._ax)

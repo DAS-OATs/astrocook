@@ -15,16 +15,27 @@ prefix = "Graph:"
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel):
+    def __init__(self, panel, gui, sel, legend=True, init_canvas=True,
+                 init_ax=True):
         self._panel = panel
         self._gui = gui
         self._sel = sel
+        self._legend = legend
         self._fig = Figure()
 
-        self._ax = self._fig.add_subplot(111)
+        if init_canvas:
+            self._init_canvas()
+        if init_ax:
+            self._init_ax(111)
+
+    def _init_ax(self, *args):
+        self._ax = self._fig.add_subplot(*args)
+        self._ax.tick_params(top=True, right=True, direction='in')
+
+    def _init_canvas(self):
         self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
-        self._canvas = FigureCanvasWxAgg(panel, -1, self._fig)
+        self._canvas = FigureCanvasWxAgg(self._panel, -1, self._fig)
         self._toolbar = NavigationToolbar2Wx(self._canvas)
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
@@ -52,10 +63,16 @@ class Graph(object):
                 self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
-                 ylim=None):
+                 ylim=None, title=None, text=None):
         sess = np.array(sess, ndmin=1)
 
         self._ax.clear()
+        self._ax.grid(True, linestyle=':')
+        if title != None:
+            self._ax.set_title(title)
+        if text != None:
+            self._ax.text(0.05, 0.1, text, transform=self._ax.transAxes)
+
         self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
                              'spec_x_y_det': GraphSpectrumXYDetail,
                              'spec_x_dy': GraphSpectrumXDy,
@@ -93,8 +110,10 @@ class Graph(object):
 
         for s in sess:
             self._seq(s, norm)
-        self._ax.legend()
+        if self._legend:
+            self._ax.legend()
 
+        print(self._ax)
         self._canvas.draw()
 
     def _seq(self, sess, norm):

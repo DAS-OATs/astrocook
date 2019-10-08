@@ -11,7 +11,8 @@ class GUIGraphMain(wx.Frame):
                  title="Spectrum",
                  size_x=wx.DisplaySize()[0]*0.9,
                  size_y=wx.DisplaySize()[1]*0.5,
-                 main=True):
+                 main=True,
+                 **kwargs):
         """ Constructor """
 
         self._gui = gui
@@ -27,15 +28,15 @@ class GUIGraphMain(wx.Frame):
         self._closed = False
         if main:
             self._gui._graph_main = self
-        self._init()
+        self._init(**kwargs)
 
-    def _init(self):
+    def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
                                            size=(self._size_x, self._size_y))
 
 
         self._panel = wx.Panel(self)
-        self._graph = Graph(self._panel, self._gui, self._sel)
+        self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
         self._textbar = wx.StaticText(self._panel, 1, style=wx.ALIGN_RIGHT)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
         box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
@@ -69,11 +70,13 @@ class GUIGraphDetail(GUIGraphMain):
                  #sess,
                  title="Spectrum detail",
                  size_x=wx.DisplaySize()[0]*0.4,
-                 size_y=wx.DisplaySize()[1]*0.6):
+                 size_y=wx.DisplaySize()[1]*0.6,
+                 **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
-                                             main=False)
+                                             main=False, **kwargs)
         self._gui._graph_det = self
-        
+        self._graph._legend = False
+
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):
         if t == None:
             t = self._gui._sess_sel.spec.t
