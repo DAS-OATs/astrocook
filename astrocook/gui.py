@@ -1,5 +1,5 @@
 from . import * #version
-from .graph import Graph
+from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
@@ -26,7 +26,7 @@ class GUI(object):
         self._sess_list = []
         self._sess_sel = None
         self._panel_sess = GUIPanelSession(self)
-        GUIGraphSpectrum(self)
+        GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
         GUITableSystList(self)
@@ -94,6 +94,7 @@ class GUIPanelSession(wx.Frame):
         self._menu = GUIMenu(self._gui)
         self.SetMenuBar(self._menu.bar())
         self.Show()
+        self.Bind(wx.EVT_CLOSE, self._on_close)
 
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
@@ -112,7 +113,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._refresh()
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
         #print(self._gui._sess_sel.__dict__)
 
     def _on_edit(self, event):
@@ -127,10 +128,22 @@ class GUIPanelSession(wx.Frame):
         sess = Session(path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
 
+    def _on_close(self, event):
+        print("AC: Bye!")
+        self.Destroy()
+        """
+        self._gui._panel_sess.Close()
+        self._gui._graph_main.Close()
+        self._gui._tab_spec.Close()
+        self._gui._tab_lines.Close()
+        self._gui._tab_systs.Close()
+        self._gui._tab_mods.Close()
+        """
+        exit()
+
     def _on_select(self, event):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
-
         item = self._tab.GetFirstSelected()
         self._items = []
         while item != -1:
@@ -138,7 +151,7 @@ class GUIPanelSession(wx.Frame):
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         self._refresh()
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
@@ -169,39 +182,3 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
-
-class GUIGraphSpectrum(wx.Frame):
-    """ Class for the GUI spectrum graph frame """
-
-    def __init__(self,
-                 gui,
-                 #sess,
-                 title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.9,
-                 size_y=wx.DisplaySize()[1]*0.5):
-        """ Constructor """
-
-        super(GUIGraphSpectrum, self).__init__(parent=None, title=title,
-                                              size=(size_x, size_y))
-        self._gui = gui
-        self._gui._graph_spec = self
-        self._sel = ['spec_x_y', 'lines_x_y', 'spec_x_cont', 'spec_x_model',
-                     'systs_z_series']
-
-        self._logx = False
-        self._logy = False
-        self._norm = False
-
-        panel = wx.Panel(self)
-        self._graph = Graph(panel, gui, self._sel)
-        box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT, border=5)
-        self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._graph._plot, 1, wx.EXPAND)
-        self._box.Add(box_toolbar, 0, wx.TOP, border=5)
-        panel.SetSizer(self._box)
-        self.Centre()
-
-    def _refresh(self, sess):
-        self._graph._refresh(sess, self._logx, self._logy, self._norm)
-        self.Show()

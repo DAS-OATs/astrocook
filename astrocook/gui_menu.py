@@ -56,14 +56,14 @@ class GUIMenu(object):
         dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
-        sel = self._gui._graph_spec._sel
+        sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
             #item.Check(False)
         else:
             sel.append(key)
             #item.Check(True)
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 class GUIMenuCook(GUIMenu):
 
@@ -90,10 +90,8 @@ class GUIMenuCook(GUIMenu):
             zem = l['z']
             xmin = l['lambdamin']
             xmax = l['lambdamax']
-            
             self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
-            
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
@@ -140,11 +138,11 @@ class GUIMenuCook(GUIMenu):
             time_end = datetime.datetime.now()
             print("%s; computation time: %s" \
                   % (datetime.datetime.now(), time_end-time_start))
-            
+
     def _on_test(self, event):
         sess_start = self._gui._sess_sel
 
-        
+
         targ_list = ascii.read('CIV-qso_data.csv')
         try:
             targ_sel = np.where(targ_list['name'] == sess_start.spec.meta['object'])
@@ -175,7 +173,7 @@ class GUIMenuCook(GUIMenu):
         sess_center = dc(sess_reg)
         sess_center.add_syst_from_lines()#series='unknown')
 
-        
+
         sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
                                 *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
         sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
@@ -197,7 +195,7 @@ class GUIMenuCook(GUIMenu):
         sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
         sess_reg.merge_syst()
         #"""
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
 
 class GUIMenuFile(GUIMenu):
@@ -211,13 +209,14 @@ class GUIMenuFile(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to File menu here
-        self._item(self._menu, start_id+1, "Open...",
+        self._item(self._menu, start_id+1, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "Save...",
+        self._item(self._menu, start_id+101, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+401, "Quit", self._on_quit)
+        self._item(self._menu, start_id+401, "Quit\tCtrl+Q",
+                   self._gui._panel_sess._on_close)
 
     def _on_open(self, event, path='.'):
         """ Behaviour for Session > Open """
@@ -259,14 +258,6 @@ class GUIMenuFile(GUIMenu):
             except IOError:
                 wx.LogError("Cannot save session '%s'." % name)
             """
-    def _on_quit(self, event):
-        print("AC: Bye!")
-        self._gui._panel_sess.Close()
-        self._gui._graph_spec.Close()
-        self._gui._tab_spec.Close()
-        self._gui._tab_lines.Close()
-        self._gui._tab_systs.Close()
-        self._gui._tab_mods.Close()
 
 
 class GUIMenuEdit(GUIMenu):
@@ -406,16 +397,16 @@ class GUIMenuView(GUIMenu):
         getattr(self._gui, method)._on_view(event)
 
     def _on_logx(self, event):
-        self._gui._graph_spec._logx = ~self._gui._graph_spec._logx
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logx = ~self._gui._graph_main._logx
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_logy(self, event):
-        self._gui._graph_spec._logy = ~self._gui._graph_spec._logy
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._logy = ~self._gui._graph_main._logy
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_norm(self, event):
-        self._gui._graph_spec._norm = ~self._gui._graph_spec._norm
-        self._gui._graph_spec._refresh(self._gui._sess_items)
+        self._gui._graph_main._norm = ~self._gui._graph_main._norm
+        self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

@@ -8,6 +8,7 @@ mm = fits.open('j1103m2645_0.7_error2_spec.fits')
 gct = Table(gc[1].data)
 mmt = Table(mm[1].data)
 
+
 plt.plot(gct['x'], gct['dy']/gct['cont'], label='DAS error')
 plt.plot(mmt['x']/10, mmt['dy'], label='Popler error')
 plt.yscale('log')
@@ -58,4 +59,24 @@ plt.yscale('log')
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Flux  (normalized)')
 plt.legend()
+plt.show()
+
+mm = fits.open('j1103m2645_0.4.fits')
+mm_h = mm[0].header
+mm_wavelog = np.arange(mm_h['CRVAL1'], mm_h['CRVAL1']+mm_h['NAXIS1']*mm_h['CDELT1'], mm_h['CDELT1'])[:mm_h['NAXIS1']]
+mm_wave = 10**mm_wavelog
+mm_flux = mm[0].data[0]
+mm_error = mm[0].data[1]
+mm_expfluc = mm[0].data[2]
+mm_rms = window_rms_2(mm_flux, 50)
+
+plt.plot(mm_wave, mm_rms, label='RMS (51 pix)', color='C1')
+plt.plot(mm_wave, mm_error, label='Error (row 2)', color='C0')
+plt.plot(mm_wave, mm_expfluc, label='Exp. fluc. (row 3)', color='C3')
+plt.legend()
+plt.xlim((4750, 5000))
+plt.ylim((0, 0.040))
+plt.title(r'$\Delta$v = 0.4 km/s')
+plt.xlabel(r'Wavelength ($\AA$)')
+plt.ylabel('Normalised flux')
 plt.show()

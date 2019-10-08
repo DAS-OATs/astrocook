@@ -48,12 +48,25 @@ class SystList(object):
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
         t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
-        self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
-        self._t['id'] = np.empty(len(self.z), dtype=int)
+        if chi2r != []:
+            self._t['chi2r'] = chi2r
+        else:
+            self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
+        if id != []:
+            self._t['id'] = id
+        else:
+            self._t['id'] = np.empty(len(self.z), dtype=int)
 
         mods_t = at.Table()
         mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
-        mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
+
+        # Currently models cannot be saved, so they can't be retrieved from a
+        # saved session. This 'try' is meant to skip model definition when a
+        # session is loaded from a file.
+        try:
+            mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
+        except:
+            pass
         #mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
         #mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
         self._mods_t = mods_t

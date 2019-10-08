@@ -104,7 +104,7 @@ class LineList(Frame):
             z_range = z_range if z_start<z_end else z_range[::-1]
             y_range = y_range if z_start<z_end else y_range[::-1]
             if logN:
-                logN_range = logN_range if z_start<z_end else logN_range[::-1] 
+                logN_range = logN_range if z_start<z_end else logN_range[::-1]
                 #print('range 2')
                 #print(z_range)
                 #print(logN_range)
@@ -113,8 +113,7 @@ class LineList(Frame):
             y_range = y_sel
             if logN:
                 logN_range = logN_sel
-                
-            
+
         if len(z_range) > 0:
             z_single = z_range[np.argmin(y_range)]
             if logN:

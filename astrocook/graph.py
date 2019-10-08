@@ -3,26 +3,44 @@ from .vars import *
 from astropy import units as au
 #from copy import deepcopy as dc
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
+from matplotlib.widgets import Cursor
 import numpy as np
 
 prefix = "Graph:"
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel):
+    def __init__(self, panel, gui, sel, legend=True, init_canvas=True,
+                 init_ax=True):
+        self._panel = panel
         self._gui = gui
         self._sel = sel
+        self._legend = legend
         self._fig = Figure()
-        self._ax = self._fig.add_subplot(111)
+
+        if init_canvas:
+            self._init_canvas()
+        if init_ax:
+            self._init_ax(111)
+
+    def _init_ax(self, *args):
+        self._ax = self._fig.add_subplot(*args)
+        self._ax.tick_params(top=True, right=True, direction='in')
+
+    def _init_canvas(self):
         self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
-        self._plot = FigureCanvasWxAgg(panel, -1, self._fig)
-        self._toolbar = NavigationToolbar2WxAgg(self._plot)
+        self._canvas = FigureCanvasWxAgg(self._panel, -1, self._fig)
+        self._toolbar = NavigationToolbar2Wx(self._canvas)
+        #self._cursor = Cursor(self._ax, useblit=True, color='red',
+        #                      linewidth=0.5)
         self._toolbar.Realize()
+        #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _check_units(self, sess, axis='x'):
         unit = axis+'unit'
@@ -34,22 +52,41 @@ class Graph(object):
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
-    def _refresh(self, sess, logx=False, logy=False, norm=False):
+    def _on_move(self, event):
+        if not event.inaxes: return
+        x = float(event.xdata)
+        y = float(event.ydata)
+        if self._panel is self._gui._graph_main._panel:
+            self._gui._graph_main._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+
+    def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
+                 ylim=None, title=None, text=None):
         sess = np.array(sess, ndmin=1)
+
         self._ax.clear()
-        self._plot_dict = {'spec_x_y': GraphSpectrumXY,
-                           'spec_x_dy': GraphSpectrumXDy,
-                           'spec_x_conv': GraphSpectrumXConv,
-                           'lines_x_y': GraphLineListXY,
-                           'spec_x_ymask': GraphSpectrumXYMask,
-                           'spec_nodes_x_y': GraphSpectrumNodesXY,
-                           'spec_x_cont': GraphSpectrumXCont,
-                           'spec_form_x': GraphSpectrumFormX,
-                           'spec_x_model': GraphSpectrumXModel,
-                           'spec_x_deabs': GraphSpectrumXDeabs,
-                           'systs_z_series': GraphSystListZSeries}
+        self._ax.grid(True, linestyle=':')
+        if title != None:
+            self._ax.set_title(title)
+        if text != None:
+            self._ax.text(0.05, 0.1, text, transform=self._ax.transAxes)
+
+        self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
+                             'spec_x_y_det': GraphSpectrumXYDetail,
+                             'spec_x_dy': GraphSpectrumXDy,
+                             'spec_x_conv': GraphSpectrumXConv,
+                             'lines_x_y': GraphLineListXY,
+                             'spec_x_ymask': GraphSpectrumXYMask,
+                             'spec_nodes_x_y': GraphSpectrumNodesXY,
+                             'spec_x_cont': GraphSpectrumXCont,
+                             'spec_form_x': GraphSpectrumFormX,
+                             'spec_x_model': GraphSpectrumXModel,
+                             'spec_x_deabs': GraphSpectrumXDeabs,
+                             'systs_z_series': GraphSystListZSeries}
         #print(self._sel)
-        self._plot_list = [self._plot_dict[s] for s in self._sel]
+        self._canvas_list = [self._canvas_dict[s] for s in self._sel]
 
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
@@ -65,18 +102,26 @@ class Graph(object):
         if logy:
             self._ax.set_yscale('log')
 
+        if xlim is not None:
+            self._ax.set_xlim(xlim)
+        if ylim is not None:
+            self._ax.set_ylim(ylim)
+
+
         for s in sess:
             self._seq(s, norm)
-        self._ax.legend()
-        self._plot.draw()
+        if self._legend:
+            self._ax.legend()
+
+        print(self._ax)
+        self._canvas.draw()
 
     def _seq(self, sess, norm):
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
-        for z, s in enumerate(self._plot_list):
+        for z, s in enumerate(self._canvas_list):
             try:
                 gs = s(sess, norm)
-                #print(gs._type)
                 if gs._type == 'axvline':
                     for x in gs._x:
                         #print(x)
@@ -92,7 +137,7 @@ class Graph(object):
                                              color='C'+str(self._c),
                                              linewidth=0.5, **gs._kwargs)
                             gs._kwargs.pop('label', None)
-                            
+
                     except:
                         pass
                 elif gs._type == 'text':
@@ -141,17 +186,18 @@ class GraphSpectrumNodesXY(object):
 
 class GraphSpectrumXY(object):
     def __init__(self, sess, norm=False):
-        self._type = 'plot'
+        self._type = 'step'
         self._x = sess.spec.x
         self._y = sess.spec.y
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
-        self._kwargs = {'lw':1.0, 'label':sess.name}
+        self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
 
 class GraphSpectrumXCont(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXCont, self).__init__(sess)
+        self._type = 'plot'
         self._y = sess.spec._t['cont']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
@@ -179,6 +225,7 @@ class GraphSpectrumXModel(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXModel, self).__init__(sess)
+        self._type = 'plot'
         self._y = sess.spec._t['model']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
@@ -192,6 +239,15 @@ class GraphSpectrumXDeabs(GraphSpectrumXY):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name+", de-absorbed"}
+
+class GraphSpectrumXYDetail(object):
+    def __init__(self, sess, norm=False):
+        self._type = 'scatter'
+        self._x = sess._xdet
+        self._y = sess._ydet
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
+        self._kwargs = {'marker':'o'}
 
 class GraphSpectrumXYMask(GraphSpectrumXY):
 
@@ -210,7 +266,7 @@ class GraphSystListZSeries(object):
         series = sess.systs.series
 
         z_list = [[zf]*len(series_d[s]) for zf,s in zip(z,series)]
-        
+
         #z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
         series_list = [series_d[s] for s in series]
         #series_flat = np.ravel([series_d[s] for s in series])
@@ -220,7 +276,7 @@ class GraphSystListZSeries(object):
 
         kn = np.where(series_flat != 'unknown')
         unkn = np.where(series_flat == 'unknown')
-        
+
         z_kn = z_flat[kn]
         series_kn = series_flat[kn]
         z_unkn = z_flat[unkn]

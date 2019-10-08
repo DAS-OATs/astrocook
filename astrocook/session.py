@@ -152,13 +152,12 @@ class Session(object):
             self.cb._append_syst()
             #print(len(self.lines.t), len(z_range))
             
-            start = time.time()
+            #start = time.time()
             for i, z in enumerate(z_range):
                 #print(i, z)
                 self.cb._mod_syst(series, z, logN, b, resol)
-            end = time.time()
-            #print(end-start)
-                
+            #end = time.time()
+
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
             print(prefix, "I've added %i %s system(s) in %i model(s) between "
@@ -715,6 +714,25 @@ class Session(object):
 
         peaks = spec._find_peaks(col, kind, kappa)
 
+        # Create new session
+        kwargs = {'path': self.path, 'name': self.name}
+        for s in self.seq:
+            try:
+                kwargs[s] = getattr(self, s)
+                if s == 'lines':
+                    kwargs[s] = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
+                                     spec._xunit, spec._yunit, spec._meta)
+            except:
+                kwargs[s] = None
+        if kwargs['spec'] != None:
+            new = Session(**kwargs)
+        else:
+            new = None
+        new.lines_kind = 'peaks'
+        spec._mask_lines(new.lines)
+        print(prefix, "I'm using peaks as lines.")
+
+        """
         lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
                          spec._xunit, spec._yunit, spec._meta)
 
@@ -722,12 +740,13 @@ class Session(object):
             self.lines._append(lines)
         else:
             self.lines = lines
-
         self.lines_kind = 'peaks'
         spec._mask_lines(self.lines)
         print(prefix, "I'm using peaks as lines.")
+        """
 
-        return 0
+
+        return new
 
     def interp_nodes(self, smooth=0):
         """ @brief Interpolate nodes with a univariate spline to estimate the
@@ -863,6 +882,9 @@ class Session(object):
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t
+                    t['x'] = t['x'].to(au.nm)
+                    t['xmin'] = t['xmin'].to(au.nm)
+                    t['xmax'] = t['xmax'].to(au.nm)
                     t.meta = obj._meta
                     t.meta['ORIGIN'] = 'Astrocook'
                     t.meta['HIERARCH ASTROCOOK VERSION'] = version
