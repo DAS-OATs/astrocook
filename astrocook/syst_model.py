@@ -59,7 +59,8 @@ class SystModel(LMComposite):
         self._group_list = []
         for i, s in enumerate(mods_t):
             mod = s['mod']
-            ys_s = mod.eval(x=self._xs, params=mod._pars)
+            #ys_s = mod.eval(x=self._xs, params=mod._pars)
+            ys_s = mod._ys
             if np.amin(np.maximum(ys, ys_s)) < 1-thres:
                 self._group *= mod._group
                 self._pars.update(mod._pars)
@@ -74,7 +75,7 @@ class SystModel(LMComposite):
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
-
+        self._ys = self._group.eval(x=self._xs, params=self._pars)
 
 
     def _make_lines(self):
@@ -115,8 +116,9 @@ class SystModel(LMComposite):
     def _make_regs(self, thres=thres):
         spec = self._spec
 
-        ys = self._group.eval(x=self._xs, params=self._pars)
-        c = np.where(ys<1-thres)[0]
+        #ys = self._group.eval(x=self._xs, params=self._pars)
+        #c = np.where(ys<1-thres)[0]
+        c = np.where(self._ys<1-thres)[0]
 
         #plt.plot(self._xs[c], ys[c])
         #plt.show()
@@ -140,3 +142,4 @@ class SystModel(LMComposite):
         self._make_regs()
         self._make_psf()
         self._make_comp()
+        #self._ys = self.eval(x=self._xs, params=self._pars)

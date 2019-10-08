@@ -74,7 +74,6 @@ class LineList(Frame):
         if logN:
             logN_sel = logN_all[np.logical_and(z_all>z_min, z_all<z_max)]
             #print('sel')
-            #print(z_sel)
             #print(logN_sel)
 
         # Find coincidences

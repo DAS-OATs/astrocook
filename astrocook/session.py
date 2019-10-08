@@ -19,6 +19,7 @@ import numpy as np
 import os
 from scipy.signal import argrelmin
 import tarfile
+import time
 
 prefix = "Session:"
 
@@ -149,10 +150,14 @@ class Session(object):
         else:
             z_range = self.lines._syst_cand(series, z_start, z_end, dz)
             self.cb._append_syst()
+            #print(len(self.lines.t), len(z_range))
+            
+            start = time.time()
             for i, z in enumerate(z_range):
+                #print(i, z)
                 self.cb._mod_syst(series, z, logN, b, resol)
-                
-        
+            end = time.time()
+            #print(end-start)
                 
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
@@ -277,7 +282,7 @@ class Session(object):
                           % (o_series, z_cand)
                     chi2r = chi2r_cand
 
-                if chi2r>=chi2r_old*1.1:# and count > 2:
+                if chi2r>=chi2r_old:#*1.1:# and count > 2:
                     self.systs._unfreeze(t_old, mods_t_old)
                     chi2r = chi2r_old
                     break
