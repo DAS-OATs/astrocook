@@ -24,8 +24,8 @@ fi
 #xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
 
 echo -e "\nStarting Astrocook...\n" > /var/log/astrocook.log
-cd /metauser/astrocook && python3 -u ac_gui.py &>> /var/log/astrocook.log &
-xterm -title "Astrocook Log" -e "tail -n 1000 -f /var/log/astrocook.log" &
+cd /data && python3 -u /metauser/astrocook/ac_gui.py &>> /var/log/astrocook.log &
+xterm -title "Log" -e "tail -n 1000 -f /var/log/astrocook.log" &
 
 
 #twm &
