@@ -79,7 +79,15 @@ COPY containers/Docker/files/supervisord_webvnc.conf /etc/supervisor/conf.d/
 RUN apt-get install -y python3 python3-pip python3-wxgtk4.0 python3-wxgtk-webview4.0 python3-wxgtk-media4.0
 
 # Install PIP dependencies
-RUN pip3 install astropy scipy specutils numpy lmfit cycler statsmodels matplotlib sphinx
+RUN pip3 install astropy==3.2.2 \
+                 scipy==1.3.1 \
+                 specutils==0.6 \
+                 numpy==1.17.3 \
+                 lmfit==0.9.14 \
+                 cycler==0.10.0 \
+                 statsmodels==0.10.1 \
+                 matplotlib==3.1.1 \
+                 sphinx==2.2.0
 
 # Astroccok X environment setup/startup
 RUN apt-get install fluxbox -y
