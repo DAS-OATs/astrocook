@@ -1,0 +1,32 @@
+#!/bin/bash
+
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+OS=`uname -s`
+if [ $OS = 'Linux' ]; then
+  case "$WINDOWMANAGER" in
+    *gnome*)
+      if [ -e /etc/SuSE-release ]; then
+        PATH=$PATH:/opt/gnome/bin
+        export PATH
+      fi
+      ;;
+  esac
+fi
+if [ -x /etc/X11/xinit/xinitrc ]; then
+  exec /etc/X11/xinit/xinitrc
+fi
+if [ -f /etc/X11/xinit/xinitrc ]; then
+  exec sh /etc/X11/xinit/xinitrc
+fi
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+#xsetroot -solid grey
+#xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+
+echo -e "\nStarting Astrocook...\n" > /var/log/astrocook.log
+cd /metauser/astrocook && python3 -u ac_gui.py &>> /var/log/astrocook.log &
+xterm -title "Astrocook Log" -e "tail -n 1000 -f /var/log/astrocook.log" &
+
+
+#twm &
+fluxbox &
