@@ -1,2 +1,13 @@
-
+.DS_Store
+*.acs
+*.fits
+*.upl
+*.acs
 *.pyc
+*.dat
+*.pyc
+QSO_constants/
+*.png
+__pycache__/
+he0515m4414.tar.gz
+QSO_constants/.DS_Store

@@ -1,9 +1,0 @@
-2019-01-25 - gcupani - Fixed bug in the workflow controlling the addition of lines to all systems.
-2019-01-24 - gcupani - Fixed bug in the detection of doublets.
-2019-01-18 - gcupani - Fixed bug that sometimes prevented fitted Voigt parameters to be copied into the table.
-2019-01-18 - gcupani - Implemented cycles to extend the addition of lines to all systems.
-2019-01-17 - gcupani - Implemented addition of lines to systems, to improve fit.
-2019-01-16 - gcupani - Fixed bug that prevented systems to be plotted at the right redshift.
-2019-01-16 - gcupani - Fixed bug that prevented fitting when lines where loaded
-from a saved table.
-2019-01-15 - gcupani - Removed deprecated methods from system.py.

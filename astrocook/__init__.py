@@ -1,3 +1,16 @@
+version = "0.3"
+
+from .session import Session
+from .syst_list import SystList
+
+#from .frame import Frame
+#from .spectrum import Spectrum
+
+#from .format import Format
+#from .session import Session
+
+
+"""
 from .list import List  # Deprecated
 from .list_reader import ListReader  # Deprecated
 from .list_syst import ListSyst  # Deprecated
@@ -16,3 +29,4 @@ from .recipe import Recipe
 from .workflow import Workflow
 from .plot import Plot
 from .app import MainFrame
+"""

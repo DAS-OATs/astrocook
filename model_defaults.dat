@@ -1,0 +1,3 @@
+lines_voigt_N 1.e13 True  1.e11 1.e19 None  None
+lines_voigt_b 10. True  0.  100.  None  None
+lines_voigt_btur 0. False 0.  100.  None  None
