@@ -31,7 +31,7 @@ class GUIMenu(object):
         bar.Append(snacks._menu, "Ingredients")
         #bar.Append(meals._menu, "Meals")
         bar.Append(meals._menu, "Recipes")
-        bar.Append(cook._menu, "Cook")
+        #bar.Append(cook._menu, "Cook")
         return bar
 
     def _item(self, menu, id, title, event):
@@ -100,7 +100,7 @@ class GUIMenuCook(GUIMenu):
 
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)  
+            sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
@@ -111,11 +111,11 @@ class GUIMenuCook(GUIMenu):
             self._gui._panel_sess._on_add(sess_reg, open=False)
             sess_center = dc(sess_reg)
             sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
-            
+
             sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
                                     *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
             sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
-            
+
             #sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0,
             #                             dz=5e-5, z_end=zem, maxfev=10)
             #sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0,
@@ -168,7 +168,7 @@ class GUIMenuCook(GUIMenu):
 
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)  
+            sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:

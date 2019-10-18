@@ -6,7 +6,7 @@ A thousand ways to cook a spectrum!
 
 ## Getting Started
 
-To get a copy of Astrocook on your local machine: 
+To get a copy of Astrocook on your local machine:
 
 ```
 git clone https://github.com/DAS-OATs/astrocook
@@ -16,25 +16,28 @@ git clone https://github.com/DAS-OATs/astrocook
 
 Astrocook requires the following packages to run:
 
-* [Astropy](http://www.astropy.org), including [Specutils](http://specutils.readthedocs.io/en/latest/)
-* [SciPy](https://www.scipy.org), and in particular [NumPy](http://www.numpy.org) and [matplotlib](https://matplotlib.org) 
-* [LmFit](https://lmfit.github.io/lmfit-py/)
-* [StatsModels](http://www.statsmodels.org/stable/index.html)
-* [Cycler](https://pypi.python.org/pypi/Cycler)
+* [Astropy 3.2.2](http://www.astropy.org)
+* [SciPy 1.3.1](https://www.scipy.org)
+* [Specutils 0.6](http://specutils.readthedocs.io/en/latest/)
+* [NumPy 1.17.3](http://www.numpy.org)
+* [LmFit 0.9.14](https://lmfit.github.io/lmfit-py/)
+* [Cycler 0.10.0](https://pypi.python.org/pypi/Cycler)
+* [StatsModels 0.10.1](http://www.statsmodels.org/stable/index.html)
+* [matplotlib 3.1.1](https://matplotlib.org)
+* [Sphinx 2.2.0](http://www.sphinx-doc.org/en/master/)
 
 
-## Running the tests
+## Running the software
 
-The following tests are available:
+The Astrocook user manual is under construction.
 
-* line_test.py: create a list of absoprtion lines from a spectrum and fit them with Voigt profiles.
-* syst_test.py: create a list of CIV doublets from a spectrum and fit them with Voigt profiles.
+In the meanwhile, you can try the following commands:
 
-To run the tests:
+* ```python mock_demo.py```, which creates a mock spectrum, plots it and saves it into an Astrocook archive (.acs).
+* ```python ac_gui.py```, which launches the (self-explaining) Astrocook GUI to perform the analysis.
 
-```
-python <name-of-the-test>
-```
+A note on .acs archive: they are normal tarballs containing all the products of an analysis session (spectrum, optional list of lines and absorption systems, etc.) in FITS format. To extract an .acs archive: ```tar -zxvf [name].acs```.
+
 
 ## Contributing
 
@@ -44,6 +47,7 @@ A CONTRIBUTING.md file will be soon uploaded to detail our code of conduct and t
 
 * **[Guido Cupani](https://github.com/gcupani)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 * **[Giorgio Calderone](https://github.com/gcalderone)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
+* **[Stefano Alberto Russo](https://github.com/sarusso)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
@@ -51,6 +55,7 @@ See also the list of [contributors](https://github.com/your/project/contributors
 
 v0.1 - Start of the project
 v0.2 - First release with a DOI; GUI available; tools for finding lines, determining continuum, and fitting systems
+v0.3 – Transition to Python 3; complete makeover of classes and methods
 
 ## License
 
