@@ -20,7 +20,7 @@ class GUI(object):
         #print("│ ASTROCOOK 🍪  v%3s │" % version)
         #print("└───────────────────┘")
         print("-----------------")
-        print(" ASTROCOOK -hey!  v%3s " % version)
+        print(" ASTROCOOK  v%3s " % version)
         print("-----------------")
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []

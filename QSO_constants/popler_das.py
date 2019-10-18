@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 from astropy.table import Table
 import numpy as np
 
-gc = fits.open('J1103-2645_RSPEC_PRE_spec.fits')
+gc = fits.open('DAS_RSPEC_PRE_2019-10-01_spec.fits')
 mm = fits.open('j1103m2645_0.7_error2_spec.fits')
 gct = Table(gc[1].data)
 mmt = Table(mm[1].data)
 
 
 plt.plot(gct['x'], gct['dy']/gct['cont'], label='DAS error')
-plt.plot(mmt['x']/10, mmt['dy'], label='Popler error')
+#plt.plot(mmt['x']/10, mmt['dy'], label='Popler error')
 plt.yscale('log')
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Flux  (normalized)')

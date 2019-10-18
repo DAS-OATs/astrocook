@@ -152,14 +152,14 @@ class Session(object):
                 #    % (series, z), end='\r')
                 #self.cb._fit_syst(series, z, l, b, resol, maxfev)
                 ###
-                
+
             #print(z_range)
             #print(logN_range)
         else:
             z_range = self.lines._syst_cand(series, z_start, z_end, dz)
             self.cb._append_syst()
             #print(len(self.lines.t), len(z_range))
-            
+
             #start = time.time()
             for i, z in enumerate(z_range):
                 #print(i, z)
@@ -168,7 +168,7 @@ class Session(object):
 
                 ### Remove this
                 #print(prefix, "I'm fitting a %s model at redshift %2.4f..."\
-                #    % (series, z), end='\r')                
+                #    % (series, z), end='\r')
                 #self.cb._fit_syst(series, z, logN, b, resol, maxfev)
                 ###
             #end = time.time()
@@ -263,7 +263,7 @@ class Session(object):
                     #print(" ")
                     #reg_x = systs._mods_t['mod'][i-1]._xm
                     #reg_x = o['mod']._xm
-                    
+
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
                 reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
@@ -272,7 +272,7 @@ class Session(object):
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
                 peaks = reg._find_peaks(col='y')#, mode='wrap')
                 #print(peaks.t)
-                
+
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
                 #print(resids._t)
@@ -284,7 +284,7 @@ class Session(object):
                 #print(z_cand)
                 #print(z_alt)
 
-                
+
                 # If no residuals are found, add a system at the init. redshift
                 if z_cand == None:
                     #print("hey")
@@ -805,6 +805,7 @@ class Session(object):
         spec._mask_lines(self.lines)
         print(prefix, "I'm using peaks as lines.")
 
+        """
         # Create new session
         kwargs = {'path': self.path, 'name': self.name}
         for s in self.seq:
@@ -812,12 +813,15 @@ class Session(object):
                 kwargs[s] = getattr(self, s)
             except:
                 kwargs[s] = None
+            print(kwargs[s])
         if kwargs['spec'] != None:
             new = Session(**kwargs)
         else:
             new = None
 
         return new
+        """
+        return 0
 
     def interp_nodes(self, smooth=0):
         """ @brief Interpolate nodes with a univariate spline to estimate the
