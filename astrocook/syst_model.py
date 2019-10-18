@@ -19,7 +19,10 @@ class SystModel(LMComposite):
                  psf_func=psf_gauss,
                  cont_func=None):
         self._spec = spec
-        self._mods_t = systs._mods_t
+        try:
+            self._mods_t = systs._mods_t
+        except:
+            self._mods_t = None
         self._id = systs._id
         self._series = series
         self._vars = vars
@@ -133,12 +136,11 @@ class SystModel(LMComposite):
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
         self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
-
-        self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
-                                   for x in self._xr])
-        #plt.plot(self._xs[c], ys[c])
-        #plt.scatter(self._xm, np.ones(len(self._xm)))
-        #plt.show()
+        try:
+            self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
+                                      for x in self._xr])
+        except:
+            self._xm = np.array([])
 
     def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
         self._series = series
