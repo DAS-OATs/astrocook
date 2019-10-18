@@ -29,14 +29,14 @@ Astrocook requires the following packages to run:
 
 ## Running the software
 
-The Astrocook user manual is under construction.
-
-In the meanwhile, you can try the following commands:
+The Astrocook user manual is under construction. In the meanwhile, you can try the following commands:
 
 * ```python mock_demo.py```, which creates a mock spectrum, plots it and saves it into an Astrocook archive (.acs).
 * ```python ac_gui.py```, which launches the (self-explaining) Astrocook GUI to perform the analysis.
 
 A note on .acs archive: they are normal tarballs containing all the products of an analysis session (spectrum, optional list of lines and absorption systems, etc.) in FITS format. To extract an .acs archive: ```tar -zxvf [name].acs```.
+
+**More information coming soon!**
 
 
 ## Contributing
