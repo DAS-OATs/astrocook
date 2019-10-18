@@ -8,10 +8,10 @@ import astropy.units as au
 import matplotlib.pyplot as plt
 import numpy as np
 
-xstep = 0.001
+xstep = 0.003
 xrange = np.arange(300, 302, xstep)
 n_lines = 10
-texp = 1
+texp = 2
 path = 'outfile.acs'
 
 x_lines = np.random.random(n_lines)*(xrange[-1]-xrange[0])+xrange[0]
