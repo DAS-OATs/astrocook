@@ -98,7 +98,7 @@ class GUIMenuCook(GUIMenu):
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=5)
+            sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)  
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
@@ -156,8 +156,8 @@ class GUIMenuCook(GUIMenu):
             #xmax = 598
             #xmin = 625
             #xmax = 630
-            xmin = 483.5
-            xmax = 487
+            #xmin = 480
+            #xmax = 490
             self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
             sess_start = self._gui._sess_sel
@@ -166,7 +166,7 @@ class GUIMenuCook(GUIMenu):
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=5)
+            sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)  
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
