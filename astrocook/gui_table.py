@@ -60,9 +60,11 @@ class GUITable(wx.Frame):
     def _init(self):
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
+
         self._panel = wx.Panel(self)
         self._tab = gridlib.Grid(self._panel)
         self._tab.CreateGrid(0, 0)
+        self.SetPosition((0, wx.DisplaySize()[1]*0.5))
 
     def _on_detail(self, event):
         if not hasattr(self._gui, '_graph_det'):
