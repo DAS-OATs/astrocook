@@ -4,7 +4,7 @@ from .format import Format
 from .functions import detect_local_minima
 from .line_list import LineList
 from .message import *
-from .model import Model
+#from .model import Model
 from .spectrum import Spectrum
 from .syst_list import SystList
 from .syst_model import SystModel
