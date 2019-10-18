@@ -113,7 +113,7 @@ class Graph(object):
         if self._legend:
             self._ax.legend()
 
-        print(self._ax)
+        #print(self._ax)
         self._canvas.draw()
 
     def _seq(self, sess, norm):

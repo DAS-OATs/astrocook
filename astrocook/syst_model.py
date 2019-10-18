@@ -1,6 +1,7 @@
 from .functions import adj_gauss, lines_voigt, convolve, psf_gauss
 from .vars import *
 from astropy import table as at
+import datetime
 from lmfit import CompositeModel as LMComposite
 from lmfit import Model as LMModel
 from lmfit import Parameters as LMParameters
@@ -9,7 +10,7 @@ import numpy as np
 
 prefix = "System model:"
 
-thres = 1e-4
+thres = 1e-6
 
 class SystModel(LMComposite):
 
@@ -28,13 +29,17 @@ class SystModel(LMComposite):
 
 
     def _fit(self, fit_kws={}):
-
+        time_start = datetime.datetime.now()
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')
+                                         #method='emcee')
+        time_end = datetime.datetime.now()
+        #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
         self._chi2r = fit.redchi
-
+        self._aic = fit.aic
+        self._bic = fit.bic
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve)
@@ -59,8 +64,8 @@ class SystModel(LMComposite):
         self._group_list = []
         for i, s in enumerate(mods_t):
             mod = s['mod']
-            #ys_s = mod.eval(x=self._xs, params=mod._pars)
-            ys_s = mod._ys
+            ys_s = mod.eval(x=self._xs, params=mod._pars)
+            #ys_s = mod._ys
             if np.amin(np.maximum(ys, ys_s)) < 1-thres:
                 self._group *= mod._group
                 self._pars.update(mod._pars)
@@ -76,7 +81,8 @@ class SystModel(LMComposite):
         else:
             self._group_sel = self._group_list[0]
         self._ys = self._group.eval(x=self._xs, params=self._pars)
-
+        #plt.plot(self._xs, self._ys)
+        #plt.show()
 
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
@@ -120,8 +126,6 @@ class SystModel(LMComposite):
         #c = np.where(ys<1-thres)[0]
         c = np.where(self._ys<1-thres)[0]
 
-        #plt.plot(self._xs[c], ys[c])
-        #plt.show()
 
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
@@ -132,6 +136,9 @@ class SystModel(LMComposite):
 
         self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
                                    for x in self._xr])
+        #plt.plot(self._xs[c], ys[c])
+        #plt.scatter(self._xm, np.ones(len(self._xm)))
+        #plt.show()
 
     def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
         self._series = series

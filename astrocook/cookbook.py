@@ -3,6 +3,7 @@ from .syst_list import SystList
 from .syst_model import SystModel
 from astropy import constants as ac
 from astropy import units as au
+import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -87,7 +88,9 @@ class Cookbook(object):
         mod._fit(fit_kws={'max_nfev': maxfev})
         #plt.plot(mod._xf, mod._yf)
         #plt.show()
+        #print(systs._t)
         systs._update(mod, mod_t=False)
+        #print(systs._t)
 
 
     def _fit_syst(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0,
@@ -103,7 +106,7 @@ class Cookbook(object):
         #plt.plot(mod._xf, mod._yf)
         #plt.show()
         systs._update(mod)
-        return 0
+        return mod
 
     def _merge_syst(self, merge_t, v_thres):
 

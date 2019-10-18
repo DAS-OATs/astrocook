@@ -179,6 +179,7 @@ class SystList(object):
 
         modw = np.where(mod == self._mods_t['mod'])[0][0]
         ids = self._mods_t['id'][modw]
+        #print(ids)
         for i in ids:
             try:
                 iw = np.where(self._t['id']==i)[0][0]
