@@ -10,7 +10,7 @@ import numpy as np
 
 prefix = "System model:"
 
-thres = 1e-6
+thres = 1e-5
 
 class SystModel(LMComposite):
 

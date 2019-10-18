@@ -237,7 +237,6 @@ class Session(object):
         old = systs._mods_t[np.where(np.logical_or(
                 systs._mods_t['chi2r'] > chi2r_thres,
                 np.isnan(systs._mods_t['chi2r'])))]
-        print(chi2r_thres)
         for i, o in enumerate(old):
             o_id = o['id'][0]
             o_series = systs._t[systs._t['id'] == o_id]['series'][0]
