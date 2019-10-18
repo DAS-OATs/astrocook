@@ -144,7 +144,15 @@ class Session(object):
                                                         dz, logN=True)
             self.cb._append_syst()
             for i, (z, l) in enumerate(zip(z_range, logN_range)):
+                ### Uncomment this
                 self.cb._mod_syst(series, z, l, b, resol)
+
+                ### Remove this
+                #print(prefix, "I'm fitting a %s model at redshift %2.4f..."\
+                #    % (series, z), end='\r')
+                #self.cb._fit_syst(series, z, l, b, resol, maxfev)
+                ###
+                
             #print(z_range)
             #print(logN_range)
         else:
@@ -155,9 +163,18 @@ class Session(object):
             #start = time.time()
             for i, z in enumerate(z_range):
                 #print(i, z)
+                ### Uncomment this
                 self.cb._mod_syst(series, z, logN, b, resol)
+
+                ### Remove this
+                #print(prefix, "I'm fitting a %s model at redshift %2.4f..."\
+                #    % (series, z), end='\r')                
+                #self.cb._fit_syst(series, z, logN, b, resol, maxfev)
+                ###
             #end = time.time()
 
+        ### Uncomment this
+        #"""
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
             print(prefix, "I've added %i %s system(s) in %i model(s) between "
@@ -170,7 +187,7 @@ class Session(object):
                 print(prefix, "I'm fitting a %s model at redshift %2.4f "
                       "(%i/%i)..."\
                     % (series, m['z0'], i+1, len(mods_t)), end='\r')
-                self.cb._fit_mod(m['mod'])
+                self.cb._fit_mod(m['mod'], maxfev)
             #print(self.systs._t)
             try:
                 print(prefix, "I've fitted %i %s system(s) in %i model(s) "
@@ -179,7 +196,7 @@ class Session(object):
                          z_range[-1]))
             except:
                 pass
-
+        #"""
         if len(self.systs._t) > 0:
             self.systs._clean(chi2r_thres)
             self.cb._update_spec()
@@ -190,7 +207,7 @@ class Session(object):
 
 
     def add_syst_from_resids(self, z_start=0, z_end=6, dz=1e-4,
-                             resol=45000, logN=11, b=5, chi2r_thres=2.0,
+                             resol=45000, logN=11, b=5, chi2r_thres=1.0,
                              maxfev=100):
         """ @brief Add and fit Voigt models from residuals of previously
         fitted models.
@@ -220,84 +237,146 @@ class Session(object):
         old = systs._mods_t[np.where(np.logical_or(
                 systs._mods_t['chi2r'] > chi2r_thres,
                 np.isnan(systs._mods_t['chi2r'])))]
-
+        print(chi2r_thres)
         for i, o in enumerate(old):
             o_id = o['id'][0]
             o_series = systs._t[systs._t['id'] == o_id]['series'][0]
             o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
 
             chi2r_old = np.inf
+            #bic_old = np.inf
             count = 0
+            count_good = 0
 
             while True:
 
                 spec = dc(self.spec)
-                spec._convolve_gauss(std=0.1, input_col='deabs', verb=False)
-                reg_x = o['mod']._xm
+                spec._convolve_gauss(std=2, input_col='deabs', verb=False)
+                try:
+                #    ciao
+                #except:
+                #    print(systs._mods_t['mod'][i])
+                    reg_x = systs._mods_t['mod'][i]._xm
+                except:
+                    break
+                    #print("except")
+                    #print(" ")
+                    #reg_x = systs._mods_t['mod'][i-1]._xm
+                    #reg_x = o['mod']._xm
+                    
                 reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
                 reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
-                #plt.plot(reg_x, reg_y)
-                #plt.show()
+                #plt.scatter(reg_x, np.ones(len(reg_x)))
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
                 peaks = reg._find_peaks(col='y')#, mode='wrap')
                 #print(peaks.t)
+                
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
                                   peaks.dy, reg._xunit, reg._yunit, reg._meta)
+                #print(resids._t)
+                #plt.scatter(peaks.x, peaks.y)
+                #plt.show()
                 z_cand = resids._syst_cand(o_series, z_start, z_end, dz,
                                            single=True)
                 z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
+                #print(z_cand)
+                #print(z_alt)
 
+                
                 # If no residuals are found, add a system at the init. redshift
                 if z_cand == None:
+                    #print("hey")
                     z_cand = o_z
 
                 if z_alt == None:
+                    #print("yeh")
                     z_alt = (1.+o_z)\
                             *xem_d[series_d[o_series][0]].to(au.nm).value
 
-                t_old, mods_t_old = self.systs._freeze()
+                # Randomize
+                #z_cand = z_cand+np.random.normal(scale=0.0005)
+                #z_alt = z_alt+np.random.normal(scale=0.0005)
+
+                if count == 0:
+                    t_old, mods_t_old = self.systs._freeze()
                 systs._append(SystList(id_start=np.max(self.systs._t['id'])+1),
                               unique=False)
                 cand = dc(self)
                 alt = dc(self)
 
-                cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
-                alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
-
+                cand_mod = cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                alt_mod = alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                """
+                print(cand_mod._chi2r, alt_mod._chi2r,
+                      cand_mod._aic, alt_mod._aic,
+                      cand_mod._bic, alt_mod._bic)
+                """
                 self.systs._mods_t = dc(mods_t_old)
-                chi2r_cand = cand.systs._t['chi2r'][cand.systs._t['id']==o_id][0]
-                chi2r_alt = alt.systs._t['chi2r'][alt.systs._t['id']==o_id][0]
-
-                if chi2r_cand > chi2r_alt*1.1:# and count > 3:
-                    self.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                #chi2r_cand = cand.systs._t['chi2r'][cand.systs._t['id']==o_id][0]
+                #chi2r_alt = alt.systs._t['chi2r'][alt.systs._t['id']==o_id][0]
+                chi2r_cand = cand_mod._chi2r
+                chi2r_alt = alt_mod._chi2r
+                """
+                if chi2r_cand > chi2r_alt:#*2:#1.1:# and count > 3:
+                    mod = self.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                    #self.systs._add('unknown', z_alt, logN, b, resol)
+                    #self.systs._update(alt_mod)
                     msg = "added an unknown component at wavelength %2.4f" \
                           % z_alt
                     chi2r = chi2r_alt
                 else:
-                    self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                    mod = self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                    #self.systs._add(o_series, z_cand, logN, b, resol)
+                    #self.systs._update(cand_mod)
                     msg = "added a %s component at redshift %2.4f" \
                           % (o_series, z_cand)
                     chi2r = chi2r_cand
-
-                if chi2r>=chi2r_old:#*1.1:# and count > 2:
+                """
+                #print(chi2r_old, cand_mod._chi2r, alt_mod._chi2r)
+                #if chi2r>=chi2r_old*100:# and count > 2:
+                #if mod._chi2r>=chi2r_old:# and chi2r < 10:#50:
+                #if ((cand_mod._chi2r>=chi2r_old and alt_mod._chi2r>= chi2r_old)
+                #    and count_good > 5) \
+                #    or (cand_mod._chi2r<10 or alt_mod._chi2r<10):
+                if cand_mod._chi2r>=chi2r_old and alt_mod._chi2r>= chi2r_old:
                     self.systs._unfreeze(t_old, mods_t_old)
-                    chi2r = chi2r_old
+                    #mod._bic = bic_old
+                    count += 1
+                    #if chi2r < 10:
                     break
                 else:
+                    t_old, mods_t_old = self.systs._freeze()
+                    if chi2r_cand > chi2r_alt:#*2:#1.1:# and count > 3:
+                        mod = self.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                        #self.systs._add('unknown', z_alt, logN, b, resol)
+                        #self.systs._update(alt_mod)
+                        msg = "added an unknown component at wavelength %2.4f" \
+                              % z_alt
+                        chi2r = chi2r_alt
+                    else:
+                        mod = self.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                        #self.systs._add(o_series, z_cand, logN, b, resol)
+                        #self.systs._update(cand_mod)
+                        msg = "added a %s component at redshift %2.4f" \
+                              % (o_series, z_cand)
+                        chi2r = chi2r_cand
                     print(prefix, "I'm improving a model at redshift %2.4f "\
                           "(%i/%i): %s (red. chi-squared: %3.2f)...          " \
-                          % (o_z, i+1, len(old), msg, chi2r), end='\r')
+                          % (o_z, i+1, len(old), msg, chi2r))#, end='\r')
+                    chi2r_old = chi2r
+                    #bic_old = mod._bic
+                    count = 0
+                    count_good += 1
 
-                chi2r_old = chi2r
                 self.cb._update_spec()
-                count += 1
+                if count_good == 10: break
                 if count >= 10: break
                 if chi2r<chi2r_thres: break
 
 
-            if count == 0:
+            if count_good == 0:
                 print(prefix, "I've not improved the %s system at redshift "\
                       "%2.4f (%i/%i): I was unable to add useful components."\
                       % (o_series, o_z, i+1, len(old)))

@@ -82,7 +82,7 @@ class GUIMenuCook(GUIMenu):
 
 
     def _on_civ_full(self, event):
-        targ_list = ascii.read('/data/cupani/CIV/targets.csv')
+        targ_list = ascii.read('/data/cupani/CIV/targets_3.csv')
 
         for l in targ_list:
             time_start = datetime.datetime.now()
@@ -98,7 +98,7 @@ class GUIMenuCook(GUIMenu):
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=10)
+            sess.convolve_gauss(std=5)
             sess.find_peaks(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)  
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
@@ -110,7 +110,7 @@ class GUIMenuCook(GUIMenu):
             sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
             sess_center = dc(sess_reg)
-            sess_center.add_syst_from_lines(z_end=20)#series='unknown')
+            sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
             
             sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
                                     *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
@@ -126,12 +126,14 @@ class GUIMenuCook(GUIMenu):
             #                             dz=5e-5, z_end=zem, maxfev=10)
             #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
             #                             dz=5e-5, z_end=zem, maxfev=10)
+
             sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
                                           maxfev=10)
+
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
-            self._gui._graph_spec._refresh(self._gui._sess_items)
+            self._gui._graph_main._refresh(self._gui._sess_items)
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
@@ -140,62 +142,75 @@ class GUIMenuCook(GUIMenu):
                   % (datetime.datetime.now(), time_end-time_start))
 
     def _on_test(self, event):
-        sess_start = self._gui._sess_sel
+        targ_list = ascii.read('/data/cupani/CIV/targets_prova.csv')
 
+        for l in targ_list:
+            time_start = datetime.datetime.now()
+            t = l['name']
+            zem = l['z']
+            xmin = l['lambdamin']
+            xmax = l['lambdamax']
+            #xmin = 381
+            #xmax = 382.5
+            #xmin = 592
+            #xmax = 598
+            #xmin = 625
+            #xmax = 630
+            xmin = 483.5
+            xmax = 487
+            self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
+                                           +'.fits')
+            sess_start = self._gui._sess_sel
+            if sess_start.spec.meta['object'] == 'J2123-0050':
+                sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+            else:
+                sess = sess_start
 
-        targ_list = ascii.read('CIV-qso_data.csv')
-        try:
-            targ_sel = np.where(targ_list['name'] == sess_start.spec.meta['object'])
-            zem = targ_list['z'][targ_sel]
-            xmin = targ_list['lambdamin'][targ_sel]
-            xmax = targ_list['lambdamax'][targ_sel]\
-                   *xem_d['MgII_2803']/xem_d['CIV_1550']
-        except:
-            zem = 3.801412
-            xmin = (1+zem)*xem_d['Ly_a']
-            xmax = (1+zem)*xem_d['MgII_2803']
+            sess.convolve_gauss(std=5)
+            sess.find_peaks(kappa=3.0)
+            sess.lines._t.remove_rows(sess.lines.y == 0)  
+            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
+                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
+            if 'cont' not in sess.spec._t.colnames:
+                sess.extract_nodes(delta_x=1000)
+                sess.interp_nodes()
 
-        if sess_start.spec.meta['object'] == 'J2123-0050':
-            sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
-        else:
-            sess = sess_start
+            sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
+            self._gui._panel_sess._on_add(sess_reg, open=False)
+            #"""
+            sess_center = dc(sess_reg)
+            sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
+            sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
+                                    *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
+            sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
+            #"""
+            #sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0,
+            #                             dz=5e-5, z_end=zem, maxfev=10)
+            #sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0,
+            #                             dz=5e-5, z_end=zem, maxfev=10)
+            sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0,
+                                         dz=5e-5, z_end=zem, maxfev=10)
+            #sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0,
+            #                             dz=5e-5, z_end=zem, maxfev=10)
+            #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
+            #                             dz=5e-5, z_end=zem, maxfev=10)
 
-        sess.convolve_gauss(std=10)
-        sess.find_peaks(kappa=3.0)
-        if 'cont' not in sess.spec._t.colnames:
-            sess.extract_nodes(delta_x=1000)
-            sess.interp_nodes()
-
-        #xmin = 494
-        #xmax = 498
-        sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
-        self._gui._panel_sess._on_add(sess_reg, open=False)
-        sess_center = dc(sess_reg)
-        sess_center.add_syst_from_lines()#series='unknown')
-
-
-        sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
-                                *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
-        sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
-
-        sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0, dz=5e-5,
-                                    z_end=zem, maxfev=10)
-        sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0, dz=5e-5,
-                                     z_end=zem, maxfev=10)
-        sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0, dz=5e-5,
-                                     z_end=zem, maxfev=10)
-        sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0, dz=5e-5,
-                                     z_end=zem, maxfev=10)
-        sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0, dz=5e-5,
-                                     z_end=zem, maxfev=10)
-        #sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
-        #                              maxfev=10)
-        """
-        sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
-        sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-        sess_reg.merge_syst()
-        #"""
-        self._gui._graph_main._refresh(self._gui._sess_items)
+            sess_reg.add_syst_from_resids(chi2r_thres=1.0, logN=13.0, b=2.0,
+                                          maxfev=10)
+            """
+            sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
+            sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
+            sess_reg.merge_syst()
+            """
+            self._gui._graph_main._refresh(self._gui._sess_items)
+            """
+            sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
+                          +datetime.date.today().isoformat()+'.xxx')
+            sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
+            """
+            time_end = datetime.datetime.now()
+            print("%s; computation time: %s" \
+                  % (datetime.datetime.now(), time_end-time_start))
 
 
 class GUIMenuFile(GUIMenu):
