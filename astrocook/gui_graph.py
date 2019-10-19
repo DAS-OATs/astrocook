@@ -29,6 +29,7 @@ class GUIGraphMain(wx.Frame):
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
+        self.SetPosition((30, wx.DisplaySize()[1]*0.3))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
