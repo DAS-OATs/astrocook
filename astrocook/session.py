@@ -83,7 +83,8 @@ class Session(object):
 
     def add_syst(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                  chi2r_thres=np.inf, maxfev=100):
-        """ @brief Add and fit a Voigt model for a system.
+        """ @brief Fit a system
+        @details Add and fit a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
         @param N Guess column density
@@ -112,7 +113,8 @@ class Session(object):
     def add_syst_from_lines(self, series='Ly_a', z_start=0, z_end=6,
                             dz=1e-4, logN=13, b=10, resol=45000,
                             chi2r_thres=np.inf, maxfev=100):
-        """ @brief Add and fit Voigt models to a line list, given a redshift
+        """ @brief Fit systems from line list
+        @details Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
         @param z_start Start redshift
@@ -209,8 +211,9 @@ class Session(object):
     def add_syst_from_resids(self, z_start=0, z_end=6, dz=1e-4,
                              resol=45000, logN=11, b=5, chi2r_thres=1.0,
                              maxfev=100):
-        """ @brief Add and fit Voigt models from residuals of previously
-        fitted models.
+        """ @brief Fit systems from residuals
+        @details Add and fit Voigt models from residuals of previously fitted
+        models.
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
@@ -395,7 +398,8 @@ class Session(object):
                        logN_start=12, logN_end=10, logN_step=-0.2,
                        b_start=8, b_end=9, b_step=1.1,
                        resol=45000, col='y', chi2r_thres=2, maxfev=100):
-        """ @brief Slide a set of Voigt models across a spectrum and fit them
+        """ @brief Fit systems by sliding
+        @details Slide a set of Voigt models across a spectrum and fit them
         where they suit the spectrum.
         @param series Series of transitions
         @param z_start Start redshift
@@ -551,7 +555,8 @@ class Session(object):
                    logN_start=15, logN_end=10, logN_step=-0.2,
                    b_start=8, b_end=9, b_step=1.1,
                    resol=45000, col='y', chi2r_thres=2, maxfev=100):
-        """ @brief Estimate the completeness of system detection by simulating
+        """ @brief Estimate completeness
+        @details Estimate the completeness of system detection by simulating
         systems at random redshifts and sliding Voigt models to fit them
         @param series Series of transitions
         @param n Number of simulated realizations
@@ -664,7 +669,8 @@ class Session(object):
         return 0
 
     def convert_x(self, zem=0, xunit=au.km/au.s):
-        """ @brief Convert the x axis to wavelength or velocity units.
+        """ @brief Convert x axis
+        @details Convert the x axis to wavelength or velocity units.
         @param zem Emission redshift, to use as a 0-point for velocities
         @param xunit Unit of wavelength or velocity
         @return 0
@@ -684,9 +690,9 @@ class Session(object):
         return 0
 
     def convert_y(self, yunit=au.electron/au.nm):
-        """ @brief Convert the x axis to wavelength or velocity units.
-        @param zem Emission redshift, to use as a 0-point for velocities
-        @param xunit Unit of wavelength or velocity
+        """ @brief Convert y axis
+        @details Convert the y axis to flux density units.
+        @param yunit Unit of flux density
         @return 0
         """
 
@@ -700,7 +706,9 @@ class Session(object):
         return 0
 
     def convolve_gauss(self, std=5, input_col='y', output_col='conv'):
-        """@brief Convolve a spectrum column with a profile using FFT transform.
+        """@brief Convolve with gaussian
+        @details Convolve a spectrum column with a gaussian profile using FFT
+        transform.
         @param std Standard deviation of the gaussian (km/s)
         @param input_col Input column
         @param output_col Output column
@@ -716,8 +724,9 @@ class Session(object):
         return 0
 
     def extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
-        """ @brief Extract nodes from a spectrum. Nodes are averages of x and y
-        in slices, computed after masking lines.
+        """ @brief Extract nodes
+        @details Extract nodes from a spectrum. Nodes are averages of x and y in
+        slices, computed after masking lines.
         @param delta_x Size of slices
         @param xunit Unit of wavelength or velocity
         @return 0
@@ -735,7 +744,8 @@ class Session(object):
         return 0
 
     def extract_region(self, xmin, xmax):
-        """ @brief Extract a spectral region as a new frame.
+        """ @brief Extract region
+        @details Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return Spectral region
@@ -773,7 +783,8 @@ class Session(object):
         return new
 
     def find_peaks(self, col='conv', kind='min', kappa=5.0, append=True):
-        """ @brief Find the peaks in a spectrum column. Peaks are the extrema
+        """ @brief Find peaks
+        @details Find the peaks in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
         standard deviations. They are saved as a list of lines.
         @param col Column where to look for peaks
@@ -823,7 +834,8 @@ class Session(object):
         return 0
 
     def interp_nodes(self, smooth=0):
-        """ @brief Interpolate nodes with a univariate spline to estimate the
+        """ @brief Interpolate nodes
+        @details Interpolate nodes with a univariate spline to estimate the
         emission level.
         @param smooth Smoothing of the spline
         @return 0
@@ -839,7 +851,8 @@ class Session(object):
         return 0
 
     def merge_syst(self, series='CIV', v_thres=100):
-        """ @brief Merge column densities of systems applying a friend-of-friend
+        """ @brief Merge systems
+        @details Merge column densities of systems applying a friend-of-friend
         algorithm.
         @param series Series of transitions
         @param v_thres Velocity threshold for merging (km/s)
@@ -974,7 +987,9 @@ class Session(object):
 
 
     def shift_from_rf(self, z=0):
-        """ @brief Shift x axis to the original frame.
+        """ @brief Shift from rest frame
+        @details Shift x axis from rest frame to the original frame.
+        @param z Redshift to use for shifting
         @return 0
         """
 
@@ -992,7 +1007,8 @@ class Session(object):
 
 
     def shift_to_rf(self, z=0):
-        """ @brief Shift x axis to the rest frame.
+        """ @brief Shift to rest frame
+        @details Shift x axis to the rest frame.
         @param z Redshift to use for shifting
         @return 0
         """
@@ -1011,7 +1027,8 @@ class Session(object):
 
     def simul_syst(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                    col='y'):
-        """ @brief Simulate a system by adding Voigt model onto a spectrum.
+        """ @brief Simulate a system
+        @details Simulate a system by adding Voigt model onto a spectrum.
         @param series Series of transitions
         @param z Guess redshift
         @param N Guess column density

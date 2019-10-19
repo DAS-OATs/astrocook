@@ -28,6 +28,7 @@ class GUIDialogMethod(wx.Dialog):
         self._methods = []
         self._params = []
         self._brief = []
+        self._details = []
         self._doc = []
 
         for a in self._attr:
@@ -36,43 +37,34 @@ class GUIDialogMethod(wx.Dialog):
             self._methods.append(method)
             self._get_params(method)
             self._get_doc(method)
+        self._init()
 
-        panel = wx.Panel(self)
-        box = wx.BoxSizer(wx.VERTICAL)
-        core = wx.BoxSizer(wx.VERTICAL)
+    def _init(self, attr=None, methods=None, params=None, brief=None,
+              details=None, doc=None):
+        if attr == None: attr = self._attr
+        if methods == None: methods = self._methods
+        if params == None: params = self._params
+        if brief == None: brief = self._brief
+        if details == None: details = self._details
+        if doc == None: doc = self._doc
 
-        # Description
-        sb = wx.StaticBox(panel, label="Description")
-        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        st = wx.StaticText(sb, 1, label='\n'.join(self._brief))
-        st.Wrap(400)
-        sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
-        core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(core)
-
-        # Parameters
-        sb = wx.StaticBox(panel, label="Parameters")
-        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        len_params = np.sum([len(i) for i in self._params])
-        fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
-        fgs_add = []
+        print(attr, methods, params, brief, details, doc)
         self._ctrl = []
-        for p_l, d_l in zip(self._params, self._doc):
-            ctrl_l = []
-            for p, d in zip(p_l, d_l):
-                stat = wx.StaticText(panel, -1, label=d+':')
-                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
-                fgs_add.append((stat, 1, wx.EXPAND))
-                fgs_add.append((ctrl, 1, wx.EXPAND))
-                ctrl_l.append(ctrl)
-            self._ctrl.append(ctrl_l)
-        if np.size(self._ctrl) > 0:
-            fgs.AddMany(fgs_add)
-            sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
-            core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(core)
+        panel = wx.Panel(self)
+        bottom = wx.BoxSizer(wx.VERTICAL)
+        core = wx.BoxSizer(wx.VERTICAL)
+        if len(methods) == 1:
+            self._box_descr(panel, core, details)
+            self._box_params(panel, core, params, doc)
+        else:
+            self._box_methods(panel, core, attr, methods, params, brief,
+                              details, doc)
+        self._box_buttons(panel, bottom)
+        self.SetSizer(bottom)
+        self.Centre()
+        self.Show()
 
-        # Buttons
+    def _box_buttons(self, panel, box):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         cancel_button = wx.Button(self, label='Cancel')
         cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
@@ -87,15 +79,68 @@ class GUIDialogMethod(wx.Dialog):
                      border=10)
         box.SetSizeHints(self)
 
-        self.SetSizer(box)
-        self.Centre()
-        self.Show()
+
+
+    def _box_descr(self, panel, box, details):
+
+        # Description
+        sb = wx.StaticBox(panel, label="Description")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        st = wx.StaticText(sb, 1, label='\n'.join(details))
+        st.Wrap(400)
+        sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
+        box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        panel.SetSizer(box)
+
+    def _box_methods(self, panel, box, attr, methods, params, brief, details,
+                     doc):
+        sb = wx.StaticBox(panel, label="Methods")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        bbs = wx.BoxSizer(wx.VERTICAL)
+        for a_l, m_l, p_l, b_l, de_l, d_l \
+            in zip(attr, methods, params, brief, details, doc):
+            button = wx.Button(panel, label=b_l)
+            # Both method and attribute should be argument of lambda, otherwise
+            # only the last method and attribute are passed
+            button.Bind(
+                wx.EVT_BUTTON,
+                lambda e, a=[a_l], m=[m_l], p=[p_l], b=[b_l], de=[de_l], d=[d_l]: \
+                self._on_method(e, a, m, p, b, de, d))
+            bbs.Add(button, 0, wx.BOTTOM|wx.EXPAND, border=5)
+        sbs.Add(bbs, flag=wx.LEFT|wx.TOP, border=20)
+        box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        panel.SetSizer(box)
+
+    def _box_params(self, panel, box, params, doc):
+        # Parameters
+        sb = wx.StaticBox(panel, label="Parameters")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        len_params = np.sum([len(i) for i in params])
+        fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
+        fgs_add = []
+        for p_l, d_l in zip(params, doc):
+            ctrl_l = []
+            for p, d in zip(p_l, d_l):
+                stat = wx.StaticText(panel, -1, label=d+':')
+                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
+                fgs_add.append((stat, 1, wx.EXPAND))
+                fgs_add.append((ctrl, 1, wx.EXPAND))
+                ctrl_l.append(ctrl)
+            self._ctrl.append(ctrl_l)
+        if np.size(self._ctrl) > 0:
+            fgs.AddMany(fgs_add)
+            sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
+            box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        panel.SetSizer(box)
+
 
     def _get_doc(self, method):
         full = inspect.getdoc(method)
         split = full.split('@')
         self._brief.append([s[6:-1] for s in split \
                            if s[0:5]=='brief'][0].replace('\n', ' '))
+        self._details.append([s[8:-1] for s in split \
+                              if s[0:7]=='details'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
@@ -110,6 +155,9 @@ class GUIDialogMethod(wx.Dialog):
 
     def _on_cancel(self, e):
         self.Close()
+
+    def _on_method(self, e, attr, method, params, brief, details, doc):
+        self._init(attr, method, params, brief, details, doc)
 
     def _on_run(self, e):
         for a, p_l, c_l in zip(self._attr, self._params, self._ctrl):
