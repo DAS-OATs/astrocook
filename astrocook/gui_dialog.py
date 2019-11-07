@@ -19,14 +19,18 @@ class GUIDialog(wx.Dialog):
         self._brief = []
         self._details = []
         self._doc = []
+        self._ctrl = []
         for a in self._attr:
             obj = self._gui._sess_sel
             method = getattr(obj, a)
             self._methods.append(method)
             self._get_params(method)
             self._get_doc(method)
+        self._panel = wx.Panel(self)
+        self._bottom = wx.BoxSizer(wx.VERTICAL)
+        self._core = wx.BoxSizer(wx.VERTICAL)
 
-    def _box_buttons(self, panel, box, cancel_run=True):
+    def _box_buttons(self, cancel_run=True):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         if cancel_run:
             cancel_button = wx.Button(self, label='Cancel')
@@ -42,10 +46,10 @@ class GUIDialog(wx.Dialog):
             ok_button.SetDefault()
             buttons.Add(ok_button, 0, border=5)
 
-        box.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
-        box.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
-        box.SetSizeHints(self)
+        self._bottom.SetSizeHints(self)
 
     def _get_doc(self, method):
         full = inspect.getdoc(method)
@@ -84,9 +88,6 @@ class GUIDialog(wx.Dialog):
             obj = self._gui._sess_sel
             m = getattr(obj, a)
 
-            #for p, c in zip(p_l, c_l):
-            #    pmod = c.GetValue()
-            #    p_l[p] = pmod
             out = m(**p_l)
             if out is not None:
                 if out is 0:
@@ -112,63 +113,39 @@ class GUIDialogMethod(GUIDialog):
                  cancel_run=True,
                  params_parent=None):
 
-        #self._gui = gui
-        #self._gui._dlg_method = self
         super(GUIDialogMethod, self).__init__(gui, title, attr)
-        """
-        self._attr = np.array(attr, ndmin=1)
-        self._methods = []
-        self._params = []
-        self._brief = []
-        self._details = []
-        self._doc = []
-        """
         self._cancel_run = cancel_run
         self._params_parent = params_parent
-        self._init()
-
-    def _init(self):
-        attr = self._attr
-        methods = self._methods
-        params = self._params
-        brief = self._brief
-        details = self._details
-        doc = self._doc
-
-        self._ctrl = []
-        panel = wx.Panel(self)
-        bottom = wx.BoxSizer(wx.VERTICAL)
-        core = wx.BoxSizer(wx.VERTICAL)
-        self._box_descr(panel, core, details)
-        self._box_params(panel, core, params, doc)
-        self._box_buttons(panel, bottom, self._cancel_run)
-        self.SetSizer(bottom)
+        self._box_descr()
+        self._box_params()
+        self._box_buttons(self._cancel_run)
+        self.SetSizer(self._bottom)
         self.Centre()
         self.Show()
 
-    def _box_descr(self, panel, box, details):
+    def _box_descr(self):
 
         # Description
-        sb = wx.StaticBox(panel, label="Description")
+        sb = wx.StaticBox(self._panel, label="Description")
         sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        st = wx.StaticText(sb, 1, label='\n'.join(details))
+        st = wx.StaticText(sb, 1, label='\n'.join(self._details))
         st.Wrap(400)
         sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
-        box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(box)
+        self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
 
-    def _box_params(self, panel, box, params, doc):
+    def _box_params(self):
         # Parameters
-        sb = wx.StaticBox(panel, label="Parameters")
+        sb = wx.StaticBox(self._panel, label="Parameters")
         sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        len_params = np.sum([len(i) for i in params])
+        len_params = np.sum([len(i) for i in self._params])
         fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
         fgs_add = []
-        for p_l, d_l in zip(params, doc):
+        for p_l, d_l in zip(self._params, self._doc):
             ctrl_l = []
             for p, d in zip(p_l, d_l):
-                stat = wx.StaticText(panel, -1, label=d+':')
-                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
+                stat = wx.StaticText(self._panel, -1, label=d+':')
+                ctrl = wx.TextCtrl(self._panel, -1, value=str(p_l[p]))
                 fgs_add.append((stat, 1, wx.EXPAND))
                 fgs_add.append((ctrl, 1, wx.EXPAND))
                 ctrl_l.append(ctrl)
@@ -176,8 +153,8 @@ class GUIDialogMethod(GUIDialog):
         if np.size(self._ctrl) > 0:
             fgs.AddMany(fgs_add)
             sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
-            box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(box)
+            self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
 
 
 class GUIDialogMethods(GUIDialog):
@@ -188,45 +165,24 @@ class GUIDialogMethods(GUIDialog):
                  attr):
 
         super(GUIDialogMethods, self).__init__(gui, title, attr)
-        self._init()
-
-    def _init(self):
-        attr = self._attr
-        methods = self._methods
-        params = self._params
-        brief = self._brief
-        details = self._details
-        doc = self._doc
-
-        self._ctrl = []
-        panel = wx.Panel(self)
-        bottom = wx.BoxSizer(wx.VERTICAL)
-        core = wx.BoxSizer(wx.VERTICAL)
-        self._box_methods(panel, core, attr, methods, params, brief,
-                          details, doc)
-        self._box_buttons(panel, bottom)
-        self.SetSizer(bottom)
+        self._box_methods()#panel, core)
+        self._box_buttons()
+        self.SetSizer(self._bottom)
         self.Centre()
         self.Show()
 
-    def _box_methods(self, panel, box, attr, methods, params, brief, details,
-                     doc):
-        sb = wx.StaticBox(panel, label="Methods")
+    def _box_methods(self):
+        sb = wx.StaticBox(self._panel, label="Methods")
         sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
         bbs = wx.BoxSizer(wx.VERTICAL)
-        for a_l, m_l, p_l, b_l, de_l, d_l \
-            in zip(attr, methods, params, brief, details, doc):
-            button = wx.Button(panel, label=b_l)
-            # Both method and attribute should be argument of lambda, otherwise
-            # only the last method and attribute are passed
-            button.Bind(
-                wx.EVT_BUTTON,
-                lambda e, a=[a_l], m=[m_l], p=[p_l], b=[b_l], de=[de_l], d=[d_l]: \
-                self._on_method(e, a, m, p, b, de, d))
+        for a_l, b_l in zip(self._attr, self._brief):
+            button = wx.Button(self._panel, label=b_l)
+            button.Bind(wx.EVT_BUTTON, lambda e, a=[a_l], b=b_l: \
+                        self._on_method(e, a, b))
             bbs.Add(button, 0, wx.BOTTOM|wx.EXPAND, border=5)
-        sbs.Add(bbs, flag=wx.LEFT|wx.TOP, border=20)
-        box.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(box)
+        sbs.Add(bbs, flag=wx.LEFT|wx.RIGHT|wx.TOP, border=5)
+        self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
 
-    def _on_method(self, e, attr, method, params, brief, details, doc):
-        GUIDialogMethod(self._gui, brief[0], attr, False, self._params)
+    def _on_method(self, e, attr, brief):
+        GUIDialogMethod(self._gui, brief, attr, False, self._params)
