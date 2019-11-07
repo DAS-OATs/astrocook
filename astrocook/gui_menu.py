@@ -53,7 +53,10 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _on_dialog(self, event, title, attr):
-        dlg = GUIDialogMethod(self._gui, title, attr)
+        if isinstance(attr, list):
+            dlg = GUIDialogMethods(self._gui, title, attr)
+        else:
+            dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_main._sel
