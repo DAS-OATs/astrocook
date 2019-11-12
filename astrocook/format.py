@@ -194,6 +194,26 @@ class Format(object):
             print(prefix, "OBJECT not defined.")
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def xshooter_das_spectrum(self, hdul):
+        """ X-shooter DAS FSPEC/RSPEC format """
+
+        hdr = hdul[0].header
+        data = hdul[1].data
+        x = data['WAVEL']
+        xmin = x-data['PIXSIZE']*0.5
+        xmax = x+data['PIXSIZE']*0.5
+        y = data['FLUX']
+        dy = data['FLUXERR']
+        xunit = au.nm
+        yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'X-shooter'}
+        try:
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+        except:
+            meta['object'] = ''
+            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
     def xshooter_reduce_spectrum(self, hdul, hdul_e):
         hdr = hdul[0].header
         crval1 = hdr['CRVAL1']
