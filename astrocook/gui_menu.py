@@ -230,11 +230,16 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id+1, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+101, "Combine sessions...",
+                   self._on_combine)
+        self._item(self._menu, start_id+102, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+401, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
+
+    def _on_combine(self, event):
+        self._gui._panel_sess._combine()
 
     def _on_open(self, event, path='.'):
         """ Behaviour for Session > Open """

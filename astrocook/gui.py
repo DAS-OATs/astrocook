@@ -3,6 +3,7 @@ from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
+from astropy import table as at
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -53,7 +54,21 @@ class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
-    def insert_string_item(self, *args):
+    def _get_selected_items(self):
+        sel = []
+
+        # start at -1 to get the first selected item
+        current = -1
+        while True:
+            next = self.GetNextItem(current, wx.LIST_NEXT_ALL,
+                                    wx.LIST_STATE_SELECTED)
+            if next == -1:
+                return sel
+
+            sel.append(next)
+            current = next
+
+    def _insert_string_item(self, *args):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
 
@@ -97,12 +112,29 @@ class GUIPanelSession(wx.Frame):
         self.Show()
         self.Bind(wx.EVT_CLOSE, self._on_close)
 
+    def _combine(self):
+        """ @brief Combine two or more sessions
+        @details When sessions are combined, a new session is opened, with a
+        new spectrum containing all entries from the spectra of the combined
+        sessions. Other objects from the sessions (line lists, etc.) are
+        discarded.
+        """
+        sel = self._tab._get_selected_items()
+        if len(sel) < 2:
+            print(prefix, "Select two or more sessions first...")
+        else:
+            spec = self._gui._sess_list[sel[0]].spec
+            for s in sel[1:]:
+                spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            sess = Session(name="pippo", spec=spec)
+            self._gui._panel_sess._on_add(sess, open=False)
+
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
         self._items = [self._sel]
 
-        self._tab.insert_string_item(self._sel, "%s (%s)"
+        self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
 
