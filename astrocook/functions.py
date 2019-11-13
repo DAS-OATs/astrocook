@@ -36,6 +36,10 @@ def convolve(data, psf):
         pad = np.ones(pad_l)
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
         conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
+        #plt.plot(range(len(conv)),temp_arr[1:-1], c='red', alpha=0.5)
+        plt.plot(range(len(k)),k)
+        #plt.plot(range(len(conv)),conv, c='black', alpha=0.5)
+        plt.show()
         if i == 0:
             ret = conv
         else:
@@ -137,9 +141,9 @@ def psf_gauss(x, #center, resol):
     c = np.median(reg)
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-(0.5 * (x-c) / sigma)**2)
-    psf[np.where(psf < 1e-4)] = 0.0
-    psf = np.zeros(len(x))
-    psf[len(x)//2] = 1
+    #psf[np.where(psf < 1e-4)] = 0.0
+    #psf = np.zeros(len(x))
+    #psf[len(x)//2] = 1
     ret = [np.array(psf)]
     return ret
 
