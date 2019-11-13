@@ -146,17 +146,18 @@ class Cookbook(object):
 
     def _rebin(self, dx, xunit):
         spec_in = dc(self.sess.spec)
+        spec_in.t.sort('x')
         spec_in._convert_x(xunit=xunit)
         xstart, xend = np.nanmin(spec_in.x), np.nanmax(spec_in.x)
         x = np.arange(xstart.value, xend.value, dx) * xunit
         format = Format()
         xmin, xmax = format._create_xmin_xmax(x)
-        dy = 0.1
         im = 0
         iM = 1
         xmin_in = spec_in.xmin[iM].value
         xmax_in = spec_in.xmax[im].value
         y = np.array([])
+        dy = np.array([])
         for i, (m, M) in enumerate(zip(xmin.value, xmax.value)):
             while xmin_in < M:
                 iM += 1
@@ -167,6 +168,7 @@ class Cookbook(object):
             ysel = spec_in.y[im:iM+1]
             dysel = spec_in.dy[im:iM+1]
             y = np.append(y, np.average(ysel, weights=1/dysel**2))
+            dy = np.append(dy, np.sqrt(np.sum(dysel**2/dysel**4))/np.sum(1/dysel**2))
             print(prefix, "rebin: I've scanned %i%% of the input spectrum."
                   % int(100*i/len(xmin)), end='\r')
 
