@@ -344,9 +344,11 @@ class GUIMenuSnacks(GUIMenu):
                           'convolve_gauss')
         self._item_method(self._menu, start_id+102, "Find peaks", 'find_peaks')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, "Extract nodes",
+        self._item_method(self._menu, start_id+201, "Rebin spectrum",
+                          'rebin')
+        self._item_method(self._menu, start_id+202, "Extract nodes",
                           'extract_nodes')
-        self._item_method(self._menu, start_id+202, "Interpolate nodes",
+        self._item_method(self._menu, start_id+203, "Interpolate nodes",
                           'interp_nodes')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+301, "Add and fit a system",

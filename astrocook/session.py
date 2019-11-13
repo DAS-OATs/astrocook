@@ -866,6 +866,8 @@ class Session(object):
         self.cb._merge_syst(self.merge, v_thres)
         self.merge.sort('z')
 
+        return 0
+
     def open(self):
 
         format = Format()
@@ -949,6 +951,22 @@ class Session(object):
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
+
+    def rebin(self, dx=10.0, xunit=au.km/au.s):
+        """ @brief Rebin spectrum
+        @details Rebin a spectrum with a given velocity step. A new session is
+        created with the rebinned spectrum. Other objects from the old session
+        (line lists, etc.) are discarded.
+        @param dx Step in x
+        @param xunit Unit of wavelength or velocity
+        @return 0
+        """
+
+        dx = float(dx)
+        xunit = au.Unit(xunit)
+        spec = self.cb._rebin(dx, xunit)
+        new = Session(name=self.name+'_rebinned', spec=spec)
+        return new
 
     def save(self, path):
 
