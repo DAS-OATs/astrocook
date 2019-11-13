@@ -9,11 +9,13 @@ class GUIDialog(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
-                 attr):
+                 attr,
+                 obj=None):
         self._gui = gui
         self._gui._dlg = self
         super(GUIDialog, self).__init__(parent=None, title=title)
         self._attr = np.array(attr, ndmin=1)
+        self._obj = obj
         self._methods = []
         self._params = []
         self._brief = []
@@ -21,8 +23,9 @@ class GUIDialog(wx.Dialog):
         self._doc = []
         self._ctrl = []
         for a in self._attr:
-            obj = self._gui._sess_sel
-            method = getattr(obj, a)
+            if self._obj == None:
+                self._obj = self._gui._sess_sel
+            method = getattr(self._obj, a)
             self._methods.append(method)
             self._get_params(method)
             self._get_doc(method)
@@ -85,8 +88,7 @@ class GUIDialog(wx.Dialog):
     def _on_run(self, e):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
-            obj = self._gui._sess_sel
-            m = getattr(obj, a)
+            m = getattr(self._obj, a)
 
             out = m(**p_l)
             if out is not None:
@@ -110,10 +112,11 @@ class GUIDialogMethod(GUIDialog):
                  gui,
                  title,
                  attr,
+                 obj=None,
                  cancel_run=True,
                  params_parent=None):
 
-        super(GUIDialogMethod, self).__init__(gui, title, attr)
+        super(GUIDialogMethod, self).__init__(gui, title, attr, obj)
         self._cancel_run = cancel_run
         self._params_parent = params_parent
         self._box_descr()
@@ -162,9 +165,10 @@ class GUIDialogMethods(GUIDialog):
     def __init__(self,
                  gui,
                  title,
-                 attr):
+                 attr,
+                 obj=None):
 
-        super(GUIDialogMethods, self).__init__(gui, title, attr)
+        super(GUIDialogMethods, self).__init__(gui, title, attr, obj)
         self._box_methods()#panel, core)
         self._box_buttons()
         self.SetSizer(self._bottom)

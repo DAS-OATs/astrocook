@@ -112,23 +112,6 @@ class GUIPanelSession(wx.Frame):
         self.Show()
         self.Bind(wx.EVT_CLOSE, self._on_close)
 
-    def _combine(self):
-        """ @brief Combine two or more sessions
-        @details When sessions are combined, a new session is opened, with a
-        new spectrum containing all entries from the spectra of the combined
-        sessions. Other objects from the sessions (line lists, etc.) are
-        discarded.
-        """
-        sel = self._tab._get_selected_items()
-        if len(sel) < 2:
-            print(prefix, "Select two or more sessions first...")
-        else:
-            spec = self._gui._sess_list[sel[0]].spec
-            for s in sel[1:]:
-                spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
-            sess = Session(name="pippo", spec=spec)
-            self._gui._panel_sess._on_add(sess, open=False)
-
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
@@ -216,3 +199,31 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
+
+    def combine(self, name='*_combined'):
+        """ @brief Combine two or more sessions
+        @details When sessions are combined, a new session is opened, with a
+        new spectrum containing all entries from the spectra of the combined
+        sessions. Other objects from the sessions (line lists, etc.) are
+        discarded.
+        @param name Name of the output session
+        @return 0
+        """
+        name_in = name
+        sel = self._tab._get_selected_items()
+        if len(sel) < 2:
+            print(prefix, "Select two or more sessions first...")
+        else:
+            spec = self._gui._sess_list[sel[0]].spec
+            if name_in[0] == '*':
+                name = self._gui._sess_list[sel[0]].name
+            for s in sel[1:]:
+                spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+                if name_in[0] == '*':
+                    name += '_' + self._gui._sess_list[s].name
+            if name_in[0] == '*':
+                name += name_in[1:]
+            sess = Session(name=name, spec=spec)
+            self._gui._panel_sess._on_add(sess, open=False)
+
+        return 0

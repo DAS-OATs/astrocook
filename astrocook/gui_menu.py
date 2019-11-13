@@ -45,18 +45,18 @@ class GUIMenu(object):
             wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
 
-    def _item_method(self, menu, id, title, targ):
+    def _item_method(self, menu, id, title, targ, obj=None):
         item = wx.MenuItem(menu, id, title+'...')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_dialog(e, title, targ), item)
+            lambda e: self._on_dialog(e, title, targ, obj), item)
         menu.Append(item)
 
-    def _on_dialog(self, event, title, attr):
+    def _on_dialog(self, event, title, attr, obj=None):
         if isinstance(attr, list):
-            dlg = GUIDialogMethods(self._gui, title, attr)
+            dlg = GUIDialogMethods(self._gui, title, attr, obj)
         else:
-            dlg = GUIDialogMethod(self._gui, title, attr)
+            dlg = GUIDialogMethod(self._gui, title, attr, obj)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_main._sel
@@ -230,8 +230,10 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id+1, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "Combine sessions...",
-                   self._on_combine)
+        #self._item(self._menu, start_id+101, "Combine sessions...",
+        #           self._on_combine)
+        self._item_method(self._menu, start_id+101, "Combine sessions...",
+                          'combine', obj=self._gui._panel_sess)
         self._item(self._menu, start_id+102, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
