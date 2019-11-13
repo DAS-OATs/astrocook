@@ -4,6 +4,7 @@ from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
 from astropy import table as at
+from copy import deepcopy as dc
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -207,14 +208,14 @@ class GUIPanelSession(wx.Frame):
         sessions. Other objects from the sessions (line lists, etc.) are
         discarded.
         @param name Name of the output session
-        @return 0
+        @return Combined session
         """
         name_in = name
         sel = self._tab._get_selected_items()
         if len(sel) < 2:
             print(prefix, "Select two or more sessions first...")
         else:
-            spec = self._gui._sess_list[sel[0]].spec
+            spec = dc(self._gui._sess_list[sel[0]].spec)
             if name_in[0] == '*':
                 name = self._gui._sess_list[sel[0]].name
             for s in sel[1:]:
@@ -224,6 +225,5 @@ class GUIPanelSession(wx.Frame):
             if name_in[0] == '*':
                 name += name_in[1:]
             sess = Session(name=name, spec=spec)
-            self._gui._panel_sess._on_add(sess, open=False)
 
-        return 0
+        return sess
