@@ -72,7 +72,7 @@ class Spectrum(Frame):
 
         return 0
 
-    
+
 
     def _extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
 
@@ -202,6 +202,9 @@ class Spectrum(Frame):
         self._t['lines_mask'][self._where_safe] = mask
 
         return 0
+
+    def _rebin(self):
+        pass
 
     def _slice(self, delta_x=1000, xunit=au.km/au.s):
         """ @brief Create 'slice' columns. 'slice' columns contains an

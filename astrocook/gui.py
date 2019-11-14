@@ -3,6 +3,8 @@ from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
+from astropy import table as at
+from copy import deepcopy as dc
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -53,7 +55,21 @@ class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
-    def insert_string_item(self, *args):
+    def _get_selected_items(self):
+        sel = []
+
+        # start at -1 to get the first selected item
+        current = -1
+        while True:
+            next = self.GetNextItem(current, wx.LIST_NEXT_ALL,
+                                    wx.LIST_STATE_SELECTED)
+            if next == -1:
+                return sel
+
+            sel.append(next)
+            current = next
+
+    def _insert_string_item(self, *args):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
 
@@ -102,7 +118,7 @@ class GUIPanelSession(wx.Frame):
         self._sel = self._tab.GetItemCount()
         self._items = [self._sel]
 
-        self._tab.insert_string_item(self._sel, "%s (%s)"
+        self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
 
@@ -184,3 +200,27 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
+
+    def combine(self, name='*_combined'):
+        """ @brief Combine two or more sessions
+        @details When sessions are combined, a new session is created, with a
+        new spectrum containing all entries from the spectra of the combined
+        sessions. Other objects from the sessions (line lists, etc.) are
+        discarded.
+        @param name Name of the output session
+        @return Combined session
+        """
+        name_in = name
+        sel = self._tab._get_selected_items()
+        spec = dc(self._gui._sess_list[sel[0]].spec)
+        if name_in[0] == '*':
+            name = self._gui._sess_list[sel[0]].name
+        for s in sel[1:]:
+            spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            if name_in[0] == '*':
+                name += '_' + self._gui._sess_list[s].name
+        if name_in[0] == '*':
+            name += name_in[1:]
+        sess = Session(name=name, spec=spec)
+
+        return sess
