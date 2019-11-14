@@ -27,6 +27,7 @@ class GUI(object):
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
+        self._sess_item_sel = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -161,6 +162,11 @@ class GUIPanelSession(wx.Frame):
     def _on_select(self, event):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_item_sel = self._tab._get_selected_items()
+
+        # Enable session combine depending on how many sessions are selected 
+        file = self._menu._file
+        file._menu.Enable(file._start_id+101, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -211,7 +217,8 @@ class GUIPanelSession(wx.Frame):
         @return Combined session
         """
         name_in = name
-        sel = self._tab._get_selected_items()
+        #sel = self._tab._get_selected_items()
+        sel = self._gui._sess_item_sel
         spec = dc(self._gui._sess_list[sel[0]].spec)
         if name_in[0] == '*':
             name = self._gui._sess_list[sel[0]].name
