@@ -34,27 +34,37 @@ class GUIMenu(object):
         #bar.Append(cook._menu, "Cook")
         return bar
 
-    def _item(self, menu, id, title, event):
+    def _item(self, menu, id, append, title, event):
         item = wx.MenuItem(menu, id, title)
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
+        if append is not None:
+            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            item.Enable(False)
 
-    def _item_graph(self, menu, id, title, key):
+    def _item_graph(self, menu, id, append, title, key, enable=False):
         item = wx.MenuItem(menu, id, title)
         self._gui._panel_sess.Bind(
             wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
+        if append is not None:
+            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            item.Enable(False)
+        else:
+            item.Enable(enable)
 
     def _item_method(self, menu, id, append, title, targ, enable=False,
                      obj=None):
         item = wx.MenuItem(menu, id, title+'...')
-        if append != None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_dialog(e, title, targ, obj), item)
         menu.Append(item)
-        item.Enable(False)
+        if append is not None:
+            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            item.Enable(False)
+        else:
+            item.Enable(enable)
 
     def _on_dialog(self, event, title, attr, obj=None):
         if isinstance(attr, list):
@@ -73,7 +83,7 @@ class GUIMenu(object):
         self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _refresh(self):
-        for a in ['spec', 'lines', 'systs']:
+        for a in seq:  # from .vars
             if getattr(self._gui._sess_sel, a) != None:
                 for i in getattr(self._gui, '_menu_'+a+'_id'):
                     for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
@@ -94,9 +104,10 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, "Fit CIV forest in all QSOs...",
+        self._item(self._menu, start_id+1, 'spec',
+                   "Fit CIV forest in all QSOs...",
                    self._on_civ_full)
-        self._item(self._menu, start_id+2, "Test...", self._on_test)
+        self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
 
 
     def _on_civ_full(self, event):
@@ -268,17 +279,17 @@ class GUIMenuFile(GUIMenu):
         self._start_id = start_id
 
         # Add items to File menu here
-        self._item(self._menu, start_id+1, "Open...\tCtrl+O",
+        self._item(self._menu, start_id+1, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+101, None,
                           "Combine sessions...", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
-        self._item(self._menu, start_id+102, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+102, None, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+401, "Quit\tCtrl+Q",
+        self._item(self._menu, start_id+401, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
 
     def _on_combine(self, event):
@@ -398,46 +409,50 @@ class GUIMenuView(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to View menu here
-        self._item(self._menu, start_id+1, "Spectrum table",
+        self._item(self._menu, start_id+1, 'spec', "Spectrum table",
                    lambda e: self._on_tab(e, 'spec'))
-        self._item(self._menu, start_id+2, "Line table",
+        self._item(self._menu, start_id+2, 'lines', "Line table",
                    lambda e: self._on_tab(e, 'lines'))
-        self._item(self._menu, start_id+3, "System table",
+        self._item(self._menu, start_id+3, 'systs', "System table",
                    lambda e: self._on_tab(e, 'systs'))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, "System detection correctness",
+        self._item(self._menu, start_id+101, 'systs',
+                   "System detection correctness",
                    lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+101, "System detection completeness",
+        self._item(self._menu, start_id+101, 'systs',
+                   "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+201, "Toggle log x axis", self._on_logx)
-        self._item(self._menu, start_id+202, "Toggle log y axis", self._on_logy)
+        self._item(self._menu, start_id+201, 'spec',
+                   "Toggle log x axis", self._on_logx)
+        self._item(self._menu, start_id+202, 'spec',
+                   "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
-        self._item_graph(self._submenu, start_id+301, "Spectrum",
+        self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
                          'spec_x_y')
-        self._item_graph(self._submenu, start_id+302, "Spectrum error",
+        self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, "Convolved spectrum",
+        self._item_graph(self._submenu, start_id+303, 'lines', "Convolved spectrum",
                          'spec_x_conv')
-        self._item_graph(self._submenu, start_id+304, "Line list",
+        self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
                          'lines_x_y')
-        self._item_graph(self._submenu, start_id+305, "Masked spectrum",
+        self._item_graph(self._submenu, start_id+305, 'lines', "Masked spectrum",
                          'spec_x_ymask')
-        self._item_graph(self._submenu, start_id+306, "Nodes",
+        self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
                          'spec_nodes_x_y')
-        self._item_graph(self._submenu, start_id+307, "Continuum",
+        self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
                          'spec_x_cont')
-        self._item_graph(self._submenu, start_id+308, "Model",
+        self._item_graph(self._submenu, start_id+308, 'systs', "Model",
                          'spec_x_model')
-        self._item_graph(self._submenu, start_id+309, "De-absorbed",
+        self._item_graph(self._submenu, start_id+309, 'systs', "De-absorbed",
                          'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+310, "Spectral format",
+        self._item_graph(self._submenu, start_id+310, None, "Spectral format",
                          'spec_form_x')
-        self._item_graph(self._submenu, start_id+311, "System list",
+        self._item_graph(self._submenu, start_id+311, None, "System list",
                          'systs_z_series')
-        self._menu.AppendSubMenu(self._submenu,  "Toggle graph elements")
-        self._item(self._menu, start_id+401, "Toggle normalization",
+        self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
+        self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
 
     def _on_ima(self, event, obj):

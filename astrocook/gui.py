@@ -30,7 +30,9 @@ class GUI(object):
         self._sess_item_sel = []
         self._menu_spec_id = []
         self._menu_lines_id = []
+        self._menu_nodes_id = []
         self._menu_systs_id = []
+        self._menu_mods_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)

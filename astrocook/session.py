@@ -45,7 +45,7 @@ class Session(object):
         self.lines = lines
         self.systs = systs
         self.mods = mods
-        self.seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+        self.seq = seq  # From .vars
         self.cb = Cookbook(self)
 
     def _append(self, frame, append=True):
