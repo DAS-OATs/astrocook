@@ -1,4 +1,5 @@
 from .graph import Graph
+from .vars import graph_sel
 import numpy as np
 import wx
 
@@ -19,8 +20,7 @@ class GUIGraphMain(wx.Frame):
         self._title = title
         self._size_x = size_x
         self._size_y = size_y
-        self._sel = ['spec_x_y', 'spec_x_y_det', 'lines_x_y', 'spec_x_cont',
-                     'spec_x_model', 'systs_z_series']
+        self._sel = graph_sel
 
         self._logx = False
         self._logy = False

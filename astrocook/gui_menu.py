@@ -43,7 +43,8 @@ class GUIMenu(object):
             item.Enable(False)
 
     def _item_graph(self, menu, id, append, title, key, enable=False):
-        item = wx.MenuItem(menu, id, title)
+        item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
+        item.key = key
         self._gui._panel_sess.Bind(
             wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
@@ -76,19 +77,22 @@ class GUIMenu(object):
         sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
-            #item.Check(False)
         else:
             sel.append(key)
-            #item.Check(True)
+        item.IsChecked() == False
         self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _refresh(self):
+        # Nested loops! WOOOO!
         for a in seq:  # from .vars
             if getattr(self._gui._sess_sel, a) != None:
                 for i in getattr(self._gui, '_menu_'+a+'_id'):
                     for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
                         try:
-                            getattr(self, m)._menu.FindItemById(i).Enable(True)
+                            item = getattr(self, m)._menu.FindItemById(i)
+                            item.Enable(True)
+                            if m == '_view':
+                                item.Check(item.key in graph_sel)  # from .vars
                         except:
                             pass
 

@@ -8,6 +8,8 @@ Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+graph_sel = ['spec_x_y', 'spec_x_y_det', 'lines_x_y', 'spec_x_cont',
+             'spec_x_model', 'systs_z_series']
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
