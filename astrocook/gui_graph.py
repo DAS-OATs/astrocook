@@ -82,8 +82,8 @@ class GUIGraphDetail(GUIGraphMain):
         if t == None:
             t = self._gui._sess_sel.spec.t
         w = np.argmin(np.abs(t['x']-x))
-        xmin = t['x'][w-xspan]
-        xmax = t['x'][w+xspan]
+        xmin = t['x'][max(w-xspan, 0)]
+        xmax = t['x'][min(w+xspan, len(t))]
         ysel = t['y'][np.where(np.logical_and(t['x']>xmin, t['x']<xmax))]
         yspan = ymargin*(np.max(ysel)-np.min(ysel))
         xlim = (xmin, xmax)
