@@ -168,8 +168,6 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
 
-        print(self._gui._menu_sess_id)
-
         # Enable session combine depending on how many sessions are selected
         file = self._menu._file
         file._menu.Enable(file._start_id+101, len(self._gui._sess_item_sel)>1)
