@@ -81,9 +81,10 @@ class GUIGraphDetail(GUIGraphMain):
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):
         if t == None:
             t = self._gui._sess_sel.spec.t
+            t = t[np.logical_and(~np.isnan(t['x']), ~np.isnan(t['y']))]
         w = np.argmin(np.abs(t['x']-x))
         xmin = t['x'][max(w-xspan, 0)]
-        xmax = t['x'][min(w+xspan, len(t))]
+        xmax = t['x'][min(w+xspan, len(t)-1)]
         ysel = t['y'][np.where(np.logical_and(t['x']>xmin, t['x']<xmax))]
         yspan = ymargin*(np.max(ysel)-np.min(ysel))
         xlim = (xmin, xmax)
