@@ -48,13 +48,13 @@ class GUIMenu(object):
     def _item_method(self, menu, id, append, title, targ, enable=False,
                      obj=None):
         item = wx.MenuItem(menu, id, title+'...')
-        item.Enable(enable)
         if append != None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_dialog(e, title, targ, obj), item)
         menu.Append(item)
+        item.Enable(False)
 
     def _on_dialog(self, event, title, attr, obj=None):
         if isinstance(attr, list):
