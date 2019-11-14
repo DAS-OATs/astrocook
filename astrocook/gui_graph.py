@@ -10,7 +10,7 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.9,
+                 size_x=wx.DisplaySize()[0]*0.96,
                  size_y=wx.DisplaySize()[1]*0.5,
                  main=True,
                  **kwargs):
@@ -29,7 +29,7 @@ class GUIGraphMain(wx.Frame):
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
-        self.SetPosition((30, wx.DisplaySize()[1]*0.3))
+        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.43))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
@@ -71,12 +71,13 @@ class GUIGraphDetail(GUIGraphMain):
                  #sess,
                  title="Spectrum detail",
                  size_x=wx.DisplaySize()[0]*0.4,
-                 size_y=wx.DisplaySize()[1]*0.6,
+                 size_y=wx.DisplaySize()[1]*0.4,
                  **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False, **kwargs)
         self._gui._graph_det = self
         self._graph._legend = False
+        self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):
         if t == None:

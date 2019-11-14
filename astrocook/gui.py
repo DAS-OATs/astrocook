@@ -92,7 +92,7 @@ class GUIPanelSession(wx.Frame):
 
         super(GUIPanelSession, self).__init__(parent=None, title=title,
                                              size=(size_x, size_y))
-        self.SetPosition((30, 30))
+        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
 
         # Import GUI
         self._gui = gui
