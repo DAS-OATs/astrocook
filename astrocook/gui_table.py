@@ -216,13 +216,15 @@ class GUITableSystList(GUITable):
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
             GUIGraphDetail(self._gui, init_ax=False)
-        elif len(self._gui._graph_det._graph._fig.axes) == 1:
+        #elif len(self._gui._graph_det._graph._fig.axes) == 1:
+        else:
             self._gui._graph_det._graph._fig.clear()
 
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         graph = self._gui._graph_det._graph
-        for i, s in enumerate(series_d[row['series']]):
+        series = series_d[row['series']]
+        for i, s in enumerate(series):
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
             self._gui._sess_sel.convert_x(zem=zem)
@@ -231,12 +233,14 @@ class GUITableSystList(GUITable):
             _, ylim = self._gui._graph_det._define_lim(0)
 
             if i == 0:
-                graph._ax = graph._fig.add_subplot(2, 1, i+1)
+                graph._ax = graph._fig.add_subplot(len(series), 1, i+1)
                 title = row['series']
-                graph._ax.tick_params(labelbottom=False)
+                if len(series) > 1:
+                    graph._ax.tick_params(labelbottom=False)
             else:
                 title = None
-                graph._ax = graph._fig.add_subplot(2, 1, i+1, sharex=graph._ax)
+                graph._ax = graph._fig.add_subplot(len(series), 1, i+1,
+                                                   sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
             self._gui._graph_det._refresh(
@@ -244,4 +248,3 @@ class GUITableSystList(GUITable):
                 xlim=(-100, 100), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
-        #print("here", graph._ax)
