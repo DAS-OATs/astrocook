@@ -37,7 +37,7 @@ def convolve(data, psf):
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
         conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
         #plt.plot(range(len(conv)),temp_arr[1:-1], c='red', alpha=0.5)
-        plt.plot(range(len(k)),k)
+        #plt.plot(range(len(k)),k)
         #plt.plot(range(len(conv)),conv, c='black', alpha=0.5)
         plt.show()
         if i == 0:
