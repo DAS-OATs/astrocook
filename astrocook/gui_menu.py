@@ -18,19 +18,19 @@ class GUIMenu(object):
 
     def bar(self):
         bar = wx.MenuBar()
-        file = GUIMenuFile(self._gui)
-        edit = GUIMenuEdit(self._gui)
-        view = GUIMenuView(self._gui)
-        snacks = GUIMenuSnacks(self._gui)
-        meals = GUIMenuMeals(self._gui)
-        cook = GUIMenuCook(self._gui)
-        bar.Append(file._menu, "File")
-        bar.Append(edit._menu, "Edit")
-        bar.Append(view._menu, "View")
+        self._file = GUIMenuFile(self._gui)
+        self._edit = GUIMenuEdit(self._gui)
+        self._view = GUIMenuView(self._gui)
+        self._snacks = GUIMenuSnacks(self._gui)
+        self._meals = GUIMenuMeals(self._gui)
+        self._cook = GUIMenuCook(self._gui)
+        bar.Append(self._file._menu, "File")
+        bar.Append(self._edit._menu, "Edit")
+        bar.Append(self._view._menu, "View")
         #bar.Append(snacks._menu, "Snacks")
-        bar.Append(snacks._menu, "Ingredients")
+        bar.Append(self._snacks._menu, "Ingredients")
         #bar.Append(meals._menu, "Meals")
-        bar.Append(meals._menu, "Recipes")
+        bar.Append(self._meals._menu, "Recipes")
         #bar.Append(cook._menu, "Cook")
         return bar
 
@@ -45,8 +45,12 @@ class GUIMenu(object):
             wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
         menu.Append(item)
 
-    def _item_method(self, menu, id, title, targ, obj=None):
+    def _item_method(self, menu, id, append, title, targ, enable=False,
+                     obj=None):
         item = wx.MenuItem(menu, id, title+'...')
+        item.Enable(enable)
+        if append != None:
+            getattr(self._gui, '_menu_'+append+'_id').append(id)
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_dialog(e, title, targ, obj), item)
@@ -67,6 +71,17 @@ class GUIMenu(object):
             sel.append(key)
             #item.Check(True)
         self._gui._graph_main._refresh(self._gui._sess_items)
+
+    def _refresh(self):
+        for a in ['spec', 'lines', 'systs']:
+            if getattr(self._gui._sess_sel, a) != None:
+                for i in getattr(self._gui, '_menu_'+a+'_id'):
+                    for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
+                        try:
+                            getattr(self, m)._menu.FindItemById(i).Enable(True)
+                        except:
+                            pass
+
 
 class GUIMenuCook(GUIMenu):
 
@@ -216,6 +231,31 @@ class GUIMenuCook(GUIMenu):
                   % (datetime.datetime.now(), time_end-time_start))
 
 
+class GUIMenuEdit(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=2000,
+                 **kwargs):
+        super(GUIMenuEdit, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Edit menu here
+        self._item_method(self._menu, start_id+301, 'spec',
+                          "Extract region", 'extract_region')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+311, 'spec',
+                          "Convert x axis", 'convert_x')
+        self._item_method(self._menu, start_id+312, 'spec',
+                          "Convert y axis", 'convert_y')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+321, 'spec',
+                          "Shift to rest frame", 'shift_to_rf')
+        self._item_method(self._menu, start_id+322, 'spec',
+                          "Shift from rest frame", 'shift_from_rf')
+
+
 class GUIMenuFile(GUIMenu):
 
     def __init__(self,
@@ -225,15 +265,16 @@ class GUIMenuFile(GUIMenu):
         super(GUIMenuFile, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        self._start_id = start_id
 
         # Add items to File menu here
         self._item(self._menu, start_id+1, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        #self._item(self._menu, start_id+101, "Combine sessions...",
-        #           self._on_combine)
-        self._item_method(self._menu, start_id+101, "Combine sessions...",
-                          'combine', obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+101, None,
+                          "Combine sessions...", 'combine',
+                          enable=len(self._gui._sess_item_sel)>1,
+                          obj=self._gui._panel_sess)
         self._item(self._menu, start_id+102, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
@@ -285,31 +326,6 @@ class GUIMenuFile(GUIMenu):
             """
 
 
-class GUIMenuEdit(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=2000,
-                 **kwargs):
-        super(GUIMenuEdit, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Edit menu here
-        self._item_method(self._menu, start_id+301, "Extract region",
-                          'extract_region')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+311, "Convert x axis",
-                          'convert_x')
-        self._item_method(self._menu, start_id+312, "Convert y axis",
-                          'convert_y')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+321, "Shift to rest frame",
-                          'shift_to_rf')
-        self._item_method(self._menu, start_id+322, "Shift from rest frame",
-                          'shift_from_rf')
-
-
 class GUIMenuMeals(GUIMenu):
     def __init__(self,
                  gui,
@@ -320,12 +336,12 @@ class GUIMenuMeals(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Meals menu here
-        self._item_method(self._menu, start_id, "Find lines",
+        self._item_method(self._menu, start_id, 'spec', "Find lines",
                           ['convolve_gauss', 'find_peaks'])
-        self._item_method(self._menu, start_id+1, "Guess continuum",
+        self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
                           ['convolve_gauss', 'find_peaks', 'extract_nodes',
                            'interp_nodes'])
-        self._item_method(self._menu, start_id+2, "Fit systems",
+        self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
                           ['add_syst_from_lines', 'add_syst_from_resids',
                            'add_syst_slide', 'compl_syst'])
 
@@ -340,30 +356,35 @@ class GUIMenuSnacks(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Snacks menu here
-        self._item_method(self._menu, start_id+101, "Convolve with gaussian",
-                          'convolve_gauss')
-        self._item_method(self._menu, start_id+102, "Find peaks", 'find_peaks')
+        self._item_method(self._menu, start_id+101, 'spec',
+                          "Rebin spectrum", 'rebin')
+        self._item_method(self._menu, start_id+102, 'spec',
+                          "Convolve with gaussian", 'convolve_gauss')
+        self._item_method(self._menu, start_id+103, 'spec', "Find peaks",
+                          'find_peaks')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, "Rebin spectrum",
-                          'rebin')
-        self._item_method(self._menu, start_id+202, "Extract nodes",
+        self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
                           'extract_nodes')
-        self._item_method(self._menu, start_id+203, "Interpolate nodes",
-                          'interp_nodes')
+        self._item_method(self._menu, start_id+202, 'lines',
+                          "Interpolate nodes", 'interp_nodes')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, "Add and fit a system",
-                          'add_syst')
-        self._item_method(self._menu, start_id+302, "Add and fit systems from "
-                          "line list", 'add_syst_from_lines')
-        self._item_method(self._menu, start_id+303, "Add and fit systems from "
-                          "residuals", 'add_syst_from_resids')
-        self._item_method(self._menu, start_id+304, "Test and fit systems "
+        self._item_method(self._menu, start_id+301, 'lines',
+                          "Add and fit a system", 'add_syst')
+        self._item_method(self._menu, start_id+302, 'lines',
+                          "Add and fit systems from line list",
+                          'add_syst_from_lines')
+        self._item_method(self._menu, start_id+303, 'systs',
+                          "Add and fit systems from residuals",
+                          'add_syst_from_resids')
+        self._item_method(self._menu, start_id+304, 'systs',
+                          "Test and fit systems "
                           "by sliding along spectrum", 'add_syst_slide')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+401, "Simulate a system",
-                          'simul_syst')
-        self._item_method(self._menu, start_id+402, "Estimate completeness "
-                          "with simulated systems", 'compl_syst')
+        self._item_method(self._menu, start_id+401, 'lines',
+                          "Simulate a system", 'simul_syst')
+        self._item_method(self._menu, start_id+402, 'systs',
+                          "Estimate completeness with simulated systems",
+                          'compl_syst')
 
 
 class GUIMenuView(GUIMenu):

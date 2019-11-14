@@ -27,6 +27,10 @@ class GUI(object):
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
+        self._sess_item_sel = []
+        self._menu_spec_id = []
+        self._menu_lines_id = []
+        self._menu_systs_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -130,6 +134,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._refresh()
+        self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
         #print(self._gui._sess_sel.__dict__)
 
@@ -161,6 +166,13 @@ class GUIPanelSession(wx.Frame):
     def _on_select(self, event):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_item_sel = self._tab._get_selected_items()
+
+        print(self._gui._menu_sess_id)
+
+        # Enable session combine depending on how many sessions are selected
+        file = self._menu._file
+        file._menu.Enable(file._start_id+101, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -169,6 +181,7 @@ class GUIPanelSession(wx.Frame):
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         self._refresh()
+        self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_veto(self, event):
@@ -211,7 +224,8 @@ class GUIPanelSession(wx.Frame):
         @return Combined session
         """
         name_in = name
-        sel = self._tab._get_selected_items()
+        #sel = self._tab._get_selected_items()
+        sel = self._gui._sess_item_sel
         spec = dc(self._gui._sess_list[sel[0]].spec)
         if name_in[0] == '*':
             name = self._gui._sess_list[sel[0]].name
