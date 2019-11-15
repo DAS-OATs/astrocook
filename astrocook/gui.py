@@ -5,12 +5,11 @@ from .gui_menu import *
 from .gui_table import *
 from astropy import table as at
 from copy import deepcopy as dc
+import logging
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
 import wx.lib.mixins.listctrl as listmix
-
-prefix = "GUI:"
 
 class GUI(object):
     """ Class for the GUI. """
@@ -148,7 +147,7 @@ class GUIPanelSession(wx.Frame):
 
         #name = path.split('/')[-1][:-5]
         name = path.split('/')[-1].split('.')[0]
-        print(prefix, "I'm loading session %s..." % path)
+        logging.info("I'm loading session %s..." % path)
         sess = Session(path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
 

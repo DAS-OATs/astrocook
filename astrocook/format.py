@@ -1,10 +1,10 @@
 from .spectrum import Spectrum
 from .line_list import LineList
 from .syst_list import SystList
+from .message import *
 from astropy import units as au
+import logging
 import numpy as np
-
-prefix = "Format:"
 
 class Format(object):
     """ Class for file formats. """
@@ -19,6 +19,7 @@ class Format(object):
         return xmin, xmax
 
     def astrocook(self, hdul, struct):
+        logging.info(msg_format('Astrocook'))
         hdr = hdul[1].header
         data = hdul[1].data
 
@@ -36,7 +37,7 @@ class Format(object):
                 meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
             except:
                 meta['object'] = ''
-                print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+                logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
             if struct in ['spec', 'nodes']:
                 out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
             if struct in ['lines']:
@@ -89,6 +90,7 @@ class Format(object):
         return out
 
     def eso_midas(self, hdul):
+        logging.info(msg_format('ESO MIDAS'))
         """ ESO-MIDAS Table """
 
         hdr = hdul[1].header
@@ -116,11 +118,12 @@ class Format(object):
             meta['object'] = hdr['FILENAME'][:-4]
         except:
             meta['object'] = ''
-            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def espresso_das_spectrum(self, hdul):
         """ ESPRESSO DAS FSPEC/RSPEC format """
+        logging.info(msg_format('ESPRESSO DAS'))
 
         hdr = hdul[0].header
         data = hdul[1].data
@@ -136,11 +139,12 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def espresso_drs_spectrum(self, hdul):
         """ ESPRESSO DRS S1D format """
+        logging.info(msg_format('ESPRESSO DRS S1D'))
 
         hdr = hdul[0].header
         data = hdul[1].data
@@ -155,11 +159,12 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def espresso_spectrum_format(self, data):
         """ ESPRESSO spectrum format """
+        logging.info(msg_format('ESPRESSO'))
 
         x = data['col2']
         xmin = data['col8']
@@ -172,7 +177,8 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def uves_popler_spectrum(self, hdul):
-        """ UVES POPLER format """
+        """ UVES_popler format """
+        logging.info(msg_format('UVES_popler'))
 
         hdr = hdul[0].header
         crval1 = hdr['CRVAL1']
@@ -191,12 +197,14 @@ class Format(object):
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
-            print(prefix, "OBJECT not defined.")
+            logging.warning(msg_miss_descr('OBJECT'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def xshooter_das_spectrum(self, hdul):
         """ X-shooter DAS FSPEC/RSPEC format """
+        logging.info(msg_format('X-shooter DAS'))
 
+        logging.info(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
         hdr = hdul[0].header
         data = hdul[1].data
         x = data['WAVEL']
@@ -211,10 +219,12 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            print(prefix, "HIERARCH ESO OBS TARG NAME not defined.")
+            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def xshooter_reduce_spectrum(self, hdul, hdul_e):
+        logging.info(msg_format('xshooter_reduce'))
+
         hdr = hdul[0].header
         crval1 = hdr['CRVAL1']
         cdelt1 = hdr['CDELT1']
@@ -232,5 +242,5 @@ class Format(object):
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
-            print(prefix, "OBJECT not defined.")
+            logging.warning(msg_miss_descr('OBJECT'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

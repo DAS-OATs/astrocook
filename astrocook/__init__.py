@@ -3,6 +3,10 @@ version = "0.3"
 from .session import Session
 from .syst_list import SystList
 
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format="[%(levelname)s] %(module)s.%(funcName)s: %(message)s")
+
 #from .frame import Frame
 #from .spectrum import Spectrum
 

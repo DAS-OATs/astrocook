@@ -14,14 +14,13 @@ from .vars import *
 from astropy import units as au
 from astropy.io import ascii, fits
 from copy import deepcopy as dc
+import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import os
 from scipy.signal import argrelmin
 import tarfile
 import time
-
-prefix = "Session:"
 
 class Session(object):
     """ Class for sessions.
@@ -64,7 +63,7 @@ class Session(object):
 
         y = spec.y
         if 'model' not in spec._t.colnames:
-            print(prefix, "I'm adding column 'model'.")
+            print("I'm adding column 'model'.")
             spec._t['model'] = np.empty(len(spec.x), dtype=float)*y.unit
         if 'deabs' not in spec._t.colnames:
             spec._t['deabs'] = y
@@ -150,7 +149,7 @@ class Session(object):
                 self.cb._mod_syst(series, z, l, b, resol)
 
                 ### Remove this
-                #print(prefix, "I'm fitting a %s model at redshift %2.4f..."\
+                #print("I'm fitting a %s model at redshift %2.4f..."\
                 #    % (series, z), end='\r')
                 #self.cb._fit_syst(series, z, l, b, resol, maxfev)
                 ###
@@ -169,7 +168,7 @@ class Session(object):
                 self.cb._mod_syst(series, z, logN, b, resol)
 
                 ### Remove this
-                #print(prefix, "I'm fitting a %s model at redshift %2.4f..."\
+                #print("I'm fitting a %s model at redshift %2.4f..."\
                 #    % (series, z), end='\r')
                 #self.cb._fit_syst(series, z, logN, b, resol, maxfev)
                 ###
@@ -179,21 +178,22 @@ class Session(object):
         #"""
         mods_t = self.systs._mods_t
         if len(z_range) > 0:
-            print(prefix, "I've added %i %s system(s) in %i model(s) between "
-                  "redshift %2.4f and %2.4f." % (len(z_range), series,
-                  len(mods_t), z_range[0], z_range[-1]))
+            logging.info("I've added %i %s system(s) in %i model(s) between "
+                         "redshift %2.4f and %2.4f." % (len(z_range), series,
+                         len(mods_t), z_range[0], z_range[-1]))
 
         if maxfev > 0:
             #print(mods_t['z0', 'id'])
             for i,m in enumerate(mods_t):
-                print(prefix, "I'm fitting a %s model at redshift %2.4f "
-                      "(%i/%i)..."\
+                print("[INFO] session.add_syst_from_lines: I'm fitting a %s "
+                      "model at redshift %2.4f (%i/%i)..."\
                     % (series, m['z0'], i+1, len(mods_t)), end='\r')
                 self.cb._fit_mod(m['mod'], maxfev)
             #print(self.systs._t)
             try:
-                print(prefix, "I've fitted %i %s system(s) in %i model(s) "
-                      "between redshift %2.4f and %2.4f." \
+                print("[INFO] session.add_syst_from_lines: I've fitted %i %s "
+                      "system(s) in %i model(s) between redshift %2.4f and "
+                      "%2.4f." \
                       % (len(z_range), series, len(mods_t), z_range[0],
                          z_range[-1]))
             except:
@@ -364,8 +364,9 @@ class Session(object):
                         msg = "added a %s component at redshift %2.4f" \
                               % (o_series, z_cand)
                         chi2r = chi2r_cand
-                    print(prefix, "I'm improving a model at redshift %2.4f "\
-                          "(%i/%i): %s (red. chi-squared: %3.2f)...          " \
+                    print("[INFO] session.add_syst_from_resids: I'm improving "
+                          "a model at redshift %2.4f (%i/%i): %s (red. "
+                          "chi-squared: %3.2f)...          " \
                           % (o_z, i+1, len(old), msg, chi2r))#, end='\r')
                     chi2r_old = chi2r
                     #bic_old = mod._bic
@@ -379,14 +380,15 @@ class Session(object):
 
 
             if count_good == 0:
-                print(prefix, "I've not improved the %s system at redshift "\
-                      "%2.4f (%i/%i): I was unable to add useful components."\
-                      % (o_series, o_z, i+1, len(old)))
+                logging.warning("I've not improved the %s system at redshift "\
+                                "%2.4f (%i/%i): I was unable to add useful "\
+                                "components."\
+                                % (o_series, o_z, i+1, len(old)))
             else:
-                print(prefix, "I've improved a model at redshift %2.4f "\
-                      "(%i/%i) by adding %i components (red. chi-squared: "\
-                      "%3.2f).                                                "\
-                      "  " % (o_z, i+1, len(old), count, chi2r))
+                logging.info("I've improved a model at redshift %2.4f (%i/%i) "
+                             "by adding %i components (red. chi-squared: "\
+                             "%3.2f).                                                "\
+                             "  " % (o_z, i+1, len(old), count, chi2r))
 
         #self.systs._clean(chi2r_thres)
 
@@ -473,7 +475,7 @@ class Session(object):
                 chi2_arr = []
                 chi2_0_arr = []
                 for iz, z in enumerate(z_range):
-                    print(prefix, "I'm testing a %s system (logN=%2.2f, "
+                    print("[INFO] session.add_syst_slide: I'm testing a %s system (logN=%2.2f, "
                           "b=%2.2f) at redshift %2.4f (%i/%i)..." \
                           % (series, logN, b, z, iz+1, len(z_range)), end='\r')
                     cond, chi2, chi2_0 = \
@@ -494,7 +496,7 @@ class Session(object):
                 self.corr[icorr, 2] = cond_c
                 self.corr[icorr, 3] = cond_swap_c
                     #1-np.array(cond_swap_c)/np.array(cond_c)
-                print(prefix, "I've tested a %s system (logN=%2.2f, "\
+                print("[INFO] session.add_syst_slide: I've tested a %s system (logN=%2.2f, "\
                       "b=%2.2f) between redshift %2.4f and %2.4f and found %i "\
                       "coincidences"
                       % (series, logN, b, z_range[0], z_range[-1], cond_c),
@@ -517,18 +519,18 @@ class Session(object):
             else:
                 self.systs = systs_old
 
-        print(prefix, "I've selected %i candidates among the coincidences."\
-              % len(chi2m[0]))
+        logging.info("I've selected %i candidates among the coincidences."\
+                     % len(chi2m[0]))
         if maxfev > 0:
             for i in range(len(chi2m[0])):
                 z = z_range[chi2m[2][i]]
                 logN = logN_range[chi2m[0][i]]
                 b = b_range[chi2m[1][i]]
                 self.cb._fit_syst(series, z, logN, b, resol, maxfev)
-                print(prefix, "I've fitted a %s system at redshift %2.4f "
+                print("[INFO] session.add_syst_slide: I've fitted a %s system at redshift %2.4f "
                       "(%i/%i)..." % (series, z, i+1, len(chi2m[0])), end='\r')
             if len(chi2m[0]) > 0:
-                print(prefix, "I've fitted %i %s systems between redshift "
+                print("[INFO] session.add_syst_slide: I've fitted %i %s systems between redshift "
                       "%2.4f and %2.4f."
                       % (len(chi2m[0]), series, z_range[chi2m[2][0]],
                          z_range[chi2m[2][-1]]))
@@ -628,7 +630,7 @@ class Session(object):
 
                     n_fail = 0
                     while n_ok < n:
-                        print(prefix, "I'm estimating completeness of %s "
+                        print("[INFO] session.compl_syst: I'm estimating completeness of %s "
                               "systems (z=[%2.2f, %2.2f], logN=%2.2f, b=%2.2f, "
                               "realization %i/%i)..."
                               % (series, zs, ze, logN, b, n_ok+1, n), end='\r')
@@ -660,7 +662,7 @@ class Session(object):
                     self.compl[icompl, 2] = b
                     self.compl[icompl, 3] = compl
 
-        print(prefix, "I've estimated completeness of %s systems "
+        logging.info("I've estimated completeness of %s systems "
               "(z=[%2.2f, %2.2f], logN=[%2.2f, %2.2f], b=[%2.2f, %2.2f]); "
               "average was %2.0f%%."
               % (series, z_start, z_end, logN_start, logN_end, b_start, b_end,
@@ -679,7 +681,7 @@ class Session(object):
         try:
             zem = float(zem)
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
         xunit = au.Unit(xunit)
 
         for s in self.seq:
@@ -718,7 +720,7 @@ class Session(object):
         try:
             std = float(std) * au.km/au.s
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
 
         self.spec._convolve_gauss(std, input_col, output_col)
         return 0
@@ -735,7 +737,7 @@ class Session(object):
             xunit = au.Unit(xunit)
             delta_x = float(delta_x)*xunit
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
 
         x, xmin, xmax, y, dy = self.spec._extract_nodes(delta_x, xunit)
         self.nodes = Spectrum(x, xmin, xmax, y, dy, self.spec._xunit,
@@ -755,14 +757,14 @@ class Session(object):
             xmin = float(xmin) * au.nm
             xmax = float(xmax) * au.nm
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
             return None
 
         if xmin > xmax:
             temp = xmin
             xmin = xmax
             xmax = temp
-            print(prefix, msg_param_swap)
+            logging.warning(msg_param_swap)
 
         kwargs = {'path': self.path, 'name': self.name}
         for s in self.seq:
@@ -796,8 +798,8 @@ class Session(object):
 
         spec = self.spec
         if col not in spec.t.colnames:
-            print(prefix, "The spectrum has not a column named '%s'. Please "\
-                  "pick another one." % col)
+            logging.error("The spectrum has not a column named '%s'. Please "\
+                          "pick another one." % col)
             return None
         kappa = float(kappa)
 
@@ -813,7 +815,7 @@ class Session(object):
 
         self.lines_kind = 'peaks'
         spec._mask_lines(self.lines)
-        print(prefix, "I'm using peaks as lines.")
+        logging.info("I'm using peaks as lines.")
 
         """
         # Create new session
@@ -841,8 +843,8 @@ class Session(object):
         @return 0
         """
         if not hasattr(self, 'nodes'):
-            print(prefix, "I need nodes to interpolate. Please try Spectrum > "
-                  "Extract nodes first.")
+            logging.error("I need nodes to interpolate. Please try Ingredients > "
+                          "Extract nodes first.")
             return None
 
         smooth = float(smooth)
@@ -907,11 +909,11 @@ class Session(object):
             pass
 
         if instr == None:
-            print(prefix, "INSTRUME not defined.")
+            logging.warning(msg_miss_descr('INSTRUME'))
         if catg == None:
-            print(prefix, "HIERARCH ESO PRO CATG not defined.")
+            logging.warning(msg_miss_descr('HIERARCH ESO PRO CATG'))
         if orig == None:
-            print(prefix, "ORIGIN not defined.")
+            logging.warning(msg_miss_descr('ORIGIN'))
 
         # Astrocook structures
         if orig == 'Astrocook':
@@ -1018,7 +1020,7 @@ class Session(object):
         try:
             z = float(z)
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
 
         for s in self.seq:
             try:
@@ -1038,7 +1040,7 @@ class Session(object):
         try:
             z = float(z)
         except:
-            print(prefix, msg_param_fail)
+            logging.error(msg_param_fail)
 
         for s in self.seq:
             try:

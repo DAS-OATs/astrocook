@@ -6,9 +6,8 @@ from .gui_dialog import *
 from .model_list import ModelList
 from astropy.io import ascii
 import datetime
+import logging
 import wx
-
-prefix = "GUI:"
 
 class GUIMenu(object):
 
@@ -312,7 +311,7 @@ class GUIMenuFile(GUIMenu):
                 return
             path = fileDialog.GetPath()
             name = path.split('/')[-1].split('.')[0]
-            print(prefix, "I'm loading session %s..." % path)
+            logging.info("I'm loading session %s..." % path)
             sess = Session(path=path, name=name)
             self._gui._panel_sess._on_add(sess, open=True)
 
@@ -329,7 +328,7 @@ class GUIMenuFile(GUIMenu):
 
             path = fileDialog.GetPath()
             dir = fileDialog.GetDirectory()
-            print(prefix, "I'm saving session %s..." % path)
+            logging.info("I'm saving session %s..." % path)
             self._gui._sess_sel.save(path)
             """
             try:

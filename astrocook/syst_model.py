@@ -8,8 +8,6 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-prefix = "System model:"
-
 thres = 1e-5
 
 class SystModel(LMComposite):
