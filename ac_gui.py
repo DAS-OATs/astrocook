@@ -1,3 +1,4 @@
+import logging
 import sys
 import wx
 
@@ -10,6 +11,8 @@ def main():
         path = sys.argv[1]
         gui = GUI(path)
     except:
+        logging.exception("I found some problems with the file you gave me.")
+        logging.warning("Re-starting with an empty session.")
         gui = GUI()
     app.MainLoop()
 

@@ -4,8 +4,9 @@ from .session import Session
 from .syst_list import SystList
 
 import logging
-logging.basicConfig(level=logging.INFO,
-                    format="[%(levelname)s] %(module)s.%(funcName)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(levelname)s] %(module)s.%(lineno)d: %(message)s")
 
 #from .frame import Frame
 #from .spectrum import Spectrum

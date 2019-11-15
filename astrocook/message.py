@@ -7,4 +7,4 @@ def msg_format(format):
     return "I'm importing data with %s format." % format
 
 def msg_miss_descr(descr):
-    return 'descriptor %s is missing.' % descr
+    return 'Descriptor %s is missing.' % descr

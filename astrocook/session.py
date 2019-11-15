@@ -886,15 +886,15 @@ class Session(object):
         try:
             instr = hdr['INSTRUME']
         except:
-            instr = None
+            instr = 'undefined'
         try:
             orig = hdr['ORIGIN']
         except:
-            orig = None
+            orig = 'undefined'
         try:
             catg = hdr['HIERARCH ESO PRO CATG']
         except:
-            catg = None
+            catg = 'undefined'
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -916,6 +916,8 @@ class Session(object):
             logging.warning(msg_miss_descr('ORIGIN'))
 
         # Astrocook structures
+        logging.debug("Instrument: %s; origin: %s; category: %s."
+                      % (instr, orig, catg))
         if orig == 'Astrocook':
             for s in self.seq:
                 try:
@@ -952,7 +954,6 @@ class Session(object):
         if instr == 'XSHOOTER' and orig == 'REDUCE':
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
-
 
     def rebin(self, dx=10.0, xunit=au.km/au.s):
         """ @brief Rebin spectrum
