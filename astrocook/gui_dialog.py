@@ -125,6 +125,7 @@ class GUIDialogMethod(GUIDialog):
         self._box_buttons(self._cancel_run)
         self.SetSizer(self._bottom)
         self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
 
     def _box_descr(self):
@@ -174,6 +175,7 @@ class GUIDialogMethods(GUIDialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
 
     def _box_methods(self):
