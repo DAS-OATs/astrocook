@@ -4,9 +4,8 @@ from astropy import table as at
 from astropy import units as au
 #from matplotlib import pyplot as plt
 from copy import deepcopy as dc
+import logging
 import numpy as np
-
-prefix = "System list:"
 
 class SystList(object):
     """ Class for system lists
@@ -137,8 +136,8 @@ class SystList(object):
         z_rem = self._t['z'][rem]
         if len(rem) > 0:
             self._t.remove_rows(rem)
-            print(prefix, "I removed %i systems because they had a "\
-                  "chi-squared above %2.2f." % (len(rem), chi2r_thres))
+            logging.info("I removed %i systems because they had a "\
+                         "chi-squared above %2.2f." % (len(rem), chi2r_thres))
         if len(mods_rem) > 0:
             self._mods_t.remove_rows(mods_rem)
         return 0

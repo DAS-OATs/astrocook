@@ -2,6 +2,7 @@ from .message import *
 from .vars import *
 from astropy import units as au
 #from copy import deepcopy as dc
+import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
@@ -10,8 +11,6 @@ from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
-
-prefix = "Graph:"
 
 class Graph(object):
 
@@ -47,8 +46,8 @@ class Graph(object):
         _unit = '_'+unit
         if getattr(getattr(sess, 'spec'), _unit) != getattr(self, _unit) \
             and getattr(self, _unit) != au.dimensionless_unscaled:
-            print(prefix, "I'm converting the %s unit of %s to plot it over the "
-                  "data already present." % (axis, sess.name))
+            logging.info("I'm converting the %s unit of %s to plot it over the "
+                         "data already present." % (axis, sess.name))
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 

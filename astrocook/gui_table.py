@@ -5,10 +5,9 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
-
-prefix = "GUI:"
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
@@ -112,9 +111,9 @@ class GUITable(wx.Frame):
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
-            print(prefix, "I'm updating table...")
+            logging.info("I'm updating table...")
         except:
-            print(prefix, "I'm loading table...")
+            logging.info("I'm loading table...")
         self._init()
         coln = len(self._data.t.colnames)
         #if not hasattr(self, '_tab'):

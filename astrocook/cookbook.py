@@ -7,10 +7,10 @@ from astropy import constants as ac
 from astropy import units as au
 from copy import deepcopy as dc
 import datetime
+import logging
 import numpy as np
 from matplotlib import pyplot as plt
-
-prefix = "Cookbook,"
+from tqdm import tqdm
 
 class Cookbook(object):
     """ Class for cookbook.
@@ -158,7 +158,9 @@ class Cookbook(object):
         xmax_in = spec_in.xmax[im].value
         y = np.array([])
         dy = np.array([])
-        for i, (m, M) in enumerate(zip(xmin.value, xmax.value)):
+        for i, (m, M) \
+            in enumerate(tqdm(zip(xmin.value, xmax.value), ncols=100,
+                         desc='cookbook._rebin - INFO', total=len(xmin))):
             while xmin_in < M:
                 iM += 1
                 xmin_in = spec_in.xmin[iM].value
@@ -169,10 +171,9 @@ class Cookbook(object):
             dysel = spec_in.dy[im:iM+1]
             y = np.append(y, np.average(ysel, weights=1/dysel**2))
             dy = np.append(dy, np.sqrt(np.sum(dysel**2/dysel**4))/np.sum(1/dysel**2))
-            print(prefix, "rebin: I've scanned %i%% of the input spectrum."
-                  % int(100*i/len(xmin)), end='\r')
+            #logging.info("I've scanned %i%% of the input spectrum."
+            #             % int(100*i/len(xmin)))
 
-        print(prefix, "rebin: I've scanned all the input spectrum.    ")
         spec_out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit,
                             yunit=spec_in.y.unit, meta=spec_in.meta)
         spec_out._convert_x(xunit=self.sess.spec.x.unit)

@@ -1,8 +1,6 @@
 from astropy import units as au
-import wx
 import matplotlib.pyplot as plt
-
-prefix = "GUI:"
+import wx
 
 class GUIImage(wx.Frame):
     """ Class for the GUI image frame """

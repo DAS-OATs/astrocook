@@ -4,9 +4,8 @@ from astropy import constants as aconst
 from astropy import table as at
 from copy import deepcopy as dc
 #from astropy.units import au.Quantity
+import logging
 import numpy as np
-
-prefix = "Frame:"
 
 class Frame():
     """Class for frames.
@@ -171,7 +170,7 @@ class Frame():
         reg._t.remove_rows(where)
 
         if len(reg.t) == 0:
-            print(prefix, msg_output_fail)
+            logging.error(msg_output_fail)
             return None
         else:
             return reg
