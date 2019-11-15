@@ -58,20 +58,32 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
-        #self._ax.lines = [self._ax.lines[0]]
-        #self._ax.axvline(x)
+        sess = self._gui._sess_sel
         if 'cursor_z_series' in self._sel:
-            z = (x/10/self._cursor_xmean.value)
+            z = (x/self._cursor_xmean.to(sess.spec._xunit).value)-1
             for c, xem in zip(self._cursor, self._cursor_xem):
                 #print(c.get_xdata()[0]*conv)
-                c.set_xdata(xem*(1+z)*10)
+                #print((xem*(1+z)*au.nm).to(sess.spec._xunit))
+                c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                 c.set_alpha(0.5)
             self._canvas.draw()
         if self._panel is self._gui._graph_main._panel:
-            self._gui._graph_main._textbar.SetLabel("%2.4f, %2.4e" % (x,y))
+            if 'cursor_z_series' in self._sel:
+                self._gui._graph_main._textbar.SetLabel(
+                    "x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                    % (x, y, self._cursor_series, z))
+            else:
+                self._gui._graph_main._textbar.SetLabel(
+                    "x=%2.4f, y=%2.4e" % (x, y))
         if hasattr(self._gui, '_graph_det'):
             if self._panel is self._gui._graph_det._panel:
-                self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4e" % (x,y))
+                if 'cursor_z_series' in self._sel:
+                    self._gui._graph_det._textbar.SetLabel(
+                        "x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                        % (x, y, self._cursor_series, z))
+                else:
+                    self._gui._graph_det._textbar.SetLabel(
+                        "x=%2.4f, y=%2.4e" % (x, y))
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None, title=None, text=None):
@@ -84,21 +96,24 @@ class Graph(object):
         if text != None:
             self._ax.text(0.05, 0.1, text, transform=self._ax.transAxes)
 
-        self._canvas_dict = {'spec_x_y': GraphSpectrumXY,
-                             'spec_x_y_det': GraphSpectrumXYDetail,
-                             'spec_x_dy': GraphSpectrumXDy,
-                             'spec_x_conv': GraphSpectrumXConv,
-                             'lines_x_y': GraphLineListXY,
-                             'spec_x_ymask': GraphSpectrumXYMask,
-                             'spec_nodes_x_y': GraphSpectrumNodesXY,
-                             'spec_x_cont': GraphSpectrumXCont,
-                             'spec_form_x': GraphSpectrumFormX,
-                             'spec_x_model': GraphSpectrumXModel,
-                             'spec_x_deabs': GraphSpectrumXDeabs,
-                             'systs_z_series': GraphSystListZSeries,
-                             'cursor_z_series': GraphCursorZSeries}
+        cmc = plt.cm.get_cmap('tab10').colors
+        self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,cmc[0],1.0),
+                             'spec_x_y_det': (GraphSpectrumXYDetail,cmc[0],1.0),
+                             'spec_x_dy': (GraphSpectrumXDy,cmc[0],0.5),
+                             'spec_x_conv': (GraphSpectrumXConv,cmc[3],0.5),
+                             'lines_x_y': (GraphLineListXY,cmc[2],1.0),
+                             'spec_x_ymask': (GraphSpectrumXYMask,cmc[2],0.5),
+                             'spec_nodes_x_y': (GraphSpectrumNodesXY,cmc[0],1.0),
+                             'spec_x_cont': (GraphSpectrumXCont,cmc[8],1.0),
+                             'spec_form_x': (GraphSpectrumFormX,cmc[7],0.5),
+                             'spec_x_model': (GraphSpectrumXModel,cmc[9],1.0),
+                             'spec_x_deabs': (GraphSpectrumXDeabs,cmc[9],0.5),
+                             'systs_z_series': (GraphSystListZSeries,cmc[2],1.0),
+                             'cursor_z_series': (GraphCursorZSeries,cmc[2],0.5)}
         #print(self._sel)
-        self._canvas_list = [self._canvas_dict[s] for s in self._sel]
+        self._canvas_l = [self._canvas_dict[s][0] for s in self._sel]
+        self._color_l = [self._canvas_dict[s][1] for s in self._sel]
+        self._alpha_l = [self._canvas_dict[s][2] for s in self._sel]
 
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
@@ -132,7 +147,8 @@ class Graph(object):
     def _seq(self, sess, norm):
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
-        for z, s in enumerate(self._canvas_list):
+        for z, (s, c, a) \
+            in enumerate(zip(self._canvas_l, self._color_l, self._alpha_l)):
             try:
                 gs = s(sess, norm)
                 if gs._type == 'axvline':
@@ -140,14 +156,14 @@ class Graph(object):
                         #print(x)
                         #print(**gs._kwargs)
                         self._ax.axvline(x.to(self._xunit).value,
-                                         color='C'+str(self._c), linewidth=1.5,
+                                         color=c, alpha=a, linewidth=1.5,
                                          **gs._kwargs)
                         gs._kwargs.pop('label', None)
                     try:
                         for x in gs._xalt:
                             #print(x)
                             self._ax.axvline(x.to(self._xunit).value,
-                                             color='C'+str(self._c),
+                                             color=c, alpha=a,
                                              linewidth=0.5, **gs._kwargs)
                             gs._kwargs.pop('label', None)
 
@@ -165,6 +181,7 @@ class Graph(object):
                         gs._kwargs.pop('label', None)
                         #print("after", x,t)
                 elif gs._type == 'axvline_special':
+                    self._cursor_series = gs._series
                     self._cursor_xem = gs._xem
                     self._cursor_xmean = gs._xmean
                     self._cursor_z = gs._z
@@ -173,11 +190,11 @@ class Graph(object):
                         self._cursor.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
-                                color='C'+str(self._c), linewidth=1.5,
+                                color=c, alpha=0.0, linewidth=1.5,
                                 **gs._kwargs))
                 else:
                     graph = getattr(self._ax, gs._type)
-                    graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),
+                    graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
                           **gs._kwargs)
                 self._c += 1
             except:
@@ -243,7 +260,7 @@ class GraphSpectrumXDy(GraphSpectrumXY):
         self._y = sess.spec.dy
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
-        self._kwargs = {'lw':1.0, 'label':sess.name+", error"}
+        self._kwargs = {'lw':1.0, 'label':sess.name+", error", 'where':'mid'}
 
 class GraphSpectrumXModel(GraphSpectrumXY):
 
@@ -262,7 +279,8 @@ class GraphSpectrumXDeabs(GraphSpectrumXY):
         self._y = sess.spec._t['deabs']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
-        self._kwargs = {'lw':1.0, 'label':sess.name+", de-absorbed"}
+        self._kwargs = {'lw':1.0, 'label':sess.name+", de-absorbed",
+                        'where':'mid'}
 
 class GraphSpectrumXYDetail(object):
     def __init__(self, sess, norm=False):
@@ -334,9 +352,10 @@ class GraphSystListZSeries(object):
 class GraphCursorZSeries(object):
     def __init__(self, sess, norm=False):
         self._type = 'axvline_special'
-        xem = np.array([xem_d['CIV_1548'].to(au.nm).value])
-        self._xem = np.array([xem_d[s].to(au.nm).value for s in series_d['CIV']])
+        self._series = 'CIV'
+        self._xem = np.array([xem_d[s].to(au.nm).value \
+                              for s in series_d[self._series]])
         self._xmean = np.mean(self._xem)*au.nm
         self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
         self._x = self._xem*(1+self._z)*au.nm
-        self._kwargs = {}
+        self._kwargs = {'linestyle': '--'}
