@@ -30,6 +30,9 @@ class Graph(object):
     def _init_ax(self, *args):
         self._ax = self._fig.add_subplot(*args)
         self._ax.tick_params(top=True, right=True, direction='in')
+        #self._cursor = Cursor(self._ax, useblit=True, color='red',
+        #                      linewidth=0.5)
+        #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _init_canvas(self):
         self._c = 0
@@ -55,11 +58,20 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
+        #self._ax.lines = [self._ax.lines[0]]
+        #self._ax.axvline(x)
+        if 'cursor_z_series' in self._sel:
+            z = (x/10/self._cursor_xmean.value)
+            for c, xem in zip(self._cursor, self._cursor_xem):
+                #print(c.get_xdata()[0]*conv)
+                c.set_xdata(xem*(1+z)*10)
+                c.set_alpha(0.5)
+            self._canvas.draw()
         if self._panel is self._gui._graph_main._panel:
-            self._gui._graph_main._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+            self._gui._graph_main._textbar.SetLabel("%2.4f, %2.4e" % (x,y))
         if hasattr(self._gui, '_graph_det'):
             if self._panel is self._gui._graph_det._panel:
-                self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4f" % (x,y))
+                self._gui._graph_det._textbar.SetLabel("%2.4f, %2.4e" % (x,y))
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None, title=None, text=None):
@@ -83,7 +95,8 @@ class Graph(object):
                              'spec_form_x': GraphSpectrumFormX,
                              'spec_x_model': GraphSpectrumXModel,
                              'spec_x_deabs': GraphSpectrumXDeabs,
-                             'systs_z_series': GraphSystListZSeries}
+                             'systs_z_series': GraphSystListZSeries,
+                             'cursor_z_series': GraphCursorZSeries}
         #print(self._sel)
         self._canvas_list = [self._canvas_dict[s] for s in self._sel]
 
@@ -113,6 +126,7 @@ class Graph(object):
             self._ax.legend()
 
         #print(self._ax)
+        #self._cursor = self._ax.axvline(8000, alpha=0.0)
         self._canvas.draw()
 
     def _seq(self, sess, norm):
@@ -150,6 +164,17 @@ class Graph(object):
                         #print("here", x,t)
                         gs._kwargs.pop('label', None)
                         #print("after", x,t)
+                elif gs._type == 'axvline_special':
+                    self._cursor_xem = gs._xem
+                    self._cursor_xmean = gs._xmean
+                    self._cursor_z = gs._z
+                    self._cursor = []
+                    for x in gs._x:
+                        self._cursor.append(
+                            self._ax.axvline(
+                                x.to(self._xunit).value, #alpha=0,
+                                color='C'+str(self._c), linewidth=1.5,
+                                **gs._kwargs))
                 else:
                     graph = getattr(self._ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color='C'+str(self._c),
@@ -305,3 +330,13 @@ class GraphSystListZSeries(object):
 
         self._kwargs = {'marker':'+', 'label':sess.name+", systs"}
         """
+
+class GraphCursorZSeries(object):
+    def __init__(self, sess, norm=False):
+        self._type = 'axvline_special'
+        xem = np.array([xem_d['CIV_1548'].to(au.nm).value])
+        self._xem = np.array([xem_d[s].to(au.nm).value for s in series_d['CIV']])
+        self._xmean = np.mean(self._xem)*au.nm
+        self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
+        self._x = self._xem*(1+self._z)*au.nm
+        self._kwargs = {}

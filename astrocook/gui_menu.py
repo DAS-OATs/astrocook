@@ -452,8 +452,10 @@ class GUIMenuView(GUIMenu):
                          'spec_x_deabs')
         self._item_graph(self._submenu, start_id+310, None, "Spectral format",
                          'spec_form_x')
-        self._item_graph(self._submenu, start_id+311, None, "System list",
+        self._item_graph(self._submenu, start_id+311, 'systs', "System list",
                          'systs_z_series')
+        self._item_graph(self._submenu, start_id+312, 'spec', "Redshift cursor",
+                         'cursor_z_series')
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
