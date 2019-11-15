@@ -190,4 +190,5 @@ class GUIDialogMethods(GUIDialog):
         self._panel.SetSizer(self._core)
 
     def _on_method(self, e, attr, brief):
-        GUIDialogMethod(self._gui, brief, attr, False, self._params)
+        GUIDialogMethod(self._gui, brief, attr, cancel_run=False,
+                        params_parent=self._params)
