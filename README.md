@@ -25,6 +25,7 @@ Astrocook requires the following packages to run:
 * [StatsModels 0.10.1](http://www.statsmodels.org/stable/index.html)
 * [matplotlib 3.1.1](https://matplotlib.org)
 * [Sphinx 2.2.0](http://www.sphinx-doc.org/en/master/)
+* [tqdm 4.36.1](https://github.com/tqdm/tqdm)
 
 
 ## Running the software

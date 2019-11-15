@@ -7,13 +7,12 @@ from astropy import units as au
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
+import logging
 #from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.interpolate import UnivariateSpline as uspline
 from scipy.stats import sem
-
-prefix = "Spectrum:"
 
 class Spectrum(Frame):
     """Class for spectra
@@ -60,9 +59,9 @@ class Spectrum(Frame):
         # Convolve
         if verb:
             if output_col in self._t.colnames:
-                print(prefix, "I'm updating column '%s'." % output_col)
+                logging.info("I'm updating column '%s'." % output_col)
             else:
-                print(prefix, "I'm adding column '%s'." % output_col)
+                logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = self._safe(conv)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
@@ -84,7 +83,7 @@ class Spectrum(Frame):
         y_ave = []
         dy_ave = []
         if 'lines_mask' not in self._t.colnames:
-            print(prefix, "Lines weren't masked. I'm taking all spectrum.")
+            logging.warning("Lines weren't masked. I'm taking all spectrum.")
 
         for s in self._slice_range:
             try:
@@ -123,11 +122,11 @@ class Spectrum(Frame):
         dy = nodes.dy.value
         spl = uspline(x, y, w=dy, s=smooth)
         cont = spl(self.x)*self._yunit
-        print(prefix, "I'm using interpolation as continuum.")
+        logging.info("I'm using interpolation as continuum.")
         if 'cont' in self._t.colnames:
-            print(prefix, "I'm updating column 'cont'.")
+            logging.info("I'm updating column 'cont'.")
         else:
-            print(prefix, "I'm adding column 'cont'.")
+            logging.info("I'm adding column 'cont'.")
         self._t['cont'] = cont #spl(self.x)
         lines._t['cont'] = np.interp(lines.x, self.x, cont)
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
@@ -195,9 +194,9 @@ class Spectrum(Frame):
         for (xmin, xmax) in zip(lines.xmin, lines.xmax):
             mask += np.logical_and(x>=xmin, x<=xmax)
         if 'lines_mask' in self._t.colnames:
-            print(prefix, "I'm updating column 'lines_mask'.")
+            logging.info("I'm updating column 'lines_mask'.")
         else:
-            print(prefix, "I'm adding column 'lines_mask'.")
+            logging.info("I'm adding column 'lines_mask'.")
             self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
         self._t['lines_mask'][self._where_safe] = mask
 
