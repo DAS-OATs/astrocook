@@ -96,6 +96,11 @@ class GUIDialog(wx.Dialog):
                     self._gui._panel_sess._refresh()
                     self._gui._panel_sess._menu._refresh()
                     self._gui._graph_main._refresh(self._gui._sess_items)
+                    if hasattr(self._gui, '_graph_det'):
+                        xlim = self._gui._graph_det._graph._ax.get_xlim()
+                        ylim = self._gui._graph_det._graph._ax.get_ylim()
+                        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                                      ylim=ylim)
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()

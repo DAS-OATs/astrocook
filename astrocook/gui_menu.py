@@ -80,6 +80,11 @@ class GUIMenu(object):
             sel.append(key)
         item.IsChecked() == False
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _refresh(self):
         # Nested loops! WOOOO!
@@ -166,6 +171,11 @@ class GUIMenuCook(GUIMenu):
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
             self._gui._graph_main._refresh(self._gui._sess_items)
+            if hasattr(self._gui, '_graph_det'):
+                xlim = self._gui._graph_det._graph._ax.get_xlim()
+                ylim = self._gui._graph_det._graph._ax.get_ylim()
+                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                              ylim=ylim)
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
@@ -235,6 +245,11 @@ class GUIMenuCook(GUIMenu):
             sess_reg.merge_syst()
             """
             self._gui._graph_main._refresh(self._gui._sess_items)
+            if hasattr(self._gui, '_graph_det'):
+                xlim = self._gui._graph_det._graph._ax.get_xlim()
+                ylim = self._gui._graph_det._graph._ax.get_ylim()
+                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                              ylim=ylim)
             """
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
@@ -467,14 +482,29 @@ class GUIMenuView(GUIMenu):
     def _on_logx(self, event):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_logy(self, event):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_norm(self, event):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

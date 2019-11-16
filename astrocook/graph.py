@@ -35,7 +35,7 @@ class Graph(object):
         #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _init_canvas(self):
-        self._c = 0
+        #self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
         self._canvas = FigureCanvasWxAgg(self._panel, -1, self._fig)
         self._toolbar = NavigationToolbar2Wx(self._canvas)
@@ -59,6 +59,11 @@ class Graph(object):
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
+        if self._panel is self._gui._graph_main._panel:
+            focus = self._gui._graph_main
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                focus = self._gui._graph_det
         if 'cursor_z_series' in self._sel:
             z = (x/self._cursor_xmean.to(sess.spec._xunit).value)-1
             for c, xem in zip(self._cursor, self._cursor_xem):
@@ -67,6 +72,11 @@ class Graph(object):
                 c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                 c.set_alpha(0.5)
             self._canvas.draw()
+            focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                                    % (x, y, self._cursor_series, z))
+        else:
+            focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
+        """
         if self._panel is self._gui._graph_main._panel:
             if 'cursor_z_series' in self._sel:
                 self._gui._graph_main._textbar.SetLabel(
@@ -84,6 +94,7 @@ class Graph(object):
                 else:
                     self._gui._graph_det._textbar.SetLabel(
                         "x=%2.4f, y=%2.4e" % (x, y))
+        """
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None, title=None, text=None):
@@ -123,7 +134,7 @@ class Graph(object):
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.2f)"
                                 % sess[0].spec._rfz)
-        self._c = 0  # Color
+        #self._c = 0  # Color
         if logx:
             self._ax.set_xscale('log')
         if logy:
@@ -196,7 +207,7 @@ class Graph(object):
                     graph = getattr(self._ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
                           **gs._kwargs)
-                self._c += 1
+                #self._c += 1
             except:
                 pass
 

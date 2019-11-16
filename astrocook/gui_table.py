@@ -5,9 +5,10 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
-import logging
 import matplotlib.pyplot as plt
 import numpy as np
+
+prefix = "GUI:"
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
@@ -17,15 +18,13 @@ class GUITable(wx.Frame):
                  attr,
                  title="Table",
                  size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.4):
 
         self._gui = gui
         self._attr = attr
         self._title = title
         self._size_x = size_x
         self._size_y = size_y
-        super(GUITable, self).__init__(parent=None, title=self._title,
-                                       size=(self._size_x, self._size_y))
 
     def _fill(self):
         for j, r in enumerate(self._data.t):
@@ -72,9 +71,6 @@ class GUITable(wx.Frame):
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
-        size_x = wx.DisplaySize()[0]*0.4
-        size_y = wx.DisplaySize()[1]*0.4
-        self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
         self._gui._graph_det._graph._init_ax(111)
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
@@ -111,9 +107,9 @@ class GUITable(wx.Frame):
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
-            logging.info("I'm updating table...")
+            print(prefix, "I'm updating table...")
         except:
-            logging.info("I'm loading table...")
+            print(prefix, "I'm loading table...")
         self._init()
         coln = len(self._data.t.colnames)
         #if not hasattr(self, '_tab'):
@@ -128,7 +124,6 @@ class GUITable(wx.Frame):
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self._on_right_click)
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
 
 
@@ -140,7 +135,7 @@ class GUITableLineList(GUITable):
                  gui,
                  title="Line table",
                  size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.4):
 
         super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
                                                size_y)
@@ -158,7 +153,7 @@ class GUITableModelList(GUITable):
                  gui,
                  title="Model table",
                  size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.4):
 
         super(GUITableModelList, self).__init__(gui, 'mods', title,
                                                 size_x, size_y)
@@ -194,7 +189,7 @@ class GUITableSpectrum(GUITable):
                  gui,
                  title="Spectrum table",
                  size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.4):
 
         super(GUITableSpectrum, self).__init__(gui, 'spec', title, size_x,
                                                size_y)
@@ -210,7 +205,7 @@ class GUITableSystList(GUITable):
                  gui,
                  title="System table",
                  size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.4):
 
         super(GUITableSystList, self).__init__(gui, 'systs', title, size_x,
                                                size_y)
@@ -221,20 +216,13 @@ class GUITableSystList(GUITable):
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
             GUIGraphDetail(self._gui, init_ax=False)
-        #elif len(self._gui._graph_det._graph._fig.axes) == 1:
-        else:
+        elif len(self._gui._graph_det._graph._fig.axes) == 1:
             self._gui._graph_det._graph._fig.clear()
 
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         graph = self._gui._graph_det._graph
-        series = series_d[row['series']]
-        rows = min(4, len(series))
-        cols = len(series)//5+1
-        size_x = wx.DisplaySize()[0]*0.4*cols
-        size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
-        self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
-        for i, s in enumerate(series):
+        for i, s in enumerate(series_d[row['series']]):
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
             self._gui._sess_sel.convert_x(zem=zem)
@@ -243,14 +231,12 @@ class GUITableSystList(GUITable):
             _, ylim = self._gui._graph_det._define_lim(0)
 
             if i == 0:
-                graph._ax = graph._fig.add_subplot(rows, cols, i+1)
+                graph._ax = graph._fig.add_subplot(2, 1, i+1)
                 title = row['series']
-                if len(series) > 1:
-                    graph._ax.tick_params(labelbottom=False)
+                graph._ax.tick_params(labelbottom=False)
             else:
                 title = None
-                graph._ax = graph._fig.add_subplot(rows, cols, i+1,
-                                                   sharex=graph._ax)
+                graph._ax = graph._fig.add_subplot(2, 1, i+1, sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
             self._gui._graph_det._refresh(
@@ -258,3 +244,4 @@ class GUITableSystList(GUITable):
                 xlim=(-100, 100), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+        #print("here", graph._ax)
