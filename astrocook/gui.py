@@ -41,7 +41,7 @@ class GUI(object):
         GUIImageCompleteness(self)
         GUIImageCorrectness(self)
         if path == None:
-            print("AC: Welcome! Try Session > Open...")
+            logging.info("Welcome! Try Session > Open...")
         else:
             self._panel_sess._on_open(path)
 
@@ -157,7 +157,7 @@ class GUIPanelSession(wx.Frame):
         self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_close(self, event):
-        print("AC: Bye!")
+        logging.info("Bye!")
         self.Destroy()
         """
         self._gui._panel_sess.Close()
