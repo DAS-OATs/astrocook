@@ -199,3 +199,31 @@ class GUIDialogMethods(GUIDialog):
     def _on_method(self, e, attr, brief):
         GUIDialogMethod(self._gui, brief, attr, cancel_run=False,
                         params_parent=self._params)
+
+class GUIDialogMini(wx.Dialog):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._gui._dlg_mini = self
+        super(GUIDialogMini, self).__init__(parent=None, title=title)
+        self._panel = wx.Panel(self)
+        self._bottom = wx.BoxSizer(wx.VERTICAL)
+        self._core = wx.BoxSizer(wx.VERTICAL)
+
+        ctrl = wx.TextCtrl(self._panel, -1, value='ciao')
+        self._core.Add(ctrl, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
+
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Cancel')
+        #apply_button.Bind(wx.EVT_BUTTON, self._on_cancel)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+        self.SetSizer(self._bottom)
+
+
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.Show()

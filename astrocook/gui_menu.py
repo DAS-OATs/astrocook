@@ -41,11 +41,13 @@ class GUIMenu(object):
             getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
 
-    def _item_graph(self, menu, id, append, title, key, enable=False):
+    def _item_graph(self, menu, id, append, title, key, enable=False,
+                    dlg_mini=False):
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
         self._gui._panel_sess.Bind(
-            wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
+            wx.EVT_MENU,
+            lambda e: self._on_graph(e, title, key, item, dlg_mini), item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
@@ -72,7 +74,10 @@ class GUIMenu(object):
         else:
             dlg = GUIDialogMethod(self._gui, title, attr, obj)
 
-    def _on_graph(self, event, key, item):
+    def _on_dialog_mini(self, event, title):
+        dlg = GUIDialogMini(self._gui, title)
+
+    def _on_graph(self, event, title, key, item, dlg_mini):
         sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
@@ -85,6 +90,9 @@ class GUIMenu(object):
             ylim = self._gui._graph_det._graph._ax.get_ylim()
             self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                           ylim=ylim)
+        if dlg_mini:
+            self._on_dialog_mini(event, title)
+
 
     def _refresh(self):
         # Nested loops! WOOOO!
@@ -470,7 +478,7 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+311, 'systs', "System list",
                          'systs_z_series')
         self._item_graph(self._submenu, start_id+312, 'spec', "Redshift cursor",
-                         'cursor_z_series')
+                         'cursor_z_series', dlg_mini=True)
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
