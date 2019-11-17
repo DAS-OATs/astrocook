@@ -363,7 +363,10 @@ class GraphSystListZSeries(object):
 class GraphCursorZSeries(object):
     def __init__(self, sess, norm=False):
         self._type = 'axvline_special'
-        self._series = 'CIV'
+        if hasattr(sess, '_series_sel'):
+            self._series = sess._series_sel
+        else:
+            self._series = 'CIV'
         self._xem = np.array([xem_d[s].to(au.nm).value \
                               for s in series_d[self._series]])
         self._xmean = np.mean(self._xem)*au.nm

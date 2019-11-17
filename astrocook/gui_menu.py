@@ -4,6 +4,7 @@ from .gui_dialog import *
 #from .session import Session
 #from .model import Model
 from .model_list import ModelList
+from .graph import GraphCursorZSeries
 from astropy.io import ascii
 import datetime
 import logging
@@ -42,12 +43,12 @@ class GUIMenu(object):
             item.Enable(False)
 
     def _item_graph(self, menu, id, append, title, key, enable=False,
-                    dlg_mini=False):
+                    dlg_mini=False, targ=None):
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_graph(e, title, key, item, dlg_mini), item)
+            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
@@ -74,10 +75,10 @@ class GUIMenu(object):
         else:
             dlg = GUIDialogMethod(self._gui, title, attr, obj)
 
-    def _on_dialog_mini(self, event, title):
-        dlg = GUIDialogMini(self._gui, title)
+    def _on_dialog_mini(self, event, title, targ):
+        dlg = GUIDialogMini(self._gui, title, targ)
 
-    def _on_graph(self, event, title, key, item, dlg_mini):
+    def _on_graph(self, event, title, key, item, dlg_mini, targ):
         sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
@@ -91,7 +92,7 @@ class GUIMenu(object):
             self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                           ylim=ylim)
         if dlg_mini:
-            self._on_dialog_mini(event, title)
+            self._on_dialog_mini(event, title, targ)
 
 
     def _refresh(self):
@@ -478,7 +479,8 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+311, 'systs', "System list",
                          'systs_z_series')
         self._item_graph(self._submenu, start_id+312, 'spec', "Redshift cursor",
-                         'cursor_z_series', dlg_mini=True)
+                         'cursor_z_series', dlg_mini=True,
+                         targ=GraphCursorZSeries)
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
