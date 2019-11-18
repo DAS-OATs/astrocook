@@ -182,6 +182,13 @@ class GUITablePopup(wx.Menu):
         #self.Bind(wx.EVT_MENU, self._parent._on_show, show)
         #self.Append(show)
 
+        if isinstance(self._parent, GUITableSystList):
+            fit = wx.MenuItem(self, wx.NewId(), 'Fit...')
+            improve = wx.MenuItem(self, wx.NewId(), 'Improve...')
+            self.Bind(wx.EVT_MENU, self._parent._on_fit, fit)
+            self.Bind(wx.EVT_MENU, self._parent._on_improve, improve)
+            self.Append(fit)
+            self.Append(improve)
         remove = wx.MenuItem(self, wx.NewId(), 'Remove')
         self.Bind(wx.EVT_MENU, self._parent._on_remove, remove)
         self.Append(remove)
@@ -225,6 +232,18 @@ class GUITableSystList(GUITable):
         else:
             self._gui._graph_det._graph._fig.clear()
 
+        # Color background of systems in the same group
+        mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
+                             for i in self._gui._sess_sel.systs._mods_t['id']])
+        for j, r in enumerate(self._data.t):
+            for i in range(len(self._data.t.colnames)):
+                if r['id'] in np.array(self._gui._sess_sel.systs._mods_t['id'][mods_sel][0]):
+                    self._tab.SetCellBackgroundColour(j, i, 'cyan')
+                else:
+                    self._tab.SetCellBackgroundColour(j, i, None)
+        self._tab.ForceRefresh()
+
+
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         graph = self._gui._graph_det._graph
@@ -255,6 +274,35 @@ class GUITableSystList(GUITable):
             graph._fig.subplots_adjust(hspace=0.)
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=s[-4:],
-                xlim=(-100, 100), ylim=ylim)
+                xlim=(-200, 200), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+
+    def _on_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        series = self._data.t[row][1]
+        z = self._data.t[row][3]
+        logN = self._data.t[row][5]
+        b = self._data.t[row][7]
+        self._gui._sess_sel.cb._fit_syst(series=series, z=z, logN=logN, b=b)
+        self._gui._panel_sess._refresh()
+        self._gui._panel_sess._menu._refresh()
+        self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
+
+    def _on_improve(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        z = self._data.t[row][3]
+        self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
+        self._gui._panel_sess._refresh()
+        self._gui._panel_sess._menu._refresh()
+        self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)

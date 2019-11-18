@@ -106,6 +106,7 @@ class Cookbook(object):
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
+        mod._pars.pretty_print()
         if maxfev > 0:
             mod._fit(fit_kws={'max_nfev': maxfev})
         #plt.plot(mod._xf, mod._yf)
