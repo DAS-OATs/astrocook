@@ -215,6 +215,7 @@ class GUIDialogMini(wx.Dialog):
         self._box_ctrl()
         self._box_buttons()
         self.SetSizer(self._bottom)
+        self.Centre()
         self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
 
@@ -227,6 +228,7 @@ class GUIDialogMini(wx.Dialog):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         apply_button = wx.Button(self, label='Apply')
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        apply_button.SetDefault()
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,

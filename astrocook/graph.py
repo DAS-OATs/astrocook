@@ -1,4 +1,5 @@
 from .message import *
+from .functions import parse
 from .vars import *
 from astropy import units as au
 #from copy import deepcopy as dc
@@ -197,11 +198,13 @@ class Graph(object):
                     self._cursor_xmean = gs._xmean
                     self._cursor_z = gs._z
                     self._cursor = []
-                    for x in gs._x:
+                    for i, x in enumerate(gs._x):
+                        if i==1:
+                            del gs._kwargs['label']
                         self._cursor.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
-                                color=c, alpha=0.0, linewidth=1.5,
+                                color=c, alpha=a, linewidth=1.5,
                                 **gs._kwargs))
                 else:
                     graph = getattr(self._ax, gs._type)
@@ -367,9 +370,10 @@ class GraphCursorZSeries(object):
             self._series = sess._series_sel
         else:
             self._series = 'CIV'
-        self._xem = np.array([xem_d[s].to(au.nm).value \
-                              for s in series_d[self._series]])
+        #self._xem = np.array([xem_d[s].to(au.nm).value \
+        #                      for s in series_d[self._series]])
+        self._xem = np.array([xem_d[t].value for t in parse(self._series)])
         self._xmean = np.mean(self._xem)*au.nm
         self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
         self._x = self._xem*(1+self._z)*au.nm
-        self._kwargs = {'linestyle': '--'}
+        self._kwargs = {'label':self._series, 'linestyle': '--'}
