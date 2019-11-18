@@ -91,7 +91,18 @@ class GUITable(wx.Frame):
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
+        """
+        if self._attr == 'systs':
+            id = self._data.t['id'][row]
+            for i, m in enumerate(self._data._mods_t):
+                if id in m['id']:
+                    if len(m['id']) == 1:
+                        self._data._mods_t.remove_row(i)
+                    else:
+                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
         self._data.t.remove_row(row)
+        """
+        self._remove_data(row)
         self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
         self._gui._panel_sess._refresh()
@@ -131,6 +142,16 @@ class GUITable(wx.Frame):
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
 
+    def _remove_data(self, row):
+        if self._attr == 'systs':
+            id = self._data.t['id'][row]
+            for i, m in enumerate(self._data._mods_t):
+                if id in m['id']:
+                    if len(m['id']) == 1:
+                        self._data._mods_t.remove_row(i)
+                    else:
+                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
+        self._data.t.remove_row(row)
 
 
 class GUITableLineList(GUITable):
@@ -280,11 +301,16 @@ class GUITableSystList(GUITable):
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
-        series = self._data.t[row][1]
-        z = self._data.t[row][3]
-        logN = self._data.t[row][5]
-        b = self._data.t[row][7]
-        self._gui._sess_sel.cb._fit_syst(series=series, z=z, logN=logN, b=b)
+        series = self._tab.GetCellValue(row, 1)
+        z = float(self._tab.GetCellValue(row, 3))
+        logN = float(self._tab.GetCellValue(row, 5))
+        b = float(self._tab.GetCellValue(row, 7))
+        #self._data.t.remove_row(row)
+        self._remove_data(row)
+        cb = self._gui._sess_sel.cb
+        cb._fit_syst(series=series, z=z, logN=logN, b=b)
+        cb._update_spec()
+        #print(self._data._mods_t)
         self._gui._panel_sess._refresh()
         self._gui._panel_sess._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
@@ -296,7 +322,7 @@ class GUITableSystList(GUITable):
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
-        z = self._data.t[row][3]
+        z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
         self._gui._panel_sess._refresh()
         self._gui._panel_sess._menu._refresh()
