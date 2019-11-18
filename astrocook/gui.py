@@ -137,6 +137,11 @@ class GUIPanelSession(wx.Frame):
         self._refresh()
         self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
         #print(self._gui._sess_sel.__dict__)
 
     def _on_edit(self, event):
@@ -182,6 +187,11 @@ class GUIPanelSession(wx.Frame):
         self._refresh()
         self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:

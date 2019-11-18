@@ -4,6 +4,7 @@ from .gui_dialog import *
 #from .session import Session
 #from .model import Model
 from .model_list import ModelList
+from .graph import GraphCursorZSeries
 from astropy.io import ascii
 import datetime
 import logging
@@ -41,11 +42,13 @@ class GUIMenu(object):
             getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
 
-    def _item_graph(self, menu, id, append, title, key, enable=False):
+    def _item_graph(self, menu, id, append, title, key, enable=False,
+                    dlg_mini=False, targ=None):
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
         self._gui._panel_sess.Bind(
-            wx.EVT_MENU, lambda e: self._on_graph(e, key, item), item)
+            wx.EVT_MENU,
+            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
@@ -72,7 +75,10 @@ class GUIMenu(object):
         else:
             dlg = GUIDialogMethod(self._gui, title, attr, obj)
 
-    def _on_graph(self, event, key, item):
+    def _on_dialog_mini(self, event, title, targ):
+        dlg = GUIDialogMini(self._gui, title, targ)
+
+    def _on_graph(self, event, title, key, item, dlg_mini, targ):
         sel = self._gui._graph_main._sel
         if key in sel:
             sel.remove(key)
@@ -80,6 +86,14 @@ class GUIMenu(object):
             sel.append(key)
         item.IsChecked() == False
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
+        if dlg_mini:
+            self._on_dialog_mini(event, title, targ)
+
 
     def _refresh(self):
         # Nested loops! WOOOO!
@@ -166,6 +180,11 @@ class GUIMenuCook(GUIMenu):
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
             self._gui._graph_main._refresh(self._gui._sess_items)
+            if hasattr(self._gui, '_graph_det'):
+                xlim = self._gui._graph_det._graph._ax.get_xlim()
+                ylim = self._gui._graph_det._graph._ax.get_ylim()
+                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                              ylim=ylim)
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
@@ -235,6 +254,11 @@ class GUIMenuCook(GUIMenu):
             sess_reg.merge_syst()
             """
             self._gui._graph_main._refresh(self._gui._sess_items)
+            if hasattr(self._gui, '_graph_det'):
+                xlim = self._gui._graph_det._graph._ax.get_xlim()
+                ylim = self._gui._graph_det._graph._ax.get_ylim()
+                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                              ylim=ylim)
             """
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
@@ -452,8 +476,11 @@ class GUIMenuView(GUIMenu):
                          'spec_x_deabs')
         self._item_graph(self._submenu, start_id+310, None, "Spectral format",
                          'spec_form_x')
-        self._item_graph(self._submenu, start_id+311, None, "System list",
+        self._item_graph(self._submenu, start_id+311, 'systs', "System list",
                          'systs_z_series')
+        self._item_graph(self._submenu, start_id+312, 'spec', "Redshift cursor",
+                         'cursor_z_series', dlg_mini=True,
+                         targ=GraphCursorZSeries)
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
@@ -465,14 +492,29 @@ class GUIMenuView(GUIMenu):
     def _on_logx(self, event):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_logy(self, event):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_norm(self, event):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
         self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

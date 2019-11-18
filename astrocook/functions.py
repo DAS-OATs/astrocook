@@ -123,6 +123,16 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
 
     return model
 
+def parse(series):
+    trans = []
+    for s in series.split(','):
+        if '_' in s:
+            trans.append(s)
+        else:
+            for t in series_d[s]:
+                trans.append(t)
+    return trans
+
 def psf_gauss(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF

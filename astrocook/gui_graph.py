@@ -53,7 +53,6 @@ class GUIGraphMain(wx.Frame):
         move_id = self._graph._canvas.mpl_connect('motion_notify_event',
                                                   self._graph._on_move)
 
-
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()

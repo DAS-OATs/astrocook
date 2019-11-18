@@ -1,13 +1,13 @@
 from .gui_graph import GUIGraphDetail
 from .vars import *
 from collections import OrderedDict
+import logging
+import matplotlib.pyplot as plt
+import numpy as np
 import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
-import logging
-import matplotlib.pyplot as plt
-import numpy as np
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """

@@ -96,6 +96,11 @@ class GUIDialog(wx.Dialog):
                     self._gui._panel_sess._refresh()
                     self._gui._panel_sess._menu._refresh()
                     self._gui._graph_main._refresh(self._gui._sess_items)
+                    if hasattr(self._gui, '_graph_det'):
+                        xlim = self._gui._graph_det._graph._ax.get_xlim()
+                        ylim = self._gui._graph_det._graph._ax.get_ylim()
+                        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                                      ylim=ylim)
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
@@ -194,3 +199,48 @@ class GUIDialogMethods(GUIDialog):
     def _on_method(self, e, attr, brief):
         GUIDialogMethod(self._gui, brief, attr, cancel_run=False,
                         params_parent=self._params)
+
+class GUIDialogMini(wx.Dialog):
+    def __init__(self,
+                 gui,
+                 title,
+                 targ):
+        self._gui = gui
+        self._gui._dlg_mini = self
+        self._targ = targ
+        super(GUIDialogMini, self).__init__(parent=None, title=title)
+        self._panel = wx.Panel(self)
+        self._bottom = wx.BoxSizer(wx.VERTICAL)
+        self._core = wx.BoxSizer(wx.VERTICAL)
+        self._box_ctrl()
+        self._box_buttons()
+        self.SetSizer(self._bottom)
+        self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.Show()
+
+    def _box_ctrl(self):
+        self._ctrl = wx.TextCtrl(self._panel, -1, value='CIV', size=(200, -1))
+        self._core.Add(self._ctrl, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+    def _on_apply(self, e):
+        self._gui._sess_sel._series_sel = self._ctrl.GetValue()
+        self._targ(self._gui._sess_sel)
+        self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
