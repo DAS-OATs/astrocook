@@ -55,11 +55,24 @@ class GUI(object):
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             self._graph_main._refresh(self._sess_items)
         else:
-            self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
+            self._graph_main._refresh(self._sess_items, xlim=xlim)
         if hasattr(self, '_graph_det'):
-            xlim_det = self._graph_det._graph._ax.get_xlim()
-            ylim_det = self._graph_det._graph._ax.get_ylim()
-            self._graph_det._refresh(self._sess_items, xlim=xlim_det, ylim=ylim_det)
+            graph = self._graph_det._graph
+            if hasattr(graph, '_axes'):
+                for zem, ax in zip(graph._zem, graph._axes):
+                    xunit = self._sess_sel.spec.x.unit
+                    self._sess_sel.convert_x(zem=zem)
+                    graph._ax = ax
+                    xlim_det = graph._ax.get_xlim()
+                    ylim_det = graph._ax.get_ylim()
+                    self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                             ylim=ylim_det)
+                    self._sess_sel.convert_x(zem=zem, xunit=xunit)
+            else:
+                xlim_det = graph._ax.get_xlim()
+                ylim_det = graph._ax.get_ylim()
+                self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                         ylim=ylim_det)
 
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):
