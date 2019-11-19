@@ -85,19 +85,16 @@ class GUIMenu(object):
         else:
             sel.append(key)
         item.IsChecked() == False
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
         if dlg_mini:
             self._on_dialog_mini(event, title, targ)
 
 
     def _refresh(self):
         # Nested loops! WOOOO!
+        """
         for a in seq:  # from .vars
+            print(getattr(self._gui._sess_sel, a))
             if getattr(self._gui._sess_sel, a) != None:
                 for i in getattr(self._gui, '_menu_'+a+'_id'):
                     for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
@@ -108,6 +105,23 @@ class GUIMenu(object):
                                 item.Check(item.key in graph_sel)  # from .vars
                         except:
                             pass
+        """
+        for a in seq:  # from .vars
+            for i in getattr(self._gui, '_menu_'+a+'_id'):
+                for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
+                    try:
+                        item = getattr(self, m)._menu.FindItemById(i)
+                        if m == '_view':
+                            item.Check(False)  # from .vars
+                        if getattr(self._gui._sess_sel, a) != None:
+                            item.Enable(True)
+                            if m == '_view':
+                                item.Check(item.key in graph_sel)  # from .vars
+                        else:
+                            item.Enable(False)
+
+                    except:
+                        pass
 
 
 class GUIMenuCook(GUIMenu):
@@ -179,12 +193,7 @@ class GUIMenuCook(GUIMenu):
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
-            self._gui._graph_main._refresh(self._gui._sess_items)
-            if hasattr(self._gui, '_graph_det'):
-                xlim = self._gui._graph_det._graph._ax.get_xlim()
-                ylim = self._gui._graph_det._graph._ax.get_ylim()
-                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                              ylim=ylim)
+            self._gui._refresh()
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
@@ -253,12 +262,7 @@ class GUIMenuCook(GUIMenu):
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
             sess_reg.merge_syst()
             """
-            self._gui._graph_main._refresh(self._gui._sess_items)
-            if hasattr(self._gui, '_graph_det'):
-                xlim = self._gui._graph_det._graph._ax.get_xlim()
-                ylim = self._gui._graph_det._graph._ax.get_ylim()
-                self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                              ylim=ylim)
+            self._gui._refresh()
             """
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
@@ -491,30 +495,15 @@ class GUIMenuView(GUIMenu):
 
     def _on_logx(self, event):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_logy(self, event):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_norm(self, event):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj

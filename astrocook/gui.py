@@ -45,6 +45,17 @@ class GUI(object):
         else:
             self._panel_sess._on_open(path)
 
+    def _refresh(self):
+        """ Refresh the GUI after an action """
+
+        self._panel_sess._refresh()
+        self._panel_sess._menu._refresh()
+        self._graph_main._refresh(self._sess_items)
+        if hasattr(self, '_graph_det'):
+            xlim = self._graph_det._graph._ax.get_xlim()
+            ylim = self._graph_det._graph._ax.get_ylim()
+            self._graph_det._refresh(self._sess_items, xlim=xlim, ylim=ylim)
+
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
@@ -134,15 +145,7 @@ class GUIPanelSession(wx.Frame):
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
-        self._refresh()
-        self._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
-        #print(self._gui._sess_sel.__dict__)
+        self._gui._refresh()
 
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
@@ -184,14 +187,7 @@ class GUIPanelSession(wx.Frame):
             self._items.append(item)
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        self._refresh()
-        self._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:

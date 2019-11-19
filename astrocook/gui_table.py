@@ -91,27 +91,10 @@ class GUITable(wx.Frame):
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
-        """
-        if self._attr == 'systs':
-            id = self._data.t['id'][row]
-            for i, m in enumerate(self._data._mods_t):
-                if id in m['id']:
-                    if len(m['id']) == 1:
-                        self._data._mods_t.remove_row(i)
-                    else:
-                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
-        self._data.t.remove_row(row)
-        """
         self._remove_data(row)
         self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
-        self._gui._panel_sess._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event),
@@ -311,24 +294,10 @@ class GUITableSystList(GUITable):
         cb._fit_syst(series=series, z=z, logN=logN, b=b)
         cb._update_spec()
         #print(self._data._mods_t)
-        self._gui._panel_sess._refresh()
-        self._gui._panel_sess._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
-        self._gui._panel_sess._refresh()
-        self._gui._panel_sess._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
