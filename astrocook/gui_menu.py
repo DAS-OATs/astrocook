@@ -92,34 +92,19 @@ class GUIMenu(object):
 
     def _refresh(self):
         # Nested loops! WOOOO!
-        """
-        for a in seq:  # from .vars
-            print(getattr(self._gui._sess_sel, a))
-            if getattr(self._gui._sess_sel, a) != None:
-                for i in getattr(self._gui, '_menu_'+a+'_id'):
-                    for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
-                        try:
-                            item = getattr(self, m)._menu.FindItemById(i)
-                            item.Enable(True)
-                            if m == '_view':
-                                item.Check(item.key in graph_sel)  # from .vars
-                        except:
-                            pass
-        """
         for a in seq:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
-                        if m == '_view':
+                        if m == '_view' and item.IsCheckable():
                             item.Check(False)  # from .vars
                         if getattr(self._gui._sess_sel, a) != None:
                             item.Enable(True)
-                            if m == '_view':
+                            if m == '_view' and item.IsCheckable():
                                 item.Check(item.key in graph_sel)  # from .vars
                         else:
                             item.Enable(False)
-
                     except:
                         pass
 

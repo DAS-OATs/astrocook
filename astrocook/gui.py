@@ -56,6 +56,11 @@ class GUI(object):
             ylim = self._graph_det._graph._ax.get_ylim()
             self._graph_det._refresh(self._sess_items, xlim=xlim, ylim=ylim)
 
+        for s in ['spec', 'lines', 'systs']:
+            if hasattr(self, '_tab_'+s):
+                if hasattr(getattr(self, '_tab_'+s), '_data'):
+                    getattr(self, '_tab_'+s)._on_view(event=None, from_scratch=False)
+
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
