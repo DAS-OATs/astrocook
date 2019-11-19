@@ -57,9 +57,9 @@ class GUI(object):
         else:
             self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         if hasattr(self, '_graph_det'):
-            xlim = self._graph_det._graph._ax.get_xlim()
-            ylim = self._graph_det._graph._ax.get_ylim()
-            self._graph_det._refresh(self._sess_items, xlim=xlim, ylim=ylim)
+            xlim_det = self._graph_det._graph._ax.get_xlim()
+            ylim_det = self._graph_det._graph._ax.get_ylim()
+            self._graph_det._refresh(self._sess_items, xlim=xlim_det, ylim=ylim_det)
 
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):

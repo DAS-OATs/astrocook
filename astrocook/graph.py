@@ -126,7 +126,7 @@ class Graph(object):
         self._canvas_l = [self._canvas_dict[s][0] for s in self._sel]
         self._color_l = [self._canvas_dict[s][1] for s in self._sel]
         self._alpha_l = [self._canvas_dict[s][2] for s in self._sel]
-        
+
         # First selected session sets the units of the axes
         self._xunit = GraphSpectrumXY(sess[0])._x.unit
         self._yunit = GraphSpectrumXY(sess[0], norm)._y.unit

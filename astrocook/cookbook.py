@@ -239,7 +239,7 @@ class Cookbook(object):
                            b=s['b'], resol=resol)
             systs._update(mod)
         self.sess.systs._mods_t = systs._mods_t
-        
+
 
     def _update_spec(self):
         spec = self.sess.spec
