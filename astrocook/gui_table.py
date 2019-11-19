@@ -238,6 +238,26 @@ class GUITableSystList(GUITable):
         self._gui = gui
         self._gui._tab_systs = self
 
+    def _extract_mod(self, tab, row):
+        systs = self._gui._sess_sel.systs
+        labels = np.array([tab.GetColLabelValue(i).split('\n')[0] \
+                  for i in range(tab.GetNumberCols())])
+        id = int(tab.GetCellValue(row, np.where(labels == 'id')[0][0]))
+        pars = ['z', 'logN', 'b']
+        vals = [float(tab.GetCellValue(row, np.where(labels == p)[0][0])) \
+                for p in pars]
+        cols = [tab.GetCellTextColour(row, np.where(labels == p)[0][0]) \
+                for p in pars]
+        for m in systs._mods_t:
+            if id in m['id']:
+                for p, v, c in zip(pars, vals, cols):
+                    par_name = 'lines_voigt_%i_%s' % (id, p)
+                    m['mod']._pars[par_name].set(value=v)
+                    m['mod']._pars[par_name].set(vary=True)
+                    if c == 'grey':
+                        m['mod']._pars[par_name].set(vary=False)
+                return m['mod']
+
     def _on_cell_right_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -309,14 +329,9 @@ class GUITableSystList(GUITable):
         z = float(self._tab.GetCellValue(row, 3))
         logN = float(self._tab.GetCellValue(row, 5))
         b = float(self._tab.GetCellValue(row, 7))
-        #self._data.t.remove_row(row)
-        #self._remove_data(row)
         cb = self._gui._sess_sel.cb
-        #cb._fit_syst(series=series, z=z, logN=logN, b=b)
-        mod = cb._mod_from_table(self._tab, row)
-        #mod._pars.pretty_print()
+        mod = self._extract_mod(self._tab, row)
         mod._fit()
-        #mod._pars.pretty_print()
         self._gui._sess_sel.systs._update(mod, mod_t=False)
         cb._update_spec()
         self._gui._refresh()
