@@ -96,8 +96,8 @@ class GUITable(wx.Frame):
         self._fill()
         self._gui._refresh()
 
-    def _on_right_click(self, event):
-        self.PopupMenu(GUITablePopup(self._gui, self, event),
+    def _on_label_right_click(self, event):
+        self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove','remove'),
                        event.GetPosition())
 
     def _on_view(self, event, from_scratch=True):
@@ -109,19 +109,13 @@ class GUITable(wx.Frame):
         except:
             logging.info("I'm loading table...")
         self._init(from_scratch)
-        """
-        coln = len(self._data.t.colnames)
-        #if not hasattr(self, '_tab'):
-        rown = len(self._data.t)-self._tab.GetNumberRows()
-        self._tab.AppendCols(coln)
-        self._tab.AppendRows(rown)
-        """
         self._fill()
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self._on_detail)
-        self._tab.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self._on_right_click)
+        self._tab.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK,
+                       self._on_label_right_click)
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
@@ -180,7 +174,7 @@ class GUITableModelList(GUITable):
 class GUITablePopup(wx.Menu):
     """ Class for the GUI table popup menu """
 
-    def __init__(self, gui, parent, event):
+    def __init__(self, gui, parent, event, title, attr):
         super(GUITablePopup, self).__init__()
         self._parent = parent
         self._event = event
@@ -188,11 +182,13 @@ class GUITablePopup(wx.Menu):
         self._gui._tab_popup = self
         self._parent = parent
         self._event = event
+        self._title = np.array(title, ndmin=1)
+        self._attr = np.array(attr, ndmin=1)
 
         #show = wx.MenuItem(self, wx.NewId(), 'Show')
         #self.Bind(wx.EVT_MENU, self._parent._on_show, show)
         #self.Append(show)
-
+        """
         if isinstance(self._parent, GUITableSystList):
             fit = wx.MenuItem(self, wx.NewId(), 'Fit...')
             improve = wx.MenuItem(self, wx.NewId(), 'Improve...')
@@ -203,7 +199,13 @@ class GUITablePopup(wx.Menu):
         remove = wx.MenuItem(self, wx.NewId(), 'Remove')
         self.Bind(wx.EVT_MENU, self._parent._on_remove, remove)
         self.Append(remove)
-
+        """
+        self._items = []
+        for t, a in zip(self._title, self._attr):
+            item = wx.MenuItem(self, wx.NewId(), t)
+            self.Bind(wx.EVT_MENU, getattr(self._parent, '_on_'+a), item)
+            self.Append(item)
+            self._items.append(item)
 
 class GUITableSpectrum(GUITable):
     """ Class for the GUI spectrum table """
@@ -235,6 +237,18 @@ class GUITableSystList(GUITable):
 
         self._gui = gui
         self._gui._tab_systs = self
+
+    def _on_cell_right_click(self, event):
+        row = event.GetRow()
+        col = event.GetCol()
+        if col in [3, 5, 7]:
+            if self._tab.GetCellTextColour(row, col) == 'black':
+                title = 'Freeze parameter'
+            elif self._tab.GetCellTextColour(row, col) == 'grey':
+                title = 'Unfreeze parameter'
+            self.PopupMenu(GUITablePopup(self._gui, self, event,
+                                         title, 'freeze_par'),
+                           event.GetPosition())
 
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
@@ -296,14 +310,44 @@ class GUITableSystList(GUITable):
         logN = float(self._tab.GetCellValue(row, 5))
         b = float(self._tab.GetCellValue(row, 7))
         #self._data.t.remove_row(row)
-        self._remove_data(row)
+        #self._remove_data(row)
         cb = self._gui._sess_sel.cb
-        cb._fit_syst(series=series, z=z, logN=logN, b=b)
-        cb._update_spec()
+        #cb._fit_syst(series=series, z=z, logN=logN, b=b)
+        mod = cb._mod_from_table(self._tab, row)
+        mod._pars.pretty_print()
+        mod._fit()
+        mod._pars.pretty_print()
+        self._gui._sess_sel.systs._update(mod)
+        #cb._update_spec()
         self._gui._refresh()
+
+    def _on_freeze_par(self, event):
+        popup = self._gui._tab_popup
+        row = popup._event.GetRow()
+        col = popup._event.GetCol()
+        par = self._tab.GetColLabelValue(col)[:-1]
+        id = int(self._tab.GetCellValue(row, 10))
+        value = float(self._tab.GetCellValue(row, col))
+        if self._tab.GetCellTextColour(row, col) == 'black':
+            self._tab.SetCellTextColour(row, col, 'grey')
+            #self._gui._sess_sel.cb._constrain(par, id, value, False)
+        elif self._tab.GetCellTextColour(row, col) == 'grey':
+            self._tab.SetCellTextColour(row, col, 'black')
+        self._tab.ForceRefresh()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
         self._gui._refresh()
+
+    def _on_label_right_click(self, event):
+        self.PopupMenu(GUITablePopup(self._gui, self, event,
+                                     ['Fit', 'Improve', 'Remove'],
+                                     ['fit', 'improve', 'remove']),
+                       event.GetPosition())
+
+    def _on_view(self, event, **kwargs):
+        super(GUITableSystList, self)._on_view(event, **kwargs)
+        self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
+                       self._on_cell_right_click)

@@ -113,6 +113,35 @@ class Cookbook(object):
         systs._update(mod)
         return mod
 
+    def _mod_from_table(self, tab, row):
+        # Move to gui_table
+        systs = self.sess.systs
+        labels = np.array([tab.GetColLabelValue(i).split('\n')[0] \
+                  for i in range(tab.GetNumberCols())])
+        id = int(tab.GetCellValue(row, np.where(labels == 'id')[0][0]))
+        pars = ['z', 'logN', 'b']
+        vals = [float(tab.GetCellValue(row, np.where(labels == p)[0][0])) \
+                for p in pars]
+        cols = [tab.GetCellTextColour(row, np.where(labels == p)[0][0]) \
+                for p in pars]
+        for m in systs._mods_t:
+            if id in m['id']:
+                for p, v, c in zip(pars, vals, cols):
+                    par_name = 'lines_voigt_%i_%s' % (id, p)
+                    m['mod']._pars[par_name].set(value=v)
+                    m['mod']._pars[par_name].set(vary=True)
+                    if c == 'grey':
+                        m['mod']._pars[par_name].set(vary=False)
+                return m['mod']
+
+    def _constrain(self, par, id, value, vary):
+        systs = self.sess.systs
+        for m in systs._mods_t:
+            #m['mod']._pars.pretty_print()
+            m['mod']._pars['lines_voigt_%i_%s' % (id, par)].set(value=value)
+            m['mod']._pars['lines_voigt_%i_%s' % (id, par)].set(vary=vary)
+            #m['mod']._pars.pretty_print()
+
     def _merge_syst(self, merge_t, v_thres):
 
         dv_t = np.array([[ac.c.to(au.km/au.s).value*(z1-z2)/(1+z1)
@@ -239,7 +268,7 @@ class Cookbook(object):
                            b=s['b'], resol=resol)
             systs._update(mod)
         self.sess.systs._mods_t = systs._mods_t
-        
+
 
     def _update_spec(self):
         spec = self.sess.spec
