@@ -298,9 +298,13 @@ class GUITableSystList(GUITable):
         size_x = wx.DisplaySize()[0]*0.4*cols
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
+        self._gui._graph_det._graph._zem = []
+        self._gui._graph_det._graph._axes = []
         for i, s in enumerate(series):
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
+            self._gui._graph_det._graph._zem.append(zem)
+            xunit = self._gui._sess_sel.spec.x.unit
             self._gui._sess_sel.convert_x(zem=zem)
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
@@ -317,11 +321,12 @@ class GUITableSystList(GUITable):
                                                    sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
+            self._gui._graph_det._graph._axes.append(graph._ax)
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=s[-4:],
                 xlim=(-200, 200), ylim=ylim)
 
-            self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+            self._gui._sess_sel.convert_x(zem=zem, xunit=xunit)
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
