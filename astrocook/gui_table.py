@@ -314,11 +314,11 @@ class GUITableSystList(GUITable):
         cb = self._gui._sess_sel.cb
         #cb._fit_syst(series=series, z=z, logN=logN, b=b)
         mod = cb._mod_from_table(self._tab, row)
-        mod._pars.pretty_print()
+        #mod._pars.pretty_print()
         mod._fit()
-        mod._pars.pretty_print()
-        self._gui._sess_sel.systs._update(mod)
-        #cb._update_spec()
+        #mod._pars.pretty_print()
+        self._gui._sess_sel.systs._update(mod, mod_t=False)
+        cb._update_spec()
         self._gui._refresh()
 
     def _on_freeze_par(self, event):
