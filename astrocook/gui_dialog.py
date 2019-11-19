@@ -219,10 +219,13 @@ class GUIDialogMini(wx.Dialog):
 
     def _box_buttons(self):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
+        cancel_button = wx.Button(self, label='Cancel')
+        cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
         apply_button = wx.Button(self, label='Apply')
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         apply_button.SetDefault()
-        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+        buttons.Add(apply_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -232,3 +235,10 @@ class GUIDialogMini(wx.Dialog):
         self._gui._sess_sel._series_sel = self._ctrl.GetValue()
         self._targ(self._gui._sess_sel)
         self._gui._refresh()
+
+    def _on_cancel(self, e):
+        self._gui._cursor.Check(False)
+        del self._gui._sess_sel._series_sel
+        self._gui._graph_main._sel.remove('cursor_z_series')
+        self._gui._refresh()
+        self.Close()

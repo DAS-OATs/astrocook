@@ -87,22 +87,27 @@ class GUIMenu(object):
         item.IsChecked() == False
         self._gui._refresh()
         if dlg_mini:
-            self._on_dialog_mini(event, title, targ)
+            self._gui._cursor = item
+            if item.IsChecked():
+                self._on_dialog_mini(event, title, targ)
+            else:
+                self._gui._dlg_mini._on_cancel(event)
 
 
     def _refresh(self):
         # Nested loops! WOOOO!
+        sel = self._gui._graph_main._sel
         for a in seq:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable():
-                            item.Check(False)  # from .vars
+                            item.Check(False)
                         if getattr(self._gui._sess_sel, a) != None:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
-                                item.Check(item.key in graph_sel)  # from .vars
+                                item.Check(item.key in sel)  # from .vars
                         else:
                             item.Enable(False)
                     except:
