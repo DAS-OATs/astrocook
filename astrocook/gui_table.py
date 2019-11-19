@@ -34,17 +34,6 @@ class GUITable(wx.Frame):
                     self._tab.SetColSize(i, 150)
                     self._tab.SetColLabelValue(i, "%s\n%s" \
                                               % (n, str(self._data.t[n].unit)))
-                """
-                try:
-                    self._tab.SetCellValue(j, i, "%3.5f" % r[n])
-                except:
-                    if type(r[n]) == str:
-                        self._tab.SetCellValue(j, i, r[n])
-                    if type(r[n]) == OrderedDict:
-                        self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
-                    if type(r[n]) == dict:
-                        self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
-                """
                 if type(r[n]) == np.int64:
                     self._tab.SetCellValue(j, i, "%4i" % r[n])
                 elif type(r[n]) == str:
@@ -58,14 +47,24 @@ class GUITable(wx.Frame):
         self._tab.AutoSizeColumns(True)
 
 
-    def _init(self):
-        super(GUITable, self).__init__(parent=None, title=self._title,
-                                       size=(self._size_x, self._size_y))
+    def _init(self, from_scratch=True):
+        if from_scratch:
+            super(GUITable, self).__init__(parent=None, title=self._title,
+                                           size=(self._size_x, self._size_y))
 
-        self._panel = wx.Panel(self)
-        self._tab = gridlib.Grid(self._panel)
-        self._tab.CreateGrid(0, 0)
-        self.SetPosition((0, wx.DisplaySize()[1]*0.5))
+            self._panel = wx.Panel(self)
+            self._tab = gridlib.Grid(self._panel)
+            self._tab.CreateGrid(0, 0)
+            self.SetPosition((0, wx.DisplaySize()[1]*0.5))
+        else:
+            self._tab.DeleteRows(0, self._tab.GetNumberRows())
+
+        coln = len(self._data.t.colnames)
+        rown = len(self._data.t)-self._tab.GetNumberRows()
+        print(coln, rown)
+        self._tab.AppendCols(coln)
+        self._tab.AppendRows(rown)
+
 
     def _on_detail(self, event):
         if not hasattr(self._gui, '_graph_det'):
@@ -91,33 +90,16 @@ class GUITable(wx.Frame):
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
-        """
-        if self._attr == 'systs':
-            id = self._data.t['id'][row]
-            for i, m in enumerate(self._data._mods_t):
-                if id in m['id']:
-                    if len(m['id']) == 1:
-                        self._data._mods_t.remove_row(i)
-                    else:
-                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
-        self._data.t.remove_row(row)
-        """
         self._remove_data(row)
         self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
-        self._gui._panel_sess._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event),
                        event.GetPosition())
 
-    def _on_view(self, event):
+    def _on_view(self, event, from_scratch=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
@@ -125,12 +107,14 @@ class GUITable(wx.Frame):
             logging.info("I'm updating table...")
         except:
             logging.info("I'm loading table...")
-        self._init()
+        self._init(from_scratch)
+        """
         coln = len(self._data.t.colnames)
         #if not hasattr(self, '_tab'):
         rown = len(self._data.t)-self._tab.GetNumberRows()
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
+        """
         self._fill()
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
@@ -311,24 +295,10 @@ class GUITableSystList(GUITable):
         cb._fit_syst(series=series, z=z, logN=logN, b=b)
         cb._update_spec()
         #print(self._data._mods_t)
-        self._gui._panel_sess._refresh()
-        self._gui._panel_sess._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
-        self._gui._panel_sess._refresh()
-        self._gui._panel_sess._menu._refresh()
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()

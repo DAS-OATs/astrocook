@@ -93,14 +93,7 @@ class GUIDialog(wx.Dialog):
             out = m(**p_l)
             if out is not None:
                 if out is 0:
-                    self._gui._panel_sess._refresh()
-                    self._gui._panel_sess._menu._refresh()
-                    self._gui._graph_main._refresh(self._gui._sess_items)
-                    if hasattr(self._gui, '_graph_det'):
-                        xlim = self._gui._graph_det._graph._ax.get_xlim()
-                        ylim = self._gui._graph_det._graph._ax.get_ylim()
-                        self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                                      ylim=ylim)
+                    self._gui._refresh()
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
@@ -226,10 +219,13 @@ class GUIDialogMini(wx.Dialog):
 
     def _box_buttons(self):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
+        cancel_button = wx.Button(self, label='Cancel')
+        cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
         apply_button = wx.Button(self, label='Apply')
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         apply_button.SetDefault()
-        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+        buttons.Add(apply_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -238,9 +234,11 @@ class GUIDialogMini(wx.Dialog):
     def _on_apply(self, e):
         self._gui._sess_sel._series_sel = self._ctrl.GetValue()
         self._targ(self._gui._sess_sel)
-        self._gui._graph_main._refresh(self._gui._sess_items)
-        if hasattr(self._gui, '_graph_det'):
-            xlim = self._gui._graph_det._graph._ax.get_xlim()
-            ylim = self._gui._graph_det._graph._ax.get_ylim()
-            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                          ylim=ylim)
+        self._gui._refresh()
+
+    def _on_cancel(self, e):
+        self._gui._cursor.Check(False)
+        del self._gui._sess_sel._series_sel
+        self._gui._graph_main._sel.remove('cursor_z_series')
+        self._gui._refresh()
+        self.Close()
