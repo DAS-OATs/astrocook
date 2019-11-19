@@ -50,7 +50,12 @@ class GUI(object):
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
-        self._graph_main._refresh(self._sess_items)
+        xlim = self._graph_main._graph._ax.get_xlim()
+        ylim = self._graph_main._graph._ax.get_ylim()
+        if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
+            self._graph_main._refresh(self._sess_items)
+        else:
+            self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         if hasattr(self, '_graph_det'):
             xlim = self._graph_det._graph._ax.get_xlim()
             ylim = self._graph_det._graph._ax.get_ylim()

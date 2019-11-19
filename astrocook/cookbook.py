@@ -25,7 +25,7 @@ class Cookbook(object):
 
     def _append_syst(self):
         systs = self.sess.systs
-        if systs != None:
+        if systs != None and len(systs.t) != 0:
             #systs._append(SystList(id_start=len(systs._t)))
             systs._append(SystList(id_start=np.max(systs._t['id'])+1))
         else:
@@ -226,6 +226,20 @@ class Cookbook(object):
 
         return 0
 
+    def _update_mods(self, resol=70000.0):
+        """ Create new system models from a system list """
+        spec = self.sess.spec
+        systs = dc(self.sess.systs)
+        systs._mods_t.remove_rows(range(len(systs._mods_t)))
+        for i in range(len(systs._t)):
+            s = systs._t[i]
+            systs._id = s['id']
+            mod = SystModel(spec, systs, z0=s['z0'])
+            mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                           b=s['b'], resol=resol)
+            systs._update(mod)
+        self.sess.systs._mods_t = systs._mods_t
+        
 
     def _update_spec(self):
         spec = self.sess.spec

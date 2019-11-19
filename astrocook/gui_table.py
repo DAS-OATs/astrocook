@@ -57,11 +57,11 @@ class GUITable(wx.Frame):
             self._tab.CreateGrid(0, 0)
             self.SetPosition((0, wx.DisplaySize()[1]*0.5))
         else:
-            self._tab.DeleteRows(0, self._tab.GetNumberRows())
+            if self._tab.GetNumberRows() != 0:
+                self._tab.DeleteRows(0, self._tab.GetNumberRows())
 
         coln = len(self._data.t.colnames)
         rown = len(self._data.t)-self._tab.GetNumberRows()
-        print(coln, rown)
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
 
@@ -91,7 +91,8 @@ class GUITable(wx.Frame):
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
         self._remove_data(row)
-        self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
+        self._gui._sess_sel.cb._update_spec()
+        #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
         self._gui._refresh()
 
@@ -127,6 +128,8 @@ class GUITable(wx.Frame):
         self.Show()
 
     def _remove_data(self, row):
+
+        """
         if self._attr == 'systs':
             id = self._data.t['id'][row]
             for i, m in enumerate(self._data._mods_t):
@@ -134,8 +137,11 @@ class GUITable(wx.Frame):
                     if len(m['id']) == 1:
                         self._data._mods_t.remove_row(i)
                     else:
-                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
+                        self._data._mods_t['id'][i].remove(id)
+        """
         self._data.t.remove_row(row)
+        if self._attr == 'systs':
+            self._gui._sess_sel.cb._update_mods()
 
 
 class GUITableLineList(GUITable):
@@ -294,7 +300,6 @@ class GUITableSystList(GUITable):
         cb = self._gui._sess_sel.cb
         cb._fit_syst(series=series, z=z, logN=logN, b=b)
         cb._update_spec()
-        #print(self._data._mods_t)
         self._gui._refresh()
 
     def _on_improve(self, event):
