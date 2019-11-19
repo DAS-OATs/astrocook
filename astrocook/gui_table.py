@@ -91,7 +91,18 @@ class GUITable(wx.Frame):
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
+        """
+        if self._attr == 'systs':
+            id = self._data.t['id'][row]
+            for i, m in enumerate(self._data._mods_t):
+                if id in m['id']:
+                    if len(m['id']) == 1:
+                        self._data._mods_t.remove_row(i)
+                    else:
+                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
         self._data.t.remove_row(row)
+        """
+        self._remove_data(row)
         self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
         self._gui._panel_sess._refresh()
@@ -131,6 +142,16 @@ class GUITable(wx.Frame):
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
 
+    def _remove_data(self, row):
+        if self._attr == 'systs':
+            id = self._data.t['id'][row]
+            for i, m in enumerate(self._data._mods_t):
+                if id in m['id']:
+                    if len(m['id']) == 1:
+                        self._data._mods_t.remove_row(i)
+                    else:
+                        self._data._mods_t['id'][i] = self._data._mods_t['id'][i].remove(id)
+        self._data.t.remove_row(row)
 
 
 class GUITableLineList(GUITable):
@@ -182,6 +203,13 @@ class GUITablePopup(wx.Menu):
         #self.Bind(wx.EVT_MENU, self._parent._on_show, show)
         #self.Append(show)
 
+        if isinstance(self._parent, GUITableSystList):
+            fit = wx.MenuItem(self, wx.NewId(), 'Fit...')
+            improve = wx.MenuItem(self, wx.NewId(), 'Improve...')
+            self.Bind(wx.EVT_MENU, self._parent._on_fit, fit)
+            self.Bind(wx.EVT_MENU, self._parent._on_improve, improve)
+            self.Append(fit)
+            self.Append(improve)
         remove = wx.MenuItem(self, wx.NewId(), 'Remove')
         self.Bind(wx.EVT_MENU, self._parent._on_remove, remove)
         self.Append(remove)
@@ -225,6 +253,18 @@ class GUITableSystList(GUITable):
         else:
             self._gui._graph_det._graph._fig.clear()
 
+        # Color background of systems in the same group
+        mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
+                             for i in self._gui._sess_sel.systs._mods_t['id']])
+        for j, r in enumerate(self._data.t):
+            for i in range(len(self._data.t.colnames)):
+                if r['id'] in np.array(self._gui._sess_sel.systs._mods_t['id'][mods_sel][0]):
+                    self._tab.SetCellBackgroundColour(j, i, 'cyan')
+                else:
+                    self._tab.SetCellBackgroundColour(j, i, None)
+        self._tab.ForceRefresh()
+
+
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         graph = self._gui._graph_det._graph
@@ -255,6 +295,40 @@ class GUITableSystList(GUITable):
             graph._fig.subplots_adjust(hspace=0.)
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=s[-4:],
-                xlim=(-100, 100), ylim=ylim)
+                xlim=(-200, 200), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=au.nm)
+
+    def _on_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        series = self._tab.GetCellValue(row, 1)
+        z = float(self._tab.GetCellValue(row, 3))
+        logN = float(self._tab.GetCellValue(row, 5))
+        b = float(self._tab.GetCellValue(row, 7))
+        #self._data.t.remove_row(row)
+        self._remove_data(row)
+        cb = self._gui._sess_sel.cb
+        cb._fit_syst(series=series, z=z, logN=logN, b=b)
+        cb._update_spec()
+        #print(self._data._mods_t)
+        self._gui._panel_sess._refresh()
+        self._gui._panel_sess._menu._refresh()
+        self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
+
+    def _on_improve(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        z = float(self._tab.GetCellValue(row, 3))
+        self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
+        self._gui._panel_sess._refresh()
+        self._gui._panel_sess._menu._refresh()
+        self._gui._graph_main._refresh(self._gui._sess_items)
+        if hasattr(self._gui, '_graph_det'):
+            xlim = self._gui._graph_det._graph._ax.get_xlim()
+            ylim = self._gui._graph_det._graph._ax.get_ylim()
+            self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
+                                          ylim=ylim)
