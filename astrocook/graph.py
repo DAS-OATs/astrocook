@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
+import wx
 
 class Graph(object):
 
@@ -55,6 +56,22 @@ class Graph(object):
             getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
+    def _on_click(self, event):
+        if not event.inaxes: return
+        if event.button != 3: return
+        x = float(event.xdata)
+        y = float(event.ydata)
+        from .gui_table import GUITablePopup
+        if self._panel is self._gui._graph_main._panel:
+            focus = self._gui._graph_main
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                focus = self._gui._graph_det
+        focus._click_xy = (x,y)
+        focus.PopupMenu(
+            GUITablePopup(self._gui, self._gui._graph_main, event, ['add_line'],
+                          ['add_line']))
+
     def _on_move(self, event):
         if not event.inaxes: return
         x = float(event.xdata)
@@ -66,36 +83,30 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         if 'cursor_z_series' in self._sel:
-            z = (x/self._cursor_xmean.to(sess.spec._xunit).value)-1
-            for c, xem in zip(self._cursor, self._cursor_xem):
-                #print(c.get_xdata()[0]*conv)
-                #print((xem*(1+z)*au.nm).to(sess.spec._xunit))
-                c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
-                c.set_alpha(0.5)
-            self._canvas.draw()
-            focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                    % (x, y, self._cursor_series, z))
+            if hasattr(self, '_canvases'):
+                for canvas, cursor in zip(self._canvases, self._cursors):
+                    print(canvas, cursor)
+                    #z = (x/self._cursor_xmean.to(sess.spec._xunit).value)-1
+                    z = (x/cursor._xmean.to(sess.spec._xunit).value)-1
+                    for c, xem in zip(cursor._lines, cursor._xem):
+                        c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
+                        c.set_alpha(0.5)
+                    canvas.draw()
+                focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                                        % (x, y, cursor._series, z))
+            else:
+                z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
+                for c, xem in zip(self._cursor._lines, self._cursor._xem):
+                    #print(c.get_xdata()[0]*conv)
+                    #print((xem*(1+z)*au.nm).to(sess.spec._xunit))
+                    c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
+                    c.set_alpha(0.5)
+                self._canvas.draw()
+                focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                                        % (x, y, self._cursor._series, z))
         else:
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
-        """
-        if self._panel is self._gui._graph_main._panel:
-            if 'cursor_z_series' in self._sel:
-                self._gui._graph_main._textbar.SetLabel(
-                    "x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                    % (x, y, self._cursor_series, z))
-            else:
-                self._gui._graph_main._textbar.SetLabel(
-                    "x=%2.4f, y=%2.4e" % (x, y))
-        if hasattr(self._gui, '_graph_det'):
-            if self._panel is self._gui._graph_det._panel:
-                if 'cursor_z_series' in self._sel:
-                    self._gui._graph_det._textbar.SetLabel(
-                        "x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                        % (x, y, self._cursor_series, z))
-                else:
-                    self._gui._graph_det._textbar.SetLabel(
-                        "x=%2.4f, y=%2.4e" % (x, y))
-        """
+
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
                  ylim=None, title=None, text=None):
@@ -122,7 +133,6 @@ class Graph(object):
                              'spec_x_deabs': (GraphSpectrumXDeabs,cmc[9],0.5),
                              'systs_z_series': (GraphSystListZSeries,cmc[2],1.0),
                              'cursor_z_series': (GraphCursorZSeries,cmc[2],0.5)}
-        #print(self._sel)
         self._canvas_l = [self._canvas_dict[s][0] for s in self._sel]
         self._color_l = [self._canvas_dict[s][1] for s in self._sel]
         self._alpha_l = [self._canvas_dict[s][2] for s in self._sel]
@@ -193,15 +203,13 @@ class Graph(object):
                         gs._kwargs.pop('label', None)
                         #print("after", x,t)
                 elif gs._type == 'axvline_special':
-                    self._cursor_series = gs._series
-                    self._cursor_xem = gs._xem
-                    self._cursor_xmean = gs._xmean
-                    self._cursor_z = gs._z
-                    self._cursor = []
+                    self._cursor = gs
+                    self._cursor._lines = []
+                    print(gs._x)
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
-                        self._cursor.append(
+                        self._cursor._lines.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=1.5,
@@ -374,6 +382,10 @@ class GraphCursorZSeries(object):
         #                      for s in series_d[self._series]])
         self._xem = np.array([xem_d[t].value for t in parse(self._series)])
         self._xmean = np.mean(self._xem)*au.nm
-        self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
-        self._x = self._xem*(1+self._z)*au.nm
+        try:
+            self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
+            self._x = self._xem*(1+self._z)*au.nm
+        except:
+            self._z = 0
+            self._x = [0*au.km/au.s]
         self._kwargs = {'label':self._series, 'linestyle': '--'}

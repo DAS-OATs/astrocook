@@ -21,6 +21,14 @@ class LineList(Frame):
         super(LineList, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
 
+    def _add(self, x, xmin, xmax, y, dy):
+        """ @brief Add a system to a system list.
+        """
+
+        self._t.add_row([x, xmin, xmax, y, dy])
+
+        return 0
+
     def _copy(self, sel=None):
         copy = super(LineList, self)._copy(sel)
         cols = [c for c in self._t.colnames \

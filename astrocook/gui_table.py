@@ -1,4 +1,3 @@
-from .gui_graph import GUIGraphDetail
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -68,6 +67,7 @@ class GUITable(wx.Frame):
 
     def _on_detail(self, event):
         if not hasattr(self._gui, '_graph_det'):
+            from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
@@ -272,6 +272,7 @@ class GUITableSystList(GUITable):
 
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
+            from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         #elif len(self._gui._graph_det._graph._fig.axes) == 1:
         else:
@@ -298,12 +299,14 @@ class GUITableSystList(GUITable):
         size_x = wx.DisplaySize()[0]*0.4*cols
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
-        self._gui._graph_det._graph._zem = []
-        self._gui._graph_det._graph._axes = []
+        graph._zem = []
+        graph._axes = []
+        graph._canvases = []
+        graph._cursors = []
         for i, s in enumerate(series):
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
-            self._gui._graph_det._graph._zem.append(zem)
+            graph._zem.append(zem)
             xunit = self._gui._sess_sel.spec.x.unit
             self._gui._sess_sel.convert_x(zem=zem)
             self._gui._sess_sel._xdet = x
@@ -321,7 +324,10 @@ class GUITableSystList(GUITable):
                                                    sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
-            self._gui._graph_det._graph._axes.append(graph._ax)
+            graph._axes.append(graph._ax)
+            graph._canvases.append(graph._canvas)
+            if hasattr(graph, '_cursor'):
+                graph._cursors.append(graph._cursor)
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=s[-4:],
                 xlim=(-200, 200), ylim=ylim)
