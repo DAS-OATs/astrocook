@@ -299,12 +299,22 @@ class GUITableSystList(GUITable):
         size_x = wx.DisplaySize()[0]*0.4*cols
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
-        graph._zems = []
-        graph._axes = []
+
+        # Redshift and wavelengths need to be initialized before the cursor
+        # is created in the graph
+        graph._zems = {}
+        graph._xs = {}
+        graph._axes = {}
         for i, s in enumerate(series):
+            key = s[-4:]
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
-            graph._zems.append(zem)
+            #print('out', xem_d[s], graph._zem, graph._x)
+            graph._zems[key] = zem
+            graph._xs[key] = x
+
+        #graph._axes = []
+        #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
             xunit = self._gui._sess_sel.spec.x.unit
             self._gui._sess_sel.convert_x(zem=zem)
             self._gui._sess_sel._xdet = x
@@ -322,10 +332,10 @@ class GUITableSystList(GUITable):
                                                    sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
-            graph._axes.append(graph._ax)
+            graph._axes[key] = graph._ax
             self._gui._graph_det._refresh(
-                self._gui._sess_items, title=title, text=s[-4:],
-                xlim=(-200, 200), ylim=ylim)
+                self._gui._sess_items, title=title, text=key,
+                xlim=(-400, 400), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=xunit)
 

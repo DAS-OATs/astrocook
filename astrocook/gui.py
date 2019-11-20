@@ -62,18 +62,18 @@ class GUI(object):
         if hasattr(self, '_graph_det'):
             graph = self._graph_det._graph
             if hasattr(graph, '_axes'):
-                for zem, ax in zip(graph._zems, graph._axes):
+                for key in graph._zems:
                     xunit = self._sess_sel.spec.x.unit
-                    self._sess_sel.convert_x(zem=zem)
-                    graph._ax = ax
+                    self._sess_sel.convert_x(zem=graph._zems[key])
+                    graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
                     if autolim:
-                        self._graph_det._refresh(self._sess_items,
+                        self._graph_det._refresh(self._sess_items, text=key,
                                                  xlim=xlim_det, ylim=ylim_det)
                     else:
-                        self._graph_det._refresh(self._sess_items)
-                    self._sess_sel.convert_x(zem=zem, xunit=xunit)
+                        self._graph_det._refresh(self._sess_items, text=key)
+                    self._sess_sel.convert_x(zem=graph._zems[key], xunit=xunit)
             else:
                 xlim_det = graph._ax.get_xlim()
                 ylim_det = graph._ax.get_ylim()
