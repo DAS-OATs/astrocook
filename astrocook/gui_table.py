@@ -299,14 +299,12 @@ class GUITableSystList(GUITable):
         size_x = wx.DisplaySize()[0]*0.4*cols
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
-        graph._zem = []
+        graph._zems = []
         graph._axes = []
-        graph._canvases = []
-        graph._cursors = []
         for i, s in enumerate(series):
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
-            graph._zem.append(zem)
+            graph._zems.append(zem)
             xunit = self._gui._sess_sel.spec.x.unit
             self._gui._sess_sel.convert_x(zem=zem)
             self._gui._sess_sel._xdet = x
@@ -325,9 +323,6 @@ class GUITableSystList(GUITable):
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
             graph._axes.append(graph._ax)
-            graph._canvases.append(graph._canvas)
-            if hasattr(graph, '_cursor'):
-                graph._cursors.append(graph._cursor)
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=s[-4:],
                 xlim=(-200, 200), ylim=ylim)

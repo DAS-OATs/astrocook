@@ -70,7 +70,7 @@ class GUIGraphMain(wx.Frame):
     def _on_add_syst(self, event):
         sess = self._gui._sess_sel
         for s in sess._series_sel.split(','):
-            sess.add_syst(series=s, z=self._graph._cursor._z)
+            sess.add_syst(series=sess._series_sel, z=self._graph._cursor._z)
         self._gui._refresh()
 
     def _on_close(self, event):

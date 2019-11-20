@@ -2,7 +2,8 @@ from .message import *
 from .functions import parse
 from .vars import *
 from astropy import units as au
-#from copy import deepcopy as dc
+from astropy import constants as aconst
+from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
@@ -23,6 +24,7 @@ class Graph(object):
         self._sel = sel
         self._legend = legend
         self._fig = Figure()
+        self._cursor_lines = []
 
         if init_canvas:
             self._init_canvas()
@@ -93,20 +95,18 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         if 'cursor_z_series' in self._sel:
-            if hasattr(self, '_canvases'):
-                for canvas, cursor in zip(self._canvases, self._cursors):
-                    print(canvas, cursor)
-                    #z = (x/self._cursor_xmean.to(sess.spec._xunit).value)-1
-                    z = (x/cursor._xmean.to(sess.spec._xunit).value)-1
-                    for c, xem in zip(cursor._lines, cursor._xem):
+            if hasattr(self, '_cursor_lines'):
+                for l in self._cursor_lines:
+                    z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
+                    for c, xem in zip(l, self._cursor._xem):
                         c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                         c.set_alpha(0.5)
-                    canvas.draw()
+                self._canvas.draw()
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                        % (x, y, cursor._series, z))
+                                        % (x, y, self._cursor._series, z))
             else:
                 z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
-                for c, xem in zip(self._cursor._lines, self._cursor._xem):
+                for c, xem in zip(self._cursor_line, self._cursor._xem):
                     #print(c.get_xdata()[0]*conv)
                     #print((xem*(1+z)*au.nm).to(sess.spec._xunit))
                     c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
@@ -215,16 +215,16 @@ class Graph(object):
                         #print("after", x,t)
                 elif gs._type == 'axvline_special':
                     self._cursor = gs
-                    self._cursor._lines = []
-                    print(gs._x)
+                    self._cursor_line = []
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
-                        self._cursor._lines.append(
+                        self._cursor_line.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=1.5,
                                 **gs._kwargs))
+                    self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(self._ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
@@ -396,7 +396,25 @@ class GraphCursorZSeries(object):
         try:
             self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
             self._x = self._xem*(1+self._z)*au.nm
+            print(self._x)
         except:
-            self._z = 0
-            self._x = [0*au.km/au.s]
+            #self._z = 0
+            #self._x = [0*au.km/au.s]
+
+            spec = dc(sess.spec)
+            spec._convert_x(zem=spec._zem, xunit=spec._xunit_old)
+            print(spec._zem)
+            self._z = np.mean(spec.x).to(au.nm).value/self._xmean.value-1.0
+            self._x = self._xem*(1+self._z)*au.nm
+            print(self._x)
+            xem = (1+sess.spec._zem) * 121.567*au.nm
+            print(xem)
+            equiv = [(au.nm, au.km/au.s,
+                     lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                     lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+            print(equiv)
+
+            self._x = self._x.to(au.km/au.s, equivalencies=equiv)
+            print(self._x)
+            #self._x = 0.0*self._xem*(1+self._z)*au.km/au.s
         self._kwargs = {'label':self._series, 'linestyle': '--'}
