@@ -1,4 +1,6 @@
 from .graph import Graph
+from .gui_dialog import GUIDialogMini
+from .syst_list import SystList
 from .vars import graph_sel
 import numpy as np
 import wx
@@ -64,6 +66,12 @@ class GUIGraphMain(wx.Frame):
 
     def _on_add_line(self, event):
         print(self._click_xy)
+
+    def _on_add_syst(self, event):
+        sess = self._gui._sess_sel
+        for s in sess._series_sel.split(','):
+            sess.add_syst(series=s, z=self._graph._cursor._z)
+        self._gui._refresh()
 
     def _on_close(self, event):
         self._closed = True

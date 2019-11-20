@@ -197,7 +197,7 @@ class GUIDialogMini(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
-                 targ):
+                 targ=None):
         self._gui = gui
         self._gui._dlg_mini = self
         self._targ = targ
@@ -213,8 +213,11 @@ class GUIDialogMini(wx.Dialog):
         self.Show()
 
     def _box_ctrl(self):
-        self._ctrl = wx.TextCtrl(self._panel, -1, value='CIV', size=(200, -1))
-        self._core.Add(self._ctrl, flag=wx.ALL|wx.EXPAND)
+        self._ctrl = []
+        ctrl = wx.TextCtrl(self._panel, -1, value='CIV', size=(200, -1))
+        self._gui._sess_sel._series_sel = 'CIV'
+        self._ctrl.append(ctrl)
+        self._core.Add(ctrl, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
     def _box_buttons(self):
@@ -232,13 +235,16 @@ class GUIDialogMini(wx.Dialog):
         self._bottom.SetSizeHints(self)
 
     def _on_apply(self, e):
-        self._gui._sess_sel._series_sel = self._ctrl.GetValue()
-        self._targ(self._gui._sess_sel)
+        self._gui._sess_sel._series_sel = self._ctrl[0].GetValue()
+        if self._targ != None:
+            self._targ(self._gui._sess_sel)
         self._gui._refresh()
 
     def _on_cancel(self, e):
-        self._gui._cursor.Check(False)
-        del self._gui._sess_sel._series_sel
-        self._gui._graph_main._sel.remove('cursor_z_series')
+        if hasattr(self._gui, '_cursor'):
+            self._gui._cursor.Check(False)
+            self._gui._graph_main._sel.remove('cursor_z_series')
+        if hasattr(self._gui._sess_sel, '_series_sel'):
+            del self._gui._sess_sel._series_sel
         self._gui._refresh()
         self.Close()

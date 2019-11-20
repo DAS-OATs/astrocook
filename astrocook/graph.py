@@ -68,9 +68,19 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         focus._click_xy = (x,y)
-        focus.PopupMenu(
-            GUITablePopup(self._gui, self._gui._graph_main, event, ['add_line'],
-                          ['add_line']))
+        if 'cont' in self._gui._sess_sel.spec._t.colnames \
+            and 'cursor_z_series' in self._sel:
+            focus.PopupMenu(
+                    GUITablePopup(self._gui, self._gui._graph_main, event,
+                                  ['Add lines', 'Add system'],
+                                  ['add_line', 'add_syst']))
+        elif 'cursor_z_series' in self._sel:
+            focus.PopupMenu(GUITablePopup(self._gui, self._gui._graph_main,
+                                          event, 'Add lines', 'add_line'))
+        else:
+            focus.PopupMenu(GUITablePopup(self._gui, self._gui._graph_main,
+                                          event, 'Add line', 'add_line'))
+
 
     def _on_move(self, event):
         if not event.inaxes: return
@@ -104,6 +114,7 @@ class Graph(object):
                 self._canvas.draw()
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
                                         % (x, y, self._cursor._series, z))
+            self._cursor._z = z
         else:
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
 
