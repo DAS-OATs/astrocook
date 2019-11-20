@@ -302,9 +302,10 @@ class GUITableSystList(GUITable):
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph
+        graph._axes = {}
         graph._zems = {}
         graph._xs = {}
-        graph._axes = {}
+        graph._series = {}
         for i, s in enumerate(series):
             key = s[-4:]
             x = (1+row['z'])*xem_d[s]
@@ -312,6 +313,7 @@ class GUITableSystList(GUITable):
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
+            graph._series[key] = s
 
         #graph._axes = []
         #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
