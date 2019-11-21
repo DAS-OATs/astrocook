@@ -302,18 +302,22 @@ class GUITableSystList(GUITable):
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph
-        graph._axes = {}
-        graph._zems = {}
-        graph._xs = {}
-        graph._series = {}
+        graph._axes = OrderedDict()
+        graph._zems = OrderedDict()
+        graph._xs = OrderedDict()
+        graph._series = OrderedDict()
         for i, s in enumerate(series):
-            key = s[-4:]
+            #key = s[-4:]
+            key = s.split('_')[-1]
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
             graph._series[key] = s
+            if i == 0:
+                graph._x = x
+                graph._zem = zem
 
         #graph._axes = []
         #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
@@ -337,7 +341,7 @@ class GUITableSystList(GUITable):
             graph._axes[key] = graph._ax
             self._gui._graph_det._refresh(
                 self._gui._sess_items, title=title, text=key,
-                xlim=(-400, 400), ylim=ylim)
+                xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=xunit)
 

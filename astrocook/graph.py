@@ -95,7 +95,7 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         if 'cursor_z_series' in self._sel:
-            if hasattr(self, '_cursor_lines'):
+            if hasattr(self, '_xs'):
                 """
                 if self._text != None:
                     gs = self._cursor
@@ -107,24 +107,45 @@ class Graph(object):
                              lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                     gs._x = gs._x.to(au.km/au.s, equivalencies=equiv)
                 """
+                for l, key in zip(self._cursor_lines, self._xs):
+                    if self._text != None:
+                        """
+                        xem = self._xs[key]
+                        #print(xem)
+                        #xem = np.mean([self._xs[i].value for i in self._xs])*self._xs[self._text].unit
+                        equiv = [(au.nm, au.km/au.s,
+                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+                        x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv)
+                        print(x_nm)
+                        #z = x_nm/xem_d[self._series[self._text]]-1
+                        z = x_nm/(np.min(self._cursor._xem)*au.nm)-1
+                        #print(z)
+                        #z = x_nm/(np.mean([xem_d[self._series[i]].value for i in self._series])*xem_d[self._series[self._text]].unit)-1
+                        self._cursor._x = self._cursor._xem*(1+z)*au.nm
+                        #print(self._cursor._xem, self._cursor._x)
+                        self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv)
+                        #print(self._cursor._x)
+                        """
+                        #xem = self._xs[key]
+                        xem = self._x
+                        equiv1 = [(au.nm, au.km/au.s,
+                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+                        x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv1)
+                        z = x_nm/(np.min(self._cursor._xem)*au.nm)-1
+                        self._cursor._x = self._cursor._xem*(1+z)*au.nm
+                        #xem = self._x
+                        xem = self._xs[key]
+                        equiv2 = [(au.nm, au.km/au.s,
+                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+                        self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv2)
+                        print(key, xem, x_nm, z, self._cursor._x)
+                    else:
+                        z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
+                        self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
 
-                if self._text != None:
-                    xem = self._xs[self._text]
-                    #xem = np.mean([self._xs[i].value for i in self._xs])*self._xs[self._text].unit
-                    equiv = [(au.nm, au.km/au.s,
-                             lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                             lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                    x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv)
-                    z = x_nm/xem_d[self._series[self._text]]-1
-                    #z = x_nm/(np.mean([xem_d[self._series[i]].value for i in self._series])*xem_d[self._series[self._text]].unit)-1
-                    self._cursor._x = self._cursor._xem*(1+z)*au.nm
-                    #print(self._cursor._x)
-                    self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv)
-                    #print(self._cursor._x)
-                else:
-                    z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
-                    self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
-                for l in self._cursor_lines:
                     for c, xi in zip(l, self._cursor._x):
                         c.set_xdata(xi)
                         c.set_alpha(0.5)
@@ -135,9 +156,9 @@ class Graph(object):
                             c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                             c.set_alpha(0.5)
                     """
-                self._canvas.draw()
-                focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                        % (x, y, self._cursor._series, z))
+                    self._canvas.draw()
+                    focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
+                                            % (x, y, self._cursor._series, z))
             else:
                 z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
                 for c, xem in zip(self._cursor_line, self._cursor._xem):
@@ -252,9 +273,13 @@ class Graph(object):
                     self._cursor = gs
                     self._cursor_line = []
                     if gs._z == 0:
-                        gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
+                        #gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
+                        #print('gs_xem', gs._xem)
+                        gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
+                        #xem = self._x
+                        #print(xem)
                         equiv = [(au.nm, au.km/au.s,
                                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
                                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
