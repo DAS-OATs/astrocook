@@ -45,34 +45,48 @@ class GUI(object):
         else:
             self._panel_sess._on_open(path)
 
-    def _refresh(self):
+    def _refresh(self, autolim=True, init_cursor=False):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
         xlim = self._graph_main._graph._ax.get_xlim()
         ylim = self._graph_main._graph._ax.get_ylim()
+        goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
-            self._graph_main._refresh(self._sess_items)
-        else:
+            goodlim = False
+        if autolim and goodlim and 1==0:
             self._graph_main._refresh(self._sess_items, xlim=xlim)
+        else:
+            self._graph_main._refresh(self._sess_items)
         if hasattr(self, '_graph_det'):
             graph = self._graph_det._graph
             if hasattr(graph, '_axes'):
-                for zem, ax in zip(graph._zem, graph._axes):
+                for key in graph._zems:
                     xunit = self._sess_sel.spec.x.unit
-                    self._sess_sel.convert_x(zem=zem)
-                    graph._ax = ax
+                    self._sess_sel.convert_x(zem=graph._zems[key])
+                    graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
-                    self._graph_det._refresh(self._sess_items, xlim=xlim_det,
-                                             ylim=ylim_det)
-                    self._sess_sel.convert_x(zem=zem, xunit=xunit)
+                    if autolim:
+                        self._graph_det._refresh(self._sess_items, text=key,
+                                                 xlim=xlim_det, ylim=ylim_det,
+                                                 init_cursor=init_cursor)
+                    else:
+                        self._graph_det._refresh(self._sess_items, text=key,
+                                                 init_cursor=init_cursor)
+                    init_cursor = False
+                    self._sess_sel.convert_x(zem=graph._zems[key], xunit=xunit)
             else:
                 xlim_det = graph._ax.get_xlim()
                 ylim_det = graph._ax.get_ylim()
-                self._graph_det._refresh(self._sess_items, xlim=xlim_det,
-                                         ylim=ylim_det)
+                if autolim:
+                    self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                             ylim=ylim_det,
+                                             init_cursor=init_cursor)
+                else:
+                    self._graph_det._refresh(self._sess_items,
+                                             init_cursor=init_cursor)
 
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):
@@ -168,7 +182,7 @@ class GUIPanelSession(wx.Frame):
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
-        self._gui._refresh()
+        self._gui._refresh(autolim=False)
 
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()

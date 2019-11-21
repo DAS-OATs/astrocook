@@ -1,4 +1,3 @@
-from .gui_graph import GUIGraphDetail
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -68,6 +67,7 @@ class GUITable(wx.Frame):
 
     def _on_detail(self, event):
         if not hasattr(self._gui, '_graph_det'):
+            from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
@@ -82,8 +82,9 @@ class GUITable(wx.Frame):
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
+        self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                      ylim=ylim)
+                                      ylim=ylim)#, init_cursor=True)
 
     def _on_close(self, event):
         self.Destroy()
@@ -94,7 +95,7 @@ class GUITable(wx.Frame):
         self._gui._sess_sel.cb._update_spec()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove','remove'),
@@ -272,6 +273,7 @@ class GUITableSystList(GUITable):
 
     def _on_detail(self, event, span=30):
         if not hasattr(self._gui, '_graph_det'):
+            from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         #elif len(self._gui._graph_det._graph._fig.axes) == 1:
         else:
@@ -298,12 +300,29 @@ class GUITableSystList(GUITable):
         size_x = wx.DisplaySize()[0]*0.4*cols
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
-        self._gui._graph_det._graph._zem = []
-        self._gui._graph_det._graph._axes = []
+
+        # Redshift and wavelengths need to be initialized before the cursor
+        # is created in the graph
+        graph._axes = OrderedDict()
+        graph._zems = OrderedDict()
+        graph._xs = OrderedDict()
+        graph._series = OrderedDict()
+        graph._cursor_lines = []
         for i, s in enumerate(series):
+            #key = s[-4:]
+            key = s.split('_')[-1]
             x = (1+row['z'])*xem_d[s]
             zem = (1+row['z'])*xem_d[s]/xem_d['Ly_a']-1
-            self._gui._graph_det._graph._zem.append(zem)
+            #print('out', xem_d[s], graph._zem, graph._x)
+            graph._zems[key] = zem
+            graph._xs[key] = x
+            graph._series[key] = s
+            if i == 0:
+                graph._x = x
+                graph._zem = zem
+
+        #graph._axes = []
+        #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
             xunit = self._gui._sess_sel.spec.x.unit
             self._gui._sess_sel.convert_x(zem=zem)
             self._gui._sess_sel._xdet = x
@@ -321,10 +340,10 @@ class GUITableSystList(GUITable):
                                                    sharex=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
-            self._gui._graph_det._graph._axes.append(graph._ax)
+            graph._axes[key] = graph._ax
             self._gui._graph_det._refresh(
-                self._gui._sess_items, title=title, text=s[-4:],
-                xlim=(-200, 200), ylim=ylim)
+                self._gui._sess_items, title=title, text=key,
+                xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.convert_x(zem=zem, xunit=xunit)
 
@@ -339,7 +358,7 @@ class GUITableSystList(GUITable):
         mod._fit()
         self._gui._sess_sel.systs._update(mod, mod_t=False)
         cb._update_spec()
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_freeze_par(self, event):
         popup = self._gui._tab_popup
@@ -359,7 +378,7 @@ class GUITableSystList(GUITable):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event,
