@@ -1025,7 +1025,8 @@ class Session(object):
 
         for s in self.seq:
             try:
-                getattr(self, s)._shift_rf(z)
+                z_to = z-getattr(self, s)._rfz
+                getattr(self, s)._shift_rf(z_to)
             except:
                 pass
         return 0

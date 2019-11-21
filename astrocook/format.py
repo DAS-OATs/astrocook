@@ -190,6 +190,8 @@ class Format(object):
         dy = data[:][2]#*data[:][3]
         x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
+        cont = np.ones(len(x))
+        sel = np.where(y != 1)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
         meta = {'instr': 'UVES'}

@@ -193,7 +193,7 @@ class Graph(object):
 
         cmc = plt.cm.get_cmap('tab10').colors
         self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,cmc[0],1.0),
-                             'spec_x_y_det': (GraphSpectrumXYDetail,cmc[0],1.0),
+                             #'spec_x_y_det': (GraphSpectrumXYDetail,cmc[0],1.0),
                              'spec_x_dy': (GraphSpectrumXDy,cmc[0],0.5),
                              'spec_x_conv': (GraphSpectrumXConv,cmc[3],0.5),
                              'lines_x_y': (GraphLineListXY,cmc[2],1.0),

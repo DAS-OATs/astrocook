@@ -31,7 +31,7 @@ class GUIMenu(object):
         bar.Append(self._snacks._menu, "Ingredients")
         #bar.Append(meals._menu, "Meals")
         bar.Append(self._meals._menu, "Recipes")
-        #bar.Append(cook._menu, "Cook")
+        #bar.Append(self._cook._menu, "Cook")
         return bar
 
     def _item(self, menu, id, append, title, event):
