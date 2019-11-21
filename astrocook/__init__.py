@@ -6,7 +6,7 @@ from .syst_list import SystList
 import logging
 logging.basicConfig(
     level=logging.INFO,
-    format="[%(levelname)s] %(module)s.%(lineno)d: %(message)s")
+    format="[%(levelname)s] %(module)s: %(message)s [deprecated]")
 
 #from .frame import Frame
 #from .spectrum import Spectrum

@@ -1,4 +1,5 @@
 from .vars import *
+from .cookbook_general import CookbookGeneral
 from .format import Format
 from .spectrum import Spectrum
 from .syst_list import SystList
@@ -12,7 +13,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-class Cookbook(object):
+class CookbookLineList(object):
+
+    def __init__(self):
+        pass
+
+
+class Cookbook(CookbookGeneral, CookbookLineList):
     """ Class for cookbook.
 
     A Cookbook contains all procedures called by Session."""
@@ -20,8 +27,7 @@ class Cookbook(object):
     def __init__(self,
                  sess):
         self.sess = sess
-        #self.spec = sess.spec
-        #self.systs = sess.systs
+
 
     def _append_syst(self):
         systs = self.sess.systs

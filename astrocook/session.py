@@ -670,43 +670,6 @@ class Session(object):
 
         return 0
 
-    def convert_x(self, zem=0, xunit=au.km/au.s):
-        """ @brief Convert x axis
-        @details Convert the x axis to wavelength or velocity units.
-        @param zem Emission redshift, to use as a 0-point for velocities
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
-
-        try:
-            zem = float(zem)
-        except:
-            logging.error(msg_param_fail)
-        xunit = au.Unit(xunit)
-
-        for s in self.seq:
-            try:
-                getattr(self, s)._convert_x(zem, xunit)
-            except:
-                pass
-        return 0
-
-    def convert_y(self, yunit=au.electron/au.nm):
-        """ @brief Convert y axis
-        @details Convert the y axis to flux density units.
-        @param yunit Unit of flux density
-        @return 0
-        """
-
-        yunit = au.Unit(yunit)
-
-        for s in self.seq:
-            try:
-                getattr(self, s)._convert_y(yunit=yunit)
-            except:
-                pass
-        return 0
-
     def convolve_gauss(self, std=5, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
@@ -745,13 +708,8 @@ class Session(object):
 
         return 0
 
+    """
     def extract_region(self, xmin, xmax):
-        """ @brief Extract region
-        @details Extract a spectral region as a new frame.
-        @param xmin Minimum wavelength (nm)
-        @param xmax Maximum wavelength (nm)
-        @return Spectral region
-        """
 
         try:
             xmin = float(xmin) * au.nm
@@ -783,6 +741,7 @@ class Session(object):
             new = None
 
         return new
+    """
 
     def find_peaks(self, col='conv', kind='min', kappa=5.0, append=True):
         """ @brief Find peaks
@@ -909,11 +868,11 @@ class Session(object):
             pass
 
         if instr == None:
-            logging.warning(msg_miss_descr('INSTRUME'))
+            logging.warning(msg_descr_miss('INSTRUME'))
         if catg == None:
-            logging.warning(msg_miss_descr('HIERARCH ESO PRO CATG'))
+            logging.warning(msg_descr_miss('HIERARCH ESO PRO CATG'))
         if orig == None:
-            logging.warning(msg_miss_descr('ORIGIN'))
+            logging.warning(msg_descr_miss('ORIGIN'))
 
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
@@ -1010,46 +969,6 @@ class Session(object):
                 except:
                     pass
 
-
-    def shift_from_rf(self, z=0):
-        """ @brief Shift from rest frame
-        @details Shift x axis from rest frame to the original frame.
-        @param z Redshift to use for shifting
-        @return 0
-        """
-
-        try:
-            z = float(z)
-        except:
-            logging.error(msg_param_fail)
-
-        for s in self.seq:
-            try:
-                z_to = z-getattr(self, s)._rfz
-                getattr(self, s)._shift_rf(z_to)
-            except:
-                pass
-        return 0
-
-
-    def shift_to_rf(self, z=0):
-        """ @brief Shift to rest frame
-        @details Shift x axis to the rest frame.
-        @param z Redshift to use for shifting
-        @return 0
-        """
-
-        try:
-            z = float(z)
-        except:
-            logging.error(msg_param_fail)
-
-        for s in self.seq:
-            try:
-                getattr(self, s)._shift_rf(z)
-            except:
-                pass
-        return 0
 
     def simul_syst(self, series='Ly_a', z=2.0, logN=14, b=10, resol=70000,
                    col='y'):

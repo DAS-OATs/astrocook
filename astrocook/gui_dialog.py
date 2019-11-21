@@ -1,7 +1,9 @@
+from .message import *
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
 import numpy as np
+import pprint
 import wx
 
 class GUIDialog(wx.Dialog):
@@ -24,8 +26,12 @@ class GUIDialog(wx.Dialog):
         self._ctrl = []
         for a in self._attr:
             if self._obj == None:
-                self._obj = self._gui._sess_sel
-            method = getattr(self._obj, a)
+                try:
+                    self._obj = self._gui._sess_sel.cb
+                    method = getattr(self._obj, a)
+                except:
+                    self._obj = self._gui._sess_sel
+                    method = getattr(self._obj, a)
             self._methods.append(method)
             self._get_params(method)
             self._get_doc(method)
@@ -89,7 +95,7 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
             m = getattr(self._obj, a)
-
+            logging.info("I'm launching method %s." % a)
             out = m(**p_l)
             if out is not None:
                 if out is 0:
