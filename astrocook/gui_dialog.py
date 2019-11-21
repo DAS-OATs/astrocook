@@ -238,7 +238,8 @@ class GUIDialogMini(wx.Dialog):
         self._gui._sess_sel._series_sel = self._ctrl[0].GetValue()
         if self._targ != None:
             self._targ(self._gui._sess_sel)
-        self._gui._refresh()
+        #self._gui._graph_det._graph._cursor_lines = []
+        self._gui._refresh(init_cursor=True)
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_cursor'):
@@ -246,5 +247,5 @@ class GUIDialogMini(wx.Dialog):
             self._gui._graph_main._sel.remove('cursor_z_series')
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
         self.Close()

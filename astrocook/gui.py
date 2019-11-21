@@ -45,7 +45,7 @@ class GUI(object):
         else:
             self._panel_sess._on_open(path)
 
-    def _refresh(self, autolim=True):
+    def _refresh(self, autolim=True, init_cursor=False):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
@@ -55,7 +55,7 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        if autolim and goodlim:
+        if autolim and goodlim and 1==0:
             self._graph_main._refresh(self._sess_items, xlim=xlim)
         else:
             self._graph_main._refresh(self._sess_items)
@@ -70,18 +70,23 @@ class GUI(object):
                     ylim_det = graph._ax.get_ylim()
                     if autolim:
                         self._graph_det._refresh(self._sess_items, text=key,
-                                                 xlim=xlim_det, ylim=ylim_det)
+                                                 xlim=xlim_det, ylim=ylim_det,
+                                                 init_cursor=init_cursor)
                     else:
-                        self._graph_det._refresh(self._sess_items, text=key)
+                        self._graph_det._refresh(self._sess_items, text=key,
+                                                 init_cursor=init_cursor)
+                    init_cursor = False
                     self._sess_sel.convert_x(zem=graph._zems[key], xunit=xunit)
             else:
                 xlim_det = graph._ax.get_xlim()
                 ylim_det = graph._ax.get_ylim()
                 if autolim:
                     self._graph_det._refresh(self._sess_items, xlim=xlim_det,
-                                             ylim=ylim_det)
+                                             ylim=ylim_det,
+                                             init_cursor=init_cursor)
                 else:
-                    self._graph_det._refresh(self._sess_items)
+                    self._graph_det._refresh(self._sess_items,
+                                             init_cursor=init_cursor)
 
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):

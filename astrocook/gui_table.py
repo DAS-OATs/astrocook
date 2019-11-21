@@ -82,8 +82,9 @@ class GUITable(wx.Frame):
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
+        self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                      ylim=ylim)
+                                      ylim=ylim)#, init_cursor=True)
 
     def _on_close(self, event):
         self.Destroy()
@@ -94,7 +95,7 @@ class GUITable(wx.Frame):
         self._gui._sess_sel.cb._update_spec()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove','remove'),
@@ -306,6 +307,7 @@ class GUITableSystList(GUITable):
         graph._zems = OrderedDict()
         graph._xs = OrderedDict()
         graph._series = OrderedDict()
+        graph._cursor_lines = []
         for i, s in enumerate(series):
             #key = s[-4:]
             key = s.split('_')[-1]
@@ -356,7 +358,7 @@ class GUITableSystList(GUITable):
         mod._fit()
         self._gui._sess_sel.systs._update(mod, mod_t=False)
         cb._update_spec()
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_freeze_par(self, event):
         popup = self._gui._tab_popup
@@ -376,7 +378,7 @@ class GUITableSystList(GUITable):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
         self.PopupMenu(GUITablePopup(self._gui, self, event,

@@ -72,7 +72,7 @@ class GUIGraphMain(wx.Frame):
         print('out', self._graph._cursor._z)
         for s in sess._series_sel.split(','):
             sess.add_syst(series=sess._series_sel, z=self._graph._cursor._z)
-        self._gui._refresh()
+        self._gui._refresh(init_cursor=True)
 
     def _on_close(self, event):
         self._closed = True

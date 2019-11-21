@@ -74,15 +74,17 @@ class Graph(object):
             and 'cursor_z_series' in self._sel:
             focus.PopupMenu(
                     GUITablePopup(self._gui, focus, event,
-                                  ['Add lines', 'Add system'],
-                                  ['add_line', 'add_syst']))
+                                  #['Add lines', 'Add system'],
+                                  #['add_line', 'add_syst']))
+                                  'Add system', 'add_syst'))
+        """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,
                                           event, 'Add lines', 'add_line'))
         else:
             focus.PopupMenu(GUITablePopup(self._gui, focus,
                                           event, 'Add line', 'add_line'))
-
+        """
 
     def _on_move(self, event):
         if not event.inaxes: return
@@ -94,6 +96,7 @@ class Graph(object):
         if hasattr(self._gui, '_graph_det'):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
+        #print(self._cursor_lines)
         if 'cursor_z_series' in self._sel:
             if hasattr(self, '_xs'):
                 """
@@ -141,7 +144,7 @@ class Graph(object):
                                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
                                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                         self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv2)
-                        print(key, xem, x_nm, z, self._cursor._x)
+                        #print(key, xem, x_nm, z, self._cursor._x)
                     else:
                         z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
                         self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
@@ -175,7 +178,7 @@ class Graph(object):
 
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
-                 ylim=None, title=None, text=None):
+                 ylim=None, title=None, text=None, init_cursor=False):
         sess = np.array(sess, ndmin=1)
 
         self._text = text
@@ -185,6 +188,8 @@ class Graph(object):
             self._ax.set_title(title)
         if text != None:
             self._ax.text(0.05, 0.1, text, transform=self._ax.transAxes)
+        if init_cursor:
+            self._cursor_lines = []
 
         cmc = plt.cm.get_cmap('tab10').colors
         self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,cmc[0],1.0),
