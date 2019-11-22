@@ -474,7 +474,7 @@ class GraphCursorZSeries(object):
             self._x = self._xem*(1+self._z)*au.nm
             """
             spec = dc(sess.spec)
-            spec._convert_x(zem=spec._zem, xunit=spec._xunit_old)
+            spec._x_convert(zem=spec._zem, xunit=spec._xunit_old)
             print(spec._zem)
             self._z = np.mean(spec.x).to(au.nm).value/self._xmean.value-1.0
             self._x = self._xem*(1+self._z)*au.nm

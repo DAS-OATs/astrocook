@@ -44,12 +44,12 @@ class Spectrum(Frame):
             copy._t[c] = self._t[c][sel]
         return copy
 
-    def _convolve_gauss(self, std=20, input_col='y', output_col='conv',
+    def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
                         verb=True):
 
         # Create profile
         xunit = self.x.unit
-        self._convert_x()
+        self._x_convert()
         x = self._safe(self.x)
         mean = np.median(x)
         prof = np.exp(-((x - mean) / std).value**2)
@@ -68,12 +68,54 @@ class Spectrum(Frame):
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
                                               *self._t[input_col].unit
         self._t[output_col] = conv
-        self._convert_x(xunit=xunit)
+        self._x_convert(xunit=xunit)
 
         return 0
 
 
-    def _extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
+    """
+    def fit_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=45000):
+        @brief Add a Voigt model for a system.
+        @param series Series of transitions
+        @param z Guess redshift
+        @param N Guess column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @return System list
+
+        z = float(z)
+        logN = float(logN)
+        b = float(b)
+        resol = float(resol)
+
+        self._systs = SystList(self)
+        self._systs._add_fit(series, z, logN, b, resol)
+
+        return self._systs
+    """
+
+
+    def _lines_mask(self, lines):
+        """ @brief Create a mask consisting on the ['xmin', 'xmax'] regions from
+        the associated line list
+        @return 0
+        """
+
+        x = self._safe(self.x)
+        mask = np.zeros(len(x), dtype=bool)
+        for (xmin, xmax) in zip(lines.xmin, lines.xmax):
+            mask += np.logical_and(x>=xmin, x<=xmax)
+        if 'lines_mask' in self._t.colnames:
+            logging.info("I'm updating column 'lines_mask'.")
+        else:
+            logging.info("I'm adding column 'lines_mask'.")
+            self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
+        self._t['lines_mask'][self._where_safe] = mask
+
+        return 0
+
+
+    def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
 
         self._slice(delta_x, xunit)
 
@@ -111,7 +153,7 @@ class Spectrum(Frame):
         return Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
 
 
-    def _interp_nodes(self, lines, nodes, smooth=0):
+    def _nodes_interp(self, lines, nodes, smooth=0):
         """ @brief Interpolate nodes with a univariate spline to estimate the
         emission level.
         @param smooth Smoothing of the spline
@@ -133,7 +175,8 @@ class Spectrum(Frame):
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
         return 0
 
-    def _find_peaks(self, col='conv', kind='min', kappa=3.0, **kwargs):
+
+    def _peaks_find(self, col='conv', kind='min', kappa=3.0, **kwargs):
 
         y = self._safe(self._t[col])
         min_idx = np.hstack(argrelmin(y, **kwargs))
@@ -164,45 +207,6 @@ class Spectrum(Frame):
 
         return lines
 
-    def fit_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=45000):
-        """ @brief Add a Voigt model for a system.
-        @param series Series of transitions
-        @param z Guess redshift
-        @param N Guess column density
-        @param b Guess Doppler broadening
-        @param resol Resolution
-        @return System list
-        """
-
-        z = float(z)
-        logN = float(logN)
-        b = float(b)
-        resol = float(resol)
-
-        self._systs = SystList(self)
-        self._systs._add_fit(series, z, logN, b, resol)
-
-        return self._systs
-
-    def _mask_lines(self, lines):
-        """ @brief Create a mask consisting on the ['xmin', 'xmax'] regions from
-        the associated line list
-        @return 0
-        """
-
-        x = self._safe(self.x)
-        mask = np.zeros(len(x), dtype=bool)
-        for (xmin, xmax) in zip(lines.xmin, lines.xmax):
-            mask += np.logical_and(x>=xmin, x<=xmax)
-        if 'lines_mask' in self._t.colnames:
-            logging.info("I'm updating column 'lines_mask'.")
-        else:
-            logging.info("I'm adding column 'lines_mask'.")
-            self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
-        self._t['lines_mask'][self._where_safe] = mask
-
-        return 0
-
 
     def _rebin(self, dx, xunit):
 
@@ -210,7 +214,7 @@ class Spectrum(Frame):
         # A deep copy is created, so the original spectrum is preserved
 
         self.t.sort('x')
-        self._convert_x(xunit=xunit)
+        self._x_convert(xunit=xunit)
 
         # Create x, xmin, and xmax
         from .format import Format
@@ -245,7 +249,7 @@ class Spectrum(Frame):
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=self.y.unit,
                        meta=self.meta)
-        out._convert_x(xunit=self._xunit_old)
+        out._x_convert(xunit=self._xunit_old)
         return out
 
 
@@ -259,11 +263,11 @@ class Spectrum(Frame):
         """
 
         xunit_orig = self._xunit
-        self._convert_x(xunit=xunit)
+        self._x_convert(xunit=xunit)
         x = self._safe(self.x)
         self._t['slice'] = np.empty(len(self.x), dtype=int)
         self._t['slice'][self._where_safe] = np.array(x//delta_x)
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
-        self._convert_x(xunit=xunit_orig)
+        self._x_convert(xunit=xunit_orig)
         return 0

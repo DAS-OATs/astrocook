@@ -101,42 +101,12 @@ class Frame():
     def meta(self, key, val):
         self._meta[key] = val
 
+
     def _append(self, frame):
         vstack = at.vstack([self._t, frame._t])
         self._t = at.unique(vstack, keys=['x'])
         return 0
 
-    def _convert_x(self, zem=0, xunit=au.km/au.s):
-
-        self._zem = zem
-        xem = (1+zem) * 121.567*au.nm
-        equiv = [(au.nm, au.km/au.s,
-                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-
-        self._xunit = xunit
-        self._xunit_old = self.x.unit
-        self.x = self.x.to(xunit, equivalencies=equiv)
-        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
-        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
-        return 0
-
-    def _convert_y(self, e_to_flux=None, yunit=au.erg/au.cm**2/au.s/au.nm):
-        """ @brief Convert the y axis to electron or flux density units.
-        @param e_to_flux Flux calibration array (same length as the spectrum)
-        @param yunit Unit of electron or flux density
-        @return 0
-        """
-
-        if e_to_flux == None:
-            e_to_flux = np.ones(len(self.t))
-        equiv = [(au.erg/au.cm**2/au.s/au.nm, au.electron/au.nm,
-                  lambda y: y*e_to_flux, lambda y: y/e_to_flux)]
-
-        self._yunit = yunit
-        self.y = self.y.to(yunit, equivalencies=equiv)
-        self.dy = self.dy.to(yunit, equivalencies=equiv)
-        return 0
 
     def _copy(self, sel=None):
         """ @brief Copy a selection from a frame into a new frame.
@@ -156,7 +126,8 @@ class Frame():
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
 
-    def _extract_region(self, xmin, xmax):
+
+    def _region_extract(self, xmin, xmax):
         """ @brief Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
@@ -177,11 +148,13 @@ class Frame():
         else:
             return reg
 
+
     def _safe(self, col):
         if isinstance(col, at.Column):
             col = au.Quantity(col)
         self._where_safe = ~np.isnan(col.value)
         return col[self._where_safe]
+
 
     def _shift_rf(self, z):
         """ @brief Shift to and from rest frame.
@@ -194,4 +167,38 @@ class Frame():
         self.xmin = self.xmin*fact
         self.xmax = self.xmax*fact
         self._rfz = z
+        return 0
+
+
+    def _x_convert(self, zem=0, xunit=au.km/au.s):
+
+        self._zem = zem
+        xem = (1+zem) * 121.567*au.nm
+        equiv = [(au.nm, au.km/au.s,
+                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+
+        self._xunit = xunit
+        self._xunit_old = self.x.unit
+        self.x = self.x.to(xunit, equivalencies=equiv)
+        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
+        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
+        return 0
+
+
+    def _y_convert(self, e_to_flux=None, yunit=au.erg/au.cm**2/au.s/au.nm):
+        """ @brief Convert the y axis to electron or flux density units.
+        @param e_to_flux Flux calibration array (same length as the spectrum)
+        @param yunit Unit of electron or flux density
+        @return 0
+        """
+
+        if e_to_flux == None:
+            e_to_flux = np.ones(len(self.t))
+        equiv = [(au.erg/au.cm**2/au.s/au.nm, au.electron/au.nm,
+                  lambda y: y*e_to_flux, lambda y: y/e_to_flux)]
+
+        self._yunit = yunit
+        self.y = self.y.to(yunit, equivalencies=equiv)
+        self.dy = self.dy.to(yunit, equivalencies=equiv)
         return 0

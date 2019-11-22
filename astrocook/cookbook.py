@@ -1,4 +1,5 @@
 from .vars import *
+from .cookbook_absorbers import CookbookAbsorbers
 from .cookbook_continuum import CookbookContinuum
 from .cookbook_general import CookbookGeneral
 from .format import Format
@@ -15,7 +16,8 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 class Cookbook(CookbookGeneral,
-               CookbookContinuum):
+               CookbookContinuum,
+               CookbookAbsorbers):
     """ Main cookbook, combining specific cookbooks.
 
     Each cookbook should link to methods of classes containing the actual
@@ -152,7 +154,7 @@ class Cookbook(CookbookGeneral,
     def _rebin(self, dx, xunit):
         spec_in = dc(self.sess.spec)
         spec_in.t.sort('x')
-        spec_in._convert_x(xunit=xunit)
+        spec_in._x_convert(xunit=xunit)
         xstart, xend = np.nanmin(spec_in.x), np.nanmax(spec_in.x)
         x = np.arange(xstart.value, xend.value, dx) * xunit
         format = Format()
@@ -181,7 +183,7 @@ class Cookbook(CookbookGeneral,
 
         spec_out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit,
                             yunit=spec_in.y.unit, meta=spec_in.meta)
-        spec_out._convert_x(xunit=self.sess.spec.x.unit)
+        spec_out._x_convert(xunit=self.sess.spec.x.unit)
         return spec_out
     """
 

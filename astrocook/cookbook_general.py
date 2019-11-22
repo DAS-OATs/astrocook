@@ -11,46 +11,7 @@ class CookbookGeneral(object):
     def __init__(self):
         pass
 
-    def convert_x(self, zem=0, xunit=au.km/au.s):
-        """ @brief Convert x axis
-        @details Convert the x axis to wavelength or velocity units.
-        @param zem Emission redshift, to use as a 0-point for velocities
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
-
-        try:
-            zem = float(zem)
-        except:
-            logging.error(msg_param_fail)
-        xunit = au.Unit(xunit)
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._convert_x(zem, xunit)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def convert_y(self, yunit=au.electron/au.nm):
-        """ @brief Convert y axis
-        @details Convert the y axis to flux density units.
-        @param yunit Unit of flux density
-        @return 0
-        """
-
-        yunit = au.Unit(yunit)
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._convert_y(yunit=yunit)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def convolve_gauss(self, std=5, input_col='y', output_col='conv'):
+    def gauss_convolve(self, std=5, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
         transform.
@@ -65,11 +26,11 @@ class CookbookGeneral(object):
         except:
             logging.error(msg_param_fail)
 
-        self.sess.spec._convolve_gauss(std, input_col, output_col)
+        self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
 
 
-    def extract_region(self, xmin, xmax):
+    def region_extract(self, xmin, xmax):
         """ @brief Extract region
         @details Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
@@ -93,7 +54,7 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                kwargs[s] = getattr(self.sess, s)._extract_region(xmin, xmax)
+                kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
             except:
                 logging.debug("Attribute %s does not support region"
                               "extraction." % s)
@@ -174,6 +135,45 @@ class CookbookGeneral(object):
         for s in self.sess.seq:
             try:
                 getattr(self.sess, s)._shift_rf(z)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0
+
+
+    def x_convert(self, zem=0, xunit=au.km/au.s):
+        """ @brief Convert x axis
+        @details Convert the x axis to wavelength or velocity units.
+        @param zem Emission redshift, to use as a 0-point for velocities
+        @param xunit Unit of wavelength or velocity
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+        except:
+            logging.error(msg_param_fail)
+        xunit = au.Unit(xunit)
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._x_convert(zem, xunit)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0
+
+
+    def y_convert(self, yunit=au.electron/au.nm):
+        """ @brief Convert y axis
+        @details Convert the y axis to flux density units.
+        @param yunit Unit of flux density
+        @return 0
+        """
+
+        yunit = au.Unit(yunit)
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._y_convert(yunit=yunit)
             except:
                 logging.debug(msg_attr_miss(s))
         return 0

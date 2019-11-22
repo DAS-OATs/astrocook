@@ -148,20 +148,20 @@ class GUIMenuCook(GUIMenu):
                                            +'.fits')
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=10)
-            sess.find_peaks(kappa=3.0)
+            sess.gauss_convolve(std=10)
+            sess.peaks_find(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
-                sess.extract_nodes(delta_x=1000)
-                sess.interp_nodes()
+                sess.nodes_extract(delta_x=1000)
+                sess.nodes_interp()
 
-            sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
+            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
             sess_center = dc(sess_reg)
             sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
@@ -216,20 +216,20 @@ class GUIMenuCook(GUIMenu):
                                            +'.fits')
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=10)
-            sess.find_peaks(kappa=3.0)
+            sess.gauss_convolve(std=10)
+            sess.peaks_find(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
-                sess.extract_nodes(delta_x=1000)
-                sess.interp_nodes()
+                sess.nodes_extract(delta_x=1000)
+                sess.nodes_interp()
 
-            sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
+            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
             #"""
             sess_center = dc(sess_reg)
@@ -279,12 +279,12 @@ class GUIMenuEdit(GUIMenu):
 
         # Add items to Edit menu here
         self._item_method(self._menu, start_id+301, 'spec',
-                          "Extract region", 'extract_region')
+                          "Extract region", 'region_extract')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+311, 'spec',
-                          "Convert x axis", 'convert_x')
+                          "Convert x axis", 'x_convert')
         self._item_method(self._menu, start_id+312, 'spec',
-                          "Convert y axis", 'convert_y')
+                          "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+321, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
@@ -373,10 +373,10 @@ class GUIMenuMeals(GUIMenu):
 
         # Add items to Meals menu here
         self._item_method(self._menu, start_id, 'spec', "Find lines",
-                          ['convolve_gauss', 'find_peaks'])
+                          ['gauss_convolve', 'peaks_find'])
         self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
-                          ['convolve_gauss', 'find_peaks', 'extract_nodes',
-                           'interp_nodes'])
+                          ['gauss_convolve', 'peaks_find', 'nodes_extract',
+                           'nodes_interp'])
         self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
                           ['add_syst_from_lines', 'add_syst_from_resids',
                            'add_syst_slide', 'compl_syst'])
@@ -395,20 +395,25 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+101, 'spec',
                           "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+102, 'spec',
-                          "Convolve with gaussian", 'convolve_gauss')
+                          "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+103, 'spec', "Find peaks",
-                          'find_peaks')
+                          'peaks_find')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
-                          'extract_nodes')
+                          'nodes_extract')
         self._item_method(self._menu, start_id+202, 'lines',
-                          "Interpolate nodes", 'interp_nodes')
+                          "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, 'lines',
-                          "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+302, 'lines',
+        #self._item_method(self._menu, start_id+301, 'lines',
+        #                  "Add and fit a system", 'add_syst')
+        self._item_method(self._menu, start_id+301, 'cont',
+                          "New system", 'syst_new')
+        self._item_method(self._menu, start_id+302, 'cont',
                           "Add and fit systems from line list",
                           'add_syst_from_lines')
+        self._item_method(self._menu, start_id+312, 'cont',
+                          "New systems from line list",
+                          'systs_new_from_lines')
         self._item_method(self._menu, start_id+303, 'systs',
                           "Add and fit systems from residuals",
                           'add_syst_from_resids')

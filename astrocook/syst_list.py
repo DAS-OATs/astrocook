@@ -118,7 +118,6 @@ class SystList(object):
 
         return 0
 
-
     def _append(self, frame, unique=True):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
@@ -142,6 +141,8 @@ class SystList(object):
             self._mods_t.remove_rows(mods_rem)
         return 0
 
+
+
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t
         """
@@ -153,6 +154,7 @@ class SystList(object):
             m['id'] = dc(self._mods_t['id'][i])
 
         return t, mods_t
+
 
     def _unfreeze(self, t, mods_t):
         """ Restore from a frozen copy of the tables self._t and self._mods_t

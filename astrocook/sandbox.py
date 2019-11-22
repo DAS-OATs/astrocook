@@ -325,8 +325,8 @@
         thres = float(thres)
 
         spec_deabs = dc(self._spec)
-        spec_deabs.convolve_gauss(input_col='deabs')
-        lines_deabs = spec_deabs.find_peaks()
+        spec_deabs.gauss_convolve(input_col='deabs')
+        lines_deabs = spec_deabs.peaks_find()
 
         z_lines = [[(x.to(au.nm)/xem_d[t].to(au.nm))-1. \
                     for t in series_d[series]] for x in lines_deabs.x]

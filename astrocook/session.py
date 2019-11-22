@@ -49,11 +49,33 @@ class Session(object):
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
 
+
     def _append(self, frame, append=True):
         if append and hasattr(self, frame.__name__):
             getattr(self, frame.__name__)._append(frame)
         else:
             setattr(self, frame.__name__, frame)
+
+
+    def _z_off(self, trans, z):
+        for t in trans:
+            x = xem_d[t]*(1+z)
+            if x < self.spec.x[0] or x > self.spec.x[-1]:
+                logging.warning("%s transition at redshift %3.2f is outside the "
+                                "spectral range! Please choose a different "
+                                "series or redshift." % (t, z))
+                return 1
+        return 0
+
+
+    def _systs_prepare(self):
+        systs = self.systs
+        if systs != None and len(systs.t) != 0:
+            systs._append(SystList(id_start=np.max(systs._t['id'])+1))
+        else:
+            setattr(self, 'systs', SystList())
+
+
 
     """
     def _update_spec(self):
@@ -255,7 +277,7 @@ class Session(object):
             while True:
 
                 spec = dc(self.spec)
-                spec._convolve_gauss(std=2, input_col='deabs', verb=False)
+                spec._gauss_convolve(std=2, input_col='deabs', verb=False)
                 try:
                 #    ciao
                 #except:
@@ -274,7 +296,7 @@ class Session(object):
                 #plt.scatter(reg_x, np.ones(len(reg_x)))
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
-                peaks = reg._find_peaks(col='y')#, mode='wrap')
+                peaks = reg._peaks_find(col='y')#, mode='wrap')
                 #print(peaks.t)
 
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
