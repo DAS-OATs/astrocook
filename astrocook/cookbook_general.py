@@ -133,7 +133,8 @@ class CookbookGeneral(object):
 
         # Create a new session
         from .session import Session
-        new = Session(name=self.sess.name+'_rebinned', spec=spec_out)
+        new = Session(gui=self._gui, name=self.sess.name+'_rebinned',
+                      spec=spec_out)
         return new
 
 

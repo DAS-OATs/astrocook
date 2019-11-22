@@ -1,4 +1,5 @@
 from .vars import *
+from .cookbook_continuum import CookbookContinuum
 from .cookbook_general import CookbookGeneral
 from .format import Format
 from .spectrum import Spectrum
@@ -13,13 +14,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-class CookbookLineList(object):
-
-    def __init__(self):
-        pass
-
-
-class Cookbook(CookbookGeneral, CookbookLineList):
+class Cookbook(CookbookGeneral,
+               CookbookContinuum):
     """ Main cookbook, combining specific cookbooks.
 
     Each cookbook should link to methods of classes containing the actual
@@ -28,6 +24,7 @@ class Cookbook(CookbookGeneral, CookbookLineList):
     def __init__(self,
                  sess):
         self.sess = sess
+        self._gui = self.sess._gui
 
 
     def _append_syst(self):

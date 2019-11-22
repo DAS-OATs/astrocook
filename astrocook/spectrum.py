@@ -108,7 +108,8 @@ class Spectrum(Frame):
         y = np.array(y_ave) * self._yunit
         dy = np.array(dy_ave) * self._yunit
 
-        return x, xmin, xmax, y, dy
+        return Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
+
 
     def _interp_nodes(self, lines, nodes, smooth=0):
         """ @brief Interpolate nodes with a univariate spline to estimate the

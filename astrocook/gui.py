@@ -28,6 +28,7 @@ class GUI(object):
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
+        self._menu_conv_id = []
         self._menu_lines_id = []
         self._menu_nodes_id = []
         self._menu_systs_id = []
@@ -91,7 +92,8 @@ class GUI(object):
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
-                    getattr(self, '_tab_'+s)._on_view(event=None, from_scratch=False)
+                    getattr(self, '_tab_'+s)._on_view(event=None,
+                                                      from_scratch=False)
 
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
@@ -193,7 +195,7 @@ class GUIPanelSession(wx.Frame):
         #name = path.split('/')[-1][:-5]
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
-        sess = Session(path=path, name=name)
+        sess = Session(gui=self, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_close(self, event):
@@ -277,6 +279,6 @@ class GUIPanelSession(wx.Frame):
                 name += '_' + self._gui._sess_list[s].name
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=spec)
+        sess = Session(gui=self, name=name, spec=spec)
 
         return sess

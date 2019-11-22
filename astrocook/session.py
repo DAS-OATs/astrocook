@@ -28,6 +28,7 @@ class Session(object):
     A Session is a self-sufficient set of analysis operations."""
 
     def __init__(self,
+                 gui=None,
                  path=None,
                  name=None,
                  spec=None,
@@ -36,6 +37,7 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None):
+        self._gui = gui
         self.path = path
         self.name = name
         self.spec = spec
@@ -670,128 +672,7 @@ class Session(object):
 
         return 0
 
-    def extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
-        """ @brief Extract nodes
-        @details Extract nodes from a spectrum. Nodes are averages of x and y in
-        slices, computed after masking lines.
-        @param delta_x Size of slices
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
-        try:
-            xunit = au.Unit(xunit)
-            delta_x = float(delta_x)*xunit
-        except:
-            logging.error(msg_param_fail)
 
-        x, xmin, xmax, y, dy = self.spec._extract_nodes(delta_x, xunit)
-        self.nodes = Spectrum(x, xmin, xmax, y, dy, self.spec._xunit,
-                              self.spec._yunit)
-
-        return 0
-
-    """
-    def extract_region(self, xmin, xmax):
-
-        try:
-            xmin = float(xmin) * au.nm
-            xmax = float(xmax) * au.nm
-        except:
-            logging.error(msg_param_fail)
-            return None
-
-        if xmin > xmax:
-            temp = xmin
-            xmin = xmax
-            xmax = temp
-            logging.warning(msg_param_swap)
-
-        kwargs = {'path': self.path, 'name': self.name}
-        for s in self.seq:
-            try:
-                #kwargs[s] = dc(getattr(self, s)._extract_region(xmin, xmax))
-                kwargs[s] = getattr(self, s)._extract_region(xmin, xmax)
-            except:
-                try: # For Model
-                    #kwargs[s] = dc(getattr(self, s)) # For Model
-                    kwargs[s] = getattr(self, s) # For Model
-                except:
-                    kwargs[s] = None
-        if kwargs['spec'] != None:
-            new = Session(**kwargs)
-        else:
-            new = None
-
-        return new
-    """
-
-    def find_peaks(self, col='conv', kind='min', kappa=5.0, append=True):
-        """ @brief Find peaks
-        @details Find the peaks in a spectrum column. Peaks are the extrema
-        (minima or maxima) that are more prominent than a given number of
-        standard deviations. They are saved as a list of lines.
-        @param col Column where to look for peaks
-        @param kind Kind of extrema ('min' or 'max')
-        @param kappa Number of standard deviations
-        @param append Append peaks to existing line list
-        @return 0
-        """
-
-        spec = self.spec
-        if col not in spec.t.colnames:
-            logging.error("The spectrum has not a column named '%s'. Please "\
-                          "pick another one." % col)
-            return None
-        kappa = float(kappa)
-
-        peaks = spec._find_peaks(col, kind, kappa)
-
-        lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                         spec._xunit, spec._yunit, spec._meta)
-
-        if append and self.lines != None:
-            self.lines._append(lines)
-        else:
-            self.lines = lines
-
-        self.lines_kind = 'peaks'
-        spec._mask_lines(self.lines)
-        logging.info("I'm using peaks as lines.")
-
-        """
-        # Create new session
-        kwargs = {'path': self.path, 'name': self.name}
-        for s in self.seq:
-            try:
-                kwargs[s] = getattr(self, s)
-            except:
-                kwargs[s] = None
-            print(kwargs[s])
-        if kwargs['spec'] != None:
-            new = Session(**kwargs)
-        else:
-            new = None
-
-        return new
-        """
-        return 0
-
-    def interp_nodes(self, smooth=0):
-        """ @brief Interpolate nodes
-        @details Interpolate nodes with a univariate spline to estimate the
-        emission level.
-        @param smooth Smoothing of the spline
-        @return 0
-        """
-        if not hasattr(self, 'nodes'):
-            logging.error("I need nodes to interpolate. Please try Ingredients > "
-                          "Extract nodes first.")
-            return None
-
-        smooth = float(smooth)
-
-        self.spec._interp_nodes(self.lines, self.nodes)
-        return 0
 
     def merge_syst(self, series='CIV', v_thres=100):
         """ @brief Merge systems

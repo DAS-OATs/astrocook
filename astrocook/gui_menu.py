@@ -97,14 +97,18 @@ class GUIMenu(object):
     def _refresh(self):
         # Nested loops! WOOOO!
         sel = self._gui._graph_main._sel
-        for a in seq:  # from .vars
+        for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable():
                             item.Check(False)
-                        if getattr(self._gui._sess_sel, a) != None:
+                        if hasattr(self._gui._sess_sel, a):
+                            cond = getattr(self._gui._sess_sel, a) != None
+                        else:
+                            cond = a in self._gui._sess_sel.spec.t.colnames
+                        if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
                                 item.Check(item.key in sel)  # from .vars
@@ -330,7 +334,7 @@ class GUIMenuFile(GUIMenu):
             path = fileDialog.GetPath()
             name = path.split('/')[-1].split('.')[0]
             logging.info("I'm loading session %s..." % path)
-            sess = Session(path=path, name=name)
+            sess = Session(gui=self._gui, path=path, name=name)
             self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_save(self, event, path='.'):
@@ -454,7 +458,7 @@ class GUIMenuView(GUIMenu):
                          'spec_x_y')
         self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, 'lines', "Convolved spectrum",
+        self._item_graph(self._submenu, start_id+303, 'conv', "Convolved spectrum",
                          'spec_x_conv')
         self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
                          'lines_x_y')
