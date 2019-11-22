@@ -13,6 +13,7 @@ import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.interpolate import UnivariateSpline as uspline
 from scipy.stats import sem
+from tqdm import tqdm
 
 class Spectrum(Frame):
     """Class for spectra
@@ -70,7 +71,6 @@ class Spectrum(Frame):
         self._convert_x(xunit=xunit)
 
         return 0
-
 
 
     def _extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
@@ -202,8 +202,51 @@ class Spectrum(Frame):
 
         return 0
 
-    def _rebin(self):
-        pass
+
+    def _rebin(self, dx, xunit):
+
+        # Convert spectrum into chosen unit
+        # A deep copy is created, so the original spectrum is preserved
+
+        self.t.sort('x')
+        self._convert_x(xunit=xunit)
+
+        # Create x, xmin, and xmax
+        from .format import Format
+        format = Format()
+        xstart, xend = np.nanmin(self.x), np.nanmax(self.x)
+        x = np.arange(xstart.value, xend.value, dx) * xunit
+        xmin, xmax = format._create_xmin_xmax(x)
+
+        # Compute y and dy combining contributions
+        im = 0
+        iM = 1
+        xmin_in = self.xmin[iM].value
+        xmax_in = self.xmax[im].value
+        y = np.array([])
+        dy = np.array([])
+        for i, (m, M) \
+            in enumerate(tqdm(zip(xmin.value, xmax.value), ncols=120,
+                         desc="[INFO] spectrum: Rebinning progress",
+                         total=len(xmin))):
+            while xmin_in < M:
+                iM += 1
+                xmin_in = self.xmin[iM].value
+            while xmax_in < m:
+                im += 1
+                xmax_in = self.xmax[im].value
+            ysel = self.y[im:iM+1]
+            dysel = self.dy[im:iM+1]
+            y = np.append(y, np.average(ysel, weights=1/dysel**2))
+            dy = np.append(dy, np.sqrt(np.sum(dysel**2/dysel**4))\
+                                       /np.sum(1/dysel**2))
+
+        # Create a new spectrum and convert it to the units of the original one
+        out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=self.y.unit,
+                       meta=self.meta)
+        out._convert_x(xunit=self._xunit_old)
+        return out
+
 
     def _slice(self, delta_x=1000, xunit=au.km/au.s):
         """ @brief Create 'slice' columns. 'slice' columns contains an

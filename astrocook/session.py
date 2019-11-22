@@ -670,24 +670,6 @@ class Session(object):
 
         return 0
 
-    def convolve_gauss(self, std=5, input_col='y', output_col='conv'):
-        """@brief Convolve with gaussian
-        @details Convolve a spectrum column with a gaussian profile using FFT
-        transform.
-        @param std Standard deviation of the gaussian (km/s)
-        @param input_col Input column
-        @param output_col Output column
-        @return 0
-        """
-
-        try:
-            std = float(std) * au.km/au.s
-        except:
-            logging.error(msg_param_fail)
-
-        self.spec._convolve_gauss(std, input_col, output_col)
-        return 0
-
     def extract_nodes(self, delta_x=1500, xunit=au.km/au.s):
         """ @brief Extract nodes
         @details Extract nodes from a spectrum. Nodes are averages of x and y in
@@ -914,21 +896,6 @@ class Session(object):
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
-    def rebin(self, dx=10.0, xunit=au.km/au.s):
-        """ @brief Rebin spectrum
-        @details Rebin a spectrum with a given velocity step. A new session is
-        created with the rebinned spectrum. Other objects from the old session
-        (line lists, etc.) are discarded.
-        @param dx Step in x
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
-
-        dx = float(dx)
-        xunit = au.Unit(xunit)
-        spec = self.cb._rebin(dx, xunit)
-        new = Session(name=self.name+'_rebinned', spec=spec)
-        return new
 
     def save(self, path):
 

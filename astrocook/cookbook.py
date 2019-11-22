@@ -20,9 +20,10 @@ class CookbookLineList(object):
 
 
 class Cookbook(CookbookGeneral, CookbookLineList):
-    """ Class for cookbook.
+    """ Main cookbook, combining specific cookbooks.
 
-    A Cookbook contains all procedures called by Session."""
+    Each cookbook should link to methods of classes containing the actual
+    algorithms. All method parameters must have default values."""
 
     def __init__(self,
                  sess):
@@ -150,6 +151,7 @@ class Cookbook(CookbookGeneral, CookbookLineList):
         systs._update(mod)
         return 0
 
+    """
     def _rebin(self, dx, xunit):
         spec_in = dc(self.sess.spec)
         spec_in.t.sort('x')
@@ -184,7 +186,7 @@ class Cookbook(CookbookGeneral, CookbookLineList):
                             yunit=spec_in.y.unit, meta=spec_in.meta)
         spec_out._convert_x(xunit=self.sess.spec.x.unit)
         return spec_out
-
+    """
 
     def _simul_syst(self, series='Ly_a', z=2.0, logN=13.0, b=10.0,
                     resol=70000.0, col='y'):
