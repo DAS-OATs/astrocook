@@ -324,7 +324,7 @@ class GUITableSystList(GUITable):
         #graph._axes = []
         #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
             xunit = self._gui._sess_sel.spec.x.unit
-            self._gui._sess_sel.x_convert(zem=zem)
+            self._gui._sess_sel.cb.x_convert(zem=zem)
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
             _, ylim = self._gui._graph_det._define_lim(0)
@@ -345,7 +345,7 @@ class GUITableSystList(GUITable):
                 self._gui._sess_items, title=title, text=key,
                 xlim=(-500, 500), ylim=ylim)
 
-            self._gui._sess_sel.x_convert(zem=zem, xunit=xunit)
+            self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()

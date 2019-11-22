@@ -197,7 +197,6 @@ class Session(object):
                 #self.cb._fit_syst(series, z, logN, b, resol, maxfev)
                 ###
             #end = time.time()
-
         ### Uncomment this
         #"""
         mods_t = self.systs._mods_t
@@ -213,7 +212,6 @@ class Session(object):
                       "model at redshift %2.4f (%i/%i)..."\
                     % (series, m['z0'], i+1, len(mods_t)), end='\r')
                 self.cb._fit_mod(m['mod'], maxfev)
-            #print(self.systs._t)
             try:
                 print("[INFO] session.add_syst_from_lines: I've fitted %i %s "
                       "system(s) in %i model(s) between redshift %2.4f and "

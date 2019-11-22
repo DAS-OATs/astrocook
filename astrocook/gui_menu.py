@@ -408,10 +408,10 @@ class GUIMenuSnacks(GUIMenu):
         #                  "Add and fit a system", 'add_syst')
         self._item_method(self._menu, start_id+301, 'cont',
                           "New system", 'syst_new')
+        #self._item_method(self._menu, start_id+302, 'cont',
+        #                  "Add and fit systems from line list",
+        #                  'add_syst_from_lines')
         self._item_method(self._menu, start_id+302, 'cont',
-                          "Add and fit systems from line list",
-                          'add_syst_from_lines')
-        self._item_method(self._menu, start_id+312, 'cont',
                           "New systems from line list",
                           'systs_new_from_lines')
         self._item_method(self._menu, start_id+303, 'systs',
