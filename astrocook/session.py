@@ -37,7 +37,7 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None):
-        self._gui = gui
+        #self._gui = gui
         self.path = path
         self.name = name
         self.spec = spec

@@ -417,6 +417,9 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+303, 'systs',
                           "Add and fit systems from residuals",
                           'add_syst_from_resids')
+        self._item_method(self._menu, start_id+313, 'systs',
+                          "New systems from residuals",
+                          'systs_new_from_resids')
         self._item_method(self._menu, start_id+304, 'systs',
                           "Test and fit systems "
                           "by sliding along spectrum", 'add_syst_slide')

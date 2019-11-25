@@ -26,7 +26,7 @@ class Cookbook(CookbookGeneral,
     def __init__(self,
                  sess):
         self.sess = sess
-        self._gui = self.sess._gui
+        #self._gui = self.sess._gui
 
 
     def _append_syst(self):

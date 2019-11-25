@@ -198,3 +198,135 @@ class CookbookAbsorbers(object):
         self._spec_update()
 
         return 0
+
+    def systs_new_from_resids(self, z_start=0, z_end=6, dz=1e-4,
+                             resol=45000, logN=11, b=5, chi2r_thres=1.0,
+                             maxfev=100):
+        """ @brief Fit systems from residuals
+        @details Add and fit Voigt models from residuals of previously fitted
+        models.
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param resol Resolution
+        @param logN Guess column density
+        @param b Guess doppler broadening
+        @param chi2r_thres Reduced chi2 threshold to find models to improve
+        @param maxfev Maximum number of function evaluation
+        @return 0
+        """
+
+        z_start = float(z_start)
+        z_end = float(z_end)
+        dz = float(dz)
+        resol = float(resol)
+        logN = float(logN)
+        b = float(b)
+        chi2r_thres = float(chi2r_thres)
+        maxfev = int(maxfev)
+
+        systs = self.sess.systs
+
+        # Select systems by redshift range and reduced chi2 threshold
+        cond_z =  np.logical_and(systs._mods_t['z0'] > z_start,
+                                 systs._mods_t['z0'] < z_end)
+        cond_chi2r = np.logical_or(systs._mods_t['chi2r'] > chi2r_thres,
+                                   np.isnan(systs._mods_t['chi2r']))
+        old = systs._mods_t[np.where(np.logical_and(cond_z, cond_chi2r))]
+        
+        for i, o in enumerate(old):
+            o_id = o['id'][0]
+            o_series = systs._t[systs._t['id'] == o_id]['series'][0]
+            o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
+
+            chi2r_old = np.inf
+            count = 0
+            count_good = 0
+
+            while True:
+
+                spec = dc(self.sess.spec)
+                spec._gauss_convolve(std=2, input_col='deabs', verb=False)
+                try:
+                    reg_x = systs._mods_t['mod'][i]._xm
+                except:
+                    break
+
+                reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
+                reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
+                reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
+                reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
+                from .spectrum import Spectrum
+                reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
+                peaks = reg._peaks_find(col='y')#, mode='wrap')
+
+                from .line_list import LineList
+                resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
+                                  peaks.dy, reg._xunit, reg._yunit, reg._meta)
+                z_cand = resids._syst_cand(o_series, z_start, z_end, dz,
+                                           single=True)
+                z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
+
+                # If no residuals are found, add a system at the init. redshift
+                if z_cand == None:
+                    z_cand = o_z
+
+                if z_alt == None:
+                    z_alt = (1.+o_z)\
+                            *xem_d[series_d[o_series][0]].to(au.nm).value
+
+                if count == 0:
+                    t_old, mods_t_old = self.sess.systs._freeze()
+                from .syst_list import SystList
+                systs._append(SystList(id_start=np.max(self.sess.systs._t['id'])+1),
+                              unique=False)
+                cand = dc(self.sess)
+                alt = dc(self.sess)
+
+                cand_mod = cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                alt_mod = alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                self.sess.systs._mods_t = dc(mods_t_old)
+                chi2r_cand = cand_mod._chi2r
+                chi2r_alt = alt_mod._chi2r
+                if cand_mod._chi2r>=chi2r_old and alt_mod._chi2r>= chi2r_old:
+                    self.sess.systs._unfreeze(t_old, mods_t_old)
+                    count += 1
+                    break
+                else:
+                    t_old, mods_t_old = self.sess.systs._freeze()
+                    if chi2r_cand > chi2r_alt:#*2:#1.1:# and count > 3:
+                        mod = self.sess.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
+                        msg = "added an unknown component at wavelength %2.4f" \
+                              % z_alt
+                        chi2r = chi2r_alt
+                    else:
+                        mod = self.sess.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
+                        msg = "added a %s component at redshift %2.4f" \
+                              % (o_series, z_cand)
+                        chi2r = chi2r_cand
+                    print("[INFO] session.add_syst_from_resids: I'm improving "
+                          "a model at redshift %2.4f (%i/%i): %s (red. "
+                          "chi-squared: %3.2f)...          " \
+                          % (o_z, i+1, len(old), msg, chi2r))#, end='\r')
+                    chi2r_old = chi2r
+                    count = 0
+                    count_good += 1
+
+                self._update_spec()
+                if count_good == 10: break
+                if count >= 10: break
+                if chi2r<chi2r_thres: break
+
+
+            if count_good == 0:
+                logging.warning("I've not improved the %s system at redshift "\
+                                "%2.4f (%i/%i): I was unable to add useful "\
+                                "components."\
+                                % (o_series, o_z, i+1, len(old)))
+            else:
+                logging.info("I've improved a model at redshift %2.4f (%i/%i) "
+                             "by adding %i components (red. chi-squared: "\
+                             "%3.2f).                                                "\
+                             "  " % (o_z, i+1, len(old), count, chi2r))
+
+        return 0
