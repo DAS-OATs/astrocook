@@ -146,6 +146,8 @@ class GUIMenuCook(GUIMenu):
             xmax = l['lambdamax']
             self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
+
+                
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
@@ -186,7 +188,7 @@ class GUIMenuCook(GUIMenu):
 
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            sess_reg.merge_syst()
+            sess_reg.syst_merge()
             self._gui._refresh()
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
@@ -254,7 +256,7 @@ class GUIMenuCook(GUIMenu):
             """
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            sess_reg.merge_syst()
+            sess_reg.syst_merge()
             """
             self._gui._refresh()
             """
@@ -414,21 +416,21 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+302, 'cont',
                           "New systems from line list",
                           'systs_new_from_lines')
+        #self._item_method(self._menu, start_id+303, 'systs',
+        #                  "Add and fit systems from residuals",
+        #                  'add_syst_from_resids')
         self._item_method(self._menu, start_id+303, 'systs',
-                          "Add and fit systems from residuals",
-                          'add_syst_from_resids')
-        self._item_method(self._menu, start_id+313, 'systs',
                           "New systems from residuals",
                           'systs_new_from_resids')
         self._item_method(self._menu, start_id+304, 'systs',
-                          "Test and fit systems "
-                          "by sliding along spectrum", 'add_syst_slide')
+                          "New systems from sliding technique",
+                          'systs_new_from_slide')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+401, 'lines',
-                          "Simulate a system", 'simul_syst')
+                          "Simulate a system", 'syst_simul')
         self._item_method(self._menu, start_id+402, 'systs',
                           "Estimate completeness with simulated systems",
-                          'compl_syst')
+                          'systs_compl')
 
 
 class GUIMenuView(GUIMenu):

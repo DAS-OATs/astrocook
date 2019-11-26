@@ -74,7 +74,7 @@ class Spectrum(Frame):
 
 
     """
-    def fit_syst(self, series='CIV', z=1.6971, logN=13, b=10, resol=45000):
+    def syst_fit(self, series='CIV', z=1.6971, logN=13, b=10, resol=45000):
         @brief Add a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift

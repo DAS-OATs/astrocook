@@ -1,8 +1,13 @@
 from .functions import parse
+from .message import *
+from .syst_list import SystList
 from .vars import *
 from copy import deepcopy as dc
 import logging
 import numpy as np
+import sys
+
+prefix = "[INFO] cookbook_absorbers:"
 
 class CookbookAbsorbers(object):
     """ Cookbook of utilities for modeling absorbers
@@ -25,6 +30,10 @@ class CookbookAbsorbers(object):
                            b=s['b'], resol=resol)
             systs._update(mod)
         self.sess.systs._mods_t = systs._mods_t
+
+
+    def _lines_cand_find(self, series, z_start, z_end, dz, logN):
+        return self.sess.lines._cand_find(series, z_start, z_end, dz, logN)
 
 
     def _spec_update(self):
@@ -62,6 +71,37 @@ class CookbookAbsorbers(object):
         return mod
 
 
+    def _syst_add_fit(self, series, z, logN, b, resol, max_nfev):
+        mod = self._syst_add(series, z, logN, b, resol)
+        if max_nfev > 0:
+            mod._fit(fit_kws={'max_nfev': max_nfev})
+        else:
+            logging.info("I'm not fitting the system because you choose "
+                         "max_nfev=0.")
+        return mod
+
+    def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
+                   resol_list=None):
+        if logN_list is None: logN_list = [None]*len(series_list)
+        if b_list is None: b_list = [None]*len(series_list)
+        if resol_list is None: resol_list = [None]*len(series_list)
+        for i, (series, z, logN, b, resol) \
+            in enumerate(zip(series_list, z_list, logN_list, b_list, resol_list)):
+            if logN is None: logN = logN_def
+            if b is None: b = b_def
+            if resol is None: resol = resol_def
+            mod = self._syst_add(series, z, logN, b, resol)
+            self._systs_update(mod)
+
+
+    def _systs_prepare(self):
+        systs = self.sess.systs
+        if systs != None and len(systs.t) != 0:
+            systs._append(SystList(id_start=np.max(systs._t['id'])+1))
+        else:
+            setattr(self.sess, 'systs', SystList())
+
+
     def _systs_reject(self, chi2r_thres, relerr_thres, resol):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > chi2r_thres
@@ -83,6 +123,22 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def _systs_update(self, mod):
+        self.sess.systs._update(mod)
+
+
+    def _z_off(self, trans, z):
+        for t in trans:
+            x = xem_d[t]*(1+z)
+            if x < self.sess.spec.x[0] or x > self.sess.spec.x[-1]:
+                logging.warning("%s transition at redshift %3.2f is outside "
+                                "the spectral range! Please choose a different "
+                                "series or redshift." % (t, z))
+                return 1
+        return 0
+
+################################################################################
+
     def syst_new(self, series='Lya', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, relerr_thres=0.1,
                  max_nfev=100):
@@ -99,25 +155,23 @@ class CookbookAbsorbers(object):
         @return 0
         """
 
-        z = float(z)
-        logN = float(logN)
-        b = float(b)
-        resol = float(resol)
-        chi2r_thres = float(chi2r_thres)
-        relerr_thres = float(relerr_thres)
-        max_nfev = int(max_nfev)
+        try:
+            z = float(z)
+            logN = float(logN)
+            b = float(b)
+            resol = float(resol)
+            chi2r_thres = float(chi2r_thres)
+            relerr_thres = float(relerr_thres)
+            max_nfev = int(max_nfev)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
 
-        if self.sess._z_off(parse(series), z): return 0
+        if self._z_off(parse(series), z): return 0
 
-        self.sess._systs_prepare()
-        systs = self.sess.systs
-        mod = self._syst_add(series, z, logN, b, resol)
-        if max_nfev > 0:
-            mod._fit(fit_kws={'max_nfev': max_nfev})
-        else:
-            logging.info("I'm not fitting the system because you choose "
-                         "max_nfev=0.")
-        systs._update(mod)
+        self._systs_prepare()
+        mod = self._syst_add_fit(series, z, logN, b, resol, max_nfev)
+        self._systs_update(mod)
         self._systs_reject(chi2r_thres, relerr_thres, resol)
         self._spec_update()
 
@@ -144,34 +198,35 @@ class CookbookAbsorbers(object):
         @return 0
         """
 
-        z_start = float(z_start)
-        z_end = float(z_end)
-        if series == 'unknown':
-            z_start = 0
-            z_end = np.inf
-        dz = float(dz)
-        if logN is not None:
-            logN = float(logN)
-        b = float(b)
-        chi2r_thres = float(chi2r_thres)
-        relerr_thres = float(relerr_thres)
-        resol = float(resol)
-        max_nfev = int(max_nfev)
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            dz = float(dz)
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            chi2r_thres = float(chi2r_thres)
+            relerr_thres = float(relerr_thres)
+            resol = float(resol)
+            max_nfev = int(max_nfev)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
 
-        z_range, logN_range = self.sess.lines._cand_find(series, z_start, z_end,
-                                                         dz, logN=logN is None)
+
+        z_range, logN_range = self._lines_cand_find(series, z_start, z_end, dz,
+                                                    logN=logN is None)
 
         if len(z_range) == 0:
             logging.warning("I've found no candidates!")
             return 0
 
-        self.sess._systs_prepare()
+        self._systs_prepare()
         systs = self.sess.systs
-        for i, (z, l) in enumerate(zip(z_range, logN_range)):
-            if l is None: l = logN_def
-            mod = self._syst_add(series, z, l, b, resol)
-            systs._update(mod)
-
+        self._systs_add([series]*len(z_range), z_range, logN_range)
 
         mods_t = systs._mods_t
         logging.info("I've added %i %s system(s) in %i model(s) between "
@@ -180,13 +235,13 @@ class CookbookAbsorbers(object):
 
         if max_nfev > 0:
             for i,m in enumerate(mods_t):
-                print("[INFO] session.add_syst_from_lines: I'm fitting a %s "
+                print(prefix, "I'm fitting a %s "
                       "model at redshift %2.4f (%i/%i)..."\
                     % (series, m['z0'], i+1, len(mods_t)), end='\r')
                 m['mod']._fit(fit_kws={'max_nfev': max_nfev})
                 systs._update(m['mod'], mod_t=False)
             try:
-                print("[INFO] session.add_syst_from_lines: I've fitted %i %s "
+                print(prefix, "I've fitted %i %s "
                       "system(s) in %i model(s) between redshift %2.4f and "
                       "%2.4f." \
                       % (len(z_range), series, len(mods_t), z_range[0],
@@ -196,137 +251,5 @@ class CookbookAbsorbers(object):
 
         self._systs_reject(chi2r_thres, relerr_thres, resol)
         self._spec_update()
-
-        return 0
-
-    def systs_new_from_resids(self, z_start=0, z_end=6, dz=1e-4,
-                             resol=45000, logN=11, b=5, chi2r_thres=1.0,
-                             maxfev=100):
-        """ @brief Fit systems from residuals
-        @details Add and fit Voigt models from residuals of previously fitted
-        models.
-        @param z_start Start redshift
-        @param z_end End redshift
-        @param dz Threshold for redshift coincidence
-        @param resol Resolution
-        @param logN Guess column density
-        @param b Guess doppler broadening
-        @param chi2r_thres Reduced chi2 threshold to find models to improve
-        @param maxfev Maximum number of function evaluation
-        @return 0
-        """
-
-        z_start = float(z_start)
-        z_end = float(z_end)
-        dz = float(dz)
-        resol = float(resol)
-        logN = float(logN)
-        b = float(b)
-        chi2r_thres = float(chi2r_thres)
-        maxfev = int(maxfev)
-
-        systs = self.sess.systs
-
-        # Select systems by redshift range and reduced chi2 threshold
-        cond_z =  np.logical_and(systs._mods_t['z0'] > z_start,
-                                 systs._mods_t['z0'] < z_end)
-        cond_chi2r = np.logical_or(systs._mods_t['chi2r'] > chi2r_thres,
-                                   np.isnan(systs._mods_t['chi2r']))
-        old = systs._mods_t[np.where(np.logical_and(cond_z, cond_chi2r))]
-        
-        for i, o in enumerate(old):
-            o_id = o['id'][0]
-            o_series = systs._t[systs._t['id'] == o_id]['series'][0]
-            o_z = np.array(systs._t['z'][systs._t['id']==o_id])[0]
-
-            chi2r_old = np.inf
-            count = 0
-            count_good = 0
-
-            while True:
-
-                spec = dc(self.sess.spec)
-                spec._gauss_convolve(std=2, input_col='deabs', verb=False)
-                try:
-                    reg_x = systs._mods_t['mod'][i]._xm
-                except:
-                    break
-
-                reg_xmin = np.interp(reg_x, spec.x.to(au.nm), spec.xmin.to(au.nm))
-                reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
-                reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
-                reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
-                from .spectrum import Spectrum
-                reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
-                peaks = reg._peaks_find(col='y')#, mode='wrap')
-
-                from .line_list import LineList
-                resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
-                                  peaks.dy, reg._xunit, reg._yunit, reg._meta)
-                z_cand = resids._syst_cand(o_series, z_start, z_end, dz,
-                                           single=True)
-                z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)
-
-                # If no residuals are found, add a system at the init. redshift
-                if z_cand == None:
-                    z_cand = o_z
-
-                if z_alt == None:
-                    z_alt = (1.+o_z)\
-                            *xem_d[series_d[o_series][0]].to(au.nm).value
-
-                if count == 0:
-                    t_old, mods_t_old = self.sess.systs._freeze()
-                from .syst_list import SystList
-                systs._append(SystList(id_start=np.max(self.sess.systs._t['id'])+1),
-                              unique=False)
-                cand = dc(self.sess)
-                alt = dc(self.sess)
-
-                cand_mod = cand.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
-                alt_mod = alt.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
-                self.sess.systs._mods_t = dc(mods_t_old)
-                chi2r_cand = cand_mod._chi2r
-                chi2r_alt = alt_mod._chi2r
-                if cand_mod._chi2r>=chi2r_old and alt_mod._chi2r>= chi2r_old:
-                    self.sess.systs._unfreeze(t_old, mods_t_old)
-                    count += 1
-                    break
-                else:
-                    t_old, mods_t_old = self.sess.systs._freeze()
-                    if chi2r_cand > chi2r_alt:#*2:#1.1:# and count > 3:
-                        mod = self.sess.cb._fit_syst('unknown', z_alt, logN, b, resol, maxfev)
-                        msg = "added an unknown component at wavelength %2.4f" \
-                              % z_alt
-                        chi2r = chi2r_alt
-                    else:
-                        mod = self.sess.cb._fit_syst(o_series, z_cand, logN, b, resol, maxfev)
-                        msg = "added a %s component at redshift %2.4f" \
-                              % (o_series, z_cand)
-                        chi2r = chi2r_cand
-                    print("[INFO] session.add_syst_from_resids: I'm improving "
-                          "a model at redshift %2.4f (%i/%i): %s (red. "
-                          "chi-squared: %3.2f)...          " \
-                          % (o_z, i+1, len(old), msg, chi2r))#, end='\r')
-                    chi2r_old = chi2r
-                    count = 0
-                    count_good += 1
-
-                self._update_spec()
-                if count_good == 10: break
-                if count >= 10: break
-                if chi2r<chi2r_thres: break
-
-
-            if count_good == 0:
-                logging.warning("I've not improved the %s system at redshift "\
-                                "%2.4f (%i/%i): I was unable to add useful "\
-                                "components."\
-                                % (o_series, o_z, i+1, len(old)))
-            else:
-                logging.info("I've improved a model at redshift %2.4f (%i/%i) "
-                             "by adding %i components (red. chi-squared: "\
-                             "%3.2f).                                                "\
-                             "  " % (o_z, i+1, len(old), count, chi2r))
 
         return 0

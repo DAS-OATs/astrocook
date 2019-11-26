@@ -2,6 +2,7 @@ from .vars import *
 from .message import *
 from copy import deepcopy as dc
 import numpy as np
+import sys
 from tqdm import tqdm
 
 class CookbookGeneral(object):
@@ -23,8 +24,9 @@ class CookbookGeneral(object):
 
         try:
             std = float(std) * au.km/au.s
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
+            return 0
 
         self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
@@ -41,7 +43,7 @@ class CookbookGeneral(object):
         try:
             xmin = float(xmin) * au.nm
             xmax = float(xmax) * au.nm
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
             return None
 
@@ -85,8 +87,9 @@ class CookbookGeneral(object):
         try:
             dx = float(dx)
             xunit = au.Unit(xunit)
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
+            return None
 
         # A deep copy is created, so the original spectrum is preserved
         spec_in = dc(self.sess.spec)
@@ -108,8 +111,9 @@ class CookbookGeneral(object):
 
         try:
             z = float(z)
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
+            return 0
 
         for s in self.sess.seq:
             try:
@@ -129,8 +133,9 @@ class CookbookGeneral(object):
 
         try:
             z = float(z)
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
+            return 0
 
         for s in self.sess.seq:
             try:
@@ -150,8 +155,10 @@ class CookbookGeneral(object):
 
         try:
             zem = float(zem)
-        except:
+        except ValueError:
             logging.error(msg_param_fail)
+            return 0
+
         xunit = au.Unit(xunit)
 
         for s in self.sess.seq:
