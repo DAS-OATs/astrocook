@@ -28,7 +28,9 @@ class GUI(object):
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
+        self._menu_conv_id = []
         self._menu_lines_id = []
+        self._menu_cont_id = []
         self._menu_nodes_id = []
         self._menu_systs_id = []
         self._menu_mods_id = []
@@ -43,6 +45,7 @@ class GUI(object):
         if path == None:
             logging.info("Welcome! Try Session > Open...")
         else:
+            logging.info("Welcome!")
             self._panel_sess._on_open(path)
 
     def _refresh(self, autolim=True, init_cursor=False):
@@ -64,7 +67,7 @@ class GUI(object):
             if hasattr(graph, '_axes'):
                 for key in graph._zems:
                     xunit = self._sess_sel.spec.x.unit
-                    self._sess_sel.convert_x(zem=graph._zems[key])
+                    self._sess_sel.cb.x_convert(zem=graph._zems[key])
                     graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
@@ -76,7 +79,7 @@ class GUI(object):
                         self._graph_det._refresh(self._sess_items, text=key,
                                                  init_cursor=init_cursor)
                     init_cursor = False
-                    self._sess_sel.convert_x(zem=graph._zems[key], xunit=xunit)
+                    self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
             else:
                 xlim_det = graph._ax.get_xlim()
                 ylim_det = graph._ax.get_ylim()
@@ -91,7 +94,8 @@ class GUI(object):
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
-                    getattr(self, '_tab_'+s)._on_view(event=None, from_scratch=False)
+                    getattr(self, '_tab_'+s)._on_view(event=None,
+                                                      from_scratch=False)
 
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
@@ -278,5 +282,4 @@ class GUIPanelSession(wx.Frame):
         if name_in[0] == '*':
             name += name_in[1:]
         sess = Session(name=name, spec=spec)
-
         return sess

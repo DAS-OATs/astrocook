@@ -31,7 +31,7 @@ class GUIMenu(object):
         bar.Append(self._snacks._menu, "Ingredients")
         #bar.Append(meals._menu, "Meals")
         bar.Append(self._meals._menu, "Recipes")
-        #bar.Append(self._cook._menu, "Cook")
+        bar.Append(self._cook._menu, "Cook")
         return bar
 
     def _item(self, menu, id, append, title, event):
@@ -97,14 +97,18 @@ class GUIMenu(object):
     def _refresh(self):
         # Nested loops! WOOOO!
         sel = self._gui._graph_main._sel
-        for a in seq:  # from .vars
+        for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable():
                             item.Check(False)
-                        if getattr(self._gui._sess_sel, a) != None:
+                        if hasattr(self._gui._sess_sel, a):
+                            cond = getattr(self._gui._sess_sel, a) != None
+                        else:
+                            cond = a in self._gui._sess_sel.spec.t.colnames
+                        if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
                                 item.Check(item.key in sel)  # from .vars
@@ -125,13 +129,19 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, 'spec',
+        self._item(self._menu, start_id+1, None,
                    "Fit CIV forest in all QSOs...",
                    self._on_civ_full)
-        self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
-
+        #self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
 
     def _on_civ_full(self, event):
+        from .cookbook import Cookbook
+        from .workflow import Workflow
+        wf = Workflow(self._gui, Cookbook())
+        wf.civ_full()
+
+    def _on_civ_full_old(self, event):
+
         targ_list = ascii.read('/data/cupani/CIV/targets_3.csv')
 
         for l in targ_list:
@@ -142,22 +152,24 @@ class GUIMenuCook(GUIMenu):
             xmax = l['lambdamax']
             self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
+
+
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=10)
-            sess.find_peaks(kappa=3.0)
+            sess.gauss_convolve(std=10)
+            sess.peaks_find(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
-                sess.extract_nodes(delta_x=1000)
-                sess.interp_nodes()
+                sess.nodes_extract(delta_x=1000)
+                sess.nodes_interp()
 
-            sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
+            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
             sess_center = dc(sess_reg)
             sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
@@ -182,7 +194,7 @@ class GUIMenuCook(GUIMenu):
 
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            sess_reg.merge_syst()
+            sess_reg.syst_merge()
             self._gui._refresh()
             sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
                           +datetime.date.today().isoformat()+'.xxx')
@@ -212,20 +224,20 @@ class GUIMenuCook(GUIMenu):
                                            +'.fits')
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
+                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
             else:
                 sess = sess_start
 
-            sess.convolve_gauss(std=10)
-            sess.find_peaks(kappa=3.0)
+            sess.gauss_convolve(std=10)
+            sess.peaks_find(kappa=3.0)
             sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
-                sess.extract_nodes(delta_x=1000)
-                sess.interp_nodes()
+                sess.nodes_extract(delta_x=1000)
+                sess.nodes_interp()
 
-            sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
+            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
             #"""
             sess_center = dc(sess_reg)
@@ -250,7 +262,7 @@ class GUIMenuCook(GUIMenu):
             """
             sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
             sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            sess_reg.merge_syst()
+            sess_reg.syst_merge()
             """
             self._gui._refresh()
             """
@@ -275,12 +287,12 @@ class GUIMenuEdit(GUIMenu):
 
         # Add items to Edit menu here
         self._item_method(self._menu, start_id+301, 'spec',
-                          "Extract region", 'extract_region')
+                          "Extract region", 'region_extract')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+311, 'spec',
-                          "Convert x axis", 'convert_x')
+                          "Convert x axis", 'x_convert')
         self._item_method(self._menu, start_id+312, 'spec',
-                          "Convert y axis", 'convert_y')
+                          "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+321, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
@@ -369,10 +381,10 @@ class GUIMenuMeals(GUIMenu):
 
         # Add items to Meals menu here
         self._item_method(self._menu, start_id, 'spec', "Find lines",
-                          ['convolve_gauss', 'find_peaks'])
+                          ['gauss_convolve', 'peaks_find'])
         self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
-                          ['convolve_gauss', 'find_peaks', 'extract_nodes',
-                           'interp_nodes'])
+                          ['gauss_convolve', 'peaks_find', 'nodes_extract',
+                           'nodes_interp'])
         self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
                           ['add_syst_from_lines', 'add_syst_from_resids',
                            'add_syst_slide', 'compl_syst'])
@@ -391,32 +403,40 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+101, 'spec',
                           "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+102, 'spec',
-                          "Convolve with gaussian", 'convolve_gauss')
+                          "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+103, 'spec', "Find peaks",
-                          'find_peaks')
+                          'peaks_find')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
-                          'extract_nodes')
-        self._item_method(self._menu, start_id+202, 'lines',
-                          "Interpolate nodes", 'interp_nodes')
+                          'nodes_extract')
+        self._item_method(self._menu, start_id+202, 'nodes',
+                          "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, 'lines',
-                          "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+302, 'lines',
-                          "Add and fit systems from line list",
-                          'add_syst_from_lines')
+        #self._item_method(self._menu, start_id+301, 'lines',
+        #                  "Add and fit a system", 'add_syst')
+        self._item_method(self._menu, start_id+301, 'cont',
+                          "New system", 'syst_new')
+        #self._item_method(self._menu, start_id+302, 'cont',
+        #                  "Add and fit systems from line list",
+        #                  'add_syst_from_lines')
+        self._item_method(self._menu, start_id+302, 'cont',
+                          "New systems from line list",
+                          'systs_new_from_lines')
+        #self._item_method(self._menu, start_id+303, 'systs',
+        #                  "Add and fit systems from residuals",
+        #                  'add_syst_from_resids')
         self._item_method(self._menu, start_id+303, 'systs',
-                          "Add and fit systems from residuals",
-                          'add_syst_from_resids')
+                          "New systems from residuals",
+                          'systs_new_from_resids')
         self._item_method(self._menu, start_id+304, 'systs',
-                          "Test and fit systems "
-                          "by sliding along spectrum", 'add_syst_slide')
+                          "New systems from sliding technique",
+                          'systs_new_from_slide')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+401, 'lines',
-                          "Simulate a system", 'simul_syst')
+                          "Simulate a system", 'syst_simul')
         self._item_method(self._menu, start_id+402, 'systs',
                           "Estimate completeness with simulated systems",
-                          'compl_syst')
+                          'systs_compl')
 
 
 class GUIMenuView(GUIMenu):
@@ -454,7 +474,7 @@ class GUIMenuView(GUIMenu):
                          'spec_x_y')
         self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, 'lines', "Convolved spectrum",
+        self._item_graph(self._submenu, start_id+303, 'conv', "Convolved spectrum",
                          'spec_x_conv')
         self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
                          'lines_x_y')

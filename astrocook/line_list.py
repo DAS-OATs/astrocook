@@ -55,6 +55,93 @@ class LineList(Frame):
                 l['XMAX'] = l['X']+0.5*ew.value
     """
 
+    def _cand_find(self, series, z_start, z_end, dz, single=False, logN=False):
+
+        # Compute all possible redshifts
+        trans = series_d[series]
+        if series == 'unknown':
+            z_all = np.ravel([[self.x.to(au.nm)] for t in trans])
+        else:
+            z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
+                                for x in self.x] for t in trans])
+        y_all = np.ravel([[self.y] for t in trans])
+        if logN:
+            fosc_r = np.ravel([[fosc_d['Ly_a']/fosc_d[t]]*len(self.x) \
+                               for t in trans])
+            logN_all = np.ravel([[self.t['logN']] for t in trans]) \
+                       + np.log10(fosc_r)
+            #print('all')
+            #print(z_all)
+            #print(logN_all)
+
+        # Select values within [z_start, z_end]
+        (z_min, z_max) = (z_start, z_end) if z_start < z_end \
+            else (z_end, z_start)
+        z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        y_sel = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        if logN:
+            logN_sel = logN_all[np.logical_and(z_all>z_min, z_all<z_max)]
+            #print('sel')
+            #print(logN_sel)
+
+        # Find coincidences
+        if len(series_d[series]) > 1:
+            z_sort = np.sort(np.ravel(z_sel))
+            y_sort = y_sel[np.argsort(np.ravel(z_sel))]
+            if logN:
+                logN_sort = logN_sel[np.argsort(np.ravel(z_sel))]
+                #print('sort')
+                #print(z_sort)
+                #print(logN_sort)
+
+            w_range = np.where(np.ediff1d(z_sort)<dz)[0]
+            z_range = np.mean(np.vstack((z_sort[w_range], z_sort[w_range+1])),
+                              axis=0)
+            #y_range = y_sort[np.where(np.ediff1d(z_sort)<dz)]
+            y_range = np.mean(np.vstack((y_sort[w_range], y_sort[w_range+1])),
+                              axis=0)
+            if logN:
+                #logN_range = logN_sort[np.where(np.ediff1d(z_sort)<dz)]
+                logN_range = np.log10(np.mean(np.vstack((
+                    10**logN_sort[w_range], 10**logN_sort[w_range+1])),
+                                              axis=0))
+                #print('range 1')
+                #print(z_range)
+                #print(logN_range)
+
+            z_range = z_range if z_start<z_end else z_range[::-1]
+            y_range = y_range if z_start<z_end else y_range[::-1]
+            if logN:
+                logN_range = logN_range if z_start<z_end else logN_range[::-1]
+                #print('range 2')
+                #print(z_range)
+                #print(logN_range)
+        else:
+            z_range = z_sel
+            y_range = y_sel
+            if logN:
+                logN_range = logN_sel
+
+        if len(z_range) > 0:
+            z_single = z_range[np.argmin(y_range)]
+            if logN:
+                logN_single = logN_range[np.argmin(y_range)]
+        else:
+            z_single = None
+            if logN:
+                logN_single = None
+
+        if single:
+            if logN:
+                return z_single, logN_single
+            else:
+                return z_single, None
+        if logN:
+            return z_range, logN_range
+        else:
+            return z_range, [None]*len(z_range)
+
+
     def _syst_cand(self, series, z_start, z_end, dz, single=False, logN=False):
 
         # Compute all possible redshifts

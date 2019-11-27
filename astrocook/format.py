@@ -37,7 +37,7 @@ class Format(object):
                 meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
             except:
                 meta['object'] = ''
-                logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+                logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
             if struct in ['spec', 'nodes']:
                 out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
             if struct in ['lines']:
@@ -118,7 +118,7 @@ class Format(object):
             meta['object'] = hdr['FILENAME'][:-4]
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def espresso_das_spectrum(self, hdul):
@@ -139,7 +139,7 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def espresso_drs_spectrum(self, hdul):
@@ -159,7 +159,7 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def espresso_spectrum_format(self, data):
@@ -199,14 +199,14 @@ class Format(object):
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('OBJECT'))
+            logging.warning(msg_descr_miss('OBJECT'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def xshooter_das_spectrum(self, hdul):
         """ X-shooter DAS FSPEC/RSPEC format """
         logging.info(msg_format('X-shooter DAS'))
 
-        logging.info(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+        logging.info(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         hdr = hdul[0].header
         data = hdul[1].data
         x = data['WAVEL']
@@ -221,7 +221,7 @@ class Format(object):
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('HIERARCH ESO OBS TARG NAME'))
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def xshooter_reduce_spectrum(self, hdul, hdul_e):
@@ -244,5 +244,5 @@ class Format(object):
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
-            logging.warning(msg_miss_descr('OBJECT'))
+            logging.warning(msg_descr_miss('OBJECT'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

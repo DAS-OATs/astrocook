@@ -7,7 +7,13 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
+logN_def = 13
+b_def = 10
+
+resol_def = 70000
+
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+seq_menu = seq + ['conv', 'cont']
 graph_sel = ['spec_x_y',
              #'spec_x_y_det',
              'lines_x_y', 'spec_x_cont', 'spec_x_model', 'systs_z_series']

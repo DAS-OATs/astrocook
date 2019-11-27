@@ -1,7 +1,9 @@
+from .message import *
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
 import numpy as np
+import datetime as dt
 import wx
 
 class GUIDialog(wx.Dialog):
@@ -23,9 +25,24 @@ class GUIDialog(wx.Dialog):
         self._doc = []
         self._ctrl = []
         for a in self._attr:
-            if self._obj == None:
-                self._obj = self._gui._sess_sel
+            self._sess_sel =  self._gui._sess_sel
+            self._cb =  self._gui._sess_sel.cb
+            if hasattr(self._cb, a):
+                self._obj = self._cb
+            else:
+                self._obj = self._sess_sel
             method = getattr(self._obj, a)
+
+            """
+            try:
+                if self._obj == None or hasattr(self._obj, a):
+                    self._obj = self._gui._sess_sel.cb
+                method = getattr(self._obj, a)
+            except:
+                if self._obj == None or not hasattr(self._obj, a):
+                    self._obj = self._gui._sess_sel
+                method = getattr(self._obj, a)
+            """
             self._methods.append(method)
             self._get_params(method)
             self._get_doc(method)
@@ -89,8 +106,12 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
             m = getattr(self._obj, a)
-
+            logging.info("I'm launching %s..." % a)
+            start = dt.datetime.now()
             out = m(**p_l)
+            end = dt.datetime.now()
+            logging.info("I completed %s in %3.3f seconds!" \
+                         % (a, (end-start).total_seconds()))
             if out is not None:
                 if out is 0:
                     self._gui._refresh()

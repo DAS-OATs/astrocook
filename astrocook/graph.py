@@ -300,7 +300,7 @@ class Graph(object):
                     self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(self._ax, gs._type)
-                    graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
+                    graph(gs._x, gs._y, zorder=z, #color=c, alpha=a,
                           **gs._kwargs)
                 #self._c += 1
             except:
@@ -474,7 +474,7 @@ class GraphCursorZSeries(object):
             self._x = self._xem*(1+self._z)*au.nm
             """
             spec = dc(sess.spec)
-            spec._convert_x(zem=spec._zem, xunit=spec._xunit_old)
+            spec._x_convert(zem=spec._zem, xunit=spec._xunit_old)
             print(spec._zem)
             self._z = np.mean(spec.x).to(au.nm).value/self._xmean.value-1.0
             self._x = self._xem*(1+self._z)*au.nm

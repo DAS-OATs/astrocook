@@ -92,7 +92,7 @@ class GUITable(wx.Frame):
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
         self._remove_data(row)
-        self._gui._sess_sel.cb._update_spec()
+        self._gui._sess_sel.cb._spec_update()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
         self._gui._refresh(init_cursor=True)
@@ -136,7 +136,7 @@ class GUITable(wx.Frame):
         """
         self._data.t.remove_row(row)
         if self._attr == 'systs':
-            self._gui._sess_sel.cb._update_mods()
+            self._gui._sess_sel.cb._mods_update()
 
 
 class GUITableLineList(GUITable):
@@ -324,7 +324,7 @@ class GUITableSystList(GUITable):
         #graph._axes = []
         #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
             xunit = self._gui._sess_sel.spec.x.unit
-            self._gui._sess_sel.convert_x(zem=zem)
+            self._gui._sess_sel.cb.x_convert(zem=zem)
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
             _, ylim = self._gui._graph_det._define_lim(0)
@@ -345,7 +345,7 @@ class GUITableSystList(GUITable):
                 self._gui._sess_items, title=title, text=key,
                 xlim=(-500, 500), ylim=ylim)
 
-            self._gui._sess_sel.convert_x(zem=zem, xunit=xunit)
+            self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
@@ -357,7 +357,7 @@ class GUITableSystList(GUITable):
         mod = self._extract_mod(self._tab, row)
         mod._fit()
         self._gui._sess_sel.systs._update(mod, mod_t=False)
-        cb._update_spec()
+        cb._spec_update()
         self._gui._refresh(init_cursor=True)
 
     def _on_freeze_par(self, event):
