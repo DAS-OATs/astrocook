@@ -164,7 +164,7 @@ class SystList(object):
         self._mods_t = mods_t
 
 
-    def _update(self, mod, mod_t=True):
+    def _update(self, mod, mod_t=True, t=True):
 
         #print(mod._id, mod._group_sel)
         if mod_t:
@@ -178,25 +178,26 @@ class SystList(object):
                 self._mods_t[mod._group_sel]['chi2r'] = np.nan
             self._mods_t[mod._group_sel]['id'].append(mod._id)
 
-        modw = np.where(mod == self._mods_t['mod'])[0][0]
-        ids = self._mods_t['id'][modw]
-        #print(ids)
-        for i in ids:
-            try:
-                iw = np.where(self._t['id']==i)[0][0]
-                pref = 'lines_voigt_'+str(i)
-                self._t[iw]['z'] = mod._pars[pref+'_z'].value
-                self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
-                self._t[iw]['b'] = mod._pars[pref+'_b'].value
-                self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+        if t:
+            modw = np.where(mod == self._mods_t['mod'])[0][0]
+            ids = self._mods_t['id'][modw]
+            #print(ids)
+            for i in ids:
                 try:
-                    self._t[iw]['chi2r'] = mod._chi2r
+                    iw = np.where(self._t['id']==i)[0][0]
+                    pref = 'lines_voigt_'+str(i)
+                    self._t[iw]['z'] = mod._pars[pref+'_z'].value
+                    self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
+                    self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                    self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                    self._t[iw]['b'] = mod._pars[pref+'_b'].value
+                    self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                    try:
+                        self._t[iw]['chi2r'] = mod._chi2r
+                    except:
+                        self._t[iw]['chi2r'] = np.nan
                 except:
-                    self._t[iw]['chi2r'] = np.nan
-            except:
-                pass
+                    pass
         self._id += 1
 
         #print(self._mods_t['id', 'chi2r'])

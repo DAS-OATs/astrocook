@@ -62,6 +62,7 @@ class CookbookContinuum(object):
                           "pick another one." % col)
             return None
         kappa = float(kappa)
+        append = append == 'True'
 
         peaks = spec._peaks_find(col, kind, kappa)
 
