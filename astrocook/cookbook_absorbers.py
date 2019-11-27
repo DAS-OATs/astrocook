@@ -312,7 +312,7 @@ class CookbookAbsorbers(object):
         self._systs_prepare(append)
         #"""
         self._systs_add([series]*len(z_list), z_list, logN_list)
-        self._systs_fit(resol, max_nfev)
+        self._systs_fit(max_nfev)
         """
         for zi, logNi, in zip(z_list, logN_list):
             print(zi)
@@ -321,9 +321,9 @@ class CookbookAbsorbers(object):
         """
         #refit_id = self._systs_reject(chi2r_thres, relerr_thres, resol, max_nfev)
         #print(refit_id)
-        refit_id = []
+        #refit_id = []
         self._mods_update(resol)
-        self._systs_refit(refit_id, max_nfev)
+        #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         return 0
