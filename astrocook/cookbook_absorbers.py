@@ -28,7 +28,7 @@ class CookbookAbsorbers(object):
             from .syst_model import SystModel
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
-                           b=s['b'], resol=resol)
+                           b=s['b'], resol=resol, update_mods_t=False)
             if systs._id in refit_id and max_nfev>0:
                 if verbose:
                     print(prefix, "I'm refitting a model at redshift %2.4f, "
@@ -38,7 +38,6 @@ class CookbookAbsorbers(object):
                 systs._update(mod)
             else:
                 systs._update(mod, t=False)
-
         #self.sess.systs._mods_t = systs._mods_t
         return 0
 
@@ -276,16 +275,22 @@ class CookbookAbsorbers(object):
             return 0
 
 
-        z_list, logN_range = self._lines_cand_find(series, z_start, z_end, dz,
-                                                    logN=logN is None)
+        z_list, logN_list = self._lines_cand_find(series, z_start, z_end, dz,
+                                                   logN=logN is None)
 
         if len(z_list) == 0:
             logging.warning("I've found no candidates!")
             return 0
 
         self._systs_prepare(append)
-        self._systs_add([series]*len(z_list), z_list, logN_range)
+        """
+        self._systs_add([series]*len(z_list), z_list, logN_list)
         self._systs_fit(max_nfev)
+        """
+        for zi, logNi, in zip(z_list, logN_list):
+            print(zi)
+            mod = self._syst_add(series, zi, logNi, b, resol)
+            self._syst_fit(mod, max_nfev)
         self._systs_reject(chi2r_thres, relerr_thres, resol, max_nfev)
         self._spec_update()
 

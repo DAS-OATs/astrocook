@@ -300,7 +300,7 @@ class Graph(object):
                     self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(self._ax, gs._type)
-                    graph(gs._x, gs._y, zorder=z, #color=c, alpha=a,
+                    graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
                           **gs._kwargs)
                 #self._c += 1
             except:
