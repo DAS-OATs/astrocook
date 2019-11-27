@@ -183,3 +183,20 @@ class CookbookGeneral(object):
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
+
+
+    def y_scale(self, fact=1.0):
+        """ @brief Scale y axis
+        @details Scale the y axis by a constant factor.
+        @param fact Multiplicative factor
+        @return 0
+        """
+
+        fact = float(fact)
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._y_scale(fact)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0

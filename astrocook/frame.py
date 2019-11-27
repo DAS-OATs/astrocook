@@ -202,3 +202,8 @@ class Frame():
         self.y = self.y.to(yunit, equivalencies=equiv)
         self.dy = self.dy.to(yunit, equivalencies=equiv)
         return 0
+
+    def _y_scale(self, fact):
+        self.y = self.y * fact
+        self.dy = self.dy * fact
+        return 0

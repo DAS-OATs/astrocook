@@ -295,8 +295,11 @@ class GUIMenuEdit(GUIMenu):
                           "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+321, 'spec',
+                          "Scale y axis", 'y_scale')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+331, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
-        self._item_method(self._menu, start_id+322, 'spec',
+        self._item_method(self._menu, start_id+332, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
 
 
