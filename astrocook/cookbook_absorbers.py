@@ -28,12 +28,12 @@ class CookbookAbsorbers(object):
             from .syst_model import SystModel
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
-                           b=s['b'], resol=resol, update_mods_t=False)
+                           b=s['b'], resol=resol)
             if systs._id in refit_id and max_nfev>0:
                 if verbose:
                     print(prefix, "I'm refitting a model at redshift %2.4f, "
                           "starting from the parameters of the previous fit..."
-                          % s['z'])
+                          % s['z'], end='\r')
                 mod._fit(fit_kws={'max_nfev': max_nfev})
                 systs._update(mod)
             else:
@@ -148,6 +148,33 @@ class CookbookAbsorbers(object):
             setattr(self.sess, 'systs', SystList())
 
 
+    def _systs_refit(self, refit_id=[], max_nfev=0, verbose=True):
+        systs = self.sess.systs
+        mods_t = systs._mods_t
+        if max_nfev > 0:
+            z_refit = []
+            for m in mods_t:
+                systs_s = [np.where(systs._t['id']==id)[0][0] for id in m['id']]
+                mods_s = np.any([id in m['id'] for id in refit_id])
+                if np.unique(systs._t['chi2r'][systs_s]).size > 1 or mods_s:
+                    if verbose:
+                        print(prefix, "I'm refitting a model at redshift "
+                              "%2.4f, starting from the result of the previous "
+                              "fit..." % m['z0'], end='\r')
+                    z_refit.append(m['z0'])
+                    m['mod']._fit(fit_kws={'max_nfev': max_nfev})
+                    systs._update(m['mod'])
+            if verbose:
+                print(prefix, "I've refitted %i model%s between redshift %2.4f "
+                      "and %2.4f." \
+                      % (len(z_refit), '' if len(z_refit)==1 else 's',
+                         np.min(z_refit), np.max(z_refit)))
+        else:
+            logging.info("I'm not refitting any system because you choose "
+                         "max_nfev=0.")
+        return 0
+
+
     def _systs_reject(self, chi2r_thres, relerr_thres, resol, max_nfev=0):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > chi2r_thres
@@ -175,8 +202,8 @@ class CookbookAbsorbers(object):
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), relerr_thres))
-        self._mods_update(resol, refit_id, max_nfev)
-        return 0
+        #self._mods_update(resol, refit_id, max_nfev)
+        return refit_id
 
 
     def _systs_update(self, mod):
@@ -283,15 +310,20 @@ class CookbookAbsorbers(object):
             return 0
 
         self._systs_prepare(append)
-        """
+        #"""
         self._systs_add([series]*len(z_list), z_list, logN_list)
-        self._systs_fit(max_nfev)
+        self._systs_fit(resol, max_nfev)
         """
         for zi, logNi, in zip(z_list, logN_list):
             print(zi)
             mod = self._syst_add(series, zi, logNi, b, resol)
             self._syst_fit(mod, max_nfev)
-        self._systs_reject(chi2r_thres, relerr_thres, resol, max_nfev)
+        """
+        #refit_id = self._systs_reject(chi2r_thres, relerr_thres, resol, max_nfev)
+        #print(refit_id)
+        refit_id = []
+        self._mods_update(resol)
+        self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         return 0

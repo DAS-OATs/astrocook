@@ -52,7 +52,7 @@ class SystModel(LMComposite):
             if v in self._defs:
                 self._defs[v] = self._vars[v]
 
-    def _make_group(self, thres=thres, update_mods_t=True):
+    def _make_group(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
@@ -141,12 +141,12 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000, update_mods_t=True):
+    def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
         self._series = series
         self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': resol}
         self._make_defs()
         self._make_lines()
-        self._make_group(update_mods_t=update_mods_t)
+        self._make_group()
         self._make_regs()
         self._make_psf()
         self._make_comp()

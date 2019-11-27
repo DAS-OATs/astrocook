@@ -62,7 +62,7 @@ class Workflow(object):
                 """
 
                 cb.systs_new_from_lines(series='CIV', logN=13.0, b=20.0,
-                                        dz=5e-5, z_end=zem, max_nfev=10, relerr_thres=1)
+                                        dz=5e-5, z_end=zem, max_nfev=10, relerr_thres=0.1)
 
                 #cb.systs_new_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
                 #                         maxfev=10)
