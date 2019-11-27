@@ -31,7 +31,7 @@ class GUIMenu(object):
         bar.Append(self._snacks._menu, "Ingredients")
         #bar.Append(meals._menu, "Meals")
         bar.Append(self._meals._menu, "Recipes")
-        #bar.Append(self._cook._menu, "Cook")
+        bar.Append(self._cook._menu, "Cook")
         return bar
 
     def _item(self, menu, id, append, title, event):
@@ -129,13 +129,19 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, 'spec',
+        self._item(self._menu, start_id+1, None,
                    "Fit CIV forest in all QSOs...",
                    self._on_civ_full)
-        self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
-
+        #self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
 
     def _on_civ_full(self, event):
+        from .cookbook import Cookbook
+        from .workflow import Workflow
+        wf = Workflow(self._gui, Cookbook())
+        wf.civ_full()
+
+    def _on_civ_full_old(self, event):
+
         targ_list = ascii.read('/data/cupani/CIV/targets_3.csv')
 
         for l in targ_list:
@@ -147,7 +153,7 @@ class GUIMenuCook(GUIMenu):
             self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
 
-                
+
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
@@ -336,7 +342,7 @@ class GUIMenuFile(GUIMenu):
             path = fileDialog.GetPath()
             name = path.split('/')[-1].split('.')[0]
             logging.info("I'm loading session %s..." % path)
-            sess = Session(gui=self._gui, path=path, name=name)
+            sess = Session(path=path, name=name)
             self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_save(self, event, path='.'):
@@ -403,7 +409,7 @@ class GUIMenuSnacks(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(self._menu, start_id+202, 'lines',
+        self._item_method(self._menu, start_id+202, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSeparator()
         #self._item_method(self._menu, start_id+301, 'lines',

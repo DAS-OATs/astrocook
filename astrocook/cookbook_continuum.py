@@ -21,6 +21,7 @@ class CookbookContinuum(object):
             delta_x = float(delta_x)*xunit
         except:
             logging.error(msg_param_fail)
+            return 0
 
         self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit)
         return 0
@@ -33,12 +34,12 @@ class CookbookContinuum(object):
         @param smooth Smoothing of the spline
         @return 0
         """
-        if not hasattr(self.sess, 'nodes'):
-            logging.error("I need nodes to interpolate. Please try Ingredients "
-                          "> Extract nodes first.")
-            return None
 
-        smooth = float(smooth)
+        try:
+            smooth = float(smooth)
+        except:
+            logging.error(msg_param_fail)
+            return 0
 
         self.sess.spec._nodes_interp(self.sess.lines, self.sess.nodes)
         return 0
@@ -56,13 +57,18 @@ class CookbookContinuum(object):
         @return 0
         """
 
+        try:
+            kappa = float(kappa)
+            append = append == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
         spec = self.sess.spec
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
                           "pick another one." % col)
-            return None
-        kappa = float(kappa)
-        append = append == 'True'
+            return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
 

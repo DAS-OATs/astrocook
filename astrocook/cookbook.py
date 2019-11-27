@@ -26,6 +26,8 @@ class Cookbook(CookbookGeneral,
     algorithms. All method parameters must have default values."""
 
     def __init__(self,
-                 sess):
+                 sess=None):
         self.sess = sess
-        #self._gui = self.sess._gui
+
+    def _refresh(self, sess):
+        self.sess = sess

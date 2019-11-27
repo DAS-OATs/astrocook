@@ -45,6 +45,7 @@ class GUI(object):
         if path == None:
             logging.info("Welcome! Try Session > Open...")
         else:
+            logging.info("Welcome!")
             self._panel_sess._on_open(path)
 
     def _refresh(self, autolim=True, init_cursor=False):
@@ -196,7 +197,7 @@ class GUIPanelSession(wx.Frame):
         #name = path.split('/')[-1][:-5]
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
-        sess = Session(gui=self, path=path, name=name)
+        sess = Session(path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_close(self, event):
@@ -280,6 +281,5 @@ class GUIPanelSession(wx.Frame):
                 name += '_' + self._gui._sess_list[s].name
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(gui=self, name=name, spec=spec)
-
+        sess = Session(name=name, spec=spec)
         return sess
