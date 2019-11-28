@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(module)s: %(message)s")
@@ -15,3 +16,10 @@ def msg_descr_miss(descr):
     return 'Descriptor %s is missing.' % descr
 def msg_format(format):
     return "I'm importing data with %s format." % format
+
+def msg_z_range(z_list):
+    if len(z_list)==1:
+        return " at redshift %2.4f" % z_list[0]
+    else:
+        return "s between redshift %2.4f and %2.4f" \
+                   % (np.min(z_list), np.max(z_list))

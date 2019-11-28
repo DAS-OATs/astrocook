@@ -6,6 +6,7 @@ from copy import deepcopy as dc
 import logging
 import numpy as np
 import sys
+from tqdm import tqdm
 
 prefix = "[INFO] cookbook_absorbers:"
 
@@ -16,7 +17,7 @@ class CookbookAbsorbers(object):
     def __init__(self):
         pass
 
-    def _mods_update(self, resol, max_nfev=0, verbose=True):
+    def _mods_recreate(self, resol, max_nfev=0, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         #systs = dc(self.sess.systs)
@@ -29,9 +30,26 @@ class CookbookAbsorbers(object):
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
                            b=s['b'], resol=resol)
-            systs._update(mod, t=False)
+            #systs._update(mod, t=False)
+            self._mods_update(mod)
         #self.sess.systs._mods_t = systs._mods_t
         return 0
+
+
+    def _mods_update(self, mod, incr=True):
+        systs = self.sess.systs
+        if mod._group_sel == -1:
+            systs._mods_t.add_row([mod._z0, mod, None, []])
+        else:
+            systs._mods_t[mod._group_sel]['mod'] = mod
+        try:
+            systs._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
+        except:
+            systs._mods_t[mod._group_sel]['chi2r'] = np.nan
+        systs._mods_t[mod._group_sel]['id'].append(mod._id)
+        if incr:
+            systs._id += 1
+
 
 
     def _lines_cand_find(self, series, z_start, z_end, dz, logN):
@@ -71,6 +89,9 @@ class CookbookAbsorbers(object):
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
+
+        # When a single system is added, it is stored only on the model table
+        self._mods_update(mod, incr=False)
         return mod
 
 
@@ -80,7 +101,9 @@ class CookbookAbsorbers(object):
         else:
             logging.info("I'm not fitting the system because you choose "
                          "max_nfev=0.")
-        self.sess.systs._update(mod)
+
+        # When a single system is fitted, it is stored also the system table
+        self._systs_update(mod)
         return 0
 
 
@@ -95,41 +118,39 @@ class CookbookAbsorbers(object):
             if b is None: b = b_def
             if resol is None: resol = resol_def
             mod = self._syst_add(series, z, logN, b, resol)
-            self.sess.systs._update(mod)
+
+            # When many systems are added, they are stored in the system table
+            self._systs_update(mod)
 
         # Improve
         mods_t = self.sess.systs._mods_t
         if verbose:
-            logging.info("I've added %i system%s in %i model%s between "
-                         "redshift %2.4f and %2.4f." \
+            logging.info("I've added %i system%s in %i model%s." \
                          % (len(z_list), '' if len(z_list)==1 else 's',
-                            len(mods_t), '' if len(mods_t)==1 else 's',
-                            z_list[0], z_list[-1]))
+                            len(mods_t), msg_z_range(z_list)))
         return 0
 
 
-    def _systs_fit(self, resol, max_nfev, verbose=True):
+    def _systs_fit(self, resol, max_nfev):
+        systs = self.sess.systs
+        mods_t = systs._mods_t
         if max_nfev > 0:
-            systs = self.sess.systs
-            mods_t = systs._mods_t
             z_list = []
-            for i,m in enumerate(mods_t):
+            for i,m in enumerate(
+                tqdm(mods_t, ncols=120, total=len(mods_t),
+                     desc="[INFO] cookbook_absorbers: Fitting")):
                 z_list.append(m['z0'])
-                if verbose:
-                    print(prefix, "I'm fitting a model at redshift %2.4f "
-                          "(%i/%i)..."
-                          % (m['z0'], i+1, len(mods_t)), end='\r')
-                m['mod']._fit(fit_kws={'max_nfev': max_nfev})
-                systs._update(m['mod'], mod_t=False)
-            if verbose:
-                print(prefix, "I've fitted %i model%s between redshift %2.4f "
-                      "and %2.4f." \
-                      % (len(mods_t), '' if len(mods_t)==1 else 's',
-                         np.min(z_list), np.max(z_list)))
+                self._syst_fit(m['mod'], max_nfev)
+
+                # When many systems are fitted, they are stored again in the
+                # system table after fitting
+                self._systs_update(m['mod'])
+            logging.info("I've fitted %i model%s." \
+                         % (len(mods_t), msg_z_range(z_list)))
+            self._mods_recreate(resol)
         else:
-            logging.info("I'm not fitting any system because you choose "
+            logging.info("I've not fitted any model because you choose "
                          "max_nfev=0.")
-        self._mods_update(resol)
         return 0
 
 
@@ -141,31 +162,26 @@ class CookbookAbsorbers(object):
             setattr(self.sess, 'systs', SystList())
 
 
-    def _systs_refit(self, refit_id=[], max_nfev=0, verbose=True):
+    def _systs_refit(self, refit_id=[], max_nfev=0):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if max_nfev > 0:
             z_list = []
-            for m in mods_t:
+            for i,m in enumerate(
+                tqdm(mods_t, ncols=120, total=len(mods_t),
+                     desc="[INFO] cookbook_absorbers: Refitting")):
                 systs_s = [np.where(systs._t['id']==id)[0][0] for id in m['id']]
                 mods_s = np.any([id in m['id'] for id in refit_id])
                 if np.unique(systs._t['chi2r'][systs_s]).size > 1 or mods_s:
-                    if verbose:
-                        print(prefix, "I'm refitting a model at redshift "
-                              "%2.4f, starting from the result of the previous "
-                              "fit..." % m['z0'], end='\r')
                     z_list.append(m['z0'])
-                    m['mod']._fit(fit_kws={'max_nfev': max_nfev})
-                    systs._update(m['mod'], mod_t=False)
-            if verbose and z_list != []:
-                print(prefix, "I've refitted %i model%s between redshift %2.4f "
-                      "and %2.4f." \
-                      % (len(z_list), '' if len(z_list)==1 else 's',
-                         np.min(z_list), np.max(z_list)))
+                    self._syst_fit(m['mod'], max_nfev)
+                    self._systs_update(m['mod'])
+            logging.info("I've refitted %i model%s." \
+                         % (len(z_list), msg_z_range(z_list)))
         else:
             logging.info("I'm not refitting any system because you choose "
                          "max_nfev=0.")
-        #self._mods_update(resol)
+        #self._mods_recreate(resol)
         return 0
 
 
@@ -199,14 +215,35 @@ class CookbookAbsorbers(object):
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), dlogN_thres))
-        #self._mods_update(resol, refit_id, max_nfev)
-        self._mods_update(resol)
+        #self._mods_recreate(resol, refit_id, max_nfev)
+        self._mods_recreate(resol)
         return refit_id
 
-    """
-    def _systs_update(self, mod):
-        self.sess.systs._update(mod)
-    """
+
+    def _systs_update(self, mod, incr=True):
+        systs = self.sess.systs
+        modw = np.where(mod == systs._mods_t['mod'])[0][0]
+        ids = systs._mods_t['id'][modw]
+        for i in ids:
+            try:
+                iw = np.where(systs._t['id']==i)[0][0]
+                pref = 'lines_voigt_'+str(i)
+                systs._t[iw]['z'] = mod._pars[pref+'_z'].value
+                systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
+                systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                systs._t[iw]['b'] = mod._pars[pref+'_b'].value
+                systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                try:
+                    systs._t[iw]['chi2r'] = mod._chi2r
+                except:
+                    systs._t[iw]['chi2r'] = np.nan
+            except:
+                pass
+
+        if incr:
+            systs._id += 1
+
 
     def _z_off(self, trans, z):
         for t in trans:
