@@ -106,7 +106,7 @@ class GUITable(wx.Frame):
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
-            logging.info("I'm updating table...")
+            #logging.info("I'm updating table...")
         except:
             logging.info("I'm loading table...")
         self._init(from_scratch)
@@ -136,7 +136,7 @@ class GUITable(wx.Frame):
         """
         self._data.t.remove_row(row)
         if self._attr == 'systs':
-            self._gui._sess_sel.cb._mods_update()
+            self._gui._sess_sel.cb._mods_update_old()
 
 
 class GUITableLineList(GUITable):
@@ -337,7 +337,8 @@ class GUITableSystList(GUITable):
             else:
                 title = None
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1,
-                                                   sharex=graph._ax)
+                                                   sharex=graph._ax,
+                                                   sharey=graph._ax)
             graph._ax.tick_params(top=True, right=True, direction='in')
             graph._fig.subplots_adjust(hspace=0.)
             graph._axes[key] = graph._ax

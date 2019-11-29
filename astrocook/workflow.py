@@ -29,6 +29,8 @@ class Workflow(object):
                 zem = l['z']
                 xmin = l['lambdamin']
                 xmax = l['lambdamax']
+                #xmin = 399
+                #xmax = 402
                 self._gui._panel_sess._on_open(path+'reduced/'+l['name']+'.fits')
 
                 sess_start = self._gui._sess_sel
@@ -38,8 +40,8 @@ class Workflow(object):
                     sess = sess_start
                 cb._refresh(sess)
 
-                cb.gauss_convolve(std=5)
-                cb.peaks_find(kappa=3.0)
+                cb.gauss_convolve(std=4)
+                cb.peaks_find(kappa=2.5)
                 sess.lines._t.remove_rows(sess.lines.y == 0)
                 if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                     sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit

@@ -92,7 +92,7 @@ class CookbookSandbox(object):
         return 0
 
 
-    def _mods_update(self, resol=70000.0):
+    def _mods_update_old(self, resol=70000.0):
         """ Create new system models from a system list """
         spec = self.sess.spec
         systs = dc(self.sess.systs)

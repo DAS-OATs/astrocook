@@ -6,7 +6,6 @@ from copy import deepcopy as dc
 import logging
 import numpy as np
 import sys
-from tqdm import tqdm
 
 prefix = "[INFO] cookbook_absorbers:"
 
@@ -23,14 +22,14 @@ class CookbookAbsorbers(object):
         #systs = dc(self.sess.systs)
         systs = self.sess.systs
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
-        for i in range(len(systs._t)):
-            s = systs._t[i]
+        #for i,s in enumerate(systs._t):
+        for i,s in enum_tqdm(systs._t, len(systs._t),
+                           "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             from .syst_model import SystModel
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
                            b=s['b'], resol=resol)
-            #systs._update(mod, t=False)
             self._mods_update(mod)
         #self.sess.systs._mods_t = systs._mods_t
         return 0
@@ -47,9 +46,10 @@ class CookbookAbsorbers(object):
         except:
             systs._mods_t[mod._group_sel]['chi2r'] = np.nan
         systs._mods_t[mod._group_sel]['id'].append(mod._id)
-        if incr:
-            systs._id += 1
 
+        #systs._id += 1
+        systs._id = np.max(systs._t['id'])+1
+        return 0
 
 
     def _lines_cand_find(self, series, z_start, z_end, dz, logN):
@@ -86,6 +86,7 @@ class CookbookAbsorbers(object):
         spec = self.sess.spec
         systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
                           None, systs._id])
+        #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
@@ -95,9 +96,12 @@ class CookbookAbsorbers(object):
         return mod
 
 
-    def _syst_fit(self, mod, max_nfev):
+    def _syst_fit(self, mod, max_nfev, verbose=True):
         if max_nfev > 0:
             mod._fit(fit_kws={'max_nfev': max_nfev})
+            if verbose:
+                logging.info("I've fitted 1 model at redshift %2.4f." \
+                             % mod._z0)
         else:
             logging.info("I'm not fitting the system because you choose "
                          "max_nfev=0.")
@@ -113,7 +117,9 @@ class CookbookAbsorbers(object):
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
         for i, (series, z, logN, b, resol) \
-            in enumerate(zip(series_list, z_list, logN_list, b_list, resol_list)):
+            in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list),
+                         len(series_list), "cookbook_absorbers: Adding"):
+            #in enumerate(zip(series_list, z_list, logN_list, b_list, resol_list)):
             if logN is None: logN = logN_def
             if b is None: b = b_def
             if resol is None: resol = resol_def
@@ -136,15 +142,11 @@ class CookbookAbsorbers(object):
         mods_t = systs._mods_t
         if max_nfev > 0:
             z_list = []
-            for i,m in enumerate(
-                tqdm(mods_t, ncols=120, total=len(mods_t),
-                     desc="[INFO] cookbook_absorbers: Fitting")):
+            for i,m in enum_tqdm(mods_t, len(mods_t),
+                                 "cookbook_absorbers: Fitting"):
                 z_list.append(m['z0'])
-                self._syst_fit(m['mod'], max_nfev)
+                self._syst_fit(m['mod'], max_nfev, verbose=False)
 
-                # When many systems are fitted, they are stored again in the
-                # system table after fitting
-                self._systs_update(m['mod'])
             logging.info("I've fitted %i model%s." \
                          % (len(mods_t), msg_z_range(z_list)))
             self._mods_recreate(resol)
@@ -167,21 +169,37 @@ class CookbookAbsorbers(object):
         mods_t = systs._mods_t
         if max_nfev > 0:
             z_list = []
-            for i,m in enumerate(
-                tqdm(mods_t, ncols=120, total=len(mods_t),
-                     desc="[INFO] cookbook_absorbers: Refitting")):
+            mod_list = []
+            #for i,m in enum_tqdm(mods_t, len(mods_t),
+            #                     "cookbook_absorbers: Refitting"):
+            for i,m in enumerate(mods_t):
                 systs_s = [np.where(systs._t['id']==id)[0][0] for id in m['id']]
-                mods_s = np.any([id in m['id'] for id in refit_id])
-                if np.unique(systs._t['chi2r'][systs_s]).size > 1 or mods_s:
+
+                # Model has systems in the refit list
+                mods_cond = np.any([id in m['id'] for id in refit_id])
+
+                # Systems in the model have different chi2r (resulting from
+                # previous fit in separate models)
+                chi2r_cond_1 = np.unique(systs._t['chi2r'][systs_s]).size > 1
+
+                # Systems in the model have the same chi2r of another model
+                # (resulting from previous fit in the same model)
+                chi2r_cond_2 = np.sum([s in systs._t['chi2r'][systs_s] \
+                                       for s in systs._t['chi2r']]) > len(systs_s)
+                if mods_cond or chi2r_cond_1 or chi2r_cond_2:
                     z_list.append(m['z0'])
-                    self._syst_fit(m['mod'], max_nfev)
-                    self._systs_update(m['mod'])
+                    mod_list.append(m['mod'])
+            for i,m in enum_tqdm(mod_list, len(mod_list),
+                                 "cookbook_absorbers: Refitting"):
+                self._syst_fit(m, max_nfev, verbose=False)
             logging.info("I've refitted %i model%s." \
                          % (len(z_list), msg_z_range(z_list)))
+            logging.info("I've updated %i system%s in %i model%s." \
+                         % (len(systs._t), '' if len(systs._t)==1 else 's',
+                            len(mods_t), msg_z_range(z_list)))
         else:
             logging.info("I'm not refitting any system because you choose "
                          "max_nfev=0.")
-        #self._mods_recreate(resol)
         return 0
 
 
@@ -202,7 +220,7 @@ class CookbookAbsorbers(object):
         if len(rem) > 0:
             # Check if systems to be rejected are in groups with systems to be
             # preserved, and in case flag the latter for refitting
-            for r in rem:
+            for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Rejecting"):
                 t_id = systs._t['id']
                 mods_t_id = systs._mods_t['id']
                 sel = [t_id[r] in m for m in mods_t_id]
@@ -215,8 +233,7 @@ class CookbookAbsorbers(object):
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), dlogN_thres))
-        #self._mods_recreate(resol, refit_id, max_nfev)
-        self._mods_recreate(resol)
+            self._mods_recreate(resol)
         return refit_id
 
 
@@ -241,7 +258,7 @@ class CookbookAbsorbers(object):
             except:
                 pass
 
-        if incr:
+        if incr and False:
             systs._id += 1
 
 
@@ -333,7 +350,7 @@ class CookbookAbsorbers(object):
             resol = float(resol)
             max_nfev = int(max_nfev)
             append = append == 'True'
-        except ValueError:
+        except:
             logging.error(msg_param_fail)
             return 0
 
@@ -351,5 +368,54 @@ class CookbookAbsorbers(object):
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
         self._systs_refit(refit_id, max_nfev)
         self._spec_update()
+
+        return 0
+
+    def systs_new_from_resids(self, series='Lya', z_start=0, z_end=6,
+                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
+                              chi2r_thres=np.inf, dlogN_thres=0.5,
+                              max_nfev=100, append=True):
+        """ @brief Fit systems from residuals
+        @details Add and fit Voigt models from residuals of previously fitted
+        models.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param logN Guess (logarithmic) column density
+        @param b Guess doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param max_nfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            dz = float(dz)
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            chi2r_thres = float(chi2r_thres)
+            dlogN_thres = float(dlogN_thres)
+            resol = float(resol)
+            max_nfev = int(max_nfev)
+            append = append == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        # Select systems by redshift range and reduced chi2 threshold
+        cond_z =  np.logical_and(systs._mods_t['z0'] > z_start,
+                                 systs._mods_t['z0'] < z_end)
+        cond_chi2r = np.logical_or(systs._mods_t['chi2r'] > chi2r_thres,
+                                   np.isnan(systs._mods_t['chi2r']))
+        old = systs._mods_t[np.where(np.logical_and(cond_z, cond_chi2r))]
 
         return 0

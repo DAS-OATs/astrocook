@@ -88,6 +88,7 @@ class GUIGraphDetail(GUIGraphMain):
                  **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False, **kwargs)
+        self._norm = True
         self._gui._graph_det = self
         self._graph._legend = False
         self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
@@ -102,6 +103,7 @@ class GUIGraphDetail(GUIGraphMain):
         ysel = t['y'][np.where(np.logical_and(t['x']>xmin, t['x']<xmax))]
         yspan = ymargin*(np.max(ysel)-np.min(ysel))
         xlim = (xmin, xmax)
-        ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
+        #ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
+        ylim = (-0.2, 1.2)
 
         return xlim, ylim

@@ -17,12 +17,14 @@ class GUI(object):
     def __init__(self, path=None):
         """ Constructor """
 
-        #print("┌───────────────────┐")
-        #print("│ ASTROCOOK 🍪  v%3s │" % version)
-        #print("└───────────────────┘")
-        print("-----------------")
-        print(" ASTROCOOK  v%3s " % version)
-        print("-----------------")
+        try:
+            print("┌───────────────────┐")
+            print("│ ASTROCOOK 🍪  v%3s │" % version)
+            print("└───────────────────┘")
+        except:
+            print("-----------------")
+            print(" ASTROCOOK  v%3s " % version)
+            print("-----------------")
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
