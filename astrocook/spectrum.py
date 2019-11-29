@@ -232,7 +232,7 @@ class Spectrum(Frame):
         dy = np.array([])
         for i, (m, M) \
             in enumerate(tqdm(zip(xmin.value, xmax.value), ncols=120,
-                         desc="[INFO] spectrum: Rebinning progress",
+                         desc="[INFO] spectrum: Rebinning",
                          total=len(xmin))):
             while xmin_in < M:
                 iM += 1

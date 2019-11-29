@@ -92,7 +92,7 @@ class CookbookSandbox(object):
         return 0
 
 
-    def _mods_update(self, resol=70000.0):
+    def _mods_update_old(self, resol=70000.0):
         """ Create new system models from a system list """
         spec = self.sess.spec
         systs = dc(self.sess.systs)
@@ -131,7 +131,7 @@ class CookbookSandbox(object):
         deabs[s] = cont[s] + y[s] - model[s]
 
 
-    def _syst_fit(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0,
+    def _syst_fit_old(self, series='CIV', z=2.0, logN=13.0, b=10.0, resol=70000.0,
                   maxfev=100):
 
         spec = self.sess.spec
@@ -515,8 +515,8 @@ class CookbookSandbox(object):
                 cand_cb = dc(self)
                 alt_cb = dc(self)
 
-                cand_mod = cand_cb._syst_fit(o_series, z_cand, logN, b, resol, maxfev)
-                alt_mod = alt_cb._syst_fit('unknown', z_alt, logN, b, resol, maxfev)
+                cand_mod = cand_cb._syst_fit_old(o_series, z_cand, logN, b, resol, maxfev)
+                alt_mod = alt_cb._syst_fit_old('unknown', z_alt, logN, b, resol, maxfev)
                 self.sess.systs._mods_t = dc(mods_t_old)
                 chi2r_cand = cand_mod._chi2r
                 chi2r_alt = alt_mod._chi2r
@@ -527,19 +527,19 @@ class CookbookSandbox(object):
                 else:
                     t_old, mods_t_old = self.sess.systs._freeze()
                     if chi2r_cand > chi2r_alt:#*2:#1.1:# and count > 3:
-                        mod = self._syst_fit('unknown', z_alt, logN, b, resol, maxfev)
+                        mod = self._syst_fit_old('unknown', z_alt, logN, b, resol, maxfev)
                         msg = "added an unknown component at wavelength %2.4f" \
                               % z_alt
                         chi2r = chi2r_alt
                     else:
-                        mod = self._syst_fit(o_series, z_cand, logN, b, resol, maxfev)
+                        mod = self._syst_fit_old(o_series, z_cand, logN, b, resol, maxfev)
                         msg = "added a %s component at redshift %2.4f" \
                               % (o_series, z_cand)
                         chi2r = chi2r_cand
                     print(prefix, "I'm improving "
                           "a model at redshift %2.4f (%i/%i): %s (red. "
                           "chi-squared: %3.2f)...          " \
-                          % (o_z, i+1, len(old), msg, chi2r))#, end='\r')
+                          % (o_z, i+1, len(old), msg, chi2r), end='\r')
                     chi2r_old = chi2r
                     count = 0
                     count_good += 1
@@ -696,7 +696,7 @@ class CookbookSandbox(object):
                 z = z_range[chi2m[2][i]]
                 logN = logN_range[chi2m[0][i]]
                 b = b_range[chi2m[1][i]]
-                self._syst_fit(series, z, logN, b, resol, maxfev)
+                self._syst_fit_old(series, z, logN, b, resol, maxfev)
                 print(prefix, "I've fitted a %s system at redshift %2.4f "
                       "(%i/%i)..." % (series, z, i+1, len(chi2m[0])), end='\r')
             if len(chi2m[0]) > 0:

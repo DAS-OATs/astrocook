@@ -76,7 +76,8 @@ class SystModel(LMComposite):
                                  for i in mods_t['id'][self._group_list[1:]]]))
             mods_t.remove_rows(self._group_list[1:])
             for i in ids:
-                mods_t['id'][0].append(i)
+                #mods_t['id'][0].append(i)
+                mods_t['id'][self._group_list[0]].append(i)
         if self._group_list == []:
             self._group_sel = -1
         else:

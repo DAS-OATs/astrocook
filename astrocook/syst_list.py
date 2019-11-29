@@ -176,7 +176,9 @@ class SystList(object):
                 self._mods_t[mod._group_sel]['chi2r'] = mod._chi2r
             except:
                 self._mods_t[mod._group_sel]['chi2r'] = np.nan
+            #print(self._mods_t[mod._group_sel]['id'], mod._id)
             self._mods_t[mod._group_sel]['id'].append(mod._id)
+            #print(self._mods_t[mod._group_sel]['id'])
 
         if t:
             modw = np.where(mod == self._mods_t['mod'])[0][0]
