@@ -164,3 +164,16 @@ def running_mean(x, h=1):
     cs = np.cumsum(np.insert(x, 0, 0))
     rm = (cs[n:] - cs[:-n]) / float(n)
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+
+
+def to_x(z, trans):
+    if trans == 'unknown':
+        return z.to(au.nm)
+    else:
+        return (1+z)*xem_d[trans].to(au.nm)
+
+def to_z(x, trans):
+    if trans == 'unknown':
+        return x.to(au.nm).value
+    else:
+        return (x.to(au.nm)/xem_d[trans].to(au.nm)).value-1

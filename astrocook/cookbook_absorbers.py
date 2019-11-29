@@ -1,10 +1,12 @@
-from .functions import parse
+from .functions import *
 from .message import *
 from .syst_list import SystList
+from .syst_model import SystModel
 from .vars import *
 from copy import deepcopy as dc
 import logging
 import numpy as np
+from scipy.interpolate import interp1d
 import sys
 
 prefix = "[INFO] cookbook_absorbers:"
@@ -16,6 +18,22 @@ class CookbookAbsorbers(object):
     def __init__(self):
         pass
 
+    def _lines_cand_find(self, series, z_start, z_end, dz):
+        return self.sess.lines._cand_find(series, z_start, z_end, dz)
+
+
+    def _logN_guess(self, series, z, b, resol):
+        spec = dc(self.sess.spec)
+        systs = dc(self.sess.systs)
+        ynorm_list = []
+        logN_list = np.arange(12, 14, 0.1)
+        for logN in logN_list:
+            mod = SystModel(spec, systs, z0=z)
+            mod._new_voigt(series, z, logN, b, resol)
+            ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
+        self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
+
+
     def _mods_recreate(self, resol, max_nfev=0, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
@@ -26,7 +44,6 @@ class CookbookAbsorbers(object):
         for i,s in enum_tqdm(systs._t, len(systs._t),
                            "cookbook_absorbers: Recreating"):
             systs._id = s['id']
-            from .syst_model import SystModel
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
                            b=s['b'], resol=resol)
@@ -50,10 +67,6 @@ class CookbookAbsorbers(object):
         #systs._id += 1
         systs._id = np.max(systs._t['id'])+1
         return 0
-
-
-    def _lines_cand_find(self, series, z_start, z_end, dz, logN):
-        return self.sess.lines._cand_find(series, z_start, z_end, dz, logN)
 
 
     def _spec_update(self):
@@ -111,6 +124,16 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def _syst_guess(self, series, z):
+        spec = dc(self.sess.spec)
+        trans = parse(series)
+        x = to_x(z, trans[0]).to(xunit_def).value
+        ynorm = np.interp(x, spec.x.to(xunit_def).value,
+                          (spec.y/spec._t['cont']).value)
+        ynorm = max(0, min(1, ynorm))
+        return max(12, min(14, self._guess_f(ynorm)))
+
+
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
                    resol_list=None, verbose=True):
         if logN_list is None: logN_list = [None]*len(series_list)
@@ -154,6 +177,13 @@ class CookbookAbsorbers(object):
             logging.info("I've not fitted any model because you choose "
                          "max_nfev=0.")
         return 0
+
+
+    def _systs_guess(self, series_list, z_list):
+        logN_list = np.array([])
+        for series, z in zip(series_list, z_list):
+            logN_list = np.append(logN_list, self._syst_guess(series, z))
+        return logN_list
 
 
     def _systs_prepare(self, append=True):
@@ -278,7 +308,7 @@ class CookbookAbsorbers(object):
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=0.5,
                  max_nfev=100):
         """ @brief New system
-        @details Add and (optionally) fit a Voigt model for a system.
+        @details Add and fit a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
         @param logN Guess (logarithmic) column density
@@ -305,6 +335,8 @@ class CookbookAbsorbers(object):
         if self._z_off(parse(series), z): return 0
 
         self._systs_prepare()
+        self._logN_guess(series, z, b, resol)
+        logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
         self._syst_fit(mod, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
@@ -318,7 +350,7 @@ class CookbookAbsorbers(object):
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=0.5,
                              max_nfev=100, append=True):
-        """ @brief Fit systems from line list
+        """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
@@ -349,21 +381,26 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append == 'True'
+            append = append or append == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
 
-        z_list, logN_list = self._lines_cand_find(series, z_start, z_end, dz,
-                                                   logN=logN is None)
+        z_list, y_list = self._lines_cand_find(series, z_start, z_end, dz)
+        z_list, logN_list = self.sess.lines._cand_find2(series, z_start, z_end, dz,
+                                                       logN=logN is None)
 
         if len(z_list) == 0:
             logging.warning("I've found no candidates!")
             return 0
 
+        series_list = [series]*len(z_list)
+
         self._systs_prepare(append)
-        self._systs_add([series]*len(z_list), z_list, logN_list)
+        self._logN_guess(series, z_list[0], b, resol)
+        logN_list = self._systs_guess(series_list, z_list)
+        self._systs_add(series_list, z_list, logN_list)
         self._systs_fit(resol, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
         self._systs_refit(refit_id, max_nfev)
@@ -371,13 +408,13 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def systs_new_from_resids(self, series='Lya', z_start=0, z_end=6,
-                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
-                              chi2r_thres=np.inf, dlogN_thres=0.5,
-                              max_nfev=100, append=True):
-        """ @brief Fit systems from residuals
-        @details Add and fit Voigt models from residuals of previously fitted
-        models.
+    def syst_new_from_resids(self, series='Lya', z_start=0, z_end=6,
+                             dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
+                             chi2r_thres=np.inf, dlogN_thres=0.5,
+                             max_nfev=100, append=True):
+        """ @brief New system from residuals
+        @details Add and fit a Voigt model from the strongest residual of
+        previously fitted models in the neighborhood.
         @param series Series of transitions
         @param z_start Start redshift
         @param z_end End redshift
@@ -406,16 +443,15 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append == 'True'
+            append = append or append == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
-        # Select systems by redshift range and reduced chi2 threshold
-        cond_z =  np.logical_and(systs._mods_t['z0'] > z_start,
-                                 systs._mods_t['z0'] < z_end)
-        cond_chi2r = np.logical_or(systs._mods_t['chi2r'] > chi2r_thres,
-                                   np.isnan(systs._mods_t['chi2r']))
-        old = systs._mods_t[np.where(np.logical_and(cond_z, cond_chi2r))]
+        self.gauss_convolve(std=4, input_col='deabs', output_col='deabs_conv')
+        sess = self.peaks_find(col='deabs_conv', kind='min', kappa=3.0, new_sess=True)
 
-        return 0
+
+        #z_cand =
+
+        return sess
