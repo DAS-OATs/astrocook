@@ -1,4 +1,5 @@
 from .frame import Frame
+from .functions import *
 from .vars import *
 from astropy import units as au
 import numpy as np
@@ -55,7 +56,31 @@ class LineList(Frame):
                 l['XMAX'] = l['X']+0.5*ew.value
     """
 
-    def _cand_find(self, series, z_start, z_end, dz, single=False, logN=False):
+    def _cand_find(self, series, z_start, z_end, dz):
+        trans = parse(series)
+
+        z_all = np.ravel([[to_z(x,t) for x in self.x] for t in trans])
+        y_all = np.ravel([[self.y] for t in trans])
+
+        (z_min, z_max) = (z_start, z_end) if z_start < z_end \
+            else (z_end, z_start)
+        z_int = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        y_int = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
+
+        if z_int == []: return z_int, y_int
+
+        z_sort = np.sort(np.ravel(z_int))
+        y_sort = y_int[np.argsort(np.ravel(z_int))]
+
+        w_list = np.where(np.ediff1d(z_sort)<dz)[0]
+        z_list = np.mean(np.vstack((z_sort[w_list], z_sort[w_list+1])), axis=0)
+        y_list = np.mean(np.vstack((y_sort[w_list], y_sort[w_list+1])), axis=0)
+        z_list = z_list if z_start<z_end else z_list[::-1]
+        y_list = y_list if z_start<z_end else y_list[::-1]
+
+        return z_list, y_list
+
+    def _cand_find2(self, series, z_start, z_end, dz, single=False, logN=False):
 
         # Compute all possible redshifts
         trans = series_d[series]
