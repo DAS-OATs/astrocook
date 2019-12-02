@@ -407,9 +407,9 @@ class GUIMenuSnacks(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(self._menu, start_id+201, 'lines', "Clean nodes",
+        self._item_method(self._menu, start_id+202, 'lines', "Clean nodes",
                           'nodes_clean')
-        self._item_method(self._menu, start_id+202, 'nodes',
+        self._item_method(self._menu, start_id+203, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSeparator()
         #self._item_method(self._menu, start_id+301, 'lines',

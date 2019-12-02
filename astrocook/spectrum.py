@@ -115,20 +115,35 @@ class Spectrum(Frame):
         return 0
 
 
-    def _nodes_clean(self, nodes, window=5, kappa=1.0):
-        y_start = nodes.y.value
+    def _nodes_clean(self, nodes, kappa=5.0):
+        """
+        y_sel = [True]
         hw = window//2
-        yg = [y_start[max(0, i-hw):i+hw] for i in range(len(y_start))]
-        yg_median = [np.median(g) for g in yg]
-        yg_std = [np.std(g) for g in yg]
+        while np.any(y_sel):
+            y_start = nodes.y.value
+            yg = [y_start[max(0, i-hw):i+hw+1] for i in range(len(y_start))]
+            yg_median = [np.median(g) for g in yg]
+            yg_std = [np.std(g) for g in yg]
 
-        y_sel = [np.abs(y-m) > kappa*s \
-                 for y, m, s in zip(y_start, yg_median, yg_std)]
-        print(np.sum(y_sel))
-
-        #print(nodes._t)
+            y_sel = [np.abs(y-m) > kappa*s \
+                     for y, m, s in zip(y_start, yg_median, yg_std)]
+            #print(yg)
+            #print(yg_median)
+            #print(yg_std)
+            #print(y_sel)
+            print(np.sum(y_sel))
+            #print(nodes._t[y_sel])
+            nodes._t.remove_rows(y_sel)
+        """
+        lines = nodes._peaks_find(col='y', kappa=kappa, kind='max')
+        y_sel = np.where(np.in1d(nodes.x.value, lines.x.value))[0]
         nodes._t.remove_rows(y_sel)
-        #print(nodes._t)
+        while np.any(y_sel):
+            lines = nodes._peaks_find(col='y', kappa=kappa)
+            y_sel = np.where(np.in1d(nodes.x.value, lines.x.value))[0]
+            #print(len(y_sel))
+            nodes._t.remove_rows(y_sel)
+        #"""
         return nodes
 
 

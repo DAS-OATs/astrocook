@@ -198,7 +198,7 @@ class Graph(object):
                              'spec_x_conv': (GraphSpectrumXConv,cmc[3],0.5),
                              'lines_x_y': (GraphLineListXY,cmc[2],1.0),
                              'spec_x_ymask': (GraphSpectrumXYMask,cmc[2],0.5),
-                             'spec_nodes_x_y': (GraphSpectrumNodesXY,cmc[0],1.0),
+                             'spec_nodes_x_y': (GraphSpectrumNodesXY,cmc[1],1.0),
                              'spec_x_cont': (GraphSpectrumXCont,cmc[8],1.0),
                              'spec_form_x': (GraphSpectrumFormX,cmc[7],0.5),
                              'spec_x_model': (GraphSpectrumXModel,cmc[9],1.0),
@@ -324,7 +324,7 @@ class GraphSpectrumFormX(object):
 
 class GraphSpectrumNodesXY(object):
     def __init__(self, sess, norm=False):
-        self._type = 'plot'
+        self._type = 'scatter'
         self._x = sess.nodes.x
         self._y = sess.nodes.y
         if norm and 'cont' in sess.spec._t.colnames:
@@ -401,7 +401,7 @@ class GraphSpectrumXYMask(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXYMask, self).__init__(sess)
-        self._type = 'scatter'
+        self._type = 'line'
         self._x[sess.spec._t['lines_mask']] = np.nan
         self._kwargs = {'label':sess.name+", masked"}
 

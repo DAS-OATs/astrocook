@@ -46,7 +46,7 @@ class Workflow(object):
                 if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                     sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
                 if 'cont' not in sess.spec._t.colnames:
-                    cb.nodes_extract(delta_x=1000)
+                    cb.nodes_extract()#delta_x=1000)
                     cb.nodes_clean()
                     cb.nodes_interp()
                 sess_reg = sess.cb.region_extract(xmin=xmin, xmax=xmax)
