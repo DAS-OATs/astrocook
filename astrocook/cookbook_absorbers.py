@@ -130,7 +130,7 @@ class CookbookAbsorbers(object):
         x = to_x(z, trans[0]).to(xunit_def).value
         ynorm = np.interp(x, spec.x.to(xunit_def).value,
                           (spec.y/spec._t['cont']).value)
-        ynorm = max(0, min(1, ynorm))
+        ynorm = max(0.1, min(0.9, ynorm))
         return max(12, min(14, self._guess_f(ynorm)))
 
 
