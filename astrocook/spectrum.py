@@ -115,6 +115,23 @@ class Spectrum(Frame):
         return 0
 
 
+    def _nodes_clean(self, nodes, window=5, kappa=1.0):
+        y_start = nodes.y.value
+        hw = window//2
+        yg = [y_start[max(0, i-hw):i+hw] for i in range(len(y_start))]
+        yg_median = [np.median(g) for g in yg]
+        yg_std = [np.std(g) for g in yg]
+
+        y_sel = [np.abs(y-m) > kappa*s \
+                 for y, m, s in zip(y_start, yg_median, yg_std)]
+        print(np.sum(y_sel))
+
+        #print(nodes._t)
+        nodes._t.remove_rows(y_sel)
+        #print(nodes._t)
+        return nodes
+
+
     def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
 
         self._slice(delta_x, xunit)
