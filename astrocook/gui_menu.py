@@ -381,8 +381,8 @@ class GUIMenuMeals(GUIMenu):
         self._item_method(self._menu, start_id, 'spec', "Find lines",
                           ['gauss_convolve', 'peaks_find'])
         self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
-                          ['gauss_convolve', 'peaks_find', 'nodes_extract',
-                           'nodes_clean', 'nodes_interp'])
+                          ['lines_find', 'nodes_extract', #'nodes_clean',
+                           'nodes_interp'])
         self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
                           ['add_syst_from_lines', 'add_syst_from_resids',
                            'add_syst_slide', 'compl_syst'])
@@ -404,6 +404,8 @@ class GUIMenuSnacks(GUIMenu):
                           "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+103, 'spec', "Find peaks",
                           'peaks_find')
+        self._item_method(self._menu, start_id+104, 'spec', "Find lines",
+                          'lines_find')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
                           'nodes_extract')

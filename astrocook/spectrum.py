@@ -59,9 +59,7 @@ class Spectrum(Frame):
 
         # Convolve
         if verb:
-            if output_col in self._t.colnames:
-                logging.info("I'm updating column '%s'." % output_col)
-            else:
+            if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = self._safe(conv)
@@ -105,9 +103,7 @@ class Spectrum(Frame):
         mask = np.zeros(len(x), dtype=bool)
         for (xmin, xmax) in zip(lines.xmin, lines.xmax):
             mask += np.logical_and(x>=xmin, x<=xmax)
-        if 'lines_mask' in self._t.colnames:
-            logging.info("I'm updating column 'lines_mask'.")
-        else:
+        if 'lines_mask' not in self._t.colnames:
             logging.info("I'm adding column 'lines_mask'.")
             self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
         self._t['lines_mask'][self._where_safe] = mask
@@ -150,7 +146,6 @@ class Spectrum(Frame):
     def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
 
         self._slice(delta_x, xunit)
-
         x_ave = []
         xmin_ave = []
         xmax_ave = []
@@ -166,15 +161,14 @@ class Spectrum(Frame):
             except:
                 where_s = np.where(self._t['slice']==s)
 
-            #print(self.x[np.where(self._t['slice']==s)][0], len(where_s[0]))
-            if len(where_s[0])>0:
+            if len(where_s[0])>0.1*len(np.where(self._t['slice']==s)[0]):
                 x_where_s = self.x[where_s].value
                 y_where_s = self.y[where_s].value
                 dy_where_s = self.dy[where_s].value
-                x_ave.append(np.average(x_where_s))
+                x_ave.append(np.median(x_where_s))
                 xmin_ave.append(x_where_s[0])
                 xmax_ave.append(x_where_s[-1])
-                y_ave.append(np.average(y_where_s, weights=dy_where_s))
+                y_ave.append(np.median(y_where_s))
                 dy_ave.append(sem(y_where_s))
         x = np.array(x_ave) * self._xunit
         xmin = np.array(xmin_ave) * self._xunit
@@ -192,15 +186,16 @@ class Spectrum(Frame):
         @return 0
         """
 
+
         x = nodes.x.value
         y = nodes.y.value
         dy = nodes.dy.value
-        spl = uspline(x, y, w=dy, s=smooth)
+        isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
+                              np.isnan(dy))
+        spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
         cont = spl(self.x)*self._yunit
         logging.info("I'm using interpolation as continuum.")
-        if 'cont' in self._t.colnames:
-            logging.info("I'm updating column 'cont'.")
-        else:
+        if 'cont' not in self._t.colnames:
             logging.info("I'm adding column 'cont'.")
         self._t['cont'] = cont #spl(self.x)
         lines._t['cont'] = np.interp(lines.x, self.x, cont)

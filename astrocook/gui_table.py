@@ -327,7 +327,7 @@ class GUITableSystList(GUITable):
             self._gui._sess_sel.cb.x_convert(zem=zem)
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
-            _, ylim = self._gui._graph_det._define_lim(0)
+            _, ylim = self._gui._graph_det._define_lim(0, norm=True)
 
             if i == 0:
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1)

@@ -30,6 +30,19 @@ class LineList(Frame):
 
         return 0
 
+
+    def _clean(self):
+        i = 0
+        while i < len(self.t)-2:
+            l = self._t[i]
+            ln = self._t[i+1]
+            if ln['x']-0.2*(ln['x']-ln['xmin'])<l['x']:
+                l['xmax'] = max(l['xmax'], ln['xmax'])
+                self.t.remove_row(i+1)
+            else:
+                i += 1
+
+
     def _copy(self, sel=None):
         copy = super(LineList, self)._copy(sel)
         cols = [c for c in self._t.colnames \
