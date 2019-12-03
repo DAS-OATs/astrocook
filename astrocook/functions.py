@@ -4,6 +4,7 @@ import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
 #from lmfit.lineshapes import gaussian as gauss
+import logging
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -164,6 +165,23 @@ def running_mean(x, h=1):
     cs = np.cumsum(np.insert(x, 0, 0))
     rm = (cs[n:] - cs[:-n]) / float(n)
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+
+
+def log2_range(start, end, step):
+    start = np.log2(start)
+    end = np.log2(end)
+    start_r = np.floor if step < 0 else np.ceil
+    end_r = np.ceil if step < 0 else np.floor
+    if start % 1 > 0:
+        start = np.round(start)
+        logging.warning("I'm only using integer powers of 2. I changed 'start' "
+                        "to %1.0f." % 2**start)
+    if end % 1 > 0:
+        end = np.round(end)
+        logging.warning("I'm only using integer powers of 2. I changed 'end' "
+                        "to %1.0f." % 2**end)
+    log2 = np.arange(start, end+step, step)
+    return np.power(2, log2)
 
 
 def to_x(z, trans):

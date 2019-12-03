@@ -408,9 +408,9 @@ class GraphSpectrumXYMask(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXYMask, self).__init__(sess)
-        self._type = 'line'
+        self._type = 'step'
         self._x[sess.spec._t['lines_mask']] = np.nan
-        self._kwargs = {'label':sess.name+", masked"}
+        self._kwargs = {'label':sess.name+", masked", 'where':'mid'}
 
 class GraphSystListZSeries(object):
     def __init__(self, sess, norm=False):

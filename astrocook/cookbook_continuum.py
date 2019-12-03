@@ -1,5 +1,7 @@
-from astropy import units as au
+from .functions import log2_range
 from .message import *
+from astropy import units as au
+from scipy.interpolate import UnivariateSpline as uspline
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -65,7 +67,6 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
-        #print(len(self.sess.nodes.t))
         self.sess.spec._nodes_interp(self.sess.lines, self.sess.nodes)
         return 0
 
@@ -84,7 +85,7 @@ class CookbookContinuum(object):
 
         try:
             kappa = float(kappa)
-            append = append == 'True'
+            append = append or append == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -103,10 +104,38 @@ class CookbookContinuum(object):
 
         if append and self.sess.lines != None:
             self.sess.lines._append(lines)
+            self.sess.lines._clean()
         else:
             self.sess.lines = lines
 
         self.sess.lines_kind = 'peaks'
         spec._lines_mask(self.sess.lines)
-        logging.info("I'm using peaks as lines.")
+        return 0
+
+
+    def lines_find(self, std_start=100.0, std_end=0.0, kind='min', kappa=5.0):
+        """ @brief Find peaks
+        @details Find the peaks in a spectrum column. Peaks are the extrema
+        (minima or maxima) that are more prominent than a given number of
+        standard deviations. They are saved as a list of lines.
+        @param std_start Start standard deviation of the gaussian (km/s)
+        @param std_end End standard deviation of the gaussian (km/s)
+        @param kind Kind of extrema ('min' or 'max')
+        @param kappa Number of standard deviations
+        @return 0
+        """
+
+        try:
+            std_start = float(std_start)
+            std_end = float(std_end)
+            kappa = float(kappa)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        for i, std in enumerate(np.arange(std_start, std_end, -5)):
+            self.gauss_convolve(std=std)
+            self.peaks_find(kind='min', kappa=kappa, append=i>0)
+
         return 0
