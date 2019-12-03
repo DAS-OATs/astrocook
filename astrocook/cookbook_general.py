@@ -12,7 +12,7 @@ class CookbookGeneral(object):
     def __init__(self):
         pass
 
-    def gauss_convolve(self, std=5, input_col='y', output_col='conv'):
+    def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
         transform.

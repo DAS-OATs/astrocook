@@ -8,7 +8,29 @@ class CookbookContinuum(object):
     def __init__(self):
         pass
 
-    def nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
+    def nodes_clean(self, kappa=5.0):
+        """ @brief Clean nodes
+        @details Clean the list of nodes from outliers.
+        @param window Number of nodes in the window (must be odd)
+        @param kappa Number of standard deviation away from the window average
+        @return 0
+        """
+        try:
+            kappa = float(kappa)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        """
+        if window%2 == 0:
+            window += 1
+            logging.warning("window was not odd. I incremented it by one.")
+        """
+
+        self.sess.nodes = self.sess.spec._nodes_clean(self.sess.nodes, kappa)
+        return 0
+
+    def nodes_extract(self, delta_x=500, xunit=au.km/au.s):
         """ @brief Extract nodes
         @details Extract nodes from a spectrum. Nodes are averages of x and y in
         slices, computed after masking lines.
@@ -24,6 +46,8 @@ class CookbookContinuum(object):
             return 0
 
         self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit)
+        #print(len(self.sess.nodes.t))
+
         return 0
 
 
@@ -41,6 +65,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
+        #print(len(self.sess.nodes.t))
         self.sess.spec._nodes_interp(self.sess.lines, self.sess.nodes)
         return 0
 
