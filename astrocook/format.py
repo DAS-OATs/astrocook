@@ -224,6 +224,31 @@ class Format(object):
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+
+    def xqr30_spectrum(self, hdul, corr=True):
+        logging.info(msg_format('xqr30'))
+
+        hdr = hdul[1].header
+        data = hdul[1].data
+        x = data['WAVE'][0]
+        xmin, xmax = self._create_xmin_xmax(x)
+        if corr:
+            y = data['FLUX'][0]
+            dy = data['ERROR'][0]
+        else:
+            y = data['FLUX_NOCORR'][0]
+            dy = data['ERROR_NOCORR'][0]
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'X-shooter'}
+        try:
+            meta['object'] = hdul._file.name.split('/')[-1][:-5]
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def xshooter_reduce_spectrum(self, hdul, hdul_e):
         logging.info(msg_format('xshooter_reduce'))
 

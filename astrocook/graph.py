@@ -192,21 +192,28 @@ class Graph(object):
             self._cursor_lines = []
 
         cmc = plt.cm.get_cmap('tab10').colors
-        self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,cmc[0],1.0),
-                             #'spec_x_y_det': (GraphSpectrumXYDetail,cmc[0],1.0),
-                             'spec_x_dy': (GraphSpectrumXDy,cmc[0],0.5),
-                             'spec_x_conv': (GraphSpectrumXConv,cmc[3],0.5),
-                             'lines_x_y': (GraphLineListXY,cmc[2],1.0),
-                             'spec_x_ymask': (GraphSpectrumXYMask,cmc[2],0.5),
-                             'spec_nodes_x_y': (GraphSpectrumNodesXY,cmc[1],1.0),
-                             'spec_x_cont': (GraphSpectrumXCont,cmc[8],1.0),
-                             'spec_form_x': (GraphSpectrumFormX,cmc[7],0.5),
-                             'spec_x_model': (GraphSpectrumXModel,cmc[9],1.0),
-                             'spec_x_deabs': (GraphSpectrumXDeabs,cmc[9],0.5),
-                             'systs_z_series': (GraphSystListZSeries,cmc[2],1.0),
-                             'cursor_z_series': (GraphCursorZSeries,cmc[2],0.5)}
+        self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,0,1.0),
+                             #'spec_x_y_det': (GraphSpectrumXYDetail,0],1.0),
+                             'spec_x_dy': (GraphSpectrumXDy,0,0.5),
+                             'spec_x_conv': (GraphSpectrumXConv,3,0.5),
+                             'lines_x_y': (GraphLineListXY,2,1.0),
+                             'spec_x_ymask': (GraphSpectrumXYMask,2,0.5),
+                             'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
+                             'spec_x_cont': (GraphSpectrumXCont,8,1.0),
+                             'spec_form_x': (GraphSpectrumFormX,7,0.5),
+                             'spec_x_model': (GraphSpectrumXModel,9,1.0),
+                             'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
+                             'systs_z_series': (GraphSystListZSeries,2,1.0),
+                             'cursor_z_series': (GraphCursorZSeries,2,0.5)}
+
+        #print([self._gui._sess_sel== i for i in self._gui._sess_items])
+        c_index = [self._canvas_dict[s][1]\
+        #c_index = [(self._canvas_dict[s][1]\
+                    #+max(len(self._gui._sess_item_sel),1)-1) % 10 \
+                   for s in self._sel]
         self._canvas_l = [self._canvas_dict[s][0] for s in self._sel]
-        self._color_l = [self._canvas_dict[s][1] for s in self._sel]
+        #if len(self._gui._sess_item_sel) < 2:
+        self._color_l = [cmc[i] for i in c_index]
         self._alpha_l = [self._canvas_dict[s][2] for s in self._sel]
 
         # First selected session sets the units of the axes

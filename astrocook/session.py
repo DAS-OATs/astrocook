@@ -35,7 +35,8 @@ class Session(object):
                  nodes=None,
                  lines=None,
                  systs=None,
-                 mods=None):
+                 mods=None,
+                 twin=False):
         #self._gui = gui
         self.path = path
         self.name = name
@@ -47,6 +48,7 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
+        self._open_twin = twin
 
 
     def _append(self, frame, append=True):
@@ -94,6 +96,14 @@ class Session(object):
         except:
             pass
 
+        try:  # For XQR-30 spectra
+            ttype = [hdul[1].header['TTYPE%i' % i].strip() for i in range(1,6)]
+            if ttype[1] == 'FLUX' and ttype[3] == 'FLUX_NOCORR':
+                instr = 'XSHOOTER'
+                orig = 'XQR-30'
+        except:
+            pass
+
         if instr == None:
             logging.warning(msg_descr_miss('INSTRUME'))
         if catg == None:
@@ -131,6 +141,11 @@ class Session(object):
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+
+        # XQR-30 spectrum
+        if instr == 'XSHOOTER' and orig == 'XQR-30':
+            self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
+            self._open_twin = ~self._open_twin
 
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
