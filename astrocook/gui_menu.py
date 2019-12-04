@@ -21,16 +21,16 @@ class GUIMenu(object):
         self._file = GUIMenuFile(self._gui)
         self._edit = GUIMenuEdit(self._gui)
         self._view = GUIMenuView(self._gui)
-        self._snacks = GUIMenuSnacks(self._gui)
-        self._meals = GUIMenuMeals(self._gui)
+        self._recipes = GUIMenuRecipes(self._gui)
+        self._courses = GUIMenuCourses(self._gui)
         self._cook = GUIMenuCook(self._gui)
         bar.Append(self._file._menu, "File")
         bar.Append(self._edit._menu, "Edit")
         bar.Append(self._view._menu, "View")
-        #bar.Append(snacks._menu, "Snacks")
-        bar.Append(self._snacks._menu, "Ingredients")
-        #bar.Append(meals._menu, "Meals")
-        bar.Append(self._meals._menu, "Recipes")
+        #bar.Append(recipes._menu, "Recipes")
+        bar.Append(self._recipes._menu, "Recipes")
+        #bar.Append(courses._menu, "Courses")
+        bar.Append(self._courses._menu, "Courses")
         bar.Append(self._cook._menu, "Cook")
         return bar
 
@@ -99,7 +99,7 @@ class GUIMenu(object):
         sel = self._gui._graph_main._sel
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
-                for m in ['_edit', '_view', '_snacks', '_meals', 'cook']:
+                for m in ['_edit', '_view', '_recipes', '_courses', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable():
@@ -368,78 +368,86 @@ class GUIMenuFile(GUIMenu):
             """
 
 
-class GUIMenuMeals(GUIMenu):
-    def __init__(self,
-                 gui,
-                 start_id=5000,
-                 **kwargs):
-        super(GUIMenuMeals, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        # Add items to Meals menu here
-        self._item_method(self._menu, start_id, 'spec', "Find lines",
-                          ['gauss_convolve', 'peaks_find'])
-        self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
-                          ['lines_find', 'nodes_extract', #'nodes_clean',
-                           'nodes_interp'])
-        self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
-                          ['add_syst_from_lines', 'add_syst_from_resids',
-                           'add_syst_slide', 'compl_syst'])
-
-class GUIMenuSnacks(GUIMenu):
+class GUIMenuRecipes(GUIMenu):
 
     def __init__(self,
                  gui,
                  start_id=4000,
                  **kwargs):
-        super(GUIMenuSnacks, self).__init__(gui)
+        super(GUIMenuRecipes, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
 
-        # Add items to Snacks menu here
-        self._item_method(self._menu, start_id+101, 'spec',
+        # Add items to Recipes menu here
+        self._item_method(self._menu, start_id+100, 'spec',
                           "Rebin spectrum", 'rebin')
-        self._item_method(self._menu, start_id+102, 'spec',
+        self._item_method(self._menu, start_id+101, 'spec',
                           "Convolve with gaussian", 'gauss_convolve')
-        self._item_method(self._menu, start_id+103, 'spec', "Find peaks",
-                          'peaks_find')
-        self._item_method(self._menu, start_id+104, 'spec', "Find lines",
+
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+200, 'spec', "Find lines",
                           'lines_find')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+201, 'lines', "Extract nodes",
+        self._item_method(self._menu, start_id+201, 'lines',
+                          "Continuum from nodes", 'nodes_cont')
+        submenu = wx.Menu()
+        self._item_method(submenu, start_id+210, 'spec', "Find peaks",
+                          'peaks_find')
+        self._item_method(submenu, start_id+211, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(self._menu, start_id+202, 'lines', "Clean nodes",
+        self._item_method(submenu, start_id+212, 'lines', "Clean nodes",
                           'nodes_clean')
-        self._item_method(self._menu, start_id+203, 'nodes',
+        self._item_method(submenu, start_id+213, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
+        self._menu.AppendSubMenu(submenu, "Other recipes")
         self._menu.AppendSeparator()
+
         #self._item_method(self._menu, start_id+301, 'lines',
         #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+301, 'cont',
+        self._item_method(self._menu, start_id+300, 'cont',
                           "New system", 'syst_new')
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
         #                  'add_syst_from_lines')
-        self._item_method(self._menu, start_id+302, 'cont',
-                          "New systems from line list",
+        self._item_method(self._menu, start_id+301, 'cont',
+                          "New systems from lines",
                           'systs_new_from_lines')
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
-        self._item_method(self._menu, start_id+303, 'systs',
-                          "New systems from residuals",
-                          'systs_new_from_resids')
-        self._item_method(self._menu, start_id+304, 'systs',
-                          "New systems from sliding technique",
-                          'systs_new_from_slide')
+        #self._item_method(self._menu, start_id+303, 'systs',
+        #                  "New systems from residuals",
+        #                  'systs_new_from_resids')
+        #self._item_method(self._menu, start_id+304, 'systs',
+        #                  "New systems from sliding technique",
+        #                  'systs_new_from_slide')
+        submenu = wx.Menu()
+
+        """
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+401, 'lines',
                           "Simulate a system", 'syst_simul')
         self._item_method(self._menu, start_id+402, 'systs',
                           "Estimate completeness with simulated systems",
                           'systs_compl')
+        """
 
+class GUIMenuCourses(GUIMenu):
+    def __init__(self,
+                 gui,
+                 start_id=5000,
+                 **kwargs):
+        super(GUIMenuCourses, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        # Add items to Courses menu here
+        #self._item_method(self._menu, start_id, 'spec', "Find lines",
+        #                  ['gauss_convolve', 'peaks_find'])
+        self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
+                          ['lines_find', 'nodes_cont'])
+        #self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
+        #                  ['add_syst_from_lines', 'add_syst_from_resids',
+        #                   'add_syst_slide', 'compl_syst'])
 
 class GUIMenuView(GUIMenu):
 

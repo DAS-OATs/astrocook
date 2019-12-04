@@ -10,10 +10,11 @@ class CookbookContinuum(object):
     def __init__(self):
         pass
 
+### Basic
+
     def nodes_clean(self, kappa=5.0):
         """ @brief Clean nodes
         @details Clean the list of nodes from outliers.
-        @param window Number of nodes in the window (must be odd)
         @param kappa Number of standard deviation away from the window average
         @return 0
         """
@@ -22,12 +23,6 @@ class CookbookContinuum(object):
         except:
             logging.error(msg_param_fail)
             return 0
-
-        """
-        if window%2 == 0:
-            window += 1
-            logging.warning("window was not odd. I incremented it by one.")
-        """
 
         self.sess.nodes = self.sess.spec._nodes_clean(self.sess.nodes, kappa)
         return 0
@@ -113,22 +108,24 @@ class CookbookContinuum(object):
         return 0
 
 
-    def lines_find(self, std_start=100.0, std_end=0.0, kind='min', kappa=5.0):
-        """ @brief Find peaks
-        @details Find the peaks in a spectrum column. Peaks are the extrema
-        (minima or maxima) that are more prominent than a given number of
-        standard deviations. They are saved as a list of lines.
+### Advanced
+
+    def lines_find(self, std_start=100.0, std_end=0.0, kind='min',
+                   kappa_peaks=5.0):
+        """ @brief Find lines
+        @details Create a line list by convolving a spectrum with different
+        gaussian profiles and finding the peaks in the convolved spectrum
         @param std_start Start standard deviation of the gaussian (km/s)
         @param std_end End standard deviation of the gaussian (km/s)
         @param kind Kind of extrema ('min' or 'max')
-        @param kappa Number of standard deviations
+        @param kappa_peaks Number of standard deviations
         @return 0
         """
 
         try:
             std_start = float(std_start)
             std_end = float(std_end)
-            kappa = float(kappa)
+            kappa_peaks = float(kappa_peaks)
         except:
             logging.error(msg_param_fail)
             return 0
@@ -136,6 +133,32 @@ class CookbookContinuum(object):
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             self.gauss_convolve(std=std)
-            self.peaks_find(kind='min', kappa=kappa, append=i>0)
+            self.peaks_find(kind='min', kappa=kappa_peaks, append=i>0)
+
+        return 0
+
+
+    def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
+                   smooth=0):
+        """ @brief Continuum from nodes
+        @details Estimate a continuum by extracting, cleaning, and interpolating
+        nodes from regions not affected by lines
+        @param delta_x Size of slices (km/s)
+        @param kappa_nodes Number of standard deviation away from the window average
+        @param smooth Smoothing of the spline
+        @return 0
+        """
+
+        try:
+            delta_x = float(delta_x)
+            kappa_nodes = float(kappa_nodes)
+            smooth = float(smooth)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.nodes_extract(delta_x, au.km/au.s)
+        self.nodes_clean(kappa_nodes)
+        self.nodes_interp(smooth)
 
         return 0

@@ -302,7 +302,7 @@ class CookbookAbsorbers(object):
                 return 1
         return 0
 
-################################################################################
+### Advanced
 
     def syst_new(self, series='Lya', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=0.5,
