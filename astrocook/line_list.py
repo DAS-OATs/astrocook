@@ -15,18 +15,22 @@ class LineList(Frame):
                  xmax=[],
                  y=[],
                  dy=[],
+                 source=[],
                  xunit=au.nm,
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
                  dtype=float):
         super(LineList, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
+        if source != []:
+            self._t['source'] = source
 
-    def _add(self, x, xmin, xmax, y, dy):
+
+    def _add(self, x, xmin, xmax, y, dy, source=None):
         """ @brief Add a system to a system list.
         """
 
-        self._t.add_row([x, xmin, xmax, y, dy])
+        self._t.add_row([x, xmin, xmax, y, dy, source])
 
         return 0
 

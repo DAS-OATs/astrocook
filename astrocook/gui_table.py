@@ -35,7 +35,7 @@ class GUITable(wx.Frame):
                                               % (n, str(self._data.t[n].unit)))
                 if type(r[n]) == np.int64:
                     self._tab.SetCellValue(j, i, "%4i" % r[n])
-                elif type(r[n]) == str:
+                elif type(r[n]) == str or type(r[n]) == np.str_:
                     self._tab.SetCellValue(j, i, r[n])
                 elif type(r[n]) == OrderedDict:
                     self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
