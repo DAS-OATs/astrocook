@@ -342,6 +342,10 @@ class GUIMenuFile(GUIMenu):
             logging.info("I'm loading session %s..." % path)
             sess = Session(path=path, name=name)
             self._gui._panel_sess._on_add(sess, open=True)
+            if sess._open_twin:
+                logging.info("I'm loading twin session %s..." % path)
+                sess = Session(path=path, name=name, twin=True)
+                self._gui._panel_sess._on_add(sess, open=True)
 
     def _on_save(self, event, path='.'):
         """ Behaviour for Session > Save """

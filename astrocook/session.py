@@ -145,7 +145,7 @@ class Session(object):
         # XQR-30 spectrum
         if instr == 'XSHOOTER' and orig == 'XQR-30':
             self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
-            self._open_twin = ~self._open_twin
+            self._open_twin = not self._open_twin
 
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
