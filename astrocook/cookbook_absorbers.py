@@ -336,7 +336,7 @@ class CookbookAbsorbers(object):
 
         self._systs_prepare()
         self._logN_guess(series, z, b, resol)
-        logN = self._syst_guess(series, z)
+        #logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
         self._syst_fit(mod, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
@@ -399,7 +399,7 @@ class CookbookAbsorbers(object):
 
         self._systs_prepare(append)
         self._logN_guess(series, z_list[0], b, resol)
-        logN_list = self._systs_guess(series_list, z_list)
+        #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list)
         self._systs_fit(resol, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
