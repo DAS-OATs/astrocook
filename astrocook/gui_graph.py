@@ -93,7 +93,7 @@ class GUIGraphDetail(GUIGraphMain):
         self._graph._legend = False
         self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
-    def _define_lim(self, x, t=None, xspan=30, ymargin=0.1, norm=False):
+    def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):#, norm=False):
         if t == None:
             t = self._gui._sess_sel.spec.t
             t = t[np.logical_and(~np.isnan(t['x']), ~np.isnan(t['y']))]
@@ -103,9 +103,9 @@ class GUIGraphDetail(GUIGraphMain):
         ysel = t['y'][np.where(np.logical_and(t['x']>xmin, t['x']<xmax))]
         yspan = ymargin*(np.max(ysel)-np.min(ysel))
         xlim = (xmin, xmax)
-        if norm:
-            ylim = (-0.2, 1.2)
-        else:
-            ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
+        #if norm:
+        ylim = (-0.2, 1.2)
+        #else:
+        #    ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
 
         return xlim, ylim

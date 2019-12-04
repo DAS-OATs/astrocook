@@ -97,8 +97,11 @@ class CookbookAbsorbers(object):
     def _syst_add(self, series, z, logN, b, resol):
         systs = self.sess.systs
         spec = self.sess.spec
-        systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
-                          None, systs._id])
+        if z in systs._t['z0']:
+            return None
+
+        systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
+                          None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -139,6 +142,7 @@ class CookbookAbsorbers(object):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
+        systs_n = 0
         for i, (series, z, logN, b, resol) \
             in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list),
                          len(series_list), "cookbook_absorbers: Adding"):
@@ -149,13 +153,15 @@ class CookbookAbsorbers(object):
             mod = self._syst_add(series, z, logN, b, resol)
 
             # When many systems are added, they are stored in the system table
-            self._systs_update(mod)
+            if mod is not None:
+                systs_n += 1
+                self._systs_update(mod)
 
         # Improve
         mods_t = self.sess.systs._mods_t
         if verbose:
             logging.info("I've added %i system%s in %i model%s." \
-                         % (len(z_list), '' if len(z_list)==1 else 's',
+                         % (systs_n, '' if systs_n==1 else 's',
                             len(mods_t), msg_z_range(z_list)))
         return 0
 
@@ -381,7 +387,7 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append or append == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -443,7 +449,7 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append or append == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0

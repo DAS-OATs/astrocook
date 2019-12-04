@@ -80,7 +80,7 @@ class CookbookContinuum(object):
 
         try:
             kappa = float(kappa)
-            append = append or append == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -97,12 +97,13 @@ class CookbookContinuum(object):
         lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
                          spec._xunit, spec._yunit, spec._meta)
 
-        if append and self.sess.lines != None:
+        if append and self.sess.lines is not None \
+            and len(self.sess.lines.t) > 0:
             self.sess.lines._append(lines)
             self.sess.lines._clean()
         else:
             self.sess.lines = lines
-
+            
         self.sess.lines_kind = 'peaks'
         spec._lines_mask(self.sess.lines)
         return 0
@@ -110,15 +111,18 @@ class CookbookContinuum(object):
 
 ### Advanced
 
-    def lines_find(self, std_start=100.0, std_end=0.0, kind='min',
-                   kappa_peaks=5.0):
+    def lines_find(self, std_start=100.0, std_end=0.0, col='y',
+                   conv_col='conv', kind='min', kappa_peaks=5.0, append=True):
         """ @brief Find lines
         @details Create a line list by convolving a spectrum with different
         gaussian profiles and finding the peaks in the convolved spectrum
         @param std_start Start standard deviation of the gaussian (km/s)
         @param std_end End standard deviation of the gaussian (km/s)
+        @param col Column to convolve
+        @param conv_col Convolved column
         @param kind Kind of extrema ('min' or 'max')
         @param kappa_peaks Number of standard deviations
+        @param append Append lines to existing line list
         @return 0
         """
 
@@ -126,14 +130,16 @@ class CookbookContinuum(object):
             std_start = float(std_start)
             std_end = float(std_end)
             kappa_peaks = float(kappa_peaks)
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
-            self.gauss_convolve(std=std)
-            self.peaks_find(kind='min', kappa=kappa_peaks, append=i>0)
+            self.gauss_convolve(std=std, input_col=col, output_col=conv_col)
+            self.peaks_find(col=conv_col, kind='min', kappa=kappa_peaks,
+                            append=append or i>0)
 
         return 0
 
