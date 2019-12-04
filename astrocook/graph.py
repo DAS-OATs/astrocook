@@ -410,6 +410,10 @@ class GraphSpectrumXYMask(GraphSpectrumXY):
         super(GraphSpectrumXYMask, self).__init__(sess)
         self._type = 'step'
         self._x[sess.spec._t['lines_mask']] = np.nan
+        try:
+            self._y = sess.spec._t['deabs']
+        except:
+            self._y = sess.spec.y
         self._kwargs = {'label':sess.name+", masked", 'where':'mid'}
 
 class GraphSystListZSeries(object):

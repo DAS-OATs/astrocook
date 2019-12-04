@@ -35,7 +35,7 @@ class GUITable(wx.Frame):
                                               % (n, str(self._data.t[n].unit)))
                 if type(r[n]) == np.int64:
                     self._tab.SetCellValue(j, i, "%4i" % r[n])
-                elif type(r[n]) == str:
+                elif type(r[n]) == str or type(r[n]) == np.str_:
                     self._tab.SetCellValue(j, i, r[n])
                 elif type(r[n]) == OrderedDict:
                     self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
@@ -327,7 +327,7 @@ class GUITableSystList(GUITable):
             self._gui._sess_sel.cb.x_convert(zem=zem)
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
-            _, ylim = self._gui._graph_det._define_lim(0, norm=True)
+            _, ylim = self._gui._graph_det._define_lim(0)#, norm=True)
 
             if i == 0:
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1)

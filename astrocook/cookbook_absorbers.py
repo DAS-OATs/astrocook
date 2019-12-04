@@ -97,8 +97,11 @@ class CookbookAbsorbers(object):
     def _syst_add(self, series, z, logN, b, resol):
         systs = self.sess.systs
         spec = self.sess.spec
-        systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
-                          None, systs._id])
+        if z in systs._t['z0']:
+            return None
+
+        systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
+                          None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -131,7 +134,13 @@ class CookbookAbsorbers(object):
         ynorm = np.interp(x, spec.x.to(xunit_def).value,
                           (spec.y/spec._t['cont']).value)
         ynorm = max(0.1, min(0.9, ynorm))
-        return max(12, min(14, self._guess_f(ynorm)))
+        try:
+            ciao
+            return max(12, min(14, self._guess_f(ynorm)))
+        except:
+            #logging.info("I couldn't guess logN for system at redshift %2.4f. "
+            #             "I'm using %2.4f instead." % (z, logN_def))
+            return logN_def
 
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
@@ -139,6 +148,7 @@ class CookbookAbsorbers(object):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
+        systs_n = 0
         for i, (series, z, logN, b, resol) \
             in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list),
                          len(series_list), "cookbook_absorbers: Adding"):
@@ -149,13 +159,15 @@ class CookbookAbsorbers(object):
             mod = self._syst_add(series, z, logN, b, resol)
 
             # When many systems are added, they are stored in the system table
-            self._systs_update(mod)
+            if mod is not None:
+                systs_n += 1
+                self._systs_update(mod)
 
         # Improve
         mods_t = self.sess.systs._mods_t
         if verbose:
             logging.info("I've added %i system%s in %i model%s." \
-                         % (len(z_list), '' if len(z_list)==1 else 's',
+                         % (systs_n, '' if systs_n==1 else 's',
                             len(mods_t), msg_z_range(z_list)))
         return 0
 
@@ -305,7 +317,7 @@ class CookbookAbsorbers(object):
 ### Advanced
 
     def syst_new(self, series='Lya', z=2.0, logN=logN_def, b=b_def,
-                 resol=resol_def, chi2r_thres=np.inf, dlogN_thres=0.5,
+                 resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
                  max_nfev=100):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
@@ -336,7 +348,7 @@ class CookbookAbsorbers(object):
 
         self._systs_prepare()
         self._logN_guess(series, z, b, resol)
-        #logN = self._syst_guess(series, z)
+        logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
         self._syst_fit(mod, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
@@ -348,7 +360,7 @@ class CookbookAbsorbers(object):
 
     def systs_new_from_lines(self, series='Lya', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
-                             chi2r_thres=np.inf, dlogN_thres=0.5,
+                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                              max_nfev=100, append=True):
         """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
@@ -381,7 +393,7 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append or append == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -399,7 +411,7 @@ class CookbookAbsorbers(object):
 
         self._systs_prepare(append)
         self._logN_guess(series, z_list[0], b, resol)
-        #logN_list = self._systs_guess(series_list, z_list)
+        logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list)
         self._systs_fit(resol, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
@@ -443,7 +455,7 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append or append == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0

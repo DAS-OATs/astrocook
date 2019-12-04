@@ -93,7 +93,7 @@ class Spectrum(Frame):
     """
 
 
-    def _lines_mask(self, lines):
+    def _lines_mask(self, lines, source=None):
         """ @brief Create a mask consisting on the ['xmin', 'xmax'] regions from
         the associated line list
         @return 0
@@ -101,7 +101,16 @@ class Spectrum(Frame):
 
         x = self._safe(self.x)
         mask = np.zeros(len(x), dtype=bool)
-        for (xmin, xmax) in zip(lines.xmin, lines.xmax):
+
+        if source is not None:
+            where = lines.t['source'] == source
+        else:
+            where = range(len(lines.t))
+
+        lines_xmin = lines.xmin[where]
+        lines_xmax = lines.xmax[where]
+
+        for (xmin, xmax) in zip(lines_xmin, lines_xmax):
             mask += np.logical_and(x>=xmin, x<=xmax)
         if 'lines_mask' not in self._t.colnames:
             logging.info("I'm adding column 'lines_mask'.")
@@ -161,9 +170,12 @@ class Spectrum(Frame):
             except:
                 where_s = np.where(self._t['slice']==s)
 
+            # Use deabs column if present
+            y = self._t['deabs'] if 'deabs' in self._t.colnames else self.y.value
+
             if len(where_s[0])>0.1*len(np.where(self._t['slice']==s)[0]):
                 x_where_s = self.x[where_s].value
-                y_where_s = self.y[where_s].value
+                y_where_s = y[where_s]
                 dy_where_s = self.dy[where_s].value
                 x_ave.append(np.median(x_where_s))
                 xmin_ave.append(x_where_s[0])
@@ -258,9 +270,8 @@ class Spectrum(Frame):
         y = np.array([])
         dy = np.array([])
         for i, (m, M) \
-            in enumerate(tqdm(zip(xmin.value, xmax.value), ncols=120,
-                         desc="[INFO] spectrum: Rebinning",
-                         total=len(xmin))):
+            in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
+                         "spectrum: Rebinning"):
             while xmin_in < M:
                 iM += 1
                 xmin_in = self.xmin[iM].value

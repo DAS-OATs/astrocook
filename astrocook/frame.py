@@ -104,7 +104,8 @@ class Frame():
 
     def _append(self, frame):
         vstack = at.vstack([self._t, frame._t])
-        self._t = at.unique(vstack, keys=['x'])
+        if len(self._t) > 0:
+            self._t = at.unique(vstack, keys=['x'])
         return 0
 
 

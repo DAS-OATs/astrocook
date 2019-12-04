@@ -5,16 +5,20 @@ logging.basicConfig(
     format="[%(levelname)s] %(module)s: %(message)s")
 from tqdm import tqdm
 
+msg_try_again = "Please try again."
+
 msg_exec_fail = "I can't go through with the execution."
-msg_output_fail = "The output is empty. Please try again."
+msg_output_fail = "The output is empty. %s" % msg_try_again
 msg_param_fail = "I can't understand the values of the parameters. "\
                  "Please try again."
 msg_param_swap = "You swapped the values of the parameters. I put them right."
 
 def msg_attr_miss(attr):
-    return 'Attribute %s is missing.' % attr
+    return "I can't find attribute %s. %s" % (attr, msg_try_again)
+def msg_col_miss(col):
+    return "I can't find column %s. %s" % (col, msg_try_again)
 def msg_descr_miss(descr):
-    return 'Descriptor %s is missing.' % descr
+    return "I can't find descriptor %s. %s" % (descr, msg_try_again)
 def msg_format(format):
     return "I'm importing data with %s format." % format
 
