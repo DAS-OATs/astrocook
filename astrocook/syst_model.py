@@ -8,7 +8,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-thres = 1e-4
+thres = 1e-2
 
 class SystModel(LMComposite):
 
@@ -130,9 +130,11 @@ class SystModel(LMComposite):
 
         #ys = self._group.eval(x=self._xs, params=self._pars)
         #c = np.where(ys<1-thres)[0]
-        c = np.where(self._ys<1-thres)[0]
-
-
+        c = []
+        t = thres
+        while len(c)==0:
+            c = np.where(self._ys<1-t)[0]
+            t = t*0.5
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
 
