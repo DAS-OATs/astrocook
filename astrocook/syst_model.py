@@ -72,8 +72,12 @@ class SystModel(LMComposite):
                 self._pars.update(mod._pars)
                 self._group_list.append(i)
         if len(self._group_list) > 1:
-            ids = list(np.ravel([np.array(i)
-                                 for i in mods_t['id'][self._group_list[1:]]]))
+            #print(self._group_list)
+            #print(mods_t['id'][self._group_list[1:]])
+            #ids = list(np.ravel([np.array(i)
+            #                     for i in mods_t['id'][self._group_list[1:]]]))
+            ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
+            #print(ids)
             mods_t.remove_rows(self._group_list[1:])
             for i in ids:
                 #mods_t['id'][0].append(i)
