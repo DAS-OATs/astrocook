@@ -103,6 +103,8 @@ class GUITable(wx.Frame):
 
     def _on_view(self, event, from_scratch=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
+        if 'z' in self._data.t.colnames: self._data.t.sort('z')
+        if 'x' in self._data.t.colnames: self._data.t.sort('x')
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
