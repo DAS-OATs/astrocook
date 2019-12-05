@@ -1,6 +1,7 @@
 from .functions import adj_gauss, lines_voigt, convolve, psf_gauss
 from .vars import *
 from astropy import table as at
+from copy import deepcopy as dc
 import datetime
 from lmfit import CompositeModel as LMComposite
 from lmfit import Model as LMModel
@@ -8,7 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-thres = 1e-2
+thres = 5e-3
 
 class SystModel(LMComposite):
 
@@ -44,7 +45,7 @@ class SystModel(LMComposite):
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve)
-
+        #self._pars.pretty_print()
 
     def _make_defs(self):
         self._defs = pars_std_d
@@ -60,17 +61,46 @@ class SystModel(LMComposite):
 
         mods_t = self._mods_t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
-        ys = self._lines.eval(x=self._xs, params=self._pars)
+        #ys = self._lines.eval(x=self._xs, params=self._pars)
+
+        try:
+            ok
+    #    except:
+            d = self._defs
+            psf = LMModel(self._psf_func, prefix='temp_', reg=self._xs)
+            temp = dc(self)
+            temp._pars.update(psf.make_params())
+            temp._pars.add_many(('temp_resol', d['resol'], d['resol_vary'],
+                                d['resol_min'], d['resol_max'], d['resol_expr']))
+            #temp._pars.pretty_print()
+            comp = LMComposite(temp._lines, psf, convolve)
+            ys = comp.eval(x=self._xs, params=temp._pars)
+        except:
+            ys = self._lines.eval(x=self._xs, params=self._pars)
+        #self._pars.pretty_print()
+
         self._group = self._lines
         self._group_list = []
+        #plt.plot(self._xs, ys)
         for i, s in enumerate(mods_t):
             mod = s['mod']
+            #mod._pars.pretty_print()
             ys_s = mod.eval(x=self._xs, params=mod._pars)
             #ys_s = mod._ys
-            if np.amin(np.maximum(ys, ys_s)) < 1-thres:
+            #print(s['z0'], s['id'])
+            #print(np.amin(np.maximum(ys, ys_s)) < 1-thres)
+            ymax = np.maximum(ys, ys_s)
+            #plt.plot(self._xs, ys, linestyle='--')
+            #plt.plot(self._xs, ys_s, linestyle=':')
+            #plt.plot(self._xs, ymax)
+            #plt.scatter(self._xs[np.argmin(ymax)], np.min(ymax))
+            #plt.show()
+            if np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys):
                 self._group *= mod._group
                 self._pars.update(mod._pars)
                 self._group_list.append(i)
+                #self._pars.pretty_print()
+
         if len(self._group_list) > 1:
             #print(self._group_list)
             #print(mods_t['id'][self._group_list[1:]])

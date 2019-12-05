@@ -42,7 +42,7 @@ class CookbookAbsorbers(object):
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
         #for i,s in enumerate(systs._t):
         for i,s in enum_tqdm(systs._t, len(systs._t),
-                           "cookbook_absorbers: Recreating"):
+                             "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
@@ -316,7 +316,7 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
-    def syst_new(self, series='Lya', z=2.0, logN=logN_def, b=b_def,
+    def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
                  max_nfev=100):
         """ @brief New system
@@ -347,8 +347,8 @@ class CookbookAbsorbers(object):
         if self._z_off(parse(series), z): return 0
 
         self._systs_prepare()
-        self._logN_guess(series, z, b, resol)
-        logN = self._syst_guess(series, z)
+        #self._logN_guess(series, z, b, resol)
+        #logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
         self._syst_fit(mod, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
@@ -358,7 +358,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_new_from_lines(self, series='Lya', z_start=0, z_end=6,
+    def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=np.inf,
                              max_nfev=100, append=True):
@@ -410,8 +410,8 @@ class CookbookAbsorbers(object):
         series_list = [series]*len(z_list)
 
         self._systs_prepare(append)
-        self._logN_guess(series, z_list[0], b, resol)
-        logN_list = self._systs_guess(series_list, z_list)
+        #self._logN_guess(series, z_list[0], b, resol)
+        #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list)
         self._systs_fit(resol, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
@@ -420,7 +420,7 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def syst_new_from_resids(self, series='Lya', z_start=0, z_end=6,
+    def syst_new_from_resids(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=0.5,
                              max_nfev=100, append=True):
