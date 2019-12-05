@@ -101,7 +101,7 @@ class CookbookAbsorbers(object):
             return None
 
         systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
-                          None, None, systs._id])
+                          None, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -294,6 +294,10 @@ class CookbookAbsorbers(object):
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
                 try:
+                    systs._t[iw]['resol'] = mod._pars['psf_gauss_0_resol'].value
+                except:
+                    systs._t[iw]['resol'] = np.nan
+                try:
                     systs._t[iw]['chi2r'] = mod._chi2r
                 except:
                     systs._t[iw]['chi2r'] = np.nan
@@ -336,7 +340,7 @@ class CookbookAbsorbers(object):
             z = float(z)
             logN = float(logN)
             b = float(b)
-            resol = float(resol)
+            resol = None if resol in [None, 'None'] else float(resol)
             chi2r_thres = float(chi2r_thres)
             dlogN_thres = float(dlogN_thres)
             max_nfev = int(max_nfev)
@@ -344,6 +348,8 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        check, resol = resol_check(self.sess.spec, resol)
+        if not check: return 0
         if self._z_off(parse(series), z): return 0
 
         self._systs_prepare()
@@ -391,28 +397,31 @@ class CookbookAbsorbers(object):
             b = float(b)
             chi2r_thres = float(chi2r_thres)
             dlogN_thres = float(dlogN_thres)
-            resol = float(resol)
+            resol = None if resol in [None, 'None'] else float(resol)
             max_nfev = int(max_nfev)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
+        check, resol = resol_check(self.sess.spec, resol)
+        if not check: return 0
 
         z_list, y_list = self._lines_cand_find(series, z_start, z_end, dz)
         z_list, logN_list = self.sess.lines._cand_find2(series, z_start, z_end, dz,
-                                                       logN=logN is None)
+                                                        logN=logN is None)
 
         if len(z_list) == 0:
             logging.warning("I've found no candidates!")
             return 0
 
         series_list = [series]*len(z_list)
+        resol_list = [resol]*len(z_list)
 
         self._systs_prepare(append)
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
-        self._systs_add(series_list, z_list, logN_list)
+        self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
         self._systs_fit(resol, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
         self._systs_refit(refit_id, max_nfev)

@@ -71,7 +71,6 @@ class Format(object):
                     pass
 
 
-
         if struct in ['systs']:
             series = data['series']
             func = data['func']
@@ -100,6 +99,7 @@ class Format(object):
         xmax = x+data['wpix']*0.5
         y = data['flux']
         dy = data['sigma']
+        resol = []*len(x)
         #"""
         try:
             cont = data['cont']
@@ -132,6 +132,7 @@ class Format(object):
         xmax = x+data['PIXSIZE']*0.5
         y = data['FLUX']
         dy = data['FLUXERR']
+        resol = np.array([70000]*len(x))
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'ESPRESSO'}
@@ -140,7 +141,7 @@ class Format(object):
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol)
 
     def espresso_drs_spectrum(self, hdul):
         """ ESPRESSO DRS S1D format """
@@ -152,6 +153,7 @@ class Format(object):
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
         dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+        resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'ESPRESSO'}
@@ -171,6 +173,7 @@ class Format(object):
         xmax = data['col9']
         y = np.zeros(len(x))
         dy = np.zeros(len(x))
+        resol = []*len(x)
         xunit = au.nm
         yunit = None
         meta = {}
@@ -190,6 +193,7 @@ class Format(object):
         dy = data[:][2]#*data[:][3]
         x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
         cont = np.ones(len(x))
         sel = np.where(y != 1)
         xunit = au.Angstrom
@@ -214,6 +218,7 @@ class Format(object):
         xmax = x+data['PIXSIZE']*0.5
         y = data['FLUX']
         dy = data['FLUXERR']
+        resol = []*len(x)
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'X-shooter'}
@@ -238,6 +243,7 @@ class Format(object):
         else:
             y = data['FLUX_NOCORR'][0]
             dy = data['ERROR_NOCORR'][0]
+        resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'X-shooter'}
@@ -262,6 +268,7 @@ class Format(object):
         dy = data_e
         x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
         meta = {'instr': 'X-shooter'}

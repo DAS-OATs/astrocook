@@ -30,11 +30,14 @@ class Spectrum(Frame):
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
                  dtype=float,
-                 cont=[]):
+                 cont=[],
+                 resol=[]):
         super(Spectrum, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
         if cont != []:
             self._t['cont'] = cont*self._yunit
+        if resol != []:
+            self._t['resol'] = resol
 
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)

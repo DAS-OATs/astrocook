@@ -6,11 +6,12 @@ logging.basicConfig(
 from tqdm import tqdm
 
 msg_try_again = "Please try again."
+msg_check = "Please check."
 
 msg_exec_fail = "I can't go through with the execution."
 msg_output_fail = "The output is empty. %s" % msg_try_again
-msg_param_fail = "I can't understand the values of the parameters. "\
-                 "Please try again."
+msg_param_fail = "I can't understand the values of the parameters. %s" \
+                  % msg_try_again
 msg_param_swap = "You swapped the values of the parameters. I put them right."
 
 def msg_attr_miss(attr):
@@ -21,6 +22,21 @@ def msg_descr_miss(descr):
     return "I can't find descriptor %s. %s" % (descr, msg_try_again)
 def msg_format(format):
     return "I'm importing data with %s format." % format
+
+def msg_resol(check, prefix):
+    if not np.logical_or(*check):
+        return "[ERROR] %s: I couldn't take the resolution either from " \
+               "parameter 'resol' or from the spectrum table. %s" \
+               % (prefix, msg_check)
+    if check[0]:
+        msg = "[INFO] %s: I've taken the resolution parameter 'resol'." \
+              % prefix
+        if check[1]:
+            msg = msg + " Ignoring the spectrum table."
+    else:
+        msg = "[INFO] %s: I've taken the resolution from the spectrum table." \
+              % prefix
+    return msg
 
 def msg_z_range(z_list):
     if len(z_list)==0:
