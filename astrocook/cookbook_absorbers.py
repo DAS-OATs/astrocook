@@ -34,7 +34,7 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _mods_recreate(self, resol, max_nfev=0, verbose=True):
+    def _mods_recreate(self, max_nfev=0, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         #systs = dc(self.sess.systs)
@@ -46,7 +46,7 @@ class CookbookAbsorbers(object):
             systs._id = s['id']
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
-                           b=s['b'], resol=resol)
+                           b=s['b'], resol=s['resol'])
             self._mods_update(mod)
         #self.sess.systs._mods_t = systs._mods_t
         return 0
@@ -98,6 +98,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
         spec = self.sess.spec
         if z in systs._t['z0']:
+            logging.warning("Redshift %2.4f already exists. Choose another "
+                            "one." % z)
             return None
 
         systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
@@ -184,7 +186,7 @@ class CookbookAbsorbers(object):
 
             logging.info("I've fitted %i model%s." \
                          % (len(mods_t), msg_z_range(z_list)))
-            self._mods_recreate(resol)
+            self._mods_recreate()#resol)
         else:
             logging.info("I've not fitted any model because you choose "
                          "max_nfev=0.")
@@ -275,7 +277,7 @@ class CookbookAbsorbers(object):
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), dlogN_thres))
-            self._mods_recreate(resol)
+            self._mods_recreate()#resol)
         return refit_id
 
 
@@ -356,6 +358,7 @@ class CookbookAbsorbers(object):
         #self._logN_guess(series, z, b, resol)
         #logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
+        if mod is None: return 0
         self._syst_fit(mod, max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
         self._systs_refit(refit_id, max_nfev)

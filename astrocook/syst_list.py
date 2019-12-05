@@ -48,19 +48,21 @@ class SystList(object):
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
         t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
-        if resol != []:
+        #if resol != []:
+        if len(resol)==len(self.z) and len(resol)>0:
             self._t['resol'] = resol
         else:
             self._t['resol'] = np.empty(len(self.z), dtype=dtype)
-        if chi2r != []:
+#        if chi2r != []:
+        if len(chi2r)==len(self.z) and len(chi2r)>0:
             self._t['chi2r'] = chi2r
         else:
             self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
-        if id != []:
+#        if id != []:
+        if len(id)==len(self.z) and len(id)>0:
             self._t['id'] = id
         else:
             self._t['id'] = np.empty(len(self.z), dtype=int)
-
         mods_t = at.Table()
         mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
 
@@ -70,7 +72,7 @@ class SystList(object):
         try:
             mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
         except:
-            pass
+            mods_t['mod'] = None
         #mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
         #mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
         self._mods_t = mods_t
@@ -122,7 +124,7 @@ class SystList(object):
 
         return 0
     """
-    
+
     def _append(self, frame, unique=True):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])

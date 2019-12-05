@@ -121,6 +121,8 @@ class Session(object):
                     setattr(self, s, format.astrocook(hdul, s))
                 except:
                     pass
+            if hasattr(self, 'spec') and hasattr(self, 'systs'):
+                self.cb._mods_recreate()
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':

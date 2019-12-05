@@ -19,7 +19,7 @@ class Format(object):
         return xmin, xmax
 
     def astrocook(self, hdul, struct):
-        logging.info(msg_format('Astrocook'))
+        logging.info(msg_format('Astrocook %s' % struct))
         hdr = hdul[1].header
         data = hdul[1].data
 
@@ -69,7 +69,10 @@ class Format(object):
                     out._t['deabs'].unit = out._t['y'].unit
                 except:
                     pass
-
+                try:
+                    out._t['resol'] = data['resol']
+                except:
+                    pass
 
         if struct in ['systs']:
             series = data['series']
@@ -80,10 +83,12 @@ class Format(object):
             dlogN = data['dlogN']
             b = data['b']
             db = data['db']
+            resol = data['resol']
             chi2r = data['chi2r']
             id = data['id']
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, chi2r=chi2r, id=id)
+                           dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
+                           id=id)
             out._t['z0'] = data['z0']
 
         return out
