@@ -15,6 +15,7 @@ class GUIMenu(object):
     def __init__(self,
                  gui):
         self._gui = gui
+        self._params_last = None
 
     def bar(self):
         bar = wx.MenuBar()
@@ -71,9 +72,12 @@ class GUIMenu(object):
 
     def _on_dialog(self, event, title, attr, obj=None):
         if isinstance(attr, list):
-            dlg = GUIDialogMethods(self._gui, title, attr, obj)
+            dlg = GUIDialogMethods(self._gui, title, attr, obj,
+                                   params_last=self._params_last)
         else:
-            dlg = GUIDialogMethod(self._gui, title, attr, obj)
+            dlg = GUIDialogMethod(self._gui, title, attr, obj,
+                                  params_last=self._params_last)
+        self._params_last = dlg._params
 
     def _on_dialog_mini(self, event, title, targ):
         dlg = GUIDialogMini(self._gui, title, targ)
@@ -447,8 +451,10 @@ class GUIMenuCourses(GUIMenu):
         # Add items to Courses menu here
         #self._item_method(self._menu, start_id, 'spec', "Find lines",
         #                  ['gauss_convolve', 'peaks_find'])
-        self._item_method(self._menu, start_id+1, 'spec', "Guess continuum",
+        self._item_method(self._menu, start_id, 'spec', "Guess continuum",
                           ['lines_find', 'nodes_cont'])
+        self._item_method(self._menu, start_id+1, 'spec', "Fit Ly-a forest",
+                          ['lines_find', 'nodes_cont', 'systs_new_from_lines'])
         #self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
         #                  ['add_syst_from_lines', 'add_syst_from_resids',
         #                   'add_syst_slide', 'compl_syst'])

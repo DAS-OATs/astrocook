@@ -24,7 +24,8 @@ class GUIDialog(wx.Dialog):
         self._details = []
         self._doc = []
         self._ctrl = []
-        for a in self._attr:
+
+        for i, a in enumerate(self._attr):
             self._sess_sel =  self._gui._sess_sel
             self._cb =  self._gui._sess_sel.cb
             if hasattr(self._cb, a):
@@ -32,20 +33,11 @@ class GUIDialog(wx.Dialog):
             else:
                 self._obj = self._sess_sel
             method = getattr(self._obj, a)
-
-            """
-            try:
-                if self._obj == None or hasattr(self._obj, a):
-                    self._obj = self._gui._sess_sel.cb
-                method = getattr(self._obj, a)
-            except:
-                if self._obj == None or not hasattr(self._obj, a):
-                    self._obj = self._gui._sess_sel
-                method = getattr(self._obj, a)
-            """
             self._methods.append(method)
             self._get_params(method)
+            self._get_last(method)
             self._get_doc(method)
+
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
         self._core = wx.BoxSizer(wx.VERTICAL)
@@ -80,6 +72,15 @@ class GUIDialog(wx.Dialog):
                               if s[0:7]=='details'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
+
+
+    def _get_last(self, method):
+        if self._params_last is not None:
+            for pls in self._params_last:
+                for pl in pls:
+                    for p in self._params[0]:
+                        if p == pl:
+                            self._params[0][p] = pls[pl]
 
     def _get_params(self, method):
         keys = inspect.getargspec(method)[0][1:]
@@ -134,11 +135,13 @@ class GUIDialogMethod(GUIDialog):
                  attr,
                  obj=None,
                  cancel_run=True,
+                 params_last=None,
                  params_parent=None):
 
-        super(GUIDialogMethod, self).__init__(gui, title, attr, obj)
+        self._params_last = params_last
         self._cancel_run = cancel_run
         self._params_parent = params_parent
+        super(GUIDialogMethod, self).__init__(gui, title, attr, obj)
         self._box_descr()
         self._box_params()
         self._box_buttons(self._cancel_run)
@@ -187,8 +190,10 @@ class GUIDialogMethods(GUIDialog):
                  gui,
                  title,
                  attr,
-                 obj=None):
+                 obj=None,
+                 params_last=None):
 
+        self._params_last = params_last
         super(GUIDialogMethods, self).__init__(gui, title, attr, obj)
         self._box_methods()#panel, core)
         self._box_buttons()
@@ -212,7 +217,7 @@ class GUIDialogMethods(GUIDialog):
 
     def _on_method(self, e, attr, brief):
         GUIDialogMethod(self._gui, brief, attr, cancel_run=False,
-                        params_parent=self._params)
+                        params_last=self._params_last, params_parent=self._params)
 
 class GUIDialogMini(wx.Dialog):
     def __init__(self,
