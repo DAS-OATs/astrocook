@@ -10,7 +10,7 @@ bunit_def = au.km / au.s
 logN_def = 13
 b_def = 10
 
-resol_def = 70000
+resol_def = None
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['conv', 'cont']

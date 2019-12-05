@@ -24,6 +24,7 @@ class SystList(object):
                  b=[],
                  db=[],
                  mod=[],
+                 resol=[],
                  chi2r=[],
                  id=[],
                  meta={},
@@ -47,6 +48,10 @@ class SystList(object):
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
         t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
+        if resol != []:
+            self._t['resol'] = resol
+        else:
+            self._t['resol'] = np.empty(len(self.z), dtype=dtype)
         if chi2r != []:
             self._t['chi2r'] = chi2r
         else:
@@ -109,15 +114,15 @@ class SystList(object):
         self._t['z'].unit = val.unit
 
 
+    """
     def _add(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
-        """ @brief Add a system to a system list.
-        """
 
         self._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
                          None, self._id])
 
         return 0
-
+    """
+    
     def _append(self, frame, unique=True):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])

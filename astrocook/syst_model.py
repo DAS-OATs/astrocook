@@ -1,4 +1,4 @@
-from .functions import adj_gauss, lines_voigt, convolve, psf_gauss
+from .functions import *
 from .vars import *
 from astropy import table as at
 from copy import deepcopy as dc
@@ -67,6 +67,9 @@ class SystModel(LMComposite):
             ok
     #    except:
             d = self._defs
+            if self._resol == None:
+                d['resol'] = spec.t['resol'][len(spec.t)//2]
+
             psf = LMModel(self._psf_func, prefix='temp_', reg=self._xs)
             temp = dc(self)
             temp._pars.update(psf.make_params())
@@ -143,6 +146,9 @@ class SystModel(LMComposite):
     def _make_psf(self):
         d = self._defs
         for i, r in enumerate(self._xr):
+            if self._resol == None:
+                c = np.where(self._spec.x.value==r[len(r)//2])
+                d['resol'] = self._spec.t['resol'][c][0]
             self._psf_pref = self._psf_func.__name__+'_'+str(i)+'_'
             psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=r)
             if i == 0:
@@ -177,13 +183,18 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None):
+        #if resol == None:
+        #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
+        #else:
+        self._resol = resol
         self._series = series
-        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': resol}
+        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': self._resol}
         self._make_defs()
         self._make_lines()
         self._make_group()
         self._make_regs()
         self._make_psf()
         self._make_comp()
+        #self._pars.pretty_print()
         #self._ys = self.eval(x=self._xs, params=self._pars)

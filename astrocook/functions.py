@@ -1,3 +1,4 @@
+from .message import *
 from .vars import *
 from astropy import constants as ac
 import scipy.ndimage.filters as filters
@@ -7,6 +8,8 @@ from scipy.special import wofz
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
+
+prefix = 'functions'
 
 def _fadd(a, u):
     """ @brief Real part of the Faddeeva function Re(F)
@@ -156,6 +159,13 @@ def psf_gauss(x, #center, resol):
     #psf[len(x)//2] = 1
     ret = [np.array(psf)]
     return ret
+
+
+def resol_check(spec, resol, prefix=prefix):
+    check = resol is not None, 'resol' in spec.t.colnames
+    resol = resol if check[0] else None
+    print(msg_resol(check, prefix))
+    return np.logical_or(*check), resol
 
 def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
