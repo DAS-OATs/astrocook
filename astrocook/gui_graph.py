@@ -2,6 +2,9 @@ from .graph import Graph
 from .gui_dialog import GUIDialogMini
 from .syst_list import SystList
 from .vars import graph_sel
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+from matplotlib.figure import Figure
 import numpy as np
 import wx
 
@@ -109,3 +112,44 @@ class GUIGraphDetail(GUIGraphMain):
         #    ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
 
         return xlim, ylim
+
+
+class GUIGraphHistogram(GUIGraphMain):
+
+    def __init__(self,
+                 gui,
+                 title="Column histogram",
+                 size_x=wx.DisplaySize()[0]*0.4,
+                 size_y=wx.DisplaySize()[1]*0.4,
+                 **kwargs):
+        #self._col_values = col_values
+        super(GUIGraphHistogram, self).__init__(gui, title, size_x, size_y,
+                                                main=False, **kwargs)
+        self._gui._graph_hist = self
+        self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
+
+    def _init(self, **kwargs):
+        super(GUIGraphMain, self).__init__(parent=None, title=self._title,
+                                           size=(self._size_x, self._size_y))
+
+
+        self._panel = wx.Panel(self)
+        self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
+        self._textbar = wx.StaticText(self._panel, 1, style=wx.ALIGN_RIGHT)
+        box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
+        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
+        box_toolbar.Add(self._textbar, 1, wx.RIGHT)
+        self._box = wx.BoxSizer(wx.VERTICAL)
+        self._box.Add(self._graph._canvas, 1, wx.EXPAND)
+        self._box.Add(box_toolbar, 0, wx.TOP)
+        self._panel.SetSizer(self._box)
+        self.Centre()
+        self.Bind(wx.EVT_CLOSE, self._on_close)
+
+    def _refresh(self, sess, col_values, **kwargs):
+        if self._closed:
+            self._init()
+        self._graph._ax.clear()
+        self._graph._ax.hist(col_values)
+        self._graph._canvas.draw()
+        self.Show()
