@@ -163,7 +163,7 @@ class Session(object):
         stem = root.split('/')[-1]
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
-                try:
+                if hasattr(self, s) and getattr(self, s) is not None:
                     if s=='systs':
                         try:
                             np.savetxt(root+'_compl.dat', self.compl, fmt='%s')
@@ -180,9 +180,10 @@ class Session(object):
                     name = root+'_'+s+'.fits'
                     obj = dc(getattr(self, s))
                     t = obj._t
-                    t['x'] = t['x'].to(au.nm)
-                    t['xmin'] = t['xmin'].to(au.nm)
-                    t['xmax'] = t['xmax'].to(au.nm)
+                    if s!='systs':
+                        t['x'] = t['x'].to(au.nm)
+                        t['xmin'] = t['xmin'].to(au.nm)
+                        t['xmax'] = t['xmax'].to(au.nm)
                     t.meta = obj._meta
                     t.meta['ORIGIN'] = 'Astrocook'
                     t.meta['HIERARCH ASTROCOOK VERSION'] = version
@@ -192,6 +193,7 @@ class Session(object):
                     t.write(name, format='fits', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
                     os.remove(name)
-
-                except:
-                    pass
+                    logging.info("I've saved frame %s as %s."
+                                 % (s, stem+'_'+s+'.fits'))
+                else:
+                    logging.error("I haven't found any frame %s to save." % s)
