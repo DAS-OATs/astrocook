@@ -449,7 +449,7 @@ class CookbookSandbox(object):
         z_start = float(z_start)
         z_end = float(z_end)
         dz = float(dz)
-        resol = float(resol)
+        resol = None if resol in [None, 'None'] else float(resol)#resol = float(resol)
         logN = float(logN)
         b = float(b)
         chi2r_thres = float(chi2r_thres)
@@ -492,7 +492,7 @@ class CookbookSandbox(object):
 
                 from .line_list import LineList
                 resids = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y,
-                                  peaks.dy, reg._xunit, reg._yunit, reg._meta)
+                                  peaks.dy, xunit=reg._xunit, yunit=reg._yunit, meta=reg._meta)
                 z_cand = resids._syst_cand(o_series, z_start, z_end, dz,
                                            single=True)
                 z_alt = resids._syst_cand('unknown', 0, np.inf, dz, single=True)

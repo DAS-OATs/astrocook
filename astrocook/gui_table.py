@@ -1,3 +1,4 @@
+from .functions import get_selected_cells
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -264,6 +265,11 @@ class GUITableSystList(GUITable):
 
         self._gui = gui
         self._gui._tab_systs = self
+        self._freezes_l = []
+        self._links_l = []
+        self._freezes_d = {}
+        self._links_d = {}
+
 
     def _extract_mod(self, tab, row):
         systs = self._gui._sess_sel.systs
@@ -283,19 +289,36 @@ class GUITableSystList(GUITable):
                     m['mod']._pars[par_name].set(vary=True)
                     if c == 'grey':
                         m['mod']._pars[par_name].set(vary=False)
+                    if par_name in self._links_d:
+                        m['mod']._pars[par_name].set(expr=self._links_d[par_name])
+                    else:
+                        m['mod']._pars[par_name].set(expr=None)
                 return m['mod']
 
     def _on_cell_right_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
+        sel = get_selected_cells(self._tab)
+        self._cells_sel = []
+        for s in sel:
+            if s[1] in [3, 5, 7]: self._cells_sel.append(s)
         if col in [3, 5, 7]:
-            if self._tab.GetCellTextColour(row, col) == 'black':
-                title = 'Freeze parameter'
-            elif self._tab.GetCellTextColour(row, col) == 'grey':
-                title = 'Unfreeze parameter'
-            self.PopupMenu(GUITablePopup(self._gui, self, event,
-                                         title, 'freeze_par'),
+            title = []
+            attr = []
+            if len(self._cells_sel) > 1:
+                if self._tab.GetCellTextColour(row, col) == 'forest green':
+                    title = ['Unlink']
+                else:
+                    title = ['Link']
+                attr = ['link_par']
+            if self._tab.GetCellTextColour(row, col) == 'grey':
+                title += ['Unfreeze']
+            else:
+                title += ['Freeze']
+            attr += ['freeze_par']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
+
 
     def _on_detail(self, event, span=30):
         if event.GetRow() == -1: return
@@ -383,29 +406,44 @@ class GUITableSystList(GUITable):
         b = float(self._tab.GetCellValue(row, 7))
         cb = self._gui._sess_sel.cb
         mod = self._extract_mod(self._tab, row)
-        mod._fit()
-        self._gui._sess_sel.systs._update(mod, mod_t=False)
+        #mod._fit()
+        cb._syst_fit(mod, max_nfev_def)
+        #self._gui._sess_sel.systs._update(mod, mod_t=False)
+        cb._systs_refit(max_nfev=max_nfev_def)
         cb._spec_update()
         self._gui._refresh(init_cursor=True)
+
 
     def _on_freeze_par(self, event):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        par = self._tab.GetColLabelValue(col)[:-1]
-        id = int(self._tab.GetCellValue(row, 10))
-        value = float(self._tab.GetCellValue(row, col))
-        if self._tab.GetCellTextColour(row, col) == 'black':
-            self._tab.SetCellTextColour(row, col, 'grey')
-            #self._gui._sess_sel.cb._constrain(par, id, value, False)
-        elif self._tab.GetCellTextColour(row, col) == 'grey':
-            self._tab.SetCellTextColour(row, col, 'black')
+        #par = self._tab.GetColLabelValue(col)[:-1]
+        #id = int(self._tab.GetCellValue(row, 11))
+        #value = float(self._tab.GetCellValue(row, col))
+        for (r, c) in self._cells_sel:
+            key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
+                                      self._tab.GetCellValue(r, 11).strip(),
+                                      self._tab.GetColLabelValue(c).split('\n')[0])
+            val = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0),
+                                      self._tab.GetCellValue(row, 11).strip(),
+                                      self._tab.GetColLabelValue(col).split('\n')[0])
+            if self._tab.GetCellTextColour(row, col) == 'grey':
+                self._tab.SetCellTextColour(r, c, 'black')
+                if key != val:
+                    self._freezes_l.remove((r,c))
+                    del self._freezes_d[key]
+            else:
+                self._tab.SetCellTextColour(r, c, 'grey')
+                if key != val:
+                    self._freezes_l.remove((r,c))
+                    self._freezes_d[key] = val
         self._tab.ForceRefresh()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
-        self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
+        self._gui._sess_sel.cb.systs_new_from_resids(z_start=z-1e-3, z_end=z+1e-3)
         self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
@@ -423,7 +461,38 @@ class GUITableSystList(GUITable):
                                          ['fit', 'improve', 'remove']),
                            event.GetPosition())
 
+
+    def _on_link_par(self, event):
+        popup = self._gui._tab_popup
+        row = popup._event.GetRow()
+        col = popup._event.GetCol()
+        #par = self._tab.GetColLabelValue(col)[:-1]
+        #id = int(self._tab.GetCellValue(row, 11))
+        #value = float(self._tab.GetCellValue(row, col))
+        for (r, c) in self._cells_sel:
+            key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
+                                      self._tab.GetCellValue(r, 11).strip(),
+                                      self._tab.GetColLabelValue(c).split('\n')[0])
+            val = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0),
+                                      self._tab.GetCellValue(row, 11).strip(),
+                                      self._tab.GetColLabelValue(col).split('\n')[0])
+            if self._tab.GetCellTextColour(row, col) == 'forest green':
+                self._tab.SetCellTextColour(r, c, 'black')
+                if key != val:
+                    self._links_l.remove((r,c))
+                    del self._links_d[key]
+            else:
+                self._tab.SetCellTextColour(r, c, 'forest green')
+                if key != val:
+                    self._links_l.append((r,c))
+                    self._links_d[key] = val
+            print(self._links_d)
+        self._tab.ForceRefresh()
+
+
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)
+        #self._tab.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK,
+        #               self._on_cell_left_dclick)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
                        self._on_cell_right_click)

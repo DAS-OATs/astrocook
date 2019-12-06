@@ -116,14 +116,13 @@ class SystList(object):
         self._t['z'].unit = val.unit
 
 
-    """
+    ### Deprecated, kept for backward compatibility with systs_new_from_resids
     def _add(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
 
         self._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
-                         None, self._id])
+                         None, None, self._id])
 
         return 0
-    """
 
     def _append(self, frame, unique=True):
         vstack_t = at.vstack([self._t, frame._t])

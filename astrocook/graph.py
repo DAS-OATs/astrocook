@@ -76,7 +76,8 @@ class Graph(object):
                     GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
                                   #['add_line', 'add_syst']))
-                                  'Add system', 'add_syst'))
+                                  #'Add system', 'add_syst'))
+                                  'New system', 'syst_new'))
         """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,

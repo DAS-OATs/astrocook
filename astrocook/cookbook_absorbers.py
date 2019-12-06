@@ -116,7 +116,9 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, max_nfev, verbose=True):
         if max_nfev > 0:
+            #mod._pars._pretty_print()
             mod._fit(fit_kws={'max_nfev': max_nfev})
+            #mod._pars._pretty_print()
             if verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
@@ -432,7 +434,7 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def syst_new_from_resids(self, series='Ly-a', z_start=0, z_end=6,
+    def syst_new_from_resids_new(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=0.5,
                              max_nfev=100, append=True):

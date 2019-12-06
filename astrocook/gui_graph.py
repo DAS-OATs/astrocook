@@ -69,10 +69,10 @@ class GUIGraphMain(wx.Frame):
         self._graph._refresh(sess, self._logx, self._logy, self._norm, **kwargs)
         self.Show()
 
-    def _on_add_line(self, event):
-        print(self._click_xy)
+    #def _on_line_new(self, event):
+    #    print(self._click_xy)
 
-    def _on_add_syst(self, event):
+    def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         for s in sess._series_sel.split(','):
             sess.cb.syst_new(series=s, z=self._graph._cursor._z)
