@@ -3,7 +3,9 @@ from .gui_dialog import GUIDialogMini
 from .syst_list import SystList
 from .vars import graph_sel
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
+    NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import numpy as np
 import wx
@@ -119,14 +121,14 @@ class GUIGraphHistogram(GUIGraphMain):
     def __init__(self,
                  gui,
                  title="Column histogram",
-                 size_x=wx.DisplaySize()[0]*0.4,
+                 size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.4,
                  **kwargs):
         #self._col_values = col_values
         super(GUIGraphHistogram, self).__init__(gui, title, size_x, size_y,
                                                 main=False, **kwargs)
         self._gui._graph_hist = self
-        self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
+        self.SetPosition((wx.DisplaySize()[0]*0.48, wx.DisplaySize()[0]*0.02))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
@@ -134,22 +136,40 @@ class GUIGraphHistogram(GUIGraphMain):
 
 
         self._panel = wx.Panel(self)
-        self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
+        #self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
+        self._fig = Figure()
+        self._canvas = FigureCanvasWxAgg(self._panel, -1, self._fig)
+        self._toolbar = NavigationToolbar2Wx(self._canvas)
+        self._toolbar.Realize()
         self._textbar = wx.StaticText(self._panel, 1, style=wx.ALIGN_RIGHT)
         box_toolbar = wx.BoxSizer(wx.HORIZONTAL)
-        box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
+        #box_toolbar.Add(self._graph._toolbar, 1, wx.RIGHT)
+        box_toolbar.Add(self._toolbar, 1, wx.RIGHT)
         box_toolbar.Add(self._textbar, 1, wx.RIGHT)
         self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._graph._canvas, 1, wx.EXPAND)
+        #self._box.Add(self._graph._canvas, 1, wx.EXPAND)
+        self._box.Add(self._canvas, 1, wx.EXPAND)
         self._box.Add(box_toolbar, 0, wx.TOP)
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
 
-    def _refresh(self, sess, col_values, **kwargs):
+    def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
+        """
         self._graph._ax.clear()
+        self._graph._init_ax(111)
         self._graph._ax.hist(col_values)
         self._graph._canvas.draw()
+        """
+        if hasattr(self, '_ax'):
+            self._ax.clear()
+        self._ax = self._fig.add_subplot(111)
+        self._ax.tick_params(top=True, right=True, direction='in')#self._init_ax(111)
+        label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel)
+        self._ax.set_xlabel(label.replace('\n',' '))
+        self._ax.set_ylabel('Frequency')
+        self._ax.hist(self._gui._col_values, bins=20, align='left')
+        self._canvas.draw()
         self.Show()

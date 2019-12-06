@@ -94,10 +94,10 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _syst_add(self, series, z, logN, b, resol):
+    def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
-        if z in systs._t['z0']:
+        if verbose and z in systs._t['z0']:
             logging.warning("Redshift %2.4f already exists. Choose another "
                             "one." % z)
             return None
@@ -146,7 +146,7 @@ class CookbookAbsorbers(object):
 
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
-                   resol_list=None, verbose=True):
+                   resol_list=None, verbose=False):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
@@ -158,7 +158,7 @@ class CookbookAbsorbers(object):
             if logN is None: logN = logN_def
             if b is None: b = b_def
             if resol is None: resol = resol_def
-            mod = self._syst_add(series, z, logN, b, resol)
+            mod = self._syst_add(series, z, logN, b, resol, verbose)
 
             # When many systems are added, they are stored in the system table
             if mod is not None:

@@ -248,7 +248,7 @@ class Format(object):
         else:
             y = data['FLUX_NOCORR'][0]
             dy = data['ERROR_NOCORR'][0]
-        resol = []*len(x)
+        resol = np.array([9000]*len(x))
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'X-shooter'}
@@ -257,7 +257,7 @@ class Format(object):
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol)
 
 
     def xshooter_reduce_spectrum(self, hdul, hdul_e):

@@ -70,6 +70,7 @@ class GUITable(wx.Frame):
 
 
     def _on_detail(self, event):
+        if event.GetRow() == -1: return
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
@@ -96,15 +97,18 @@ class GUITable(wx.Frame):
             from .gui_graph import GUIGraphHistogram
             GUIGraphHistogram(self._gui)#, self._col_values)
         else:
-            self._gui._graph_hist._graph._fig.clear()
-        self._gui._graph_hist._refresh(self._gui._sess_items, self._col_values)
+            #self._gui._graph_hist._graph._fig.clear()
+            self._gui._graph_hist._fig.clear()
+        self._gui._graph_hist._refresh(self._gui._sess_items)
 
 
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
         if row == -1:
-            self._col_values = [float(self._tab.GetCellValue(i, col)) \
-                                for i in range(self._tab.GetNumberRows())]
+            self._gui._col_sel = col
+            self._gui._col_tab = self._tab
+            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+                                     for i in range(self._tab.GetNumberRows())]
             self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
                                          'histogram'), event.GetPosition())
         if col == -1:
@@ -294,6 +298,7 @@ class GUITableSystList(GUITable):
                            event.GetPosition())
 
     def _on_detail(self, event, span=30):
+        if event.GetRow() == -1: return
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
@@ -406,8 +411,10 @@ class GUITableSystList(GUITable):
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
         if row == -1 and col>1:
-            self._col_values = [float(self._tab.GetCellValue(i, col)) \
-                                for i in range(self._tab.GetNumberRows())]
+            self._gui._col_sel = col
+            self._gui._col_tab = self._tab
+            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+                                     for i in range(self._tab.GetNumberRows())]
             self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
                                          'histogram'), event.GetPosition())
         if col == -1:

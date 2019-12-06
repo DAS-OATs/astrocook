@@ -147,7 +147,7 @@ class SystModel(LMComposite):
         d = self._defs
         for i, r in enumerate(self._xr):
             if self._resol == None:
-                c = np.where(self._spec.x.value==r[len(r)//2])
+                c = np.where(self._spec.x.to(au.nm).value==r[len(r)//2])
                 d['resol'] = self._spec.t['resol'][c][0]
             self._psf_pref = self._psf_func.__name__+'_'+str(i)+'_'
             psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=r)
