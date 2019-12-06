@@ -30,6 +30,7 @@ class Format(object):
             xmax = data['xmax']
             y = data['y']
             dy = data['dy']
+
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr
@@ -39,9 +40,9 @@ class Format(object):
                 meta['object'] = ''
                 logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
             if struct in ['spec', 'nodes']:
-                out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+                out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta=meta)
             if struct in ['lines']:
-                out = LineList(x, xmin, xmax, y, dy, xunit, yunit, meta)
+                out = LineList(x, xmin, xmax, y, dy, xunit, yunit, meta=meta)
 
             # Additional columns
             if struct in ['spec']:
@@ -73,6 +74,13 @@ class Format(object):
                     out._t['resol'] = data['resol']
                 except:
                     pass
+
+            if struct in ['lines']:
+                try:
+                    out._t['source'] = data['source']
+                except:
+                    pass
+
 
         if struct in ['systs']:
             series = data['series']

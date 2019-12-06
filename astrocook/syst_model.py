@@ -96,6 +96,10 @@ class SystModel(LMComposite):
                 self._group_list.append(i)
                 #self._pars.pretty_print()
 
+                ##
+                mod._ys = self._group.eval(x=self._xs, params=self._pars)
+                ##
+
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
@@ -183,4 +187,4 @@ class SystModel(LMComposite):
         self._make_psf()
         self._make_comp()
         #self._pars.pretty_print()
-        self._ys = self.eval(x=self._xs, params=self._pars)
+        #self._ys = self.eval(x=self._xs, params=self._pars)
