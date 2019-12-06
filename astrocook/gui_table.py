@@ -383,7 +383,8 @@ class GUITableSystList(GUITable):
         b = float(self._tab.GetCellValue(row, 7))
         cb = self._gui._sess_sel.cb
         mod = self._extract_mod(self._tab, row)
-        mod._fit()
+        #mod._fit()
+        cb._syst_fit(mod, max_nfev_def)
         self._gui._sess_sel.systs._update(mod, mod_t=False)
         cb._spec_update()
         self._gui._refresh(init_cursor=True)
@@ -393,7 +394,7 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         par = self._tab.GetColLabelValue(col)[:-1]
-        id = int(self._tab.GetCellValue(row, 10))
+        id = int(self._tab.GetCellValue(row, 11))
         value = float(self._tab.GetCellValue(row, col))
         if self._tab.GetCellTextColour(row, col) == 'black':
             self._tab.SetCellTextColour(row, col, 'grey')
@@ -405,7 +406,7 @@ class GUITableSystList(GUITable):
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
-        self._gui._sess_sel.add_syst_from_resids(z_start=z-1e-3, z_end=z+1e-3)
+        self._gui._sess_sel.cb.systs_new_from_resids(z_start=z-1e-3, z_end=z+1e-3)
         self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
