@@ -294,6 +294,21 @@ class Spectrum(Frame):
         return out
 
 
+    def _resol_est(self, px, update):
+        dx = self.xmax[px-1:].value-self.xmin[:1-px].value
+        dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
+             *self.x.unit
+        if update:
+            if 'resol' not in self._t.colnames:
+                logging.info("I'm adding column 'resol'.")
+            else:
+                logging.info("I'm updating column 'resol'.")
+            self._t['resol'] = self.x/dx
+        logging.info('The mean estimated resolution is %4.2f.'
+                     % np.mean(self._t['resol']))
+        return 0
+
+
     def _slice(self, delta_x=1000, xunit=au.km/au.s):
         """ @brief Create 'slice' columns. 'slice' columns contains an
         increasing counter to split 'x' values into evenly-sized slices

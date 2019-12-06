@@ -153,7 +153,7 @@ def psf_gauss(x, #center, resol):
 
     c = np.nanmedian(reg)
     sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-(0.5 * (x-c) / sigma)**2)
+    psf = np.exp(-0.5*((x-c) / sigma)**2)
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))
     #psf[len(x)//2] = 1
