@@ -204,3 +204,53 @@ def to_z(x, trans):
         return x.to(au.nm).value
     else:
         return (x.to(au.nm)/xem_d[trans].to(au.nm)).value-1
+
+# Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
+def corners_to_cells(top_lefts, bottom_rights):
+    """
+    Take lists of top left and bottom right corners, and
+    return a list of all the cells in that range
+    """
+    cells = []
+    for top_left, bottom_right in zip(top_lefts, bottom_rights):
+
+        rows_start = top_left[0]
+        rows_end = bottom_right[0]
+
+        cols_start = top_left[1]
+        cols_end = bottom_right[1]
+
+        rows = range(rows_start, rows_end+1)
+        cols = range(cols_start, cols_end+1)
+
+        cells.extend([(row, col)
+            for row in rows
+            for col in cols])
+
+    return cells
+
+def get_selected_cells(grid):
+    """
+    Return the selected cells in the grid as a list of
+    (row, col) pairs.
+    We need to take care of three possibilities:
+    1. Multiple cells were click-selected (GetSelectedCells)
+    2. Multiple cells were drag selected (GetSelectionBlock…)
+    3. A single cell only is selected (CursorRow/Col)
+    """
+
+    top_left = grid.GetSelectionBlockTopLeft()
+
+    if top_left:
+        bottom_right = grid.GetSelectionBlockBottomRight()
+        return corners_to_cells(top_left, bottom_right)
+
+    selection = list(grid.GetSelectedCells())
+
+    row = grid.GetGridCursorRow()
+    col = grid.GetGridCursorCol()
+    from wx.grid import GridCellCoords
+    if not selection:
+        return [GridCellCoords(row, col)]
+
+    return [GridCellCoords(row, col)]+selection

@@ -32,10 +32,12 @@ class SystModel(LMComposite):
 
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
+        self._pars.pretty_print()
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')
                                          #method='emcee')
+        self._pars.pretty_print()
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
