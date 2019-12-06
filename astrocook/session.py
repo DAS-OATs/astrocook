@@ -114,7 +114,7 @@ class Session(object):
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
-        if orig == 'Astrocook':
+        if orig[:9] == 'Astrocook':
             for s in self.seq:
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
@@ -188,8 +188,8 @@ class Session(object):
                         t['xmax'] = t['xmax'].to(au.nm)
                     t.meta = obj._meta
                     t.meta['ORIGIN'] = 'Astrocook'
-                    t.meta['HIERARCH ASTROCOOK VERSION'] = version
-                    t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                    #t.meta['HIERARCH ASTROCOOK VERSION'] = version
+                    #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     t.write(name, format='fits', overwrite=True)

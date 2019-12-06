@@ -150,7 +150,7 @@ class CookbookAbsorbers(object):
 
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
-                   resol_list=None, verbose=False):
+                   resol_list=None, verbose=True):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
@@ -162,7 +162,7 @@ class CookbookAbsorbers(object):
             if logN is None: logN = logN_def
             if b is None: b = b_def
             if resol is None: resol = resol_def
-            mod = self._syst_add(series, z, logN, b, resol, verbose)
+            mod = self._syst_add(series, z, logN, b, resol, False)
 
             # When many systems are added, they are stored in the system table
             if mod is not None:

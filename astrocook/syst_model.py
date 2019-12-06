@@ -87,17 +87,9 @@ class SystModel(LMComposite):
         #plt.plot(self._xs, ys)
         for i, s in enumerate(mods_t):
             mod = s['mod']
-            #mod._pars.pretty_print()
-            ys_s = mod.eval(x=self._xs, params=mod._pars)
-            #ys_s = mod._ys
-            #print(s['z0'], s['id'])
-            #print(np.amin(np.maximum(ys, ys_s)) < 1-thres)
+            #ys_s = mod.eval(x=self._xs, params=mod._pars)
+            ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
-            #plt.plot(self._xs, ys, linestyle='--')
-            #plt.plot(self._xs, ys_s, linestyle=':')
-            #plt.plot(self._xs, ymax)
-            #plt.scatter(self._xs[np.argmin(ymax)], np.min(ymax))
-            #plt.show()
             if np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys):
                 self._group *= mod._group
                 self._pars.update(mod._pars)
@@ -105,15 +97,9 @@ class SystModel(LMComposite):
                 #self._pars.pretty_print()
 
         if len(self._group_list) > 1:
-            #print(self._group_list)
-            #print(mods_t['id'][self._group_list[1:]])
-            #ids = list(np.ravel([np.array(i)
-            #                     for i in mods_t['id'][self._group_list[1:]]]))
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
-            #print(ids)
             mods_t.remove_rows(self._group_list[1:])
             for i in ids:
-                #mods_t['id'][0].append(i)
                 mods_t['id'][self._group_list[0]].append(i)
         if self._group_list == []:
             self._group_sel = -1
@@ -197,4 +183,4 @@ class SystModel(LMComposite):
         self._make_psf()
         self._make_comp()
         #self._pars.pretty_print()
-        #self._ys = self.eval(x=self._xs, params=self._pars)
+        self._ys = self.eval(x=self._xs, params=self._pars)

@@ -28,10 +28,11 @@ class GUIDialog(wx.Dialog):
         for i, a in enumerate(self._attr):
             self._sess_sel =  self._gui._sess_sel
             self._cb =  self._gui._sess_sel.cb
-            if hasattr(self._cb, a):
-                self._obj = self._cb
-            else:
-                self._obj = self._sess_sel
+            if self._obj == None:
+                if hasattr(self._cb, a):
+                    self._obj = self._cb
+                else:
+                    self._obj = self._sess_sel
             method = getattr(self._obj, a)
             self._methods.append(method)
             self._get_params(method)
