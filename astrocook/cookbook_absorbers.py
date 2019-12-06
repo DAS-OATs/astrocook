@@ -97,9 +97,11 @@ class CookbookAbsorbers(object):
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
-        if verbose and z in systs._t['z0']:
-            logging.warning("Redshift %2.4f already exists. Choose another "
-                            "one." % z)
+        if z in systs._t['z0'] \
+            and series==systs._t['series'][systs._t['z0']==z]:
+            if verbose:
+                logging.warning("Redshift %2.4f already exists. Choose another "
+                                "one." % z)
             return None
 
         systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
