@@ -65,7 +65,12 @@ class GUITable(wx.Frame):
         self._tab.AppendRows(rown)
 
 
+    def _on_close(self, event):
+        self.Destroy()
+
+
     def _on_detail(self, event):
+        if event.GetRow() == -1: return
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
@@ -86,8 +91,29 @@ class GUITable(wx.Frame):
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                       ylim=ylim)#, init_cursor=True)
 
-    def _on_close(self, event):
-        self.Destroy()
+
+    def _on_histogram(self, event):
+        if not hasattr(self._gui, '_graph_hist'):
+            from .gui_graph import GUIGraphHistogram
+            GUIGraphHistogram(self._gui)#, self._col_values)
+        else:
+            #self._gui._graph_hist._graph._fig.clear()
+            self._gui._graph_hist._fig.clear()
+        self._gui._graph_hist._refresh(self._gui._sess_items)
+
+
+    def _on_label_right_click(self, event):
+        row, col = event.GetRow(), event.GetCol()
+        if row == -1:
+            self._gui._col_sel = col
+            self._gui._col_tab = self._tab
+            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+                                     for i in range(self._tab.GetNumberRows())]
+            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
+                                         'histogram'), event.GetPosition())
+        if col == -1:
+            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove',
+                                         'remove'), event.GetPosition())
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
@@ -97,9 +123,6 @@ class GUITable(wx.Frame):
         self._fill()
         self._gui._refresh(init_cursor=True)
 
-    def _on_label_right_click(self, event):
-        self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove','remove'),
-                       event.GetPosition())
 
     def _on_view(self, event, from_scratch=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
@@ -123,6 +146,7 @@ class GUITable(wx.Frame):
         self.Centre()
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
+
 
     def _remove_data(self, row):
 
@@ -274,6 +298,7 @@ class GUITableSystList(GUITable):
                            event.GetPosition())
 
     def _on_detail(self, event, span=30):
+        if event.GetRow() == -1: return
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
@@ -384,10 +409,19 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
     def _on_label_right_click(self, event):
-        self.PopupMenu(GUITablePopup(self._gui, self, event,
-                                     ['Fit', 'Improve', 'Remove'],
-                                     ['fit', 'improve', 'remove']),
-                       event.GetPosition())
+        row, col = event.GetRow(), event.GetCol()
+        if row == -1 and col>1:
+            self._gui._col_sel = col
+            self._gui._col_tab = self._tab
+            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+                                     for i in range(self._tab.GetNumberRows())]
+            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
+                                         'histogram'), event.GetPosition())
+        if col == -1:
+            self.PopupMenu(GUITablePopup(self._gui, self, event,
+                                         ['Fit', 'Improve', 'Remove'],
+                                         ['fit', 'improve', 'remove']),
+                           event.GetPosition())
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)

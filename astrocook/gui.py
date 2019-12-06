@@ -92,12 +92,18 @@ class GUI(object):
                 else:
                     self._graph_det._refresh(self._sess_items,
                                              init_cursor=init_cursor)
-
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
                                                       from_scratch=False)
+                if hasattr(self, '_col_sel'):
+                    self._col_values = \
+                        [float(self._col_tab.GetCellValue(i, self._col_sel)) \
+                         for i in range(self._col_tab.GetNumberRows())]
+
+        if hasattr(self, '_graph_hist'):
+            self._graph_hist._refresh(self._sess_items)
 
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
