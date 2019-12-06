@@ -32,6 +32,33 @@ class CookbookGeneral(object):
         return 0
 
 
+    def rebin(self, dx=10.0, xunit=au.km/au.s):
+        """ @brief Rebin spectrum
+        @details Rebin a spectrum with a given velocity step. A new session is
+        created with the rebinned spectrum. Other objects from the old session
+        (line lists, etc.) are discarded.
+        @param dx Step in x
+        @param xunit Unit of wavelength or velocity
+        @return 0
+        """
+
+        try:
+            dx = float(dx)
+            xunit = au.Unit(xunit)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        # A deep copy is created, so the original spectrum is preserved
+        spec_in = dc(self.sess.spec)
+        spec_out = spec_in._rebin(dx, xunit)
+
+        # Create a new session
+        from .session import Session
+        new = Session(name=self.sess.name+'_rebinned', spec=spec_out)
+        return new
+
+
     def region_extract(self, xmin, xmax):
         """ @brief Extract region
         @details Extract a spectral region as a new frame.
@@ -74,32 +101,25 @@ class CookbookGeneral(object):
         return new
 
 
-    def rebin(self, dx=10.0, xunit=au.km/au.s):
-        """ @brief Rebin spectrum
-        @details Rebin a spectrum with a given velocity step. A new session is
-        created with the rebinned spectrum. Other objects from the old session
-        (line lists, etc.) are discarded.
-        @param dx Step in x
-        @param xunit Unit of wavelength or velocity
+    def resol_est(self, px=3, update=True):
+        """ @brief Estimate resolution
+        @details Estimate spectral resolution assuming the spectrum has
+        a fixed number of pixels per resolution element.
+        @param px Number of pixels
+        @param update Update column 'resol'
         @return 0
         """
 
         try:
-            dx = float(dx)
-            xunit = au.Unit(xunit)
-        except ValueError:
+            px = int(px)
+            update = str(update) == 'True'
+        except:
             logging.error(msg_param_fail)
-            return None
+            return 0
 
-        # A deep copy is created, so the original spectrum is preserved
-        spec_in = dc(self.sess.spec)
-        spec_out = spec_in._rebin(dx, xunit)
+        self.sess.spec._resol_est(px, update)
 
-        # Create a new session
-        from .session import Session
-        new = Session(name=self.sess.name+'_rebinned', spec=spec_out)
-        return new
-
+        return 0
 
     def shift_from_rf(self, z=0):
         """ @brief Shift from rest frame

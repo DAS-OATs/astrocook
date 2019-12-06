@@ -391,6 +391,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+101, 'spec',
                           "Convolve with gaussian", 'gauss_convolve')
+        self._item_method(self._menu, start_id+102, 'spec',
+                          "Estimate resolution", 'resol_est')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",

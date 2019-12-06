@@ -26,8 +26,9 @@ def msg_format(format):
 def msg_resol(check, prefix):
     if not np.logical_or(*check):
         return "[ERROR] %s: I couldn't take the resolution either from " \
-               "parameter 'resol' or from the spectrum table. %s" \
-               % (prefix, msg_check)
+               "parameter 'resol' or from the spectrum table. Please try " \
+               "running Recipes > Estimate resolution before." \
+               % prefix
     if check[0]:
         msg = "[INFO] %s: I've taken the resolution parameter 'resol'." \
               % prefix
