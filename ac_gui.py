@@ -8,8 +8,8 @@ def main():
     app = wx.App(False)
     from astrocook.gui import GUI
     try:
-        path = sys.argv[1]
-        gui = GUI(path)
+        paths = sys.argv[1:]
+        gui = GUI(paths)
     except:
         logging.exception("I found some problems loading this session.")
         logging.warning("Re-starting with an empty session.")
