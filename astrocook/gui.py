@@ -3,6 +3,7 @@ from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
+from .message import *
 from astropy import table as at
 from copy import deepcopy as dc
 import logging
@@ -14,7 +15,7 @@ import wx.lib.mixins.listctrl as listmix
 class GUI(object):
     """ Class for the GUI. """
 
-    def __init__(self, path=None):
+    def __init__(self, paths=None):
         """ Constructor """
 
         try:
@@ -44,11 +45,12 @@ class GUI(object):
         GUITableModelList(self)
         GUIImageCompleteness(self)
         GUIImageCorrectness(self)
-        if path == None:
+        if paths == None:
             logging.info("Welcome! Try Session > Open...")
         else:
             logging.info("Welcome!")
-            self._panel_sess._on_open(path)
+            for p in paths:
+                self._panel_sess._on_open(p)
 
     def _refresh(self, autolim=True, init_cursor=False):
         """ Refresh the GUI after an action """
@@ -196,6 +198,10 @@ class GUIPanelSession(wx.Frame):
         x = sess.spec._safe(sess.spec.x)#.value
         self._gui._refresh(autolim=False)
 
+        # Enable import from depending on how many sessions are present
+        edit = self._menu._edit
+        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)>1)
+
 
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
@@ -235,7 +241,7 @@ class GUIPanelSession(wx.Frame):
 
         # Enable session combine depending on how many sessions are selected
         file = self._menu._file
-        file._menu.Enable(file._start_id+101, len(self._gui._sess_item_sel)>1)
+        file._menu.Enable(file._start_id+100, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -299,17 +305,44 @@ class GUIPanelSession(wx.Frame):
         sess = Session(name=name, spec=spec)
         return sess
 
-    def import_from(self, session='', attr='systs', mode='replace'):
+    def import_from(self, sess_name='', attr='systs', mode='replace'):
         """ @brief Import from session
         @details Import an attribute from a session into the current one. The
         attribute is either replaced or appended to the corresponding one.
-        @param session From session
+        @param sess_name From session
         @param attr Attribute
         @param mode Mode (replace or append)
         @return 0
         """
+        sess_list = self._gui._sess_list
+        name_list = [s.name for s in  sess_list]
+        if sess_name not in name_list:
+            logging.error("I can't find session %s." % sess_name)
+            return 0
 
-        if session not in self._gui._sess_list:
-            logging.error("I couldn't find session %s" % s)
+        sess = sess_list[name_list==sess_name]
+        if not hasattr(sess, attr):
+            logging.error(msg_attr_miss(attr))
+            return 0
+
+        import_attr = getattr(sess, attr)
+        if import_attr is None:
+            logging.error("Attribute %s is None." % attr)
+            return 0
+
+        if attr == 'systs' \
+            and 'cont' not in self._gui._sess_sel.spec.t.colnames:
+            logging.error("Attribute %s requires a continuum. Please try "
+                          "Recipes > Guess continuum before.")
+            return 0
+
+        if mode=='replace':
+            setattr(self._gui._sess_sel, attr, import_attr)
+
+        if mode=='append':
+            getattr(self._gui._sess_sel, attr)._append(import_attr)
+
+        if attr=='systs':
+            self._gui._sess_sel.cb._spec_update()
 
         return 0

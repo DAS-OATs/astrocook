@@ -283,11 +283,12 @@ class GUIMenuEdit(GUIMenu):
         super(GUIMenuEdit, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        self._start_id = start_id
 
         # Add items to Edit menu here
         #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
         self._item_method(self._menu, start_id+300, None,
-                          "Import from session", 'import',
+                          "Import from session", 'import_from',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         self._menu.AppendSeparator()
