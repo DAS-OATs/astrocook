@@ -267,7 +267,7 @@ class GUITableSystList(GUITable):
         self._gui._tab_systs = self
         self._freezes_l = []
         self._links_l = []
-        self._freezes_d = {}
+        #self._freezes_d = {}
         self._links_d = {}
 
 
@@ -422,22 +422,31 @@ class GUITableSystList(GUITable):
         #id = int(self._tab.GetCellValue(row, 11))
         #value = float(self._tab.GetCellValue(row, col))
         for (r, c) in self._cells_sel:
+            """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
                                       self._tab.GetCellValue(r, 11).strip(),
                                       self._tab.GetColLabelValue(c).split('\n')[0])
             val = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0),
                                       self._tab.GetCellValue(row, 11).strip(),
                                       self._tab.GetColLabelValue(col).split('\n')[0])
+            """
             if self._tab.GetCellTextColour(row, col) == 'grey':
                 self._tab.SetCellTextColour(r, c, 'black')
-                if key != val:
-                    self._freezes_l.remove((r,c))
-                    del self._freezes_d[key]
+                #if key != val:
+                self._freezes_l.remove((r,c))
+                    #del self._freezes_d[key]
             else:
                 self._tab.SetCellTextColour(r, c, 'grey')
-                if key != val:
-                    self._freezes_l.remove((r,c))
-                    self._freezes_d[key] = val
+                #if key != val:
+                self._freezes_l.append((r,c))
+                    #self._freezes_d[key] = val
+        self._tab.ForceRefresh()
+
+    def _on_freeze_par_all(self, event):
+        col = self._gui._tab_popup._event.GetCol()
+        for i in range(self._tab.GetNumberRows()):
+            self._tab.SetCellTextColour(i, col, 'grey')
+            self._freezes_l.append((i,col))
         self._tab.ForceRefresh()
 
     def _on_improve(self, event):
@@ -453,8 +462,13 @@ class GUITableSystList(GUITable):
             self._gui._col_tab = self._tab
             self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
                                      for i in range(self._tab.GetNumberRows())]
-            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
-                                         'histogram'), event.GetPosition())
+            title = ['Histogram']
+            attr = ['histogram']
+            if col in [3,5,7]:
+                title += ['Freeze all']
+                attr += ['freeze_par_all']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                           event.GetPosition())
         if col == -1:
             self.PopupMenu(GUITablePopup(self._gui, self, event,
                                          ['Fit', 'Improve', 'Remove'],
