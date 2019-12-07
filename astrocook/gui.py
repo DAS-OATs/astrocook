@@ -196,8 +196,10 @@ class GUIPanelSession(wx.Frame):
         x = sess.spec._safe(sess.spec.x)#.value
         self._gui._refresh(autolim=False)
 
+
     def _on_edit(self, event):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
+
 
     def _on_open(self, path):
         """ Behaviour for Session > Open """
@@ -211,6 +213,7 @@ class GUIPanelSession(wx.Frame):
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
+
 
     def _on_close(self, event):
         logging.info("Bye!")
@@ -295,3 +298,18 @@ class GUIPanelSession(wx.Frame):
             name += name_in[1:]
         sess = Session(name=name, spec=spec)
         return sess
+
+    def import_from(self, session='', attr='systs', mode='replace'):
+        """ @brief Import from session
+        @details Import an attribute from a session into the current one. The
+        attribute is either replaced or appended to the corresponding one.
+        @param session From session
+        @param attr Attribute
+        @param mode Mode (replace or append)
+        @return 0
+        """
+
+        if session not in self._gui._sess_list:
+            logging.error("I couldn't find session %s" % s)
+
+        return 0

@@ -285,20 +285,26 @@ class GUIMenuEdit(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Edit menu here
-        self._item_method(self._menu, start_id+301, 'spec',
+        #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
+        self._item_method(self._menu, start_id+300, None,
+                          "Import from session", 'import',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+310, 'spec',
                           "Extract region", 'region_extract')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+311, 'spec',
+        self._item_method(self._menu, start_id+320, 'spec',
                           "Convert x axis", 'x_convert')
-        self._item_method(self._menu, start_id+312, 'spec',
+        self._item_method(self._menu, start_id+321, 'spec',
                           "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+321, 'spec',
+        self._item_method(self._menu, start_id+330, 'spec',
                           "Scale y axis", 'y_scale')
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+331, 'spec',
+        self._item_method(self._menu, start_id+340, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
-        self._item_method(self._menu, start_id+332, 'spec',
+        self._item_method(self._menu, start_id+341, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
 
 
@@ -314,17 +320,17 @@ class GUIMenuFile(GUIMenu):
         self._start_id = start_id
 
         # Add items to File menu here
-        self._item(self._menu, start_id+1, None, "Open...\tCtrl+O",
+        self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+101, None,
-                          "Combine sessions...", 'combine',
+        self._item_method(self._menu, start_id+100, None,
+                          "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
-        self._item(self._menu, start_id+102, None, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+401, None, "Quit\tCtrl+Q",
+        self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
 
     def _on_combine(self, event):
