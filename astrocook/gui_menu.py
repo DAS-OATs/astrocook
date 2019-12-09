@@ -295,7 +295,7 @@ class GUIMenuEdit(GUIMenu):
                           "Import structure", 'struct_import',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+301, None,
+        self._item_method(self._menu, start_id+302, None,
                           "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
@@ -432,6 +432,12 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(self._menu, start_id+301, 'lines',
                           "New systems from lines",
                           'systs_new_from_lines')
+        submenu = wx.Menu()
+        self._item_method(self._menu, start_id+310, 'lines',
+                          "Fit system", '_syst_fit')
+        self._item_method(self._menu, start_id+311, 'lines',
+                          "Fit systems", '_systs_fit')
+        self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
