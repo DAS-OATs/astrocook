@@ -288,8 +288,16 @@ class GUIMenuEdit(GUIMenu):
         # Add items to Edit menu here
         #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
         self._item_method(self._menu, start_id+300, None,
-                          "Import from session", 'import_from',
+                          "Compare structures", 'struct_compare',
                           enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+301, None,
+                          "Import structure", 'struct_import',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+301, None,
+                          "Combine sessions", 'combine',
+                          enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+310, 'spec',
@@ -324,10 +332,6 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+100, None,
-                          "Combine sessions", 'combine',
-                          enable=len(self._gui._sess_item_sel)>1,
-                          obj=self._gui._panel_sess)
         self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._menu.AppendSeparator()

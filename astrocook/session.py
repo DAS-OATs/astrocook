@@ -57,7 +57,6 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
-
     def open(self):
 
         format = Format()

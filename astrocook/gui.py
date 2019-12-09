@@ -200,7 +200,8 @@ class GUIPanelSession(wx.Frame):
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)>1)
+        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)>0)
+        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
 
 
     def _on_edit(self, event):
@@ -240,8 +241,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_item_sel = self._tab._get_selected_items()
 
         # Enable session combine depending on how many sessions are selected
-        file = self._menu._file
-        file._menu.Enable(file._start_id+100, len(self._gui._sess_item_sel)>1)
+        edit = self._menu._edit
+        edit._menu.Enable(edit._start_id+302, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -281,6 +282,54 @@ class GUIPanelSession(wx.Frame):
             except:
                 pass
 
+
+    def _struct_parse(self, struct, length=2):
+        sess_list = self._gui._sess_list
+
+        parse = struct.split(',')
+
+        if len(parse) < length:
+            logging.error("I can't parse the structure.")
+            return None
+
+        # Session
+        sessn = parse[0]
+        try:
+            sessn = int(sessn)
+            parse[0] = sessn
+        except:
+            logging.error(msg_param_fail)
+            return None
+
+        if sessn > len(sess_list):
+            logging.error("I can't find session %s." % sessn)
+            return None
+
+        # Attribute
+        attrn = parse[1]
+        sess = sess_list[sessn]
+        if not hasattr(sess, attrn):
+            logging.error(msg_attr_miss(attrn))
+            return None
+
+        attr = getattr(sess, attrn)
+        if attr is None:
+            logging.error("Attribute %s is None." % attrn)
+            return None
+
+
+        if length==3:
+            # Column
+            coln = parse[2]
+            if coln not in getattr(sess, attrn)._t.colnames:
+                logging.error(msg_col_miss(coln))
+                return None
+            col = getattr(sess, attrn)._t[coln]
+            return coln, col, parse
+        else:
+            return attrn, attr, parse
+
+
     def combine(self, name='*_combined'):
         """ @brief Combine two or more sessions
         @details When sessions are combined, a new session is created, with a
@@ -305,44 +354,78 @@ class GUIPanelSession(wx.Frame):
         sess = Session(name=name, spec=spec)
         return sess
 
-    def import_from(self, sess_name='', attr='systs', mode='replace'):
-        """ @brief Import from session
-        @details Import an attribute from a session into the current one. The
-        attribute is either replaced or appended to the corresponding one.
-        @param sess_name From session
-        @param attr Attribute
+    def struct_compare(self, struct_1='0,spec,x', struct_2='0,spec,y',
+                       struct_out='0,spec,diff', op='subtract'):
+
+
+    #struct_1='0,systs,z', struct_2='1,systs,z',
+                       #struct_out='0,systs,diff_z', op='subtract'):
+        """ @brief Compare structures
+        @details Compare two structures from the same session or two different
+        sessions.
+        @param struct_1 First structure (session number,table,column)
+        @param struct_2 Second structure (as before)
+        @param struct_out Output structure (as before)
+        @param op Binary numpy operator
+        @return 0
+        """
+
+        parse_1 = self._struct_parse(struct_1, length=3)
+        parse_2 = self._struct_parse(struct_2, length=3)
+        parse_out = self._struct_parse(struct_out, length=2)
+        if parse_1 is None or parse_2 is None or parse_out is None: return 0
+        coln_1, col_1, _ = parse_1
+        coln_2, col_2, _ = parse_2
+        attrn_out, attr_out, all_out = parse_out
+
+        if len(col_1) != len(col_2):
+            logging.error("The two columns have different lengths! %s" \
+                          % msg_try_again)
+            return 0
+
+        if len(col_1) != len(attr_out._t):
+            logging.error("The output table have different length than the "
+                          "input columns! %s" \
+                          % msg_try_again)
+            return 0
+
+        if not hasattr(np, op):
+            logging.error("Numpy doesn't have a %s operator." % op)
+            return 0
+
+        getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
+            getattr(np, op)(col_1, col_2)
+
+
+        return 0
+
+
+    def struct_import(self, struct='0,systs', mode='replace'):
+        """ @brief Import structure
+        @details Import a structure from a session into the current one. The
+        structure is either replaced or appended to the corresponding one.
+        @param struct Structure (session number,table)
         @param mode Mode (replace or append)
         @return 0
         """
-        sess_list = self._gui._sess_list
-        name_list = [s.name for s in  sess_list]
-        if sess_name not in name_list:
-            logging.error("I can't find session %s." % sess_name)
-            return 0
 
-        sess = sess_list[name_list==sess_name]
-        if not hasattr(sess, attr):
-            logging.error(msg_attr_miss(attr))
-            return 0
+        parse = self._struct_parse(struct)
+        if parse is None: return 0
+        attrn, attr, _ = parse
 
-        import_attr = getattr(sess, attr)
-        if import_attr is None:
-            logging.error("Attribute %s is None." % attr)
-            return 0
-
-        if attr == 'systs' \
+        if attrn == 'systs' \
             and 'cont' not in self._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
-                          "Recipes > Guess continuum before.")
+                          "Recipes > Guess continuum before." % attrn)
             return 0
 
         if mode=='replace':
-            setattr(self._gui._sess_sel, attr, import_attr)
+            setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
-            getattr(self._gui._sess_sel, attr)._append(import_attr)
+            getattr(self._gui._sess_sel, attrn)._append(attr)
 
-        if attr=='systs':
+        if attrn=='systs':
             self._gui._sess_sel.cb._spec_update()
 
         return 0
