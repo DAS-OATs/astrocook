@@ -205,7 +205,7 @@ class Graph(object):
                              'spec_x_model': (GraphSpectrumXModel,9,1.0),
                              'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
                              'systs_z_series': (GraphSystListZSeries,2,1.0),
-                             'cursor_z_series': (GraphCursorZSeries,2,0.5)}
+                             'cursor_z_series': (GraphCursorZSeries,3,0.5)}
 
         #print([self._gui._sess_sel== i for i in self._gui._sess_items])
         c_index = [self._canvas_dict[s][1]\
