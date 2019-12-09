@@ -513,7 +513,7 @@ class GUIMenuView(GUIMenu):
                          'spec_x_y')
         self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
                          'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, 'conv', "Convolved spectrum",
+        self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
                          'spec_x_conv')
         self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
                          'lines_x_y')

@@ -178,7 +178,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_fit(self, resol, max_nfev):
+    def _systs_fit(self, max_nfev):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if max_nfev > 0:
@@ -324,6 +324,46 @@ class CookbookAbsorbers(object):
                 return 1
         return 0
 
+### Basic
+
+    def syst_fit(self, num=0, max_nfev=100):
+        """ @brief Fit a systems
+        @details Fit all Voigt model from a list of systems.
+        @param num Number of the system in the list
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+
+        try:
+            num = int(num)
+            max_nfev = int(max_nfev)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self._syst_fit(max_nfev)
+
+        return 0
+
+
+    def systs_fit(self, max_nfev=100):
+        """ @brief Fit systems
+        @details Fit all Voigt model from a list of systems.
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+
+        try:
+            max_nfev = int(max_nfev)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self._systs_fit(max_nfev)
+
+        return 0
+
+
 ### Advanced
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
@@ -429,7 +469,7 @@ class CookbookAbsorbers(object):
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
-        self._systs_fit(resol, max_nfev)
+        self._systs_fit(max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
         self._systs_refit(refit_id, max_nfev)
         self._spec_update()

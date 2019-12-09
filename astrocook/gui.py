@@ -31,7 +31,7 @@ class GUI(object):
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
-        self._menu_conv_id = []
+        self._menu_y_conv_id = []
         self._menu_lines_id = []
         self._menu_cont_id = []
         self._menu_nodes_id = []
