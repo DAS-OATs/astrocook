@@ -251,7 +251,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_reject(self, chi2r_thres, dlogN_thres, resol, max_nfev=0):
+    def _systs_reject(self, chi2r_thres, dlogN_thres, max_nfev=0):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > chi2r_thres
         """
@@ -268,6 +268,7 @@ class CookbookAbsorbers(object):
         if len(rem) > 0:
             # Check if systems to be rejected are in groups with systems to be
             # preserved, and in case flag the latter for refitting
+            """
             for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Rejecting"):
                 t_id = systs._t['id']
                 mods_t_id = systs._mods_t['id']
@@ -275,13 +276,27 @@ class CookbookAbsorbers(object):
                 if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
                     refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
             systs._t.remove_rows(rem)
+            """
+            refit_id = self._syst_remove(self, rem, refit_id)
             logging.info("I've rejected %i mis-identified system%s (%i with a "\
                          "reduced chi2 above %2.2f, %i with relative errors "\
                          "above %2.2f)."
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), dlogN_thres))
-            self._mods_recreate()#resol)
+        return refit_id
+
+
+    def _systs_remove(self, rem, refit_id):
+        systs = self.sess.systs
+        for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
+            t_id = systs._t['id']
+            mods_t_id = systs._mods_t['id']
+            sel = [t_id[r] in m for m in mods_t_id]
+            if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
+                refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
+        systs._t.remove_rows(rem)
+        self._mods_recreate()
         return refit_id
 
 
@@ -405,7 +420,7 @@ class CookbookAbsorbers(object):
         mod = self._syst_add(series, z, logN, b, resol)
         if mod is None: return 0
         self._syst_fit(mod, max_nfev)
-        refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol)
+        refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
@@ -471,7 +486,7 @@ class CookbookAbsorbers(object):
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
         self._systs_fit(max_nfev)
-        refit_id = self._systs_reject(chi2r_thres, dlogN_thres, resol, max_nfev)
+        refit_id = self._systs_reject(chi2r_thres, dlogN_thres, max_nfev)
         self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
