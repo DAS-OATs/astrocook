@@ -161,9 +161,15 @@ class GUITable(wx.Frame):
                     else:
                         self._data._mods_t['id'][i].remove(id)
         """
-        self._data.t.remove_row(row)
         if self._attr == 'systs':
-            self._gui._sess_sel.cb._mods_update_old()
+            #self._gui._sess_sel.cb._mods_update_old()
+            #self._gui._sess_sel.cb._mods_recreate()
+            refit_id = self._gui._sess_sel.cb._systs_remove([row], [])
+            self._gui._sess_sel.cb._systs_refit(refit_id, max_nfev_def)
+        else:
+            self._data.t.remove_row(row)
+
+
 
 
 class GUITableLineList(GUITable):
