@@ -360,7 +360,8 @@ class CookbookAbsorbers(object):
             return 0
 
         self._systs_fit(max_nfev)
-
+        #self._systs_refit(refit_id, max_nfev)
+        self._spec_update()
         return 0
 
 
