@@ -298,6 +298,8 @@ class GUITableSystList(GUITable):
                                 for c in col:
                                     self._tab.SetCellTextColour(i, c,
                                                                 'forest green')
+                            except:
+                                pass
 
     def _id_extract(self, row):
         labels = self._labels_extract()
