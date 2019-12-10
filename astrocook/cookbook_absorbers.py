@@ -252,7 +252,8 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_reject(self, chi2r_thres, dlogN_thres, max_nfev=0):
+    def _systs_reject(self, chi2r_thres, dlogN_thres, max_nfev=0,
+                      recreate=True):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > chi2r_thres
         """
@@ -278,7 +279,7 @@ class CookbookAbsorbers(object):
                     refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
             systs._t.remove_rows(rem)
             """
-            refit_id = self._syst_remove(self, rem, refit_id)
+            refit_id = self._systs_remove(rem, refit_id, recreate)
             logging.info("I've rejected %i mis-identified system%s (%i with a "\
                          "reduced chi2 above %2.2f, %i with relative errors "\
                          "above %2.2f)."
@@ -288,7 +289,7 @@ class CookbookAbsorbers(object):
         return refit_id
 
 
-    def _systs_remove(self, rem, refit_id):
+    def _systs_remove(self, rem, refit_id, recreate=True):
         systs = self.sess.systs
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
@@ -297,7 +298,7 @@ class CookbookAbsorbers(object):
             if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
                 refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
         systs._t.remove_rows(rem)
-        self._mods_recreate()
+        if recreate: self._mods_recreate()
         return refit_id
 
 
@@ -362,11 +363,39 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_fit(self, max_nfev=100, recreate=True):
+    def systs_clean(self, chi2r_thres=2.0, dlogN_thres=1.0, max_nfev=100,
+                    refit=False):
+        """ @brief Clean system list
+        @details Clean systems from a list by rejecting systems with reduced
+        chi2 and/or error on column density above a given threshold
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param max_nfev Maximum number of function evaluation
+        @param refit Refit systems after recreation
+        @return 0
+        """
+
+        try:
+            chi2r_thres = float(chi2r_thres)
+            dlogN_thres = float(dlogN_thres)
+            max_nfev = int(max_nfev)
+            refit = str(refit) == 'True'
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
+        if refit: self._systs_refit(refit_id, max_nfev)
+        self._spec_update()
+
+        return 0
+
+
+    def systs_fit(self, max_nfev=100, recreate=False):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param max_nfev Maximum number of function evaluation
-        @param recreate Recreate systems after fitting
+        @param recreate Recreate and refit systems after fitting
         @return 0
         """
 
@@ -378,7 +407,7 @@ class CookbookAbsorbers(object):
             return 0
 
         self._systs_fit(max_nfev, recreate)
-        #self._systs_refit(refit_id, max_nfev)
+        if recreate: self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         return 0
