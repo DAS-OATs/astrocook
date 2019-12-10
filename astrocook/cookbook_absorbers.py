@@ -185,6 +185,7 @@ class CookbookAbsorbers(object):
             z_list = []
             for i,m in enum_tqdm(mods_t, len(mods_t),
                                  "cookbook_absorbers: Fitting"):
+            #for i,m in enumerate(mods_t):
                 z_list.append(m['z0'])
                 self._syst_fit(m['mod'], max_nfev, verbose=False)
 
@@ -377,6 +378,7 @@ class CookbookAbsorbers(object):
         self._systs_fit(max_nfev)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
+
         return 0
 
 

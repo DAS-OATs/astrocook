@@ -273,7 +273,7 @@ class GUITableSystList(GUITable):
         self._gui._tab_systs = self
         self._freezes_l = []
         self._links_l = []
-        #self._freezes_d = {}
+        self._freezes_d = {}
         self._links_d = {}
 
 
@@ -289,6 +289,7 @@ class GUITableSystList(GUITable):
                 for p in pars]
         for m in systs._mods_t:
             if id in m['id']:
+                """
                 for p, v, c in zip(pars, vals, cols):
                     par_name = 'lines_voigt_%i_%s' % (id, p)
                     m['mod']._pars[par_name].set(value=v)
@@ -299,12 +300,30 @@ class GUITableSystList(GUITable):
                         m['mod']._pars[par_name].set(expr=self._links_d[par_name])
                     else:
                         m['mod']._pars[par_name].set(expr=None)
+                """
                 return m['mod']
+
+    def _key_extract(self, row, col):
+        id = self._tab.GetCellValue(row, 11).strip()
+        coln = self._tab.GetColLabelValue(col).split('\n')[0]
+        parn = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0), id, coln)
+        return int(id), parn
+
+    def _mods_edit(self, dict):
+        for k, v in dict.items():
+            #print(k, dict[k])
+            for m in self._gui._sess_sel.systs._mods_t:
+                if v[0] in m['id']:
+                    if v[1]=='expr': m['mod']._pars[k].set(expr=v[2])
+                    if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
 
     def _on_cell_right_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
         sel = get_selected_cells(self._tab)
+        if len(sel) == 0:
+            self._tab.SetGridCursor(row, col)
+            sel = get_selected_cells(self._tab)
         self._cells_sel = []
         for s in sel:
             if s[1] in [3, 5, 7]: self._cells_sel.append(s)
@@ -424,42 +443,37 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        #par = self._tab.GetColLabelValue(col)[:-1]
-        #id = int(self._tab.GetCellValue(row, 11))
-        #value = float(self._tab.GetCellValue(row, col))
         for (r, c) in self._cells_sel:
-            """
-            key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
-                                      self._tab.GetCellValue(r, 11).strip(),
-                                      self._tab.GetColLabelValue(c).split('\n')[0])
-            val = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0),
-                                      self._tab.GetCellValue(row, 11).strip(),
-                                      self._tab.GetColLabelValue(col).split('\n')[0])
-            """
+            id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(row, col) == 'grey':
                 self._tab.SetCellTextColour(r, c, 'black')
-                #if key != val:
                 self._freezes_l.remove((r,c))
-                    #del self._freezes_d[key]
+                del self._freezes_d[parn]
             else:
                 self._tab.SetCellTextColour(r, c, 'grey')
-                #if key != val:
                 self._freezes_l.append((r,c))
-                    #self._freezes_d[key] = val
+                self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
+        self._mods_edit(self._freezes_d)
+
 
     def _on_freeze_par_all(self, event):
         col = self._gui._tab_popup._event.GetCol()
         for i in range(self._tab.GetNumberRows()):
+            id, parn = self._key_extract(i, col)
             self._tab.SetCellTextColour(i, col, 'grey')
-            self._freezes_l.append((i,col))
+            self._freezes_l.append((i, col))
+            self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
+        self._mods_edit(self._freezes_d)
+
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
         z = float(self._tab.GetCellValue(row, 3))
         self._gui._sess_sel.cb.systs_new_from_resids(z_start=z-1e-3, z_end=z+1e-3)
         self._gui._refresh(init_cursor=True)
+
 
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
@@ -486,28 +500,29 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        #par = self._tab.GetColLabelValue(col)[:-1]
-        #id = int(self._tab.GetCellValue(row, 11))
-        #value = float(self._tab.GetCellValue(row, col))
         for (r, c) in self._cells_sel:
+            """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
                                       self._tab.GetCellValue(r, 11).strip(),
                                       self._tab.GetColLabelValue(c).split('\n')[0])
             val = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0),
                                       self._tab.GetCellValue(row, 11).strip(),
                                       self._tab.GetColLabelValue(col).split('\n')[0])
+            """
+            id, parn = self._key_extract(r, c)
+            _, val = self._key_extract(row, col)
             if self._tab.GetCellTextColour(row, col) == 'forest green':
                 self._tab.SetCellTextColour(r, c, 'black')
-                if key != val:
+                if parn != val:
                     self._links_l.remove((r,c))
-                    del self._links_d[key]
+                    del self._links_d[parn]
             else:
                 self._tab.SetCellTextColour(r, c, 'forest green')
-                if key != val:
+                if parn != val:
                     self._links_l.append((r,c))
-                    self._links_d[key] = val
-            print(self._links_d)
+                    self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
+        self._mods_edit(self._links_d)
 
 
     def _on_view(self, event, **kwargs):
