@@ -178,7 +178,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_fit(self, max_nfev):
+    def _systs_fit(self, max_nfev, recreate=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if max_nfev > 0:
@@ -191,7 +191,7 @@ class CookbookAbsorbers(object):
 
             logging.info("I've fitted %i model%s." \
                          % (len(mods_t), msg_z_range(z_list)))
-            self._mods_recreate()#resol)
+            if recreate: self._mods_recreate()#resol)
         else:
             logging.info("I've not fitted any model because you choose "
                          "max_nfev=0.")
@@ -362,20 +362,22 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_fit(self, max_nfev=100):
+    def systs_fit(self, max_nfev=100, recreate=True):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param max_nfev Maximum number of function evaluation
+        @param recreate Recreate systems after fitting
         @return 0
         """
 
         try:
             max_nfev = int(max_nfev)
+            recreate = str(recreate) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
-        self._systs_fit(max_nfev)
+        self._systs_fit(max_nfev, recreate)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
