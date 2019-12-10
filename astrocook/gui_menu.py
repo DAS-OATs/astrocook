@@ -437,6 +437,8 @@ class GUIMenuRecipes(GUIMenu):
         #                  "Fit system", 'syst_fit')
         self._item_method(submenu, start_id+311, 'systs',
                           "Fit systems", 'systs_fit')
+        self._item_method(submenu, start_id+312, 'systs',
+                          "Clean systems", 'systs_clean')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
