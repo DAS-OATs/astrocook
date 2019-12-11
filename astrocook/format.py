@@ -40,9 +40,11 @@ class Format(object):
                 meta['object'] = ''
                 logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
             if struct in ['spec', 'nodes']:
-                out = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta=meta)
+                out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=yunit,
+                               meta=meta)
             if struct in ['lines']:
-                out = LineList(x, xmin, xmax, y, dy, xunit, yunit, meta=meta)
+                out = LineList(x, xmin, xmax, y, dy, xunit=xunit, yunit=yunit,
+                               meta=meta)
 
             # Additional columns
             if struct in ['spec']:

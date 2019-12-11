@@ -33,6 +33,9 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
         #self._pars.pretty_print()
+        #plt.step(self._xs, self._ys)
+        #plt.step(self._xf, self._yf)
+        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')
@@ -41,12 +44,18 @@ class SystModel(LMComposite):
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
+        #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
+        #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
+        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')
+        #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
+        #plt.xlim(972, 977)
+        #plt.show()
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
 
     def _make_comp(self):
-        super(SystModel, self).__init__(self._group, self._psf, convolve)
+        super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
     def _make_defs(self):
@@ -112,7 +121,7 @@ class SystModel(LMComposite):
         else:
             self._group_sel = self._group_list[0]
         self._ys = self._group.eval(x=self._xs, params=self._pars)
-        #plt.plot(self._xs, self._ys)
+        plt.plot(self._xs, self._ys, linestyle='--')
         #plt.show()
 
     def _make_lines(self):
@@ -137,6 +146,7 @@ class SystModel(LMComposite):
 
     def _make_psf(self):
         d = self._defs
+        """
         for i, r in enumerate(self._xr):
             if self._resol == None:
                 c = np.where(self._spec.x.to(au.nm).value==r[len(r)//2])
@@ -151,8 +161,22 @@ class SystModel(LMComposite):
             self._pars.add_many(
                 (self._psf_pref+'resol', d['resol'], d['resol_vary'],
                  d['resol_min'], d['resol_max'], d['resol_expr']))
+        """
 
+        if self._resol == None:
+            c = np.where(self._spec.x.to(au.nm).value==self._xr[0][len(self._xr[0])//2])
+            d['resol'] = self._spec.t['resol'][c][0]
+        else:
+            d['resol'] = self._resol
 
+        self._psf_pref = self._psf_func.__name__+'_0_'
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=self._xr[0])
+        self._psf = psf
+        self._pars.update(psf.make_params())
+        self._pars.add_many(
+            (self._psf_pref+'resol', d['resol'], d['resol_vary'],
+             d['resol_min'], d['resol_max'], d['resol_expr']))
+        #"""
     def _make_regs(self, thres=thres):
         spec = self._spec
 
@@ -165,6 +189,7 @@ class SystModel(LMComposite):
             t = t*0.5
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
+        #print(len(self._xr))
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])

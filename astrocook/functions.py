@@ -27,26 +27,42 @@ def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
         model += ampl*np.exp(-(0.5 * (x-c) / sigma)**2)
     return model
 
+def convolve_simple(dat, kernel):
+    """simple convolution of two arrays"""
+    npts = len(dat) #min(len(dat), len(kernel))
+    pad = np.ones(npts)
+    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
+    noff = int((len(out) - npts) / 2)
+    ret = (out[noff:])[:npts]
+    #print(len(dat), len(kernel), len(ret))
+    return ret
+
 def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
+        #print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
         k_arr = k_arr/np.sum(k_arr)
-        data_arr = data#[s:s+l]
+        #data_arr = data
+        data_arr = data[s:s+l]
         pad_l = len(k_arr)#*2
         pad = np.ones(pad_l)
+
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
         conv = np.convolve(temp_arr, k_arr, mode='valid')[pad_l//2+1:][:l]
+        #print(len(temp_arr), len(conv))
         #plt.plot(range(len(conv)),temp_arr[1:-1], c='red', alpha=0.5)
         #plt.plot(range(len(conv)),conv, c='black', alpha=0.5)
         #plt.show()
         if i == 0:
             ret = conv
         else:
-            ret *= conv
+            ret = np.append(ret, conv)
+    #print([len(p) for p in psf], len(ret))
     return ret
 
 def detect_local_minima(arr):
@@ -151,14 +167,46 @@ def psf_gauss(x, #center, resol):
     @return Gaussian PSF over x
     """
 
+    _, inds, _ = np.intersect1d(x, reg, return_indices=True)
     c = np.nanmedian(reg)
+    sigma = c / resol * 4.246609001e-1
+    psf = np.exp(-0.5*((x[inds]-c) / sigma)**2)
+    #psf[np.where(psf < 1e-4)] = 0.0
+    #psf = np.zeros(len(x))
+    #psf[len(x)//2] = 1
+    ret = [np.array(psf)]
+    #plt.plot(x, psf)
+    ret = psf
+    return ret
+
+def psf_gauss_new(x, resol, spec=None):
+    """ @brief Gaussian PSF
+
+    The function returns a gaussian array for each element of a selected region
+    in the wavelength domain
+
+    @param x Wavelength domain (in nm)
+    @param c_min Starting pixel of the region
+    @param c_max Ending pixel of the region
+    @param center Center wavelength of the region
+    @param resol Resolution
+    @return Gaussian PSF over x
+    """
+
+    c = np.nanmedian(x)
+    print(resol)
+    resol = np.interp(c, spec.x, spec.t['resol'])
+    print('after', resol)
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((x-c) / sigma)**2)
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))
     #psf[len(x)//2] = 1
     ret = [np.array(psf)]
+    plt.plot(x, psf)
+    ret = psf
     return ret
+
 
 
 def resol_check(spec, resol, prefix=prefix):
