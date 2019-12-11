@@ -27,17 +27,6 @@ def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
         model += ampl*np.exp(-(0.5 * (x-c) / sigma)**2)
     return model
 
-def convolve_simple(dat, kernel):
-    """simple convolution of two arrays"""
-    npts = len(dat) #min(len(dat), len(kernel))
-    pad = np.ones(npts)
-    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
-    out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
-    noff = int((len(out) - npts) / 2)
-    ret = (out[noff:])[:npts]
-    #print(len(dat), len(kernel), len(ret))
-    return ret
-
 def convolve(data, psf):
     s = 0
     l = 0
@@ -64,6 +53,19 @@ def convolve(data, psf):
             ret = np.append(ret, conv)
     #print([len(p) for p in psf], len(ret))
     return ret
+
+
+def convolve_simple(dat, kernel):
+    """simple convolution of two arrays"""
+    npts = len(dat) #max(len(dat), len(kernel))
+    pad = np.ones(npts)
+    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
+    noff = int((len(out) - npts) / 2)
+    ret = (out[noff:])[:npts]
+    #print(len(dat), len(kernel), len(ret))
+    return ret
+
 
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
@@ -152,7 +154,7 @@ def parse(series):
                 trans.append(t)
     return trans
 
-def psf_gauss(x, #center, resol):
+def psf_gauss_wrong(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF
 
@@ -179,31 +181,18 @@ def psf_gauss(x, #center, resol):
     ret = psf
     return ret
 
-def psf_gauss_new(x, resol, spec=None):
-    """ @brief Gaussian PSF
-
-    The function returns a gaussian array for each element of a selected region
-    in the wavelength domain
-
-    @param x Wavelength domain (in nm)
-    @param c_min Starting pixel of the region
-    @param c_max Ending pixel of the region
-    @param center Center wavelength of the region
-    @param resol Resolution
-    @return Gaussian PSF over x
-    """
-
-    c = np.nanmedian(x)
-    print(resol)
-    resol = np.interp(c, spec.x, spec.t['resol'])
-    print('after', resol)
+def psf_gauss(x, resol, spec=None):
+    c = x[len(x)//2]
+    #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-0.5*((x-c) / sigma)**2)
+    psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
+    psf = psf[np.where(psf > 1e-6)]
+    xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))
     #psf[len(x)//2] = 1
-    ret = [np.array(psf)]
-    plt.plot(x, psf)
+    #ret = [np.array(psf)]
+    #plt.plot(xout*10, psf)
     ret = psf
     return ret
 

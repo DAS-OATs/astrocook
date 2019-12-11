@@ -9,7 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-thres = 5e-3
+thres = 1e-3
 
 class SystModel(LMComposite):
 
@@ -121,7 +121,7 @@ class SystModel(LMComposite):
         else:
             self._group_sel = self._group_list[0]
         self._ys = self._group.eval(x=self._xs, params=self._pars)
-        plt.plot(self._xs, self._ys, linestyle='--')
+        #plt.plot(self._xs, self._ys, linestyle='--')
         #plt.show()
 
     def _make_lines(self):
@@ -164,19 +164,35 @@ class SystModel(LMComposite):
         """
 
         if self._resol == None:
-            c = np.where(self._spec.x.to(au.nm).value==self._xr[0][len(self._xr[0])//2])
+            c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
             d['resol'] = self._spec.t['resol'][c][0]
         else:
             d['resol'] = self._resol
+        #print(d['resol'])
 
         self._psf_pref = self._psf_func.__name__+'_0_'
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=self._xr[0])
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
         self._psf = psf
         self._pars.update(psf.make_params())
         self._pars.add_many(
             (self._psf_pref+'resol', d['resol'], d['resol_vary'],
              d['resol_min'], d['resol_max'], d['resol_expr']))
         #"""
+
+    def _make_regions(self, mod, xs, thres=thres):
+        ys = mod.eval(x=xs, params=self._pars)
+        c = np.where(ys<1-thres)[0]
+        #plt.plot(xs, ys)
+        #if len(c)%2==0:
+        #    c = c[:-1]
+        xr = np.array(xs[c])
+        yr = np.array(self._spec.y[c]/self._spec._t['cont'][c])
+        wr = np.array(self._spec._t['cont'][c]/self._spec.dy[c])
+        #plt.plot(xr, mod.eval(x=xr, params=self._pars))
+        return xr, yr, wr, ys
+
+
+
     def _make_regs(self, thres=thres):
         spec = self._spec
 
@@ -210,8 +226,11 @@ class SystModel(LMComposite):
         self._make_defs()
         self._make_lines()
         self._make_group()
-        self._make_regs()
+        #self._make_regs()
         self._make_psf()
         self._make_comp()
+        self._xr, self._yr, self._wr, self._ys = self._make_regions(self._group, self._xs)
+        #print('r', self._yr)
+        self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
         #self._pars.pretty_print()
         #self._ys = self.eval(x=self._xs, params=self._pars)

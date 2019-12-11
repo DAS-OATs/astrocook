@@ -7,7 +7,7 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
-logN_def = 13
+logN_def = 14
 b_def = 10
 
 resol_def = None
