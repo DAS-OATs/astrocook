@@ -519,21 +519,23 @@ class GUIMenuView(GUIMenu):
                          'spec_x_conv')
         self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
                          'lines_x_y')
-        self._item_graph(self._submenu, start_id+305, 'lines', "Masked spectrum",
-                         'spec_x_ymask')
+        self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
+                         'spec_x_yfitmask')
         self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
                          'spec_nodes_x_y')
         self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
                          'spec_x_cont')
         self._item_graph(self._submenu, start_id+308, 'systs', "Model",
                          'spec_x_model')
-        self._item_graph(self._submenu, start_id+309, 'systs', "De-absorbed",
+        self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
+                         'spec_x_yfitmask')
+        self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
                          'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+310, None, "Spectral format",
+        self._item_graph(self._submenu, start_id+311, None, "Spectral format",
                          'spec_form_x')
-        self._item_graph(self._submenu, start_id+311, 'systs', "System list",
+        self._item_graph(self._submenu, start_id+312, 'systs', "System list",
                          'systs_z_series')
-        self._item_graph(self._submenu, start_id+312, 'spec', "Redshift cursor",
+        self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
                          'cursor_z_series', dlg_mini=True,
                          targ=GraphCursorZSeries)
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")

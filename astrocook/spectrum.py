@@ -116,7 +116,7 @@ class Spectrum(Frame):
         for (xmin, xmax) in zip(lines_xmin, lines_xmax):
             mask += np.logical_and(x>=xmin, x<=xmax)
         if 'lines_mask' not in self._t.colnames:
-            logging.info("I'm adding column 'lines_mask'.")
+            logging.info("I'm adding column 'lines_mask' to spectrum.")
             self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
         self._t['lines_mask'][self._where_safe] = mask
 

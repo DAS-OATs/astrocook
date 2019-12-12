@@ -198,11 +198,12 @@ class Graph(object):
                              'spec_x_dy': (GraphSpectrumXDy,0,0.5),
                              'spec_x_conv': (GraphSpectrumXConv,3,0.5),
                              'lines_x_y': (GraphLineListXY,2,1.0),
-                             'spec_x_ymask': (GraphSpectrumXYMask,2,0.5),
+                             'spec_x_ylinemask': (GraphSpectrumXYLinesMask,2,0.5),
                              'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
                              'spec_x_cont': (GraphSpectrumXCont,8,1.0),
                              'spec_form_x': (GraphSpectrumFormX,7,0.5),
                              'spec_x_model': (GraphSpectrumXModel,9,1.0),
+                             'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
                              'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
                              'systs_z_series': (GraphSystListZSeries,2,1.0),
                              'cursor_z_series': (GraphCursorZSeries,3,0.5)}
@@ -381,6 +382,7 @@ class GraphSpectrumXModel(GraphSpectrumXY):
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXModel, self).__init__(sess)
         self._type = 'plot'
+        self._x = sess.spec.x
         self._y = sess.spec._t['model']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
@@ -405,17 +407,28 @@ class GraphSpectrumXYDetail(object):
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'marker':'o'}
 
-class GraphSpectrumXYMask(GraphSpectrumXY):
+class GraphSpectrumXYFitMask(GraphSpectrumXY):
 
     def __init__(self, sess, norm=False):
-        super(GraphSpectrumXYMask, self).__init__(sess)
+        super(GraphSpectrumXYFitMask, self).__init__(sess)
+        self._type = 'plot'
+        self._x[sess.spec._t['fit_mask']==0] = np.nan
+        self._y = sess.spec._t['model']
+        if norm and 'cont' in sess.spec._t.colnames:
+            self._y = self._y/sess.spec._t['cont']
+        self._kwargs = {'lw':3.0, 'label':sess.name+", masked for fitting"}
+
+class GraphSpectrumXYLinesMask(GraphSpectrumXY):
+
+    def __init__(self, sess, norm=False):
+        super(GraphSpectrumXYLinesMask, self).__init__(sess)
         self._type = 'step'
         self._x[sess.spec._t['lines_mask']] = np.nan
         try:
             self._y = sess.spec._t['deabs']
         except:
             self._y = sess.spec.y
-        self._kwargs = {'label':sess.name+", masked", 'where':'mid'}
+        self._kwargs = {'label':sess.name+", masked for lines", 'where':'mid'}
 
 class GraphSystListZSeries(object):
     def __init__(self, sess, norm=False):
@@ -451,7 +464,7 @@ class GraphSystListZSeries(object):
         #print(self._x)
         #print(self._xalt)
         self._kwargs = {'linestyle': ':',
-                        'label':sess.name+", systs components"}
+                        'label':sess.name+", system components"}
         """
         self._y = series_flat
         series = np.array([sess.systs.series[i[0]]
