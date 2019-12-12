@@ -9,7 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-thres = 1e-3
+thres = 1e-2
 
 class SystModel(LMComposite):
 
@@ -40,16 +40,17 @@ class SystModel(LMComposite):
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')
                                          #method='emcee')
-        #self._pars.pretty_print()
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
+        #self._pars.pretty_print()
         #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
         #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')
         #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
         #plt.xlim(972, 977)
         #plt.show()
+        #self._ys = self.eval(x=self._xs, params=self._pars)
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
@@ -101,6 +102,7 @@ class SystModel(LMComposite):
             #ys_s = mod.eval(x=self._xs, params=mod._pars)
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
+            #print(np.amin(ymax))
             if np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys):
                 self._group *= mod._group
                 self._pars.update(mod._pars)
@@ -180,14 +182,30 @@ class SystModel(LMComposite):
         #"""
 
     def _make_regions(self, mod, xs, thres=thres):
+        spec = self._spec
+        if 'fit_mask' not in spec.t.colnames:
+            #logging.info("I'm adding column 'fit_mask' to spectrum.")
+            spec.t['fit_mask'] = np.zeros(len(spec.x), dtype=bool)
+
+
+        #self._pars.pretty_print()
         ys = mod.eval(x=xs, params=self._pars)
-        c = np.where(ys<1-thres)[0]
+        c = []
+        t = thres
+        while len(c)==0:
+            c = np.where(ys<1-t)[0]
+            t = t*0.5
+
+        #c = np.where(ys<1-thres)[0]
         #plt.plot(xs, ys)
+        #plt.show()
         #if len(c)%2==0:
         #    c = c[:-1]
         xr = np.array(xs[c])
-        yr = np.array(self._spec.y[c]/self._spec._t['cont'][c])
-        wr = np.array(self._spec._t['cont'][c]/self._spec.dy[c])
+        #print(len(xr), xr)
+        yr = np.array(spec.y[c]/spec._t['cont'][c])
+        wr = np.array(spec._t['cont'][c]/spec.dy[c])
+        spec.t['fit_mask'][c] = True
         #plt.plot(xr, mod.eval(x=xr, params=self._pars))
         return xr, yr, wr, ys
 
@@ -195,7 +213,6 @@ class SystModel(LMComposite):
 
     def _make_regs(self, thres=thres):
         spec = self._spec
-
         #ys = self._group.eval(x=self._xs, params=self._pars)
         #c = np.where(ys<1-thres)[0]
         c = []
@@ -205,7 +222,6 @@ class SystModel(LMComposite):
             t = t*0.5
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
-        #print(len(self._xr))
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
@@ -229,7 +245,7 @@ class SystModel(LMComposite):
         #self._make_regs()
         self._make_psf()
         self._make_comp()
-        self._xr, self._yr, self._wr, self._ys = self._make_regions(self._group, self._xs)
+        self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
         #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
         #self._pars.pretty_print()

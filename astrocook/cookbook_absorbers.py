@@ -286,6 +286,8 @@ class CookbookAbsorbers(object):
                          % (len(rem), '' if len(rem)==1 else 's',
                             np.sum(chi2r_cond), chi2r_thres,
                             np.sum(relerr_cond), dlogN_thres))
+        elif recreate:
+            self._mods_recreate()
         return refit_id
 
 
