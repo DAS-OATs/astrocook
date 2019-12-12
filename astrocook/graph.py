@@ -382,6 +382,7 @@ class GraphSpectrumXModel(GraphSpectrumXY):
     def __init__(self, sess, norm=False):
         super(GraphSpectrumXModel, self).__init__(sess)
         self._type = 'plot'
+        self._x = sess.spec.x
         self._y = sess.spec._t['model']
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
@@ -463,7 +464,7 @@ class GraphSystListZSeries(object):
         #print(self._x)
         #print(self._xalt)
         self._kwargs = {'linestyle': ':',
-                        'label':sess.name+", systs components"}
+                        'label':sess.name+", system components"}
         """
         self._y = series_flat
         series = np.array([sess.systs.series[i[0]]

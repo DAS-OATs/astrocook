@@ -34,7 +34,7 @@ class SystModel(LMComposite):
         time_start = datetime.datetime.now()
         #self._pars.pretty_print()
         #plt.step(self._xs, self._ys)
-        #plt.step(self._xf, self._yf)
+        #plt.step(self._xf, self._yf, where='mid')
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
@@ -50,10 +50,12 @@ class SystModel(LMComposite):
         #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
         #plt.xlim(972, 977)
         #plt.show()
-        #self._ys = self.eval(x=self._xs, params=self._pars)
+        self._ys = self.eval(x=self._xs, params=self._pars)
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
+        #print(self._xs[40:50])
+        #print(self._ys[40:50])
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
@@ -202,8 +204,8 @@ class SystModel(LMComposite):
         #if len(c)%2==0:
         #    c = c[:-1]
         xr = np.array(xs[c])
-        #print(len(xr), xr)
         yr = np.array(spec.y[c]/spec._t['cont'][c])
+        #print(xr[np.argmin(yr)], yr[np.argmin(yr)])
         wr = np.array(spec._t['cont'][c]/spec.dy[c])
         spec.t['fit_mask'][c] = True
         #plt.plot(xr, mod.eval(x=xr, params=self._pars))

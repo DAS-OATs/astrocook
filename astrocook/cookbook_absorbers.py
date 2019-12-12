@@ -5,6 +5,7 @@ from .syst_model import SystModel
 from .vars import *
 from copy import deepcopy as dc
 import logging
+from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 import sys
@@ -37,7 +38,6 @@ class CookbookAbsorbers(object):
     def _mods_recreate(self, max_nfev=0, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
-        #systs = dc(self.sess.systs)
         systs = self.sess.systs
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
         #for i,s in enumerate(systs._t):
@@ -45,10 +45,16 @@ class CookbookAbsorbers(object):
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             mod = SystModel(spec, systs, z0=s['z0'])
-            mod._new_voigt(series=s['series'], z=s['z0'], logN=s['logN'],
+            mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
+            mod._pars['lines_voigt_%i_z' % i].stderr=s['dz']
+            mod._pars['lines_voigt_%i_logN' % i].stderr=s['dlogN']
+            mod._pars['lines_voigt_%i_b' % i].stderr=s['db']
+            mod._pars['lines_voigt_%i_btur' % i].stderr=0
+            mod._pars['psf_gauss_0_resol'].stderr=0
+
             self._mods_update(mod)
-        #self.sess.systs._mods_t = systs._mods_t
+        mod = self.sess.systs._mods_t['mod'][0]
         return 0
 
 
@@ -118,9 +124,7 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, max_nfev, verbose=True):
         if max_nfev > 0:
-            #mod._pars._pretty_print()
             mod._fit(fit_kws={'max_nfev': max_nfev})
-            #mod._pars._pretty_print()
             if verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
@@ -520,10 +524,12 @@ class CookbookAbsorbers(object):
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
+        mod = self.sess.systs._mods_t['mod'][0]
         self._systs_fit(max_nfev)
         refit_id = self._systs_reject(chi2r_thres, dlogN_thres, max_nfev)
         self._systs_refit(refit_id, max_nfev)
         self._spec_update()
+        plt.show()
 
         return 0
 
