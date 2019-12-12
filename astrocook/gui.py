@@ -354,36 +354,40 @@ class GUIPanelSession(wx.Frame):
         sess = Session(name=name, spec=spec)
         return sess
 
-    def struct_compare(self, struct_1='0,spec,x', struct_2='0,spec,y',
+    def struct_compare(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):
 
 
-    #struct_1='0,systs,z', struct_2='1,systs,z',
+    #struct_A='0,systs,z', struct_B='1,systs,z',
                        #struct_out='0,systs,diff_z', op='subtract'):
         """ @brief Compare structures
         @details Compare two structures from the same session or two different
         sessions.
-        @param struct_1 First structure (session number,table,column)
-        @param struct_2 Second structure (as before)
-        @param struct_out Output structure (as before)
-        @param op Binary numpy operator
+        @param struct_A Structure A (session,table,column)
+        @param struct_B Structure B (same syntax) or scalar
+        @param struct_out Output structure (same syntax)
+        @param op Binary operator
         @return 0
         """
 
-        parse_1 = self._struct_parse(struct_1, length=3)
-        parse_2 = self._struct_parse(struct_2, length=3)
+        parse_A = self._struct_parse(struct_A, length=3)
         parse_out = self._struct_parse(struct_out, length=2)
-        if parse_1 is None or parse_2 is None or parse_out is None: return 0
-        coln_1, col_1, _ = parse_1
-        coln_2, col_2, _ = parse_2
+        if parse_A is None or parse_out is None: return 0
+        coln_A, col_A, _ = parse_A
         attrn_out, attr_out, all_out = parse_out
+        try:
+            col_B = np.full(np.shape(col_A), float(struct_B))
+        except:
+            parse_B = self._struct_parse(struct_B, length=3)
+            parse_out = self._struct_parse(struct_out, length=2)
+            if parse_B is None: return 0
+            coln_B, col_B, _ = parse_B
+            if len(col_A) != len(col_B):
+                logging.error("The two columns have different lengths! %s" \
+                            % msg_try_again)
+                return 0
 
-        if len(col_1) != len(col_2):
-            logging.error("The two columns have different lengths! %s" \
-                          % msg_try_again)
-            return 0
-
-        if len(col_1) != len(attr_out._t):
+        if len(col_A) != len(attr_out._t):
             logging.error("The output table have different length than the "
                           "input columns! %s" \
                           % msg_try_again)
@@ -394,8 +398,7 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
-            getattr(np, op)(col_1, col_2)
-
+            getattr(np, op)(col_A, col_B)
 
         return 0
 
@@ -412,6 +415,7 @@ class GUIPanelSession(wx.Frame):
         parse = self._struct_parse(struct)
         if parse is None: return 0
         attrn, attr, _ = parse
+        attr = dc(attr)
 
         if attrn == 'systs' \
             and 'cont' not in self._gui._sess_sel.spec.t.colnames:
@@ -423,7 +427,7 @@ class GUIPanelSession(wx.Frame):
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
-            getattr(self._gui._sess_sel, attrn)._append(attr)
+            getattr(self._gui._sess_sel, attrn)._append(dc(attr))
 
         if attrn=='systs':
             self._gui._sess_sel.cb._spec_update()
