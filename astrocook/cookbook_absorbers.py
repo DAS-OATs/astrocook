@@ -47,11 +47,11 @@ class CookbookAbsorbers(object):
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
-            mod._pars['lines_voigt_%i_z' % i].stderr=s['dz']
-            mod._pars['lines_voigt_%i_logN' % i].stderr=s['dlogN']
-            mod._pars['lines_voigt_%i_b' % i].stderr=s['db']
-            mod._pars['lines_voigt_%i_btur' % i].stderr=0
-            mod._pars['psf_gauss_0_resol'].stderr=0
+            #mod._pars['lines_voigt_%i_z' % i].stderr=s['dz']
+            #mod._pars['lines_voigt_%i_logN' % i].stderr=s['dlogN']
+            #mod._pars['lines_voigt_%i_b' % i].stderr=s['db']
+            #mod._pars['lines_voigt_%i_btur' % i].stderr=0
+            #mod._pars['psf_gauss_0_resol'].stderr=0
 
             self._mods_update(mod)
         mod = self.sess.systs._mods_t['mod'][0]
