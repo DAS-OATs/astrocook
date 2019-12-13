@@ -43,7 +43,7 @@ class SystModel(LMComposite):
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
-        self._pars.pretty_print()
+        #self._pars.pretty_print()
         #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
         #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')

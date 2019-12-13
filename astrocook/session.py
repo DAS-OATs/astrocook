@@ -186,7 +186,13 @@ class Session(object):
                         t['x'] = t['x'].to(au.nm)
                         t['xmin'] = t['xmin'].to(au.nm)
                         t['xmax'] = t['xmax'].to(au.nm)
+                    for k in obj._meta:
+                        if k in ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT',
+                                 'TFIELDS'] \
+                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT']:
+                            del k
                     t.meta = obj._meta
+
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s

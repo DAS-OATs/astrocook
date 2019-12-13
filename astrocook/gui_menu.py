@@ -28,11 +28,10 @@ class GUIMenu(object):
         bar.Append(self._file._menu, "File")
         bar.Append(self._edit._menu, "Edit")
         bar.Append(self._view._menu, "View")
-        #bar.Append(recipes._menu, "Recipes")
         bar.Append(self._recipes._menu, "Recipes")
-        #bar.Append(courses._menu, "Courses")
-        bar.Append(self._courses._menu, "Courses")
-        bar.Append(self._cook._menu, "Cook")
+        #bar.Append(self._courses._menu, "Courses")
+        bar.Append(self._courses._menu, "Set menus")
+        #bar.Append(self._cook._menu, "Cook")
         return bar
 
     def _item(self, menu, id, append, title, event):
@@ -96,6 +95,42 @@ class GUIMenu(object):
                 self._on_dialog_mini(event, title, targ)
             else:
                 self._gui._dlg_mini._on_cancel(event)
+
+
+    def _on_open(self, event, path=None, wildcard=None,
+                 action='_on_open_session'):
+        """ Behaviour for Session > Open """
+
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=self._gui._path
+            else:
+                path='.'
+        if wildcard is None:
+            wildcard = "Astrocook sessions (*.acs)|*.acs|" \
+                       "FITS files (*.fits)|*.fits"
+        with wx.FileDialog(self._gui._panel_sess, "Open file", path,
+                           wildcard=wildcard,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            self._gui._path = fileDialog.GetPath()
+            try:
+                getattr(self, action)(self._gui._path)
+            except:
+                getattr(self._gui._panel_sess, action)(self._gui._path)
+
+    def _on_open_session(self, path):
+        name = path.split('/')[-1].split('.')[0]
+        #logging.info("I'm loading session %s..." % path)
+        sess = Session(path=path, name=name)
+        self._gui._panel_sess._on_add(sess, open=True)
+        if sess._open_twin:
+            #logging.info("I'm loading twin session %s..." % path)
+            sess = Session(path=path, name=name, twin=True)
+            self._gui._panel_sess._on_add(sess, open=True)
+        #self._gui._path = path
 
 
     def _refresh(self):
@@ -341,30 +376,15 @@ class GUIMenuFile(GUIMenu):
     def _on_combine(self, event):
         self._gui._panel_sess._combine()
 
-    def _on_open(self, event, path='.'):
-        """ Behaviour for Session > Open """
 
-        wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                   "FITS files (*.fits)|*.fits"
-        with wx.FileDialog(self._gui._panel_sess, "Open file", path,
-                           wildcard=wildcard,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
-                           as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return
-            path = fileDialog.GetPath()
-            name = path.split('/')[-1].split('.')[0]
-            logging.info("I'm loading session %s..." % path)
-            sess = Session(path=path, name=name)
-            self._gui._panel_sess._on_add(sess, open=True)
-            if sess._open_twin:
-                logging.info("I'm loading twin session %s..." % path)
-                sess = Session(path=path, name=name, twin=True)
-                self._gui._panel_sess._on_add(sess, open=True)
-
-    def _on_save(self, event, path='.'):
+    def _on_save(self, event, path=None):
         """ Behaviour for Session > Save """
 
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=self._gui._path
+            else:
+                path='.'
         name = self._gui._sess_sel.name
         with wx.FileDialog(self._gui._panel_sess, "Save session", path, name,
                            wildcard="Astrocook session (*.acs)|*.acs",
@@ -479,6 +499,13 @@ class GUIMenuCourses(GUIMenu):
         #self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
         #                  ['add_syst_from_lines', 'add_syst_from_resids',
         #                   'add_syst_slide', 'compl_syst'])
+        self._menu.AppendSeparator()
+        #self._item_method(self._menu, start_id+101, 'spec', "From file",
+        #                  'from_file', obj=self._gui._panel_sess)
+        self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
+                   lambda e: \
+                   self._on_open(e, wildcard="JSON file (*.json)|*.json|",
+                                 action='load_json'))
 
 class GUIMenuView(GUIMenu):
 
