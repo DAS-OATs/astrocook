@@ -36,6 +36,7 @@ class SystModel(LMComposite):
         #plt.step(self._xs, self._ys)
         #plt.step(self._xf, self._yf, where='mid')
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
+        #print(self._pars['lines_voigt_196_z'])
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')

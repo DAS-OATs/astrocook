@@ -100,7 +100,8 @@ class GUI(object):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
                                                       from_scratch=False)
-                if hasattr(self, '_col_sel'):
+                if hasattr(self, '_col_sel') \
+                    and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \
                         [float(self._col_tab.GetCellValue(i, self._col_sel)) \
                          for i in range(self._col_tab.GetNumberRows())]
