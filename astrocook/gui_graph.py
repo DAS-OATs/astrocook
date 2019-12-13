@@ -170,6 +170,6 @@ class GUIGraphHistogram(GUIGraphMain):
         label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel)
         self._ax.set_xlabel(label.replace('\n',' '))
         self._ax.set_ylabel('Frequency')
-        self._ax.hist(self._gui._col_values, bins=30, align='left')
+        self._ax.hist(self._gui._col_values, bins=300, align='mid')
         self._canvas.draw()
         self.Show()

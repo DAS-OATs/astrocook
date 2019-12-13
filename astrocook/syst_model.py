@@ -32,7 +32,7 @@ class SystModel(LMComposite):
 
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
-        self._pars.pretty_print()
+        #self._pars.pretty_print()
         #plt.step(self._xs, self._ys)
         #plt.step(self._xf, self._yf, where='mid')
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
