@@ -8,6 +8,7 @@ from .graph import GraphCursorZSeries
 from astropy.io import ascii
 import datetime
 import logging
+import os
 import wx
 
 class GUIMenu(object):
@@ -382,7 +383,7 @@ class GUIMenuFile(GUIMenu):
 
         if path is None:
             if hasattr(self._gui, '_path'):
-                path=self._gui._path
+                path=os.path.basename(self._gui._path)
             else:
                 path='.'
         name = self._gui._sess_sel.name
