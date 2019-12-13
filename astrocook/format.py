@@ -3,6 +3,7 @@ from .line_list import LineList
 from .syst_list import SystList
 from .message import *
 from astropy import units as au
+from astropy.table import Table
 import logging
 import numpy as np
 
@@ -100,6 +101,9 @@ class Format(object):
                            dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
                            id=id)
             out._t['z0'] = data['z0']
+            for c in Table(data).colnames:
+                if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
+                    out._t[c] = data[c]
 
         return out
 

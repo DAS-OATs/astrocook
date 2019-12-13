@@ -93,6 +93,10 @@ class GUITable(wx.Frame):
                                       ylim=ylim)#, init_cursor=True)
 
 
+    def _on_edit(self, event):
+        print(ciao)
+
+
     def _on_histogram(self, event):
         if not hasattr(self._gui, '_graph_hist'):
             from .gui_graph import GUIGraphHistogram
@@ -140,6 +144,7 @@ class GUITable(wx.Frame):
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
+        self._tab.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self._on_edit)
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self._on_detail)
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK,
                        self._on_label_right_click)
