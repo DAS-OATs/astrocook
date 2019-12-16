@@ -1,5 +1,6 @@
-from .functions import log2_range
+from .functions import *
 from .message import *
+from .vars import *
 from astropy import units as au
 from scipy.interpolate import UnivariateSpline as uspline
 
@@ -112,7 +113,7 @@ class CookbookContinuum(object):
 ### Advanced
 
     def lines_find(self, std_start=100.0, std_end=0.0, col='y', kind='min',
-                   kappa_peaks=5.0, append=True):
+                   kappa_peaks=5.0, resol=resol_def, append=True):
         """ @brief Find lines
         @details Create a line list by convolving a spectrum with different
         gaussian profiles and finding the peaks in the convolved spectrum
@@ -121,6 +122,7 @@ class CookbookContinuum(object):
         @param col Column to convolve
         @param kind Kind of extrema ('min' or 'max')
         @param kappa_peaks Number of standard deviations
+        @param resol Resolution
         @param append Append lines to existing line list
         @return 0
         """
@@ -129,6 +131,7 @@ class CookbookContinuum(object):
             std_start = float(std_start)
             std_end = float(std_end)
             kappa_peaks = float(kappa_peaks)
+            resol = None if resol in [None, 'None'] else float(resol)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -137,6 +140,11 @@ class CookbookContinuum(object):
         if col not in self.sess.spec.t.colnames:
             logging.error(msg_col_miss(col))
             return 0
+
+        check, resol = resol_check(self.sess.spec, resol)
+        if check:
+            logging.info("I'm adding column 'resol'.")
+            self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
