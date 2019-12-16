@@ -6,6 +6,7 @@ from .gui_table import *
 from .message import *
 from astropy import table as at
 from copy import deepcopy as dc
+import json
 import logging
 import numpy as np
 from sphinx.util import docstrings as ds
@@ -99,7 +100,8 @@ class GUI(object):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
                                                       from_scratch=False)
-                if hasattr(self, '_col_sel'):
+                if hasattr(self, '_col_sel') \
+                    and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \
                         [float(self._col_tab.GetCellValue(i, self._col_sel)) \
                          for i in range(self._col_tab.GetNumberRows())]
@@ -353,6 +355,28 @@ class GUIPanelSession(wx.Frame):
             name += name_in[1:]
         sess = Session(name=name, spec=spec)
         return sess
+
+    def load_json(self, path='.'):
+        """@brief Load from JSON
+        @details Load a set menu from a JSON file.
+        @param path Path to file
+        @return 0
+        """
+
+        with open(path) as json_file:
+            d = json.load(json_file)
+            for r in d['set_menu']:
+                if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
+                    cb = self._gui._sess_sel.cb
+                elif r['cookbook'] == '':
+                    cb = self._gui
+                else:
+                    rs = r['cookbook'].split('.')
+                    cb = getattr(self._gui, rs[0])
+                    for s in rs[1:]:
+                        cb = getattr(cb, s)
+                getattr(cb, r['recipe'])(**r['params'])
+
 
     def struct_compare(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):

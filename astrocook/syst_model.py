@@ -36,6 +36,7 @@ class SystModel(LMComposite):
         #plt.step(self._xs, self._ys)
         #plt.step(self._xf, self._yf, where='mid')
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
+        #print(self._pars['lines_voigt_196_z'])
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf, fit_kws=fit_kws,
                                          method='least_squares')
@@ -43,7 +44,7 @@ class SystModel(LMComposite):
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
-        self._pars.pretty_print()
+        #self._pars.pretty_print()
         #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
         #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')

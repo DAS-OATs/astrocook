@@ -497,8 +497,9 @@ class GUITableSystList(GUITable):
         self._constr_copy()
 
 
-    def _on_freeze_par_all(self, event):
-        col = self._gui._tab_popup._event.GetCol()
+    def _on_freeze_par_all(self, event=None, col=None):
+        if event is not None:
+            col = self._gui._tab_popup._event.GetCol()
         for i in range(self._tab.GetNumberRows()):
             id, parn = self._key_extract(i, col)
             #self._tab.SetCellTextColour(i, col, 'grey')
