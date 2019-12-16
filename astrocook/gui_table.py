@@ -66,6 +66,11 @@ class GUITable(wx.Frame):
         self._tab.AppendRows(rown)
 
 
+    def _labels_extract(self):
+        return np.array([self._tab.GetColLabelValue(i).split('\n')[0] \
+                         for i in range(self._tab.GetNumberCols())])
+
+
     def _on_close(self, event):
         self.Destroy()
 
@@ -94,7 +99,9 @@ class GUITable(wx.Frame):
 
 
     def _on_edit(self, event):
-        print(ciao)
+        row, col = event.GetRow(), event.GetCol()
+        labels = self._labels_extract()
+        self._data.t[labels[col]][row] = self._tab.GetCellValue(row, col)
 
 
     def _on_histogram(self, event):
@@ -311,11 +318,6 @@ class GUITableSystList(GUITable):
         return int(self._tab.GetCellValue(row, np.where(labels == 'id')[0][0]))
 
 
-    def _labels_extract(self):
-        return np.array([self._tab.GetColLabelValue(i).split('\n')[0] \
-                         for i in range(self._tab.GetNumberCols())])
-
-
     def _key_extract(self, row, col):
         #id = self._tab.GetCellValue(row, 11).strip()
         id = self._id_extract(row)
@@ -458,6 +460,16 @@ class GUITableSystList(GUITable):
                 xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
+
+
+    def _on_edit(self, event):
+        row, col = event.GetRow(), event.GetCol()
+        value = float(self._tab.GetCellValue(row, col))
+        labels = self._labels_extract()
+        self._data.t[labels[col]][row] = value
+        id = self._id_extract(row)
+        mod = self._mod_extract(row)
+        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(value=value)
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
