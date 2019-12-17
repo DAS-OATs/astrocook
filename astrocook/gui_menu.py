@@ -117,10 +117,17 @@ class GUIMenu(object):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             self._gui._path = fileDialog.GetPath()
+            """
             try:
                 getattr(self, action)(self._gui._path)
             except:
                 getattr(self._gui._panel_sess, action)(self._gui._path)
+            """
+        try:
+            getattr(self, action)(self._gui._path)
+        except:
+            getattr(self._gui._panel_sess, action)(self._gui._path)
+
 
     def _on_open_session(self, path):
         name = path.split('/')[-1].split('.')[0]

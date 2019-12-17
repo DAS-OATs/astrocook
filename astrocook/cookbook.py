@@ -27,6 +27,7 @@ class Cookbook(CookbookGeneral,
 
     def __init__(self,
                  sess=None):
+        super(Cookbook, self).__init__()
         self.sess = sess
 
     def _refresh(self, sess):

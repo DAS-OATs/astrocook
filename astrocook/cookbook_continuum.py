@@ -141,8 +141,8 @@ class CookbookContinuum(object):
             logging.error(msg_col_miss(col))
             return 0
 
-        check, resol = resol_check(self.sess.spec, resol)
-        if check:
+        #check, resol = resol_check(self.sess.spec, resol)
+        if resol is not None:
             logging.info("I'm adding column 'resol'.")
             self.sess.spec._t['resol'] = resol
 
