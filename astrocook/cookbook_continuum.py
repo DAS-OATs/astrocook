@@ -9,7 +9,8 @@ class CookbookContinuum(object):
     """
 
     def __init__(self):
-        pass
+        super(CookbookContinuum, self).__init__()
+
 
 ### Basic
 

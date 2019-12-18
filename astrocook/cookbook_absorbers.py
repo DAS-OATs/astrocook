@@ -17,7 +17,8 @@ class CookbookAbsorbers(object):
     """
 
     def __init__(self):
-        self._refit_n = 0
+        super(CookbookAbsorbers, self).__init__()
+        self._refit_n = 20
         self._chi2rav_thres = np.inf
         self._chi2r_thres = np.inf
         self._dlogN_thres = np.inf
@@ -193,6 +194,7 @@ class CookbookAbsorbers(object):
 
     def _systs_cycle(self, verbose=True):
         chi2rav = np.inf
+        print(self._refit_n)
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres:
@@ -304,7 +306,7 @@ class CookbookAbsorbers(object):
 
         rem = np.where(np.logical_or(chi2r_cond, relerr_cond))[0]
         z_rem = systs._t['z'][rem]
-        refit_id = []
+        #refit_id = []
         if len(rem) > 0:
             # Check if systems to be rejected are in groups with systems to be
             # preserved, and in case flag the latter for refitting
@@ -317,14 +319,16 @@ class CookbookAbsorbers(object):
                     refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
             systs._t.remove_rows(rem)
             """
-            #refit_id = self._systs_remove(rem, refit_id)
+            self._systs_remove(rem)#, refit_id)
+            """
             for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
                 t_id = systs._t['id']
                 mods_t_id = systs._mods_t['id']
                 sel = [t_id[r] in m for m in mods_t_id]
-                if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
-                    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
+                #if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
+                #    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
             systs._t.remove_rows(rem)
+            """
             if verbose:
                 logging.info("I've rejected %i mis-identified system%s (%i with a "\
                              "reduced chi2 above %2.2f, %i with relative errors "\
@@ -334,18 +338,17 @@ class CookbookAbsorbers(object):
                                 np.sum(relerr_cond), self._dlogN_thres))
         return 0 #refit_id
 
-    """
-    def _systs_remove(self, rem, refit_id):
+
+    def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
             sel = [t_id[r] in m for m in mods_t_id]
-            if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
-                refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
+            #if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
+            #    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
         systs._t.remove_rows(rem)
-        return refit_id
-    """
+
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
