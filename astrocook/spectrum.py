@@ -250,7 +250,7 @@ class Spectrum(Frame):
         return lines
 
 
-    def _rebin(self, dx, xunit):
+    def _rebin(self, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -270,25 +270,31 @@ class Spectrum(Frame):
         iM = 1
         xmin_in = self.xmin[iM].value
         xmax_in = self.xmax[im].value
-        y = np.array([])
-        dy = np.array([])
+        y_out = np.array([])
+        dy_out = np.array([])
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
             while xmin_in < M:
                 iM += 1
-                xmin_in = self.xmin[iM].value
+                try:
+                    xmin_in = self.xmin[iM].value
+                except:
+                    break
             while xmax_in < m:
                 im += 1
-                xmax_in = self.xmax[im].value
-            ysel = self.y[im:iM+1]
-            dysel = self.dy[im:iM+1]
-            y = np.append(y, np.average(ysel, weights=1/dysel**2))
-            dy = np.append(dy, np.sqrt(np.sum(dysel**2/dysel**4))\
-                                       /np.sum(1/dysel**2))
+                try:
+                    xmax_in = self.xmax[im].value
+                except:
+                    break
+            ysel = y[im:iM+1]
+            dysel = dy[im:iM+1]
+            y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
+            dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
+                                               /np.sum(1/dysel**2))
 
         # Create a new spectrum and convert it to the units of the original one
-        out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=self.y.unit,
+        out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
         out._x_convert(xunit=self._xunit_old)
         return out

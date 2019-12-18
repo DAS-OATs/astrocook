@@ -351,10 +351,12 @@ class GUIPanelSession(wx.Frame):
             spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
             if name_in[0] == '*':
                 name += '_' + self._gui._sess_list[s].name
+        spec._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
         sess = Session(name=name, spec=spec)
         return sess
+
 
     def load_json(self, path='.'):
         """@brief Load from JSON
