@@ -18,8 +18,8 @@ class CookbookAbsorbers(object):
 
     def __init__(self):
         super(CookbookAbsorbers, self).__init__()
-        self._refit_n = 20
-        self._chi2rav_thres = np.inf
+        self._refit_n = 3
+        self._chi2rav_thres = 1e-2
         self._chi2r_thres = np.inf
         self._dlogN_thres = np.inf
         self._max_nfev = max_nfev_def
@@ -461,7 +461,7 @@ class CookbookAbsorbers(object):
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 refit_n=20, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+                 refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
         @param series Series of transitions
@@ -512,7 +512,7 @@ class CookbookAbsorbers(object):
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=np.inf,
-                             refit_n=20, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                             refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
                              append=True):
         """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
