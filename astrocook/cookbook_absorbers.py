@@ -194,7 +194,7 @@ class CookbookAbsorbers(object):
 
     def _systs_cycle(self, verbose=True):
         chi2rav = np.inf
-        print(self._refit_n)
+        chi2r_list, z_list = [], []
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres:
@@ -205,7 +205,7 @@ class CookbookAbsorbers(object):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                            -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
-        if verbose:
+        if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
             if chi2rav < np.inf:

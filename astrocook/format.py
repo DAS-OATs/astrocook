@@ -126,7 +126,10 @@ class Format(object):
             try:
                 cont = data['CONT']
             except:
-                cont = []
+                if np.all(data['normflux']==y):
+                    cont = np.ones(len(x))
+                else:
+                    cont = []
         #"""
         #cont = []
 
