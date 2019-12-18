@@ -344,6 +344,8 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        if sel == []:
+            sel = range(len(self._gui._sess_list))
         spec = dc(self._gui._sess_list[sel[0]].spec)
         if name_in[0] == '*':
             name = self._gui._sess_list[sel[0]].name
@@ -377,7 +379,9 @@ class GUIPanelSession(wx.Frame):
                     cb = getattr(self._gui, rs[0])
                     for s in rs[1:]:
                         cb = getattr(cb, s)
-                getattr(cb, r['recipe'])(**r['params'])
+                out = getattr(cb, r['recipe'])(**r['params'])
+                if out is not None and out != 0:
+                    self._on_add(out, open=False)
 
 
     def struct_compare(self, struct_A='0,spec,x', struct_B='0,spec,y',

@@ -43,7 +43,7 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    self._tab.SetCellValue(j, i, "%3.5f" % r[n])
+                    self._tab.SetCellValue(j, i, "%3.7f" % r[n])
         self._tab.AutoSizeColumns(True)
 
 
@@ -119,7 +119,8 @@ class GUITable(wx.Frame):
         if row == -1:
             self._gui._col_sel = col
             self._gui._col_tab = self._tab
-            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+            self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
+                                     self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
             self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
                                          'histogram'), event.GetPosition())
@@ -176,8 +177,9 @@ class GUITable(wx.Frame):
         if self._attr == 'systs':
             #self._gui._sess_sel.cb._mods_update_old()
             #self._gui._sess_sel.cb._mods_recreate()
-            refit_id = self._gui._sess_sel.cb._systs_remove([row], [])
-            self._gui._sess_sel.cb._systs_refit(refit_id, max_nfev_def)
+            self._gui._sess_sel.cb._systs_remove([row])
+            #self._gui._sess_sel.cb._systs_refit(refit_id, max_nfev_def)
+            self._gui._sess_sel.cb._systs_cycle()
         else:
             self._data.t.remove_row(row)
 
@@ -534,7 +536,8 @@ class GUITableSystList(GUITable):
         if row == -1 and col>1:
             self._gui._col_sel = col
             self._gui._col_tab = self._tab
-            self._gui._col_values = [float(self._tab.GetCellValue(i, col)) \
+            self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
+                                     self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
             title = ['Histogram']
             attr = ['histogram']

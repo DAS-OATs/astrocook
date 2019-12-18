@@ -17,7 +17,13 @@ class CookbookAbsorbers(object):
     """
 
     def __init__(self):
-        pass
+        super(CookbookAbsorbers, self).__init__()
+        self._refit_n = 3
+        self._chi2rav_thres = 1e-2
+        self._chi2r_thres = np.inf
+        self._dlogN_thres = np.inf
+        self._max_nfev = max_nfev_def
+
 
     def _lines_cand_find(self, series, z_start, z_end, dz):
         return self.sess.lines._cand_find(series, z_start, z_end, dz)
@@ -35,7 +41,7 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _mods_recreate(self, max_nfev=0, verbose=True):
+    def _mods_recreate(self, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         systs = self.sess.systs
@@ -54,6 +60,10 @@ class CookbookAbsorbers(object):
             #mod._pars['psf_gauss_0_resol'].stderr=0
 
             self._mods_update(mod)
+        mods_n = len(self.sess.systs._mods_t)
+        if verbose:
+            logging.info("I've recreated %i model%s." \
+                         % (mods_n, '' if mods_n==1 else 's'))
         mod = self.sess.systs._mods_t['mod'][0]
         return 0
 
@@ -122,9 +132,9 @@ class CookbookAbsorbers(object):
         return mod
 
 
-    def _syst_fit(self, mod, max_nfev, verbose=True):
-        if max_nfev > 0:
-            mod._fit(fit_kws={'max_nfev': max_nfev})
+    def _syst_fit(self, mod, verbose=True):
+        if self._max_nfev > 0:
+            mod._fit(fit_kws={'max_nfev': self._max_nfev})
             if verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
@@ -182,24 +192,48 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_fit(self, max_nfev, recreate=True):
+    def _systs_cycle(self, verbose=True):
+        chi2rav = np.inf
+        chi2r_list, z_list = [], []
+        for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
+                              'cookbook_absorbers: Cycling'):
+            if chi2rav > self._chi2rav_thres:
+                self._systs_reject(verbose=False)
+                self._mods_recreate(verbose=False)
+                chi2r_list, z_list = self._systs_fit(verbose=False)
+                if i > 1 and len(chi2r_list)==len(chi2r_list_old):
+                    chi2rav = np.mean(np.abs(np.array(chi2r_list)\
+                                           -np.array(chi2r_list_old)))
+                chi2r_list_old = chi2r_list
+        if verbose and z_list != []:
+            logging.info("I've fitted %i model%s." \
+                         % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
+            if chi2rav < np.inf:
+                logging.info("Average chi2r variation after last cycle: %2.4e."\
+                             % chi2rav)
+
+
+    def _systs_fit(self, verbose=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
-        if max_nfev > 0:
+        if self._max_nfev > 0:
             z_list = []
+            chi2r_list = []
             for i,m in enum_tqdm(mods_t, len(mods_t),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
                 z_list.append(m['z0'])
-                self._syst_fit(m['mod'], max_nfev, verbose=False)
+                self._syst_fit(m['mod'], verbose=False)
+                chi2r_list.append(m['mod']._chi2r)
 
-            logging.info("I've fitted %i model%s." \
-                         % (len(mods_t), msg_z_range(z_list)))
-            if recreate: self._mods_recreate()#resol)
+            if verbose:
+                logging.info("I've fitted %i model%s." \
+                             % (len(mods_t), msg_z_range(z_list)))
         else:
-            logging.info("I've not fitted any model because you choose "
-                         "max_nfev=0.")
-        return 0
+            if verbose:
+                logging.info("I've not fitted any model because you choose "
+                             "max_nfev=0.")
+        return chi2r_list, z_list
 
 
     def _systs_guess(self, series_list, z_list):
@@ -216,13 +250,14 @@ class CookbookAbsorbers(object):
         else:
             setattr(self.sess, 'systs', SystList())
 
-
+    """
     def _systs_refit(self, refit_id=[], max_nfev=0):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if max_nfev > 0:
             z_list = []
             mod_list = []
+            #chi2r_list = []
             #for i,m in enum_tqdm(mods_t, len(mods_t),
             #                     "cookbook_absorbers: Refitting"):
             for i,m in enumerate(mods_t):
@@ -245,6 +280,8 @@ class CookbookAbsorbers(object):
             for i,m in enum_tqdm(mod_list, len(mod_list),
                                  "cookbook_absorbers: Refitting"):
                 self._syst_fit(m, max_nfev, verbose=False)
+                #chi2r_list.append(m._chi2r)
+            #print(chi2r_list)
             logging.info("I've refitted %i model%s." \
                          % (len(z_list), msg_z_range(z_list)))
             logging.info("I've updated %i system%s in %i model%s." \
@@ -254,23 +291,22 @@ class CookbookAbsorbers(object):
             logging.info("I'm not refitting any system because you choose "
                          "max_nfev=0.")
         return 0
+    """
 
-
-    def _systs_reject(self, chi2r_thres, dlogN_thres, max_nfev=0,
-                      recreate=True):
+    def _systs_reject(self, verbose=True):
         systs = self.sess.systs
-        chi2r_cond = systs._t['chi2r'] > chi2r_thres
+        chi2r_cond = systs._t['chi2r'] > self._chi2r_thres
         """
         relerr_cond = np.logical_or(np.logical_or(
             systs._t['dz'] > dlogN_thres*systs._t['z'],
             systs._t['dlogN'] > dlogN_thres*systs._t['logN']),
             systs._t['db'] > dlogN_thres*systs._t['b'])
         """
-        relerr_cond = systs._t['dlogN'] > dlogN_thres
+        relerr_cond = systs._t['dlogN'] > self._dlogN_thres
 
         rem = np.where(np.logical_or(chi2r_cond, relerr_cond))[0]
         z_rem = systs._t['z'][rem]
-        refit_id = []
+        #refit_id = []
         if len(rem) > 0:
             # Check if systems to be rejected are in groups with systems to be
             # preserved, and in case flag the latter for refitting
@@ -283,29 +319,35 @@ class CookbookAbsorbers(object):
                     refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
             systs._t.remove_rows(rem)
             """
-            refit_id = self._systs_remove(rem, refit_id, recreate)
-            logging.info("I've rejected %i mis-identified system%s (%i with a "\
-                         "reduced chi2 above %2.2f, %i with relative errors "\
-                         "above %2.2f)."
-                         % (len(rem), '' if len(rem)==1 else 's',
-                            np.sum(chi2r_cond), chi2r_thres,
-                            np.sum(relerr_cond), dlogN_thres))
-        elif recreate:
-            self._mods_recreate()
-        return refit_id
+            self._systs_remove(rem)#, refit_id)
+            """
+            for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
+                t_id = systs._t['id']
+                mods_t_id = systs._mods_t['id']
+                sel = [t_id[r] in m for m in mods_t_id]
+                #if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
+                #    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
+            systs._t.remove_rows(rem)
+            """
+            if verbose:
+                logging.info("I've rejected %i mis-identified system%s (%i with a "\
+                             "reduced chi2 above %2.2f, %i with relative errors "\
+                             "above %2.2f)."
+                             % (len(rem), '' if len(rem)==1 else 's',
+                                np.sum(chi2r_cond), self._chi2r_thres,
+                                np.sum(relerr_cond), self._dlogN_thres))
+        return 0 #refit_id
 
 
-    def _systs_remove(self, rem, refit_id, recreate=True):
+    def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
             sel = [t_id[r] in m for m in mods_t_id]
-            if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
-                refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
+            #if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
+            #    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
         systs._t.remove_rows(rem)
-        if recreate: self._mods_recreate()
-        return refit_id
 
 
     def _systs_update(self, mod, incr=True):
@@ -349,7 +391,7 @@ class CookbookAbsorbers(object):
 
 ### Basic
 
-    def syst_fit(self, num=0, max_nfev=100):
+    def syst_fit(self, num=0, max_nfev=max_nfev_def):
         """ @brief Fit a systems
         @details Fit all Voigt model from a list of systems.
         @param num Number of the system in the list
@@ -359,45 +401,43 @@ class CookbookAbsorbers(object):
 
         try:
             num = int(num)
-            max_nfev = int(max_nfev)
+            self._max_nfev = int(max_nfev)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        self._syst_fit(max_nfev)
+        self._syst_fit()
 
         return 0
 
 
-    def systs_clean(self, chi2r_thres=2.0, dlogN_thres=1.0, max_nfev=100,
-                    refit=False):
+    def systs_clean(self, chi2r_thres=2.0, dlogN_thres=1.0,
+                    max_nfev=max_nfev_def):
         """ @brief Clean system list
         @details Clean systems from a list by rejecting systems with reduced
         chi2 and/or error on column density above a given threshold
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
         @param max_nfev Maximum number of function evaluation
-        @param refit Refit systems after recreation
         @return 0
         """
 
         try:
-            chi2r_thres = float(chi2r_thres)
-            dlogN_thres = float(dlogN_thres)
-            max_nfev = int(max_nfev)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._max_nfev = int(max_nfev)
             refit = str(refit) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
 
-        refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
-        if refit: self._systs_refit(refit_id, max_nfev)
+        self._systs_reject()
         self._spec_update()
 
         return 0
 
 
-    def systs_fit(self, max_nfev=100, recreate=False):
+    def systs_fit(self, max_nfev=max_nfev_def):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param max_nfev Maximum number of function evaluation
@@ -406,14 +446,12 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            max_nfev = int(max_nfev)
-            recreate = str(recreate) == 'True'
+            self._max_nfev = int(max_nfev)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        self._systs_fit(max_nfev, recreate)
-        if recreate: self._systs_refit(refit_id, max_nfev)
+        self._systs_fit()
         self._spec_update()
 
         return 0
@@ -423,7 +461,7 @@ class CookbookAbsorbers(object):
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 max_nfev=100):
+                 refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
         @param series Series of transitions
@@ -433,6 +471,8 @@ class CookbookAbsorbers(object):
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @return 0
         """
@@ -442,9 +482,11 @@ class CookbookAbsorbers(object):
             logN = float(logN)
             b = float(b)
             resol = None if resol in [None, 'None'] else float(resol)
-            chi2r_thres = float(chi2r_thres)
-            dlogN_thres = float(dlogN_thres)
-            max_nfev = int(max_nfev)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = int(max_nfev)
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -458,9 +500,10 @@ class CookbookAbsorbers(object):
         #logN = self._syst_guess(series, z)
         mod = self._syst_add(series, z, logN, b, resol)
         if mod is None: return 0
-        self._syst_fit(mod, max_nfev)
-        refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
-        self._systs_refit(refit_id, max_nfev)
+        self._syst_fit(mod)
+        self._systs_cycle()
+        #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
+        #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         return 0
@@ -469,7 +512,8 @@ class CookbookAbsorbers(object):
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=np.inf,
-                             max_nfev=100, append=True):
+                             refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                             append=True):
         """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
         range.
@@ -482,6 +526,8 @@ class CookbookAbsorbers(object):
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @param append Append systems to existing system list
         @return 0
@@ -497,10 +543,12 @@ class CookbookAbsorbers(object):
             if logN is not None:
                 logN = float(logN)
             b = float(b)
-            chi2r_thres = float(chi2r_thres)
-            dlogN_thres = float(dlogN_thres)
             resol = None if resol in [None, 'None'] else float(resol)
-            max_nfev = int(max_nfev)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -510,8 +558,8 @@ class CookbookAbsorbers(object):
         if not check: return 0
 
         z_list, y_list = self._lines_cand_find(series, z_start, z_end, dz)
-        z_list, logN_list = self.sess.lines._cand_find2(series, z_start, z_end, dz,
-                                                        logN=logN is None)
+        z_list, logN_list = self.sess.lines._cand_find2(series, z_start, z_end,
+                                                        dz, logN=logN is None)
 
         if len(z_list) == 0:
             logging.warning("I've found no candidates!")
@@ -520,23 +568,21 @@ class CookbookAbsorbers(object):
         series_list = [series]*len(z_list)
         resol_list = [resol]*len(z_list)
 
+
         self._systs_prepare(append)
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
-        mod = self.sess.systs._mods_t['mod'][0]
-        self._systs_fit(max_nfev)
-        refit_id = self._systs_reject(chi2r_thres, dlogN_thres, max_nfev)
-        self._systs_refit(refit_id, max_nfev)
+        self._systs_fit()
+        self._systs_cycle()
         self._spec_update()
-        plt.show()
 
         return 0
 
     def syst_new_from_resids_new(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=0.5,
-                             max_nfev=100, append=True):
+                             max_nfev=max_nfev_def, append=True):
         """ @brief New system from residuals
         @details Add and fit a Voigt model from the strongest residual of
         previously fitted models in the neighborhood.
@@ -564,8 +610,8 @@ class CookbookAbsorbers(object):
             if logN is not None:
                 logN = float(logN)
             b = float(b)
-            chi2r_thres = float(chi2r_thres)
-            dlogN_thres = float(dlogN_thres)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
             append = str(append) == 'True'

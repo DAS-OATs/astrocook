@@ -38,13 +38,16 @@ class SystModel(LMComposite):
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
         #print(self._pars['lines_voigt_196_z'])
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, fit_kws=fit_kws,
+                                         weights=self._wf,
+                                         #fit_kws=fit_kws,
+                                         #fit_kws={'method':'lm'},
                                          method='least_squares')
                                          #method='emcee')
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
         #self._pars.pretty_print()
+        #print(fit.fit_report())
         #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
         #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
         #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')
@@ -138,7 +141,7 @@ class SystModel(LMComposite):
         self._pars.add_many(
             #(self._lines_pref+'z', d['z'], d['z_vary'], d['z_min'], d['z_max'],
             # d['z_expr']),
-            (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-1e-4, d['z']+1e-4,
+            (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-d['z_min'], d['z']+d['z_max'],
              d['z_expr']),
             (self._lines_pref+'logN', d['logN'], d['logN_vary'], d['logN_min'],
              d['logN_max'], d['logN_expr']),

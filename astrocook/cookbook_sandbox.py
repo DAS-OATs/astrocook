@@ -14,7 +14,7 @@ class CookbookSandbox(object):
     """
 
     def __init__(self):
-        pass
+        super(CookbookSandbox, self).__init__()
 
     def _systs_append(self):
         systs = self.sess.systs

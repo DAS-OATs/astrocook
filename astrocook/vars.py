@@ -11,7 +11,7 @@ logN_def = 14
 b_def = 10
 
 resol_def = None
-max_nfev_def = 100
+max_nfev_def = 1000
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont']
@@ -23,8 +23,8 @@ graph_sel = ['spec_x_y',
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 0.0, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
-    'z_max': 10.0, 'logN_max': 17, 'b_max': 50.0, 'btur_max': 50.0, 'resol_max': 1e6,
+    'z_min': 1e-4, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
+    'z_max': 1e-4, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 

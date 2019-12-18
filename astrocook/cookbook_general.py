@@ -10,7 +10,8 @@ class CookbookGeneral(object):
     """
 
     def __init__(self):
-        pass
+        super(CookbookGeneral, self).__init__()
+
 
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
