@@ -32,7 +32,7 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rebin(self, dx=10.0, xunit=au.km/au.s):
+    def rebin(self, dx=10.0, xunit=au.km/au.s, norm=True):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given velocity step. A new session is
         created with the rebinned spectrum. Other objects from the old session
@@ -49,9 +49,25 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return None
 
+
         # A deep copy is created, so the original spectrum is preserved
         spec_in = dc(self.sess.spec)
-        spec_out = spec_in._rebin(dx, xunit)
+
+        cont = 'cont' in spec_in.t.colnames
+        if not norm or (norm and not cont):
+            if not cont:
+                logging.warning("I can't find continuum to normalize the "
+                                "spectrum. Using non-normalized y column "
+                                "instead.")
+            y = spec_in.y
+            dy = spec_in.dy
+        else:
+            y = spec_in.y/spec_in.t['cont']
+            dy = spec_in.dy/spec_in.t['cont']
+
+        spec_out = spec_in._rebin(dx, xunit, y, dy)
+        if cont:
+            spec_out.t['cont'] = 1
 
         # Create a new session
         from .session import Session
