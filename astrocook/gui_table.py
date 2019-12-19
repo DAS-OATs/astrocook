@@ -298,12 +298,15 @@ class GUITableSystList(GUITable):
             for m in self._gui._sess_sel.systs._mods_t:
                 if id in m['id']:
                     for p,v in m['mod']._pars.items():
+                        #"""
                         if v.vary == False:
                             try:
                                 col = np.where(labels==p.split('_')[-1])[0][0]
+                                id_i = i if col==9 else np.where(id==int(p.split('_')[-2]))[0][0]
                                 self._tab.SetCellTextColour(i, col, 'grey')
                             except:
                                 pass
+                        #"""
                         if v.expr is not None:
                             try:
                                 col = np.where(np.logical_or(
