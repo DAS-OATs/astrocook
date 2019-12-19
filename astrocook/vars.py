@@ -11,7 +11,7 @@ logN_def = 14
 b_def = 10
 
 resol_def = None
-max_nfev_def = 1000
+max_nfev_def = 100
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont']
