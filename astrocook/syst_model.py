@@ -39,7 +39,7 @@ class SystModel(LMComposite):
         #print(self._pars['lines_voigt_196_z'])
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf,
-                                         #fit_kws=fit_kws,
+                                         fit_kws=fit_kws,
                                          #fit_kws={'method':'lm'},
                                          method='least_squares')
                                          #method='emcee')
