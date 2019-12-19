@@ -1,4 +1,5 @@
 from astropy import units as au
+from astropy.io import ascii
  #c, e, m_e
 
 xunit_def = au.nm
@@ -53,6 +54,12 @@ psf_gauss_d = {
     'z_min': 0.0, 'resol_min': 0,
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
+
+
+atom_par = ascii.read('atom_par.dat')
+#xem_d = {k: v for (k, v) in atom_par['col1', 'col2']}
+
+print(xem_d)
 
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
