@@ -86,6 +86,11 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def _resol_update(self, resol):
+        mods_t = self.sess.systs._mods_t
+        for m in mods_t:
+            m['mod']._pars['psf_gauss_0_resol'].value = resol
+
     def _spec_update(self):
         spec = self.sess.spec
         systs = self.sess.systs

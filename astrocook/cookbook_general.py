@@ -102,7 +102,7 @@ class CookbookGeneral(object):
             try:
                 kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
             except:
-                logging.debug("Attribute %s does not support region"
+                logging.debug("Attribute %s does not support region "
                               "extraction." % s)
                 try:
                     kwargs[s] = getattr(self.sess, s)

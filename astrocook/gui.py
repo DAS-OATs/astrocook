@@ -454,12 +454,16 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         if mode=='replace':
+            if attrn == 'systs':
+                x = self._gui._sess_sel.spec.x.to(au.nm)
+                attr = attr._region_extract(np.min(x), np.max(x))
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
             getattr(self._gui._sess_sel, attrn)._append(dc(attr))
 
         if attrn=='systs':
+
             self._gui._sess_sel.cb._spec_update()
 
         return 0
