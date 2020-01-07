@@ -489,6 +489,7 @@ class GraphCursorZSeries(object):
             self._series = 'CIV'
         #self._xem = np.array([xem_d[s].to(au.nm).value \
         #                      for s in series_d[self._series]])
+        #print(parse(self._series))
         self._xem = np.array([xem_d[t].value for t in parse(self._series)])
         self._xmean = np.mean(self._xem)*au.nm
         try:
