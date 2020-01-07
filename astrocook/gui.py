@@ -463,7 +463,6 @@ class GUIPanelSession(wx.Frame):
             getattr(self._gui._sess_sel, attrn)._append(dc(attr))
 
         if attrn=='systs':
-
             self._gui._sess_sel.cb._spec_update()
 
         return 0
