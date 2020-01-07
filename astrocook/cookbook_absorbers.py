@@ -200,17 +200,21 @@ class CookbookAbsorbers(object):
 
     def _systs_cycle(self, verbose=True):
         chi2rav = np.inf
+        chi2rav_old = 0
         chi2r_list, z_list = [], []
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
-            if chi2rav > self._chi2rav_thres:
-                self._systs_reject(verbose=False)
-                self._mods_recreate(verbose=False)
+            if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
+                if chi2rav < np.inf: chi2rav_old = chi2rav
                 chi2r_list, z_list = self._systs_fit(verbose=False)
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
-                                           -np.array(chi2r_list_old)))
+                                             -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
+                self._systs_reject(verbose=False)
+                self._mods_recreate(verbose=False)
+            print(chi2rav, chi2rav_old)
+        chi2r_list, z_list = self._systs_fit(verbose=False)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
@@ -397,6 +401,36 @@ class CookbookAbsorbers(object):
 
 ### Basic
 
+
+    def comp_extract(self, num=1):
+        """ @brief Extract systems
+        @details Extract systems with less than a given number of components
+        @param num Number of components
+        @return 0
+        """
+
+        try:
+            num = int(num)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        out = self.sess.systs
+        t_sel = []
+        mods_t_sel = []
+        for i, m in enumerate(out._mods_t):
+            #print(len(m['id']))
+            if len(m['id']) > num:
+                for id in m['id']:
+                    t_sel.append(np.where(out._t['id'] == id)[0])
+                mods_t_sel.append(i)
+        #print(t_sel)
+        out._t.remove_rows(t_sel)
+        out._mods_t.remove_rows(mods_t_sel)
+        #print(out._t)
+        return 0
+
+
     def syst_fit(self, num=0, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit a systems
@@ -470,7 +504,7 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        self._systs_fit()
+        #self._systs_fit()
         self._systs_cycle()
         self._spec_update()
 
@@ -593,7 +627,7 @@ class CookbookAbsorbers(object):
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
-        self._systs_fit()
+        #self._systs_fit()
         self._systs_cycle()
         self._spec_update()
 
