@@ -359,7 +359,6 @@ class GUITableSystList(GUITable):
                     if v[1]=='expr': m['mod']._pars[k].set(expr=v[2])
                     if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
 
-
     def _on_cell_right_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -488,7 +487,7 @@ class GUITableSystList(GUITable):
         cb._syst_fit(mod, max_nfev_def)
         #self._gui._sess_sel.systs._update(mod, mod_t=False)
         #cb._systs_refit(max_nfev=max_nfev_def)
-        cb._systs_cycle()
+        #cb._systs_cycle()
         cb._spec_update()
         self._gui._refresh(init_cursor=True)
 

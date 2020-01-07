@@ -45,6 +45,7 @@ class CookbookAbsorbers(object):
         """ Create new system models from a system list """
         spec = self.sess.spec
         systs = self.sess.systs
+        #if len(systs._t)==0: return 0
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
         #for i,s in enumerate(systs._t):
         for i,s in enum_tqdm(systs._t, len(systs._t),
@@ -64,7 +65,7 @@ class CookbookAbsorbers(object):
         if verbose:
             logging.info("I've recreated %i model%s." \
                          % (mods_n, '' if mods_n==1 else 's'))
-        mod = self.sess.systs._mods_t['mod'][0]
+        #mod = self.sess.systs._mods_t['mod'][0]
         return 0
 
 
@@ -84,6 +85,11 @@ class CookbookAbsorbers(object):
         systs._id = np.max(systs._t['id'])+1
         return 0
 
+
+    def _resol_update(self, resol):
+        mods_t = self.sess.systs._mods_t
+        for m in mods_t:
+            m['mod']._pars['psf_gauss_0_resol'].value = resol
 
     def _spec_update(self):
         spec = self.sess.spec
@@ -194,17 +200,21 @@ class CookbookAbsorbers(object):
 
     def _systs_cycle(self, verbose=True):
         chi2rav = np.inf
+        chi2rav_old = 0
         chi2r_list, z_list = [], []
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
-            if chi2rav > self._chi2rav_thres:
-                self._systs_reject(verbose=False)
-                self._mods_recreate(verbose=False)
+            if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
+                if chi2rav < np.inf: chi2rav_old = chi2rav
                 chi2r_list, z_list = self._systs_fit(verbose=False)
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
-                                           -np.array(chi2r_list_old)))
+                                             -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
+                self._systs_reject(verbose=False)
+                self._mods_recreate(verbose=False)
+            print(chi2rav, chi2rav_old)
+        chi2r_list, z_list = self._systs_fit(verbose=False)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
@@ -391,22 +401,61 @@ class CookbookAbsorbers(object):
 
 ### Basic
 
-    def syst_fit(self, num=0, max_nfev=max_nfev_def):
+
+    def comp_extract(self, num=1):
+        """ @brief Extract systems
+        @details Extract systems with less than a given number of components
+        @param num Number of components
+        @return 0
+        """
+
+        try:
+            num = int(num)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        out = self.sess.systs
+        t_sel = []
+        mods_t_sel = []
+        for i, m in enumerate(out._mods_t):
+            #print(len(m['id']))
+            if len(m['id']) > num:
+                for id in m['id']:
+                    t_sel.append(np.where(out._t['id'] == id)[0])
+                mods_t_sel.append(i)
+        #print(t_sel)
+        out._t.remove_rows(t_sel)
+        out._mods_t.remove_rows(mods_t_sel)
+        #print(out._t)
+        return 0
+
+
+    def syst_fit(self, num=0, refit_n=0, chi2rav_thres=1e-2,
+                 max_nfev=max_nfev_def):
         """ @brief Fit a systems
         @details Fit all Voigt model from a list of systems.
         @param num Number of the system in the list
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @return 0
         """
 
         try:
             num = int(num)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        self._syst_fit()
+        mods_t = self.sess.systs._mods_t
+        mod = mods_t['mod'][num in mods_t['id']]
+        self._syst_fit(mod)
+        self._systs_cycle()
+        self._spec_update()
 
         return 0
 
@@ -426,32 +475,37 @@ class CookbookAbsorbers(object):
             self._chi2r_thres = float(chi2r_thres)
             self._dlogN_thres = float(dlogN_thres)
             self._max_nfev = int(max_nfev)
-            refit = str(refit) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
 
         self._systs_reject()
+        self._mods_recreate()
+        self._systs_fit()
         self._spec_update()
 
         return 0
 
 
-    def systs_fit(self, max_nfev=max_nfev_def):
+    def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
-        @param recreate Recreate and refit systems after fitting
         @return 0
         """
 
         try:
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        self._systs_fit()
+        #self._systs_fit()
+        self._systs_cycle()
         self._spec_update()
 
         return 0
@@ -461,7 +515,7 @@ class CookbookAbsorbers(object):
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
         @param series Series of transitions
@@ -573,7 +627,7 @@ class CookbookAbsorbers(object):
         #self._logN_guess(series, z_list[0], b, resol)
         #logN_list = self._systs_guess(series_list, z_list)
         self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
-        self._systs_fit()
+        #self._systs_fit()
         self._systs_cycle()
         self._spec_update()
 

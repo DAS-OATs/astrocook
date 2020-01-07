@@ -75,7 +75,7 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         for s in sess._series_sel.split(','):
-            sess.cb.syst_new(series=s, z=self._graph._cursor._z)
+            sess.cb.syst_new(series=s, z=self._graph._cursor._z, refit_n=0)
         self._gui._refresh(init_cursor=True)
 
     def _on_close(self, event):
@@ -170,6 +170,9 @@ class GUIGraphHistogram(GUIGraphMain):
         label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel)
         self._ax.set_xlabel(label.replace('\n',' '))
         self._ax.set_ylabel('Frequency')
-        self._ax.hist(self._gui._col_values, bins=300, align='mid')
+        values = self._gui._col_values
+        bins = np.arange(np.floor(np.min(values))-0.5, np.ceil(np.max(values))+0.5)
+        #print(values, bins)
+        self._ax.hist(values, bins=bins, align='mid')
         self._canvas.draw()
         self.Show()
