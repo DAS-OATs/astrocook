@@ -74,7 +74,7 @@ class LineList(Frame):
     """
 
     def _cand_find(self, series, z_start, z_end, dz):
-        trans = parse(series)
+        trans = trans_parse(series)
 
         z_all = np.ravel([[to_z(x,t) for x in self.x] for t in trans])
         y_all = np.ravel([[self.y] for t in trans])
@@ -100,7 +100,8 @@ class LineList(Frame):
     def _cand_find2(self, series, z_start, z_end, dz, single=False, logN=False):
 
         # Compute all possible redshifts
-        trans = series_d[series]
+        #trans = series_d[series]
+        trans = trans_parse(series)
         if series == 'unknown':
             z_all = np.ravel([[self.x.to(au.nm)] for t in trans])
         else:
@@ -187,7 +188,8 @@ class LineList(Frame):
     def _syst_cand(self, series, z_start, z_end, dz, single=False, logN=False):
 
         # Compute all possible redshifts
-        trans = series_d[series]
+        #trans = series_d[series]
+        trans = trans_parse(series)
         if series == 'unknown':
             z_all = np.ravel([[self.x.to(au.nm)] for t in trans])
         else:

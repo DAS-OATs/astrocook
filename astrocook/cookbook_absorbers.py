@@ -155,7 +155,7 @@ class CookbookAbsorbers(object):
 
     def _syst_guess(self, series, z):
         spec = dc(self.sess.spec)
-        trans = parse(series)
+        trans = trans_parse(series)
         x = to_x(z, trans[0]).to(xunit_def).value
         ynorm = np.interp(x, spec.x.to(xunit_def).value,
                           (spec.y/spec._t['cont']).value)
@@ -213,7 +213,7 @@ class CookbookAbsorbers(object):
                 chi2r_list_old = chi2r_list
                 self._systs_reject(verbose=False)
                 self._mods_recreate(verbose=False)
-            print(chi2rav, chi2rav_old)
+            #print(chi2rav, chi2rav_old)
         chi2r_list, z_list = self._systs_fit(verbose=False)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
@@ -547,7 +547,7 @@ class CookbookAbsorbers(object):
 
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
-        if self._z_off(parse(series), z): return 0
+        if self._z_off(trans_parse(series), z): return 0
 
         self._systs_prepare()
         #self._logN_guess(series, z, b, resol)
@@ -556,6 +556,8 @@ class CookbookAbsorbers(object):
         if mod is None: return 0
         self._syst_fit(mod)
         self._systs_cycle()
+        if self._refit_n == 0:
+            self._mods_recreate()
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()

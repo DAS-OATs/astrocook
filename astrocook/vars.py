@@ -1,4 +1,5 @@
 from astropy import units as au
+from astropy.io import ascii
  #c, e, m_e
 
 xunit_def = au.nm
@@ -55,6 +56,13 @@ psf_gauss_d = {
     'z_expr': None, 'resol_expr': None}
 
 
+atom_par = ascii.read('atom_par.dat')
+xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
+fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
+gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+
+
+
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
@@ -78,7 +86,7 @@ series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                'CaII': ['CaII_3934', 'CaII_3969'],
                'unknown': ['unknown']}
 
-xem_d = {'Ly_a': 121.567 * au.nm,
+xem_d_old = {'Ly_a': 121.567 * au.nm,
           'Ly_b': 102.5722200 * au.nm,
           'Ly_g': 97.2536700 * au.nm,
              'Ly_d': 94.9743000 * au.nm,
@@ -118,7 +126,7 @@ xem_d = {'Ly_a': 121.567 * au.nm,
              'CaII_3969': 396.95901 * au.nm}
 
 # Ionic oscillator strengths
-fosc_d = {'Ly_a': 0.416,
+fosc_d_old = {'Ly_a': 0.416,
           'Ly_b': 0.0791000,
           'Ly_g': 0.0290100,
           'Ly_d': 0.0139000,
@@ -158,7 +166,7 @@ fosc_d = {'Ly_a': 0.416,
           'unknown': 0.416}
 
 # Ionic damping lengths
-gamma_d = {'Ly_a': 6.265e+08,
+gamma_d_old = {'Ly_a': 6.265e+08,
               'Ly_b': 1.8970e+08,
               'Ly_g': 8.1260e+07,
               'Ly_d': 4.2040e+07,

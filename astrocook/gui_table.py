@@ -399,6 +399,8 @@ class GUITableSystList(GUITable):
         # Color background of systems in the same group
         mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
                              for i in self._gui._sess_sel.systs._mods_t['id']])
+        #print(self._gui._sess_sel.systs._mods_t['id'])
+        #print(mods_sel)
         for j, r in enumerate(self._data.t):
             for i in range(len(self._data.t.colnames)):
                 if r['id'] in np.array(self._gui._sess_sel.systs._mods_t['id'][mods_sel][0]):
@@ -411,7 +413,10 @@ class GUITableSystList(GUITable):
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         graph = self._gui._graph_det._graph
-        series = series_d[row['series']]
+        try:
+            series = series_d[row['series']]
+        except:
+            series = [row['series']]
         rows = min(4, len(series))
         cols = len(series)//5+1
         size_x = wx.DisplaySize()[0]*0.4*cols
