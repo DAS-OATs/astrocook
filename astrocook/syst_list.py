@@ -170,7 +170,8 @@ class SystList(object):
         """
 
         reg = dc(self)
-        reg_x = np.array([to_x(z, series_d[s][0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
+        #reg_x = np.array([to_x(z, series_d[s][0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
+        reg_x = np.array([to_x(z, trans_parse(s)[0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
         where = np.full(len(reg_x), True)
         s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
         where[s] = False

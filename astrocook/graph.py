@@ -1,5 +1,5 @@
 from .message import *
-from .functions import parse
+from .functions import trans_parse
 from .vars import *
 from astropy import units as au
 from astropy import constants as aconst
@@ -438,10 +438,13 @@ class GraphSystListZSeries(object):
         z = sess.systs.z
         series = sess.systs.series
 
-        z_list = [[zf]*len(series_d[s]) for zf,s in zip(z,series)]
+        #z_list = [[zf]*len(series_d[s]) for zf,s in zip(z,series)]
+        z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
 
         #z_flat = np.ravel([[zf]*len(series_d[s]) for zf,s in zip(z,series)])
-        series_list = [series_d[s] for s in series]
+        #series_list = [series_d[s] for s in series]
+        series_list = [trans_parse(s) for s in series]
+
         #series_flat = np.ravel([series_d[s] for s in series])
 
         z_flat = np.array([z for zl in z_list for z in zl])
@@ -489,8 +492,7 @@ class GraphCursorZSeries(object):
             self._series = 'CIV'
         #self._xem = np.array([xem_d[s].to(au.nm).value \
         #                      for s in series_d[self._series]])
-        #print(parse(self._series))
-        self._xem = np.array([xem_d[t].value for t in parse(self._series)])
+        self._xem = np.array([xem_d[t].value for t in trans_parse(self._series)])
         self._xmean = np.mean(self._xem)*au.nm
         try:
             self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0

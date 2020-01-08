@@ -22,7 +22,8 @@ def _fadd(a, u):
 
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
-    for t in series_d[series]:
+    #for t in series_d[series]:
+    for t in trans_parse(series):
         c = (1+z)*xem_d[t].to(au.nm).value
         model += ampl*np.exp(-(0.5 * (x-c) / sigma)**2)
     return model
@@ -124,7 +125,8 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(len(x))
-    for t in series_d[series]:
+    #for t in series_d[series]:
+    for t in trans_parse(series):
         if series == 'unknown':
             xem = z*au.nm
             xobs = z*au.nm
@@ -144,15 +146,22 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
 
     return model
 
-def parse(series):
-    trans = []
-    for s in series.split(','):
-        if '_' in s:
-            trans.append(s)
-        else:
-            for t in series_d[s]:
-                trans.append(t)
-    return trans
+def log2_range(start, end, step):
+    start = np.log2(start)
+    end = np.log2(end)
+    start_r = np.floor if step < 0 else np.ceil
+    end_r = np.ceil if step < 0 else np.floor
+    if start % 1 > 0:
+        start = np.round(start)
+        logging.warning("I'm only using integer powers of 2. I changed 'start' "
+                        "to %1.0f." % 2**start)
+    if end % 1 > 0:
+        end = np.round(end)
+        logging.warning("I'm only using integer powers of 2. I changed 'end' "
+                        "to %1.0f." % 2**end)
+    log2 = np.arange(start, end+step, step)
+    return np.power(2, log2)
+
 
 def psf_gauss_wrong(x, #center, resol):
               resol, reg=None):
@@ -197,7 +206,6 @@ def psf_gauss(x, resol, spec=None):
     return ret
 
 
-
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
     resol = resol if check[0] else None
@@ -213,23 +221,6 @@ def running_mean(x, h=1):
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 
-def log2_range(start, end, step):
-    start = np.log2(start)
-    end = np.log2(end)
-    start_r = np.floor if step < 0 else np.ceil
-    end_r = np.ceil if step < 0 else np.floor
-    if start % 1 > 0:
-        start = np.round(start)
-        logging.warning("I'm only using integer powers of 2. I changed 'start' "
-                        "to %1.0f." % 2**start)
-    if end % 1 > 0:
-        end = np.round(end)
-        logging.warning("I'm only using integer powers of 2. I changed 'end' "
-                        "to %1.0f." % 2**end)
-    log2 = np.arange(start, end+step, step)
-    return np.power(2, log2)
-
-
 def to_x(z, trans):
     if trans == 'unknown':
         return z.to(au.nm)
@@ -241,6 +232,17 @@ def to_z(x, trans):
         return x.to(au.nm).value
     else:
         return (x.to(au.nm)/xem_d[trans].to(au.nm)).value-1
+
+
+def trans_parse(series):
+    trans = []
+    for s in series.split(','):
+        if '_' in s:
+            trans.append(s)
+        else:
+            for t in series_d[s]:
+                trans.append(t)
+    return trans
 
 # Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
 def corners_to_cells(top_lefts, bottom_rights):

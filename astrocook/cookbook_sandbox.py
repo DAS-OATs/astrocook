@@ -210,10 +210,12 @@ class CookbookSandbox(object):
     def _z_adapt(self, series, z_start, z_end):
         spec = self.sess.spec
         z_min = np.max([(np.min(spec.x.to(au.nm))/xem_d[t]).value-1.0 \
-                        for t in series_d[series]])
+                        #for t in series_d[series]])
+                        for t in trans_parse(series)])
         z_start = max(z_min, z_start)
         z_max = np.min([(np.max(spec.x.to(au.nm))/xem_d[t]).value-1.0 \
-                        for t in series_d[series]])
+                        #for t in series_d[series]])
+                        for t in trans_parse(series)])
         z_end = min(z_max, z_end)
         return z_start, z_end
 
