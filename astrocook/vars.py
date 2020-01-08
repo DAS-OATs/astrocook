@@ -1,5 +1,6 @@
 from astropy import units as au
 from astropy.io import ascii
+import numpy as np
  #c, e, m_e
 
 xunit_def = au.nm
@@ -66,7 +67,14 @@ gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
-series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
+series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
+for s in series_d:
+    series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
+
+series_d['Ly-ab'] = ['Ly_b', 'Ly_a']
+series_d['Ly-abg'] = ['Ly_g', 'Ly_b', 'Ly_a']
+
+series_d_old = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
                        'Ly_b', 'Ly_a'],
                'Ly-abg': ['Ly_g', 'Ly_b', 'Ly_a'],
