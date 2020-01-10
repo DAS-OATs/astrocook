@@ -1,4 +1,4 @@
-from .functions import get_selected_cells
+from .functions import get_selected_cells, trans_parse
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -416,7 +416,8 @@ class GUITableSystList(GUITable):
         try:
             series = series_d[row['series']]
         except:
-            series = [row['series']]
+            series = row['series'].split(',')
+        series = trans_parse(row['series'])
         rows = min(4, len(series))
         cols = len(series)//5+1
         size_x = wx.DisplaySize()[0]*0.4*cols
