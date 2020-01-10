@@ -532,6 +532,7 @@ class CookbookAbsorbers(object):
         """
 
         try:
+            #series = series.replace(';',',')
             z = float(z)
             logN = float(logN)
             b = float(b)
@@ -549,13 +550,14 @@ class CookbookAbsorbers(object):
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
 
-        self._systs_prepare()
+        for s in series.split(';'):
+            self._systs_prepare()
         #self._logN_guess(series, z, b, resol)
         #logN = self._syst_guess(series, z)
-        mod = self._syst_add(series, z, logN, b, resol)
-        if mod is None: return 0
-        self._syst_fit(mod)
-        self._systs_cycle()
+            mod = self._syst_add(s, z, logN, b, resol)
+            if mod is None: return 0
+            self._syst_fit(mod)
+            self._systs_cycle()
         if self._refit_n == 0:
             self._mods_recreate()
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
@@ -590,6 +592,7 @@ class CookbookAbsorbers(object):
         """
 
         try:
+            series = series.replace(';',',')
             z_start = float(z_start)
             z_end = float(z_end)
             if series == 'unknown':
@@ -657,6 +660,7 @@ class CookbookAbsorbers(object):
         """
 
         try:
+            series = series.replace(';',',')
             z_start = float(z_start)
             z_end = float(z_end)
             if series == 'unknown':
