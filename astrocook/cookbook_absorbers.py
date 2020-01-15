@@ -3,6 +3,7 @@ from .message import *
 from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
+from astropy import constants as aconst
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
@@ -39,6 +40,77 @@ class CookbookAbsorbers(object):
             mod._new_voigt(series, z, logN, b, resol)
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
+
+
+    def _mod_ccf(self, mod, eval=None, verbose=True):
+        if eval is None:
+            eval = mod.eval(x=mod._xf, params=mod._pars)
+
+        w = np.abs(np.gradient(eval))
+        w = w/np.sum(w)
+        #ccf = np.correlate(eval, mod._yf)[0]
+
+        ccf_same = np.correlate(eval, mod._yf, mode='same')
+        ccf_loc = np.argmax(ccf_same)
+        ccf = np.max(ccf_same)
+        ccf = np.sum(ccf_same)
+        #plt.plot(mod._xf, eval)
+        #plt.plot(mod._xf, ccf_same)
+        #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
+        if verbose:
+            logging.info("The data-model CCF is %2.3f." % ccf)
+        return ccf
+
+
+    def _mod_ccf_max(self, mod, vstart=-20, vend=20, dv=0.01, verbose=True):
+        sd = -1*int(np.floor(np.log10(dv)))-1
+
+        xmin = mod._xf[0]
+        xmax = mod._xf[-1]
+        xmean = 0.5*(xmin+xmax)
+        v_shift = np.arange(vstart, vend, dv)
+        x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
+        xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
+        xend = xmean * vend/aconst.c.to(au.km/au.s).value
+        dx = xmean * dv/aconst.c.to(au.km/au.s).value
+
+        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
+        eval_osampl = mod.eval(x=x_osampl, params=mod._pars)
+
+        #plt.plot(x_osampl,eval_osampl, linewidth=3)
+        #x_shift = np.arange(xstart, xend, dx)
+        #print(len(x_shift), len(v_shift))
+        ccf = []
+        #plt.plot(mod._xf, mod._yf)
+        for xs in x_shift:
+            x = x_osampl+xs
+            eval = np.interp(mod._xf, x, eval_osampl)
+            ccf1 = self._mod_ccf(mod, eval, verbose=False)
+            ccf.append(ccf1)
+        amax = np.argmin(ccf)
+        deltax = x_shift[amax]
+        deltav = v_shift[amax]
+        #plt.scatter(xmean+x_shift, ccf/ccf[amax])
+        #plt.scatter(xmean+x_shift[amax], 1)
+        #plt.show()
+        if verbose:
+            logging.info(("I maximized the data model CCF with a shift of "
+                          "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
+                          % (deltax, deltav))
+        return ccf[amax], deltax, deltav
+
+
+    def _mods_ccf_max(self, vstart, vend, dv):
+        systs = self.sess.systs
+        for i, m in enum_tqdm(systs._mods_t, len(systs._mods_t),
+                              "cookbook_absorbers: Computing CCF"):
+            ccf, deltax, deltav = self._mod_ccf_max(m['mod'], vstart, vend, dv,
+                                                    verbose=False)
+            for i in m['id']:
+                w = np.where(systs._t['id']==i)
+                systs._t['ccf_deltav'][w] = deltav
+
+        return 0
 
 
     def _mods_recreate(self, verbose=True):
@@ -428,6 +500,35 @@ class CookbookAbsorbers(object):
         out._t.remove_rows(t_sel)
         out._mods_t.remove_rows(mods_t_sel)
         #print(out._t)
+        return 0
+
+
+    def mods_ccf_max(self, vstart=-20, vend=20, dv=1e-2):
+        """ @brief Maximize data/model CCF
+        @details Slide the system models around their mean wavelength to
+        determine the best data/model CCF and the corresponding shift.
+        The wavelength range used for sliding is defined in velocity units.
+        @param vstart Range start (km/s with respect to mean wavelength)
+        @param vend Range end (km/s with respect to mean wavelength)
+        @param dv Range step (km/s)
+        @return 0
+        """
+
+        try:
+            vstart = float(vstart)
+            vend = float(vend)
+            dv = float(dv)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        systs = self.sess.systs
+        if 'ccf_deltav' not in systs._t.colnames:
+            logging.info("I'm adding column 'ccf_deltav'.")
+            systs._t['ccf_deltav'] = np.empty(len(systs._t), dtype=float)
+
+        self._mods_ccf_max(vstart, vend, dv)
+
         return 0
 
 

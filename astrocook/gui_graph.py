@@ -171,7 +171,18 @@ class GUIGraphHistogram(GUIGraphMain):
         self._ax.set_xlabel(label.replace('\n',' '))
         self._ax.set_ylabel('Frequency')
         values = self._gui._col_values
-        bins = np.arange(np.floor(np.min(values))-0.5, np.ceil(np.max(values))+0.5)
+
+        # Temporary: only for deltav
+        values = []
+        rej = 0
+        for v in self._gui._col_values:
+            if np.abs(v) < 39.98 and v != 0 and v not in values:
+                values.append(v)
+            else:
+                rej += 1
+        print(rej, len(self._gui._col_values))
+
+        bins = np.arange(np.floor(np.min(values))-0.5, np.ceil(np.max(values))+0.5, 0.5)
         #print(values, bins)
         self._ax.hist(values, bins=bins, align='mid')
         self._canvas.draw()

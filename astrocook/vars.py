@@ -71,6 +71,7 @@ series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1'
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
 
+series_d['Ly-a'] = ['Ly_a']
 series_d['Ly-ab'] = ['Ly_b', 'Ly_a']
 series_d['Ly-abg'] = ['Ly_g', 'Ly_b', 'Ly_a']
 

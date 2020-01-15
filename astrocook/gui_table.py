@@ -250,10 +250,13 @@ class GUITablePopup(wx.Menu):
         """
         self._items = []
         for t, a in zip(self._title, self._attr):
-            item = wx.MenuItem(self, wx.NewId(), t)
-            self.Bind(wx.EVT_MENU, getattr(self._parent, '_on_'+a), item)
-            self.Append(item)
-            self._items.append(item)
+            if t == 'sep':
+                self.AppendSeparator()
+            else:
+                item = wx.MenuItem(self, wx.NewId(), t)
+                self.Bind(wx.EVT_MENU, getattr(self._parent, '_on_'+a), item)
+                self.Append(item)
+                self._items.append(item)
 
 class GUITableSpectrum(GUITable):
     """ Class for the GUI spectrum table """
@@ -481,6 +484,21 @@ class GUITableSystList(GUITable):
         mod = self._mod_extract(row)
         mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(value=value)
 
+
+    def _on_ccf(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        cb = self._gui._sess_sel.cb
+        mod = self._mod_extract(row)
+        cb._mod_ccf(mod)
+
+
+    def _on_ccf_max(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        cb = self._gui._sess_sel.cb
+        mod = self._mod_extract(row)
+        cb._mod_ccf_max(mod)
+
+
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
         series = self._tab.GetCellValue(row, 1)
@@ -496,6 +514,7 @@ class GUITableSystList(GUITable):
         #cb._systs_cycle()
         cb._spec_update()
         self._gui._refresh(init_cursor=True)
+
 
 
     def _on_freeze_par(self, event):
@@ -556,10 +575,11 @@ class GUITableSystList(GUITable):
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
         if col == -1:
-            self.PopupMenu(GUITablePopup(self._gui, self, event,
-                                         ['Fit', 'Improve', 'Remove'],
-                                         ['fit', 'improve', 'remove']),
-                           event.GetPosition())
+            self.PopupMenu(GUITablePopup(
+                self._gui, self, event,
+                ['Fit', 'Improve', 'Remove', 'sep', 'CCF', 'Maximize CCF'],
+                ['fit', 'improve', 'remove', None, 'ccf', 'ccf_max']),
+                event.GetPosition())
 
 
     def _on_link_par(self, event):

@@ -469,6 +469,9 @@ class GUIMenuRecipes(GUIMenu):
                           "Clean systems", 'systs_clean')
         self._item_method(submenu, start_id+313, 'systs',
                           "Extract systems", 'comp_extract')
+        submenu.AppendSeparator()
+        self._item_method(submenu,start_id+321, 'systs', "Compute CCF",
+                          'mods_ccf_max')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",

@@ -1,5 +1,5 @@
 from .vars import *
-from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x
+from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
 from astropy import table as at
 from astropy import units as au
 #from matplotlib import pyplot as plt
