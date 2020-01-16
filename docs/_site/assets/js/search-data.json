@@ -1,0 +1,28 @@
+{
+  
+  "0": {
+    "title": "",
+    "content": "404 . Page not found :( . The requested page could not be found. .",
+    "url": "http://localhost:4000/astrocook/docs/404.html",
+    "relUrl": "/404.html"
+  }
+  ,"1": {
+    "title": "About",
+    "content": "About . Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by Guido Cupani, Giorgio Calderone, and Stefano Russo, with contributions from Stefano Cristiani and Giuliano Taffoni. .",
+    "url": "http://localhost:4000/astrocook/docs/about/",
+    "relUrl": "/about/"
+  }
+  ,"2": {
+    "title": "Home",
+    "content": "A thousand recipes to cook as spectrum . About .",
+    "url": "http://localhost:4000/astrocook/docs/",
+    "relUrl": "/"
+  }
+  ,"3": {
+    "title": "Getting started",
+    "content": "Getting started . Dependencies . Astrocook requires the following packages: . Astropy 3.2.2 | SciPy 1.3.1 | Specutils 0.6 | NumPy 1.17.3 | LmFit 0.9.14 | Cycler 0.10.0 | StatsModels 0.10.1 | matplotlib 3.1.1 | Sphinx 2.2.0 | . Installation . GitHub . Clone the GitHub repository on your local machine: git clone https://github.com/DAS-OATs/astrocook . | Fetch the last commit of the develop branch git fetch origin develop . | Docker . (Coming soon) .",
+    "url": "http://localhost:4000/astrocook/docs/start.html",
+    "relUrl": "/start.html"
+  }
+  
+}
