@@ -9,18 +9,42 @@
   ,"1": {
     "title": "About",
     "content": "About . Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by Guido Cupani, Giorgio Calderone, and Stefano Russo, with contributions from Stefano Cristiani and Giuliano Taffoni. .",
-    "url": "http://localhost:4000/astrocook/docs/about/",
-    "relUrl": "/about/"
+    "url": "http://localhost:4000/astrocook/docs/about.html",
+    "relUrl": "/about.html"
   }
   ,"2": {
+    "title": "Common tasks",
+    "content": "Common tasks . A reference collection of step-by-step analysis procedures .",
+    "url": "http://localhost:4000/astrocook/docs/common.html",
+    "relUrl": "/common.html"
+  }
+  ,"3": {
+    "title": "Cookbook",
+    "content": "Cookbook . A close-up look at all the available recipes .",
+    "url": "http://localhost:4000/astrocook/docs/cookbook.html",
+    "relUrl": "/cookbook.html"
+  }
+  ,"4": {
+    "title": "Using the GUI",
+    "content": "Using the GUI . . Launch the GUI | Manage sessions | Use recipes | Save sessions | Quit the GUI | Troubleshooting | . Launch the GUI . You can launch the Astrocook GUI: . $ cd /your/path/astrocook/ $ python ac_gui.py . This will open a blank main window: . ⚠️ On some macOS systems, python ac_gui.py will produce an error message like this: . This program needs access to the screen. Please run with a Framework build of python, and only when you are logged in on the main display of your Mac. . If this happens, use pythonw ac_gui.py instead. . To load data, you can choose File &gt; Open... on the menu bar (ctrl+O or ⌘+O, depending on the system) and browse through your file system. Alternatively, you can specify one or more paths directly at launch: . $ python ac_gui.py /path/to/1st_spec.fits /path/to/2nd_spec.fits . In this case the main window will display a list: If the format of the data is not recognized, Astrocook will fall back on a blank window. . Manage sessions . Each item in the main window is called a session. A session is created whenever a new spectrum is loaded. When you select a session on the main window, its spectrum is displayed in the plot window: . To perform the analysis, you need to select a session and access one of the several recipes available from the menu bar. The information extracted by the analysis is continuously attached to the selected session. This means that, e.g., a list of absorption lines is always attached to the spectrum it has been extracted from. . You can switch between sessions at any time, selecting them on the main window. When you select a session, you always retrieve the latest snapshot of the analysis, together with all the information extracted so far. . ⚠️ If no session is selected and you click on the first session, it will not be selected unless you push ctrl as well. . Use recipes . Astrocook provides you with (broadly speaking) three kind of recipes for the analysis: . recipes to manipulate sessions, combining and sharing data structures among them: these are grouped in the Edit menu; | recipes to manage the plot window and the additional windows to display the data: these are grouped in the View menu; | general analysis recipes to “cook your spectrum”: these are spread between the Recipes menu (atomic operations and simple workflows) and the Set menus menu (complex workflows for specific tasks). | Typically, when you choose a recipe from the menu bar a dialog window appears. The dialog window displays a brief description of the recipe and allows you to edit the parameters. . ⚠️ When you click on the run button in a dialog window, the whole GUI freezes. You should consider this before using recipes that require long running times. . At the beginning of the analysis, only a limited set of recipes is available from the menu bar, while others are greyed out. This happens because the greyed-out recipes require some piece of information that has not been extracted yet (e.g., to fit an absorption systems you need to detect it first). As you progresses with the analysis, more and more recipes become available. . Save sessions . You can save a session by clicking on it on the main window and choosing File &gt; Save... on the menu bar (ctrl+S or ⌘+S, depending on the system). . Sessions are saved as .acs archives that can be directly opened by Astrocook (either with File &gt; Open... or as argument of python ac_gui.py from the command line). .acs archives can also be extracted with . $ tar -zxvf /path/to/archive.acs . Quit the GUI . You can quit Astrocook with File &gt; Quit... on the menu bar (ctrl+Q or ⌘+Q, depending on the system) or by closing the main window. . ⚠️ When you quit Astrocook, all unsaved sessions will be lost. . Troubleshooting . Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to report the bug. . ⚠️ If Astrocook stops responding, you can kill the GUI with ctrl+C. Since this will destroy all sessions, you are suggested to frequently save your analysis. .",
+    "url": "http://localhost:4000/astrocook/docs/gui.html",
+    "relUrl": "/gui.html"
+  }
+  ,"5": {
     "title": "Home",
-    "content": "A thousand recipes to cook as spectrum . About .",
+    "content": "Astrocook . A thousand recipes to cook as spectrum .",
     "url": "http://localhost:4000/astrocook/docs/",
     "relUrl": "/"
   }
-  ,"3": {
+  ,"6": {
+    "title": "Setup",
+    "content": "Setup . . Dependencies | Install the package | . Dependencies . Astrocook is written in Python 3 and requires the following packages: . Astropy 3.2.3 | SciPy 1.3.1 | Specutils 0.6 | NumPy 1.17.3 | LmFit 0.9.14 | Cycler 0.10.0 | StatsModels 0.10.1 | matplotlib 3.1.1 | Sphinx 2.2.0 | . You are suggested to manage the dependencies using Conda. The quickest way to do it is to get the Miniconda installer (instructions here) and to open an environment dedicated to Astrocook: . $ conda create -n astrocook python=3.7 $ source activate astrocook . This is an example of how you can install the required packages from the Conda repository: . $ conda install -c anaconda package-name=package-version . If this doesn’t work, look for the package in the Anaconda Cloud. . Install the package . Clone the GitHub repository on your local machine: $ cd /your/path/ $ git clone https://github.com/DAS-OATs/astrocook . | Fetch the last commit of the develop branch $ cd /your/path/astrocook/ $ git fetch origin develop . | ⚠️ The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the develop branch until it gets merged on the master branch. .",
+    "url": "http://localhost:4000/astrocook/docs/setup.html",
+    "relUrl": "/setup.html"
+  }
+  ,"7": {
     "title": "Getting started",
-    "content": "Getting started . Dependencies . Astrocook requires the following packages: . Astropy 3.2.2 | SciPy 1.3.1 | Specutils 0.6 | NumPy 1.17.3 | LmFit 0.9.14 | Cycler 0.10.0 | StatsModels 0.10.1 | matplotlib 3.1.1 | Sphinx 2.2.0 | . Installation . GitHub . Clone the GitHub repository on your local machine: git clone https://github.com/DAS-OATs/astrocook . | Fetch the last commit of the develop branch git fetch origin develop . | Docker . (Coming soon) .",
+    "content": "Getting started . Everything you need to know to quickly start your analysis .",
     "url": "http://localhost:4000/astrocook/docs/start.html",
     "relUrl": "/start.html"
   }

@@ -4,6 +4,7 @@ title: Home
 nav_order: 1
 ---
 
-# A thousand recipes to cook as spectrum
+# Astrocook
 
-[About](about)
+A thousand recipes to cook as spectrum
+{: .fs-6 .fw-300}
