@@ -4,7 +4,7 @@ title: Home
 nav_order: 1
 ---
 
-# Astrocook
+# Astrocook 🍪 
 
 A thousand recipes to cook as spectrum
 {: .fs-6 .fw-300}
