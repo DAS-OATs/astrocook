@@ -9,4 +9,4 @@ nav_order: 1
 A thousand recipes to cook as spectrum
 {: .fs-6 .fw-300}
 
-[Getting started](_site/start.html)
+[Getting started](start.md)
