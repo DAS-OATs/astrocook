@@ -23,7 +23,7 @@ email: guido.cupani@inaf.oats
 description: >- # this means to ignore newlines until "baseurl:"
   A thousand recipes to cook a spectrum
 baseurl: "/astrocook" # the subpath of your site, e.g. /blog
-url: "https://das-oats.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://das-oats.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
 github_username:  gcupani
 
@@ -41,7 +41,7 @@ plugins:
 # Excluded items can be processed by explicitly listing the directories or
 # their entries' file path in the `include:` list.
 #
-# exclude:
+#exclude:
 #   - .sass-cache/
 #   - .jekyll-cache/
 #   - gemfiles/
