@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Managing data
-has-children: true
+has_children: true
 nav_order: 3
 ---
 
