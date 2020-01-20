@@ -28,7 +28,8 @@ url: "https://das-oats.github.io/" # the base hostname & protocol for your site,
 github_username:  gcupani
 
 # Build settings
-remote_theme: pmarsceill/just-the-docs
+#remote_theme: pmarsceill/just-the-docs
+theme: minima
 plugins:
   - jekyll-feed
 
