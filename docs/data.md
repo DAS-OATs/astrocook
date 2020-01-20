@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Data structures
+title: Handling data
 has-children: true
 nav_order: 3
 ---
 
-# Data structures
+# Handling data
 
-An overview of the data you will be handling
+More details on what you can do with your data
 {: .fs-6 .fw-300}

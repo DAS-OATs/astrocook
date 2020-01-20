@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Merging of spectra
+title: Merging spectra
 parent: Common tasks
 nav_order: 1
 ---
 
-# Merging of spectra
+# Merging spectra
 {: .no_toc}
 
 ## Table of contents
