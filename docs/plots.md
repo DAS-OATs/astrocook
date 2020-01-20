@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Plots
-parent: Handling data
+parent: Managing data
 nav_order: 2
 ---
 

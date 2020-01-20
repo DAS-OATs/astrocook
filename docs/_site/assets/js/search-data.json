@@ -49,8 +49,8 @@
     "relUrl": "/cookbook.html"
   }
   ,"8": {
-    "title": "Handling data",
-    "content": "Handling data . More details on what you can do with your data .",
+    "title": "Managing data",
+    "content": "Managing data . More details on what you can do with your data .",
     "url": "http://localhost:4000/astrocook/data.html",
     "relUrl": "/data.html"
   }
@@ -97,8 +97,8 @@
     "relUrl": "/start.html"
   }
   ,"16": {
-    "title": "Structures",
-    "content": "Structures . . .",
+    "title": "Data structures",
+    "content": "Data structures . . .",
     "url": "http://localhost:4000/astrocook/structures.html",
     "relUrl": "/structures.html"
   }

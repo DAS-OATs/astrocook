@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Handling data
+title: Managing data
 has-children: true
 nav_order: 3
 ---
 
-# Handling data
+# Managing data
 
 More details on what you can do with your data
 {: .fs-6 .fw-300}

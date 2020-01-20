@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Tables
-parent: Handling data
+parent: Managing data
 nav_order: 3
 ---
 

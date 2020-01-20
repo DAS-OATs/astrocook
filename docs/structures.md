@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Structures
-parent: Handling data
+title: Data structures
+parent: Managing data
 nav_order: 1
 ---
 
-# Structures
+# Data structures
 {: .no_toc}
 
 ## Table of contents
