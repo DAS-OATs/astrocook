@@ -1,3 +1,9 @@
+---
+layout: default
+title: Readme
+nav_exclude: true
+---
+
 # Astrocook
 
 A thousand ways to cook a spectrum!
