@@ -87,7 +87,8 @@ RUN pip3 install astropy==3.2.2 \
                  cycler==0.10.0 \
                  statsmodels==0.10.1 \
                  matplotlib==3.1.1 \
-                 sphinx==2.2.0
+                 sphinx==2.2.0\
+                 tqdm==4.40.1
 
 # Astroccok X environment setup/startup
 RUN apt-get install fluxbox -y
