@@ -671,7 +671,7 @@ class CookbookAbsorbers(object):
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=np.inf,
-                             refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
                              append=True):
         """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
@@ -693,7 +693,7 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            series = series.replace(';',',')
+            #series = series.replace(';',',')
             z_start = float(z_start)
             z_end = float(z_end)
             if series == 'unknown':
@@ -717,25 +717,26 @@ class CookbookAbsorbers(object):
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
 
-        z_list, y_list = self._lines_cand_find(series, z_start, z_end, dz)
-        z_list, logN_list = self.sess.lines._cand_find2(series, z_start, z_end,
-                                                        dz, logN=logN is None)
+        for s in series.split(';'):
+            z_list, y_list = self._lines_cand_find(s, z_start, z_end, dz)
+            z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
+                                                            dz, logN=logN is None)
 
-        if len(z_list) == 0:
-            logging.warning("I've found no candidates!")
-            return 0
+            if len(z_list) == 0:
+                logging.warning("I've found no candidates!")
+                return 0
 
-        series_list = [series]*len(z_list)
-        resol_list = [resol]*len(z_list)
+            s_list = [s]*len(z_list)
+            resol_list = [resol]*len(z_list)
 
 
-        self._systs_prepare(append)
-        #self._logN_guess(series, z_list[0], b, resol)
-        #logN_list = self._systs_guess(series_list, z_list)
-        self._systs_add(series_list, z_list, logN_list, resol_list=resol_list)
-        #self._systs_fit()
-        self._systs_cycle()
-        self._spec_update()
+            self._systs_prepare(append)
+            #self._logN_guess(series, z_list[0], b, resol)
+            #logN_list = self._systs_guess(series_list, z_list)
+            self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
+            #self._systs_fit()
+            self._systs_cycle()
+            self._spec_update()
 
         return 0
 

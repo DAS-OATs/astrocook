@@ -128,7 +128,8 @@ class LineList(Frame):
             #print(logN_sel)
 
         # Find coincidences
-        if len(series_d[series]) > 1:
+        #if len(series_d[series]) > 1:
+        if len(trans) > 1:
             z_sort = np.sort(np.ravel(z_sel))
             y_sort = y_sel[np.argsort(np.ravel(z_sel))]
             if logN:
