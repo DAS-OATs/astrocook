@@ -224,8 +224,6 @@ class GUITablePopup(wx.Menu):
 
     def __init__(self, gui, parent, event, title, attr):
         super(GUITablePopup, self).__init__()
-        self._parent = parent
-        self._event = event
         self._gui = gui
         self._gui._tab_popup = self
         self._parent = parent
@@ -257,6 +255,7 @@ class GUITablePopup(wx.Menu):
                 self.Bind(wx.EVT_MENU, getattr(self._parent, '_on_'+a), item)
                 self.Append(item)
                 self._items.append(item)
+
 
 class GUITableSpectrum(GUITable):
     """ Class for the GUI spectrum table """

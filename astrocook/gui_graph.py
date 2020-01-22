@@ -59,9 +59,8 @@ class GUIGraphMain(wx.Frame):
         #self._gui._statusbar = self.CreateStatusBar()
         move_id = self._graph._canvas.mpl_connect('motion_notify_event',
                                                   self._graph._on_move)
-        click_id = self._graph._canvas.mpl_connect('button_press_event',
+        click_id = self._graph._canvas.mpl_connect('button_release_event',
                                                    self._graph._on_click)
-
 
     def _refresh(self, sess, **kwargs):
         if self._closed:
