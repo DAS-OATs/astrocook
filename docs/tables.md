@@ -5,7 +5,7 @@ parent: Managing data
 nav_order: 3
 ---
 
-# Tables
+# Playing with tables
 {: .no_toc}
 
 ## Table of contents
