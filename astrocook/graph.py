@@ -17,12 +17,10 @@ import wx
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel, legend=True, init_canvas=True,
-                 init_ax=True):
+    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True):
         self._panel = panel
         self._gui = gui
         self._sel = sel
-        self._legend = legend
         self._fig = Figure()
         self._cursor_lines = []
 

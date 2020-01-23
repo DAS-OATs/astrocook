@@ -35,13 +35,22 @@ class GUIMenu(object):
         #bar.Append(self._cook._menu, "Cook")
         return bar
 
-    def _item(self, menu, id, append, title, event):
-        item = wx.MenuItem(menu, id, title)
+    def _item(self, menu, id, append, title, event, key=None, enable=False):
+        if key is not None:
+            item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
+            item.Check(False)
+            item.key = key
+        else:
+            item = wx.MenuItem(menu, id, title)
+
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
+        else:
+            item.Enable(enable)
+        return item
 
     def _item_graph(self, menu, id, append, title, key, enable=False,
                     dlg_mini=False, targ=None):
@@ -88,7 +97,7 @@ class GUIMenu(object):
             sel.remove(key)
         else:
             sel.append(key)
-        item.IsChecked() == False
+        #item.IsChecked() == False
         self._gui._refresh()
         if dlg_mini:
             self._gui._cursor = item
@@ -144,12 +153,14 @@ class GUIMenu(object):
     def _refresh(self):
         # Nested loops! WOOOO!
         sel = self._gui._graph_main._sel
+
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_recipes', '_courses', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
-                        if m == '_view' and item.IsCheckable():
+                        if m == '_view' and item.IsCheckable() \
+                            and item.key not in ['legend', 'norm']:
                             item.Check(False)
                         if hasattr(self._gui._sess_sel, a):
                             cond = getattr(self._gui._sess_sel, a) != None
@@ -158,7 +169,8 @@ class GUIMenu(object):
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
-                                item.Check(item.key in sel)  # from .vars
+                                if item.key not in ['legend', 'norm']:
+                                    item.Check(item.key in sel)
                         else:
                             item.Enable(False)
                     except:
@@ -529,6 +541,7 @@ class GUIMenuView(GUIMenu):
         super(GUIMenuView, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        self._menu_view = self
 
         # Add items to View menu here
         self._item(self._menu, start_id+1, 'spec', "Spectrum table",
@@ -578,11 +591,11 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
                          'cursor_z_series', dlg_mini=True,
                          targ=GraphCursorZSeries)
-        self._item(self._submenu, start_id+314, 'spec', "Legend",
-                   self._on_legend)
+        self._legend = self._item(self._submenu, start_id+314, 'spec', "Legend",
+                                  self._on_legend, key='legend')
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
-        self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
-                   self._on_norm)
+        self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
+                                self._on_norm, key='norm')
 
     def _on_ima(self, event, obj):
         method = '_ima_'+obj
