@@ -578,6 +578,8 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
                          'cursor_z_series', dlg_mini=True,
                          targ=GraphCursorZSeries)
+        self._item(self._submenu, start_id+314, 'spec', "Legend",
+                   self._on_legend)
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                    self._on_norm)
@@ -585,6 +587,10 @@ class GUIMenuView(GUIMenu):
     def _on_ima(self, event, obj):
         method = '_ima_'+obj
         getattr(self._gui, method)._on_view(event)
+
+    def _on_legend(self, event):
+        self._gui._graph_main._legend = ~self._gui._graph_main._legend
+        self._gui._refresh()
 
     def _on_logx(self, event):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
