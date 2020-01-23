@@ -17,12 +17,10 @@ import wx
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel, legend=True, init_canvas=True,
-                 init_ax=True):
+    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True):
         self._panel = panel
         self._gui = gui
         self._sel = sel
-        self._legend = legend
         self._fig = Figure()
         self._cursor_lines = []
 
@@ -178,8 +176,8 @@ class Graph(object):
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
 
 
-    def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
-                 ylim=None, title=None, text=None, init_cursor=False):
+    def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
+                 xlim=None, ylim=None, title=None, text=None, init_cursor=False):
         sess = np.array(sess, ndmin=1)
 
         self._text = text
@@ -240,7 +238,7 @@ class Graph(object):
 
         for s in sess:
             self._seq(s, norm)
-        if self._legend:
+        if legend:
             self._ax.legend()
 
         #print(self._ax)

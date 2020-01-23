@@ -32,6 +32,7 @@ class GUIGraphMain(wx.Frame):
         self._logx = False
         self._logy = False
         self._norm = False
+        self._legend = False
         self._closed = False
         if main:
             self._gui._graph_main = self
@@ -65,7 +66,8 @@ class GUIGraphMain(wx.Frame):
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
-        self._graph._refresh(sess, self._logx, self._logy, self._norm, **kwargs)
+        self._graph._refresh(sess, self._logx, self._logy, self._norm,
+                             self._legend, **kwargs)
         self.Show()
 
     #def _on_line_new(self, event):
