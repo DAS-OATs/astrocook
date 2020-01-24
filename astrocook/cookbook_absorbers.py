@@ -163,6 +163,7 @@ class CookbookAbsorbers(object):
         for m in mods_t:
             m['mod']._pars['psf_gauss_0_resol'].value = resol
 
+
     def _spec_update(self):
         spec = self.sess.spec
         systs = self.sess.systs
@@ -528,6 +529,17 @@ class CookbookAbsorbers(object):
             systs._t['ccf_deltav'] = np.empty(len(systs._t), dtype=float)
 
         self._mods_ccf_max(vstart, vend, dv)
+
+        return 0
+
+    def mods_recreate(self):
+        """ @brief Recreate the models
+        @details Recreate the models from the current system list.
+        @return 0
+        """
+
+        self._mods_recreate()
+        self._spec_update()
 
         return 0
 
