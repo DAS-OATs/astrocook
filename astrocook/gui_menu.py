@@ -35,7 +35,7 @@ class GUIMenu(object):
         #bar.Append(self._cook._menu, "Cook")
         return bar
 
-    def _item(self, menu, id, append, title, event, key=None, enable=False):
+    def _item(self, menu, id, append, title, event, key=None, enable=True):
         if key is not None:
             item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
             #item.Check(False)
