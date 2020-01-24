@@ -476,10 +476,12 @@ class GUIMenuRecipes(GUIMenu):
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
         self._item_method(submenu, start_id+311, 'systs',
-                          "Fit systems", 'systs_fit')
+                          "Recreate models", 'mods_recreate')
         self._item_method(submenu, start_id+312, 'systs',
-                          "Clean systems", 'systs_clean')
+                          "Fit systems", 'systs_fit')
         self._item_method(submenu, start_id+313, 'systs',
+                          "Clean systems", 'systs_clean')
+        self._item_method(submenu, start_id+314, 'systs',
                           "Extract systems", 'comp_extract')
         submenu.AppendSeparator()
         self._item_method(submenu,start_id+321, 'systs', "Compute CCF",
