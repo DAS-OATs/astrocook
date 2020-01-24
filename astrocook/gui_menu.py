@@ -38,7 +38,7 @@ class GUIMenu(object):
     def _item(self, menu, id, append, title, event, key=None, enable=False):
         if key is not None:
             item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
-            item.Check(False)
+            #item.Check(False)
             item.key = key
         else:
             item = wx.MenuItem(menu, id, title)
