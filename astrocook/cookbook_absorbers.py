@@ -50,10 +50,12 @@ class CookbookAbsorbers(object):
         w = w/np.sum(w)
         #ccf = np.correlate(eval, mod._yf)[0]
 
-        ccf_same = np.correlate(eval, mod._yf, mode='same')
+        #ccf_same = np.correlate(eval, mod._yf, mode='same')
+        ccf_same = np.dot(eval, mod._yf)
         ccf_loc = np.argmax(ccf_same)
         ccf = np.max(ccf_same)
         ccf = np.sum(ccf_same)
+        #plt.plot(mod._xf, mod._yf)
         #plt.plot(mod._xf, eval)
         #plt.plot(mod._xf, ccf_same)
         #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
@@ -87,12 +89,13 @@ class CookbookAbsorbers(object):
             eval = np.interp(mod._xf, x, eval_osampl)
             ccf1 = self._mod_ccf(mod, eval, verbose=False)
             ccf.append(ccf1)
-        amax = np.argmin(ccf)
+        #amax = np.argmin(ccf)
+        amax = np.argmax(ccf)
         deltax = x_shift[amax]
         deltav = v_shift[amax]
-        #plt.scatter(xmean+x_shift, ccf/ccf[amax])
-        #plt.scatter(xmean+x_shift[amax], 1)
-        #plt.show()
+        plt.scatter(xmean+x_shift, ccf/ccf[amax])
+        plt.scatter(xmean+x_shift[amax], 1)
+        plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
