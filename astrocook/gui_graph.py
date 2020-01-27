@@ -181,7 +181,6 @@ class GUIGraphHistogram(GUIGraphMain):
                 values.append(v)
             else:
                 rej += 1
-        print(rej, len(self._gui._col_values))
 
         bins = np.arange(np.floor(np.min(values))-0.5, np.ceil(np.max(values))+0.5, 0.5)
         #print(values, bins)
