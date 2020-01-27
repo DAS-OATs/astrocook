@@ -57,8 +57,8 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
-data_path = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-atom_par = ascii.read(data_path+'/atom_par.dat')
+p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+atom_par = ascii.read(p+'/atom_par.dat')
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}

@@ -131,14 +131,16 @@ class Session(object):
         # ESPRESSO DRS spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
             self.spec = format.espresso_drs_spectrum(hdul)
+            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
-                ascii.read('espr_spec_form.dat'))
+                ascii.read(p+'espr_spec_form.dat'))
 
         # ESPRESSO DAS spectrum
         if instr == 'ESPRESSO' and catg[1:5] == 'SPEC':
             self.spec = format.espresso_das_spectrum(hdul)
+            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
-                ascii.read('espr_spec_form.dat'))
+                ascii.read(p+'espr_spec_form.dat'))
 
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
