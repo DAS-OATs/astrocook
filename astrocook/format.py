@@ -173,8 +173,12 @@ class Format(object):
         data = hdul[1].data
         x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
-        y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
-        dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+        try:
+            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+        except:
+            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
