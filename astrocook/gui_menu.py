@@ -476,15 +476,18 @@ class GUIMenuRecipes(GUIMenu):
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
         self._item_method(submenu, start_id+311, 'systs',
-                          "Recreate models", 'mods_recreate')
+                          "Collapse systems", 'systs_collapse')
         self._item_method(submenu, start_id+312, 'systs',
+                          "Recreate models", 'mods_recreate')
+        submenu.AppendSeparator()
+        self._item_method(submenu, start_id+321, 'systs',
                           "Fit systems", 'systs_fit')
-        self._item_method(submenu, start_id+313, 'systs',
+        self._item_method(submenu, start_id+322, 'systs',
                           "Clean systems", 'systs_clean')
-        self._item_method(submenu, start_id+314, 'systs',
+        self._item_method(submenu, start_id+323, 'systs',
                           "Extract systems", 'comp_extract')
         submenu.AppendSeparator()
-        self._item_method(submenu,start_id+321, 'systs', "Compute CCF",
+        self._item_method(submenu,start_id+331, 'systs', "Compute CCF",
                           'mods_ccf_max')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
