@@ -127,6 +127,7 @@ class CookbookAbsorbers(object):
     def _mods_recreate(self, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
+        spec.t['fit_mask'] = False
         systs = self.sess.systs
         #if len(systs._t)==0: return 0
         systs._mods_t.remove_rows(range(len(systs._mods_t)))

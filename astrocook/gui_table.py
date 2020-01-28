@@ -179,7 +179,7 @@ class GUITable(wx.Frame):
             #self._gui._sess_sel.cb._mods_recreate()
             self._gui._sess_sel.cb._systs_remove([row])
             #self._gui._sess_sel.cb._systs_refit(refit_id, max_nfev_def)
-            self._gui._sess_sel.cb._systs_cycle()
+            self._gui._sess_sel.cb._mods_recreate()
         else:
             self._data.t.remove_row(row)
 
