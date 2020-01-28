@@ -114,6 +114,11 @@ class CookbookGeneral(object):
             new = Session(**kwargs)
         else:
             new = None
+        if 'systs' in self.sess.seq:
+            old = dc(self.sess)
+            self.sess = new
+            self._mods_recreate()
+            self.sess = old
 
         return new
 

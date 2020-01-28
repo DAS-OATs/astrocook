@@ -50,6 +50,9 @@ class CookbookAbsorbers(object):
         if y is None:
             y = mod._yf
 
+        if np.sum(yw) != 1:
+            yw = yw/np.sum(yw)
+
         #w = np.abs(np.gradient(eval))
         #w = w/np.sum(w)
         #ccf = np.correlate(eval, mod._yf)[0]
@@ -69,7 +72,8 @@ class CookbookAbsorbers(object):
         return ccf
 
 
-    def _mod_ccf_max(self, mod, vstart=-20, vend=20, dv=1e-2, verbose=True):
+    def _mod_ccf_max(self, mod, vstart=-20, vend=20, dv=1e-2, weight=True,
+                     verbose=True):
         sd = -1*int(np.floor(np.log10(dv)))-1
 
         xmin = mod._xf[0]
@@ -88,7 +92,10 @@ class CookbookAbsorbers(object):
         #x_shift = np.arange(xstart, xend, dx)
         #print(len(x_shift), len(v_shift))
         ccf = []
-        yw = np.abs(np.gradient(eval_ref))
+        if weight:
+            yw = np.abs(np.gradient(eval_ref))
+        else:
+            yw = None
         y = (1-mod._yf)#*grad/np.sum(grad)
         #plt.plot(mod._xf, mod._yf)
         for xs in x_shift:
@@ -113,12 +120,12 @@ class CookbookAbsorbers(object):
         return ccf[amax], deltax, deltav
 
 
-    def _mods_ccf_max(self, vstart, vend, dv):
+    def _mods_ccf_max(self, vstart, vend, dv, weight):
         systs = self.sess.systs
         for i, m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                               "cookbook_absorbers: Computing CCF"):
             ccf, deltax, deltav = self._mod_ccf_max(m['mod'], vstart, vend, dv,
-                                                    verbose=False)
+                                                    weight, verbose=False)
             for i in m['id']:
                 w = np.where(systs._t['id']==i)
                 systs._t['ccf_deltav'][w] = deltav
@@ -518,7 +525,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def mods_ccf_max(self, vstart=-20, vend=20, dv=1):
+    def mods_ccf_max(self, vstart=-20, vend=20, dv=0.01, weight=True):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
         determine the best data/model CCF and the corresponding shift.
@@ -526,6 +533,7 @@ class CookbookAbsorbers(object):
         @param vstart Range start (km/s with respect to mean wavelength)
         @param vend Range end (km/s with respect to mean wavelength)
         @param dv Range step (km/s)
+        @param weight Weight the model by the absolute value of its derivative
         @return 0
         """
 
@@ -533,6 +541,7 @@ class CookbookAbsorbers(object):
             vstart = float(vstart)
             vend = float(vend)
             dv = float(dv)
+            weight = str(weight) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -542,7 +551,7 @@ class CookbookAbsorbers(object):
             logging.info("I'm adding column 'ccf_deltav'.")
             systs._t['ccf_deltav'] = np.empty(len(systs._t), dtype=float)
 
-        self._mods_ccf_max(vstart, vend, dv)
+        self._mods_ccf_max(vstart, vend, dv, weight)
 
         return 0
 
