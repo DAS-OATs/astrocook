@@ -42,9 +42,11 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _mod_ccf(self, mod, ym=None, y=None, verbose=True):
-        if eval is None:
+    def _mod_ccf(self, mod, ym=None, yw=None, y=None, verbose=True):
+        if ym is None:
             ym = mod.eval(x=mod._xf, params=mod._pars)
+        if yw is None:
+            yw = np.ones(len(mod._xf))
         if y is None:
             y = mod._yf
 
@@ -57,7 +59,7 @@ class CookbookAbsorbers(object):
         #ccf_same = np.correlate(eval, mod._yf, mode='same')
         #ccf_loc = np.argmax(ccf_same)
         #ccf = np.max(ccf_same)
-        ccf = np.dot(ym, y)
+        ccf = np.dot(ym*yw, y)
         #ccf = np.corrcoef(eval, mod._yf)[1][0]
         #plt.plot(mod._xf, y)
         #plt.plot(mod._xf, ym)
@@ -86,19 +88,19 @@ class CookbookAbsorbers(object):
         #x_shift = np.arange(xstart, xend, dx)
         #print(len(x_shift), len(v_shift))
         ccf = []
-        grad = np.abs(np.gradient(eval_ref))
-        y = (1-mod._yf)*grad/np.sum(grad)
+        yw = np.abs(np.gradient(eval_ref))
+        y = (1-mod._yf)#*grad/np.sum(grad)
         #plt.plot(mod._xf, mod._yf)
         for xs in x_shift:
             x = x_osampl+xs
             eval = np.interp(mod._xf, x, eval_osampl)
             grad = np.abs(np.gradient(eval))
             ym = (1-eval)#*(grad/np.sum(grad))
-            y = (1-mod._yf)#*(grad/np.sum(grad))
-            ccf1 = self._mod_ccf(mod, ym, y, verbose=False)
+            #y = (1-mod._yf)#*(grad/np.sum(grad))
+            ccf1 = self._mod_ccf(mod, ym, yw, y, verbose=False)
             ccf.append(ccf1)
-        amax = np.argmin(ccf)
-        #amax = np.argmax(ccf)
+        #amax = np.argmin(ccf)
+        amax = np.argmax(ccf)
         deltax = x_shift[amax]
         deltav = v_shift[amax]
         plt.scatter(xmean+x_shift, ccf/ccf[amax])

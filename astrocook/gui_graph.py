@@ -182,7 +182,7 @@ class GUIGraphHistogram(GUIGraphMain):
             else:
                 rej += 1
 
-        bins = np.arange(np.floor(np.min(values))-0.5, np.ceil(np.max(values))+0.5, 0.5)
+        bins = np.arange(np.floor(np.min(values))-0.25, np.ceil(np.max(values))+0.25, 0.5)
         #print(values, bins)
         self._ax.hist(values, bins=bins, align='mid')
         self._canvas.draw()
