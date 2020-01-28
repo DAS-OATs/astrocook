@@ -65,7 +65,7 @@ class CookbookAbsorbers(object):
         ccf = np.dot(ym*yw, y)
         #ccf = np.corrcoef(eval, mod._yf)[1][0]
         #plt.plot(mod._xf, y)
-        #plt.plot(mod._xf, ym)
+        #plt.plot(mod._xf, ym*yw*100)
         #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
@@ -101,7 +101,7 @@ class CookbookAbsorbers(object):
         for xs in x_shift:
             x = x_osampl+xs
             eval = np.interp(mod._xf, x, eval_osampl)
-            grad = np.abs(np.gradient(eval))
+            #grad = np.abs(np.gradient(eval))
             ym = (1-eval)#*(grad/np.sum(grad))
             #y = (1-mod._yf)#*(grad/np.sum(grad))
             ccf1 = self._mod_ccf(mod, ym, yw, y, verbose=False)
@@ -110,9 +110,13 @@ class CookbookAbsorbers(object):
         amax = np.argmax(ccf)
         deltax = x_shift[amax]
         deltav = v_shift[amax]
-        plt.scatter(xmean+x_shift, ccf/ccf[amax])
-        plt.scatter(xmean+x_shift[amax], 1)
-        plt.show()
+        if weight:
+            color = 'r'
+        else:
+            color = 'g'
+        #plt.scatter(xmean+x_shift, ccf/ccf[amax], c=color)
+        #plt.scatter(xmean+x_shift[amax], 1)
+        #plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
@@ -525,7 +529,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def mods_ccf_max(self, vstart=-20, vend=20, dv=0.01, weight=True):
+    def mods_ccf_max(self, vstart=-20, vend=20, dv=0.01, weight=False):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
         determine the best data/model CCF and the corresponding shift.
