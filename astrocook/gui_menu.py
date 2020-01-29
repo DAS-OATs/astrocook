@@ -489,6 +489,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Clean systems", 'systs_clean')
         self._item_method(submenu, start_id+323, 'z0',
                           "Extract systems", 'comp_extract')
+        self._item_method(submenu, start_id+324, 'systs',
+                          "Select systems", 'systs_select')
         submenu.AppendSeparator()
         self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')

@@ -8,6 +8,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import numpy as np
+from scipy.stats import norm
 import wx
 
 class GUIGraphMain(wx.Frame):
@@ -178,7 +179,7 @@ class GUIGraphHistogram(GUIGraphMain):
         values = []
         rej = 0
         for v in self._gui._col_values:
-            if np.abs(v) < 39.98 and v != 0 and v not in values:
+            if np.abs(v) < 19.98 and v != 0 and v not in values:
                 values.append(v)
             else:
                 rej += 1
@@ -189,7 +190,8 @@ class GUIGraphHistogram(GUIGraphMain):
         mu = np.average(bins[:-1]+0.25, weights=n)
         sigma = np.sqrt(np.average((bins[:-1]+0.25-mu)**2, weights=n))
         x = np.linspace(bins[0], bins[-1], len(bins)*10)
-        #g = 
-        self._ax.plt
+        g = np.exp(-(0.5 * (x-mu) / sigma)**2)
+        g = g*len(g)/np.sum(g)*np.sum(n)/len(n)
+        self._ax.plot(x, g)
         self._canvas.draw()
         self.Show()
