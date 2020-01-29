@@ -165,7 +165,10 @@ class GUIMenu(object):
                         if hasattr(self._gui._sess_sel, a):
                             cond = getattr(self._gui._sess_sel, a) != None
                         else:
-                            cond = a in self._gui._sess_sel.spec.t.colnames
+                            try:
+                                cond = a in self._gui._sess_sel.systs.t.colnames
+                            except:
+                                cond = a in self._gui._sess_sel.spec.t.colnames
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -436,6 +439,8 @@ class GUIMenuRecipes(GUIMenu):
         super(GUIMenuRecipes, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        #sess = self._gui._sess_sel
+
 
         # Add items to Recipes menu here
         self._item_method(self._menu, start_id+100, 'spec',
@@ -464,7 +469,7 @@ class GUIMenuRecipes(GUIMenu):
 
         #self._item_method(self._menu, start_id+301, 'lines',
         #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+300, 'cont',
+        self._item_method(self._menu, start_id+300, 'z0',
                           "New system", 'syst_new')
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
@@ -475,19 +480,17 @@ class GUIMenuRecipes(GUIMenu):
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
-        self._item_method(submenu, start_id+311, 'systs',
-                          "Collapse systems", 'systs_collapse')
-        self._item_method(submenu, start_id+312, 'systs',
+        self._item_method(submenu, start_id+311, 'z0',
                           "Recreate models", 'mods_recreate')
         submenu.AppendSeparator()
-        self._item_method(submenu, start_id+321, 'systs',
+        self._item_method(submenu, start_id+321, 'z0',
                           "Fit systems", 'systs_fit')
-        self._item_method(submenu, start_id+322, 'systs',
+        self._item_method(submenu, start_id+322, 'z0',
                           "Clean systems", 'systs_clean')
-        self._item_method(submenu, start_id+323, 'systs',
+        self._item_method(submenu, start_id+323, 'z0',
                           "Extract systems", 'comp_extract')
         submenu.AppendSeparator()
-        self._item_method(submenu,start_id+331, 'systs', "Compute CCF",
+        self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
@@ -547,6 +550,7 @@ class GUIMenuView(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
         self._menu_view = self
+        self._start_id = start_id
 
         # Add items to View menu here
         self._item(self._menu, start_id+1, 'spec', "Spectrum table",
@@ -556,12 +560,16 @@ class GUIMenuView(GUIMenu):
         self._item(self._menu, start_id+3, 'systs', "System table",
                    lambda e: self._on_tab(e, 'systs'))
         self._menu.AppendSeparator()
+        """
         self._item(self._menu, start_id+101, 'systs',
                    "System detection correctness",
                    lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+101, 'systs',
+        self._item(self._menu, start_id+102, 'systs',
                    "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
+        """
+        self._item(self._menu, start_id+101, 'systs', "Compress system table",
+                   self._on_compress)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)
@@ -601,6 +609,15 @@ class GUIMenuView(GUIMenu):
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
+
+    def _on_compress(self, event):
+        if self._menu.GetLabel(self._start_id+101) == "Compress system table":
+            self._menu.SetLabel(self._start_id+101, "Uncompress system table")
+        else:
+            self._menu.SetLabel(self._start_id+101, "Compress system table")
+
+        self._gui._sess_sel.systs._compress()
+        self._gui._refresh()
 
     def _on_ima(self, event, obj):
         method = '_ima_'+obj

@@ -82,7 +82,7 @@ class SystList(object):
         self._meta = meta
         self._dtype = dtype
 
-        self._collapsed = False
+        self._compressed = False
 
     @property
     def t(self):
@@ -150,9 +150,9 @@ class SystList(object):
         return 0
 
 
-    def _collapse(self):
-        if not self._collapsed:
-            self._t_uncollapsed = dc(self._t)
+    def _compress(self):
+        if not self._compressed:
+            self._t_uncompressed = dc(self._t)
             self._t['group'] = np.empty(len(self._t), dtype=int)
             for i, ids in enumerate(self._mods_t['id']):
                 for id in ids:
@@ -166,10 +166,10 @@ class SystList(object):
             t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] for g in t_by_group.groups]))
             t['id'] = at.Column(np.array([g['id'][len(g)//2] for g in t_by_group.groups]))
             self._t = t
-            self._collapsed = True
+            self._compressed = True
         else:
-            self._t = self._t_uncollapsed
-            self._collapsed = False
+            self._t = self._t_uncompressed
+            self._compressed = False
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t

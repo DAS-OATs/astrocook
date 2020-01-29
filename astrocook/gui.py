@@ -37,6 +37,7 @@ class GUI(object):
         self._menu_cont_id = []
         self._menu_nodes_id = []
         self._menu_systs_id = []
+        self._menu_z0_id = []
         self._menu_mods_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
