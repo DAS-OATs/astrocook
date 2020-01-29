@@ -54,7 +54,7 @@ class GUI(object):
             for p in paths:
                 self._panel_sess._on_open(p)
 
-    def _refresh(self, autolim=True, init_cursor=False):
+    def _refresh(self, autolim=True, init_cursor=False, autosort=True):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
@@ -100,7 +100,8 @@ class GUI(object):
             if hasattr(self, '_tab_'+s):
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
-                                                      from_scratch=False)
+                                                      from_scratch=False,
+                                                      autosort=autosort)
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \

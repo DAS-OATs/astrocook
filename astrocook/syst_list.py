@@ -160,11 +160,21 @@ class SystList(object):
             t_by_group = self._t.group_by('group')
             t = at.Table()
             #t = t_by_group.groups.aggregate(np.mean)
-            t['series'] = at.Column(np.array([g['series'][len(g)//2] for g in t_by_group.groups]))
-            t['z'] = at.Column(np.array([np.mean(g['z']) for g in t_by_group.groups]))
-            t['logN'] = at.Column(np.array([np.log10(np.sum(10**g['logN'])) for g in t_by_group.groups]))
-            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] for g in t_by_group.groups]))
-            t['id'] = at.Column(np.array([g['id'][len(g)//2] for g in t_by_group.groups]))
+            t['series'] = at.Column(np.array([g['series'][len(g)//2] \
+                                              for g in t_by_group.groups]))
+            t['z'] = at.Column(np.array([np.mean(g['z']) \
+                                         for g in t_by_group.groups]))
+            t['logN'] = at.Column(np.array([np.log10(np.sum(10**g['logN'])) \
+                                            for g in t_by_group.groups]))
+            for c in t_by_group.colnames[10:-1]:
+                t[c] = at.Column(np.array([g[c][len(g)//2] \
+                                           for g in t_by_group.groups]))
+            """
+            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] \
+                                             for g in t_by_group.groups]))
+            t['id'] = at.Column(np.array([g['id'][len(g)//2] \
+                                          for g in t_by_group.groups]))
+            """
             self._t = t
             self._compressed = True
         else:
