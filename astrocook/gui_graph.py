@@ -173,6 +173,7 @@ class GUIGraphHistogram(GUIGraphMain):
         self._ax.set_ylabel('Frequency')
         values = self._gui._col_values
 
+        """
         # Temporary: only for deltav
         values = []
         rej = 0
@@ -181,9 +182,14 @@ class GUIGraphHistogram(GUIGraphMain):
                 values.append(v)
             else:
                 rej += 1
+        """
 
         bins = np.arange(np.floor(np.min(values))-0.25, np.ceil(np.max(values))+0.25, 0.5)
-        #print(values, bins)
-        self._ax.hist(values, bins=bins, align='mid')
+        n, bins, patches = self._ax.hist(values, bins=bins, align='mid')
+        mu = np.average(bins[:-1]+0.25, weights=n)
+        sigma = np.sqrt(np.average((bins[:-1]+0.25-mu)**2, weights=n))
+        x = np.linspace(bins[0], bins[-1], len(bins)*10)
+        #g = 
+        self._ax.plt
         self._canvas.draw()
         self.Show()
