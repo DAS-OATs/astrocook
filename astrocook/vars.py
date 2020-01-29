@@ -17,7 +17,7 @@ resol_def = None
 max_nfev_def = 100
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
-seq_menu = seq + ['y_conv', 'cont']
+seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = ['spec_x_y',
              #'spec_x_y_det',
              'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',

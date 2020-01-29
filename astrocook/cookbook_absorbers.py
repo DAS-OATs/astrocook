@@ -571,6 +571,14 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def systs_collapse(self):
+        """ @brief Collapse the system list
+        @details Collapse the list by grouping systems that are modeled together
+        @return 0
+        """
+        self.sess.systs._collapse()
+        return 0
+
     def syst_fit(self, num=0, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit a systems

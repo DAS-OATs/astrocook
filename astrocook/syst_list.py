@@ -82,6 +82,8 @@ class SystList(object):
         self._meta = meta
         self._dtype = dtype
 
+        self._compressed = False
+
     @property
     def t(self):
         return self._t
@@ -148,6 +150,26 @@ class SystList(object):
         return 0
 
 
+    def _compress(self):
+        if not self._compressed:
+            self._t_uncompressed = dc(self._t)
+            self._t['group'] = np.empty(len(self._t), dtype=int)
+            for i, ids in enumerate(self._mods_t['id']):
+                for id in ids:
+                    self._t['group'][self._t['id']==id] = i
+            t_by_group = self._t.group_by('group')
+            t = at.Table()
+            #t = t_by_group.groups.aggregate(np.mean)
+            t['series'] = at.Column(np.array([g['series'][len(g)//2] for g in t_by_group.groups]))
+            t['z'] = at.Column(np.array([np.mean(g['z']) for g in t_by_group.groups]))
+            t['logN'] = at.Column(np.array([np.log10(np.sum(10**g['logN'])) for g in t_by_group.groups]))
+            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] for g in t_by_group.groups]))
+            t['id'] = at.Column(np.array([g['id'][len(g)//2] for g in t_by_group.groups]))
+            self._t = t
+            self._compressed = True
+        else:
+            self._t = self._t_uncompressed
+            self._compressed = False
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t
