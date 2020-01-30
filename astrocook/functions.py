@@ -20,6 +20,22 @@ def _fadd(a, u):
 
     return np.real(wofz(u + 1j * a))
 
+def _voigt_par_convert(x, z, N, b, btur, trans):
+    if trans == 'unknown':
+        xem = z*au.nm
+        xobs = z*au.nm
+    else:
+        xem = xem_d[trans]
+        xobs = xem*(1+z)
+    fosc = fosc_d[trans]
+    gamma = gamma_d[trans]/au.s
+    b_qs = np.sqrt(b**2 + btur**2)
+    atom = fosc * ac.e.esu**2 / (ac.m_e * ac.c)
+    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    a = 0.25 * gamma * xem / (np.pi * b_qs)
+    u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+    return tau0, a, u
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -127,6 +143,7 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
     for t in trans_parse(series):
+        """
         if series == 'unknown':
             xem = z*au.nm
             xobs = z*au.nm
@@ -140,6 +157,8 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+        """
+        tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
         model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
                           * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))

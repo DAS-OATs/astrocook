@@ -145,7 +145,11 @@ class CookbookAbsorbers(object):
         #if len(systs._t)==0: return 0
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
         #for i,s in enumerate(systs._t):
-        for i,s in enum_tqdm(systs._t, len(systs._t),
+        if systs._compressed:
+            systs_t = systs._t_uncompressed
+        else:
+            systs_t = systs._t
+        for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             mod = SystModel(spec, systs, z0=s['z0'])
@@ -655,6 +659,65 @@ class CookbookAbsorbers(object):
         #self._systs_fit()
         self._systs_cycle()
         self._spec_update()
+
+        return 0
+
+
+    def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=18.0,
+                     b_min=1.0, b_max=100.0, col=None, col_min=None,
+                     col_max=None):
+        """ @brief Select systems
+        @details Select systems based on their Voigt and fit parameters. A
+        logical `and` is applied to all conditions.
+        @param z_min Minimum redshift
+        @param z_max Maximum redshift
+        @param logN_min Minimum (logarithmic) column density
+        @param logN_max Maximum (logarithmic) column density
+        @param b_min Minimum Doppler broadening
+        @param b_max Maximum Doppler broadening
+        @param col Other column
+        @param col_min Minimum of other column
+        @param col_max Maximum of other column
+        @return 0
+        """
+
+        try:
+            z_min = float(z_min)
+            z_max = float(z_max)
+            logN_min = float(logN_min)
+            logN_max = float(logN_max)
+            b_min = float(b_min)
+            b_max = float(b_max)
+            col = None if col in [None, 'None'] else str(col)
+            col_min = None if col_min in [None, 'None'] else float(col_min)
+            col_max = None if col_max in [None, 'None'] else float(col_max)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
+        z_sel = np.logical_and(systs._t['z']>z_min, systs._t['z']<z_max)
+        logN_sel = np.logical_and(systs._t['logN']>logN_min, systs._t['logN']<logN_max)
+        b_sel = np.logical_and(systs._t['b']>b_min, systs._t['b']<b_max)
+        cond = np.logical_and(z_sel, np.logical_and(logN_sel, b_sel))
+
+        if col is not None:
+            cond = np.logical_and(cond, np.logical_and(systs._t[col]>col_min,
+                                                       systs._t[col]<col_max))
+
+        systs._t = systs._t[cond]
+        self._mods_recreate()
+        self._spec_update()
+
+        if recompress:
+            systs._compress()
 
         return 0
 

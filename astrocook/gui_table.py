@@ -122,8 +122,10 @@ class GUITable(wx.Frame):
             self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
-            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Histogram',
-                                         'histogram'), event.GetPosition())
+            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
+            attr = ['sort', 'sort_reverse', None, 'histogram']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title,
+                                         attr), event.GetPosition())
         if col == -1:
             self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove',
                                          'remove'), event.GetPosition())
@@ -137,10 +139,22 @@ class GUITable(wx.Frame):
         self._gui._refresh(init_cursor=True)
 
 
-    def _on_view(self, event, from_scratch=True):
+    def _on_sort(self, event):
+        labels = self._labels_extract()
+        self._data.t.sort(labels[self._gui._col_sel])
+        self._gui._refresh(autosort=False)
+
+    def _on_sort_reverse(self, event):
+        labels = self._labels_extract()
+        self._data.t.sort(labels[self._gui._col_sel])
+        self._data.t.reverse()
+        self._gui._refresh(autosort=False)
+
+    def _on_view(self, event, from_scratch=True, autosort=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
-        if 'z' in self._data.t.colnames: self._data.t.sort('z')
-        if 'x' in self._data.t.colnames: self._data.t.sort('x')
+        if autosort:
+            if 'z' in self._data.t.colnames: self._data.t.sort('z')
+            if 'x' in self._data.t.colnames: self._data.t.sort('x')
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
             #self._tab.DeleteRows(pos=0, numRows=self._tab.GetNumberRows())
@@ -566,11 +580,11 @@ class GUITableSystList(GUITable):
             self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
-            title = ['Histogram']
-            attr = ['histogram']
+            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
+            attr = ['sort', 'sort_reverse', None, 'histogram']
             if col in [3,5,7]:
-                title += ['Freeze all']
-                attr += ['freeze_par_all']
+                title += ['sep', 'Freeze all']
+                attr += [None, 'freeze_par_all']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
         if col == -1:
