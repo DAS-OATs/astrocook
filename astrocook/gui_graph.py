@@ -169,8 +169,8 @@ class GUIGraphHistogram(GUIGraphMain):
             self._ax.clear()
         self._ax = self._fig.add_subplot(111)
         self._ax.tick_params(top=True, right=True, direction='in')#self._init_ax(111)
-        label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel)
-        self._ax.set_xlabel(label.replace('\n',' '))
+        label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel).split('\n')[0]
+        self._ax.set_xlabel(label.replace('\n',' ')+' km/s')
         self._ax.set_ylabel('Frequency')
         values = self._gui._col_values
 
@@ -187,11 +187,28 @@ class GUIGraphHistogram(GUIGraphMain):
 
         bins = np.arange(np.floor(np.min(values))-0.25, np.ceil(np.max(values))+0.25, 0.5)
         n, bins, patches = self._ax.hist(values, bins=bins, align='mid')
-        mu = np.average(bins[:-1]+0.25, weights=n)
-        sigma = np.sqrt(np.average((bins[:-1]+0.25-mu)**2, weights=n))
+        #mu = np.average(bins[:-1]+0.25, weights=n)
+        #sigma = np.sqrt(np.average((bins[:-1]+0.25-mu)**2, weights=n))
+        mu = np.mean(values)
+        sigma = np.std(values)
         x = np.linspace(bins[0], bins[-1], len(bins)*10)
         g = np.exp(-(0.5 * (x-mu) / sigma)**2)
-        g = g*len(g)/np.sum(g)*np.sum(n)/len(n)
-        self._ax.plot(x, g)
+        g = g*len(g)/np.sum(g)
+        sigmal = np.percentile(values, 15.87)
+        sigmar = np.percentile(values, 84.13)
+        #self._ax.plot(x, g, c='C1')
+        self._ax.axvline(mu, linestyle='--', c='C1')
+        self._ax.axvline(mu+sigma, linestyle='--', c='C1')
+        self._ax.axvline(mu-sigma, linestyle='--', c='C1')
+        self._ax.axvline(sigmal, linestyle=':', c='C2')
+        self._ax.axvline(sigmar, linestyle=':', c='C2')
+        self._ax.text(0.95, 0.9, r'$\mu$ = %3.2f' % mu, c='C1',
+                      transform=self._ax.transAxes, horizontalalignment='right')
+        self._ax.text(0.95, 0.8, r'$\sigma$ = %3.2f' % sigma, c='C1',
+                      transform=self._ax.transAxes, horizontalalignment='right')
+        self._ax.text(0.95, 0.7, '15.87th cent = %3.2f' % sigmal, c='C2',
+                      transform=self._ax.transAxes, horizontalalignment='right')
+        self._ax.text(0.95, 0.6, '84.13th cent = %3.2f' % sigmar, c='C2',
+                      transform=self._ax.transAxes, horizontalalignment='right')
         self._canvas.draw()
         self.Show()

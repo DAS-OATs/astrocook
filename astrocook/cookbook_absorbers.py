@@ -664,7 +664,8 @@ class CookbookAbsorbers(object):
 
 
     def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=18.0,
-                     b_min=1.0, b_max=100.0):
+                     b_min=1.0, b_max=100.0, col=None, col_min=None,
+                     col_max=None):
         """ @brief Select systems
         @details Select systems based on their Voigt and fit parameters. A
         logical `and` is applied to all conditions.
@@ -674,6 +675,9 @@ class CookbookAbsorbers(object):
         @param logN_max Maximum (logarithmic) column density
         @param b_min Minimum Doppler broadening
         @param b_max Maximum Doppler broadening
+        @param col Other column
+        @param col_min Minimum of other column
+        @param col_max Maximum of other column
         @return 0
         """
 
@@ -684,6 +688,9 @@ class CookbookAbsorbers(object):
             logN_max = float(logN_max)
             b_min = float(b_min)
             b_max = float(b_max)
+            col = None if col in [None, 'None'] else str(col)
+            col_min = None if col_min in [None, 'None'] else float(col_min)
+            col_max = None if col_max in [None, 'None'] else float(col_max)
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -700,6 +707,11 @@ class CookbookAbsorbers(object):
         logN_sel = np.logical_and(systs._t['logN']>logN_min, systs._t['logN']<logN_max)
         b_sel = np.logical_and(systs._t['b']>b_min, systs._t['b']<b_max)
         cond = np.logical_and(z_sel, np.logical_and(logN_sel, b_sel))
+
+        if col is not None:
+            cond = np.logical_and(cond, np.logical_and(systs._t[col]>col_min,
+                                                       systs._t[col]<col_max))
+
         systs._t = systs._t[cond]
         self._mods_recreate()
         self._spec_update()
