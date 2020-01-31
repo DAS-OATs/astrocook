@@ -219,11 +219,11 @@ class GUIGraphHistogram(GUIGraphMain):
         #self._ax.plot(x, g, c='C3')
         self._ax.text(0.95, 0.9, r'$\mu$ = %3.2f' % mu, c='C1',
                       transform=self._ax.transAxes, horizontalalignment='right')
-        self._ax.text(0.95, 0.8, r'$\sigma$ = %3.2f' % sigma, c='C1',
+        self._ax.text(0.95, 0.8, r'$\sigma$ = %3.4f' % sigma, c='C1',
                       transform=self._ax.transAxes, horizontalalignment='right')
-        self._ax.text(0.95, 0.7, '15.87th cent = %3.2f' % sigmal, c='C2',
+        self._ax.text(0.95, 0.7, '15.87th cent = %3.4f' % sigmal, c='C2',
                       transform=self._ax.transAxes, horizontalalignment='right')
-        self._ax.text(0.95, 0.6, '84.13th cent = %3.2f' % sigmar, c='C2',
+        self._ax.text(0.95, 0.6, '84.13th cent = %3.4f' % sigmar, c='C2',
                       transform=self._ax.transAxes, horizontalalignment='right')
         #self._ax.text(0.95, 0.5, r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$' % dv, c='C3',
         #              transform=self._ax.transAxes, horizontalalignment='right')

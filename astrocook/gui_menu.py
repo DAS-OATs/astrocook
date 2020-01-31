@@ -449,12 +449,16 @@ class GUIMenuRecipes(GUIMenu):
                           "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+102, 'spec',
                           "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+103, 'spec',
+                          "Estimate SNR", 'snr_est')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'lines',
                           "Continuum from nodes", 'nodes_cont')
+        self._item_method(self._menu, start_id+202, 'systs', "Update lines",
+                          'lines_update')
         submenu = wx.Menu()
         self._item_method(submenu, start_id+210, 'spec', "Find peaks",
                           'peaks_find')

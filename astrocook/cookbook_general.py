@@ -185,6 +185,23 @@ class CookbookGeneral(object):
                 logging.debug(msg_attr_miss(s))
         return 0
 
+    def snr_est(self):
+        """ @brief Estimate the SNR
+        @details Estimate the signal-to-noise ratio per pixel.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        if 'snr' not in spec._t.colnames:
+            logging.info("I'm adding column 'snr'.")
+        else:
+            logging.info("I'm updating column 'snr'.")
+
+        spec._t['snr'] = spec.y/spec.dy
+
+        return 0
+
+
 
     def x_convert(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert x axis
