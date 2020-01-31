@@ -159,11 +159,16 @@ class Format(object):
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'ESPRESSO'}
         try:
+            cont = data['CONT']
+        except:
+            cont = []
+        try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol,
+                        cont=cont)
 
     def espresso_drs_spectrum(self, hdul):
         """ ESPRESSO DRS S1D format """
