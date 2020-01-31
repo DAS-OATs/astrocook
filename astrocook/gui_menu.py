@@ -449,6 +449,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+102, 'spec',
                           "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+103, 'spec',
+                          "Estimate SNR", 'snr_est')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",

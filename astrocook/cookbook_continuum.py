@@ -212,7 +212,8 @@ class CookbookContinuum(object):
                 else:
                     lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
         lines._t['fwhm'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
-        lines._t['dx'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+        if snr is not None:
+            lines._t['dx'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
 
         for s in systs._t:
             for trans in trans_parse(s['series']):
@@ -227,13 +228,15 @@ class CookbookContinuum(object):
                         else:
                             lines._t[c][diff_x.argmin()] = s[c]
 
+
         for l in lines._t:
             if l['series'] != 'None':
                 fwhm = self._voigt_fwhm(l)
                 xpix = np.median(spec._t['xmax']-spec._t['xmin'])
                 l['fwhm'] = fwhm
-                l['dx'] = (2*np.pi*np.log(2))**(-0.25)/snr\
-                          *np.sqrt(xpix*fwhm)
+                if snr is not None:
+                    l['dx'] = (2*np.pi*np.log(2))**(-0.25)/snr\
+                               *np.sqrt(xpix*fwhm)
                     #lines._t['dx'][diff_x.argmin()] = self._voigt_fwhm(s)
 
 #                print(s['z0'], np.abs(lines.x.to(xunit_def).value - x))
