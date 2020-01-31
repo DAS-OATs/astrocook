@@ -455,6 +455,8 @@ class GUIMenuRecipes(GUIMenu):
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'lines',
                           "Continuum from nodes", 'nodes_cont')
+        self._item_method(self._menu, start_id+202, 'systs', "Update lines",
+                          'lines_update')
         submenu = wx.Menu()
         self._item_method(submenu, start_id+210, 'spec', "Find peaks",
                           'peaks_find')

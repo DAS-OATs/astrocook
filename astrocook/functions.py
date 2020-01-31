@@ -140,7 +140,7 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
-    model = np.ones(len(x))
+    model = np.ones(np.size(np.array(x)))
     #for t in series_d[series]:
     for t in trans_parse(series):
         """

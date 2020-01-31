@@ -1,8 +1,17 @@
 from .functions import *
+from .functions import _voigt_par_convert, _fadd
 from .message import *
 from .vars import *
+from astropy import table as at
 from astropy import units as au
 from scipy.interpolate import UnivariateSpline as uspline
+from scipy.optimize import root_scalar
+from matplotlib import pyplot as plt
+
+def _voigt_fwhm_func(x, z, logN, b, series):
+    mod = 1-lines_voigt(x, z, logN, b, 0.0, series)
+    hm = 0.5*(np.min(mod))
+    return mod-hm
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -10,6 +19,23 @@ class CookbookContinuum(object):
 
     def __init__(self):
         super(CookbookContinuum, self).__init__()
+
+
+    def _voigt_fwhm(self, l):
+        x = np.arange(l['x']-1.0, l['x']+1.0, 1e-4)#*au.nm
+        #tau0, a, u = _voigt_par_convert(x, l['z']*au.dimensionless_unscaled, 10**l['logN']/au.cm**2, l['b']*au.km/au.s,
+        #                                0.0* au.km/au.s, l['series'])
+        #mod = 1-np.exp(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u))
+        mod = 1-lines_voigt(x, l['z'], l['logN'], l['b'], 0.0, l['series'])
+        hm = 0.5*(np.max(mod))
+        xw = x[np.where(mod>hm)]
+        #print(l['x'], xw[0], xw[-1])
+        #xl = root_scalar(_voigt_fwhm_func, x0=l['x']-1e-3, x1=l['x']-2e-3, method='secant', args=(l['z'], l['logN'], l['b'], l['series']))
+        #xr = root_scalar(_voigt_fwhm_func, x0=l['x']+1e-3, x1=l['x']+2e-3, method='secant', args=(l['z'], l['logN'], l['b'], l['series']))
+        #print(l['x'], xl, xr)
+        #fwhm = xr-xl
+        fwhm = xw[-1]-xw[0]
+        return fwhm
 
 
 ### Basic
@@ -153,6 +179,64 @@ class CookbookContinuum(object):
             self.gauss_convolve(std=std, input_col=col, output_col=col+'_conv')
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
                             append=append or i>0)
+
+        return 0
+
+
+    def lines_update(self, snr=None):
+        """ @brief Update line list
+        @details Update line list after the systems have been fitted.
+        @param snr Signal-to-noise ratio
+        @return 0
+        """
+
+        try:
+            snr = 100 if snr in [None, 'None'] else float(snr)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        systs = self.sess.systs
+        lines = self.sess.lines
+        spec = self.sess.spec
+        systs_x = np.array([])
+
+        cols = np.append(systs._t.colnames[0:2], systs._t.colnames[3:9])
+        for c in cols:
+            if c not in lines._t.colnames:
+                logging.info("I'm adding column '%s'." % c)
+                if c in ['func']:
+                    lines._t[c] = at.Column(np.array('None', ndmin=1), dtype='S5')
+                elif c in ['series']:
+                    lines._t[c] = at.Column(np.array('None', ndmin=1), dtype='S100')
+                else:
+                    lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+        lines._t['fwhm'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+        lines._t['dx'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+
+        for s in systs._t:
+            for trans in trans_parse(s['series']):
+                #systs_x = np.append(systs_x,
+                #                    to_x(s['z0'], trans).to(xunit_def).value)
+                systs_x = to_x(s['z0'], trans).to(xunit_def).value
+                diff_x = np.abs(lines.x.to(xunit_def).value - systs_x)
+                if diff_x.min() == 0:
+                    for c in cols:
+                        if c == 'series':
+                            lines._t[c][diff_x.argmin()] = trans
+                        else:
+                            lines._t[c][diff_x.argmin()] = s[c]
+
+        for l in lines._t:
+            if l['series'] != 'None':
+                fwhm = self._voigt_fwhm(l)
+                xpix = np.median(spec._t['xmax']-spec._t['xmin'])
+                l['fwhm'] = fwhm
+                l['dx'] = (2*np.pi*np.log(2))**(-0.25)/snr\
+                          *np.sqrt(xpix*fwhm)
+                    #lines._t['dx'][diff_x.argmin()] = self._voigt_fwhm(s)
+
+#                print(s['z0'], np.abs(lines.x.to(xunit_def).value - x))
 
         return 0
 
