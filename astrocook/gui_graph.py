@@ -184,24 +184,39 @@ class GUIGraphHistogram(GUIGraphMain):
             else:
                 rej += 1
         """
-
-        bins = np.arange(np.floor(np.min(values))-0.25, np.ceil(np.max(values))+0.25, 0.5)
-        n, bins, patches = self._ax.hist(values, bins=bins, align='mid')
+        """
+        scale = int(round(np.median(np.log10(values))))-1
+        min = np.floor(np.min(values))
+        max = np.ceil(np.max(values))
+        if np.log10(max)-np.log10(min) > 2:
+            values = np.log10(values)
+            scale = int(round(np.median(np.log10(values))))-1
+            min = np.floor(np.min(values))
+            max = np.ceil(np.max(values))
+        step = 0.5*10**scale
+        bins = np.arange(min-0.5*step, max+1.5*step, step)
+        """
+        scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
+        bins = int(scale)*10
+        n, bins, patches = self._ax.hist(values, align='mid', bins=bins)
         #mu = np.average(bins[:-1]+0.25, weights=n)
         #sigma = np.sqrt(np.average((bins[:-1]+0.25-mu)**2, weights=n))
         mu = np.mean(values)
         sigma = np.std(values)
-        x = np.linspace(bins[0], bins[-1], len(bins)*10)
-        g = np.exp(-(0.5 * (x-mu) / sigma)**2)
-        g = g*len(g)/np.sum(g)
         sigmal = np.percentile(values, 15.87)
         sigmar = np.percentile(values, 84.13)
-        #self._ax.plot(x, g, c='C1')
+        clr = 0.5*(sigmal+sigmar)
+        dv = 0.83
+        x = np.linspace(bins[0], bins[-1], len(bins)*10)
+        g = np.exp(-0.5 * ((x-clr) / dv)**2)
+        g = g*len(g)/np.sum(g) * np.sum(n)/len(bins)
+        #print(np.sum(n)*(bins[1]-bins[0]), np.sum(g)/len(g))
         self._ax.axvline(mu, linestyle='--', c='C1')
         self._ax.axvline(mu+sigma, linestyle='--', c='C1')
         self._ax.axvline(mu-sigma, linestyle='--', c='C1')
         self._ax.axvline(sigmal, linestyle=':', c='C2')
         self._ax.axvline(sigmar, linestyle=':', c='C2')
+        #self._ax.plot(x, g, c='C3')
         self._ax.text(0.95, 0.9, r'$\mu$ = %3.2f' % mu, c='C1',
                       transform=self._ax.transAxes, horizontalalignment='right')
         self._ax.text(0.95, 0.8, r'$\sigma$ = %3.2f' % sigma, c='C1',
@@ -210,5 +225,7 @@ class GUIGraphHistogram(GUIGraphMain):
                       transform=self._ax.transAxes, horizontalalignment='right')
         self._ax.text(0.95, 0.6, '84.13th cent = %3.2f' % sigmar, c='C2',
                       transform=self._ax.transAxes, horizontalalignment='right')
+        #self._ax.text(0.95, 0.5, r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$' % dv, c='C3',
+        #              transform=self._ax.transAxes, horizontalalignment='right')
         self._canvas.draw()
         self.Show()

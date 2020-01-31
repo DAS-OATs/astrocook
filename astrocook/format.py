@@ -84,6 +84,10 @@ class Format(object):
                 except:
                     pass
 
+            for c in Table(data).colnames:
+                if c not in ['x', 'dx', 'xmin', 'xmax', 'y', 'dy']:
+                    out._t[c] = data[c]
+
 
         if struct in ['systs']:
             series = data['series']
