@@ -42,16 +42,11 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _mod_ccf(self, mod, ym=None, yw=None, y=None, verbose=True):
+    def _mod_ccf(self, mod, ym=None, y=None, verbose=True):
         if ym is None:
             ym = mod.eval(x=mod._xf, params=mod._pars)
-        if yw is None:
-            yw = np.ones(len(mod._xf))
         if y is None:
             y = mod._yf
-
-        if np.sum(yw) != 1:
-            yw = yw/np.sum(yw)
 
         #w = np.abs(np.gradient(eval))
         #w = w/np.sum(w)
@@ -62,10 +57,10 @@ class CookbookAbsorbers(object):
         #ccf_same = np.correlate(eval, mod._yf, mode='same')
         #ccf_loc = np.argmax(ccf_same)
         #ccf = np.max(ccf_same)
-        ccf = np.dot(ym*yw, y)
+        ccf = np.dot(ym, y)
         #ccf = np.corrcoef(eval, mod._yf)[1][0]
-        #plt.plot(mod._xf, y)
-        #plt.plot(mod._xf, ym*yw*100)
+        plt.plot(mod._xf, y)
+        plt.plot(mod._xf, ym)
         #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
@@ -86,37 +81,48 @@ class CookbookAbsorbers(object):
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
-        eval_osampl = mod.eval(x=x_osampl, params=mod._pars)
-        eval_ref = mod.eval(x=mod._xf, params=mod._pars)
+        eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
+        #eval_ref = mod.eval(x=mod._xf, params=mod._pars)
         #plt.plot(x_osampl,eval_osampl, linewidth=3)
         #x_shift = np.arange(xstart, xend, dx)
         #print(len(x_shift), len(v_shift))
+        #yw_osampl = np.abs(np.gradient(eval_osampl))
         ccf = []
+        #"""
         if weight:
-            yw = np.abs(np.gradient(eval_ref))
-        else:
-            yw = None
+            w = np.abs(np.gradient(eval_osampl))
+            eval_osampl = eval_osampl * w/np.sum(w)*len(w)
+        #else:
+        #    yw_osampl = None
+        #"""
         y = (1-mod._yf)#*grad/np.sum(grad)
         #plt.plot(mod._xf, mod._yf)
         for xs in x_shift:
             x = x_osampl+xs
-            eval = np.interp(mod._xf, x, eval_osampl)
+            ym = np.interp(mod._xf, x, eval_osampl)
             #grad = np.abs(np.gradient(eval))
-            ym = (1-eval)#*(grad/np.sum(grad))
+            """
+            if weight:
+                yw = np.abs(np.gradient(eval))
+            else:
+                yw = None
+            """
+            #ym = (1-eval)#*(grad/np.sum(grad))
             #y = (1-mod._yf)#*(grad/np.sum(grad))
-            ccf1 = self._mod_ccf(mod, ym, yw, y, verbose=False)
+            ccf1 = self._mod_ccf(mod, ym, y, verbose=False)
             ccf.append(ccf1)
         #amax = np.argmin(ccf)
         amax = np.argmax(ccf)
         deltax = x_shift[amax]
         deltav = v_shift[amax]
+        print(deltax, deltav)
         if weight:
             color = 'r'
         else:
             color = 'g'
-        #plt.scatter(xmean+x_shift, ccf/ccf[amax], c=color)
-        #plt.scatter(xmean+x_shift[amax], 1)
-        #plt.show()
+        plt.scatter(xmean+x_shift, ccf/ccf[amax], c=color)
+        plt.scatter(xmean+x_shift[amax], 1)
+        plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \

@@ -87,6 +87,8 @@ class Format(object):
             for c in Table(data).colnames:
                 if c not in ['x', 'dx', 'xmin', 'xmax', 'y', 'dy']:
                     out._t[c] = data[c]
+                    if c in ['conv', 'cont', 'model', 'deabs']:
+                        out._t[c].unit = out._t['y'].unit
 
 
         if struct in ['systs']:
