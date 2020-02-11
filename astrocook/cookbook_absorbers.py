@@ -4,6 +4,8 @@ from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
 from astropy import constants as aconst
+from astropy import table as at
+from astropy import units as au
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
@@ -521,6 +523,10 @@ class CookbookAbsorbers(object):
                     systs._t[iw]['chi2r'] = mod._chi2r
                 except:
                     systs._t[iw]['chi2r'] = np.nan
+                try:
+                    systs._t[iw]['snr'] = np.median(mod._yf*mod._wf)
+                except:
+                    systs._t[iw]['snr'] = np.nan
             except:
                 pass
 
@@ -756,6 +762,60 @@ class CookbookAbsorbers(object):
         if recompress:
             systs._compress()
 
+        return 0
+
+
+    def systs_sigmav(self):
+        """ @brief Estimate position uncertainty
+        @details Estimate the uncertainty in the position of systems in velocity
+        units.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+        lines = self.sess.lines
+
+        if 'fwhm' not in lines._t.colnames:
+            logging.error("FWHM of lines is required to compute position "
+                          "uncertainty . Please try Recipes > Update lines "
+                          "before." % attrn)
+            return 0
+
+        xpix = np.median(spec._t['xmax']-spec._t['xmin'])
+
+        if 'sigmav' not in systs._t.colnames:
+            logging.info("I'm adding column 'sigmav'.")
+            systs._t['sigmav'] = at.Column(np.array(np.nan, ndmin=1),
+                                           dtype=float)
+
+        for m in systs._mods_t:
+            sel = np.array([np.where(systs._t['id']==id)[0][0] for id in m['id']])
+            amax = np.argmax(lines._t[sel]['fwhm'])
+            fwhm = lines._t[sel]['fwhm'][amax]
+            x = lines._t[sel]['x'][amax]
+            for i in lines._t[sel]['syst_id']:
+                s = np.where(systs._t['id']==i)[0][0]
+                systs._t[s]['sigmav'] = (2*np.pi*np.log(2))**(-0.25)/systs._t[s]['snr']\
+                                        *np.sqrt(xpix*fwhm)*aconst.c.to(au.km/au.s).value/x
+
+        return 0
+
+
+    def systs_snr(self):
+        """ @brief Estimate SNR of systems
+        @details Estimate the signal-to-noise ratio of systems as the median
+        flux/flux error ratio in the group interval.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        for m in systs._mods_t:
+            for i in m['id']:
+                sel = np.where(systs._t['id']==i)[0][0]
+                systs._t[sel]['snr'] = np.median(m['mod']._yf*m['mod']._wf)
         return 0
 
 

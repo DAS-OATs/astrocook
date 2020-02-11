@@ -486,6 +486,10 @@ class GUIMenuRecipes(GUIMenu):
         #                  "Fit system", 'syst_fit')
         self._item_method(submenu, start_id+311, 'z0',
                           "Recreate models", 'mods_recreate')
+        self._item_method(submenu, start_id+312, 'z0',
+                          "Estimate SNR of systems", 'systs_snr')
+        self._item_method(submenu, start_id+313, 'z0',
+                          "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
         self._item_method(submenu, start_id+321, 'z0',
                           "Fit systems", 'systs_fit')

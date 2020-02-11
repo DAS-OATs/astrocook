@@ -26,6 +26,7 @@ class SystList(object):
                  mod=[],
                  resol=[],
                  chi2r=[],
+                 snr=[],
                  id=[],
                  meta={},
                  dtype=float):
@@ -58,6 +59,11 @@ class SystList(object):
             self._t['chi2r'] = chi2r
         else:
             self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
+        if len(snr)==len(self.z) and len(snr)>0:
+            self._t['snr'] = snr
+        else:
+            self._t['snr'] = np.empty(len(self.z), dtype=dtype)
+            self._t['snr'] = np.nan
 #        if id != []:
         if len(id)==len(self.z) and len(id)>0:
             self._t['id'] = id

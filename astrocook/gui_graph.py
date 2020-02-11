@@ -213,7 +213,11 @@ class GUIGraphHistogram(GUIGraphMain):
         clr = 0.5*(sigmal+sigmar)
         dv = 0.83
         x = np.linspace(bins[0], bins[-1], len(bins)*10)
-        g = np.exp(-0.5 * ((x-clr) / dv)**2)
+        #g = np.exp(-0.5 * ((x-clr) / dv)**2)
+        g = np.zeros(x.shape)
+        if 'sigmav' in self._gui._sess_sel.systs.t.colnames:
+            for sigmav in self._gui._sess_sel.systs.t['sigmav']:
+                g = g+np.exp(-0.5 * ((x-clr) / sigmav)**2)
         g = g*len(g)/np.sum(g) * np.sum(n)/len(bins)
         #print(np.sum(n)*(bins[1]-bins[0]), np.sum(g)/len(g))
         self._ax.axvline(mu, linestyle='--', c='C1', label=r'$\mu$ = %3.2f, $\sigma$ = %3.2f'%(mu,sigma))

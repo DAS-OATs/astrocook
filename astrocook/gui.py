@@ -8,6 +8,7 @@ from astropy import table as at
 from copy import deepcopy as dc
 import json
 import logging
+from matplotlib import pyplot as plt
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -457,8 +458,17 @@ class GUIPanelSession(wx.Frame):
 
         if mode=='replace':
             if attrn == 'systs':
+                #spec = self._gui._sess_sel.spec
                 x = self._gui._sess_sel.spec.x.to(au.nm)
                 attr = attr._region_extract(np.min(x), np.max(x))
+
+                # Redefine regions from spectrum
+                for m in attr._mods_t:
+                    mod = m['mod']
+                    mod._spec = self._gui._sess_sel.spec
+                    mod._xf, mod._yf, mod._wf, mod._ys = \
+                        mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
+                                               .to(au.nm).value)
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
