@@ -170,19 +170,13 @@ class CookbookContinuum(object):
         return 0
 
 
-    def lines_update(self, snr=None):
+    def lines_update(self):
         """ @brief Update line list
-        @details Update line list after the systems have been fitted.
-        @param snr Signal-to-noise ratio
+        @details Update line list after the systems have been fitted, copying
+        fitting parameters and computing the line FWHM. The recipe only works if
+        the systems were extracted from the line list that is to be updated.
         @return 0
         """
-
-        try:
-            snr = None if snr in [None, 'None'] else float(snr)
-        except:
-            logging.error(msg_param_fail)
-            return 0
-
 
         systs = self.sess.systs
         lines = self.sess.lines
@@ -206,9 +200,8 @@ class CookbookContinuum(object):
                 else:
                     lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
         lines._t['fwhm'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
-        if snr is not None:
-            lines._t['dx'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
 
+        count = 0
         for s in systs._t:
             for trans in trans_parse(s['series']):
                 #systs_x = np.append(systs_x,
@@ -216,6 +209,7 @@ class CookbookContinuum(object):
                 systs_x = to_x(s['z0'], trans).to(xunit_def).value
                 diff_x = np.abs(lines.x.to(xunit_def).value - systs_x)
                 if diff_x.min() == 0:
+                    count += 1
                     for c in cols:
                         if c == 'syst_id':
                             lines._t[c][diff_x.argmin()] = s['id']
@@ -224,18 +218,19 @@ class CookbookContinuum(object):
                         else:
                             lines._t[c][diff_x.argmin()] = s[c]
 
+        if count==0:
+            logging.warning("I couldn't copy the fitting parameters and "
+                            "removed the columns. Please check that the "
+                            "systems have been extracted from the line list "
+                            "that is to be updated.")
+            lines._t.remove_columns(np.append(cols, 'fwhm'))
+            return 0
 
         for l in lines._t:
             if l['series'] != 'None':
                 fwhm = self._voigt_fwhm(l)
                 xpix = np.median(spec._t['xmax']-spec._t['xmin'])
                 l['fwhm'] = fwhm
-                if snr is not None:
-                    l['dx'] = (2*np.pi*np.log(2))**(-0.25)/snr\
-                               *np.sqrt(xpix*fwhm)
-                    #lines._t['dx'][diff_x.argmin()] = self._voigt_fwhm(s)
-
-#                print(s['z0'], np.abs(lines.x.to(xunit_def).value - x))
 
         return 0
 

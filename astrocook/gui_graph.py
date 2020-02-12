@@ -215,9 +215,16 @@ class GUIGraphHistogram(GUIGraphMain):
         x = np.linspace(bins[0], bins[-1], len(bins)*10)
         #g = np.exp(-0.5 * ((x-clr) / dv)**2)
         g = np.zeros(x.shape)
-        if 'sigmav' in self._gui._sess_sel.systs.t.colnames:
-            for sigmav in self._gui._sess_sel.systs.t['sigmav']:
-                g = g+np.exp(-0.5 * ((x-clr) / sigmav)**2)
+        if 'sigmav_AB' in self._gui._sess_sel.systs.t.colnames:
+            col = 'sigmav_AB'
+        elif 'sigmav' in self._gui._sess_sel.systs.t.colnames:
+            col = 'sigmav'
+        else:
+            col = None
+        if col != None:
+            for sigmav in self._gui._sess_sel.systs.t[col]:
+                if not np.isnan(sigmav):
+                    g = g+np.exp(-0.5 * ((x-clr) / sigmav)**2)
         g = g*len(g)/np.sum(g) * np.sum(n)/len(bins)
         #print(np.sum(n)*(bins[1]-bins[0]), np.sum(g)/len(g))
         self._ax.axvline(mu, linestyle='--', c='C1', label=r'$\mu$ = %3.2f, $\sigma$ = %3.2f'%(mu,sigma))
@@ -226,7 +233,8 @@ class GUIGraphHistogram(GUIGraphMain):
         self._ax.axvline(sigmal, linestyle=':', c='C2', label='15.87th cent = %3.2f,\n84.13th cent = %3.2f'%(sigmal,sigmar))
         self._ax.axvline(sigmar, linestyle=':', c='C2')
         #self._ax.plot(x, g, c='C3', label=r'$\langle\Delta v\rangle_{\mathrm{SNR}=10} = %3.2f$'%dv)
-        self._ax.plot(x, g, c='C3', label=r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$'%dv)
+        #self._ax.plot(x, g, c='C3', label=r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$'%dv)
+        self._ax.plot(x, g, c='C3', label="Cumulative position uncertainty")
         """
         self._ax.text(0.95, 0.9, r'$\mu$ = %3.2f' % mu, c='C1',
                       transform=self._ax.transAxes, horizontalalignment='right')

@@ -111,7 +111,8 @@ class CookbookAbsorbers(object):
         #plt.plot(mod._xf, mod._yf)
 
         for i, xs in enumerate(x_shift):
-            plot = i%30 == 0
+            #plot = i%30 == 0
+            plot = False
             x = x_osampl+xs
             #ym = np.interp(mod._xf, x, eval_osampl)
             digitized = np.digitize(x, mod._xf)
@@ -131,7 +132,7 @@ class CookbookAbsorbers(object):
 
             ccf.append(ccf1)
 
-        plt.plot(mod._xf, y, linewidth=4)
+        #plt.plot(mod._xf, y, linewidth=4)
         if weight:
             color = 'r'
         else:
@@ -152,9 +153,9 @@ class CookbookAbsorbers(object):
             ccf_max = ccf[amax]
             deltax = x_shift[amax]
             deltav = v_shift[amax]
-            plt.scatter(xmean+x_shift[amax], 1)
+            #plt.scatter(xmean+x_shift[amax], 1)
 
-        plt.show()
+        #plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
@@ -779,7 +780,7 @@ class CookbookAbsorbers(object):
         if 'fwhm' not in lines._t.colnames:
             logging.error("FWHM of lines is required to compute position "
                           "uncertainty . Please try Recipes > Update lines "
-                          "before." % attrn)
+                          "before.")
             return 0
 
         xpix = np.median(spec._t['xmax']-spec._t['xmin'])
@@ -790,7 +791,15 @@ class CookbookAbsorbers(object):
                                            dtype=float)
 
         for m in systs._mods_t:
-            sel = np.array([np.where(systs._t['id']==id)[0][0] for id in m['id']])
+            #sel = np.array([np.where(systs._t['id']==id)[0][0] for id in m['id']])
+            sel = np.array([], dtype=int)
+            for id in m['id']:
+                try:
+                    sel = np.append(sel, np.where(lines._t['syst_id']==id)[0][0])
+                except:
+                    pass
+            #print(sel)
+            #sel = np.array([np.where(lines._t['syst_id']==id)[0][0] for id in m['id']])
             amax = np.argmax(lines._t[sel]['fwhm'])
             fwhm = lines._t[sel]['fwhm'][amax]
             x = lines._t[sel]['x'][amax]

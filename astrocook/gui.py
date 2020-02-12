@@ -457,12 +457,13 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         if mode=='replace':
-            if attrn == 'systs':
+            if attrn in ['lines', 'systs']:
                 #spec = self._gui._sess_sel.spec
                 x = self._gui._sess_sel.spec.x.to(au.nm)
                 attr = attr._region_extract(np.min(x), np.max(x))
 
                 # Redefine regions from spectrum
+            if attrn == 'systs':
                 for m in attr._mods_t:
                     mod = m['mod']
                     mod._spec = self._gui._sess_sel.spec
