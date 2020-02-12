@@ -224,6 +224,7 @@ class SystModel(LMComposite):
 
     def _make_regs(self, thres=thres):
         spec = self._spec
+
         #ys = self._group.eval(x=self._xs, params=self._pars)
         #c = np.where(ys<1-thres)[0]
         c = []

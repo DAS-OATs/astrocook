@@ -4,14 +4,22 @@ from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
 from astropy import constants as aconst
+from astropy import table as at
+from astropy import units as au
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit
 import sys
 
 prefix = "[INFO] cookbook_absorbers:"
+
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
 
 class CookbookAbsorbers(object):
     """ Cookbook of utilities for modeling absorbers
@@ -42,16 +50,11 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _mod_ccf(self, mod, ym=None, yw=None, y=None, verbose=True):
+    def _mod_ccf(self, mod, ym=None, y=None, verbose=True, plot=False):
         if ym is None:
             ym = mod.eval(x=mod._xf, params=mod._pars)
-        if yw is None:
-            yw = np.ones(len(mod._xf))
         if y is None:
             y = mod._yf
-
-        if np.sum(yw) != 1:
-            yw = yw/np.sum(yw)
 
         #w = np.abs(np.gradient(eval))
         #w = w/np.sum(w)
@@ -62,17 +65,19 @@ class CookbookAbsorbers(object):
         #ccf_same = np.correlate(eval, mod._yf, mode='same')
         #ccf_loc = np.argmax(ccf_same)
         #ccf = np.max(ccf_same)
-        ccf = np.dot(ym*yw, y)
+        ccf = np.dot(ym, y)
         #ccf = np.corrcoef(eval, mod._yf)[1][0]
-        #plt.plot(mod._xf, y)
-        #plt.plot(mod._xf, ym*yw*100)
+        if plot:
+            #plt.plot(mod._xf, y)
+            plt.plot(mod._xf, ym)
+        #plt.plot(mod._xf, ym*y)
         #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
 
 
-    def _mod_ccf_max(self, mod, vstart=-20, vend=20, dv=1e-2, weight=True,
+    def _mod_ccf_max(self, mod, vstart=-5, vend=5, dv=1e-2, weight=True,
                      verbose=True):
         sd = -1*int(np.floor(np.log10(dv)))-1
 
@@ -86,42 +91,77 @@ class CookbookAbsorbers(object):
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
-        eval_osampl = mod.eval(x=x_osampl, params=mod._pars)
-        eval_ref = mod.eval(x=mod._xf, params=mod._pars)
+        eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
+        #eval_ref = mod.eval(x=mod._xf, params=mod._pars)
         #plt.plot(x_osampl,eval_osampl, linewidth=3)
         #x_shift = np.arange(xstart, xend, dx)
         #print(len(x_shift), len(v_shift))
+        #yw_osampl = np.abs(np.gradient(eval_osampl))
         ccf = []
+        #"""
+        y = (1-mod._yf)
         if weight:
-            yw = np.abs(np.gradient(eval_ref))
-        else:
-            yw = None
+            w = np.abs(np.gradient(eval_osampl))
+            #w = 1-eval_osampl
+            eval_osampl = eval_osampl * w/np.sum(w)*len(w)
+        #else:
+        #    yw_osampl = None
+        #"""
         y = (1-mod._yf)#*grad/np.sum(grad)
         #plt.plot(mod._xf, mod._yf)
-        for xs in x_shift:
+
+        for i, xs in enumerate(x_shift):
+            #plot = i%30 == 0
+            plot = False
             x = x_osampl+xs
-            eval = np.interp(mod._xf, x, eval_osampl)
+            #ym = np.interp(mod._xf, x, eval_osampl)
+            digitized = np.digitize(x, mod._xf)
+            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(mod._xf))]
             #grad = np.abs(np.gradient(eval))
-            ym = (1-eval)#*(grad/np.sum(grad))
+            """
+            if weight:
+                yw = np.abs(np.gradient(eval))
+            else:
+                yw = None
+            """
+            #ym = (1-eval)#*(grad/np.sum(grad))
             #y = (1-mod._yf)#*(grad/np.sum(grad))
-            ccf1 = self._mod_ccf(mod, ym, yw, y, verbose=False)
+            ccf1 = self._mod_ccf(mod, ym, y, verbose=False, plot=plot)
+            if plot:
+                plt.scatter(xmean+xs, ccf1)
+
             ccf.append(ccf1)
-        #amax = np.argmin(ccf)
-        amax = np.argmax(ccf)
-        deltax = x_shift[amax]
-        deltav = v_shift[amax]
+
+        #plt.plot(mod._xf, y, linewidth=4)
         if weight:
             color = 'r'
         else:
             color = 'g'
-        #plt.scatter(xmean+x_shift, ccf/ccf[amax], c=color)
-        #plt.scatter(xmean+x_shift[amax], 1)
+        #plt.scatter(xmean+x_shift, ccf/np.max(ccf), c=color)
+        try:
+            p0 = [np.max(ccf), xmean, 5e-4]
+            coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
+            #print(coeff)
+            fit = gauss(xmean+x_shift, *coeff)
+            ccf_max = coeff[0]
+            deltax = coeff[1]-xmean
+            deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
+            #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
+            #print("gauss")
+        except:
+            amax = np.argmax(ccf)
+            ccf_max = ccf[amax]
+            deltax = x_shift[amax]
+            deltav = v_shift[amax]
+            #plt.scatter(xmean+x_shift[amax], 1)
+
         #plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
-        return ccf[amax], deltax, deltav
+        #return ccf[amax], deltax, deltav
+        return ccf_max, deltax, deltav
 
 
     def _mods_ccf_max(self, vstart, vend, dv, weight):
@@ -484,6 +524,10 @@ class CookbookAbsorbers(object):
                     systs._t[iw]['chi2r'] = mod._chi2r
                 except:
                     systs._t[iw]['chi2r'] = np.nan
+                try:
+                    systs._t[iw]['snr'] = np.median(mod._yf*mod._wf)
+                except:
+                    systs._t[iw]['snr'] = np.nan
             except:
                 pass
 
@@ -533,7 +577,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def mods_ccf_max(self, vstart=-20, vend=20, dv=0.01, weight=False):
+    def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
         determine the best data/model CCF and the corresponding shift.
@@ -719,6 +763,68 @@ class CookbookAbsorbers(object):
         if recompress:
             systs._compress()
 
+        return 0
+
+
+    def systs_sigmav(self):
+        """ @brief Estimate position uncertainty
+        @details Estimate the uncertainty in the position of systems in velocity
+        units.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+        lines = self.sess.lines
+
+        if 'fwhm' not in lines._t.colnames:
+            logging.error("FWHM of lines is required to compute position "
+                          "uncertainty . Please try Recipes > Update lines "
+                          "before.")
+            return 0
+
+        xpix = np.median(spec._t['xmax']-spec._t['xmin'])
+
+        if 'sigmav' not in systs._t.colnames:
+            logging.info("I'm adding column 'sigmav'.")
+            systs._t['sigmav'] = at.Column(np.array(np.nan, ndmin=1),
+                                           dtype=float)
+
+        for m in systs._mods_t:
+            #sel = np.array([np.where(systs._t['id']==id)[0][0] for id in m['id']])
+            sel = np.array([], dtype=int)
+            for id in m['id']:
+                try:
+                    sel = np.append(sel, np.where(lines._t['syst_id']==id)[0][0])
+                except:
+                    pass
+            #print(sel)
+            #sel = np.array([np.where(lines._t['syst_id']==id)[0][0] for id in m['id']])
+            amax = np.argmax(lines._t[sel]['fwhm'])
+            fwhm = lines._t[sel]['fwhm'][amax]
+            x = lines._t[sel]['x'][amax]
+            for i in lines._t[sel]['syst_id']:
+                s = np.where(systs._t['id']==i)[0][0]
+                systs._t[s]['sigmav'] = (2*np.pi*np.log(2))**(-0.25)/systs._t[s]['snr']\
+                                        *np.sqrt(xpix*fwhm)*aconst.c.to(au.km/au.s).value/x
+
+        return 0
+
+
+    def systs_snr(self):
+        """ @brief Estimate SNR of systems
+        @details Estimate the signal-to-noise ratio of systems as the median
+        flux/flux error ratio in the group interval.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        for m in systs._mods_t:
+            for i in m['id']:
+                sel = np.where(systs._t['id']==i)[0][0]
+                systs._t[sel]['snr'] = np.median(m['mod']._yf*m['mod']._wf)
         return 0
 
 

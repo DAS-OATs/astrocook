@@ -457,8 +457,6 @@ class GUIMenuRecipes(GUIMenu):
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'lines',
                           "Continuum from nodes", 'nodes_cont')
-        self._item_method(self._menu, start_id+202, 'systs', "Update lines",
-                          'lines_update')
         submenu = wx.Menu()
         self._item_method(submenu, start_id+210, 'spec', "Find peaks",
                           'peaks_find')
@@ -486,6 +484,12 @@ class GUIMenuRecipes(GUIMenu):
         #                  "Fit system", 'syst_fit')
         self._item_method(submenu, start_id+311, 'z0',
                           "Recreate models", 'mods_recreate')
+        self._item_method(submenu, start_id+312, 'z0',
+                          "Estimate SNR of systems", 'systs_snr')
+        self._item_method(submenu, start_id+313, 'z0', "Update lines",
+                          'lines_update')
+        self._item_method(submenu, start_id+314, 'z0',
+                          "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
         self._item_method(submenu, start_id+321, 'z0',
                           "Fit systems", 'systs_fit')
