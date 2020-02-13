@@ -193,11 +193,10 @@ class CookbookAbsorbers(object):
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             expr = {}
-            #print(systs._expr)
             for k, v in systs._expr.items():
+                #print(k,v)
                 if v[0]==systs._id:
                     expr[k] = v[2]
-            #print(expr)
             mod = SystModel(spec, systs, z0=s['z0'], expr=expr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])

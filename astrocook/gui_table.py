@@ -637,7 +637,11 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        for (r, c) in self._cells_sel:
+        #print(self._cells_sel)
+        self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
+        #print(self._cells_sel)
+        _, val = self._key_extract(self._cells_sel[0][0], self._cells_sel[0][1])
+        for (r, c) in self._cells_sel[1:]:
             """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
                                       self._tab.GetCellValue(r, 11).strip(),
@@ -646,10 +650,14 @@ class GUITableSystList(GUITable):
                                       self._tab.GetCellValue(row, 11).strip(),
                                       self._tab.GetColLabelValue(col).split('\n')[0])
             """
+            """
             id_1, parn_1 = self._key_extract(r, c)
             id_2, parn_2 = self._key_extract(row, col)
+            #print(id_1, id_2, parn_1, parn_2)
             if id_1<id_2: id, parn, val = id_2, parn_2, parn_1
             if id_1>=id_2: id, parn, val = id_1, parn_1, parn_2
+            """
+            id, parn = self._key_extract(r, c)
             #print(id_1, parn_1, id_2, parn_2, self._tab.GetCellTextColour(r, c))
             if self._tab.GetCellTextColour(r, c) == 'forest green':
                 #self._tab.SetCellTextColour(r, c, 'black')
@@ -666,6 +674,7 @@ class GUITableSystList(GUITable):
             else:
                 #self._tab.SetCellTextColour(r, c, 'forest green')
                 if parn != val:
+                    print(id, 'expr',val)
                     #self._links_l.append((r,c))
                     self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
