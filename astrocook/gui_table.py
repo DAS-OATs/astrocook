@@ -305,7 +305,13 @@ class GUITableSystList(GUITable):
         #self._links_l = []
         self._freezes_d = {}
         self._links_d = {}
+        #self._colors =
 
+    def _row_extract(self, id):
+        labels = self._labels_extract()
+        ids = np.array([int(self._tab.GetCellValue(i, np.where(labels == 'id')[0][0])) \
+               for i in range(self._tab.GetNumberRows())])
+        return np.where(id==ids)[0][0]
 
     def _constr_copy(self):
         labels = self._labels_extract()
@@ -318,18 +324,19 @@ class GUITableSystList(GUITable):
                         if v.vary == False:
                             try:
                                 col = np.where(labels==p.split('_')[-1])[0][0]
-                                id_i = i if col==9 else np.where(id==int(p.split('_')[-2]))[0][0]
-                                self._tab.SetCellTextColour(i, col, 'grey')
+                                #id_i = i if col==9 else np.where(id==int(p.split('_')[-2]))[0][0]
+                                id_i = i if col==9 else \
+                                       self._row_extract(int(p.split('_')[-2]))
+                                self._tab.SetCellTextColour(id_i, col, 'grey')
                             except:
                                 pass
                         #"""
-                        if v.expr is not None:
+                        if v.expr != None:
                             try:
-                                col = np.where(np.logical_or(
-                                    labels==p.split('_')[-1],
-                                    labels==v.expr.split('_')[-1]))[0]
-                                for c in col:
-                                    self._tab.SetCellTextColour(i, c,
+                                col = np.where(labels==p.split('_')[-1])[0][0]
+                                for e in (p, v.expr):
+                                    id_i = self._row_extract(int(e.split('_')[-2]))
+                                    self._tab.SetCellTextColour(id_i, col,
                                                                 'forest green')
                             except:
                                 pass
