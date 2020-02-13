@@ -13,7 +13,7 @@ thres = 1e-2
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=[], z0=None,
+    def __init__(self, spec, systs, series=[], vars=None, expr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
                  cont_func=None):
@@ -24,7 +24,10 @@ class SystModel(LMComposite):
             self._mods_t = None
         self._id = systs._id
         self._series = series
+        if vars is None: vars = {}
+        if expr is None: expr = {}
         self._vars = vars
+        self._expr = expr
         self._z0 = z0
         self._lines_func = lines_func
         self._psf_func = psf_func
@@ -108,22 +111,67 @@ class SystModel(LMComposite):
         self._group = self._lines
         self._group_list = []
         #plt.plot(self._xs, ys)
+
+        # Copy the parameter expressions to the list and remove them from the
+        # models, otherwise parameter update fails
+        """
+        for i, s in enumerate(mods_t):
+            mod = s['mod']
+            for p,v in mod._pars.items():
+                if v.expr != None:
+                    self._expr[p] = v.expr
+                    v.expr = ''
+        """
+        #print(self._expr)
+
         for i, s in enumerate(mods_t):
             mod = s['mod']
             #ys_s = mod.eval(x=self._xs, params=mod._pars)
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
             #print(np.amin(ymax))
-            if np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys):
+            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+            pars_cond = False
+            #for p,v in self._pars.items():
+            for p,v in self._expr.items():
+                for mod_p,mod_v in mod._pars.items():
+                    pars_cond = pars_cond or v==mod_p
+            if y_cond or pars_cond:
                 self._group *= mod._group
+                """
+                print('mod')
+                mod._pars.pretty_print()
+                print('self')
+                self._pars.pretty_print()
+                """
+                mod = s['mod']
+                for p,v in mod._pars.items():
+                    if v.expr != None:
+                        self._expr[p] = v.expr
+                        v.expr = ''
+                """
+                print('mod cleaned')
+                mod._pars.pretty_print()
+                """
                 self._pars.update(mod._pars)
+                """
+                print('combine')
+                self._pars.pretty_print()
+                """
+                if pars_cond:
+                    for p,v in self._expr.items():
+                        self._pars[p].expr = v
+                """
+                print('constrained')
+                self._pars.pretty_print()
+                """
                 self._group_list.append(i)
                 #self._pars.pretty_print()
 
                 ##
                 mod._ys = self._group.eval(x=self._xs, params=self._pars)
                 ##
-
+        #print(self._group_list)
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
@@ -250,7 +298,10 @@ class SystModel(LMComposite):
         #else:
         self._resol = resol
         self._series = series
-        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': self._resol}
+
+        for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
+            if l not in self._vars:
+                self._vars[l] = v
         self._make_defs()
         self._make_lines()
         self._make_group()

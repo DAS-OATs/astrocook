@@ -301,8 +301,8 @@ class GUITableSystList(GUITable):
 
         self._gui = gui
         self._gui._tab_systs = self
-        self._freezes_l = []
-        self._links_l = []
+        #self._freezes_l = []
+        #self._links_l = []
         self._freezes_d = {}
         self._links_d = {}
 
@@ -366,7 +366,7 @@ class GUITableSystList(GUITable):
             if id in m['id']:
                 return m['mod']
 
-
+    """
     def _mods_edit(self, dict):
         for k, v in dict.items():
             #print(k, dict[k])
@@ -374,6 +374,7 @@ class GUITableSystList(GUITable):
                 if v[0] in m['id']:
                     if v[1]=='expr': m['mod']._pars[k].set(expr=v[2])
                     if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
+    """
 
     def _on_cell_right_click(self, event):
         row = event.GetRow()
@@ -538,17 +539,15 @@ class GUITableSystList(GUITable):
             id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(row, col) == 'grey':
                 self._tab.SetCellTextColour(r, c, 'black')
-                try:
-                    self._freezes_l.remove((r,c))
-                    del self._freezes_d[parn]
-                except:
-                    pass
+                self._freezes_d[parn] = (id, 'vary', True)
             else:
-                #self._tab.SetCellTextColour(r, c, 'grey')
-                self._freezes_l.append((r,c))
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
-        self._mods_edit(self._freezes_d)
+        systs = self._gui._sess_sel.systs
+        #print(self._freezes_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        systs._constrain(self._freezes_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         self._constr_copy()
 
 
@@ -558,10 +557,11 @@ class GUITableSystList(GUITable):
         for i in range(self._tab.GetNumberRows()):
             id, parn = self._key_extract(i, col)
             #self._tab.SetCellTextColour(i, col, 'grey')
-            self._freezes_l.append((i, col))
+            #self._freezes_l.append((i, col))
             self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
-        self._mods_edit(self._freezes_d)
+        print(self._freezes_d)
+        self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._constr_copy()
 
 
@@ -612,23 +612,32 @@ class GUITableSystList(GUITable):
             id_2, parn_2 = self._key_extract(row, col)
             if id_1<id_2: id, parn, val = id_2, parn_2, parn_1
             if id_1>=id_2: id, parn, val = id_1, parn_1, parn_2
-            if self._tab.GetCellTextColour(row, col) == 'forest green':
+            #print(id_1, parn_1, id_2, parn_2, self._tab.GetCellTextColour(r, c))
+            if self._tab.GetCellTextColour(r, c) == 'forest green':
                 self._tab.SetCellTextColour(r, c, 'black')
-                if parn != val:
+                self._links_d[parn] = (id, 'expr', '')
+                #if parn != val:
+                #    self._links_d[parn] = (id, 'expr', None)
+                """
                     try:
-                        self._links_l.remove((r,c))
+                        #self._links_l.remove((r,c))
                         del self._links_d[parn]
                     except:
                         pass
+                """
             else:
                 self._tab.SetCellTextColour(r, c, 'forest green')
                 if parn != val:
-                    self._links_l.append((r,c))
+                    #self._links_l.append((r,c))
                     self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
+        systs = self._gui._sess_sel.systs
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        systs._constrain(self._links_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        self._gui._sess_sel.cb._mods_recreate()
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         self._constr_copy()
-        self._mods_edit(self._links_d)
-
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)
