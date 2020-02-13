@@ -305,7 +305,9 @@ class GUITableSystList(GUITable):
         #self._links_l = []
         self._freezes_d = {}
         self._links_d = {}
-        #self._colors =
+        self._cmc = plt.cm.get_cmap('tab10').colors
+        self._cells_sel = []
+#        print(self._cmc[0])
 
     def _row_extract(self, id):
         labels = self._labels_extract()
@@ -315,31 +317,59 @@ class GUITableSystList(GUITable):
 
     def _constr_copy(self):
         labels = self._labels_extract()
+        count = 0
         for i in range(self._tab.GetNumberRows()):
             id = self._id_extract(i)
             for m in self._gui._sess_sel.systs._mods_t:
                 if id in m['id']:
                     for p,v in m['mod']._pars.items():
-                        #"""
+                        #print(self._cells_sel)
                         if v.vary == False:
                             try:
                                 col = np.where(labels==p.split('_')[-1])[0][0]
-                                #id_i = i if col==9 else np.where(id==int(p.split('_')[-2]))[0][0]
                                 id_i = i if col==9 else \
                                        self._row_extract(int(p.split('_')[-2]))
                                 self._tab.SetCellTextColour(id_i, col, 'grey')
                             except:
                                 pass
-                        #"""
                         if v.expr != None:
-                            try:
-                                col = np.where(labels==p.split('_')[-1])[0][0]
-                                for e in (p, v.expr):
-                                    id_i = self._row_extract(int(e.split('_')[-2]))
-                                    self._tab.SetCellTextColour(id_i, col,
-                                                                'forest green')
-                            except:
-                                pass
+                            for e in (p, v.expr):
+                                id_i = self._row_extract(int(e.split('_')[-2]))
+                                self._tab.SetCellTextColour(
+                                    id_i, col, 'forest green')#self._cmc[count%10])
+                            count += 1
+
+    def _text_colour(self):
+        labels = self._labels_extract()
+        for (r,c) in self._cells_sel:
+            self._tab.SetCellTextColour(r, c, 'black')
+        for i in range(self._tab.GetNumberRows()):
+        #for (r,c) in self._cells_sel:
+            id = self._id_extract(i)
+            for m in self._gui._sess_sel.systs._mods_t:
+                if id in m['id']:
+                    for p,v in m['mod']._pars.items():
+                        """
+                        id_c = int(p.split('_')[-2])==id
+                        labels_c1 = p.split('_')[-1] in labels[c]
+                        try:
+                            labels_c2 = v.expr.split('_')[-1] in labels[c]
+                        except:
+                            labels_c2 = False
+                        if id_c and labels_c1:# or labels_c2):
+                        """
+                        if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                            r = self._row_extract(int(p.split('_')[-2]))
+                            c = np.where(labels==p.split('_')[-1])[0][0]
+                            if c == 9: r = i
+                            if v.vary == False:
+                                self._tab.SetCellTextColour(r, c, 'grey')
+                            if v.expr != None:
+                                r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                                c2 = np.where(labels==p.split('_')[-1])[0][0]
+                                self._tab.SetCellTextColour(r, c, 'forest green')
+                                self._tab.SetCellTextColour(r2, c2, 'forest green')
+
 
     def _id_extract(self, row):
         labels = self._labels_extract()
@@ -544,8 +574,8 @@ class GUITableSystList(GUITable):
         col = popup._event.GetCol()
         for (r, c) in self._cells_sel:
             id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(row, col) == 'grey':
-                self._tab.SetCellTextColour(r, c, 'black')
+            if self._tab.GetCellTextColour(row, col) != 'black':
+                #self._tab.SetCellTextColour(r, c, 'black')
                 self._freezes_d[parn] = (id, 'vary', True)
             else:
                 self._freezes_d[parn] = (id, 'vary', False)
@@ -555,7 +585,8 @@ class GUITableSystList(GUITable):
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         systs._constrain(self._freezes_d)
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
-        self._constr_copy()
+        #self._constr_copy()
+        self._text_colour()
 
 
     def _on_freeze_par_all(self, event=None, col=None):
@@ -567,10 +598,10 @@ class GUITableSystList(GUITable):
             #self._freezes_l.append((i, col))
             self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
-        print(self._freezes_d)
+        #print(self._freezes_d)
         self._gui._sess_sel.systs._constrain(self._freezes_d)
-        self._constr_copy()
-
+        #self._constr_copy()
+        self._text_colour()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
@@ -621,7 +652,7 @@ class GUITableSystList(GUITable):
             if id_1>=id_2: id, parn, val = id_1, parn_1, parn_2
             #print(id_1, parn_1, id_2, parn_2, self._tab.GetCellTextColour(r, c))
             if self._tab.GetCellTextColour(r, c) == 'forest green':
-                self._tab.SetCellTextColour(r, c, 'black')
+                #self._tab.SetCellTextColour(r, c, 'black')
                 self._links_d[parn] = (id, 'expr', '')
                 #if parn != val:
                 #    self._links_d[parn] = (id, 'expr', None)
@@ -633,7 +664,7 @@ class GUITableSystList(GUITable):
                         pass
                 """
             else:
-                self._tab.SetCellTextColour(r, c, 'forest green')
+                #self._tab.SetCellTextColour(r, c, 'forest green')
                 if parn != val:
                     #self._links_l.append((r,c))
                     self._links_d[parn] = (id, 'expr', val)
@@ -644,11 +675,13 @@ class GUITableSystList(GUITable):
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         self._gui._sess_sel.cb._mods_recreate()
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
-        self._constr_copy()
+        #self._constr_copy()
+        self._text_colour()
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)
-        self._constr_copy()
+        #self._constr_copy()
+        self._text_colour()
         #self._tab.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK,
         #               self._on_cell_left_dclick)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
