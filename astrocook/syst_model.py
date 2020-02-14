@@ -112,18 +112,6 @@ class SystModel(LMComposite):
         self._group_list = []
         #plt.plot(self._xs, ys)
 
-        # Copy the parameter expressions to the list and remove them from the
-        # models, otherwise parameter update fails
-        """
-        for i, s in enumerate(mods_t):
-            mod = s['mod']
-            for p,v in mod._pars.items():
-                if v.expr != None:
-                    self._expr[p] = v.expr
-                    v.expr = ''
-        """
-        #print(self._expr)
-
         for i, s in enumerate(mods_t):
             mod = s['mod']
             #ys_s = mod.eval(x=self._xs, params=mod._pars)
@@ -158,7 +146,7 @@ class SystModel(LMComposite):
                 print('combine')
                 self._pars.pretty_print()
                 """
-                if pars_cond:
+                if pars_cond or self._expr != {}:
                     for p,v in self._expr.items():
                         self._pars[p].expr = v
                 """

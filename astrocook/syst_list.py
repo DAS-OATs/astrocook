@@ -196,7 +196,7 @@ class SystList(object):
             for m in self._mods_t:
                 if v[0] in m['id']:
                     if v[1]=='expr':
-                        print(k, v[2])
+                        #print(k, v[2])
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)

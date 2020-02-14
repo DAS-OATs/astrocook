@@ -197,6 +197,7 @@ class CookbookAbsorbers(object):
                 #print(k,v)
                 if v[0]==systs._id:
                     expr[k] = v[2]
+            #print(systs._expr,expr)
             mod = SystModel(spec, systs, z0=s['z0'], expr=expr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
