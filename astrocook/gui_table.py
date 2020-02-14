@@ -8,6 +8,7 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import wx.lib.colourdb as cdb
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
@@ -305,9 +306,9 @@ class GUITableSystList(GUITable):
         #self._links_l = []
         self._freezes_d = {}
         self._links_d = {}
-        #print(wx.ColourDatabase().__dict__)
-        self._colours = ['forest green']#, 'orchid']
+        self._colours = ['cadet blue', 'forest green', 'dark orchid', 'purple', 'maroon']#, 'orchid']
         self._colourc = 0
+        self._links_c = {}
         self._cells_sel = []
 #        print(self._colours[0])
 
@@ -348,11 +349,12 @@ class GUITableSystList(GUITable):
         for i in range(self._tab.GetNumberRows()):
         #for (r,c) in self._cells_sel:
             id = self._id_extract(i)
-            mod = []
+            #mod = []
             for m in self._gui._sess_sel.systs._mods_t:
                 if id in m['id']:
                     #print(id, m['id'])
-                    mod.append(m['mod'])
+                    #mod.append(m['mod'])
+                    mod = m['mod']
                     """
                     for p,v in m['mod']._pars.items():
                         if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
@@ -369,28 +371,25 @@ class GUITableSystList(GUITable):
                                 self._tab.SetCellTextColour(r2, c2, self._colours[self._colourc%len(self._colours)])
                                 self._colourc += 1
                     """
-            adv = False
-            #print(mod)
-            for m in mod:
-                for p,v in m._pars.items():
-                    if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
-                        #print(i, p)
-                        #r = self._row_extract(int(p.split('_')[-2]))
-                        c = np.where(labels==p.split('_')[-1])[0][0]
-                        r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
-                        #print(i,p,v.expr,r,c)
-                        if v.vary == False:
-                            #print('vary',i,p,r,c)
-                            self._tab.SetCellTextColour(r, c, 'grey')
-                        if v.expr != None:
-                            r2 = self._row_extract(int(v.expr.split('_')[-2]))
-                            c2 = np.where(labels==p.split('_')[-1])[0][0]
-                            #print(id, m['id'], p,v.expr,self._colourc)
-                            self._tab.SetCellTextColour(r, c, self._colours[self._colourc%len(self._colours)])
-                            self._tab.SetCellTextColour(r2, c2, self._colours[self._colourc%len(self._colours)])
-                            adv = True
-            if adv:
-                self._colourc += 1
+            for p,v in mod._pars.items():
+                if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                    #print(i, p)
+                    #r = self._row_extract(int(p.split('_')[-2]))
+                    c = np.where(labels==p.split('_')[-1])[0][0]
+                    r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    #print(i,p,v.expr,r,c)
+                    if v.vary == False:
+                        #print('vary',i,p,r,c)
+                        self._tab.SetCellTextColour(r, c, 'grey')
+                    if v.expr != None:
+                        r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                        c2 = np.where(labels==p.split('_')[-1])[0][0]
+                        if v.expr not in self._links_c:
+                            self._links_c[v.expr] = self._colours[self._colourc\
+                                                    %len(self._colours)]
+                            self._colourc += 1
+                        self._tab.SetCellTextColour(r, c, self._links_c[v.expr])
+                        self._tab.SetCellTextColour(r2, c2, self._links_c[v.expr])
 
 
     def _id_extract(self, row):
