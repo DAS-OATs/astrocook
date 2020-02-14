@@ -149,6 +149,9 @@ class SystModel(LMComposite):
                 if pars_cond or self._expr != {}:
                     for p,v in self._expr.items():
                         self._pars[p].expr = v
+                        self._pars[p].min = self._pars[v].min
+                        self._pars[p].max = self._pars[v].max
+                        self._pars[p].value = self._pars[v].value
                 """
                 print('constrained')
                 self._pars.pretty_print()

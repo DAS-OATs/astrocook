@@ -697,6 +697,7 @@ class GUITableSystList(GUITable):
                 if parn != val:
                     #print(id, 'expr',val)
                     #self._links_l.append((r,c))
+                    self._tab.SetCellValue(r, c, self._tab.GetCellValue(self._cells_sel[0][0], self._cells_sel[0][1]))
                     self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
