@@ -134,6 +134,7 @@ class GUIGraphDetail(GUIGraphMain):
         graph._series = OrderedDict()
         graph._cursor_lines = []
         for i, s in enumerate(series):
+            print(s)
             #key = s[-4:]
             key = s.split('_')[-1]
             x = (1+z)*xem_d[s]
@@ -156,7 +157,7 @@ class GUIGraphDetail(GUIGraphMain):
 
             if i == 0:
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1)
-                title = series
+                #title = series
                 if len(series) > 1:
                     graph._ax.tick_params(labelbottom=False)
             else:
@@ -168,7 +169,7 @@ class GUIGraphDetail(GUIGraphMain):
             graph._fig.subplots_adjust(hspace=0.)
             graph._axes[key] = graph._ax
             self._refresh(
-                self._gui._sess_items, title=title, text=key,
+                self._gui._sess_items, text=s, #key,
                 xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
