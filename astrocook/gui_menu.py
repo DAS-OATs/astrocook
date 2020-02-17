@@ -104,7 +104,7 @@ class GUIMenu(object):
             if item.IsChecked():
                 if not hasattr(self._gui, '_dlg_mini') \
                     or self._gui._dlg_mini == None:
-                    self._on_dialog_mini(event, title, targ)
+                    self._on_dialog_mini(event, "System controls", targ)
             else:
                 self._gui._dlg_mini._on_cancel(event)
 

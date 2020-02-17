@@ -95,7 +95,7 @@ class GUITable(wx.Frame):
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
-        self._gui._graph_det._graph._cursor_lines = []
+        #self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                       ylim=ylim)#, init_cursor=True)
 
@@ -491,7 +491,7 @@ class GUITableSystList(GUITable):
         z = row['z']
         if not hasattr(self._gui, '_dlg_mini') \
             or self._gui._dlg_mini == None:
-            GUIDialogMini(self._gui, "Redshift cursor", series=row['series'], z=row['z'])
+            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
         else:
             self._gui._dlg_mini._refresh(row['series'], row['z'])
 

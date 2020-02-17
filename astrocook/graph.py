@@ -129,12 +129,16 @@ class Graph(object):
                         self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv)
                         #print(self._cursor._x)
                         """
+
+                        """
                         #xem = self._xs[key]
                         xem = self._x
+                        #print(xem)
                         equiv1 = [(au.nm, au.km/au.s,
                                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
                                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                         x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv1)
+                        print(x)
                         z = x_nm/(np.min(self._cursor._xem)*au.nm)-1
                         self._cursor._x = self._cursor._xem*(1+z)*au.nm
                         #xem = self._x
@@ -144,10 +148,16 @@ class Graph(object):
                                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                         self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv2)
                         #print(key, xem, x_nm, z, self._cursor._x)
+                        """
+
+                        z = self._z+(1+self._z)*x/aconst.c.to(au.km/au.s).value
+                        self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
+                        xem = self._xs[key]
+                        self._cursor._x = (np.log(self._cursor._x/xem))*aconst.c.to(au.km/au.s)
                     else:
                         z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
                         self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
-
+                    #print(z)
                     for c, xi in zip(l, self._cursor._x):
                         c.set_xdata(xi)
                         c.set_alpha(0.5)
@@ -285,17 +295,21 @@ class Graph(object):
                     self._cursor = gs
                     self._cursor_line = []
                     if gs._z == 0:
+                        #break
                         #gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
                         #print('gs_xem', gs._xem)
-                        gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
+                        #gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
+                        gs._z = self._z
+                        #print(gs._z)
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
                         #xem = self._x
                         #print(xem)
-                        equiv = [(au.nm, au.km/au.s,
-                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                        gs._x = gs._x.to(au.km/au.s, equivalencies=equiv)
+                        #equiv = [(au.nm, au.km/au.s,
+                        #         lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                        #         lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+                        gs._x = np.log(gs._x/xem)*aconst.c.to(au.km/au.s)
+                    #print(gs._x)
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
@@ -498,35 +512,5 @@ class GraphCursorZSeries(object):
         except:
             self._z = 0
             self._x = self._xem*(1+self._z)*au.nm
-            """
-            spec = dc(sess.spec)
-            spec._x_convert(zem=spec._zem, xunit=spec._xunit_old)
-            print(spec._zem)
-            self._z = np.mean(spec.x).to(au.nm).value/self._xmean.value-1.0
-            self._x = self._xem*(1+self._z)*au.nm
-            print(self._x)
-            xem = (1+sess.spec._zem) * 121.567*au.nm
-            print(xem)
-            equiv = [(au.nm, au.km/au.s,
-                     lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                     lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-            print(equiv)
-
-            self._x = self._x.to(au.km/au.s, equivalencies=equiv)
-            print(self._x)
-            """
-            """
-            self._z = 0.0sess.spec._zem
-            print(self._z)
-            self._x = self._xem*(1+self._z)*au.nm
-            print(self._x)
-            xem = (1+self._z) * 121.567*au.nm
-            print(xem)
-            equiv = [(au.nm, au.km/au.s,
-                     lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                     lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-            self._x = 0*self._x.to(au.km/au.s, equivalencies=equiv)
-            print(self._x)
-            """
-            #self._x = 0.0*self._xem*(1+self._z)*au.km/au.s
+        #print(self._x)
         self._kwargs = {'label':self._series, 'linestyle': '--'}

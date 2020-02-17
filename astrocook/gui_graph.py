@@ -99,6 +99,7 @@ class GUIGraphDetail(GUIGraphMain):
         self._norm = True
         self._gui._graph_det = self
         self._graph._legend = False
+        self._graph._cursor_lines = []
         self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):#, norm=False):
@@ -132,17 +133,18 @@ class GUIGraphDetail(GUIGraphMain):
         graph._zems = OrderedDict()
         graph._xs = OrderedDict()
         graph._series = OrderedDict()
-        graph._cursor_lines = []
+        #graph._cursor_lines = []
         for i, s in enumerate(series):
-            print(s)
             #key = s[-4:]
             key = s.split('_')[-1]
+            key = s
             x = (1+z)*xem_d[s]
             zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
             graph._series[key] = s
+            graph._z = z
             if i == 0:
                 graph._x = x
                 graph._zem = zem
@@ -169,8 +171,8 @@ class GUIGraphDetail(GUIGraphMain):
             graph._fig.subplots_adjust(hspace=0.)
             graph._axes[key] = graph._ax
             self._refresh(
-                self._gui._sess_items, text=s, #key,
-                xlim=(-500, 500), ylim=ylim)
+                self._gui._sess_items, text=key,
+                xlim=(-1000, 1000), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
