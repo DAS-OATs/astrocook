@@ -1,7 +1,8 @@
 from .graph import Graph
 from .gui_dialog import GUIDialogMini
 from .syst_list import SystList
-from .vars import graph_sel
+from .vars import *
+from collections import OrderedDict
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
@@ -116,6 +117,61 @@ class GUIGraphDetail(GUIGraphMain):
         #    ylim = (np.min(ysel)-yspan, np.max(ysel)+yspan)
 
         return xlim, ylim
+
+    def _update(self, series, z):
+        graph = self._graph
+        rows = min(4, len(series))
+        cols = len(series)//5+1
+        size_x = wx.DisplaySize()[0]*0.4*cols
+        size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
+        self.SetSize(wx.Size(size_x, size_y))
+
+        # Redshift and wavelengths need to be initialized before the cursor
+        # is created in the graph
+        graph._axes = OrderedDict()
+        graph._zems = OrderedDict()
+        graph._xs = OrderedDict()
+        graph._series = OrderedDict()
+        graph._cursor_lines = []
+        for i, s in enumerate(series):
+            #key = s[-4:]
+            key = s.split('_')[-1]
+            x = (1+z)*xem_d[s]
+            zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print('out', xem_d[s], graph._zem, graph._x)
+            graph._zems[key] = zem
+            graph._xs[key] = x
+            graph._series[key] = s
+            if i == 0:
+                graph._x = x
+                graph._zem = zem
+
+        #graph._axes = []
+        #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
+            xunit = self._gui._sess_sel.spec.x.unit
+            self._gui._sess_sel.cb.x_convert(zem=zem)
+            self._gui._sess_sel._xdet = x
+            self._gui._sess_sel._ydet = 0.0
+            _, ylim = self._define_lim(0)#, norm=True)
+
+            if i == 0:
+                graph._ax = graph._fig.add_subplot(rows, cols, i+1)
+                title = series
+                if len(series) > 1:
+                    graph._ax.tick_params(labelbottom=False)
+            else:
+                title = None
+                graph._ax = graph._fig.add_subplot(rows, cols, i+1,
+                                                   sharex=graph._ax,
+                                                   sharey=graph._ax)
+            graph._ax.tick_params(top=True, right=True, direction='in')
+            graph._fig.subplots_adjust(hspace=0.)
+            graph._axes[key] = graph._ax
+            self._refresh(
+                self._gui._sess_items, title=title, text=key,
+                xlim=(-500, 500), ylim=ylim)
+
+            self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
 
 class GUIGraphHistogram(GUIGraphMain):

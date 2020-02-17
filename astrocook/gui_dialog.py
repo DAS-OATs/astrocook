@@ -1,3 +1,4 @@
+from .functions import trans_parse
 from .message import *
 from collections import OrderedDict
 from copy import deepcopy as dc
@@ -224,10 +225,12 @@ class GUIDialogMini(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
-                 targ=None):
+                 targ=None,
+                 series='CIV'):
         self._gui = gui
         self._gui._dlg_mini = self
         self._targ = targ
+        self._series = series
         super(GUIDialogMini, self).__init__(parent=None, title=title)
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
@@ -241,10 +244,10 @@ class GUIDialogMini(wx.Dialog):
 
     def _box_ctrl(self):
         self._ctrl = []
-        ctrl = wx.TextCtrl(self._panel, -1, value='CIV', size=(200, -1))
-        self._gui._sess_sel._series_sel = 'CIV'
-        self._ctrl.append(ctrl)
-        self._core.Add(ctrl, flag=wx.ALL|wx.EXPAND)
+        self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(200, -1))
+        self._gui._sess_sel._series_sel = self._series
+        self._ctrl.append(self._ctrl_series)
+        self._core.Add(self._ctrl_series, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
     def _box_buttons(self):
@@ -265,6 +268,9 @@ class GUIDialogMini(wx.Dialog):
         self._gui._sess_sel._series_sel = self._ctrl[0].GetValue()
         if self._targ != None:
             self._targ(self._gui._sess_sel)
+        if hasattr(self._gui, '_graph_det'):
+            series = trans_parse(self._gui._sess_sel._series_sel)
+            self._gui._graph_det._update(series, 5.3)
         #self._gui._graph_det._graph._cursor_lines = []
         self._gui._refresh(init_cursor=True)
 
@@ -275,4 +281,8 @@ class GUIDialogMini(wx.Dialog):
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
         self._gui._refresh(init_cursor=True)
+        self._gui._dlg_mini = None
         self.Close()
+
+    def _refresh(self, series='CIV'):
+        self._ctrl_series.SetValue(series)

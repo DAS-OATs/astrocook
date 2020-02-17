@@ -102,7 +102,9 @@ class GUIMenu(object):
         if dlg_mini:
             self._gui._cursor = item
             if item.IsChecked():
-                self._on_dialog_mini(event, title, targ)
+                if not hasattr(self._gui, '_dlg_mini') \
+                    or self._gui._dlg_mini == None:
+                    self._on_dialog_mini(event, title, targ)
             else:
                 self._gui._dlg_mini._on_cancel(event)
 

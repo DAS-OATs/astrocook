@@ -1,4 +1,5 @@
 from .functions import get_selected_cells, trans_parse
+from .gui_dialog import GUIDialogMini
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -487,12 +488,21 @@ class GUITableSystList(GUITable):
 
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
-        graph = self._gui._graph_det._graph
+        if not hasattr(self._gui, '_dlg_mini') \
+            or self._gui._dlg_mini == None:
+            GUIDialogMini(self._gui, "Redshift cursor", series=row['series'])
+        else:
+            self._gui._dlg_mini._refresh(row['series'])
+
         try:
             series = series_d[row['series']]
         except:
             series = row['series'].split(',')
         series = trans_parse(row['series'])
+        z = row['z']
+        self._gui._graph_det._update(series, z)
+        """
+        graph = self._gui._graph_det._graph
         rows = min(4, len(series))
         cols = len(series)//5+1
         size_x = wx.DisplaySize()[0]*0.4*cols
@@ -545,7 +555,7 @@ class GUITableSystList(GUITable):
                 xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
-
+        """
 
     def _on_edit(self, event):
         row, col = event.GetRow(), event.GetCol()
