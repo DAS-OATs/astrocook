@@ -548,13 +548,18 @@ class GUITableSystList(GUITable):
 
 
     def _on_edit(self, event):
+        #for m in self._data._mods_t['mod']:
+        #    m._pars.pretty_print()
         row, col = event.GetRow(), event.GetCol()
         value = float(self._tab.GetCellValue(row, col))
         labels = self._labels_extract()
         self._data.t[labels[col]][row] = value
         id = self._id_extract(row)
         mod = self._mod_extract(row)
-        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(value=value)
+        vary = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].vary
+        expr = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].expr
+        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(
+            value=value, vary=vary, expr=expr)
 
 
     def _on_ccf(self, event):
