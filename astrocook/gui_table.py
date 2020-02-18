@@ -489,18 +489,22 @@ class GUITableSystList(GUITable):
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         z = row['z']
+        series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
         if not hasattr(self._gui, '_dlg_mini') \
             or self._gui._dlg_mini == None:
             GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
         else:
             self._gui._dlg_mini._refresh(row['series'], row['z'])
 
+        """
         try:
             series = series_d[row['series']]
         except:
             series = row['series'].split(',')
         series = trans_parse(row['series'])
         self._gui._graph_det._update(series, z)
+        """
         """
         graph = self._gui._graph_det._graph
         rows = min(4, len(series))
