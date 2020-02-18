@@ -245,11 +245,19 @@ class GUIDialogMini(wx.Dialog):
         self.Show()
 
     def _box_ctrl(self):
-        self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(200, -1))
-        self._ctrl_z = wx.TextCtrl(self._panel, -1, value=str(self._z), size=(200, -1))
+        fgs = wx.FlexGridSizer(2, 2, 4, 15)
+        #fgs_series = wx.FlexGridSizer(2, 2, 4, 15)
+        #fgs_z = wx.FlexGridSizer(2, 2, 4, 15)
+        stat_series = wx.StaticText(self._panel, -1, label="Series:")
+        stat_z = wx.StaticText(self._panel, -1, label="Redshift:")
+        self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(150, -1))
+        self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % self._z, size=(150, -1))
+        fgs.AddMany([(stat_series, 1, wx.EXPAND), (self._ctrl_series, 1, wx.EXPAND),
+                     (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND)])
         self._gui._sess_sel._series_sel = self._series
-        self._core.Add(self._ctrl_series, flag=wx.ALL|wx.EXPAND)
-        self._core.Add(self._ctrl_z, flag=wx.ALL|wx.EXPAND)
+        #self._core.Add(self._ctrl_series, flag=wx.ALL|wx.EXPAND)
+        #self._core.Add(self._ctrl_z, flag=wx.ALL|wx.EXPAND)
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
     def _box_buttons(self):

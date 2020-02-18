@@ -172,7 +172,7 @@ class GUIGraphDetail(GUIGraphMain):
             graph._axes[key] = graph._ax
             self._refresh(
                 self._gui._sess_items, text=key,
-                xlim=(-1000, 1000), ylim=ylim)
+                xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
