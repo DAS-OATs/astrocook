@@ -53,7 +53,10 @@ class GUI(object):
         else:
             logging.info("Welcome!")
             for p in paths:
-                self._panel_sess._on_open(p)
+                if p[-4:] == 'json':
+                    self._panel_sess.load_json(p)
+                else:
+                    self._panel_sess._on_open(p)
 
     def _refresh(self, init_cursor=False, autolim=True,
                  autosort=True):
@@ -371,6 +374,7 @@ class GUIPanelSession(wx.Frame):
         @return 0
         """
 
+        logging.info("I'm loading JSON file %s..." % path)
         with open(path) as json_file:
             d = json.load(json_file)
             for r in d['set_menu']:
