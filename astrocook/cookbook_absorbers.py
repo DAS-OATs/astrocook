@@ -907,7 +907,6 @@ class CookbookAbsorbers(object):
             z_list, y_list = self._lines_cand_find(s, z_start, z_end, dz)
             z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
                                                             dz, logN=logN is None)
-            print(z_list)
 
             if len(z_list) == 0:
                 logging.warning("I've found no candidates!")
