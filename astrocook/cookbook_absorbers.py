@@ -233,7 +233,7 @@ class CookbookAbsorbers(object):
             return None
 
         systs._t.add_row(['voigt_func', series, z, z, None, logN, None, b,
-                          None, None, None, systs._id])
+                          None, None, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
