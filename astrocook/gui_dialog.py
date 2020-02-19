@@ -1,3 +1,4 @@
+from .functions import trans_parse
 from .message import *
 from collections import OrderedDict
 from copy import deepcopy as dc
@@ -224,10 +225,14 @@ class GUIDialogMini(wx.Dialog):
     def __init__(self,
                  gui,
                  title,
-                 targ=None):
+                 targ=None,
+                 series='CIV',
+                 z=2.0):
         self._gui = gui
         self._gui._dlg_mini = self
         self._targ = targ
+        self._series = series
+        self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
@@ -240,11 +245,19 @@ class GUIDialogMini(wx.Dialog):
         self.Show()
 
     def _box_ctrl(self):
-        self._ctrl = []
-        ctrl = wx.TextCtrl(self._panel, -1, value='CIV', size=(200, -1))
-        self._gui._sess_sel._series_sel = 'CIV'
-        self._ctrl.append(ctrl)
-        self._core.Add(ctrl, flag=wx.ALL|wx.EXPAND)
+        fgs = wx.FlexGridSizer(2, 2, 4, 15)
+        #fgs_series = wx.FlexGridSizer(2, 2, 4, 15)
+        #fgs_z = wx.FlexGridSizer(2, 2, 4, 15)
+        stat_series = wx.StaticText(self._panel, -1, label="Series:")
+        stat_z = wx.StaticText(self._panel, -1, label="Redshift:")
+        self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(150, -1))
+        self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % self._z, size=(150, -1))
+        fgs.AddMany([(stat_series, 1, wx.EXPAND), (self._ctrl_series, 1, wx.EXPAND),
+                     (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND)])
+        self._gui._sess_sel._series_sel = self._series
+        #self._core.Add(self._ctrl_series, flag=wx.ALL|wx.EXPAND)
+        #self._core.Add(self._ctrl_z, flag=wx.ALL|wx.EXPAND)
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
     def _box_buttons(self):
@@ -262,11 +275,17 @@ class GUIDialogMini(wx.Dialog):
         self._bottom.SetSizeHints(self)
 
     def _on_apply(self, e):
-        self._gui._sess_sel._series_sel = self._ctrl[0].GetValue()
+        series = self._ctrl_series.GetValue()
+        z = self._ctrl_z.GetValue()
+        self._gui._sess_sel._series_sel = series
         if self._targ != None:
             self._targ(self._gui._sess_sel)
-        #self._gui._graph_det._graph._cursor_lines = []
-        self._gui._refresh(init_cursor=True)
+        if hasattr(self._gui, '_graph_det'):
+            series = trans_parse(self._gui._sess_sel._series_sel)
+            self._gui._graph_det._graph._fig.clear()
+            self._gui._graph_det._update(series, float(z))
+        if hasattr(self._gui._graph_det._graph, '_cursor'):
+            self._gui._refresh(init_cursor=True)
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_cursor'):
@@ -275,4 +294,11 @@ class GUIDialogMini(wx.Dialog):
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
         self._gui._refresh(init_cursor=True)
+        self._gui._dlg_mini = None
         self.Close()
+
+    def _refresh(self, series='CIV', z=2.0):
+        self._ctrl_series.SetValue(series)
+        self._ctrl_z.SetValue("%3.7f" % z)
+        if hasattr(self._gui._graph_det._graph, '_cursor'):
+            self._gui._refresh(init_cursor=True)

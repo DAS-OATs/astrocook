@@ -36,13 +36,6 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
         #self._pars.pretty_print()
-        #plt.step(self._xs, self._ys)
-        #plt.step(self._xf, self._yf, where='mid')
-        #plt.plot()
-        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
-        #print('before')
-        #print(self._pars['lines_voigt_498_z'])
-        #print(self._yf)
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf,
                                          fit_kws=fit_kws,
@@ -50,24 +43,12 @@ class SystModel(LMComposite):
                                          method='least_squares')
                                          #method='emcee')
         time_end = datetime.datetime.now()
-        #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
-        #print('after')
-        #print(self._pars['lines_voigt_498_z'])
         #self._pars.pretty_print()
-        #print(fit.fit_report())
-        #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
-        #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
-        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')
-        #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
-        #plt.xlim(972, 977)
-        #plt.show()
         self._ys = self.eval(x=self._xs, params=self._pars)
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
-        #print(self._xs[40:50])
-        #print(self._ys[40:50])
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
@@ -148,7 +129,15 @@ class SystModel(LMComposite):
                 """
                 if pars_cond or self._expr != {}:
                     for p,v in self._expr.items():
+                        #print(s['id'], pars_cond, self._expr != {}, self._expr, p, v)
+                        #print(self._pars[p])
                         self._pars[p].expr = v
+                        if v != '':
+                            #print(self._pars[v])
+                            self._pars[p].min = self._pars[v].min
+                            self._pars[p].max = self._pars[v].max
+                            self._pars[p].value = self._pars[v].value
+                        #print(self._pars[p])
                 """
                 print('constrained')
                 self._pars.pretty_print()

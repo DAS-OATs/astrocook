@@ -1,4 +1,5 @@
 from .functions import get_selected_cells, trans_parse
+from .gui_dialog import GUIDialogMini
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -8,6 +9,7 @@ import pprint
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
+import wx.lib.colourdb as cdb
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
@@ -93,7 +95,7 @@ class GUITable(wx.Frame):
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
-        self._gui._graph_det._graph._cursor_lines = []
+        #self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                       ylim=ylim)#, init_cursor=True)
 
@@ -141,19 +143,20 @@ class GUITable(wx.Frame):
 
     def _on_sort(self, event):
         labels = self._labels_extract()
-        self._data.t.sort(labels[self._gui._col_sel])
+        self._data.t.sort([labels[self._gui._col_sel], 'id'])
         self._gui._refresh(autosort=False)
 
     def _on_sort_reverse(self, event):
         labels = self._labels_extract()
-        self._data.t.sort(labels[self._gui._col_sel])
-        self._data.t.reverse()
+        self._data.t['id'] = -1*self._data.t['id']
+        self._data.t.sort([labels[self._gui._col_sel], 'id'], reverse=True)
+        self._data.t['id'] = -1*self._data.t['id']
         self._gui._refresh(autosort=False)
 
     def _on_view(self, event, from_scratch=True, autosort=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
         if autosort:
-            if 'z' in self._data.t.colnames: self._data.t.sort('z')
+            if 'z' in self._data.t.colnames: self._data.t.sort(['z','id'])
             if 'x' in self._data.t.colnames: self._data.t.sort('x')
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
@@ -301,12 +304,23 @@ class GUITableSystList(GUITable):
 
         self._gui = gui
         self._gui._tab_systs = self
-        self._freezes_l = []
-        self._links_l = []
+        #self._freezes_l = []
+        #self._links_l = []
         self._freezes_d = {}
         self._links_d = {}
+        self._colours = ['cadet blue', 'forest green', 'dark orchid', 'purple', 'maroon']#, 'orchid']
+        self._colourc = 0
+        self._links_c = {}
+        self._cells_sel = []
+#        print(self._colours[0])
 
+    def _row_extract(self, id):
+        labels = self._labels_extract()
+        ids = np.array([int(self._tab.GetCellValue(i, np.where(labels == 'id')[0][0])) \
+               for i in range(self._tab.GetNumberRows())])
+        return np.where(id==ids)[0][0]
 
+    """
     def _constr_copy(self):
         labels = self._labels_extract()
         for i in range(self._tab.GetNumberRows()):
@@ -314,25 +328,71 @@ class GUITableSystList(GUITable):
             for m in self._gui._sess_sel.systs._mods_t:
                 if id in m['id']:
                     for p,v in m['mod']._pars.items():
-                        #"""
+                        #print(self._cells_sel)
                         if v.vary == False:
                             try:
                                 col = np.where(labels==p.split('_')[-1])[0][0]
-                                id_i = i if col==9 else np.where(id==int(p.split('_')[-2]))[0][0]
-                                self._tab.SetCellTextColour(i, col, 'grey')
+                                id_i = i if col==9 else \
+                                       self._row_extract(int(p.split('_')[-2]))
+                                self._tab.SetCellTextColour(id_i, col, 'grey')
                             except:
                                 pass
-                        #"""
-                        if v.expr is not None:
-                            try:
-                                col = np.where(np.logical_or(
-                                    labels==p.split('_')[-1],
-                                    labels==v.expr.split('_')[-1]))[0]
-                                for c in col:
-                                    self._tab.SetCellTextColour(i, c,
-                                                                'forest green')
-                            except:
-                                pass
+                        if v.expr != None:
+                            for e in (p, v.expr):
+                                id_i = self._row_extract(int(e.split('_')[-2]))
+                                self._tab.SetCellTextColour(
+                                    id_i, col, self._colours[self._colourc%len(self._colours)])
+                            self._colourc += 1
+    """
+    def _text_colours(self):
+        labels = self._labels_extract()
+        for (r,c) in self._cells_sel:
+            self._tab.SetCellTextColour(r, c, 'black')
+        for i in range(self._tab.GetNumberRows()):
+        #for (r,c) in self._cells_sel:
+            id = self._id_extract(i)
+            #mod = []
+            for m in self._gui._sess_sel.systs._mods_t:
+                if id in m['id']:
+                    #print(id, m['id'])
+                    #mod.append(m['mod'])
+                    mod = m['mod']
+                    """
+                    for p,v in m['mod']._pars.items():
+                        if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                            r = self._row_extract(int(p.split('_')[-2]))
+                            c = np.where(labels==p.split('_')[-1])[0][0]
+                            if c == 9: r = i
+                            if v.vary == False:
+                                self._tab.SetCellTextColour(r, c, 'grey')
+                            if v.expr != None:
+                                r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                                c2 = np.where(labels==p.split('_')[-1])[0][0]
+                                print(id, m['id'], p,v.expr,self._colourc)
+                                self._tab.SetCellTextColour(r, c, self._colours[self._colourc%len(self._colours)])
+                                self._tab.SetCellTextColour(r2, c2, self._colours[self._colourc%len(self._colours)])
+                                self._colourc += 1
+                    """
+            for p,v in mod._pars.items():
+                if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                    #print(i, p)
+                    #r = self._row_extract(int(p.split('_')[-2]))
+                    c = np.where(labels==p.split('_')[-1])[0][0]
+                    r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    #print(i,p,v.expr,r,c)
+                    if v.vary == False:
+                        #print('vary',i,p,r,c)
+                        self._tab.SetCellTextColour(r, c, 'grey')
+                    if v.expr != None:
+                        r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                        c2 = np.where(labels==p.split('_')[-1])[0][0]
+                        if v.expr not in self._links_c:
+                            self._links_c[v.expr] = self._colours[self._colourc\
+                                                    %len(self._colours)]
+                            self._colourc += 1
+                        self._tab.SetCellTextColour(r, c, self._links_c[v.expr])
+                        self._tab.SetCellTextColour(r2, c2, self._links_c[v.expr])
+
 
     def _id_extract(self, row):
         labels = self._labels_extract()
@@ -366,7 +426,7 @@ class GUITableSystList(GUITable):
             if id in m['id']:
                 return m['mod']
 
-
+    """
     def _mods_edit(self, dict):
         for k, v in dict.items():
             #print(k, dict[k])
@@ -374,6 +434,7 @@ class GUITableSystList(GUITable):
                 if v[0] in m['id']:
                     if v[1]=='expr': m['mod']._pars[k].set(expr=v[2])
                     if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
+    """
 
     def _on_cell_right_click(self, event):
         row = event.GetRow()
@@ -389,7 +450,7 @@ class GUITableSystList(GUITable):
             title = []
             attr = []
             if len(self._cells_sel) > 1:
-                if self._tab.GetCellTextColour(row, col) == 'forest green':
+                if self._tab.GetCellTextColour(row, col) in self._colours:
                     title = ['Unlink']
                 else:
                     title = ['Link']
@@ -428,12 +489,25 @@ class GUITableSystList(GUITable):
 
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
-        graph = self._gui._graph_det._graph
+        z = row['z']
+        series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
+        if not hasattr(self._gui, '_dlg_mini') \
+            or self._gui._dlg_mini == None:
+            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
+        else:
+            self._gui._dlg_mini._refresh(row['series'], row['z'])
+
+        """
         try:
             series = series_d[row['series']]
         except:
             series = row['series'].split(',')
         series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
+        """
+        """
+        graph = self._gui._graph_det._graph
         rows = min(4, len(series))
         cols = len(series)//5+1
         size_x = wx.DisplaySize()[0]*0.4*cols
@@ -486,16 +560,21 @@ class GUITableSystList(GUITable):
                 xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
-
+        """
 
     def _on_edit(self, event):
+        #for m in self._data._mods_t['mod']:
+        #    m._pars.pretty_print()
         row, col = event.GetRow(), event.GetCol()
         value = float(self._tab.GetCellValue(row, col))
         labels = self._labels_extract()
         self._data.t[labels[col]][row] = value
         id = self._id_extract(row)
         mod = self._mod_extract(row)
-        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(value=value)
+        vary = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].vary
+        expr = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].expr
+        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(
+            value=value, vary=vary, expr=expr)
 
 
     def _on_ccf(self, event):
@@ -536,20 +615,19 @@ class GUITableSystList(GUITable):
         col = popup._event.GetCol()
         for (r, c) in self._cells_sel:
             id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(row, col) == 'grey':
-                self._tab.SetCellTextColour(r, c, 'black')
-                try:
-                    self._freezes_l.remove((r,c))
-                    del self._freezes_d[parn]
-                except:
-                    pass
+            if self._tab.GetCellTextColour(row, col) != 'black':
+                #self._tab.SetCellTextColour(r, c, 'black')
+                self._freezes_d[parn] = (id, 'vary', True)
             else:
-                #self._tab.SetCellTextColour(r, c, 'grey')
-                self._freezes_l.append((r,c))
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
-        self._mods_edit(self._freezes_d)
-        self._constr_copy()
+        systs = self._gui._sess_sel.systs
+        #print(self._freezes_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        systs._constrain(self._freezes_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        #self._constr_copy()
+        self._text_colours()
 
 
     def _on_freeze_par_all(self, event=None, col=None):
@@ -558,12 +636,13 @@ class GUITableSystList(GUITable):
         for i in range(self._tab.GetNumberRows()):
             id, parn = self._key_extract(i, col)
             #self._tab.SetCellTextColour(i, col, 'grey')
-            self._freezes_l.append((i, col))
+            #self._freezes_l.append((i, col))
             self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
-        self._mods_edit(self._freezes_d)
-        self._constr_copy()
-
+        #print(self._freezes_d)
+        self._gui._sess_sel.systs._constrain(self._freezes_d)
+        #self._constr_copy()
+        self._text_colours()
 
     def _on_improve(self, event):
         row = self._gui._tab_popup._event.GetRow()
@@ -599,7 +678,11 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        for (r, c) in self._cells_sel:
+        #print(self._cells_sel)
+        self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
+        #print(self._cells_sel)
+        id_r, val = self._key_extract(self._cells_sel[0][0], self._cells_sel[0][1])
+        for (r, c) in self._cells_sel[1:]:
             """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
                                       self._tab.GetCellValue(r, 11).strip(),
@@ -608,31 +691,51 @@ class GUITableSystList(GUITable):
                                       self._tab.GetCellValue(row, 11).strip(),
                                       self._tab.GetColLabelValue(col).split('\n')[0])
             """
+            """
             id_1, parn_1 = self._key_extract(r, c)
             id_2, parn_2 = self._key_extract(row, col)
+            #print(id_1, id_2, parn_1, parn_2)
             if id_1<id_2: id, parn, val = id_2, parn_2, parn_1
             if id_1>=id_2: id, parn, val = id_1, parn_1, parn_2
-            if self._tab.GetCellTextColour(row, col) == 'forest green':
-                self._tab.SetCellTextColour(r, c, 'black')
-                if parn != val:
+            """
+            id, parn = self._key_extract(r, c)
+            #print(id_1, parn_1, id_2, parn_2, self._tab.GetCellTextColour(r, c))
+            if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
+                #self._tab.SetCellTextColour(r, c, 'black')
+                self._links_d[parn] = (id, 'expr', '')
+                self._links_d[val] = (id_r, 'expr', '')
+
+                #if parn != val:
+                #    self._links_d[parn] = (id, 'expr', None)
+                """
                     try:
-                        self._links_l.remove((r,c))
+                        #self._links_l.remove((r,c))
                         del self._links_d[parn]
                     except:
                         pass
+                """
             else:
-                self._tab.SetCellTextColour(r, c, 'forest green')
+                #self._tab.SetCellTextColour(r, c, 'forest green')
                 if parn != val:
-                    self._links_l.append((r,c))
+                    #print(id, 'expr',val)
+                    #self._links_l.append((r,c))
+                    self._tab.SetCellValue(r, c, self._tab.GetCellValue(self._cells_sel[0][0], self._cells_sel[0][1]))
                     self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
-        self._constr_copy()
-        self._mods_edit(self._links_d)
-
+        systs = self._gui._sess_sel.systs
+        #print(self._links_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        systs._constrain(self._links_d)
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        self._gui._sess_sel.cb._mods_recreate()
+        #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        #self._constr_copy()
+        self._text_colours()
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)
-        self._constr_copy()
+        #self._constr_copy()
+        self._text_colours()
         #self._tab.Bind(wx.grid.EVT_GRID_CELL_LEFT_DCLICK,
         #               self._on_cell_left_dclick)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,

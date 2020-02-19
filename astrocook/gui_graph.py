@@ -1,7 +1,9 @@
 from .graph import Graph
 from .gui_dialog import GUIDialogMini
 from .syst_list import SystList
-from .vars import graph_sel
+from .vars import *
+from collections import OrderedDict
+import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
@@ -98,7 +100,8 @@ class GUIGraphDetail(GUIGraphMain):
         self._norm = True
         self._gui._graph_det = self
         self._graph._legend = False
-        self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
+        self._graph._cursor_lines = []
+        #self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):#, norm=False):
         if t == None:
@@ -117,6 +120,77 @@ class GUIGraphDetail(GUIGraphMain):
 
         return xlim, ylim
 
+    def _update(self, series, z, nmax=15):
+        graph = self._graph
+        if len(series) > nmax:
+            logging.warning("I'm discarding the last %i transitions, because I "
+                            "can display only 15 panels." % (len(series)-nmax))
+            series = series[:nmax]
+        n = len(series)
+        rows = min(5, n)
+        cols = (n-1)//5+1
+        idxs = np.ravel(np.reshape(range(rows*cols), (rows, cols)).T)[:n]
+        size_x = min(wx.DisplaySize()[0]*0.5, wx.DisplaySize()[0]*0.4*cols)
+        size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
+        self.SetSize(wx.Size(size_x, size_y))
+        self.SetPosition((min(wx.DisplaySize()[0]*0.98-size_x,
+                              wx.DisplaySize()[0]*0.58),
+                         wx.DisplaySize()[1]*0.02))
+
+        # Redshift and wavelengths need to be initialized before the cursor
+        # is created in the graph
+        graph._axes = OrderedDict()
+        graph._zems = OrderedDict()
+        graph._xs = OrderedDict()
+        graph._series = OrderedDict()
+        #graph._cursor_lines = []
+        for i, s in zip(idxs, series):
+            #key = s[-4:]
+            key = s.split('_')[-1]
+            key = s
+            x = (1+z)*xem_d[s]
+            zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print('out', xem_d[s], graph._zem, graph._x)
+            graph._zems[key] = zem
+            graph._xs[key] = x
+            graph._series[key] = s
+            graph._z = z
+            if i == 0:
+                graph._x = x
+                graph._zem = zem
+
+        #graph._axes = []
+        #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
+            xunit = self._gui._sess_sel.spec.x.unit
+            self._gui._sess_sel.cb.x_convert(zem=zem)
+            self._gui._sess_sel._xdet = x
+            self._gui._sess_sel._ydet = 0.0
+            _, ylim = self._define_lim(0)#, norm=True)
+
+            if i == 0:
+                graph._ax = graph._fig.add_subplot(rows, cols, i+1)
+                #title = series
+                #if len(series) > 1:
+                #    graph._ax.tick_params(labelbottom=False)
+            else:
+                title = None
+                graph._ax = graph._fig.add_subplot(rows, cols, i+1,
+                                                   sharex=graph._ax,
+                                                   sharey=graph._ax)
+            if i < len(series)-cols:
+                graph._ax.tick_params(labelbottom=False)
+            if i%cols !=0:
+                graph._ax.tick_params(labelleft=False)
+
+            graph._ax.tick_params(top=True, right=True, direction='in')
+            graph._fig.subplots_adjust(hspace=0.,wspace=0.)
+            graph._axes[key] = graph._ax
+            self._refresh(
+                self._gui._sess_items, text=key,
+                xlim=(-500, 500), ylim=ylim)
+
+            self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
+
 
 class GUIGraphHistogram(GUIGraphMain):
 
@@ -130,7 +204,7 @@ class GUIGraphHistogram(GUIGraphMain):
         super(GUIGraphHistogram, self).__init__(gui, title, size_x, size_y,
                                                 main=False, **kwargs)
         self._gui._graph_hist = self
-        self.SetPosition((wx.DisplaySize()[0]*0.48, wx.DisplaySize()[0]*0.02))
+        self.SetPosition((wx.DisplaySize()[0]*0.48, wx.DisplaySize()[1]*0.02))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
@@ -216,7 +290,7 @@ class GUIGraphHistogram(GUIGraphMain):
         #g = np.exp(-0.5 * ((x-clr) / dv)**2)
         g = np.zeros(x.shape)
         if 'sigmav_AB' in self._gui._sess_sel.systs.t.colnames:
-            col = 'sigmav_AB'
+            col = 'sigmav'
         elif 'sigmav' in self._gui._sess_sel.systs.t.colnames:
             col = 'sigmav'
         else:
