@@ -56,22 +56,9 @@ class CookbookAbsorbers(object):
         if y is None:
             y = mod._yf
 
-        #w = np.abs(np.gradient(eval))
-        #w = w/np.sum(w)
-        #ccf = np.correlate(eval, mod._yf)[0]
-
-        #mod._yf = mod.eval(x=mod._xf, params=mod._pars)
-
-        #ccf_same = np.correlate(eval, mod._yf, mode='same')
-        #ccf_loc = np.argmax(ccf_same)
-        #ccf = np.max(ccf_same)
         ccf = np.dot(ym, y)
-        #ccf = np.corrcoef(eval, mod._yf)[1][0]
         if plot:
-            #plt.plot(mod._xf, y)
             plt.plot(mod._xf, ym)
-        #plt.plot(mod._xf, ym*y)
-        #plt.scatter(mod._xf[ccf_loc], ccf_same[ccf_loc])
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
@@ -92,40 +79,21 @@ class CookbookAbsorbers(object):
 
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
-        #eval_ref = mod.eval(x=mod._xf, params=mod._pars)
-        #plt.plot(x_osampl,eval_osampl, linewidth=3)
-        #x_shift = np.arange(xstart, xend, dx)
-        #print(len(x_shift), len(v_shift))
-        #yw_osampl = np.abs(np.gradient(eval_osampl))
         ccf = []
-        #"""
+
         y = (1-mod._yf)
         if weight:
-            w = np.abs(np.gradient(eval_osampl))
-            #w = 1-eval_osampl
-            eval_osampl = eval_osampl * w/np.sum(w)*len(w)
-        #else:
-        #    yw_osampl = None
-        #"""
-        y = (1-mod._yf)#*grad/np.sum(grad)
-        #plt.plot(mod._xf, mod._yf)
+            #w = np.abs(np.gradient(eval_osampl))
+            #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
+            y = y*mod._wf
+
+        #y = (1-mod._yf)#*grad/np.sum(grad)
 
         for i, xs in enumerate(x_shift):
-            #plot = i%30 == 0
             plot = False
             x = x_osampl+xs
-            #ym = np.interp(mod._xf, x, eval_osampl)
             digitized = np.digitize(x, mod._xf)
             ym = [eval_osampl[digitized == i].mean() for i in range(0, len(mod._xf))]
-            #grad = np.abs(np.gradient(eval))
-            """
-            if weight:
-                yw = np.abs(np.gradient(eval))
-            else:
-                yw = None
-            """
-            #ym = (1-eval)#*(grad/np.sum(grad))
-            #y = (1-mod._yf)#*(grad/np.sum(grad))
             ccf1 = self._mod_ccf(mod, ym, y, verbose=False, plot=plot)
             if plot:
                 plt.scatter(xmean+xs, ccf1)
@@ -141,13 +109,11 @@ class CookbookAbsorbers(object):
         try:
             p0 = [np.max(ccf), xmean, 5e-4]
             coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
-            #print(coeff)
             fit = gauss(xmean+x_shift, *coeff)
             ccf_max = coeff[0]
             deltax = coeff[1]-xmean
             deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
             #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
-            #print("gauss")
         except:
             amax = np.argmax(ccf)
             ccf_max = ccf[amax]
@@ -155,12 +121,10 @@ class CookbookAbsorbers(object):
             deltav = v_shift[amax]
             #plt.scatter(xmean+x_shift[amax], 1)
 
-        #plt.show()
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
-        #return ccf[amax], deltax, deltav
         return ccf_max, deltax, deltav
 
 
