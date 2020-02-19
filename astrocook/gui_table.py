@@ -142,19 +142,20 @@ class GUITable(wx.Frame):
 
     def _on_sort(self, event):
         labels = self._labels_extract()
-        self._data.t.sort(labels[self._gui._col_sel])
+        self._data.t.sort([labels[self._gui._col_sel], 'id'])
         self._gui._refresh(autosort=False)
 
     def _on_sort_reverse(self, event):
         labels = self._labels_extract()
-        self._data.t.sort(labels[self._gui._col_sel])
-        self._data.t.reverse()
+        self._data.t['id'] = -1*self._data.t['id']
+        self._data.t.sort([labels[self._gui._col_sel], 'id'], reverse=True)
+        self._data.t['id'] = -1*self._data.t['id']
         self._gui._refresh(autosort=False)
 
     def _on_view(self, event, from_scratch=True, autosort=True):
         self._data = getattr(self._gui._sess_sel, self._attr)
         if autosort:
-            if 'z' in self._data.t.colnames: self._data.t.sort('z')
+            if 'z' in self._data.t.colnames: self._data.t.sort(['z','id'])
             if 'x' in self._data.t.colnames: self._data.t.sort('x')
         try:
             self._tab.DeleteCols(pos=0, numCols=self._tab.GetNumberCols())
@@ -666,7 +667,7 @@ class GUITableSystList(GUITable):
         #print(self._cells_sel)
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         #print(self._cells_sel)
-        _, val = self._key_extract(self._cells_sel[0][0], self._cells_sel[0][1])
+        id_r, val = self._key_extract(self._cells_sel[0][0], self._cells_sel[0][1])
         for (r, c) in self._cells_sel[1:]:
             """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
@@ -688,6 +689,8 @@ class GUITableSystList(GUITable):
             if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
                 #self._tab.SetCellTextColour(r, c, 'black')
                 self._links_d[parn] = (id, 'expr', '')
+                self._links_d[val] = (id_r, 'expr', '')
+
                 #if parn != val:
                 #    self._links_d[parn] = (id, 'expr', None)
                 """
