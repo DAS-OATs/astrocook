@@ -1,4 +1,5 @@
 from .functions import get_selected_cells, trans_parse
+from .gui_dialog import GUIDialogMini
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -94,7 +95,7 @@ class GUITable(wx.Frame):
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
-        self._gui._graph_det._graph._cursor_lines = []
+        #self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
                                       ylim=ylim)#, init_cursor=True)
 
@@ -488,12 +489,25 @@ class GUITableSystList(GUITable):
 
         #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
-        graph = self._gui._graph_det._graph
+        z = row['z']
+        series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
+        if not hasattr(self._gui, '_dlg_mini') \
+            or self._gui._dlg_mini == None:
+            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
+        else:
+            self._gui._dlg_mini._refresh(row['series'], row['z'])
+
+        """
         try:
             series = series_d[row['series']]
         except:
             series = row['series'].split(',')
         series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
+        """
+        """
+        graph = self._gui._graph_det._graph
         rows = min(4, len(series))
         cols = len(series)//5+1
         size_x = wx.DisplaySize()[0]*0.4*cols
@@ -546,7 +560,7 @@ class GUITableSystList(GUITable):
                 xlim=(-500, 500), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
-
+        """
 
     def _on_edit(self, event):
         #for m in self._data._mods_t['mod']:
