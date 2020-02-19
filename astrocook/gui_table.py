@@ -473,6 +473,17 @@ class GUITableSystList(GUITable):
         else:
             self._gui._graph_det._graph._fig.clear()
 
+        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        row = self._data.t[event.GetRow()]
+        z = row['z']
+        series = trans_parse(row['series'])
+        self._gui._graph_det._update(series, z)
+        if not hasattr(self._gui, '_dlg_mini') \
+            or self._gui._dlg_mini == None:
+            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
+        else:
+            self._gui._dlg_mini._refresh(row['series'], row['z'])
+
         # Color background of systems in the same group
         mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
                              for i in self._gui._sess_sel.systs._mods_t['id']])
@@ -487,16 +498,6 @@ class GUITableSystList(GUITable):
         self._tab.ForceRefresh()
 
 
-        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
-        row = self._data.t[event.GetRow()]
-        z = row['z']
-        series = trans_parse(row['series'])
-        self._gui._graph_det._update(series, z)
-        if not hasattr(self._gui, '_dlg_mini') \
-            or self._gui._dlg_mini == None:
-            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
-        else:
-            self._gui._dlg_mini._refresh(row['series'], row['z'])
 
         """
         try:

@@ -55,7 +55,8 @@ class GUI(object):
             for p in paths:
                 self._panel_sess._on_open(p)
 
-    def _refresh(self, autolim=True, init_cursor=False, autosort=True):
+    def _refresh(self, init_cursor=False, autolim=True,
+                 autosort=True):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
