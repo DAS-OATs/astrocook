@@ -107,6 +107,7 @@ class LineList(Frame):
         else:
             z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
                                 for x in self.x] for t in trans])
+        trans_all = np.ravel([[t for x in self.x] for t in trans])
         y_all = np.ravel([[self.y] for t in trans])
         if logN:
             fosc_r = np.ravel([[fosc_d['Ly_a']/fosc_d[t]]*len(self.x) \
@@ -122,6 +123,7 @@ class LineList(Frame):
             else (z_end, z_start)
         z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
         y_sel = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        trans_sel = trans_all[np.logical_and(z_all>z_min, z_all<z_max)]
         if logN:
             logN_sel = logN_all[np.logical_and(z_all>z_min, z_all<z_max)]
             #print('sel')
@@ -132,13 +134,16 @@ class LineList(Frame):
         if len(trans) > 1:
             z_sort = np.sort(np.ravel(z_sel))
             y_sort = y_sel[np.argsort(np.ravel(z_sel))]
+            trans_sort = trans_sel[np.argsort(np.ravel(z_sel))]
             if logN:
                 logN_sort = logN_sel[np.argsort(np.ravel(z_sel))]
                 #print('sort')
-                #print(z_sort)
                 #print(logN_sort)
+            #print(z_sort)
+            #print(trans_sort)
 
-            w_range = np.where(np.ediff1d(z_sort)<dz)[0]
+            w_range = np.where(np.logical_and(np.ediff1d(z_sort)<dz,
+                                              trans_sort[:-1]!=trans_sort[1:]))[0]
             z_range = np.mean(np.vstack((z_sort[w_range], z_sort[w_range+1])),
                               axis=0)
             #y_range = y_sort[np.where(np.ediff1d(z_sort)<dz)]

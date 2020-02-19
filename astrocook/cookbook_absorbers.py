@@ -921,7 +921,7 @@ class CookbookAbsorbers(object):
             #logN_list = self._systs_guess(series_list, z_list)
             self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
             #self._systs_fit()
-            self._systs_cycle()
+            #self._systs_cycle()
             self._spec_update()
 
         return 0
