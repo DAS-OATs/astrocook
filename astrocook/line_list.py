@@ -122,6 +122,7 @@ class LineList(Frame):
             else (z_end, z_start)
         z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
         y_sel = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        print(z_sel)
         if logN:
             logN_sel = logN_all[np.logical_and(z_all>z_min, z_all<z_max)]
             #print('sel')
@@ -150,7 +151,7 @@ class LineList(Frame):
                     10**logN_sort[w_range], 10**logN_sort[w_range+1])),
                                               axis=0))
                 #print('range 1')
-                #print(z_range)
+            print(z_range)
                 #print(logN_range)
 
             z_range = z_range if z_start<z_end else z_range[::-1]

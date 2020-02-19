@@ -907,6 +907,7 @@ class CookbookAbsorbers(object):
             z_list, y_list = self._lines_cand_find(s, z_start, z_end, dz)
             z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
                                                             dz, logN=logN is None)
+            print(z_list)
 
             if len(z_list) == 0:
                 logging.warning("I've found no candidates!")
@@ -921,7 +922,7 @@ class CookbookAbsorbers(object):
             #logN_list = self._systs_guess(series_list, z_list)
             self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
             #self._systs_fit()
-            self._systs_cycle()
+            #self._systs_cycle()
             self._spec_update()
 
         return 0
