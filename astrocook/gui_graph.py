@@ -216,7 +216,7 @@ class GUIGraphHistogram(GUIGraphMain):
         #g = np.exp(-0.5 * ((x-clr) / dv)**2)
         g = np.zeros(x.shape)
         if 'sigmav_AB' in self._gui._sess_sel.systs.t.colnames:
-            col = 'sigmav_AB'
+            col = 'sigmav'
         elif 'sigmav' in self._gui._sess_sel.systs.t.colnames:
             col = 'sigmav'
         else:

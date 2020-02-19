@@ -32,6 +32,7 @@ class SystList(object):
                  dtype=float):
 
         self._id = id_start
+        self._expr = {}
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -186,6 +187,22 @@ class SystList(object):
         else:
             self._t = self._t_uncompressed
             self._compressed = False
+
+
+    def _constrain(self, dict):
+        self._expr = {}
+        for k, v in dict.items():
+            #print(k, dict[k])
+            for m in self._mods_t:
+                if v[0] in m['id']:
+                    if v[1]=='expr':
+                        #print(k, v[2])
+                        m['mod']._pars[k].set(expr=v[2])
+                        if v[2]=='':
+                            m['mod']._pars[k].set(vary=True)
+                        self._expr[k] = (v[0], k.split('_')[-1], v[2])
+                    if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
+
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t
