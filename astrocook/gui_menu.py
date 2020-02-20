@@ -56,6 +56,8 @@ class GUIMenu(object):
                     dlg_mini=False, targ=None):
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
+        if targ == GraphCursorZSeries:
+            self._gui._cursor = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
@@ -98,16 +100,24 @@ class GUIMenu(object):
         else:
             sel.append(key)
         #item.IsChecked() == False
-        self._gui._refresh()
+        self._gui._refresh(init_tab=False)
         if dlg_mini:
-            self._gui._cursor = item
+            #self._gui._cursor = item
             if item.IsChecked():
                 if not hasattr(self._gui, '_dlg_mini') \
                     or self._gui._dlg_mini == None:
                     self._on_dialog_mini(event, "System controls", targ)
+                #print('menu on ', self._gui._graph_main._sel)
+                self._gui._dlg_mini._shown = True
+                #self._gui._graph_main._sel.append(self._gui._cursor.key)
+                self._gui._dlg_mini._on_apply(event)
+                self._gui._dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
+                self._gui._dlg_mini._shown = False
+                #print('menu off', self._gui._graph_main._sel)
+                #self._gui._graph_main._sel.remove(self._gui._cursor.key)
                 self._gui._dlg_mini._on_cancel(event)
-
+                self._gui._dlg_mini._cursor_button.SetLabel("Show cursor")
 
     def _on_open(self, event, path=None, wildcard=None,
                  action='_on_open_session'):

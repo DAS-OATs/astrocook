@@ -58,7 +58,7 @@ class GUI(object):
                 else:
                     self._panel_sess._on_open(p)
 
-    def _refresh(self, init_cursor=False, autolim=True,
+    def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True):
         """ Refresh the GUI after an action """
 
@@ -74,6 +74,8 @@ class GUI(object):
         else:
             self._graph_main._refresh(self._sess_items)
         if hasattr(self, '_graph_det'):
+            #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
+            #"""
             graph = self._graph_det._graph
             if hasattr(graph, '_axes'):
                 for key in graph._zems:
@@ -101,8 +103,9 @@ class GUI(object):
                 else:
                     self._graph_det._refresh(self._sess_items,
                                              init_cursor=init_cursor)
+            #"""
         for s in ['spec', 'lines', 'systs']:
-            if hasattr(self, '_tab_'+s):
+            if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
                                                       from_scratch=False,
@@ -116,6 +119,34 @@ class GUI(object):
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
 
+    def _refresh_graph_det(self, init_cursor=False, autolim=True):
+        graph = self._graph_det._graph
+        if hasattr(graph, '_axes'):
+            for key in graph._zems:
+                xunit = self._sess_sel.spec.x.unit
+                self._sess_sel.cb.x_convert(zem=graph._zems[key])
+                graph._ax = graph._axes[key]
+                xlim_det = graph._ax.get_xlim()
+                ylim_det = graph._ax.get_ylim()
+                if autolim:
+                    self._graph_det._refresh(self._sess_items, text=key,
+                                             xlim=xlim_det, ylim=ylim_det,
+                                             init_cursor=init_cursor)
+                else:
+                    self._graph_det._refresh(self._sess_items, text=key,
+                                             init_cursor=init_cursor)
+                init_cursor = False
+                self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+        else:
+            xlim_det = graph._ax.get_xlim()
+            ylim_det = graph._ax.get_ylim()
+            if autolim:
+                self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                         ylim=ylim_det,
+                                         init_cursor=init_cursor)
+            else:
+                self._graph_det._refresh(self._sess_items,
+                                         init_cursor=init_cursor)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
