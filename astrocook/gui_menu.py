@@ -98,7 +98,7 @@ class GUIMenu(object):
         else:
             sel.append(key)
         #item.IsChecked() == False
-        self._gui._refresh()
+        self._gui._refresh(init_tab=False)
         if dlg_mini:
             self._gui._cursor = item
             if item.IsChecked():

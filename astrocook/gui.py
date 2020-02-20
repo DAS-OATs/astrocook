@@ -58,7 +58,7 @@ class GUI(object):
                 else:
                     self._panel_sess._on_open(p)
 
-    def _refresh(self, init_cursor=False, autolim=True,
+    def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True):
         """ Refresh the GUI after an action """
 
@@ -105,7 +105,7 @@ class GUI(object):
                                              init_cursor=init_cursor)
             #"""
         for s in ['spec', 'lines', 'systs']:
-            if hasattr(self, '_tab_'+s):
+            if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
                                                       from_scratch=False,
