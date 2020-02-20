@@ -284,8 +284,9 @@ class GUIDialogMini(wx.Dialog):
             series = trans_parse(self._gui._sess_sel._series_sel)
             self._gui._graph_det._graph._fig.clear()
             self._gui._graph_det._update(series, float(z))
-        if hasattr(self._gui._graph_det._graph, '_cursor'):
-            self._gui._refresh(init_cursor=True)
+            #if hasattr(self._gui._graph_det._graph, '_cursor'):
+                #self._gui._refresh(init_cursor=True)
+        self._gui._refresh(init_cursor=True)
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_cursor'):
