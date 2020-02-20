@@ -168,19 +168,70 @@ class CookbookAbsorbers(object):
             mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
-            #mod._pars['lines_voigt_%i_z' % i].stderr=s['dz']
-            #mod._pars['lines_voigt_%i_logN' % i].stderr=s['dlogN']
-            #mod._pars['lines_voigt_%i_b' % i].stderr=s['db']
-            #mod._pars['lines_voigt_%i_btur' % i].stderr=0
-            #mod._pars['psf_gauss_0_resol'].stderr=0
-
             self._mods_update(mod)
         mods_n = len(self.sess.systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s." \
                          % (mods_n, '' if mods_n==1 else 's'))
-        #mod = self.sess.systs._mods_t['mod'][0]
-        #print(self.sess.systs._mods_t['mod'])
+        return 0
+
+    def _mods_recreate2(self, only_constr=False, verbose=True):
+        """ Create new system models from a system list """
+        spec = self.sess.spec
+        spec.t['fit_mask'] = False
+        systs = self.sess.systs
+
+        if only_constr:# and False:
+            mod_sel = np.ravel([[int(v[2].split('_')[-2]),v[0]] for k,v in systs._constr.items()])
+            mod_w = np.array([], dtype=int)
+
+            for i in range(2):
+                for id in mod_sel:
+                    mod_w = np.append(mod_w, np.where([id in mod_id for mod_id in systs._mods_t['id']])[0])
+                mod_w = np.unique(mod_w)
+                mod_sel = np.array([], dtype=int)
+                for w in mod_w:
+                    mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
+                
+            #mod_sel = np.ravel(np.array([m for m in systs._mods_t['id'][mod_w]]))
+            #print(mod_sel)
+
+        else:
+            mod_w = range(len(systs._mods_t))
+            mod_sel = np.array(systs._t['id'])
+        #print(mod_w)
+
+
+        #print(systs._mods_t)
+        systs._mods_t.remove_rows(mod_w)
+        #print(systs._mods_t)
+        #for i,s in enumerate(systs._t):
+        if systs._compressed:
+            systs_t = systs._t_uncompressed
+        else:
+            systs_t = systs._t
+        for i,s in enum_tqdm(systs_t, len(systs_t),
+                             "cookbook_absorbers: Recreating"):
+            systs._id = s['id']
+            if systs._id in mod_sel:
+                vars = {}
+                constr = {}
+                for k, v in systs._constr.items():
+                    if v[0]==systs._id:
+                        if v[2]!=None:
+                            constr[k] = v[2]
+                        else:
+                            vars[k.split('_')[-1]+'_vary'] = False
+
+                mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                            b=s['b'], resol=s['resol'])
+                self._mods_update(mod)
+        #print(systs._mods_t)
+        mods_n = len(mod_w)#len(self.sess.systs._mods_t)
+        if verbose:
+            logging.info("I've recreated %i model%s." \
+                         % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
 

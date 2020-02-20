@@ -728,7 +728,7 @@ class GUITableSystList(GUITable):
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         systs._constrain(self._links_d)
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
-        self._gui._sess_sel.cb._mods_recreate()
+        self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         #self._constr_copy()
         self._text_colours()
