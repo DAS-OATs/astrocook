@@ -302,4 +302,5 @@ class GUIDialogMini(wx.Dialog):
         self._ctrl_series.SetValue(series)
         self._ctrl_z.SetValue("%3.7f" % z)
         if hasattr(self._gui._graph_det._graph, '_cursor'):
+            #self._gui._refresh_graph_det(init_cursor=True)
             self._gui._refresh(init_cursor=True)
