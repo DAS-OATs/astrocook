@@ -741,3 +741,10 @@ class GUITableSystList(GUITable):
         #               self._on_cell_left_dclick)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
                        self._on_cell_right_click)
+        #"""
+        for k, v in self._data._constr.items():
+            if v[2]==None:
+                self._freezes_d[k]=(v[0], 'vary', True)
+            else:
+                self._links_d[k]=(v[0], 'expr', v[2])
+        #"""

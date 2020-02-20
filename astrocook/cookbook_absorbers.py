@@ -156,12 +156,16 @@ class CookbookAbsorbers(object):
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
-            expr = {}
-            for k, v in systs._expr.items():
-                #print(k,v)
+            vars = {}
+            constr = {}
+            for k, v in systs._constr.items():
                 if v[0]==systs._id:
-                    expr[k] = v[2]
-            mod = SystModel(spec, systs, z0=s['z0'], expr=expr)
+                    if v[2]!=None:
+                        constr[k] = v[2]
+                    else:
+                        vars[k.split('_')[-1]+'_vary'] = False
+
+            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
             #mod._pars['lines_voigt_%i_z' % i].stderr=s['dz']

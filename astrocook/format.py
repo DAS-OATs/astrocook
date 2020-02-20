@@ -111,6 +111,14 @@ class Format(object):
                 if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
                     out._t[c] = data[c]
 
+            for k in hdr:
+                ks = k.split(' ')
+                if 'CONSTR' in ks:
+                    if 'ID' in ks: id = int(hdr[k])
+                    if 'PAR' in ks: par = hdr[k]
+                    if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
+                        = (id, par, hdr[k])
+            #print(out._constr)
         return out
 
     def eso_midas(self, hdul):

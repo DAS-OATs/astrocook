@@ -32,7 +32,7 @@ class SystList(object):
                  dtype=float):
 
         self._id = id_start
-        self._expr = {}
+        self._constr = {}
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -87,6 +87,7 @@ class SystList(object):
         self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
         self._meta = meta
+        #self._meta = self._constr
         self._dtype = dtype
 
         self._compressed = False
@@ -190,7 +191,7 @@ class SystList(object):
 
 
     def _constrain(self, dict):
-        self._expr = {}
+        #self._constr = {}
         for k, v in dict.items():
             #print(k, dict[k])
             for m in self._mods_t:
@@ -200,8 +201,11 @@ class SystList(object):
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)
-                        self._expr[k] = (v[0], k.split('_')[-1], v[2])
-                    if v[1]=='vary': m['mod']._pars[k].set(vary=v[2])
+                        self._constr[k] = (v[0], k.split('_')[-1], v[2])
+                    if v[1]=='vary':
+                        m['mod']._pars[k].set(vary=v[2])
+                        self._constr[k] = (v[0], k.split('_')[-1], None)
+        #print(self._constr)
 
 
     def _freeze(self):

@@ -200,6 +200,11 @@ class Session(object):
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                    if s == 'systs':
+                        for i,(k,v) in enumerate(obj._constr.items()):
+                            t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                            t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                            t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     t.write(name, format='fits', overwrite=True)
