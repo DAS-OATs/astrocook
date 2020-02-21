@@ -181,8 +181,9 @@ class CookbookAbsorbers(object):
         spec.t['fit_mask'] = False
         systs = self.sess.systs
 
-        if only_constr:# and False:
-            mod_sel = np.ravel([[int(v[2].split('_')[-2]),v[0]] for k,v in systs._constr.items()])
+        if only_constr:
+
+            mod_sel = np.ravel([[int(v[2].split('_')[-2]),v[0]] for k,v in systs._constr.items() if v[2]!=None])
             mod_w = np.array([], dtype=int)
 
             for i in range(2):
@@ -192,7 +193,7 @@ class CookbookAbsorbers(object):
                 mod_sel = np.array([], dtype=int)
                 for w in mod_w:
                     mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
-                
+
             #mod_sel = np.ravel(np.array([m for m in systs._mods_t['id'][mod_w]]))
             #print(mod_sel)
 
