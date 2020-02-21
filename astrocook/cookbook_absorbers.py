@@ -215,8 +215,8 @@ class CookbookAbsorbers(object):
         else:
             mod_w = range(len(systs._mods_t))
             mod_sel = np.array(systs._t['id'])
-        print(mod_w)
-        print(mod_sel)
+        #print(mod_w)
+        #print(mod_sel)
 
         #print(systs._mods_t)
         systs._mods_t.remove_rows(mod_w)
@@ -238,12 +238,15 @@ class CookbookAbsorbers(object):
                             constr[k] = v[2]
                         else:
                             vars[k.split('_')[-1]+'_vary'] = False
-
+                #print(systs._id)
+                #print(systs._mods_t['id'])
+                #print(constr)
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                             b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
-        #print(systs._mods_t)
+                #print(systs._mods_t['id'])
+        #print(systs._mods_t['id'])
         mods_n = len(mod_w)#len(self.sess.systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s." \
@@ -265,6 +268,7 @@ class CookbookAbsorbers(object):
 
         #systs._id += 1
         systs._id = np.max(systs._t['id'])+1
+        systs._mods_t.sort('id')
         return 0
 
 

@@ -105,6 +105,7 @@ class SystModel(LMComposite):
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
                     pars_cond = pars_cond or v==mod_p
+            #print(s['id'],pars_cond)
             if y_cond or pars_cond:
                 self._group *= mod._group
                 """
@@ -128,10 +129,13 @@ class SystModel(LMComposite):
                 print('combine')
                 self._pars.pretty_print()
                 """
+                #self._pars.pretty_print()
+                #print(self._constr)
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
                         #print(s['id'], pars_cond, self._constr != {}, self._constr, p, v)
                         #print(self._pars[p])
+                        #print(self._pars[v])
                         self._pars[p].expr = v
                         if v != '':
                             #print(self._pars[v])
@@ -139,10 +143,10 @@ class SystModel(LMComposite):
                             self._pars[p].max = self._pars[v].max
                             self._pars[p].value = self._pars[v].value
                         #print(self._pars[p])
-                #"""
-                #print('constrained')
-                #self._pars.pretty_print()
-                #"""
+                """
+                print('constrained')
+                self._pars.pretty_print()
+                """
                 self._group_list.append(i)
                 #self._pars.pretty_print()
 
@@ -150,6 +154,8 @@ class SystModel(LMComposite):
                 mod._ys = self._group.eval(x=self._xs, params=self._pars)
                 ##
         #print(self._group_list)
+        #print('final')
+        #self._pars.pretty_print()
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
