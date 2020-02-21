@@ -681,9 +681,10 @@ class GUITableSystList(GUITable):
         col = popup._event.GetCol()
         #print(self._cells_sel)
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
-        #print(self._cells_sel)
-        id_r, val = self._key_extract(self._cells_sel[0][0], self._cells_sel[0][1])
-        for (r, c) in self._cells_sel[1:]:
+        ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
+        others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
+        id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
+        for (r, c) in others:#self._cells_sel[list(others)]:
             """
             key = 'lines_%s_%s_%s' % (self._tab.GetCellValue(r, 0),
                                       self._tab.GetCellValue(r, 11).strip(),
@@ -717,10 +718,11 @@ class GUITableSystList(GUITable):
                 """
             else:
                 #self._tab.SetCellTextColour(r, c, 'forest green')
+                #print(parn, val)
                 if parn != val:
                     #print(id, 'expr',val)
                     #self._links_l.append((r,c))
-                    self._tab.SetCellValue(r, c, self._tab.GetCellValue(self._cells_sel[0][0], self._cells_sel[0][1]))
+                    self._tab.SetCellValue(r, c, self._tab.GetCellValue(self._cells_sel[ref][0], self._cells_sel[ref][1]))
                     self._links_d[parn] = (id, 'expr', val)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs

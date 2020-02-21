@@ -226,6 +226,7 @@ class CookbookAbsorbers(object):
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
+        systs_t.sort('id')
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
@@ -246,6 +247,7 @@ class CookbookAbsorbers(object):
                             b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
                 #print(systs._mods_t['id'])
+        systs_t.sort(['z','id'])
         #print(systs._mods_t['id'])
         mods_n = len(mod_w)#len(self.sess.systs._mods_t)
         if verbose:
