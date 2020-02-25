@@ -107,20 +107,20 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
-        source = [col]*len(peaks.t)
-        from .line_list import LineList
-        lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                         source, spec._xunit, spec._yunit, meta=spec._meta)
+        if len(peaks.t) > 0:
+            source = [col]*len(peaks.t)
+            from .line_list import LineList
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
+                             source, spec._xunit, spec._yunit, meta=spec._meta)
+            if append and self.sess.lines is not None \
+                and len(self.sess.lines.t) > 0:
+                self.sess.lines._append(lines)
+                self.sess.lines._clean()
+            else:
+                self.sess.lines = lines
 
-        if append and self.sess.lines is not None \
-            and len(self.sess.lines.t) > 0:
-            self.sess.lines._append(lines)
-            self.sess.lines._clean()
-        else:
-            self.sess.lines = lines
-
-        self.sess.lines_kind = 'peaks'
-        spec._lines_mask(self.sess.lines, source=col)
+            self.sess.lines_kind = 'peaks'
+            spec._lines_mask(self.sess.lines, source=col)
         return 0
 
 
@@ -163,7 +163,7 @@ class CookbookContinuum(object):
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
-            self.gauss_convolve(std=std, input_col=col, output_col=col+'_conv')
+            self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
                             append=append or i>0)
 
