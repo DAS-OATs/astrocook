@@ -66,6 +66,7 @@ gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
+trans_d = atom_par['col1']
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]

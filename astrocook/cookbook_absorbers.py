@@ -800,6 +800,67 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
+    def cand_find(self, z_start=0, z_end=6, dz=1e-4, resol=resol_def):
+        """ @brief Find candidate systems
+        @details Cross-match line wavelengths with known transitions to find
+        candidate systems.
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param resol Resolution
+        @return 0
+        """
+
+        try:
+            #series = series.replace(';',',')
+            z_start = float(z_start)
+            z_end = float(z_end)
+            dz = float(dz)
+            resol = None if resol in [None, 'None'] else float(resol)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        check, resol = resol_check(self.sess.spec, resol)
+        if not check: return 0
+
+        refit_n_temp = dc(self._refit_n)
+        max_nfev_temp = dc(self._max_nfev)
+        #print(refit_n_temp, max_nfev_temp)
+
+        self._refit_n = 0
+        self._max_nfev = 1
+        #print(refit_n_temp, max_nfev_temp)
+
+        #for t in np.array(np.meshgrid(trans_d, trans_d)).T.reshape(-1,2):#zip(series_d, series_d):
+        trans_arr = np.array(np.meshgrid(trans_d, trans_d)).T.reshape(-1,2)
+        for i, t in enum_tqdm(trans_arr, len(trans_arr),
+                              "cookbook_absorbers: Finding candidates"):
+            p0 = t[0].split('_')[0]
+            p1 = t[1].split('_')[0]
+            x0 = xem_d[t[0]]
+            x1 = xem_d[t[1]]
+            z0 = np.min(self.sess.spec.x)/x1-1
+            z1 = np.max(self.sess.spec.x)/x0-1
+            #print(x0, x1, z0, z1)
+            if p0==p1 and x0<x1 and z0>z_start and z1<z_end:
+                s = "%s,%s" % (t[0],t[1])
+                z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
+                                                        dz)
+
+                s_list = [s]*len(z_list)
+                resol_list = [resol]*len(z_list)
+                self._systs_add(s_list, z_list, logN_list, resol_list=resol_list, verbose=False)
+                #self._systs_cycle()
+                self._spec_update()
+
+        self._refit_n = refit_n_temp
+        self._max_nfev = max_nfev_temp
+        #print(self._refit_n, self._max_nfev)
+
+        return 0
+
+
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
                  refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
