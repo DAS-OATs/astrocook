@@ -800,7 +800,8 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
-    def cand_find(self, z_start=0, z_end=6, dz=1e-4, resol=resol_def):
+    def cand_find(self, z_start=0, z_end=6, dz=1e-4, resol=resol_def,
+                  avoid_systs=True):
         """ @brief Find candidate systems
         @details Cross-match line wavelengths with known transitions to find
         candidate systems.
@@ -808,6 +809,7 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param resol Resolution
+        @param avoid_systs Avoid finding candidates in systems already detected
         @return 0
         """
 
@@ -817,6 +819,7 @@ class CookbookAbsorbers(object):
             z_end = float(z_end)
             dz = float(dz)
             resol = None if resol in [None, 'None'] else float(resol)
+            avoid_systs = str(avoid_systs) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -844,13 +847,23 @@ class CookbookAbsorbers(object):
             z1 = np.max(self.sess.spec.x)/x0-1
             #print(x0, x1, z0, z1)
             if p0==p1 and x0<x1 and z0>z_start and z1<z_end:
+            #if x0<x1 and z0>z_start and z1<z_end:
                 s = "%s,%s" % (t[0],t[1])
                 z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
                                                         dz)
 
                 s_list = [s]*len(z_list)
                 resol_list = [resol]*len(z_list)
-                self._systs_add(s_list, z_list, logN_list, resol_list=resol_list, verbose=False)
+                add = len(z_list)>0
+                if avoid_systs:
+                    for zi in z_list:
+                        for si in trans_parse(s):
+                            xi = to_x(zi,si)
+                            wi = np.abs(self.sess.spec.x - xi).argmin()
+                            mi = self.sess.spec.t['model'][wi]
+                            add = bool(add and mi>1-1e-4)
+                if add:
+                    self._systs_add(s_list, z_list, logN_list, resol_list=resol_list, verbose=False)
                 #self._systs_cycle()
                 self._spec_update()
 
