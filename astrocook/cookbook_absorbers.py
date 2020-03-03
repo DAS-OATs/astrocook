@@ -907,7 +907,7 @@ class CookbookAbsorbers(object):
         @details Add transitions to fitted systems and refit them.
         @return 0
         """
-        for s in self.sess.systs._t:
+        #for s in self.sess.systs._t:
 
         return 0
 
