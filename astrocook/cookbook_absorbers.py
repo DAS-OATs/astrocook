@@ -231,8 +231,9 @@ class CookbookAbsorbers(object):
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
+        #print(systs._t['series'][systs._t['z0']==z])
         if z in systs._t['z0'] \
-            and series==systs._t['series'][systs._t['z0']==z]:
+            and series in systs._t['series'][systs._t['z0']==z]:
             if verbose:
                 logging.warning("Redshift %2.4f already exists. Choose another "
                                 "one." % z)
@@ -801,7 +802,7 @@ class CookbookAbsorbers(object):
 ### Advanced
 
     def cand_find(self, series=None, z_start=0, z_end=6, dz=1e-4,
-                  resol=resol_def, short=True, avoid_systs=True, append=True):
+                  resol=resol_def, avoid_systs=True, append=True):
         """ @brief Find candidate systems
         @details Cross-match line wavelengths with known transitions to find
         candidate systems.
@@ -810,8 +811,8 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param resol Resolution
-        @param short Use short list of transitions
-        @param avoid_systs Avoid finding candidates in systems already detected
+        @param avoid_systs Avoid finding candidates over systems already
+        detected
         @param append Append systems to existing system list
         @return 0
         """
@@ -823,7 +824,6 @@ class CookbookAbsorbers(object):
             z_end = float(z_end)
             dz = float(dz)
             resol = None if resol in [None, 'None'] else float(resol)
-            short = str(short) == 'True'
             avoid_systs = str(avoid_systs) == 'True'
             append = str(append) == 'True'
         except:
@@ -902,12 +902,69 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_complete(self):
+    def systs_complete(self, series=None, dz=1e-4, resol=resol_def, avoid_systs=True):
         """ @brief Complete systems
-        @details Add transitions to fitted systems and refit them.
+        @details Add candidate transitions to fitted systems.
+        @param series Series of transitions
+        @param dz Threshold for redshift coincidence
+        @param resol Resolution
+        @param avoid_systs Avoid adding transitions over systems already fitted
         @return 0
         """
-        #for s in self.sess.systs._t:
+        try:
+            #series = series.replace(';',',')
+            series = None if series in [None, 'None'] else str(series)
+            dz = float(dz)
+            resol = None if resol in [None, 'None'] else float(resol)
+            avoid_systs = str(avoid_systs) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #refit_n_temp = dc(self._refit_n)
+        #max_nfev_temp = dc(self._max_nfev)
+
+        #self._refit_n = 0
+        #self._max_nfev = 1
+
+        if series != None:
+            t_d = trans_parse(series)
+        else:
+            t_d = trans_d
+        #trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
+
+        systs = dc(self.sess.systs)
+        for j, syst in enum_tqdm(systs._t, len(systs._t),
+                            "cookbook_absorbers: Completing systems"):#[7:8]:
+            #for i, t in enumerate(t_d):
+            for i, t in enum_tqdm(t_d, len(t_d),
+                                  "cookbook_absorbers: Finding candidates"):
+                s = "%s,%s" % (t,syst['series'])
+                z_l, logN_l = self.sess.lines._cand_find2(s, syst['z']-dz, syst['z']+dz, dz)
+                z_len = len(z_l)
+                #print(s, z_l)
+                add = False
+                if avoid_systs and 'model' in self.sess.spec.t.colnames and len(z_l)>1:
+                    for zi in z_l[0:1]:
+                        for si in trans_parse(t):
+                            xi = to_x(zi,si)
+                            if xi > np.min(self.sess.spec.x) and xi < np.max(self.sess.spec.x):
+                                wi = np.abs(self.sess.spec.x - xi).argmin()
+                                mi = self.sess.spec.t['model'][wi]
+                            #add = bool(add and mi>1-1e-4)
+                                if mi>1-1e-4:# and False:
+                                    z = z_l[0]
+                                    logN = logN_l[0]
+                                    add = True
+
+                if add:
+                    #print([t], [z])
+                    self._systs_add([t], [z], [logN], resol_list=[resol], verbose=False)
+        #self._systs_fit()
+        self._spec_update()
+
+        #self._refit_n = refit_n_temp
+        #self._max_nfev = max_nfev_temp
 
         return 0
 

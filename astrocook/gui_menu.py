@@ -493,10 +493,10 @@ class GUIMenuRecipes(GUIMenu):
         #self._item_method(self._menu, start_id+302, 'lines',
         #                  "New systems from lines",
         #                  'systs_new_from_lines')
-        self._item_method(submenu, start_id+302, 'z0',
-                          "Fit systems", 'systs_fit')
-        self._item_method(self._menu, start_id+303, 'z0',
+        self._item_method(self._menu, start_id+302, 'z0',
                           "Complete systems", 'systs_complete')
+        self._item_method(self._menu, start_id+303, 'z0',
+                          "Fit systems", 'systs_fit')
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
