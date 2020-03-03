@@ -71,6 +71,17 @@ series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1'
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
 
+#trans_d_short = ['SiIV_1393', 'SiIV_1402', 'SiII_1526', 'CIV_1548', 'CIV_1550', 'AlII_1670', 'NiII_1741', 'NiII_1751', 'AlIII_1854', 'AlIII_1862', 'FeII_2344', 'FeII_2374', 'FeII_2382', 'MnII_2576', 'FeII_2586', 'MnII_2594', 'FeII_2600', 'MnII_2606', 'MgII_2796', 'MgII_2803']
+trans_d_short = ['CIV_1548', 'CIV_1550', 'MgII_2796', 'MgII_2803', 'SiIV_1393', 'SiIV_1402', 'AlIII_1854', 'AlIII_1862', 'FeII_2586', 'FeII_2600']
+trans_d_short = ['CIV_1548', 'CIV_1550']
+series_d_short = {}
+for (k,v) in series_d.items():
+    for vi in v:
+        if vi in trans_d_short:
+            if k not in series_d_short:
+                series_d_short[k] = []
+            series_d_short[k].append(vi)
+
 series_d['Ly-a'] = ['Ly_a']
 series_d['Ly-ab'] = ['Ly_b', 'Ly_a']
 series_d['Ly-abg'] = ['Ly_g', 'Ly_b', 'Ly_a']

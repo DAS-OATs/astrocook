@@ -800,26 +800,32 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
-    def cand_find(self, z_start=0, z_end=6, dz=1e-4, resol=resol_def,
-                  avoid_systs=True):
+    def cand_find(self, series=None, z_start=0, z_end=6, dz=1e-4,
+                  resol=resol_def, short=True, avoid_systs=True, append=True):
         """ @brief Find candidate systems
         @details Cross-match line wavelengths with known transitions to find
         candidate systems.
+        @param series Series of transitions
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param resol Resolution
+        @param short Use short list of transitions
         @param avoid_systs Avoid finding candidates in systems already detected
+        @param append Append systems to existing system list
         @return 0
         """
 
         try:
             #series = series.replace(';',',')
+            series = None if series in [None, 'None'] else str(series)
             z_start = float(z_start)
             z_end = float(z_end)
             dz = float(dz)
             resol = None if resol in [None, 'None'] else float(resol)
+            short = str(short) == 'True'
             avoid_systs = str(avoid_systs) == 'True'
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -836,7 +842,17 @@ class CookbookAbsorbers(object):
         #print(refit_n_temp, max_nfev_temp)
 
         #for t in np.array(np.meshgrid(trans_d, trans_d)).T.reshape(-1,2):#zip(series_d, series_d):
-        trans_arr = np.array(np.meshgrid(trans_d, trans_d)).T.reshape(-1,2)
+        #if short:
+        #    t_d = trans_d_short
+        if series != None:
+            t_d = trans_parse(series)
+        else:
+            t_d = trans_d
+        trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
+        z_list = np.array([])
+        logN_list = np.array([])
+        s_list = np.array([])
+        resol_list = np.array([])
         for i, t in enum_tqdm(trans_arr, len(trans_arr),
                               "cookbook_absorbers: Finding candidates"):
             p0 = t[0].split('_')[0]
@@ -845,31 +861,53 @@ class CookbookAbsorbers(object):
             x1 = xem_d[t[1]]
             z0 = np.min(self.sess.spec.x)/x1-1
             z1 = np.max(self.sess.spec.x)/x0-1
-            #print(x0, x1, z0, z1)
-            if p0==p1 and x0<x1 and z0>z_start and z1<z_end:
-            #if x0<x1 and z0>z_start and z1<z_end:
+            if p0==p1 and x0<x1 and (z0>z_start or z1<z_end):
                 s = "%s,%s" % (t[0],t[1])
-                z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
-                                                        dz)
+                #print(s)
+                z_l, logN_l = self.sess.lines._cand_find2(s, z_start, z_end, dz)
 
-                s_list = [s]*len(z_list)
-                resol_list = [resol]*len(z_list)
-                add = len(z_list)>0
-                if avoid_systs:
-                    for zi in z_list:
+                self._systs_prepare(append)
+
+                if avoid_systs and 'model' in self.sess.spec.t.colnames:
+                    for zi in z_l:
                         for si in trans_parse(s):
                             xi = to_x(zi,si)
                             wi = np.abs(self.sess.spec.x - xi).argmin()
                             mi = self.sess.spec.t['model'][wi]
-                            add = bool(add and mi>1-1e-4)
+                            #add = bool(add and mi>1-1e-4)
+                            if mi<1-1e-4:
+                                wi = np.where(z_l!=zi)[0]
+                                z_l = np.array(z_l)[wi]
+                                logN_l = np.array(logN_l)[wi]
+
+                add = len(z_l)>0
+                s_l = [s]*len(z_l)
+                resol_l = [resol]*len(z_l)
+
                 if add:
-                    self._systs_add(s_list, z_list, logN_list, resol_list=resol_list, verbose=False)
-                #self._systs_cycle()
+                    #z_list = np.append(z_list, z_l)
+                    #logN_list = np.append(logN_list, logN_l)
+                    #s_list = np.append(s_list, s_l)
+                    #resol_list = np.append(resol_list, resol_l)
+                    self._systs_add(s_l, z_l, logN_l, resol_list=resol_l, verbose=False)
                 self._spec_update()
+        #self._systs_prepare(append)
+        #self._systs_add(s_list, z_list, logN_list, resol_list=resol_list, verbose=False)
+        #self._spec_update()
 
         self._refit_n = refit_n_temp
         self._max_nfev = max_nfev_temp
         #print(self._refit_n, self._max_nfev)
+
+        return 0
+
+
+    def systs_complete(self):
+        """ @brief Complete systems
+        @details Add transitions to fitted systems and refit them.
+        @return 0
+        """
+        for s in self.sess.systs._t:
 
         return 0
 

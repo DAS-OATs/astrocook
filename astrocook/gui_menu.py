@@ -483,16 +483,20 @@ class GUIMenuRecipes(GUIMenu):
 
         #self._item_method(self._menu, start_id+301, 'lines',
         #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+300, 'lines',
-                          "Find candidate systems", 'cand_find')
-        self._item_method(self._menu, start_id+301, 'z0',
+        self._item_method(self._menu, start_id+300, 'z0',
                           "New system", 'syst_new')
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
         #                  'add_syst_from_lines')
-        self._item_method(self._menu, start_id+302, 'lines',
-                          "New systems from lines",
-                          'systs_new_from_lines')
+        self._item_method(self._menu, start_id+301, 'lines',
+                          "Find candidate systems", 'cand_find')
+        #self._item_method(self._menu, start_id+302, 'lines',
+        #                  "New systems from lines",
+        #                  'systs_new_from_lines')
+        self._item_method(submenu, start_id+302, 'z0',
+                          "Fit systems", 'systs_fit')
+        self._item_method(self._menu, start_id+303, 'z0',
+                          "Complete systems", 'systs_complete')
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
@@ -505,8 +509,6 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(submenu, start_id+314, 'z0',
                           "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
-        self._item_method(submenu, start_id+321, 'z0',
-                          "Fit systems", 'systs_fit')
         self._item_method(submenu, start_id+322, 'z0',
                           "Clean systems", 'systs_clean')
         self._item_method(submenu, start_id+323, 'z0',
