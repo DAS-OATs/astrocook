@@ -489,13 +489,15 @@ class GUIMenuRecipes(GUIMenu):
         #                  "Add and fit systems from line list",
         #                  'add_syst_from_lines')
         self._item_method(self._menu, start_id+301, 'lines',
-                          "Find candidate systems", 'cand_find')
+                          "Find candidate systems", 'cands_find')
         #self._item_method(self._menu, start_id+302, 'lines',
         #                  "New systems from lines",
         #                  'systs_new_from_lines')
         self._item_method(self._menu, start_id+302, 'z0',
-                          "Complete systems", 'systs_complete')
+                          "Improve systems", 'systs_improve')
         self._item_method(self._menu, start_id+303, 'z0',
+                          "Complete systems", 'systs_complete')
+        self._item_method(self._menu, start_id+304, 'z0',
                           "Fit systems", 'systs_fit')
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',

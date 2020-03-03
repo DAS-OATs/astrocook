@@ -34,8 +34,8 @@ class CookbookAbsorbers(object):
         self._max_nfev = max_nfev_def
 
 
-    def _lines_cand_find(self, series, z_start, z_end, dz):
-        return self.sess.lines._cand_find(series, z_start, z_end, dz)
+    def _lines_cands_find(self, series, z_start, z_end, dz):
+        return self.sess.lines._cands_find(series, z_start, z_end, dz)
 
 
     def _logN_guess(self, series, z, b, resol):
@@ -801,7 +801,7 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
-    def cand_find(self, series=None, z_start=0, z_end=6, dz=1e-4,
+    def cands_find(self, series=None, z_start=0, z_end=6, dz=1e-4,
                   resol=resol_def, avoid_systs=True, append=True):
         """ @brief Find candidate systems
         @details Cross-match line wavelengths with known transitions to find
@@ -864,7 +864,7 @@ class CookbookAbsorbers(object):
             if p0==p1 and x0<x1 and (z0>z_start or z1<z_end):
                 s = "%s,%s" % (t[0],t[1])
                 #print(s)
-                z_l, logN_l = self.sess.lines._cand_find2(s, z_start, z_end, dz)
+                z_l, logN_l = self.sess.lines._cands_find2(s, z_start, z_end, dz)
 
                 self._systs_prepare(append)
 
@@ -898,73 +898,6 @@ class CookbookAbsorbers(object):
         self._refit_n = refit_n_temp
         self._max_nfev = max_nfev_temp
         #print(self._refit_n, self._max_nfev)
-
-        return 0
-
-
-    def systs_complete(self, series=None, dz=1e-4, resol=resol_def, avoid_systs=True):
-        """ @brief Complete systems
-        @details Add candidate transitions to fitted systems.
-        @param series Series of transitions
-        @param dz Threshold for redshift coincidence
-        @param resol Resolution
-        @param avoid_systs Avoid adding transitions over systems already fitted
-        @return 0
-        """
-        try:
-            #series = series.replace(';',',')
-            series = None if series in [None, 'None'] else str(series)
-            dz = float(dz)
-            resol = None if resol in [None, 'None'] else float(resol)
-            avoid_systs = str(avoid_systs) == 'True'
-        except:
-            logging.error(msg_param_fail)
-            return 0
-
-        #refit_n_temp = dc(self._refit_n)
-        #max_nfev_temp = dc(self._max_nfev)
-
-        #self._refit_n = 0
-        #self._max_nfev = 1
-
-        if series != None:
-            t_d = trans_parse(series)
-        else:
-            t_d = trans_d
-        #trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
-
-        systs = dc(self.sess.systs)
-        for j, syst in enum_tqdm(systs._t, len(systs._t),
-                            "cookbook_absorbers: Completing systems"):#[7:8]:
-            #for i, t in enumerate(t_d):
-            for i, t in enum_tqdm(t_d, len(t_d),
-                                  "cookbook_absorbers: Finding candidates"):
-                s = "%s,%s" % (t,syst['series'])
-                z_l, logN_l = self.sess.lines._cand_find2(s, syst['z']-dz, syst['z']+dz, dz)
-                z_len = len(z_l)
-                #print(s, z_l)
-                add = False
-                if avoid_systs and 'model' in self.sess.spec.t.colnames and len(z_l)>1:
-                    for zi in z_l[0:1]:
-                        for si in trans_parse(t):
-                            xi = to_x(zi,si)
-                            if xi > np.min(self.sess.spec.x) and xi < np.max(self.sess.spec.x):
-                                wi = np.abs(self.sess.spec.x - xi).argmin()
-                                mi = self.sess.spec.t['model'][wi]
-                            #add = bool(add and mi>1-1e-4)
-                                if mi>1-1e-4:# and False:
-                                    z = z_l[0]
-                                    logN = logN_l[0]
-                                    add = True
-
-                if add:
-                    #print([t], [z])
-                    self._systs_add([t], [z], [logN], resol_list=[resol], verbose=False)
-        #self._systs_fit()
-        self._spec_update()
-
-        #self._refit_n = refit_n_temp
-        #self._max_nfev = max_nfev_temp
 
         return 0
 
@@ -1023,6 +956,125 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def systs_complete(self, series=None, dz=1e-4, resol=resol_def, avoid_systs=True):
+        """ @brief Complete systems
+        @details Add candidate transitions to fitted systems.
+        @param series Series of transitions
+        @param dz Threshold for redshift coincidence
+        @param resol Resolution
+        @param avoid_systs Avoid adding transitions over systems already fitted
+        @return 0
+        """
+        try:
+            #series = series.replace(';',',')
+            series = None if series in [None, 'None'] else str(series)
+            dz = float(dz)
+            resol = None if resol in [None, 'None'] else float(resol)
+            avoid_systs = str(avoid_systs) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #refit_n_temp = dc(self._refit_n)
+        #max_nfev_temp = dc(self._max_nfev)
+
+        #self._refit_n = 0
+        #self._max_nfev = 1
+
+        if series != None:
+            t_d = trans_parse(series)
+        else:
+            t_d = trans_d
+        #trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
+
+        systs = dc(self.sess.systs)
+        for j, syst in enum_tqdm(systs._t, len(systs._t),
+                            "cookbook_absorbers: Completing systems"):#[7:8]:
+            #for i, t in enumerate(t_d):
+            for i, t in enum_tqdm(t_d, len(t_d),
+                                  "cookbook_absorbers: Finding candidates"):
+                s = "%s,%s" % (t,syst['series'])
+                z_l, logN_l = self.sess.lines._cands_find2(s, syst['z']-dz, syst['z']+dz, dz)
+                z_len = len(z_l)
+                #print(s, z_l)
+                add = False
+                if avoid_systs and 'model' in self.sess.spec.t.colnames and len(z_l)>1:
+                    for zi in z_l[0:1]:
+                        for si in trans_parse(t):
+                            xi = to_x(zi,si)
+                            if xi > np.min(self.sess.spec.x) and xi < np.max(self.sess.spec.x):
+                                wi = np.abs(self.sess.spec.x - xi).argmin()
+                                mi = self.sess.spec.t['model'][wi]
+                            #add = bool(add and mi>1-1e-4)
+                                if mi>1-1e-4:# and False:
+                                    z = z_l[0]
+                                    logN = logN_l[0]
+                                    add = True
+
+                if add:
+                    #print([t], [z])
+                    self._systs_add([t], [z], [logN], resol_list=[resol], verbose=False)
+        #self._systs_fit()
+        self._spec_update()
+
+        #self._refit_n = refit_n_temp
+        #self._max_nfev = max_nfev_temp
+
+        return 0
+
+    def systs_improve(self):
+        """ @brief Improve systems
+        @details Improve systems adding components to reduce residuals
+        @return 0
+        """
+
+        spec = dc(self.sess.spec)
+        lines = dc(self.sess.lines)
+        systs = dc(self.sess.systs)
+        self.lines_find(col='deabs', append=False)
+
+        dx_thres = np.max(spec.xmax.value-spec.xmin.value)
+
+        mods_sel = []
+        for j, syst in enum_tqdm(systs._t, len(systs._t),
+                            "cookbook_absorbers: Improving systems"):#[7:8]:
+            l = self.sess.lines
+            mod_sel = np.where([syst['id'] in i for i in systs._mods_t['id']])[0]
+            if mod_sel not in mods_sel:
+                mods_sel.append(mod_sel)
+                mod = systs._mods_t['mod'][mod_sel][0]
+                id = systs._mods_t['id'][mod_sel][0]
+                x_mod = np.where([np.min(np.abs(x.value-mod._xf))<dx_thres
+                                 for x in l.x])[0]
+                if len(x_mod)>0:
+                    y_sel = np.argmin(l.y[x_mod].value)
+                    series = np.unique([s['series'] for s in systs._t if s['id'] in id])
+                    trans = np.unique([trans_parse(s) for s in series])
+                    z_list = [to_z(l.x[x_mod][y_sel], t) for t in trans]
+                    z_sel = np.argmin([np.abs(systs._t['z']-z) for z in z_list])
+                    #print([np.abs(systs._t['z']-z) for z in z_list], z_sel)
+                    s = systs._t['series'][z_sel%len(systs._t)]
+                    z = z_list[z_sel//len(systs._t)]
+                    #print(s, z)
+                    self._systs_add([s], [z], verbose=False)
+
+            #else:
+            """
+            if len(m_sel)>0:
+                sel = np.argmin(l.y[m_sel].value)
+                s_sel = trans_parse(np.unique([systs._t['series'][np.where(systs._t['id']==i)] for i in m['id']]))
+                z_sel = [np.array(systs._t['z'][systs._t['id']==i]) for i in m['id']]
+                print(s_sel)
+                z = [to_z(l.x[sel], s)  for s in s_sel]
+                print(z)
+            """
+        self.sess.lines = lines
+        self._spec_update()
+        return 0
+
+
+
+
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=np.inf,
@@ -1073,8 +1125,8 @@ class CookbookAbsorbers(object):
         if not check: return 0
 
         for s in series.split(';'):
-            z_list, y_list = self._lines_cand_find(s, z_start, z_end, dz)
-            z_list, logN_list = self.sess.lines._cand_find2(s, z_start, z_end,
+            z_list, y_list = self._lines_cands_find(s, z_start, z_end, dz)
+            z_list, logN_list = self.sess.lines._cands_find2(s, z_start, z_end,
                                                             dz, logN=logN is None)
 
             if len(z_list) == 0:

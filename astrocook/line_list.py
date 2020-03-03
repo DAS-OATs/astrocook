@@ -73,7 +73,7 @@ class LineList(Frame):
                 l['XMAX'] = l['X']+0.5*ew.value
     """
 
-    def _cand_find(self, series, z_start, z_end, dz):
+    def _cands_find(self, series, z_start, z_end, dz):
         trans = trans_parse(series)
 
         z_all = np.ravel([[to_z(x,t) for x in self.x] for t in trans])
@@ -97,7 +97,7 @@ class LineList(Frame):
 
         return z_list, y_list
 
-    def _cand_find2(self, series, z_start, z_end, dz, single=False, logN=False):
+    def _cands_find2(self, series, z_start, z_end, dz, single=False, logN=False):
 
         # Compute all possible redshifts
         #trans = series_d[series]
