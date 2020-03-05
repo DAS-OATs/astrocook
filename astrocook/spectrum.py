@@ -287,8 +287,8 @@ class Spectrum(Frame):
                     xmax_in = self.xmax[im].value
                 except:
                     break
-            ysel = y[im:iM+1]
-            dysel = dy[im:iM+1]
+            ysel = y[im:iM+1].value
+            dysel = dy[im:iM+1].value
             y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
             dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
                                                /np.sum(1/dysel**2))

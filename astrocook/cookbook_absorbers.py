@@ -232,6 +232,7 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
         spec = self.sess.spec
         #print(systs._t['series'][systs._t['z0']==z])
+        #print(systs._id)
         if z in systs._t['z0'] \
             and series in systs._t['series'][systs._t['z0']==z]:
             if verbose:
@@ -365,6 +366,28 @@ class CookbookAbsorbers(object):
             logN_list = np.append(logN_list, self._syst_guess(series, z))
         return logN_list
 
+
+    def _systs_merge(self, dz=1e-5):
+        systs = dc(self.sess.systs)
+        merged = np.array([], dtype=int)
+        for syst in systs._t:
+            z = syst['z']
+            pref = syst['series'].split('_')[0]
+            systs_pref = np.array([s.split('_')[0] for s in systs._t['series']])
+            w = np.where(np.logical_and(systs._t['z']>z-dz,
+                                        systs._t['z']<z+dz))[0]
+            sel = systs_pref[w]==pref
+            if np.sum(sel)>1:
+                #print(w[sel])
+                #print(systs._t['series'][w[sel][0]])
+                self.sess.systs._t['series'][w[sel][0]] = \
+                    ','.join(np.unique(systs._t['series'][w[sel]]))
+                merged = np.append(merged, w[sel][1:])
+
+        if len(merged)>0:
+            #print(merged)
+            self.sess.systs._t.remove_rows(merged)
+            self._mods_recreate()
 
     def _systs_prepare(self, append=True):
         systs = self.sess.systs
@@ -801,7 +824,7 @@ class CookbookAbsorbers(object):
 
 ### Advanced
 
-    def cands_find(self, series=None, z_start=0, z_end=6, dz=1e-4,
+    def cands_find(self, series='all', z_start=0, z_end=6, dz=1e-4,
                   resol=resol_def, avoid_systs=True, append=True):
         """ @brief Find candidate systems
         @details Cross-match line wavelengths with known transitions to find
@@ -819,7 +842,7 @@ class CookbookAbsorbers(object):
 
         try:
             #series = series.replace(';',',')
-            series = None if series in [None, 'None'] else str(series)
+            #series = None if series in [None, 'None'] else str(series)
             z_start = float(z_start)
             z_end = float(z_end)
             dz = float(dz)
@@ -844,7 +867,7 @@ class CookbookAbsorbers(object):
         #for t in np.array(np.meshgrid(trans_d, trans_d)).T.reshape(-1,2):#zip(series_d, series_d):
         #if short:
         #    t_d = trans_d_short
-        if series != None:
+        if series != 'all':
             t_d = trans_parse(series)
         else:
             t_d = trans_d
@@ -853,6 +876,7 @@ class CookbookAbsorbers(object):
         logN_list = np.array([])
         s_list = np.array([])
         resol_list = np.array([])
+        count = 0
         for i, t in enum_tqdm(trans_arr, len(trans_arr),
                               "cookbook_absorbers: Finding candidates"):
             p0 = t[0].split('_')[0]
@@ -864,7 +888,7 @@ class CookbookAbsorbers(object):
             if p0==p1 and x0<x1 and (z0>z_start or z1<z_end):
                 s = "%s,%s" % (t[0],t[1])
                 #print(s)
-                z_l, logN_l = self.sess.lines._cands_find2(s, z_start, z_end, dz)
+                z_l, logN_l, _ = self.sess.lines._cands_find2(s, z_start, z_end, dz)
 
                 self._systs_prepare(append)
 
@@ -889,6 +913,7 @@ class CookbookAbsorbers(object):
                     #logN_list = np.append(logN_list, logN_l)
                     #s_list = np.append(s_list, s_l)
                     #resol_list = np.append(resol_list, resol_l)
+                    count += len(z_l)
                     self._systs_add(s_l, z_l, logN_l, resol_list=resol_l, verbose=False)
                 self._spec_update()
         #self._systs_prepare(append)
@@ -898,6 +923,8 @@ class CookbookAbsorbers(object):
         self._refit_n = refit_n_temp
         self._max_nfev = max_nfev_temp
         #print(self._refit_n, self._max_nfev)
+        logging.info("I found %i candidates (transitions considered: %s)." \
+                     % (count, series))
 
         return 0
 
@@ -988,17 +1015,20 @@ class CookbookAbsorbers(object):
         #trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
 
         systs = dc(self.sess.systs)
+        count = 0
+        #for j, syst in enum_tqdm(systs._t[3:4], len(systs._t[3:4]),
         for j, syst in enum_tqdm(systs._t, len(systs._t),
                             "cookbook_absorbers: Completing systems"):#[7:8]:
             #for i, t in enumerate(t_d):
+            added = False
             for i, t in enum_tqdm(t_d, len(t_d),
                                   "cookbook_absorbers: Finding candidates"):
                 s = "%s,%s" % (t,syst['series'])
-                z_l, logN_l = self.sess.lines._cands_find2(s, syst['z']-dz, syst['z']+dz, dz)
-                z_len = len(z_l)
-                #print(s, z_l)
+                z_l, logN_l, trans_l = self.sess.lines._cands_find2(s, syst['z']-dz, syst['z']+dz, dz)
+                z_len = len(z_l)-len(trans_parse(syst['series']))+1
+                #print(s, z_l,trans_parse(syst['series']),trans_l)
                 add = False
-                if avoid_systs and 'model' in self.sess.spec.t.colnames and len(z_l)>1:
+                if avoid_systs and 'model' in self.sess.spec.t.colnames and t in trans_l:#z_len>0:
                     for zi in z_l[0:1]:
                         for si in trans_parse(t):
                             xi = to_x(zi,si)
@@ -1012,34 +1042,78 @@ class CookbookAbsorbers(object):
                                     add = True
 
                 if add:
-                    #print([t], [z])
+                    added = True
                     self._systs_add([t], [z], [logN], resol_list=[resol], verbose=False)
-        #self._systs_fit()
-        self._spec_update()
+            if added:
+                count += 1
 
+        self._systs_merge()
+        #self._mods_recreate()
+        self._spec_update()
+        logging.info("I completed %i systems (transitions considered: %s)." \
+                     % (count, series))
         #self._refit_n = refit_n_temp
         #self._max_nfev = max_nfev_temp
 
         return 0
 
-    def systs_improve(self):
+    def systs_improve(self, impr_n=3, refit_n=0):
         """ @brief Improve systems
         @details Improve systems adding components to reduce residuals
+        @param impr_n Number of improve cycles
+        @param refit_n Number of refit cycles
         @return 0
+        """
+
+        try:
+            self._impr_n = int(impr_n)
+            refit_n = int(refit_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        logging.info("I will improve systems in at most %i iterations." \
+                     % self._impr_n)
+        counts = 0
+        i = 0
+        c = np.inf
+        while i<self._impr_n and c!=0:# in range(self._impr_n):
+            c = self._systs_improve()
+            i += 1
+            counts += c
+            self.systs_fit(refit_n=refit_n)
+
+        logging.info("I improved systems in %i iterations, adding %i "
+                     "components" % (i,counts))
+        return 0
+
+
+    def _systs_improve(self):
+        """ @brief Improve systems
+        @details Improve systems by adding components to reduce residuals
+        @return Number of components added
         """
 
         spec = dc(self.sess.spec)
         lines = dc(self.sess.lines)
         systs = dc(self.sess.systs)
+        ids = dc(systs._mods_t['id'])
         self.lines_find(col='deabs', append=False)
 
         dx_thres = np.max(spec.xmax.value-spec.xmin.value)
 
         mods_sel = []
+        count = 0
+        #s_list = []
+        #z_list = []
         for j, syst in enum_tqdm(systs._t, len(systs._t),
-                            "cookbook_absorbers: Improving systems"):#[7:8]:
+                            "cookbook_absorbers: Adding systems"):#[7:8]:
             l = self.sess.lines
-            mod_sel = np.where([syst['id'] in i for i in systs._mods_t['id']])[0]
+            mod_sel = np.where([syst['id'] in i for i in ids])[0]
+            #print('systs')
+            #print(systs._mods_t['id'])
+            #print('self.sess.systs')
+            #print(self.sess.systs._mods_t['id'])
             if mod_sel not in mods_sel:
                 mods_sel.append(mod_sel)
                 mod = systs._mods_t['mod'][mod_sel][0]
@@ -1047,16 +1121,36 @@ class CookbookAbsorbers(object):
                 x_mod = np.where([np.min(np.abs(x.value-mod._xf))<dx_thres
                                  for x in l.x])[0]
                 if len(x_mod)>0:
+                    count += 1
                     y_sel = np.argmin(l.y[x_mod].value)
                     series = np.unique([s['series'] for s in systs._t if s['id'] in id])
-                    trans = np.unique([trans_parse(s) for s in series])
+                    trans = np.array([])
+                    for s in series:
+                        trans = np.append(trans, trans_parse(s))
+                    #trans = np.unique(np.ravel([trans_parse(s) for s in series]))
+                    trans = np.unique(trans)
+                    #print(trans)
                     z_list = [to_z(l.x[x_mod][y_sel], t) for t in trans]
                     z_sel = np.argmin([np.abs(systs._t['z']-z) for z in z_list])
                     #print([np.abs(systs._t['z']-z) for z in z_list], z_sel)
                     s = systs._t['series'][z_sel%len(systs._t)]
                     z = z_list[z_sel//len(systs._t)]
+                    #s_list.append(s)
+                    #z_list.append(z)
                     #print(s, z)
+                    """
+                    print('systs')
+                    print(systs._mods_t['id'])
+                    print('self.sess.systs')
+                    print(self.sess.systs._mods_t['id'])
+                    """
                     self._systs_add([s], [z], verbose=False)
+                    """
+                    print('systs')
+                    print(systs._mods_t['id'])
+                    print('self.sess.systs')
+                    print(self.sess.systs._mods_t['id'])
+                    """
 
             #else:
             """
@@ -1068,9 +1162,12 @@ class CookbookAbsorbers(object):
                 z = [to_z(l.x[sel], s)  for s in s_sel]
                 print(z)
             """
+        #self._systs_add(s_list, z_list, verbose=False)
         self.sess.lines = lines
+        self.lines_find(col='deabs', append=True)
         self._spec_update()
-        return 0
+        logging.info("I added %i systems." % count)
+        return count
 
 
 
@@ -1126,7 +1223,7 @@ class CookbookAbsorbers(object):
 
         for s in series.split(';'):
             z_list, y_list = self._lines_cands_find(s, z_start, z_end, dz)
-            z_list, logN_list = self.sess.lines._cands_find2(s, z_start, z_end,
+            z_list, logN_list, _ = self.sess.lines._cands_find2(s, z_start, z_end,
                                                             dz, logN=logN is None)
 
             if len(z_list) == 0:

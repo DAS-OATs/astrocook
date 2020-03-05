@@ -149,6 +149,7 @@ class LineList(Frame):
             #y_range = y_sort[np.where(np.ediff1d(z_sort)<dz)]
             y_range = np.mean(np.vstack((y_sort[w_range], y_sort[w_range+1])),
                               axis=0)
+            trans_range = trans_sort
             if logN:
                 #logN_range = logN_sort[np.where(np.ediff1d(z_sort)<dz)]
                 logN_range = np.log10(np.mean(np.vstack((
@@ -160,6 +161,7 @@ class LineList(Frame):
 
             z_range = z_range if z_start<z_end else z_range[::-1]
             y_range = y_range if z_start<z_end else y_range[::-1]
+            trans_range = trans_range if z_start<z_end else trans_range[::-1]
             if logN:
                 logN_range = logN_range if z_start<z_end else logN_range[::-1]
                 #print('range 2')
@@ -168,27 +170,30 @@ class LineList(Frame):
         else:
             z_range = z_sel
             y_range = y_sel
+            trans_range = trans_sel
             if logN:
                 logN_range = logN_sel
 
         if len(z_range) > 0:
             z_single = z_range[np.argmin(y_range)]
+            trans_single = trans_range[np.argmin(y_range)]
             if logN:
                 logN_single = logN_range[np.argmin(y_range)]
         else:
             z_single = None
+            trans_single = None
             if logN:
                 logN_single = None
 
         if single:
             if logN:
-                return z_single, logN_single
+                return z_single, logN_single, trans_single
             else:
-                return z_single, None
+                return z_single, None, trans_single
         if logN:
-            return z_range, logN_range
+            return z_range, logN_range, trans_range
         else:
-            return z_range, [None]*len(z_range)
+            return z_range, [None]*len(z_range), trans_range
 
 
     def _syst_cand(self, series, z_start, z_end, dz, single=False, logN=False):
