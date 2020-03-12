@@ -509,9 +509,16 @@ class GUIPanelSession(wx.Frame):
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
-            getattr(self._gui._sess_sel, attrn)._append(dc(attr))
+            attr_dc = dc(attr)
+            if attrn == 'systs':
+                id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
+                attr_dc._t['id'] = attr_dc._t['id']+id_max
+            print(len(attr_dc._t))
+            print(len(np.unique(attr_dc._t['id'])))
+            getattr(self._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
+            self._gui._sess_sel.cb._mods_recreate()
             self._gui._sess_sel.cb._spec_update()
 
         return 0

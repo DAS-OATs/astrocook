@@ -225,6 +225,7 @@ class SystModel(LMComposite):
 
 
         #self._pars.pretty_print()
+        #print(xs)
         ys = mod.eval(x=xs, params=self._pars)
         c = []
         t = thres

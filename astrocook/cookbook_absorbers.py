@@ -983,7 +983,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_complete(self, series=None, dz=1e-4, resol=resol_def, avoid_systs=True):
+    def systs_complete(self, series='all', dz=1e-4, resol=resol_def, avoid_systs=True):
         """ @brief Complete systems
         @details Add candidate transitions to fitted systems.
         @param series Series of transitions
@@ -994,7 +994,7 @@ class CookbookAbsorbers(object):
         """
         try:
             #series = series.replace(';',',')
-            series = None if series in [None, 'None'] else str(series)
+            #series = None if series in [None, 'None'] else str(series)
             dz = float(dz)
             resol = None if resol in [None, 'None'] else float(resol)
             avoid_systs = str(avoid_systs) == 'True'
@@ -1008,7 +1008,7 @@ class CookbookAbsorbers(object):
         #self._refit_n = 0
         #self._max_nfev = 1
 
-        if series != None:
+        if series != 'all':
             t_d = trans_parse(series)
         else:
             t_d = trans_d
