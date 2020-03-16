@@ -216,6 +216,27 @@ class Format(object):
         meta = {}
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+
+    def firehose_spectrum(self, hdul):
+        """ FIRE spectrum format, as produced by the FIREhose pipeline  """
+        logging.info(msg_format('FIRE'))
+
+        hdr = hdul[0].header
+        data = hdul[5].data
+        x = data['WAVE'][0]*0.1
+        xmin, xmax = self._create_xmin_xmax(x)
+        y = data['FLUX'][0]
+        dy = data['SIG'][0]
+        xunit = au.nm
+        yunit = None
+        meta = {'instr': 'FIRE'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def uves_popler_spectrum(self, hdul):
         """ UVES_popler format """
         logging.info(msg_format('UVES_popler'))
