@@ -65,7 +65,7 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
-        safe = self._safe(conv)
+        safe = np.array(self._safe(conv), dtype=float)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
                                               *self._t[input_col].unit
         self._t[output_col] = conv
@@ -287,8 +287,8 @@ class Spectrum(Frame):
                     xmax_in = self.xmax[im].value
                 except:
                     break
-            ysel = y[im:iM+1]
-            dysel = dy[im:iM+1]
+            ysel = y[im:iM+1].value
+            dysel = dy[im:iM+1].value
             y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
             dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
                                                /np.sum(1/dysel**2))

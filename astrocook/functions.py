@@ -215,15 +215,22 @@ def psf_gauss(x, resol, spec=None):
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
-    xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
+    #xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))
     #psf[len(x)//2] = 1
     #ret = [np.array(psf)]
     #plt.plot(xout*10, psf)
+    """
     ret = psf
     return ret
-
+    """
+    if len(psf)==0:
+        #print(x, spec.x.to(xunit_def).value)
+        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
+    else:
+        ret = psf
+        return ret
 
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
