@@ -143,6 +143,10 @@ class Session(object):
                 ascii.read(p+'espr_spec_form.dat'))
 
         # UVES POPLER spectrum
+        if instr == 'FIRE':
+            self.spec = format.firehose_spectrum(hdul)
+
+        # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
 
