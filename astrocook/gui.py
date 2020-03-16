@@ -513,8 +513,8 @@ class GUIPanelSession(wx.Frame):
             if attrn == 'systs':
                 id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
                 attr_dc._t['id'] = attr_dc._t['id']+id_max
-            print(len(attr_dc._t))
-            print(len(np.unique(attr_dc._t['id'])))
+            #print(len(attr_dc._t))
+            #print(len(np.unique(attr_dc._t['id'])))
             getattr(self._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
