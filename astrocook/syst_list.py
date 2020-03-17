@@ -204,7 +204,12 @@ class SystList(object):
                         self._constr[k] = (v[0], k.split('_')[-1], v[2])
                     if v[1]=='vary':
                         m['mod']._pars[k].set(vary=v[2])
-                        self._constr[k] = (v[0], k.split('_')[-1], None)
+                        if v[2]:
+                            if k in self._constr: del self._constr[k]
+                        else:
+                            self._constr[k] = (v[0], k.split('_')[-1], None)
+                        #print(v[0], v[1], v[2])
+                        #print(self._constr)
         #print(self._constr)
 
 

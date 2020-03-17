@@ -158,6 +158,7 @@ class CookbookAbsorbers(object):
             systs._id = s['id']
             vars = {}
             constr = {}
+            #print(systs._constr)
             for k, v in systs._constr.items():
                 if v[0]==systs._id:
                     if v[2]!=None:
@@ -332,6 +333,7 @@ class CookbookAbsorbers(object):
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
             mod._fit(fit_kws={'max_nfev': self._max_nfev})
+            #mod._pars.pretty_print()
             if verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)

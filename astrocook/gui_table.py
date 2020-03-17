@@ -379,9 +379,10 @@ class GUITableSystList(GUITable):
                     #r = self._row_extract(int(p.split('_')[-2]))
                     c = np.where(labels==p.split('_')[-1])[0][0]
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
-                    #print(i,p,v.expr,r,c)
+                    #print(i,p,v.vary,r,c)
                     if v.vary == False:
-                        #print('vary',i,p,r,c)
+                        #if p[:3]!='psf':
+                            #print('vary',i,p,r,c)
                         self._tab.SetCellTextColour(r, c, 'grey')
                     if v.expr != None:
                         r2 = self._row_extract(int(v.expr.split('_')[-2]))
@@ -614,6 +615,7 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
+        #print(self._freezes_d)
         for (r, c) in self._cells_sel:
             id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(row, col) != 'black':
@@ -621,11 +623,15 @@ class GUITableSystList(GUITable):
                 self._freezes_d[parn] = (id, 'vary', True)
             else:
                 self._freezes_d[parn] = (id, 'vary', False)
+            #print(r,c,self._freezes_d)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-        #print(self._freezes_d)
+        #print('before:')
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
+        #print(self._freezes_d)
         systs._constrain(self._freezes_d)
+        #print(self._data._constr)
+        #print('after:')
         #[m['mod']._pars.pretty_print() for m in systs._mods_t]
         #self._constr_copy()
         self._text_colours()
@@ -746,7 +752,7 @@ class GUITableSystList(GUITable):
         #"""
         for k, v in self._data._constr.items():
             if v[2]==None:
-                self._freezes_d[k]=(v[0], 'vary', True)
+                self._freezes_d[k]=(v[0], 'vary', False)
             else:
                 self._links_d[k]=(v[0], 'expr', v[2])
         #"""
