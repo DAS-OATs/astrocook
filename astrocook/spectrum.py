@@ -4,6 +4,7 @@ from .line_list import LineList
 from .message import *
 #from .vars import *
 from astropy import units as au
+from astropy.modeling.models import BlackBody
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
@@ -38,6 +39,15 @@ class Spectrum(Frame):
             self._t['cont'] = cont*self._yunit
         if resol != []:
             self._t['resol'] = resol
+
+
+    def _bb_template(self, temp=6000, scale=1.0):
+        bb = BlackBody(temperature=temp*au.K, scale=scale)
+        output_col = 'bb_template'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = bb(self.x)
+
 
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
