@@ -369,21 +369,25 @@ class GUIMenuEdit(GUIMenu):
                           "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+310, 'spec',
-                          "Extract region", 'region_extract')
+        submenu = wx.Menu()
+        self._item_method(submenu, start_id+310, 'spec',
+                          "Blackbody", 'bb')
+        self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+320, 'spec',
-                          "Convert x axis", 'x_convert')
-        self._item_method(self._menu, start_id+321, 'spec',
-                          "Convert y axis", 'y_convert')
+                          "Extract region", 'region_extract')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+330, 'spec',
-                          "Scale y axis", 'y_scale')
+                          "Convert x axis", 'x_convert')
+        self._item_method(self._menu, start_id+331, 'spec',
+                          "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+340, 'spec',
+                          "Scale y axis", 'y_scale')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+350, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
-        self._item_method(self._menu, start_id+341, 'spec',
+        self._item_method(self._menu, start_id+351, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
 
 
