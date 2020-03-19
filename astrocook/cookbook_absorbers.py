@@ -924,6 +924,9 @@ class CookbookAbsorbers(object):
             #series = None if series in [None, 'None'] else str(series)
             z_start = float(z_start)
             z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
             dz = float(dz)
             resol = None if resol in [None, 'None'] else float(resol)
             avoid_systs = str(avoid_systs) == 'True'
@@ -964,7 +967,9 @@ class CookbookAbsorbers(object):
             x1 = xem_d[t[1]]
             z0 = np.min(self.sess.spec.x)/x1-1
             z1 = np.max(self.sess.spec.x)/x0-1
-            if p0==p1 and x0<x1 and (z0>z_start or z1<z_end):
+            z_start = max(z0, z_start)
+            z_end = min(z1, z_end)
+            if p0==p1 and x0<x1:# and (z0>z_start or z1<z_end):
                 s = "%s,%s" % (t[0],t[1])
                 #print(s)
                 z_l, logN_l, _ = self.sess.lines._cands_find2(s, z_start, z_end, dz)

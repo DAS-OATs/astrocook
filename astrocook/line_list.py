@@ -99,6 +99,7 @@ class LineList(Frame):
 
     def _cands_find2(self, series, z_start, z_end, dz, single=False, logN=False):
 
+        #print(z_start, z_end)
         # Compute all possible redshifts
         #trans = series_d[series]
         trans = trans_parse(series)
