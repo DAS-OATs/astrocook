@@ -103,6 +103,13 @@ class Session(object):
         except:
             pass
 
+        try:
+            prefix = self.path.split('/')[-1][:2]
+            if prefix == 'ql':
+                orig = 'QUBRICS'
+        except:
+            pass
+
         if instr == None:
             logging.warning(msg_descr_miss('INSTRUME'))
         if catg == None:
@@ -142,9 +149,15 @@ class Session(object):
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read(p+'espr_spec_form.dat'))
 
-        # UVES POPLER spectrum
+        # FIRE spectrum
         if instr == 'FIRE':
             self.spec = format.firehose_spectrum(hdul)
+
+
+        # QUBRICS spectrum
+        if orig == 'QUBRICS':
+            self.spec = format.qubrics_spectrum(hdul)
+
 
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':

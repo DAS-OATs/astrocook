@@ -237,6 +237,25 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
+    def qubrics_spectrum(self, hdul):
+        """ LDSS3 spectrum """
+        logging.info(msg_format('QUBRICS'))
+        hdr = hdul[0].header
+        data = hdul[1].data
+        x = data['wave']*0.1
+        xmin, xmax = self._create_xmin_xmax(x)
+        y = data['flux']
+        dy = np.full(len(y), np.nan)
+        xunit = au.nm
+        yunit = au.erg/au.cm**2/au.s/au.nm
+        meta = {}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def uves_popler_spectrum(self, hdul):
         """ UVES_popler format """
         logging.info(msg_format('UVES_popler'))
