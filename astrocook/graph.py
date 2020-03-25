@@ -26,6 +26,7 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._cursor_lines = []
+        self._clicks = []
 
         if init_canvas:
             self._init_canvas()
@@ -61,7 +62,6 @@ class Graph(object):
 
     def _on_click(self, event):
         if not event.inaxes: return
-        if event.button != 3: return
         x = float(event.xdata)
         y = float(event.ydata)
         from .gui_table import GUITablePopup
@@ -71,14 +71,26 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         focus._click_xy = (x,y)
-        if 'cont' in self._gui._sess_sel.spec._t.colnames \
-            and 'cursor_z_series' in self._sel:
-            focus.PopupMenu(
-                    GUITablePopup(self._gui, focus, event,
+        title = []
+        attr = []
+        if event.button == 1:
+            self._clicks = [(x,y)]
+        if event.button == 3:
+            if len(self._clicks) == 1:
+                title.append('Zap feature')
+                attr.append('spec_zap')
+                self._clicks.append((x,y))                
+            if 'cont' in self._gui._sess_sel.spec._t.colnames \
+                and 'cursor_z_series' in self._sel:
+                title.append('New system')
+                attr.append('syst_new')
+
+        focus.PopupMenu(
+            GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
                                   #['add_line', 'add_syst']))
                                   #'Add system', 'add_syst'))
-                                  'New system', 'syst_new'))
+                                  title, attr))
         """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,

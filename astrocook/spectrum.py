@@ -343,3 +343,13 @@ class Spectrum(Frame):
                                   self._t['slice'][self._where_safe][-1])
         self._x_convert(xunit=xunit_orig)
         return 0
+
+
+    def _zap(self, xmin, xmax):
+
+        w = np.where(np.logical_and(self.x.value>xmin, self.x.value<xmax))
+        self._t['y'][w] = np.interp(
+                              self.x[w].value,
+                              [self.x[w][0].value, self.x[w][-1].value],
+                              [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+        return 0
