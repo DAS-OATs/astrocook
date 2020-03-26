@@ -5,6 +5,7 @@ from .message import *
 #from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
+from astropy.modeling.powerlaws import PowerLaw1D
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
@@ -39,14 +40,6 @@ class Spectrum(Frame):
             self._t['cont'] = cont*self._yunit
         if resol != []:
             self._t['resol'] = resol
-
-
-    def _bb_template(self, temp=6000, scale=1.0):
-        bb = BlackBody(temperature=temp*au.K, scale=scale)
-        output_col = 'bb_template'
-        if output_col not in self._t.colnames:
-            logging.info("I'm adding column '%s'." % output_col)
-        self._t[output_col] = bb(self.x)
 
 
     def _copy(self, sel=None):
@@ -259,7 +252,6 @@ class Spectrum(Frame):
 
         return lines
 
-
     def _rebin(self, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
@@ -343,6 +335,23 @@ class Spectrum(Frame):
                                   self._t['slice'][self._where_safe][-1])
         self._x_convert(xunit=xunit_orig)
         return 0
+
+    def _template_bb(self, temp=6000, scale=1.0):
+        bb = BlackBody(temperature=temp*au.K, scale=scale)
+        output_col = 'blackbody'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = bb(self.x)
+
+
+    def _template_pl(self, ampl=1.0, x_ref=None, index=-1.0):
+        if x_ref == None: x_ref = np.mean(self.x)
+        pl = PowerLaw1D(amplitude=ampl, x_0=x_ref, alpha=-index)
+        output_col = 'power_law'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = pl(self.x)
+
 
 
     def _zap(self, xmin, xmax):
