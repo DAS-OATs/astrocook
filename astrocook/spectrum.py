@@ -337,7 +337,7 @@ class Spectrum(Frame):
         return 0
 
     def _template_bb(self, temp=6000, scale=1.0):
-        bb = BlackBody(temperature=temp*au.K, scale=scale)
+        bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
         output_col = 'blackbody'
         if output_col not in self._t.colnames:
             logging.info("I'm adding column '%s'." % output_col)
