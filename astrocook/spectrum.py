@@ -4,6 +4,8 @@ from .line_list import LineList
 from .message import *
 #from .vars import *
 from astropy import units as au
+from astropy.modeling.models import BlackBody
+from astropy.modeling.powerlaws import PowerLaw1D
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
@@ -38,6 +40,7 @@ class Spectrum(Frame):
             self._t['cont'] = cont*self._yunit
         if resol != []:
             self._t['resol'] = resol
+
 
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
@@ -249,7 +252,6 @@ class Spectrum(Frame):
 
         return lines
 
-
     def _rebin(self, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
@@ -332,4 +334,31 @@ class Spectrum(Frame):
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
         self._x_convert(xunit=xunit_orig)
+        return 0
+
+    def _template_bb(self, temp=6000, scale=1.0):
+        bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
+        output_col = 'blackbody'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = bb(self.x)
+
+
+    def _template_pl(self, ampl=1.0, x_ref=None, index=-1.0):
+        if x_ref == None: x_ref = np.mean(self.x)
+        pl = PowerLaw1D(amplitude=ampl, x_0=x_ref, alpha=-index)
+        output_col = 'power_law'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = pl(self.x)
+
+
+
+    def _zap(self, xmin, xmax):
+
+        w = np.where(np.logical_and(self.x.value>xmin, self.x.value<xmax))
+        self._t['y'][w] = np.interp(
+                              self.x[w].value,
+                              [self.x[w][0].value, self.x[w][-1].value],
+                              [self.y[w][0].value, self.y[w][-1].value])*self._yunit
         return 0

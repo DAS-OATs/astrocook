@@ -76,6 +76,14 @@ class GUIGraphMain(wx.Frame):
     #def _on_line_new(self, event):
     #    print(self._click_xy)
 
+    def _on_spec_zap(self, event):
+        sess = self._gui._sess_sel
+        x = [self._graph._clicks[0][0], self._graph._clicks[1][0]]
+        xmin = np.min(x)
+        xmax = np.max(x)
+        sess.spec._zap(xmin, xmax)
+        self._gui._refresh()
+
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         #for s in sess._series_sel.split(';'):
