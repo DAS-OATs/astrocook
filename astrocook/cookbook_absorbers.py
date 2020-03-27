@@ -425,6 +425,7 @@ class CookbookAbsorbers(object):
             for i,m in enum_tqdm(mods_t, len(mods_t),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
+                print(m['mod']._chi2r)
                 z_list.append(m['z0'])
                 self._syst_fit(m['mod'], verbose=False)
                 chi2r_list.append(m['mod']._chi2r)
