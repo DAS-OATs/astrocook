@@ -113,9 +113,35 @@ class Format(object):
 
         return out
 
-    def eso_midas(self, hdul):
-        logging.info(msg_format('ESO MIDAS'))
-        """ ESO-MIDAS Table """
+    def eso_midas_image(self, hdul):
+        logging.info(msg_format('ESO MIDAS image'))
+        """ ESO-MIDAS image """
+
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(x), np.nan)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {'instr': ''}
+        try:
+            meta['object'] = hdr['FILENAME'][:-4]
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def eso_midas_table(self, hdul):
+        logging.info(msg_format('ESO MIDAS table'))
+        """ ESO-MIDAS table """
 
         hdr = hdul[1].header
         data = hdul[1].data
