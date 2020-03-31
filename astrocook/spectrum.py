@@ -272,8 +272,8 @@ class Spectrum(Frame):
         iM = 1
         xmin_in = self.xmin[iM].value
         xmax_in = self.xmax[im].value
-        y_out = np.array([])
-        dy_out = np.array([])
+        y_out = np.array([]) * y.unit
+        dy_out = np.array([]) * y.unit
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
@@ -291,7 +291,10 @@ class Spectrum(Frame):
                     break
             ysel = y[im:iM+1]
             dysel = dy[im:iM+1]
-            y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
+            if np.any(np.isnan(dysel)):
+                y_out = np.append(y_out, np.average(ysel))
+            else:
+                y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
             dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
                                                /np.sum(1/dysel**2))
 
