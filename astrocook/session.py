@@ -157,6 +157,11 @@ class Session(object):
             self.spec = format.firehose_spectrum(hdul)
 
 
+        # FIRE spectrum
+        if instr == 'MagE':
+            self.spec = format.mage_spectrum(hdul)
+
+
         # QUBRICS spectrum
         if orig == 'QUBRICS':
             self.spec = format.qubrics_spectrum(hdul)

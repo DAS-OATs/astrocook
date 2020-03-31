@@ -227,6 +227,7 @@ class Format(object):
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+
     def espresso_spectrum_format(self, data):
         """ ESPRESSO spectrum format """
         logging.info(msg_format('ESPRESSO'))
@@ -256,6 +257,28 @@ class Format(object):
         xunit = au.nm
         yunit = None
         meta = {'instr': 'FIRE'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def mage_spectrum(self, hdul):
+        """ LDSS3 spectrum """
+        logging.info(msg_format('QUBRICS'))
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {}
         try:
             meta['object'] = hdr['OBJECT']
         except:
