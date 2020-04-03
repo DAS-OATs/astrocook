@@ -213,12 +213,13 @@ class Format(object):
         try:
             y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
             dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.electron #erg/au.cm**2/au.s/au.nm
         except:
             y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
             dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
         xunit = au.Angstrom
-        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'ESPRESSO'}
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
