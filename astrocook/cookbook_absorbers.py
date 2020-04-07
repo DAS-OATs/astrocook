@@ -426,12 +426,12 @@ class CookbookAbsorbers(object):
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
                 try:
-                    print(m['mod']._chi2r)
+                    print(m['chi2r'])
                 except:
                     pass
                 z_list.append(m['z0'])
-                self._syst_fit(m['mod'], verbose=False)
-                chi2r_list.append(m['mod']._chi2r)
+                #self._syst_fit(m['mod'], verbose=False)
+                #chi2r_list.append(m['mod']._chi2r)
 
             if verbose:
                 logging.info("I've fitted %i model%s." \
