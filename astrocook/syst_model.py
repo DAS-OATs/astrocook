@@ -13,7 +13,7 @@ thres = 1e-2
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=None, expr=None, z0=None,
+    def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
                  cont_func=None):
@@ -25,9 +25,9 @@ class SystModel(LMComposite):
         self._id = systs._id
         self._series = series
         if vars is None: vars = {}
-        if expr is None: expr = {}
+        if constr is None: constr = {}
         self._vars = vars
-        self._expr = expr
+        self._constr = constr
         self._z0 = z0
         self._lines_func = lines_func
         self._psf_func = psf_func
@@ -55,7 +55,7 @@ class SystModel(LMComposite):
         #self._pars.pretty_print()
 
     def _make_defs(self):
-        self._defs = pars_std_d
+        self._defs = dc(pars_std_d)
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
@@ -102,9 +102,10 @@ class SystModel(LMComposite):
             y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
             pars_cond = False
             #for p,v in self._pars.items():
-            for p,v in self._expr.items():
+            for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
                     pars_cond = pars_cond or v==mod_p
+            #print(s['id'],pars_cond)
             if y_cond or pars_cond:
                 self._group *= mod._group
                 """
@@ -116,8 +117,9 @@ class SystModel(LMComposite):
                 mod = s['mod']
                 for p,v in mod._pars.items():
                     if v.expr != None:
-                        self._expr[p] = v.expr
+                        self._constr[p] = v.expr
                         v.expr = ''
+
                 """
                 print('mod cleaned')
                 mod._pars.pretty_print()
@@ -127,10 +129,13 @@ class SystModel(LMComposite):
                 print('combine')
                 self._pars.pretty_print()
                 """
-                if pars_cond or self._expr != {}:
-                    for p,v in self._expr.items():
-                        #print(s['id'], pars_cond, self._expr != {}, self._expr, p, v)
+                #self._pars.pretty_print()
+                #print(self._constr)
+                if pars_cond or self._constr != {}:
+                    for p,v in self._constr.items():
+                        #print(s['id'], pars_cond, self._constr != {}, self._constr, p, v)
                         #print(self._pars[p])
+                        #print(self._pars[v])
                         self._pars[p].expr = v
                         if v != '':
                             #print(self._pars[v])
@@ -149,6 +154,8 @@ class SystModel(LMComposite):
                 mod._ys = self._group.eval(x=self._xs, params=self._pars)
                 ##
         #print(self._group_list)
+        #print('final')
+        #self._pars.pretty_print()
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
@@ -225,6 +232,7 @@ class SystModel(LMComposite):
 
 
         #self._pars.pretty_print()
+        #print(xs)
         ys = mod.eval(x=xs, params=self._pars)
         c = []
         t = thres

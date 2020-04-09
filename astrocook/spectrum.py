@@ -68,7 +68,7 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
-        safe = self._safe(conv)
+        safe = np.array(self._safe(conv), dtype=float)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
                                               *self._t[input_col].unit
         self._t[output_col] = conv

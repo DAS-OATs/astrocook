@@ -57,7 +57,7 @@ class Graph(object):
             and getattr(self, _unit) != au.dimensionless_unscaled:
             logging.info("I'm converting the %s unit of %s to plot it over the "
                          "data already present." % (axis, sess.name))
-            getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
+            getattr(sess.cb, axis+'_convert')(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
     def _on_click(self, event):
