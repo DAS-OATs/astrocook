@@ -420,18 +420,32 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if self._max_nfev > 0:
+            fit_list = []
+            for i,m in enumerate(mods_t):
+                if self._sel_fit:
+                    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
+                          for id in m['id']]
+                    fit_list.append(np.isnan(dz).any())
+                else:
+                    fit_list.append(True)
+
             z_list = []
             chi2r_list = []
-            for i,m in enum_tqdm(mods_t, len(mods_t),
+            for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
-                try:
-                    print(m['chi2r'])
-                except:
-                    pass
+                """
+                if self._sel_fit:
+                    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
+                          for id in m['id']]
+                    fit = np.isnan(dz).any()
+                else:
+                    fit = True
+                """
                 z_list.append(m['z0'])
-                #self._syst_fit(m['mod'], verbose=False)
-                #chi2r_list.append(m['mod']._chi2r)
+                if fit_list[i]:
+                    self._syst_fit(m['mod'], verbose=False)
+                    chi2r_list.append(m['mod']._chi2r)
 
             if verbose:
                 logging.info("I've fitted %i model%s." \
@@ -760,12 +774,14 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+    def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                  sel_fit=False):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
+        @param sel_fit Selective fit (only new systems will be fitted)
         @return 0
         """
 
@@ -773,6 +789,7 @@ class CookbookAbsorbers(object):
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
+            self._sel_fit = str(sel_fit) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
