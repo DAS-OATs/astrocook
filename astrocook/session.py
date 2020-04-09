@@ -133,7 +133,10 @@ class Session(object):
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
-            self.spec = format.eso_midas(hdul)
+            if len(hdul) == 1:
+                self.spec = format.eso_midas_image(hdul)
+            else:
+                self.spec = format.eso_midas_table(hdul)
 
         # ESPRESSO DRS spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
@@ -152,6 +155,11 @@ class Session(object):
         # FIRE spectrum
         if instr == 'FIRE':
             self.spec = format.firehose_spectrum(hdul)
+
+
+        # FIRE spectrum
+        if instr == 'MagE':
+            self.spec = format.mage_spectrum(hdul)
 
 
         # QUBRICS spectrum

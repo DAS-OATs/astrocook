@@ -121,9 +121,35 @@ class Format(object):
             #print(out._constr)
         return out
 
-    def eso_midas(self, hdul):
-        logging.info(msg_format('ESO MIDAS'))
-        """ ESO-MIDAS Table """
+    def eso_midas_image(self, hdul):
+        logging.info(msg_format('ESO MIDAS image'))
+        """ ESO-MIDAS image """
+
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(x), np.nan)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {'instr': ''}
+        try:
+            meta['object'] = hdr['FILENAME'][:-4]
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def eso_midas_table(self, hdul):
+        logging.info(msg_format('ESO MIDAS table'))
+        """ ESO-MIDAS table """
 
         hdr = hdul[1].header
         data = hdul[1].data
@@ -195,12 +221,13 @@ class Format(object):
         try:
             y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
             dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.electron #erg/au.cm**2/au.s/au.nm
         except:
             y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
             dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
         xunit = au.Angstrom
-        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'ESPRESSO'}
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
@@ -208,6 +235,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
 
     def espresso_spectrum_format(self, data):
         """ ESPRESSO spectrum format """
@@ -238,6 +266,28 @@ class Format(object):
         xunit = au.nm
         yunit = None
         meta = {'instr': 'FIRE'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def mage_spectrum(self, hdul):
+        """ LDSS3 spectrum """
+        logging.info(msg_format('QUBRICS'))
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = {}
         try:
             meta['object'] = hdr['OBJECT']
         except:
