@@ -79,7 +79,7 @@ class Graph(object):
             if len(self._clicks) == 1:
                 title.append('Zap feature')
                 attr.append('spec_zap')
-                self._clicks.append((x,y))                
+                self._clicks.append((x,y))
             if 'cont' in self._gui._sess_sel.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
@@ -156,7 +156,7 @@ class Graph(object):
         #start = dt.datetime.now()
         self._text = text
         self._ax.clear()
-        self._ax.grid(True, linestyle=':')
+        self._ax.grid(True, which='both', linestyle=':')
         if title != None:
             self._ax.set_title(title)
         if text != None:
@@ -196,7 +196,7 @@ class Graph(object):
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
         if sess[0].spec._rfz != 0.0:
-            self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.2f)"
+            self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
                                 % sess[0].spec._rfz)
         #self._c = 0  # Color
         if logx:

@@ -32,7 +32,7 @@ class CookbookAbsorbers(object):
         self._chi2r_thres = np.inf
         self._dlogN_thres = np.inf
         self._max_nfev = max_nfev_def
-
+        self._sel_fit = False
 
     def _lines_cands_find(self, series, z_start, z_end, dz):
         return self.sess.lines._cands_find(series, z_start, z_end, dz)
@@ -800,6 +800,51 @@ class CookbookAbsorbers(object):
 
         return 0
 
+    def systs_supersede(self, dv=5, series='Ly-a'):
+        """ @brief Supersede systems
+        @details Enforce rules for systems to supersede other systems in case of
+        superposition. Two systems are superposed when the difference between
+        their positions, expressed as a velocity, is below a given threshold.
+        @param dv Velocity threshold (km/s)
+        @param series Series to be superseded
+        @return 0
+        """
+
+        try:
+            dv = float(dv)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        systs = self.sess.systs
+
+
+        q = [trans_parse(t) for t in systs._t['series']]
+        #print(systs._t['z'], s)
+        r = np.array([], dtype=int)
+        #s = np.array([])
+        x = np.array([])
+        for i, (zi, si) in enumerate(zip(systs._t['z'], systs._t['series'])):
+            r = np.append(r, [i for t in trans_parse(si)])
+            #s = np.append(s, trans_parse(si))
+            x = np.append(x, [to_x(zi, t).value for t in trans_parse(si)])
+        argsort = np.argsort(x)
+        v = aconst.c.to(au.km/au.s).value*x/x[argsort][0]
+        where = np.where(np.ediff1d(v[argsort])<dv)
+
+        rem = []
+        for w in where[0]:
+            check_1 = systs._t['series'][r[argsort][w]]!= series
+            check_2 = systs._t['series'][r[argsort][1:][w]]!= series
+            if check_1 and not check_2:
+                rem.append(r[argsort][1:][w])
+            if check_2 and not check_1:
+                rem.append(r[argsort][w])
+
+        self._systs_remove(rem)
+        self._mods_recreate()
+
+        return 0
 
     def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=18.0,
                      b_min=1.0, b_max=100.0, col=None, col_min=None,
