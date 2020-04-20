@@ -171,14 +171,22 @@ class Session(object):
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
 
+
+        # XSHOOTER MERGE1D spectrum
+        if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
+            self.spec = format.xshooter_merge1d_spectrum(hdul)
+
+
         # XQR-30 spectrum
         if instr == 'XSHOOTER' and orig == 'XQR-30':
             self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
             self._open_twin = not self._open_twin
 
+
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
             self.spec = format.xshooter_das_spectrum(hdul)
+
 
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
