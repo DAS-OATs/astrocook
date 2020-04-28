@@ -240,7 +240,7 @@ class GUIPanelSession(wx.Frame):
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)>0)
+        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
         edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
 
 
@@ -280,9 +280,10 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
 
-        # Enable session combine depending on how many sessions are selected
+        # Enable session equalize/combine depending on how many sessions are selected
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+302, len(self._gui._sess_item_sel)>1)
+        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_item_sel)==2)
+        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -370,7 +371,7 @@ class GUIPanelSession(wx.Frame):
             return attrn, attr, parse
 
 
-    def combine(self, name='*_combined'):
+    def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
         @details When sessions are combined, a new session is created, with a
         new spectrum containing all entries from the spectra of the combined
@@ -382,6 +383,12 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        if sel == []:
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
         if sel == []:
             sel = range(len(self._gui._sess_list))
         spec = dc(self._gui._sess_list[sel[0]].spec)
@@ -396,6 +403,46 @@ class GUIPanelSession(wx.Frame):
             name += name_in[1:]
         sess = Session(name=name, spec=spec)
         return sess
+
+
+    def equalize(self, xmin, xmax, _sel=''):
+        """ @brief Equalize two sessions
+        @details Equalize the flux level of one session to another session. The
+        last-selected session is equalized to the first-selected one. The
+        equalization factor is the ratio of the median flux within a wavelength
+        interval.
+        @param xmin Minimum wavelength (nm)
+        @param xmax Maximum wavelength (nm)
+        @return 0
+        """
+
+        try:
+            xmin = float(xmin) * au.nm
+            xmax = float(xmax) * au.nm
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        sel = self._gui._sess_item_sel
+        if sel == []:
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+
+        for i,s in enumerate(sel):
+            sess = self._gui._sess_list[s]
+            w = np.where(np.logical_and(sess.spec.x>xmin, sess.spec.x<xmax))[0]
+            if len(w)==0:
+                logging.error("I can't use this wavelength range for "
+                              "equalization. Please choose a range covered by "
+                              "both sessions.")
+                return(0)
+            if i == 0:
+                f = np.median(sess.spec.y[w])
+            else:
+                sess.spec.y = f/np.median(sess.spec.y[w])*sess.spec.y
+
+
+        return 0
 
 
     def load_json(self, path='.'):
@@ -423,7 +470,7 @@ class GUIPanelSession(wx.Frame):
                     self._on_add(out, open=False)
 
 
-    def struct_compare(self, struct_A='0,spec,x', struct_B='0,spec,y',
+    def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):
 
 
