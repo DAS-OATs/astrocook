@@ -341,6 +341,29 @@ class Format(object):
             logging.warning(msg_descr_miss('OBJECT'))
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def wfccd_spectrum(self, hdul):
+        """ WFCCD format """
+        logging.info(msg_format('WFCCD'))
+
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CD1_1']
+        naxis1 = hdr['NAXIS1']
+        y = hdul[0].data[0][0]
+        dy = hdul[0].data[1][0]
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'WFCCD'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('OBJECT'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def xshooter_das_spectrum(self, hdul):
         """ X-shooter DAS FSPEC/RSPEC format """
         logging.info(msg_format('X-shooter DAS'))

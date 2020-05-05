@@ -106,6 +106,7 @@ class Graph(object):
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
+        x = x/(1+sess.spec._rfz)
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
         if hasattr(self._gui, '_graph_det'):
@@ -294,7 +295,6 @@ class Graph(object):
                         #         lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
                         #         lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                         gs._x = np.log(gs._x/xem)*aconst.c.to(au.km/au.s)
-                    #print(gs._x)
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
