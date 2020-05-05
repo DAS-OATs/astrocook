@@ -172,6 +172,10 @@ class Session(object):
             self.spec = format.uves_popler_spectrum(hdul)
 
 
+        # WFCCD Spectrum
+        if instr[:5] == 'WFCCD':
+            self.spec = format.wfccd_spectrum(hdul)
+
         # XSHOOTER MERGE1D spectrum
         if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
             self.spec = format.xshooter_merge1d_spectrum(hdul)
