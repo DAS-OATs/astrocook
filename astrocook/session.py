@@ -178,7 +178,10 @@ class Session(object):
 
         # XSHOOTER MERGE1D spectrum
         if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
-            self.spec = format.xshooter_merge1d_spectrum(hdul)
+            if hdul[0].header['NAXIS'] == 0:
+                self.spec = format.xshooter_vacbary_spectrum(hdul)
+            else:
+                self.spec = format.xshooter_merge1d_spectrum(hdul)
 
 
         # XQR-30 spectrum

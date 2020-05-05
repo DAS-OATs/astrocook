@@ -364,6 +364,30 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
+    def xqr30_spectrum(self, hdul, corr=True):
+        logging.info(msg_format('xqr30'))
+
+        hdr = hdul[1].header
+        data = hdul[1].data
+        x = data['WAVE'][0]
+        xmin, xmax = self._create_xmin_xmax(x)
+        if corr:
+            y = data['FLUX'][0]
+            dy = data['ERROR'][0]
+        else:
+            y = data['FLUX_NOCORR'][0]
+            dy = data['ERROR_NOCORR'][0]
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
+        meta = {'instr': 'X-shooter'}
+        try:
+            meta['object'] = hdul._file.name.split('/')[-1][:-5]
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def xshooter_das_spectrum(self, hdul):
         """ X-shooter DAS FSPEC/RSPEC format """
         logging.info(msg_format('X-shooter DAS'))
@@ -388,24 +412,23 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
-    def xqr30_spectrum(self, hdul, corr=True):
-        logging.info(msg_format('xqr30'))
+    def xshooter_vacbary_spectrum(self, hdul):
+        """ X-shooter VAC/BARY format """
+        logging.info(msg_format('X-shooter VAC/BARY'))
 
-        hdr = hdul[1].header
+        logging.info(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        hdr = hdul[0].header
         data = hdul[1].data
-        x = data['WAVE'][0]
+        x = data['wave']
         xmin, xmax = self._create_xmin_xmax(x)
-        if corr:
-            y = data['FLUX'][0]
-            dy = data['ERROR'][0]
-        else:
-            y = data['FLUX_NOCORR'][0]
-            dy = data['ERROR_NOCORR'][0]
-        xunit = au.Angstrom
-        yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
+        y = data['flux']
+        dy = data['err']
+        resol = []*len(x)
+        xunit = au.nm
+        yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
         meta = {'instr': 'X-shooter'}
         try:
-            meta['object'] = hdul._file.name.split('/')[-1][:-5]
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
