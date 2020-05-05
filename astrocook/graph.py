@@ -39,6 +39,7 @@ class Graph(object):
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
         #cid =  plt.connect('motion_notify_event', self._on_move)
+        self._axt = None
 
     def _init_canvas(self):
         #self._c = 0
@@ -198,11 +199,28 @@ class Graph(object):
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
                                 % sess[0].spec._rfz)
+            if self._axt == None:
+                self._axt = self._ax.twiny()
+                self._axt.set_xlabel(str(self._xunit))
+        else:
+            try:
+                self._axt.remove()
+            except:
+                pass
+            self._axt = None
         #self._c = 0  # Color
         if logx:
             self._ax.set_xscale('log')
+            try:
+                self._axt.set_xscale('log')
+            except:
+                pass
         if logy:
             self._ax.set_yscale('log')
+            try:
+                self._axt.set_yscale('log')
+            except:
+                pass
 
         if xlim is not None:
             self._ax.set_xlim(xlim)
@@ -293,6 +311,10 @@ class Graph(object):
                 #self._c += 1
             except:
                 pass
+            if self._axt != None:
+                self._axt.set_xlim(np.array(self._ax.get_xlim()) \
+                                   * (1+sess.spec._rfz))
+
 
 class GraphLineListXY(object):
     def __init__(self, sess, norm=False):
