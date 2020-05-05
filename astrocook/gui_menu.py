@@ -358,21 +358,26 @@ class GUIMenuEdit(GUIMenu):
         # Add items to Edit menu here
         #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
         self._item_method(self._menu, start_id+300, None,
-                          "Compare structures", 'struct_compare',
-                          enable=len(self._gui._sess_list)>0,
+                          "Equalize sessions", 'equalize',
+                          enable=len(self._gui._sess_item_sel)==2,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+301, None,
-                          "Import structure", 'struct_import',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+302, None,
                           "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+310, None,
+                          "Import structure", 'struct_import',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+311, None,
+                          "Modify structures", 'struct_modify',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+310, 'spec',
+        self._item_method(submenu, start_id+312, 'spec',
                           "Blackbody", 'bb')
-        self._item_method(submenu, start_id+311, 'spec',
+        self._item_method(submenu, start_id+313, 'spec',
                           "Power-law", 'pl')
         self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
