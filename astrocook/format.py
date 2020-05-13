@@ -313,6 +313,29 @@ class Format(object):
             meta['object'] = ''
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def uves_spectrum(self, hdul, hdul_err):
+        """ UVES format (two files: FLUXCAL_SCI, FLUXCAL_ERRORBAR_SCI) """
+        logging.info(msg_format('uves'))
+
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = hdul[0].data
+        dy = hdul_err[0].data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom
+        meta = {'instr': 'UVES'}
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('OBJECT'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
 
     def uves_popler_spectrum(self, hdul):
         """ UVES_popler format """

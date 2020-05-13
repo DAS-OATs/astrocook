@@ -167,6 +167,14 @@ class Session(object):
             self.spec = format.qubrics_spectrum(hdul)
 
 
+        # UVES Spectrum
+        if instr == 'UVES':
+            if 'FLUXCAL_SCI' in self.path:
+                hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
+                                                       'FLUXCAL_ERRORBAR_SCI'))
+                self.spec = format.uves_spectrum(hdul, hdul_err)
+
+
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)

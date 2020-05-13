@@ -240,8 +240,10 @@ class GUIPanelSession(wx.Frame):
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
-        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
+        #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
+        #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
+        edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
+        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>1)
 
 
     def _on_edit(self, event):
