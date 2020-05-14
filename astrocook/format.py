@@ -329,6 +329,7 @@ class Format(object):
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
         meta = {'instr': 'UVES'}
+        meta['v_bary'] = hdr['HIERARCH ESO QC VRAD BARYCOR']
         try:
             meta['object'] = hdr['OBJECT']
         except:

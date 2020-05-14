@@ -171,6 +171,18 @@ class Frame():
         return 0
 
 
+    def _shift_bary(self, v):
+        """ @brief Shift to and from barycentic frame.
+        @param v Velocity in the barycentric frame (km/s)
+        @return 0
+        """
+
+        fact = 1+v/aconst.c.to(au.km/au.s).value
+        self.x = self.x*fact
+        self.xmin = self.xmin*fact
+        self.xmax = self.xmax*fact
+        return 0
+
     def _x_convert(self, zem=0, xunit=au.km/au.s):
 
         self._zem = zem

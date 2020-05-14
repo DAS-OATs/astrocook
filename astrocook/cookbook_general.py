@@ -185,6 +185,31 @@ class CookbookGeneral(object):
                 logging.debug(msg_attr_miss(s))
         return 0
 
+
+    def shift_bary(self, v=None):
+        """ @brief Shift to barycentric frame
+        @details Shift x axis to the barycentric frame of the solar system.
+        @param v Velocity in the barycentric frame (km/s)
+        @return 0
+        """
+
+        try:
+            v = float(v)
+        except:
+            try:
+                v = self.sess.spec.meta['v_bary']
+            except ValueError:
+                logging.error(msg_param_fail)
+                return 0
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._shift_bary(v)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0
+
+
     def snr_est(self):
         """ @brief Estimate the SNR
         @details Estimate the signal-to-noise ratio per pixel.
