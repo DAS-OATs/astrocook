@@ -344,11 +344,14 @@ class GraphSpectrumNodesXY(object):
 class GraphSpectrumXY(object):
     def __init__(self, sess, norm=False):
         self._type = 'step'
+        #self._type = 'plot'
         self._x = sess.spec.x
         self._y = sess.spec.y
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
+        #self._kwargs = {'lw':1.0, 'label':sess.name}
+
 
 class GraphSpectrumXCont(GraphSpectrumXY):
 

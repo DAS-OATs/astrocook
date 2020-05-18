@@ -129,7 +129,7 @@ class SystList(object):
     ### Deprecated, kept for backward compatibility with systs_new_from_resids
     def _add(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
 
-        self._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
+        self._t.add_row(['voigt', series, z, z, None, logN, None, b, None,
                          None, None, self._id])
 
         return 0
