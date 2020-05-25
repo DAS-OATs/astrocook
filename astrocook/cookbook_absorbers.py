@@ -140,8 +140,10 @@ class CookbookAbsorbers(object):
 
         return 0
 
+    def _mods_recreate(self, **kwargs):
+        return self._mods_recreate2(**kwargs)
 
-    def _mods_recreate(self, verbose=True):
+    def _mods_recreate1(self, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         spec.t['fit_mask'] = False
@@ -165,7 +167,6 @@ class CookbookAbsorbers(object):
                         constr[k] = v[2]
                     else:
                         vars[k.split('_')[-1]+'_vary'] = False
-
             mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'])
@@ -248,6 +249,7 @@ class CookbookAbsorbers(object):
                             b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
                 #print(systs._mods_t['id'])
+
         systs_t.sort(['z','id'])
         #print(systs._mods_t['id'])
         mods_n = len(mod_w)#len(self.sess.systs._mods_t)
