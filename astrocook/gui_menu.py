@@ -35,18 +35,29 @@ class GUIMenu(object):
         #bar.Append(self._cook._menu, "Cook")
         return bar
 
-    def _item(self, menu, id, append, title, event):
-        item = wx.MenuItem(menu, id, title)
+    def _item(self, menu, id, append, title, event, key=None, enable=True):
+        if key is not None:
+            item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
+            #item.Check(False)
+            item.key = key
+        else:
+            item = wx.MenuItem(menu, id, title)
+
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
+        else:
+            item.Enable(enable)
+        return item
 
     def _item_graph(self, menu, id, append, title, key, enable=False,
                     dlg_mini=False, targ=None):
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
+        if targ == GraphCursorZSeries:
+            self._gui._cursor = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
@@ -88,15 +99,25 @@ class GUIMenu(object):
             sel.remove(key)
         else:
             sel.append(key)
-        item.IsChecked() == False
-        self._gui._refresh()
+        #item.IsChecked() == False
+        self._gui._refresh(init_tab=False)
         if dlg_mini:
-            self._gui._cursor = item
+            #self._gui._cursor = item
             if item.IsChecked():
-                self._on_dialog_mini(event, title, targ)
+                if not hasattr(self._gui, '_dlg_mini') \
+                    or self._gui._dlg_mini == None:
+                    self._on_dialog_mini(event, "System controls", targ)
+                #print('menu on ', self._gui._graph_main._sel)
+                self._gui._dlg_mini._shown = True
+                #self._gui._graph_main._sel.append(self._gui._cursor.key)
+                self._gui._dlg_mini._on_apply(event)
+                self._gui._dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
+                self._gui._dlg_mini._shown = False
+                #print('menu off', self._gui._graph_main._sel)
+                #self._gui._graph_main._sel.remove(self._gui._cursor.key)
                 self._gui._dlg_mini._on_cancel(event)
-
+                self._gui._dlg_mini._cursor_button.SetLabel("Show cursor")
 
     def _on_open(self, event, path=None, wildcard=None,
                  action='_on_open_session'):
@@ -144,21 +165,27 @@ class GUIMenu(object):
     def _refresh(self):
         # Nested loops! WOOOO!
         sel = self._gui._graph_main._sel
+
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view', '_recipes', '_courses', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
-                        if m == '_view' and item.IsCheckable():
+                        if m == '_view' and item.IsCheckable() \
+                            and item.key not in ['legend', 'norm']:
                             item.Check(False)
                         if hasattr(self._gui._sess_sel, a):
                             cond = getattr(self._gui._sess_sel, a) != None
                         else:
-                            cond = a in self._gui._sess_sel.spec.t.colnames
+                            try:
+                                cond = a in self._gui._sess_sel.systs.t.colnames
+                            except:
+                                cond = a in self._gui._sess_sel.spec.t.colnames
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
-                                item.Check(item.key in sel)  # from .vars
+                                if item.key not in ['legend', 'norm']:
+                                    item.Check(item.key in sel)
                         else:
                             item.Enable(False)
                     except:
@@ -331,32 +358,45 @@ class GUIMenuEdit(GUIMenu):
         # Add items to Edit menu here
         #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
         self._item_method(self._menu, start_id+300, None,
-                          "Compare structures", 'struct_compare',
-                          enable=len(self._gui._sess_list)>0,
+                          "Equalize sessions", 'equalize',
+                          enable=len(self._gui._sess_item_sel)==2,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+301, None,
-                          "Import structure", 'struct_import',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+302, None,
                           "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+310, 'spec',
-                          "Extract region", 'region_extract')
+        self._item_method(self._menu, start_id+310, None,
+                          "Import structure", 'struct_import',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+311, None,
+                          "Modify structures", 'struct_modify',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        submenu = wx.Menu()
+        self._item_method(submenu, start_id+312, 'spec',
+                          "Blackbody", 'bb')
+        self._item_method(submenu, start_id+313, 'spec',
+                          "Power-law", 'pl')
+        self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+320, 'spec',
-                          "Convert x axis", 'x_convert')
-        self._item_method(self._menu, start_id+321, 'spec',
-                          "Convert y axis", 'y_convert')
+                          "Extract region", 'region_extract')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+330, 'spec',
-                          "Scale y axis", 'y_scale')
+                          "Convert x axis", 'x_convert')
+        self._item_method(self._menu, start_id+331, 'spec',
+                          "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+340, 'spec',
+                          "Scale y axis", 'y_scale')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+350, 'spec',
+                          "Shift to barycentric frame", 'shift_bary')
+        self._item_method(self._menu, start_id+351, 'spec',
                           "Shift to rest frame", 'shift_to_rf')
-        self._item_method(self._menu, start_id+341, 'spec',
+        self._item_method(self._menu, start_id+352, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
 
 
@@ -424,6 +464,8 @@ class GUIMenuRecipes(GUIMenu):
         super(GUIMenuRecipes, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        #sess = self._gui._sess_sel
+
 
         # Add items to Recipes menu here
         self._item_method(self._menu, start_id+100, 'spec',
@@ -432,6 +474,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+102, 'spec',
                           "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+103, 'spec',
+                          "Estimate SNR", 'snr_est')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
@@ -452,7 +496,7 @@ class GUIMenuRecipes(GUIMenu):
 
         #self._item_method(self._menu, start_id+301, 'lines',
         #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+300, 'cont',
+        self._item_method(self._menu, start_id+300, 'z0',
                           "New system", 'syst_new')
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
@@ -460,17 +504,34 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(self._menu, start_id+301, 'lines',
                           "New systems from lines",
                           'systs_new_from_lines')
+        self._item_method(self._menu, start_id+302, 'lines',
+                          "Find candidate systems", 'cands_find')
+        self._item_method(self._menu, start_id+303, 'z0',
+                          "Improve systems", 'systs_improve')
+        self._item_method(self._menu, start_id+304, 'z0',
+                          "Complete systems", 'systs_complete')
+        self._item_method(self._menu, start_id+305, 'z0',
+                          "Fit systems", 'systs_fit')
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
-        self._item_method(submenu, start_id+311, 'systs',
-                          "Fit systems", 'systs_fit')
-        self._item_method(submenu, start_id+312, 'systs',
-                          "Clean systems", 'systs_clean')
-        self._item_method(submenu, start_id+313, 'systs',
-                          "Extract systems", 'comp_extract')
+        self._item_method(submenu, start_id+311, 'z0',
+                          "Recreate models", 'mods_recreate')
+        self._item_method(submenu, start_id+312, 'z0',
+                          "Estimate SNR of systems", 'systs_snr')
+        self._item_method(submenu, start_id+313, 'z0', "Update lines",
+                          'lines_update')
+        self._item_method(submenu, start_id+314, 'z0',
+                          "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
-        self._item_method(submenu,start_id+321, 'systs', "Compute CCF",
+        self._item_method(submenu, start_id+322, 'z0',
+                          "Clean systems", 'systs_clean')
+        self._item_method(submenu, start_id+323, 'z0',
+                          "Extract systems", 'comp_extract')
+        self._item_method(submenu, start_id+324, 'systs',
+                          "Select systems", 'systs_select')
+        submenu.AppendSeparator()
+        self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
@@ -529,6 +590,8 @@ class GUIMenuView(GUIMenu):
         super(GUIMenuView, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        self._menu_view = self
+        self._start_id = start_id
 
         # Add items to View menu here
         self._item(self._menu, start_id+1, 'spec', "Spectrum table",
@@ -538,12 +601,16 @@ class GUIMenuView(GUIMenu):
         self._item(self._menu, start_id+3, 'systs', "System table",
                    lambda e: self._on_tab(e, 'systs'))
         self._menu.AppendSeparator()
+        """
         self._item(self._menu, start_id+101, 'systs',
                    "System detection correctness",
                    lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+101, 'systs',
+        self._item(self._menu, start_id+102, 'systs',
                    "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
+        """
+        self._item(self._menu, start_id+101, 'systs', "Compress system table",
+                   self._on_compress)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)
@@ -578,13 +645,28 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
                          'cursor_z_series', dlg_mini=True,
                          targ=GraphCursorZSeries)
+        self._legend = self._item(self._submenu, start_id+314, 'spec', "Legend",
+                                  self._on_legend, key='legend')
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
-        self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
-                   self._on_norm)
+        self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
+                                self._on_norm, key='norm')
+
+    def _on_compress(self, event):
+        if self._menu.GetLabel(self._start_id+101) == "Compress system table":
+            self._menu.SetLabel(self._start_id+101, "Uncompress system table")
+        else:
+            self._menu.SetLabel(self._start_id+101, "Compress system table")
+
+        self._gui._sess_sel.systs._compress()
+        self._gui._refresh()
 
     def _on_ima(self, event, obj):
         method = '_ima_'+obj
         getattr(self._gui, method)._on_view(event)
+
+    def _on_legend(self, event):
+        self._gui._graph_main._legend = ~self._gui._graph_main._legend
+        self._gui._refresh()
 
     def _on_logx(self, event):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx

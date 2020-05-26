@@ -5,10 +5,13 @@ from astropy import units as au
 from astropy import constants as aconst
 from copy import deepcopy as dc
 import logging
+import matplotlib
+matplotlib.use('WxAgg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-    NavigationToolbar2WxAgg
+    NavigationToolbar2WxAgg, _convert_agg_to_wx_bitmap
 from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
@@ -17,14 +20,13 @@ import wx
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel, legend=True, init_canvas=True,
-                 init_ax=True):
+    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True):
         self._panel = panel
         self._gui = gui
         self._sel = sel
-        self._legend = legend
         self._fig = Figure()
         self._cursor_lines = []
+        self._clicks = []
 
         if init_canvas:
             self._init_canvas()
@@ -37,6 +39,7 @@ class Graph(object):
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
         #cid =  plt.connect('motion_notify_event', self._on_move)
+        self._axt = None
 
     def _init_canvas(self):
         #self._c = 0
@@ -55,12 +58,11 @@ class Graph(object):
             and getattr(self, _unit) != au.dimensionless_unscaled:
             logging.info("I'm converting the %s unit of %s to plot it over the "
                          "data already present." % (axis, sess.name))
-            getattr(sess, 'convert_'+axis)(**{unit: getattr(self, _unit)})
+            getattr(sess.cb, axis+'_convert')(**{unit: getattr(self, _unit)})
             self._gui._panel_sess._refresh()
 
     def _on_click(self, event):
         if not event.inaxes: return
-        if event.button != 3: return
         x = float(event.xdata)
         y = float(event.ydata)
         from .gui_table import GUITablePopup
@@ -70,14 +72,26 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         focus._click_xy = (x,y)
-        if 'cont' in self._gui._sess_sel.spec._t.colnames \
-            and 'cursor_z_series' in self._sel:
-            focus.PopupMenu(
-                    GUITablePopup(self._gui, focus, event,
+        title = []
+        attr = []
+        if event.button == 1:
+            self._clicks = [(x,y)]
+        if event.button == 3:
+            if len(self._clicks) == 1:
+                title.append('Zap feature')
+                attr.append('spec_zap')
+                self._clicks.append((x,y))
+            if 'cont' in self._gui._sess_sel.spec._t.colnames \
+                and 'cursor_z_series' in self._sel:
+                title.append('New system')
+                attr.append('syst_new')
+
+        focus.PopupMenu(
+            GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
                                   #['add_line', 'add_syst']))
                                   #'Add system', 'add_syst'))
-                                  'New system', 'syst_new'))
+                                  title, attr))
         """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,
@@ -92,6 +106,7 @@ class Graph(object):
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
+        x = x/(1+sess.spec._rfz)
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
         if hasattr(self._gui, '_graph_det'):
@@ -100,91 +115,50 @@ class Graph(object):
         #print(self._cursor_lines)
         if 'cursor_z_series' in self._sel:
             if hasattr(self, '_xs'):
-                """
-                if self._text != None:
-                    gs = self._cursor
-                    gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
-                    gs._x = gs._xem*(1+gs._z)*au.nm
-                    xem = self._xs[self._text]
-                    equiv = [(au.nm, au.km/au.s,
-                             lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                             lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                    gs._x = gs._x.to(au.km/au.s, equivalencies=equiv)
-                """
                 for l, key in zip(self._cursor_lines, self._xs):
                     if self._text != None:
-                        """
+                        z = self._z+(1+self._z)*x/aconst.c.to(au.km/au.s).value
+                        self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
                         xem = self._xs[key]
-                        #print(xem)
-                        #xem = np.mean([self._xs[i].value for i in self._xs])*self._xs[self._text].unit
-                        equiv = [(au.nm, au.km/au.s,
-                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                        x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv)
-                        print(x_nm)
-                        #z = x_nm/xem_d[self._series[self._text]]-1
-                        z = x_nm/(np.min(self._cursor._xem)*au.nm)-1
-                        #print(z)
-                        #z = x_nm/(np.mean([xem_d[self._series[i]].value for i in self._series])*xem_d[self._series[self._text]].unit)-1
-                        self._cursor._x = self._cursor._xem*(1+z)*au.nm
-                        #print(self._cursor._xem, self._cursor._x)
-                        self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv)
-                        #print(self._cursor._x)
-                        """
-                        #xem = self._xs[key]
-                        xem = self._x
-                        equiv1 = [(au.nm, au.km/au.s,
-                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                        x_nm = (x*au.km/au.s).to(au.nm, equivalencies=equiv1)
-                        z = x_nm/(np.min(self._cursor._xem)*au.nm)-1
-                        self._cursor._x = self._cursor._xem*(1+z)*au.nm
-                        #xem = self._x
-                        xem = self._xs[key]
-                        equiv2 = [(au.nm, au.km/au.s,
-                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                        self._cursor._x = self._cursor._x.to(au.km/au.s, equivalencies=equiv2)
-                        #print(key, xem, x_nm, z, self._cursor._x)
+                        self._cursor._x = (np.log(self._cursor._x/xem))*aconst.c.to(au.km/au.s)
                     else:
                         z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
                         self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
-
                     for c, xi in zip(l, self._cursor._x):
                         c.set_xdata(xi)
                         c.set_alpha(0.5)
-                    """
-                    else:
-                        z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
-                        for c, xem in zip(l, self._cursor._xem):
-                            c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
-                            c.set_alpha(0.5)
-                    """
-                    self._canvas.draw()
+                    #self._canvas.draw()
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
                                             % (x, y, self._cursor._series, z))
             else:
                 z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
                 for c, xem in zip(self._cursor_line, self._cursor._xem):
-                    #print(c.get_xdata()[0]*conv)
-                    #print((xem*(1+z)*au.nm).to(sess.spec._xunit))
                     c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                     c.set_alpha(0.5)
-                self._canvas.draw()
+                #self._canvas.draw()
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
                                         % (x, y, self._cursor._series, z))
             self._cursor._z = z
         else:
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
+        for l in self._cursor_lines:
+            for b in l:
+                self._ax.draw_artist(b)
 
+        # Copied from https://matplotlib.org/_modules/matplotlib/backends/backend_wxagg.html
+        #self._canvas.update()
+        self._canvas.draw_idle()
+        #self._canvas.flush_events()
 
-    def _refresh(self, sess, logx=False, logy=False, norm=False, xlim=None,
-                 ylim=None, title=None, text=None, init_cursor=False):
+    def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
+                 xlim=None, ylim=None, title=None, text=None, init_cursor=False):
         sess = np.array(sess, ndmin=1)
 
+        #import datetime as dt
+        #start = dt.datetime.now()
         self._text = text
         self._ax.clear()
-        self._ax.grid(True, linestyle=':')
+        self._ax.grid(True, which='both', linestyle=':')
         if title != None:
             self._ax.set_title(title)
         if text != None:
@@ -224,13 +198,30 @@ class Graph(object):
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
         if sess[0].spec._rfz != 0.0:
-            self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.2f)"
+            self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
                                 % sess[0].spec._rfz)
+            if self._axt == None:
+                self._axt = self._ax.twiny()
+                self._axt.set_xlabel(str(self._xunit))
+        else:
+            try:
+                self._axt.remove()
+            except:
+                pass
+            self._axt = None
         #self._c = 0  # Color
         if logx:
             self._ax.set_xscale('log')
+            try:
+                self._axt.set_xscale('log')
+            except:
+                pass
         if logy:
             self._ax.set_yscale('log')
+            try:
+                self._axt.set_yscale('log')
+            except:
+                pass
 
         if xlim is not None:
             self._ax.set_xlim(xlim)
@@ -240,12 +231,15 @@ class Graph(object):
 
         for s in sess:
             self._seq(s, norm)
-        if self._legend:
+        if legend:
             self._ax.legend()
 
         #print(self._ax)
         #self._cursor = self._ax.axvline(8000, alpha=0.0)
+
         self._canvas.draw()
+        #self._canvas.flush_events()
+        #print(dt.datetime.now()-start)
 
     def _seq(self, sess, norm):
         self._check_units(sess, 'x')
@@ -287,17 +281,20 @@ class Graph(object):
                     self._cursor = gs
                     self._cursor_line = []
                     if gs._z == 0:
+                        #break
                         #gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
                         #print('gs_xem', gs._xem)
-                        gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
+                        #gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
+                        gs._z = self._z
+                        #print(gs._z)
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
                         #xem = self._x
                         #print(xem)
-                        equiv = [(au.nm, au.km/au.s,
-                                 lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                                 lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-                        gs._x = gs._x.to(au.km/au.s, equivalencies=equiv)
+                        #equiv = [(au.nm, au.km/au.s,
+                        #         lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
+                        #         lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
+                        gs._x = np.log(gs._x/xem)*aconst.c.to(au.km/au.s)
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
@@ -314,6 +311,10 @@ class Graph(object):
                 #self._c += 1
             except:
                 pass
+            if self._axt != None:
+                self._axt.set_xlim(np.array(self._ax.get_xlim()) \
+                                   * (1+sess.spec._rfz))
+
 
 class GraphLineListXY(object):
     def __init__(self, sess, norm=False):
@@ -343,11 +344,14 @@ class GraphSpectrumNodesXY(object):
 class GraphSpectrumXY(object):
     def __init__(self, sess, norm=False):
         self._type = 'step'
+        #self._type = 'plot'
         self._x = sess.spec.x
         self._y = sess.spec.y
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
+        #self._kwargs = {'lw':1.0, 'label':sess.name}
+
 
 class GraphSpectrumXCont(GraphSpectrumXY):
 
@@ -500,35 +504,5 @@ class GraphCursorZSeries(object):
         except:
             self._z = 0
             self._x = self._xem*(1+self._z)*au.nm
-            """
-            spec = dc(sess.spec)
-            spec._x_convert(zem=spec._zem, xunit=spec._xunit_old)
-            print(spec._zem)
-            self._z = np.mean(spec.x).to(au.nm).value/self._xmean.value-1.0
-            self._x = self._xem*(1+self._z)*au.nm
-            print(self._x)
-            xem = (1+sess.spec._zem) * 121.567*au.nm
-            print(xem)
-            equiv = [(au.nm, au.km/au.s,
-                     lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                     lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-            print(equiv)
-
-            self._x = self._x.to(au.km/au.s, equivalencies=equiv)
-            print(self._x)
-            """
-            """
-            self._z = 0.0sess.spec._zem
-            print(self._z)
-            self._x = self._xem*(1+self._z)*au.nm
-            print(self._x)
-            xem = (1+self._z) * 121.567*au.nm
-            print(xem)
-            equiv = [(au.nm, au.km/au.s,
-                     lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                     lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-            self._x = 0*self._x.to(au.km/au.s, equivalencies=equiv)
-            print(self._x)
-            """
-            #self._x = 0.0*self._xem*(1+self._z)*au.km/au.s
+        #print(self._x)
         self._kwargs = {'label':self._series, 'linestyle': '--'}

@@ -8,6 +8,7 @@ from astropy import table as at
 from copy import deepcopy as dc
 import json
 import logging
+from matplotlib import pyplot as plt
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -21,7 +22,7 @@ class GUI(object):
 
         try:
             print("┌───────────────────┐")
-            print("│ ASTROCOOK 🍪  v%3s │" % version)
+            print("│ ASTROCOOK 🍪 v%3s │" % version)
             print("└───────────────────┘")
         except:
             print("-----------------")
@@ -37,6 +38,7 @@ class GUI(object):
         self._menu_cont_id = []
         self._menu_nodes_id = []
         self._menu_systs_id = []
+        self._menu_z0_id = []
         self._menu_mods_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
@@ -51,9 +53,13 @@ class GUI(object):
         else:
             logging.info("Welcome!")
             for p in paths:
-                self._panel_sess._on_open(p)
+                if p[-4:] == 'json':
+                    self._panel_sess.load_json(p)
+                else:
+                    self._panel_sess._on_open(p)
 
-    def _refresh(self, autolim=True, init_cursor=False):
+    def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
+                 autosort=True):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
@@ -68,6 +74,8 @@ class GUI(object):
         else:
             self._graph_main._refresh(self._sess_items)
         if hasattr(self, '_graph_det'):
+            #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
+            #"""
             graph = self._graph_det._graph
             if hasattr(graph, '_axes'):
                 for key in graph._zems:
@@ -95,11 +103,13 @@ class GUI(object):
                 else:
                     self._graph_det._refresh(self._sess_items,
                                              init_cursor=init_cursor)
+            #"""
         for s in ['spec', 'lines', 'systs']:
-            if hasattr(self, '_tab_'+s):
+            if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     getattr(self, '_tab_'+s)._on_view(event=None,
-                                                      from_scratch=False)
+                                                      from_scratch=False,
+                                                      autosort=autosort)
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \
@@ -109,6 +119,34 @@ class GUI(object):
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
 
+    def _refresh_graph_det(self, init_cursor=False, autolim=True):
+        graph = self._graph_det._graph
+        if hasattr(graph, '_axes'):
+            for key in graph._zems:
+                xunit = self._sess_sel.spec.x.unit
+                self._sess_sel.cb.x_convert(zem=graph._zems[key])
+                graph._ax = graph._axes[key]
+                xlim_det = graph._ax.get_xlim()
+                ylim_det = graph._ax.get_ylim()
+                if autolim:
+                    self._graph_det._refresh(self._sess_items, text=key,
+                                             xlim=xlim_det, ylim=ylim_det,
+                                             init_cursor=init_cursor)
+                else:
+                    self._graph_det._refresh(self._sess_items, text=key,
+                                             init_cursor=init_cursor)
+                init_cursor = False
+                self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+        else:
+            xlim_det = graph._ax.get_xlim()
+            ylim_det = graph._ax.get_ylim()
+            if autolim:
+                self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                         ylim=ylim_det,
+                                         init_cursor=init_cursor)
+            else:
+                self._graph_det._refresh(self._sess_items,
+                                         init_cursor=init_cursor)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
@@ -202,8 +240,10 @@ class GUIPanelSession(wx.Frame):
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)>0)
-        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
+        #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
+        #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
+        edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
+        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>1)
 
 
     def _on_edit(self, event):
@@ -242,9 +282,10 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
 
-        # Enable session combine depending on how many sessions are selected
+        # Enable session equalize/combine depending on how many sessions are selected
         edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+302, len(self._gui._sess_item_sel)>1)
+        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_item_sel)==2)
+        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -332,7 +373,7 @@ class GUIPanelSession(wx.Frame):
             return attrn, attr, parse
 
 
-    def combine(self, name='*_combined'):
+    def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
         @details When sessions are combined, a new session is created, with a
         new spectrum containing all entries from the spectra of the combined
@@ -344,6 +385,12 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        if sel == []:
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
         if sel == []:
             sel = range(len(self._gui._sess_list))
         spec = dc(self._gui._sess_list[sel[0]].spec)
@@ -360,6 +407,46 @@ class GUIPanelSession(wx.Frame):
         return sess
 
 
+    def equalize(self, xmin, xmax, _sel=''):
+        """ @brief Equalize two sessions
+        @details Equalize the flux level of one session to another session. The
+        last-selected session is equalized to the first-selected one. The
+        equalization factor is the ratio of the median flux within a wavelength
+        interval.
+        @param xmin Minimum wavelength (nm)
+        @param xmax Maximum wavelength (nm)
+        @return 0
+        """
+
+        try:
+            xmin = float(xmin) * au.nm
+            xmax = float(xmax) * au.nm
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        sel = self._gui._sess_item_sel
+        if sel == []:
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+
+        for i,s in enumerate(sel):
+            sess = self._gui._sess_list[s]
+            w = np.where(np.logical_and(sess.spec.x>xmin, sess.spec.x<xmax))[0]
+            if len(w)==0:
+                logging.error("I can't use this wavelength range for "
+                              "equalization. Please choose a range covered by "
+                              "both sessions.")
+                return(0)
+            if i == 0:
+                f = np.median(sess.spec.y[w])
+            else:
+                sess.spec.y = f/np.median(sess.spec.y[w])*sess.spec.y
+
+
+        return 0
+
+
     def load_json(self, path='.'):
         """@brief Load from JSON
         @details Load a set menu from a JSON file.
@@ -367,6 +454,7 @@ class GUIPanelSession(wx.Frame):
         @return 0
         """
 
+        logging.info("I'm loading JSON file %s..." % path)
         with open(path) as json_file:
             d = json.load(json_file)
             for r in d['set_menu']:
@@ -384,7 +472,7 @@ class GUIPanelSession(wx.Frame):
                     self._on_add(out, open=False)
 
 
-    def struct_compare(self, struct_A='0,spec,x', struct_B='0,spec,y',
+    def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):
 
 
@@ -454,15 +542,32 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         if mode=='replace':
-            if attrn == 'systs':
+            if attrn in ['lines', 'systs']:
+                #spec = self._gui._sess_sel.spec
                 x = self._gui._sess_sel.spec.x.to(au.nm)
                 attr = attr._region_extract(np.min(x), np.max(x))
+
+                # Redefine regions from spectrum
+            if attrn == 'systs':
+                for m in attr._mods_t:
+                    mod = m['mod']
+                    mod._spec = self._gui._sess_sel.spec
+                    mod._xf, mod._yf, mod._wf, mod._ys = \
+                        mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
+                                               .to(au.nm).value)
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
-            getattr(self._gui._sess_sel, attrn)._append(dc(attr))
+            attr_dc = dc(attr)
+            if attrn == 'systs':
+                id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
+                attr_dc._t['id'] = attr_dc._t['id']+id_max
+            #print(len(attr_dc._t))
+            #print(len(np.unique(attr_dc._t['id'])))
+            getattr(self._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
+            self._gui._sess_sel.cb._mods_recreate()
             self._gui._sess_sel.cb._spec_update()
 
         return 0

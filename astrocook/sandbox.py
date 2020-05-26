@@ -37,7 +37,7 @@
         """
         mod = SystModel2(self.systs)
 
-        self.systs._t.add_row(['voigt_func', series, z, z, logN, b, None, self.systs._id])
+        self.systs._t.add_row(['voigt', series, z, z, logN, b, None, self.systs._id])
         mod.new_voigt(series, z, logN, b, resol)
         mod.fit(fit_kws={'maxfev': maxfev})
         self.systs._fit_save(mod)

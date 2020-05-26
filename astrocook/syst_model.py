@@ -13,7 +13,7 @@ thres = 1e-2
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=[], z0=None,
+    def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
                  cont_func=None):
@@ -24,7 +24,10 @@ class SystModel(LMComposite):
             self._mods_t = None
         self._id = systs._id
         self._series = series
+        if vars is None: vars = {}
+        if constr is None: constr = {}
         self._vars = vars
+        self._constr = constr
         self._z0 = z0
         self._lines_func = lines_func
         self._psf_func = psf_func
@@ -33,13 +36,6 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
         #self._pars.pretty_print()
-        #plt.step(self._xs, self._ys)
-        #plt.step(self._xf, self._yf, where='mid')
-        #plt.plot()
-        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
-        #print('before')
-        #print(self._pars['lines_voigt_498_z'])
-        #print(self._yf)
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                          weights=self._wf,
                                          fit_kws=fit_kws,
@@ -47,31 +43,19 @@ class SystModel(LMComposite):
                                          method='least_squares')
                                          #method='emcee')
         time_end = datetime.datetime.now()
-        #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
-        #print('after')
-        #print(self._pars['lines_voigt_498_z'])
         #self._pars.pretty_print()
-        #print(fit.fit_report())
-        #print(len(self._xs), len(self.eval(x=self._xs, params=self._pars)))
-        #print(len(self._xf), len(self.eval(x=self._xf, params=self._pars)))
-        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars), linestyle=':')
-        #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
-        #plt.xlim(972, 977)
-        #plt.show()
         self._ys = self.eval(x=self._xs, params=self._pars)
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
-        #print(self._xs[40:50])
-        #print(self._ys[40:50])
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
     def _make_defs(self):
-        self._defs = pars_std_d
+        self._defs = dc(pars_std_d)
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
@@ -108,22 +92,70 @@ class SystModel(LMComposite):
         self._group = self._lines
         self._group_list = []
         #plt.plot(self._xs, ys)
+
         for i, s in enumerate(mods_t):
             mod = s['mod']
             #ys_s = mod.eval(x=self._xs, params=mod._pars)
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
             #print(np.amin(ymax))
-            if np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys):
+            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+            pars_cond = False
+            #for p,v in self._pars.items():
+            for p,v in self._constr.items():
+                for mod_p,mod_v in mod._pars.items():
+                    pars_cond = pars_cond or v==mod_p
+            #print(s['id'],pars_cond)
+            if y_cond or pars_cond:
                 self._group *= mod._group
+                """
+                print('mod')
+                mod._pars.pretty_print()
+                print('self')
+                self._pars.pretty_print()
+                """
+                mod = s['mod']
+                for p,v in mod._pars.items():
+                    if v.expr != None:
+                        self._constr[p] = v.expr
+                        v.expr = ''
+
+                """
+                print('mod cleaned')
+                mod._pars.pretty_print()
+                """
                 self._pars.update(mod._pars)
+                """
+                print('combine')
+                self._pars.pretty_print()
+                """
+                #self._pars.pretty_print()
+                #print(self._constr)
+                if pars_cond or self._constr != {}:
+                    for p,v in self._constr.items():
+                        #print(s['id'], pars_cond, self._constr != {}, self._constr, p, v)
+                        #print(self._pars[p])
+                        #print(self._pars[v])
+                        self._pars[p].expr = v
+                        if v != '':
+                            #print(self._pars[v])
+                            self._pars[p].min = self._pars[v].min
+                            self._pars[p].max = self._pars[v].max
+                            self._pars[p].value = self._pars[v].value
+                        #print(self._pars[p])
+                """
+                print('constrained')
+                self._pars.pretty_print()
+                """
                 self._group_list.append(i)
                 #self._pars.pretty_print()
 
                 ##
                 mod._ys = self._group.eval(x=self._xs, params=self._pars)
                 ##
-
+        #print(self._group_list)
+        #print('final')
+        #self._pars.pretty_print()
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
@@ -200,6 +232,7 @@ class SystModel(LMComposite):
 
 
         #self._pars.pretty_print()
+        #print(xs)
         ys = mod.eval(x=xs, params=self._pars)
         c = []
         t = thres
@@ -224,6 +257,7 @@ class SystModel(LMComposite):
 
     def _make_regs(self, thres=thres):
         spec = self._spec
+
         #ys = self._group.eval(x=self._xs, params=self._pars)
         #c = np.where(ys<1-thres)[0]
         c = []
@@ -249,7 +283,10 @@ class SystModel(LMComposite):
         #else:
         self._resol = resol
         self._series = series
-        self._vars = {'z': z, 'logN': logN, 'b': b, 'resol': self._resol}
+
+        for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
+            if l not in self._vars:
+                self._vars[l] = v
         self._make_defs()
         self._make_lines()
         self._make_group()

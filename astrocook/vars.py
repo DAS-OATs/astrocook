@@ -1,6 +1,7 @@
 from astropy import units as au
 from astropy.io import ascii
 import numpy as np
+import os
  #c, e, m_e
 
 xunit_def = au.nm
@@ -16,7 +17,7 @@ resol_def = None
 max_nfev_def = 100
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
-seq_menu = seq + ['y_conv', 'cont']
+seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = ['spec_x_y',
              #'spec_x_y_det',
              'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
@@ -25,8 +26,8 @@ graph_sel = ['spec_x_y',
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 1e-4, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
-    'z_max': 1e-4, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
+    'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
+    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -56,20 +57,30 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
-
-atom_par = ascii.read('atom_par.dat')
+p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+atom_par = ascii.read(p+'/atom_par.dat')
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 
-
-
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
+trans_d = atom_par['col1']
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
+
+#trans_d_short = ['SiIV_1393', 'SiIV_1402', 'SiII_1526', 'CIV_1548', 'CIV_1550', 'AlII_1670', 'NiII_1741', 'NiII_1751', 'AlIII_1854', 'AlIII_1862', 'FeII_2344', 'FeII_2374', 'FeII_2382', 'MnII_2576', 'FeII_2586', 'MnII_2594', 'FeII_2600', 'MnII_2606', 'MgII_2796', 'MgII_2803']
+trans_d_short = ['CIV_1548', 'CIV_1550', 'MgII_2796', 'MgII_2803', 'SiIV_1393', 'SiIV_1402', 'AlIII_1854', 'AlIII_1862', 'FeII_2586', 'FeII_2600']
+trans_d_short = ['CIV_1548', 'CIV_1550']
+series_d_short = {}
+for (k,v) in series_d.items():
+    for vi in v:
+        if vi in trans_d_short:
+            if k not in series_d_short:
+                series_d_short[k] = []
+            series_d_short[k].append(vi)
 
 series_d['Ly-a'] = ['Ly_a']
 series_d['Ly-ab'] = ['Ly_b', 'Ly_a']

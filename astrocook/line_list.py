@@ -73,7 +73,7 @@ class LineList(Frame):
                 l['XMAX'] = l['X']+0.5*ew.value
     """
 
-    def _cand_find(self, series, z_start, z_end, dz):
+    def _cands_find(self, series, z_start, z_end, dz):
         trans = trans_parse(series)
 
         z_all = np.ravel([[to_z(x,t) for x in self.x] for t in trans])
@@ -97,8 +97,9 @@ class LineList(Frame):
 
         return z_list, y_list
 
-    def _cand_find2(self, series, z_start, z_end, dz, single=False, logN=False):
+    def _cands_find2(self, series, z_start, z_end, dz, single=False, logN=False):
 
+        #print(z_start, z_end)
         # Compute all possible redshifts
         #trans = series_d[series]
         trans = trans_parse(series)
@@ -107,6 +108,7 @@ class LineList(Frame):
         else:
             z_all = np.ravel([[(x.to(au.nm)/xem_d[t].to(au.nm)).value-1. \
                                 for x in self.x] for t in trans])
+        trans_all = np.ravel([[t for x in self.x] for t in trans])
         y_all = np.ravel([[self.y] for t in trans])
         if logN:
             fosc_r = np.ravel([[fosc_d['Ly_a']/fosc_d[t]]*len(self.x) \
@@ -122,27 +124,33 @@ class LineList(Frame):
             else (z_end, z_start)
         z_sel = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
         y_sel = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
+        trans_sel = trans_all[np.logical_and(z_all>z_min, z_all<z_max)]
         if logN:
             logN_sel = logN_all[np.logical_and(z_all>z_min, z_all<z_max)]
             #print('sel')
             #print(logN_sel)
 
         # Find coincidences
-        if len(series_d[series]) > 1:
+        #if len(series_d[series]) > 1:
+        if len(trans) > 1:
             z_sort = np.sort(np.ravel(z_sel))
             y_sort = y_sel[np.argsort(np.ravel(z_sel))]
+            trans_sort = trans_sel[np.argsort(np.ravel(z_sel))]
             if logN:
                 logN_sort = logN_sel[np.argsort(np.ravel(z_sel))]
                 #print('sort')
-                #print(z_sort)
                 #print(logN_sort)
+            #print(z_sort)
+            #print(trans_sort)
 
-            w_range = np.where(np.ediff1d(z_sort)<dz)[0]
+            w_range = np.where(np.logical_and(np.ediff1d(z_sort)<dz,
+                                              trans_sort[:-1]!=trans_sort[1:]))[0]
             z_range = np.mean(np.vstack((z_sort[w_range], z_sort[w_range+1])),
                               axis=0)
             #y_range = y_sort[np.where(np.ediff1d(z_sort)<dz)]
             y_range = np.mean(np.vstack((y_sort[w_range], y_sort[w_range+1])),
                               axis=0)
+            trans_range = trans_sort
             if logN:
                 #logN_range = logN_sort[np.where(np.ediff1d(z_sort)<dz)]
                 logN_range = np.log10(np.mean(np.vstack((
@@ -154,6 +162,7 @@ class LineList(Frame):
 
             z_range = z_range if z_start<z_end else z_range[::-1]
             y_range = y_range if z_start<z_end else y_range[::-1]
+            trans_range = trans_range if z_start<z_end else trans_range[::-1]
             if logN:
                 logN_range = logN_range if z_start<z_end else logN_range[::-1]
                 #print('range 2')
@@ -162,27 +171,30 @@ class LineList(Frame):
         else:
             z_range = z_sel
             y_range = y_sel
+            trans_range = trans_sel
             if logN:
                 logN_range = logN_sel
 
         if len(z_range) > 0:
             z_single = z_range[np.argmin(y_range)]
+            trans_single = trans_range[np.argmin(y_range)]
             if logN:
                 logN_single = logN_range[np.argmin(y_range)]
         else:
             z_single = None
+            trans_single = None
             if logN:
                 logN_single = None
 
         if single:
             if logN:
-                return z_single, logN_single
+                return z_single, logN_single, trans_single
             else:
-                return z_single, None
+                return z_single, None, trans_single
         if logN:
-            return z_range, logN_range
+            return z_range, logN_range, trans_range
         else:
-            return z_range, [None]*len(z_range)
+            return z_range, [None]*len(z_range), trans_range
 
 
     def _syst_cand(self, series, z_start, z_end, dz, single=False, logN=False):

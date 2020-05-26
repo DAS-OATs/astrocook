@@ -103,6 +103,13 @@ class Session(object):
         except:
             pass
 
+        try:
+            prefix = self.path.split('/')[-1][:2]
+            if prefix == 'ql':
+                orig = 'QUBRICS'
+        except:
+            pass
+
         if instr == None:
             logging.warning(msg_descr_miss('INSTRUME'))
         if catg == None:
@@ -126,32 +133,75 @@ class Session(object):
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
-            self.spec = format.eso_midas(hdul)
+            if len(hdul) == 1:
+                self.spec = format.eso_midas_image(hdul)
+            else:
+                self.spec = format.eso_midas_table(hdul)
 
         # ESPRESSO DRS spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
             self.spec = format.espresso_drs_spectrum(hdul)
+            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
-                ascii.read('espr_spec_form.dat'))
+                ascii.read(p+'espr_spec_form.dat'))
 
         # ESPRESSO DAS spectrum
-        if instr == 'ESPRESSO' and catg[1:5] == 'SPEC':
+        if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
             self.spec = format.espresso_das_spectrum(hdul)
+            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
-                ascii.read('espr_spec_form.dat'))
+                ascii.read(p+'espr_spec_form.dat'))
+
+        # FIRE spectrum
+        if instr == 'FIRE':
+            self.spec = format.firehose_spectrum(hdul)
+
+
+        # FIRE spectrum
+        if instr == 'MagE':
+            self.spec = format.mage_spectrum(hdul)
+
+
+        # QUBRICS spectrum
+        if orig == 'QUBRICS':
+            self.spec = format.qubrics_spectrum(hdul)
+
+
+        # UVES Spectrum
+        if instr == 'UVES':
+            if 'FLUXCAL_SCI' in self.path:
+                hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
+                                                       'FLUXCAL_ERRORBAR_SCI'))
+                self.spec = format.uves_spectrum(hdul, hdul_err)
+
 
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+
+
+        # WFCCD Spectrum
+        if instr[:5] == 'WFCCD':
+            self.spec = format.wfccd_spectrum(hdul)
+
+        # XSHOOTER MERGE1D spectrum
+        if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
+            if hdul[0].header['NAXIS'] == 0:
+                self.spec = format.xshooter_vacbary_spectrum(hdul)
+            else:
+                self.spec = format.xshooter_merge1d_spectrum(hdul)
+
 
         # XQR-30 spectrum
         if instr == 'XSHOOTER' and orig == 'XQR-30':
             self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
             self._open_twin = not self._open_twin
 
+
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
             self.spec = format.xshooter_das_spectrum(hdul)
+
 
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
@@ -198,6 +248,11 @@ class Session(object):
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                    if s == 'systs':
+                        for i,(k,v) in enumerate(obj._constr.items()):
+                            t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                            t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                            t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     t.write(name, format='fits', overwrite=True)

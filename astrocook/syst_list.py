@@ -26,11 +26,13 @@ class SystList(object):
                  mod=[],
                  resol=[],
                  chi2r=[],
+                 snr=[],
                  id=[],
                  meta={},
                  dtype=float):
 
         self._id = id_start
+        self._constr = {}
 
         t = at.Table()
         zunit = au.dimensionless_unscaled
@@ -58,6 +60,11 @@ class SystList(object):
             self._t['chi2r'] = chi2r
         else:
             self._t['chi2r'] = np.empty(len(self.z), dtype=dtype)
+        if len(snr)==len(self.z) and len(snr)>0:
+            self._t['snr'] = snr
+        else:
+            self._t['snr'] = np.empty(len(self.z), dtype=dtype)
+            self._t['snr'] = np.nan
 #        if id != []:
         if len(id)==len(self.z) and len(id)>0:
             self._t['id'] = id
@@ -80,7 +87,10 @@ class SystList(object):
         self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
         self._meta = meta
+        #self._meta = self._constr
         self._dtype = dtype
+
+        self._compressed = False
 
     @property
     def t(self):
@@ -119,7 +129,7 @@ class SystList(object):
     ### Deprecated, kept for backward compatibility with systs_new_from_resids
     def _add(self, series='Ly_a', z=2.0, logN=13, b=10, resol=70000):
 
-        self._t.add_row(['voigt_func', series, z, z, None, logN, None, b, None,
+        self._t.add_row(['voigt', series, z, z, None, logN, None, b, None,
                          None, None, self._id])
 
         return 0
@@ -147,6 +157,60 @@ class SystList(object):
             self._mods_t.remove_rows(mods_rem)
         return 0
 
+
+    def _compress(self):
+        if not self._compressed:
+            self._t_uncompressed = dc(self._t)
+            self._t['group'] = np.empty(len(self._t), dtype=int)
+            for i, ids in enumerate(self._mods_t['id']):
+                for id in ids:
+                    self._t['group'][self._t['id']==id] = i
+            t_by_group = self._t.group_by('group')
+            t = at.Table()
+            #t = t_by_group.groups.aggregate(np.mean)
+            t['series'] = at.Column(np.array([g['series'][len(g)//2] \
+                                              for g in t_by_group.groups]))
+            t['z'] = at.Column(np.array([np.mean(g['z']) \
+                                         for g in t_by_group.groups]))
+            t['logN'] = at.Column(np.array([np.log10(np.sum(10**g['logN'])) \
+                                            for g in t_by_group.groups]))
+            for c in t_by_group.colnames[10:-1]:
+                t[c] = at.Column(np.array([g[c][len(g)//2] \
+                                           for g in t_by_group.groups]))
+            """
+            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] \
+                                             for g in t_by_group.groups]))
+            t['id'] = at.Column(np.array([g['id'][len(g)//2] \
+                                          for g in t_by_group.groups]))
+            """
+            self._t = t
+            self._compressed = True
+        else:
+            self._t = self._t_uncompressed
+            self._compressed = False
+
+
+    def _constrain(self, dict):
+        #self._constr = {}
+        for k, v in dict.items():
+            #print(k, dict[k])
+            for m in self._mods_t:
+                if v[0] in m['id']:
+                    if v[1]=='expr':
+                        #print(k, v[2])
+                        m['mod']._pars[k].set(expr=v[2])
+                        if v[2]=='':
+                            m['mod']._pars[k].set(vary=True)
+                        self._constr[k] = (v[0], k.split('_')[-1], v[2])
+                    if v[1]=='vary':
+                        m['mod']._pars[k].set(vary=v[2])
+                        if v[2]:
+                            if k in self._constr: del self._constr[k]
+                        else:
+                            self._constr[k] = (v[0], k.split('_')[-1], None)
+                        #print(v[0], v[1], v[2])
+                        #print(self._constr)
+        #print(self._constr)
 
 
     def _freeze(self):

@@ -4,6 +4,8 @@ from .line_list import LineList
 from .message import *
 #from .vars import *
 from astropy import units as au
+from astropy.modeling.models import BlackBody
+from astropy.modeling.powerlaws import PowerLaw1D
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
@@ -39,6 +41,7 @@ class Spectrum(Frame):
         if resol != []:
             self._t['resol'] = resol
 
+
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
         cols = [c for c in self._t.colnames \
@@ -65,7 +68,7 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
-        safe = self._safe(conv)
+        safe = np.array(self._safe(conv), dtype=float)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
                                               *self._t[input_col].unit
         self._t[output_col] = conv
@@ -249,7 +252,6 @@ class Spectrum(Frame):
 
         return lines
 
-
     def _rebin(self, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
@@ -270,8 +272,8 @@ class Spectrum(Frame):
         iM = 1
         xmin_in = self.xmin[iM].value
         xmax_in = self.xmax[im].value
-        y_out = np.array([])
-        dy_out = np.array([])
+        y_out = np.array([]) * y.unit
+        dy_out = np.array([]) * y.unit
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
@@ -289,7 +291,10 @@ class Spectrum(Frame):
                     break
             ysel = y[im:iM+1]
             dysel = dy[im:iM+1]
-            y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
+            if np.any(np.isnan(dysel)):
+                y_out = np.append(y_out, np.average(ysel))
+            else:
+                y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
             dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
                                                /np.sum(1/dysel**2))
 
@@ -332,4 +337,31 @@ class Spectrum(Frame):
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
         self._x_convert(xunit=xunit_orig)
+        return 0
+
+    def _template_bb(self, temp=6000, scale=1.0):
+        bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
+        output_col = 'blackbody'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = bb(self.x)
+
+
+    def _template_pl(self, ampl=1.0, x_ref=None, index=-1.0):
+        if x_ref == None: x_ref = np.mean(self.x)
+        pl = PowerLaw1D(amplitude=ampl, x_0=x_ref, alpha=-index)
+        output_col = 'power_law'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = pl(self.x)
+
+
+
+    def _zap(self, xmin, xmax):
+
+        w = np.where(np.logical_and(self.x.value>xmin, self.x.value<xmax))
+        self._t['y'][w] = np.interp(
+                              self.x[w].value,
+                              [self.x[w][0].value, self.x[w][-1].value],
+                              [self.y[w][0].value, self.y[w][-1].value])*self._yunit
         return 0

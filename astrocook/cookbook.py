@@ -3,6 +3,7 @@ from .cookbook_absorbers import CookbookAbsorbers
 from .cookbook_continuum import CookbookContinuum
 from .cookbook_general import CookbookGeneral
 from .cookbook_sandbox import CookbookSandbox
+from .cookbook_templates import CookbookTemplates
 from .format import Format
 from .spectrum import Spectrum
 from .syst_list import SystList
@@ -19,7 +20,8 @@ from tqdm import tqdm
 class Cookbook(CookbookGeneral,
                CookbookContinuum,
                CookbookAbsorbers,
-               CookbookSandbox):
+               CookbookSandbox,
+               CookbookTemplates):
     """ Main cookbook, combining specific cookbooks.
 
     Each cookbook should link to methods of classes containing the actual
