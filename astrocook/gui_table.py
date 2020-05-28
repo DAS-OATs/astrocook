@@ -45,7 +45,7 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    self._tab.SetCellValue(j, i, "%3.7f" % r[n])
+                    self._tab.SetCellValue(j, i, "%3.7e" % r[n])
         self._tab.AutoSizeColumns(True)
 
 

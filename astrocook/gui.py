@@ -441,7 +441,9 @@ class GUIPanelSession(wx.Frame):
             if i == 0:
                 f = np.median(sess.spec.y[w])
             else:
-                sess.spec.y = f/np.median(sess.spec.y[w])*sess.spec.y
+                f = f/np.median(sess.spec.y[w])
+                sess.spec.y = f*sess.spec.y
+                sess.spec.dy = f*sess.spec.dy
 
 
         return 0
@@ -478,9 +480,8 @@ class GUIPanelSession(wx.Frame):
 
     #struct_A='0,systs,z', struct_B='1,systs,z',
                        #struct_out='0,systs,diff_z', op='subtract'):
-        """ @brief Compare structures
-        @details Compare two structures from the same session or two different
-        sessions.
+        """ @brief Modify structures
+        @details Apply a binary operator on structures to create new structures.
         @param struct_A Structure A (session,table,column)
         @param struct_B Structure B (same syntax) or scalar
         @param struct_out Output structure (same syntax)

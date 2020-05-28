@@ -339,6 +339,7 @@ class Spectrum(Frame):
         self._x_convert(xunit=xunit_orig)
         return 0
 
+
     def _template_bb(self, temp=6000, scale=1.0):
         bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
         output_col = 'blackbody'
@@ -354,7 +355,6 @@ class Spectrum(Frame):
         if output_col not in self._t.colnames:
             logging.info("I'm adding column '%s'." % output_col)
         self._t[output_col] = pl(self.x)
-
 
 
     def _zap(self, xmin, xmax):
