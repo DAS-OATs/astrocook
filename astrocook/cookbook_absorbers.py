@@ -242,8 +242,6 @@ class CookbookAbsorbers(object):
                         else:
                             vars[k.split('_')[-1]+'_vary'] = False
                 #print(systs._id)
-                #print(systs._mods_t['id'])
-                #print(constr)
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                             b=s['b'], resol=s['resol'])
