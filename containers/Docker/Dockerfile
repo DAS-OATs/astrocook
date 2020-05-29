@@ -8,7 +8,7 @@ USER root
 RUN apt-get install -y python3 python3-pip python3-wxgtk4.0 python3-wxgtk-webview4.0 python3-wxgtk-media4.0
 
 # Install PIP dependencies
-RUN pip3 install astropy==3.2.2 \
+RUN pip3 install astropy==4.0.0 \
                  scipy==1.3.1 \
                  specutils==0.6 \
                  numpy==1.17.3 \
