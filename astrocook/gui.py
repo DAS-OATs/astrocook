@@ -385,6 +385,7 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        sess_list = self._gui._sess_list
         if sel == []:
             try:
                 sel = [int(s) \
@@ -392,18 +393,32 @@ class GUIPanelSession(wx.Frame):
             except:
                 pass
         if sel == []:
-            sel = range(len(self._gui._sess_list))
-        spec = dc(self._gui._sess_list[sel[0]].spec)
+            sel = range(len(sess_list))
+
+        spec = dc(sess_list[sel[0]].spec)
+        lines = None
+        if hasattr(sess_list[sel[0]], 'lines'):
+            lines = dc(sess_list[sel[0]].lines)
+
         if name_in[0] == '*':
-            name = self._gui._sess_list[sel[0]].name
+            name = sess_list[sel[0]].name
+
         for s in sel[1:]:
-            spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            spec._append(sess_list[s].spec)
+
+            if hasattr(sess_list[s], 'lines') and sess_list[s].lines != None:
+                if lines != None:
+                    lines._append(sess_list[s].lines)
+                else:
+                    lines = dc(sess_list[s].lines)
+
             if name_in[0] == '*':
-                name += '_' + self._gui._sess_list[s].name
+                name += '_' + sess_list[s].name
         spec._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=spec)
+        sess = Session(name=name, spec=spec, lines=lines)
         return sess
 
 
