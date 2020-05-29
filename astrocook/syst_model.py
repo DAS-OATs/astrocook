@@ -212,11 +212,13 @@ class SystModel(LMComposite):
         """
 
         if self._resol == None:
-            c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
-            d['resol'] = self._spec.t['resol'][c][0]
+            #c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
+            #d['resol'] = self._spec.t['resol'][c][0]
+            x = to_x(d['z'], trans_parse(self._series)[0])
+            c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
+            d['resol'] = self._spec.t['resol'][c]
         else:
             d['resol'] = self._resol
-        #print(d['resol'])
 
         self._psf_pref = self._psf_func.__name__+'_0_'
         psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
