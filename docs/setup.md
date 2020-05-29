@@ -19,7 +19,7 @@ nav_order: 1
 
 Astrocook is written in Python 3 and requires the following packages:
 
-* [Astropy 3.2.3](http://www.astropy.org)
+* [Astropy 4.0](http://www.astropy.org)
 * [SciPy 1.3.1](https://www.scipy.org)
 * [Specutils 0.6](http://specutils.readthedocs.io/en/latest/)
 * [NumPy 1.17.3](http://www.numpy.org)

@@ -66,7 +66,7 @@ The spectrum of this new session contains all the entries of the combined spectr
 
 The same method can be used to combine more than two spectra.
 
-⚠️ **When sessions are combined, only the spectra are actually combined. All other data structures are not considered.**
+⚠️ **When sessions are combined, the data structures associated with the spectrum (line lists and system lists) are merged.**
 
 ## Rebin the combined spectrum
 
