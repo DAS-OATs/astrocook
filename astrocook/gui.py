@@ -397,30 +397,34 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = range(len(sess_list))
 
-        spec = dc(sess_list[sel[0]].spec)
-        lines = None
-        if hasattr(sess_list[sel[0]], 'lines'):
-            lines = dc(sess_list[sel[0]].lines)
+        struct_out = {}
+        for struct in sess_list[sel[0]].seq:
+            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+
 
         if name_in[0] == '*':
             name = sess_list[sel[0]].name
 
         for s in sel[1:]:
             #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
-            spec._append(sess_list[s].spec)
 
-            if hasattr(sess_list[s], 'lines') and sess_list[s].lines != None:
-                if lines != None:
-                    lines._append(sess_list[s].lines)
-                else:
-                    lines = dc(sess_list[s].lines)
-
+            for struct in sess_list[s].seq:
+                if hasattr(sess_list[s], struct) \
+                    and getattr(sess_list[s], struct) != None:
+                    if struct_out[struct] != None:
+                        struct_out[struct]._append(
+                            getattr(sess_list[s], struct))
+                    else:
+                        struct_out[struct] = dc(getattr(sess_list[s], struct))
+    
             if name_in[0] == '*':
                 name += '_' + sess_list[s].name
-        spec._t.sort('x')
+
+
+        struct_out['spec']._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=spec, lines=lines)
+        sess = Session(name=name, spec=struct_out['spec'], lines=struct_out['lines'], systs=struct_out['systs'])
         return sess
 
 

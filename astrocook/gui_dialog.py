@@ -117,9 +117,7 @@ class GUIDialog(wx.Dialog):
                          % (a, (end-start).total_seconds()))
             if out is not None:
                 if out is 0:
-                    print('alice')
                     self._gui._refresh()
-                    print('emma')
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
