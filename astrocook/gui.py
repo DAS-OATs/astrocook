@@ -489,6 +489,7 @@ class GUIPanelSession(wx.Frame):
                 out = getattr(cb, r['recipe'])(**r['params'])
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
+                self._refresh()
 
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
