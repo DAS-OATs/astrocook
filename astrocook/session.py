@@ -261,4 +261,4 @@ class Session(object):
                     logging.info("I've saved frame %s as %s."
                                  % (s, stem+'_'+s+'.fits'))
                 else:
-                    logging.error("I haven't found any frame %s to save." % s)
+                    logging.warning("I haven't found any frame %s to save." % s)

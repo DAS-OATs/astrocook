@@ -212,6 +212,7 @@ class GUIPanelSession(wx.Frame):
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
+        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_select)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         panel.SetSizer(self._box)
@@ -293,7 +294,8 @@ class GUIPanelSession(wx.Frame):
             self._items.append(item)
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        self._gui._refresh()
+        if self._gui._sess_item_sel != []:
+            self._gui._refresh()
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
@@ -385,6 +387,7 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        sess_list = self._gui._sess_list
         if sel == []:
             try:
                 sel = [int(s) \
@@ -392,18 +395,36 @@ class GUIPanelSession(wx.Frame):
             except:
                 pass
         if sel == []:
-            sel = range(len(self._gui._sess_list))
-        spec = dc(self._gui._sess_list[sel[0]].spec)
+            sel = range(len(sess_list))
+
+        struct_out = {}
+        for struct in sess_list[sel[0]].seq:
+            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+
+
         if name_in[0] == '*':
-            name = self._gui._sess_list[sel[0]].name
+            name = sess_list[sel[0]].name
+
         for s in sel[1:]:
-            spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+
+            for struct in sess_list[s].seq:
+                if getattr(sess_list[s], struct) != None:
+                    if struct_out[struct] != None:
+                        struct_out[struct]._append(
+                            getattr(sess_list[s], struct))
+                    else:
+                        struct_out[struct] = dc(getattr(sess_list[s], struct))
+
             if name_in[0] == '*':
-                name += '_' + self._gui._sess_list[s].name
-        spec._t.sort('x')
+                name += '_' + sess_list[s].name
+
+        struct_out['spec']._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=spec)
+        sess = Session(name=name, spec=struct_out['spec'],
+                       nodes=struct_out['nodes'], lines=struct_out['lines'],
+                       systs=struct_out['systs'])
         return sess
 
 
@@ -472,6 +493,7 @@ class GUIPanelSession(wx.Frame):
                 out = getattr(cb, r['recipe'])(**r['params'])
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
+                self._refresh()
 
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
