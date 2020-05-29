@@ -212,6 +212,7 @@ class GUIPanelSession(wx.Frame):
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
+        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_select)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         panel.SetSizer(self._box)
@@ -293,7 +294,8 @@ class GUIPanelSession(wx.Frame):
             self._items.append(item)
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        self._gui._refresh()
+        if self._gui._sess_item_sel != []:
+            self._gui._refresh()
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
