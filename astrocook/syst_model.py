@@ -8,6 +8,7 @@ from lmfit import Model as LMModel
 from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
+import operator
 
 thres = 1e-2
 
@@ -54,6 +55,14 @@ class SystModel(LMComposite):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
+    def _zero(self, x):
+        return 0*x
+
+    def _make_comp2(self):
+        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
+        #self._pars.pretty_print()
+
+
     def _make_defs(self):
         self._defs = dc(pars_std_d)
         for v in self._vars:
@@ -70,23 +79,7 @@ class SystModel(LMComposite):
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
         #ys = self._lines.eval(x=self._xs, params=self._pars)
 
-        try:
-            ok
-    #    except:
-            d = self._defs
-            if self._resol == None:
-                d['resol'] = spec.t['resol'][len(spec.t)//2]
-
-            psf = LMModel(self._psf_func, prefix='temp_', reg=self._xs)
-            temp = dc(self)
-            temp._pars.update(psf.make_params())
-            temp._pars.add_many(('temp_resol', d['resol'], d['resol_vary'],
-                                d['resol_min'], d['resol_max'], d['resol_expr']))
-            #temp._pars.pretty_print()
-            comp = LMComposite(temp._lines, psf, convolve)
-            ys = comp.eval(x=self._xs, params=temp._pars)
-        except:
-            ys = self._lines.eval(x=self._xs, params=self._pars)
+        ys = self._lines.eval(x=self._xs, params=self._pars)
         #self._pars.pretty_print()
 
         self._group = self._lines
@@ -172,6 +165,64 @@ class SystModel(LMComposite):
         #plt.plot(self._xs, self._ys, linestyle='--')
         #plt.show()
 
+
+    def _make_group2(self, thres=thres):
+        """ @brief Group lines that must be fitted together into a single model.
+        """
+
+        spec = self._spec
+
+        mods_t = self._mods_t
+        self._xs = np.array(spec._safe(spec.x).to(au.nm))
+
+        #print(self.__dict__)
+        ys = self._lines.eval(x=self._xs, params=self._pars)
+
+        self._group = self._lines
+        self._group_list = []
+
+        for i, s in enumerate(mods_t):
+            mod = s['mod']
+            ys_s = mod._ys
+            ymax = np.maximum(ys, ys_s)
+            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+            pars_cond = False
+            for p,v in self._constr.items():
+                for mod_p,mod_v in mod._pars.items():
+                    pars_cond = pars_cond or v==mod_p
+            if y_cond or pars_cond:
+                self._group *= mod._group
+                mod = s['mod']
+                for p,v in mod._pars.items():
+                    if v.expr != None:
+                        self._constr[p] = v.expr
+                        v.expr = ''
+                self._pars.update(mod._pars)
+                if pars_cond or self._constr != {}:
+                    for p,v in self._constr.items():
+                        self._pars[p].expr = v
+                        if v != '':
+                            try:
+                                self._pars[p].min = self._pars[v].min
+                                self._pars[p].max = self._pars[v].max
+                                self._pars[p].value = self._pars[v].value
+                            except:
+                                self._pars[p].expr = ''
+                self._group_list.append(i)
+                mod._ys = self._group.eval(x=self._xs, params=self._pars)
+
+        if len(self._group_list) > 1:
+            ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
+            mods_t.remove_rows(self._group_list[1:])
+            for i in ids:
+                mods_t['id'][self._group_list[0]].append(i)
+        if self._group_list == []:
+            self._group_sel = -1
+        else:
+            self._group_sel = self._group_list[0]
+        self._ys = self._group.eval(x=self._xs, params=self._pars)
+
+
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
@@ -190,6 +241,43 @@ class SystModel(LMComposite):
             (self._lines_pref+'btur', d['btur'], d['btur_vary'], d['btur_min'],
              d['btur_max'], d['btur_expr']))
         self._lines = line
+
+
+    def _make_lines_psf(self):
+        self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
+        self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
+        line = LMModel(self._lines_func, prefix=self._lines_pref,
+                       series=self._series)
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+        line_psf = LMComposite(line, psf, convolve_simple)
+
+        d = self._defs
+
+        if self._resol == None or np.isnan(self._resol):
+            #c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
+            #d['resol'] = self._spec.t['resol'][c][0]
+            x = to_x(d['z'], trans_parse(self._series)[0])
+            c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
+            d['resol'] = self._spec.t['resol'][c]
+        else:
+            d['resol'] = self._resol
+
+        self._pars = line_psf.make_params()
+        #print(d['z'])
+        self._pars.add_many(
+            #(self._lines_pref+'z', d['z'], d['z_vary'], 0, 10,
+            (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-d['z_min'],
+             d['z']+d['z_max'], d['z_expr']),
+            (self._lines_pref+'logN', d['logN'], d['logN_vary'], d['logN_min'],
+             d['logN_max'], d['logN_expr']),
+            (self._lines_pref+'b', d['b'], d['b_vary'], d['b_min'], d['b_max'],
+             d['b_expr']),
+            (self._lines_pref+'btur', d['btur'], d['btur_vary'], d['btur_min'],
+             d['btur_max'], d['btur_expr']),
+            (self._psf_pref+'resol', d['resol'], d['resol_vary'],
+             d['resol_min'], d['resol_max'], d['resol_expr']))
+
+        self._lines = line_psf
 
 
     def _make_psf(self):
@@ -293,12 +381,19 @@ class SystModel(LMComposite):
             if l not in self._vars:
                 self._vars[l] = v
         self._make_defs()
-        self._make_lines()
-        self._make_group()
-        #self._make_regs()
-        self._make_psf()
-        self._make_comp()
+
+        #self._make_lines()
+        self._make_lines_psf()
+
+        #self._make_group()
+        self._make_group2()
+
+        #self._make_psf()
+        #self._make_comp()
+        self._make_comp2()
+
         self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
+
         #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
         #self._pars.pretty_print()
