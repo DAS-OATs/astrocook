@@ -68,7 +68,7 @@ Typically, when you choose a recipe from the menu bar a dialog window appears. T
 
 ![Dialog window](img/dialog_window.png)
 
-⚠️ **When you click on the `run` button in a dialog window, the whole GUI freezes. You should consider this before using recipes that require long running times.**
+⚠️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
 
 At the beginning of the analysis, only a limited set of recipes is available from the menu bar, while others are greyed out. This happens because the greyed-out recipes require some piece of information that has not been extracted yet (e.g., to fit an absorption systems you need to detect it first). As you progresses with the analysis, more and more recipes become available.
 

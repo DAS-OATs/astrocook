@@ -26,6 +26,7 @@ class GUIMenu(object):
         self._recipes = GUIMenuRecipes(self._gui)
         self._courses = GUIMenuCourses(self._gui)
         self._cook = GUIMenuCook(self._gui)
+        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._file._menu, "File")
         bar.Append(self._edit._menu, "Edit")
         bar.Append(self._view._menu, "View")
@@ -172,7 +173,7 @@ class GUIMenu(object):
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable() \
-                            and item.key not in ['legend', 'norm']:
+                            and item.key not in self._key_list:
                             item.Check(False)
                         if hasattr(self._gui._sess_sel, a):
                             cond = getattr(self._gui._sess_sel, a) != None
@@ -184,7 +185,7 @@ class GUIMenu(object):
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
-                                if item.key not in ['legend', 'norm']:
+                                if item.key not in self._key_list:
                                     item.Check(item.key in sel)
                         else:
                             item.Enable(False)
@@ -594,12 +595,14 @@ class GUIMenuView(GUIMenu):
         self._start_id = start_id
 
         # Add items to View menu here
-        self._item(self._menu, start_id+1, 'spec', "Spectrum table",
-                   lambda e: self._on_tab(e, 'spec'))
-        self._item(self._menu, start_id+2, 'lines', "Line table",
-                   lambda e: self._on_tab(e, 'lines'))
-        self._item(self._menu, start_id+3, 'systs', "System table",
-                   lambda e: self._on_tab(e, 'systs'))
+        tab_id = [start_id+1, start_id+2, start_id+3]
+        self._gui._menu_tab_id = tab_id
+        self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
+                   lambda e: self._on_tab(e, 'spec'), key='spec')
+        self._item(self._menu, tab_id[1], 'lines', "Line table",
+                   lambda e: self._on_tab(e, 'lines'), key='lines')
+        self._item(self._menu, tab_id[2], 'systs', "System table",
+                   lambda e: self._on_tab(e, 'systs'), key='systs')
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',
@@ -682,4 +685,9 @@ class GUIMenuView(GUIMenu):
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj
-        getattr(self._gui, method)._on_view(event)
+        index = ['spec', 'lines', 'systs'].index(obj)
+        item = self._menu.FindItemById(self._gui._menu_tab_id[index])
+        if item.IsChecked():
+            getattr(self._gui, method)._on_view(event)
+        else:
+            getattr(self._gui, method)._on_close(event)
