@@ -28,7 +28,7 @@ class GUI(object):
             print("-----------------")
             print(" ASTROCOOK  v%3s " % version)
             print("-----------------")
-        print("Cupani et al. 2017-2019 * INAF-OATs")
+        print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
         self._sess_item_sel = []
@@ -40,6 +40,7 @@ class GUI(object):
         self._menu_systs_id = []
         self._menu_z0_id = []
         self._menu_mods_id = []
+        self._menu_tab_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -107,9 +108,12 @@ class GUI(object):
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
-                    getattr(self, '_tab_'+s)._on_view(event=None,
-                                                      from_scratch=False,
-                                                      autosort=autosort)
+                    if hasattr(getattr(self._sess_sel, s), '_t'):
+                        getattr(self, '_tab_'+s)._on_view(
+                            event=None, from_scratch=False, autosort=autosort)
+                    else:
+                        getattr(self, '_tab_'+s).Destroy()
+
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \
