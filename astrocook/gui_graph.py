@@ -93,6 +93,7 @@ class GUIGraphMain(wx.Frame):
     def _on_close(self, event):
         self._closed = True
         self.Destroy()
+        del self._gui._graph_det
 
 class GUIGraphDetail(GUIGraphMain):
 
