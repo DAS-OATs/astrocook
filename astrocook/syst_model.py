@@ -100,13 +100,13 @@ class SystModel(LMComposite):
                     pars_cond = pars_cond or v==mod_p
             #print(s['id'],pars_cond)
             if y_cond or pars_cond:
-                self._group *= mod._group
                 """
                 print('mod')
                 mod._pars.pretty_print()
                 print('self')
                 self._pars.pretty_print()
                 """
+                self._group *= mod._group
                 mod = s['mod']
                 for p,v in mod._pars.items():
                     if v.expr != None:
@@ -181,7 +181,9 @@ class SystModel(LMComposite):
         self._group = self._lines
         self._group_list = []
 
+        #print(mods_t['id'])
         for i, s in enumerate(mods_t):
+            #print(s['id'])
             mod = s['mod']
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
@@ -191,7 +193,15 @@ class SystModel(LMComposite):
                 for mod_p,mod_v in mod._pars.items():
                     pars_cond = pars_cond or v==mod_p
             if y_cond or pars_cond:
+                #print('mod')
+                #mod._pars.pretty_print()
+                #print('self')
+                #self._pars.pretty_print()
+                #try:
                 self._group *= mod._group
+                #except:
+                #    self._group_sel = -1
+                #    return
                 mod = s['mod']
                 for p,v in mod._pars.items():
                     if v.expr != None:

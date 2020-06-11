@@ -229,6 +229,8 @@ class CookbookAbsorbers(object):
         else:
             systs_t = systs._t
         systs_t.sort('id')
+        wrong_id = []
+        corr_id = []
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
@@ -243,10 +245,18 @@ class CookbookAbsorbers(object):
                             vars[k.split('_')[-1]+'_vary'] = False
                 #print(systs._id)
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                if any([mod._id in i for i in systs._mods_t['id']]):
+                    wrong_id.append(mod._id)
+                    corr_id.append(np.max(systs_t['id'])+1)
+                    mod._id = np.max(systs_t['id'])+1
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                            b=s['b'], resol=s['resol'])
+                               b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
                 #print(systs._mods_t['id'])
+
+        for w, c in zip(wrong_id, corr_id):
+            logging.warning("System %i had a duplicated id! I changed it to %i."
+                            % (w, c))
 
         systs_t.sort(['z','id'])
         #print(systs._mods_t['id'])
