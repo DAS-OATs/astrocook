@@ -175,11 +175,17 @@ class Format(object):
 
         hdr = hdul[1].header
         data = hdul[1].data
-        x = data['wave']
-        xmin = x-data['wpix']*0.5
-        xmax = x+data['wpix']*0.5
-        y = data['flux']
-        dy = data['sigma']
+        try:
+            x = data['wave']
+            xmin = x-data['wpix']*0.5
+            xmax = x+data['wpix']*0.5
+            y = data['flux']
+            dy = data['sigma']
+        except:
+            x = data['WAVE']
+            xmin, xmax = self._create_xmin_xmax(x)
+            y = data['NORMFLUX']
+            dy = data['STDEV']
         resol = []*len(x)
         #"""
         try:

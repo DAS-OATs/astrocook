@@ -48,7 +48,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        #print(i, k)
+        print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]

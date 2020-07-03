@@ -449,10 +449,16 @@ class GUITableSystList(GUITable):
         self._data.t[labels[col]][row] = value
         id = self._id_extract(row)
         mod = self._mod_extract(row)
-        vary = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].vary
-        expr = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].expr
-        mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(
-            value=value, vary=vary, expr=expr)
+        try:
+            vary = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].vary
+            expr = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].expr
+            mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(
+                value=value, vary=vary, expr=expr)
+        except:
+            vary = mod._pars['psf_gauss_%i_%s' % (id, labels[col])].vary
+            expr = mod._pars['psf_gauss_%i_%s' % (id, labels[col])].expr
+            mod._pars['psf_gauss_%i_%s' % (id, labels[col])].set(
+                value=value, vary=vary, expr=expr)
 
 
     def _on_fit(self, event):
