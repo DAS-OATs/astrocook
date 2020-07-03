@@ -750,7 +750,7 @@ class CookbookAbsorbers(object):
 
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
-        self._syst_fit(mod)
+        #self._syst_fit(mod)
         self._systs_cycle()
         self._spec_update()
 
@@ -1128,14 +1128,20 @@ class CookbookAbsorbers(object):
 
         for s in series.split(';'):
             self._systs_prepare()
+            #print(self.sess.systs._t)
         #self._logN_guess(series, z, b, resol)
         #logN = self._syst_guess(series, z)
+            #print(s, z, logN, b, resol, self._refit_n)
             mod = self._syst_add(s, z, logN, b, resol)
             if mod is None: return 0
-            self._syst_fit(mod)
+            #self._systs_cycle()
+            #self._syst_fit(mod)
+            #print(self.sess.systs._t)
+            #print(self.sess.systs._mods_t['id'])
+            if self._refit_n == 0:
+                self._mods_recreate()
+            #print(self.sess.systs._mods_t['id'])
             self._systs_cycle()
-        if self._refit_n == 0:
-            self._mods_recreate()
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
