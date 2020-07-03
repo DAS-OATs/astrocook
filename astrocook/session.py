@@ -131,6 +131,10 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
 
+        # ESO ADP spectrum
+        if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
+            self.spec = format.eso_adp(hdul)
+
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
             if len(hdul) == 1:

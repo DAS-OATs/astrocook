@@ -121,6 +121,28 @@ class Format(object):
             #print(out._constr)
         return out
 
+    def eso_adp(self, hdul):
+        logging.info(msg_format('ESO Advanced Data Product'))
+        """ ESO Advanced Data Product """
+
+        hdr = hdul[0].header
+        data = hdul[1].data
+        x = data['WAVE'][0]
+        xmin, xmax = self._create_xmin_xmax(x)
+        y = data['FLUX'][0]
+        dy = data['ERR'][0]
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        resol = []*len(x)
+        meta = {'instr': hdr['INSTRUME']}
+        try:
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def eso_midas_image(self, hdul):
         logging.info(msg_format('ESO MIDAS image'))
         """ ESO-MIDAS image """
