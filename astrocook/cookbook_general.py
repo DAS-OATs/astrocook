@@ -33,17 +33,22 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rebin(self, dx=10.0, xunit=au.km/au.s, norm=True):
+    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s, norm=True):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given velocity step. A new session is
         created with the rebinned spectrum. Other objects from the old session
         (line lists, etc.) are discarded.
+        @param xstart Start wavelength (nm; None to take the minimum wavelength)
+        @param xend End wavelength (nm; None to take the maximum wavelength)
+        @param dx Step in x
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
         @return 0
         """
 
         try:
+            xstart = None if xstart in [None, 'None'] else float(xstart)
+            xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
         except ValueError:
@@ -66,7 +71,7 @@ class CookbookGeneral(object):
             y = spec_in.y/spec_in.t['cont']
             dy = spec_in.dy/spec_in.t['cont']
 
-        spec_out = spec_in._rebin(dx, xunit, y, dy)
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy)
         if cont:
             spec_out.t['cont'] = 1
 

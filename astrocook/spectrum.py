@@ -2,7 +2,7 @@ from .frame import Frame
 from .line_list import LineList
 #from .syst_list import SystList
 from .message import *
-#from .vars import *
+from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
@@ -252,7 +252,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, dx, xunit, y, dy):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -263,7 +263,14 @@ class Spectrum(Frame):
         # Create x, xmin, and xmax
         from .format import Format
         format = Format()
-        xstart, xend = np.nanmin(self.x), np.nanmax(self.x)
+        if xstart is None:
+            xstart = np.nanmin(self.x)
+        else:
+            xstart = (xstart*au.nm).to(xunit, equivalencies=equiv_w_v)
+        if xend is None:
+            xend = np.nanmax(self.x)
+        else:
+            xend = (xend*au.nm).to(xunit, equivalencies=equiv_w_v)
         x = np.arange(xstart.value, xend.value, dx) * xunit
         xmin, xmax = format._create_xmin_xmax(x)
 

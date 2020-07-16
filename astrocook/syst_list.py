@@ -134,12 +134,14 @@ class SystList(object):
 
         return 0
 
-    def _append(self, frame, unique=True):
+    def _append(self, frame, unique=False):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
+
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
-            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+#            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+            self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
         #print(self._mods_t['z0', 'id'])
         return 0
 

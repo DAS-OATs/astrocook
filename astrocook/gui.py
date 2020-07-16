@@ -409,6 +409,7 @@ class GUIPanelSession(wx.Frame):
         if name_in[0] == '*':
             name = sess_list[sel[0]].name
 
+        logging.info("Combining sessions %s..." % ', '.join(str(s) for s in sel))
         for s in sel[1:]:
             #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
 
@@ -454,6 +455,8 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
+        logging.info("Equalizing session %i to session %i... "
+                     % (sel[1], sel[0]))
 
         for i,s in enumerate(sel):
             sess = self._gui._sess_list[s]
@@ -465,8 +468,10 @@ class GUIPanelSession(wx.Frame):
                 return(0)
             if i == 0:
                 f = np.median(sess.spec.y[w])
+                #print(np.median(sess.spec.y[w]))
             else:
                 f = f/np.median(sess.spec.y[w])
+                #print(np.median(sess.spec.y[w]), f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
 

@@ -231,6 +231,7 @@ class CookbookAbsorbers(object):
         systs_t.sort('id')
         wrong_id = []
         corr_id = []
+        #print(systs_t)
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
@@ -252,6 +253,7 @@ class CookbookAbsorbers(object):
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
+                #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
 
         for w, c in zip(wrong_id, corr_id):
@@ -1126,14 +1128,30 @@ class CookbookAbsorbers(object):
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
 
-        for s in series.split(';'):
+        for i, s in enumerate(series.split(';')):
+            #print(i, 'start')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             self._systs_prepare()
             #print(self.sess.systs._t)
         #self._logN_guess(series, z, b, resol)
         #logN = self._syst_guess(series, z)
             #print(s, z, logN, b, resol, self._refit_n)
             mod = self._syst_add(s, z, logN, b, resol)
+            #print(i, 'before')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             if mod is None: return 0
+            #"""
+            if i==0:
+                k = 'lines_voigt_%i_z' % mod._id
+            else:
+                #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
+                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
+            #"""
+            #print(mod._pars[k])
             #self._systs_cycle()
             #self._syst_fit(mod)
             #print(self.sess.systs._t)
@@ -1141,7 +1159,16 @@ class CookbookAbsorbers(object):
             if self._refit_n == 0:
                 self._mods_recreate()
             #print(self.sess.systs._mods_t['id'])
+            #print(i, 'midway')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             self._systs_cycle()
+            #print(i, 'after')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
+            #print(self.sess.systs._mods_t['id'])
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()

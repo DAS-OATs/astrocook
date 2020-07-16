@@ -1,4 +1,5 @@
 from astropy import units as au
+from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
@@ -9,6 +10,11 @@ yunit_def = au.erg / (au.Angstrom * au.cm**2 * au.s)
 zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
+
+equiv_w_v = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/121.567)*aconst.c.to(au.km/au.s),
+              lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*121.567)]
+
 
 logN_def = 14
 b_def = 10
