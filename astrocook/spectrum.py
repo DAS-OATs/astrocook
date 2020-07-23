@@ -366,9 +366,13 @@ class Spectrum(Frame):
 
     def _zap(self, xmin, xmax):
 
-        w = np.where(np.logical_and(self.x.value>xmin, self.x.value<xmax))
-        self._t['y'][w] = np.interp(
-                              self.x[w].value,
-                              [self.x[w][0].value, self.x[w][-1].value],
-                              [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+        xmin = np.ravel(np.array(xmin))
+        xmax = np.ravel(np.array(xmax))
+
+        for m, M in zip(xmin, xmax):
+            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+            self._t['y'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
         return 0
