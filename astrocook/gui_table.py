@@ -474,11 +474,17 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
 
-
     def _on_freeze_par(self, event):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
+        """
+        for i in (33,34,35,40,41,42):
+            try:
+                print('Freeze before', self._freezes_d['lines_voigt_%i_b' % i])
+            except:
+                pass
+        """
         for (r, c) in self._cells_sel:
             id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(row, col) != 'black':
@@ -487,7 +493,32 @@ class GUITableSystList(GUITable):
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
+        """
+        print('before constrain')
+        for m in systs._mods_t:
+            if (33 in m['id']):
+                m['mod']._pars.pretty_print()
+        """
+
+        for v in self._freezes_d:
+            if v in self._links_d and self._freezes_d[v][2] == True:
+                self._freezes_d[v] = (self._freezes_d[v][0],
+                                      self._freezes_d[v][1], False)
+
         systs._constrain(self._freezes_d)
+        #systs._constrain(self._links_d)
+        #self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
+        """
+        print('after constrain')
+        for m in systs._mods_t:
+            if (33 in m['id']):
+                m['mod']._pars.pretty_print()
+        for i in (33,34,35,40,41,42):
+            try:
+                print('Freeze after', self._freezes_d['lines_voigt_%i_b' % i])
+            except:
+                pass
+        """
         self._text_colours()
 
 
@@ -539,6 +570,13 @@ class GUITableSystList(GUITable):
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
         others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
         id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
+        """
+        for i in (33,34,35,40,41,42):
+            try:
+                print('Link before  ', self._links_d['lines_voigt_%i_b' % i])
+            except:
+                pass
+        """
         for (r, c) in others:
             id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
@@ -554,6 +592,16 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
+        """
+        for m in systs._mods_t:
+            if (33 in m['id']):
+                m['mod']._pars.pretty_print()
+        for i in (33,34,35,40,41,42):
+            try:
+                print('Link after  ', self._links_d['lines_voigt_%i_b' % i])
+            except:
+                pass
+        """
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)

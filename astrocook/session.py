@@ -213,6 +213,11 @@ class Session(object):
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
 
+        # generic
+        if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
+            self.spec = format.generic_spectrum(hdul)
+
+
     def save(self, path):
 
         root = path[:-4]

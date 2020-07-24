@@ -198,6 +198,12 @@ class SystList(object):
             #print(k, dict[k])
             for m in self._mods_t:
                 if v[0] in m['id']:
+                    """
+                    if k in ['lines_voigt_%i_b' %i for i in (33,34,35,40,41,42)]:
+                        print('inside')
+                        print(v)
+                        m['mod']._pars.pretty_print()
+                    """
                     if v[1]=='expr':
                         #print(k, v[2])
                         m['mod']._pars[k].set(expr=v[2])
