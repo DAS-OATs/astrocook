@@ -501,9 +501,11 @@ class GUITableSystList(GUITable):
         """
 
         for v in self._freezes_d:
-            if v in self._links_d and self._freezes_d[v][2] == True:
+            if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
+                #print(v, self._links_d[v], self._freezes_d[v])
                 self._freezes_d[v] = (self._freezes_d[v][0],
                                       self._freezes_d[v][1], False)
+                print(v, self._links_d[v], self._freezes_d[v])
 
         systs._constrain(self._freezes_d)
         #systs._constrain(self._links_d)
