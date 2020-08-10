@@ -306,13 +306,21 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            data = hdul[1].data
-            x = data['wave']
+            zero
+        except:
+            if len(hdul)>1:
+                data = hdul[1].data
+                x = data['wave']
+                y = data['flux']
+                dy = np.full(len(y), np.nan)
+            else:
+                data = hdul[0].data
+                x = data[0][:]
+                y = data[1][:]
+                dy = data[2][:]
             if np.max(x)>3000:
                 x = x*0.1
             xmin, xmax = self._create_xmin_xmax(x)
-            y = data['flux']
-            dy = np.full(len(y), np.nan)
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = {}
@@ -321,8 +329,8 @@ class Format(object):
             except:
                 meta['object'] = ''
             return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-        except:
-            return None
+        #except:
+        #    return None
 
 
     def mage_spectrum(self, hdul):
