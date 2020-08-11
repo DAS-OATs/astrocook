@@ -332,6 +332,26 @@ class GUIPanelSession(wx.Frame):
                 pass
 
 
+    def _select(self, _sel=0):
+
+        _sel = int(_sel)
+        """
+        sel = self._gui._sess_item_sel
+        sess_list = self._gui._sess_list
+        if sel == []:
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
+        if sel == []:
+            sel = range(len(sess_list))
+        """
+        evt = wx.ListEvent()
+        evt.SetIndex(_sel)
+        self._on_select(evt)
+
+
     def _struct_parse(self, struct, length=2):
         sess_list = self._gui._sess_list
 

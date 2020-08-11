@@ -289,3 +289,20 @@ class CookbookGeneral(object):
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
+
+
+    def y_scale_med(self):
+        """ @brief Scale y axis by median
+        @details Scale the y axis by its median.
+        @return 0
+        """
+
+        fact = 1/np.median(self.sess.spec.y)
+
+        for s in self.sess.seq:
+            try:
+                struct = getattr(self.sess, s)
+                struct._y_scale(fact)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0

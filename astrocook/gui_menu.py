@@ -391,6 +391,8 @@ class GUIMenuEdit(GUIMenu):
                           "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+340, 'spec',
+                          "Scale y axis by median", 'y_scale_med')
+        self._item_method(self._menu, start_id+341, 'spec',
                           "Scale y axis", 'y_scale')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+350, 'spec',
