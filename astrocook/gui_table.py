@@ -505,7 +505,7 @@ class GUITableSystList(GUITable):
                 #print(v, self._links_d[v], self._freezes_d[v])
                 self._freezes_d[v] = (self._freezes_d[v][0],
                                       self._freezes_d[v][1], False)
-                print(v, self._links_d[v], self._freezes_d[v])
+                #print(v, self._links_d[v], self._freezes_d[v])
 
         systs._constrain(self._freezes_d)
         #systs._constrain(self._links_d)

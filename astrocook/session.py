@@ -28,6 +28,7 @@ class Session(object):
     A Session is a self-sufficient set of analysis operations."""
 
     def __init__(self,
+                 gui=None,
                  path=None,
                  name=None,
                  spec=None,
@@ -37,7 +38,7 @@ class Session(object):
                  systs=None,
                  mods=None,
                  twin=False):
-        #self._gui = gui
+        self._gui = gui
         self.path = path
         self.name = name
         self.spec = spec

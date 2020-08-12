@@ -261,11 +261,11 @@ class GUIPanelSession(wx.Frame):
         #name = path.split('/')[-1][:-5]
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
-        sess = Session(path=path, name=name)
+        sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         if sess._open_twin:
             logging.info("I'm loading twin session %s..." % path)
-            sess = Session(path=path, name=name, twin=True)
+            sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
 
@@ -447,7 +447,7 @@ class GUIPanelSession(wx.Frame):
         struct_out['spec']._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=struct_out['spec'],
+        sess = Session(gui=self._gui, name=name, spec=struct_out['spec'],
                        nodes=struct_out['nodes'], lines=struct_out['lines'],
                        systs=struct_out['systs'])
         return sess
