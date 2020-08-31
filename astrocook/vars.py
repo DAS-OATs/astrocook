@@ -27,7 +27,7 @@ seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = ['spec_x_y',
              #'spec_x_y_det',
              'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
-             'systs_z_series']
+             'systs_z_series', 'spec_h2o_reg']
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
@@ -62,6 +62,9 @@ psf_gauss_d = {
     'z_min': 0.0, 'resol_min': 0,
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
+
+
+h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
 atom_par = ascii.read(p+'/atom_par.dat')

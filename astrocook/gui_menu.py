@@ -650,7 +650,9 @@ class GUIMenuView(GUIMenu):
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
                          'cursor_z_series', dlg_mini=True,
                          targ=GraphCursorZSeries)
-        self._legend = self._item(self._submenu, start_id+314, 'spec', "Legend",
+        self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
+                         'spec_h2o_reg')
+        self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
                                   self._on_legend, key='legend')
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
         self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",

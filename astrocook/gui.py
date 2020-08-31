@@ -60,7 +60,7 @@ class GUI(object):
                     self._panel_sess._on_open(p)
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True):
+                 autosort=True, _xlim=None):
         """ Refresh the GUI after an action """
 
         self._panel_sess._refresh()
@@ -70,8 +70,8 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        if autolim and goodlim and 1==0:
-            self._graph_main._refresh(self._sess_items, xlim=xlim)
+        if autolim and goodlim and _xlim != None:
+            self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         else:
             self._graph_main._refresh(self._sess_items)
         if hasattr(self, '_graph_det'):

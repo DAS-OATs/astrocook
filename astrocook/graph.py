@@ -180,7 +180,8 @@ class Graph(object):
                              'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
                              'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
                              'systs_z_series': (GraphSystListZSeries,2,1.0),
-                             'cursor_z_series': (GraphCursorZSeries,3,0.5)}
+                             'cursor_z_series': (GraphCursorZSeries,3,0.5),
+                             'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)}
 
         #print([self._gui._sess_sel== i for i in self._gui._sess_items])
         c_index = [self._canvas_dict[s][1]\
@@ -223,11 +224,12 @@ class Graph(object):
             except:
                 pass
 
+        #print('in', xlim)
+
         if xlim is not None:
             self._ax.set_xlim(xlim)
         if ylim is not None:
             self._ax.set_ylim(ylim)
-
 
         for s in sess:
             self._seq(s, norm)
@@ -266,9 +268,21 @@ class Graph(object):
 
                     except:
                         pass
-                elif gs._type == 'text':
+                elif gs._type == 'fill_between':
+                    ylim = self._ax.get_ylim()
                     trans = transforms.blended_transform_factory(
                                 self._ax.transData, self._ax.transAxes)
+                    reg = h2o_reg/(1+sess.spec._rfz)
+                    x = gs._x.to(au.nm).value
+                    where = np.logical_and(x>reg[0][0], x<reg[0][1])\
+                                +np.logical_and(x>reg[1][0], x<reg[1][1])\
+                                +np.logical_and(x>reg[2][0], x<reg[2][1])
+                    self._ax.fill_between(gs._x.to(self._xunit).value, 0, 1,
+                                          where=where,
+                                          transform=trans, color='gray', alpha=a)
+                    self._ax.set_ylim(ylim)
+
+                elif gs._type == 'text':
                     for (x, t) in zip(gs._x, gs._y):
                         #print(x,t)
                         self._ax.text(x.to(self._xunit).value, 0.8, t,
@@ -351,6 +365,12 @@ class GraphSpectrumXY(object):
             self._y = self._y/sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
         #self._kwargs = {'lw':1.0, 'label':sess.name}
+
+
+class GraphSpectrumH2ORegion(GraphSpectrumXY):
+    def __init__(self, sess, norm=False):
+        super(GraphSpectrumH2ORegion, self).__init__(sess)
+        self._type = 'fill_between'
 
 
 class GraphSpectrumXCont(GraphSpectrumXY):
