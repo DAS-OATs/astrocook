@@ -240,6 +240,7 @@ class Session(object):
                         except:
                             pass
                     name = root+'_'+s+'.fits'
+                    name_dat = root+'_'+s+'.dat'
                     obj = dc(getattr(self, s))
                     t = obj._t
                     if s!='systs':
@@ -266,8 +267,12 @@ class Session(object):
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     t.write(name, format='fits', overwrite=True)
+                    ascii.write(t, name_dat, names=t.colnames,
+                                format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
+                    arch.add(name_dat)
                     os.remove(name)
+                    os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
                                  % (s, stem+'_'+s+'.fits'))
                 else:
