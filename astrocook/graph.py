@@ -520,9 +520,8 @@ class GraphCursorZSeries(object):
         self._xmean = np.mean(self._xem)*au.nm
         try:
             self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
-            self._x = self._xem*(1+self._z)*au.nm
+            self._z = sess._z_sel
         except:
             self._z = 0
-            self._x = self._xem*(1+self._z)*au.nm
-        #print(self._x)
+        self._x = self._xem*(1+self._z)*au.nm
         self._kwargs = {'label':self._series, 'linestyle': '--'}

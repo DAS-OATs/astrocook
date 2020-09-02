@@ -307,6 +307,7 @@ class GUIDialogMini(wx.Dialog):
         series = self._ctrl_series.GetValue()
         z = self._ctrl_z.GetValue()
         self._gui._sess_sel._series_sel = series
+        self._gui._sess_sel._z_sel = float(z)
         if self._targ != None:
             self._targ(self._gui._sess_sel)
         if hasattr(self._gui, '_graph_det'):
