@@ -1,4 +1,5 @@
 from .graph import GraphCursorZSeries
+from matplotlib import pyplot as plt
 
 class CookbookGraph(object):
     """ Cookbook of graph utilities
@@ -22,3 +23,6 @@ class CookbookGraph(object):
         gui._dlg_mini._ctrl_z.SetValue(str(z))
         gui._dlg_mini._ctrl_series.SetValue(str(series))
         gui._dlg_mini._on_apply(None)
+
+    def save(self, name='fig.pdf'):
+        self.sess._gui._graph_main._graph._fig.savefig(name)
