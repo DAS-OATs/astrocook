@@ -64,6 +64,10 @@ psf_gauss_d = {
     'z_expr': None, 'resol_expr': None}
 
 
+x_col_names = np.array(['x', 'wave', 'WAVE'])
+y_col_names = np.array(['y', 'flux', 'FLUX'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR'])
+
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'

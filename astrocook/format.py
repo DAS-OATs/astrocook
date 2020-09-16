@@ -2,6 +2,7 @@ from .spectrum import Spectrum
 from .line_list import LineList
 from .syst_list import SystList
 from .message import *
+from .vars import *
 from astropy import units as au
 from astropy.table import Table
 import logging
@@ -309,10 +310,17 @@ class Format(object):
             zero
         except:
             if len(hdul)>1:
-                data = hdul[1].data
-                x = data['wave']
-                y = data['flux']
-                dy = np.full(len(y), np.nan)
+                data = Table(hdul[1].data)
+                x_col = np.where([c in data.colnames for c in x_col_names])
+                y_col = np.where([c in data.colnames for c in y_col_names])
+                dy_col = np.where([c in data.colnames for c in dy_col_names])
+                try:
+                    x = data[x_col_names[x_col][0]]
+                    y = data[y_col_names[y_col][0]]
+                    dy = data[y_col_names[dy_col][0]] if dy_col!=[] \
+                        else np.full(len(y), np.nan)
+                except:
+                    loggin.error("I can't recognize columns.")
             else:
                 data = hdul[0].data
                 x = data[0][:]
