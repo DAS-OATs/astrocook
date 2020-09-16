@@ -131,7 +131,9 @@ class GUIMenu(object):
                 path='.'
         if wildcard is None:
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                       "FITS files (*.fits)|*.fits"
+                       "FITS files (*.fits)|*.fits|" \
+                       "Data files (*.data)|*.data|" \
+                       "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \

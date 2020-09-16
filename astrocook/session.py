@@ -13,6 +13,7 @@ from .vars import *
 #from astropy import constants as ac
 from astropy import units as au
 from astropy.io import ascii, fits
+from astropy.table import Table
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
@@ -67,9 +68,15 @@ class Session(object):
                 arch.extractall(path=root)
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
                 hdr = hdul[1].header
-        else:
+        elif self.path[-4:] == 'fits':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
+        else:
+            t = Table(ascii.read(self.path))
+            hdul = fits.HDUList([fits.PrimaryHDU(),
+                                 fits.BinTableHDU.from_columns(np.array(t))])
+            hdr = hdul[0].header
+
 
         try:
             instr = hdr['INSTRUME']

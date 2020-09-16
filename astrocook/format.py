@@ -311,16 +311,17 @@ class Format(object):
         except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
-                x_col = np.where([c in data.colnames for c in x_col_names])
-                y_col = np.where([c in data.colnames for c in y_col_names])
-                dy_col = np.where([c in data.colnames for c in dy_col_names])
+                x_col = np.where([c in data.colnames for c in x_col_names])[0]
+                y_col = np.where([c in data.colnames for c in y_col_names])[0]
+                dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
                 try:
                     x = data[x_col_names[x_col][0]]
                     y = data[y_col_names[y_col][0]]
-                    dy = data[y_col_names[dy_col][0]] if dy_col!=[] \
+                    dy = data[dy_col_names[dy_col][0]] if dy_col!=[] \
                         else np.full(len(y), np.nan)
                 except:
-                    loggin.error("I can't recognize columns.")
+                    logging.error("I can't recognize columns.")
+                    return 0
             else:
                 data = hdul[0].data
                 x = data[0][:]
