@@ -277,7 +277,7 @@ class Session(object):
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
-                    arch.add(name_dat)
+                    arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                     os.remove(name)
                     os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
