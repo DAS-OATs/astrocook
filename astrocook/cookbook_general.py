@@ -120,7 +120,16 @@ class CookbookGeneral(object):
         else:
             new = None
         if 'systs' in self.sess.seq and self.sess.systs != None:
-            old = dc(self.sess)
+
+            # This is needed instead of a simple deepcopy because
+            # GUIPanelSession does not support pickling
+            #old = dc(self.sess)
+            old = Session(self.sess._gui)
+            for d in self.sess.__dict__:
+                if d != '_gui' and d != 'cb':
+                    old.__dict__[d] = dc(self.sess.__dict__[d])
+            old.__dict__['cb'] = self.sess.__dict__['cb']
+
             self.sess = new
             self._mods_recreate()
             self.sess = old
