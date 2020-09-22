@@ -32,7 +32,6 @@ class Format(object):
             xmax = data['xmax']
             y = data['y']
             dy = data['dy']
-
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr
@@ -317,6 +316,7 @@ class Format(object):
                 try:
                     x = data[x_col_names[x_col][0]]
                     y = data[y_col_names[y_col][0]]
+                    #dy = data[dy_col_names[dy_col][0]] if len(dy_col)>0 \
                     dy = data[dy_col_names[dy_col][0]] if dy_col!=[] \
                         else np.full(len(y), np.nan)
                 except:

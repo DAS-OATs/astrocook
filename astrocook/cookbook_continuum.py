@@ -6,7 +6,11 @@ from astropy import table as at
 from astropy import units as au
 from scipy.interpolate import UnivariateSpline as uspline
 from scipy.optimize import root_scalar
+from scipy.signal import savgol_filter as sgf
 from matplotlib import pyplot as plt
+
+#from mpl_toolkits import mplot3d
+
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -107,6 +111,90 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
+        print(peaks.t)
+        if len(peaks.t) > 0:
+            source = [col]*len(peaks.t)
+            from .line_list import LineList
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
+                             source, spec._xunit, spec._yunit, meta=spec._meta)
+            if append and self.sess.lines is not None \
+                and len(self.sess.lines.t) > 0:
+                self.sess.lines._append(lines)
+                self.sess.lines._clean()
+            else:
+                self.sess.lines = lines
+
+            self.sess.lines_kind = 'peaks'
+            spec._lines_mask(self.sess.lines, source=col)
+        return 0
+
+
+    def peaks_find_new(self, col='y', kind='min', window=101, kappa=2, append=True):
+        """ @brief Find peaks
+        @details Find the peaks in a spectrum column. Peaks are the extrema
+        (minima or maxima) that are more prominent than a given number of
+        standard deviations. They are saved as a list of lines.
+        @param col Column where to look for peaks
+        @param kind Kind of extrema ('min' or 'max')
+        @param kappa Number of standard deviations
+        @param append Append peaks to existing line list
+        @return 0
+        """
+
+        try:
+            window = int(window)
+            kappa = float(kappa)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        if col not in spec.t.colnames:
+            logging.error("The spectrum has not a column named '%s'. Please "\
+                          "pick another one." % col)
+            return 0
+
+        x = spec.t['x']
+        y = spec.t['y']
+        dy = spec.t['dy']
+        #plt.plot(spec.x, y)
+        for i in range(100):
+            if i > 0:
+                xsel = np.array(x[~sel])
+                ysel = np.array(y[~sel])
+                ssel = np.sum(sel)
+            else:
+                xsel = np.array(x)
+                ysel = np.array(y)
+                ssel = 0
+            csy = np.cumsum(
+                      np.insert(np.insert(ysel, 0, np.full((window-1)//2+1, ysel[0])),
+                                -1, np.full((window-1)//2, ysel[-1])))
+            fy = (csy[window:]-csy[:-window]) / float(window)
+            iy = np.interp(x, xsel, fy)
+
+            if kind=='min':
+                sel = y<iy-kappa*dy
+            else:
+                sel = y>iy+kappa*dy
+            #print(np.sum(sel), ssel)
+            if np.sum(sel)==ssel: break
+
+            #y = y*1e17
+            gy = np.gradient(y)
+
+            #ax = plt.axes(projection ="3d")
+            #ax.scatter3D(y[~sel]-fy[~sel], np.log(dy[~sel]), gy[~sel], s=1)
+            #ax.scatter3D(y[sel]-fy[sel], np.log(dy[sel]), gy[sel], s=2)
+
+            #plt.plot(spec.x, iy)
+
+        #plt.show()
+
+        peaks = spec._copy(sel)
+        print(type(peaks))
+        print(peaks.t)
         if len(peaks.t) > 0:
             source = [col]*len(peaks.t)
             from .line_list import LineList
