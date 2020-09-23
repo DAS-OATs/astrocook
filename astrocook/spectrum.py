@@ -298,6 +298,7 @@ class Spectrum(Frame):
                     break
             ysel = y[im:iM+1]
             dysel = dy[im:iM+1]
+            #print(ysel, dysel)
             if np.any(np.isnan(dysel)):
                 y_out = np.append(y_out, np.average(ysel))
             else:

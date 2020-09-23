@@ -175,20 +175,66 @@ class Format(object):
         """ ESO-MIDAS table """
 
         hdr = hdul[1].header
-        data = hdul[1].data
+        data = Table(hdul[1].data)
+
+        x_col_names = np.array(['wave', 'WAVE'])
+        y_col_names = np.array(['fluxc', 'flux', 'FLUX'])
+        dy_col_names = np.array(['errc', 'err', 'sigma', 'STDEV'])
+        wpix_col_names = np.array(['wpix', 'WPIX'])
+        cont_col_names = np.array(['cont', 'CONT'])
+        norm_col_names = np.array(['normflux', 'NORMFLUX'])
+
+        x_col = np.where([c in data.colnames for c in x_col_names])[0]
+        y_col = np.where([c in data.colnames for c in y_col_names])[0]
+        dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
+        wpix_col = np.where([c in data.colnames for c in wpix_col_names])[0]
+        cont_col = np.where([c in data.colnames for c in cont_col_names])[0]
+        norm_col = np.where([c in data.colnames for c in norm_col_names])[0]
+
+        try:
+            x = data[x_col_names[x_col][0]]
+            y = data[y_col_names[y_col][0]]
+            dy = data[dy_col_names[dy_col][0]] if dy_col!=[] \
+                else np.full(len(y), np.nan)
+        except:
+            logging.error("I can't recognize columns.")
+            return 0
+
+        try:
+            xmin = x-data[wpix_col_names[wpix_col][0]]*0.5
+            xmax = x+data[wpix_col_names[wpix_col][0]]*0.5
+        except:
+            xmin, xmax = self._create_xmin_xmax(x)
+
+        try:
+            cont = data[cont_col_names[cont_col][0]]
+        except:
+            try:
+                if np.all(data[norm_col_names[norm_col][0]]==y):
+                    cont = np.ones(len(x))
+            except:
+                cont = []
+        """
         try:
             x = data['wave']
-            xmin = x-data['wpix']*0.5
-            xmax = x+data['wpix']*0.5
+            try:
+                xmin = x-data['wpix']*0.5
+                xmax = x+data['wpix']*0.5
+            except:
+                xmin = x-data['Wpix']*0.5
+                xmax = x+data['Wpix']*0.5
             y = data['flux']
-            dy = data['sigma']
+            try:
+                dy = data['sigma']
+            except:
+                dy = data['err']
         except:
             x = data['WAVE']
             xmin, xmax = self._create_xmin_xmax(x)
             y = data['NORMFLUX']
             dy = data['STDEV']
         resol = []*len(x)
-        #"""
+
         try:
             cont = data['cont']
         except:
@@ -199,8 +245,8 @@ class Format(object):
                     cont = np.ones(len(x))
                 else:
                     cont = []
-        #"""
-        #cont = []
+
+        """
 
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
@@ -307,8 +353,8 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            zero
-        except:
+        #    zero
+        #except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -338,8 +384,8 @@ class Format(object):
             except:
                 meta['object'] = ''
             return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-        #except:
-        #    return None
+        except:
+            return None
 
 
     def mage_spectrum(self, hdul):
