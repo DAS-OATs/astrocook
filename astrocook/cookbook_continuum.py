@@ -4,9 +4,11 @@ from .message import *
 from .vars import *
 from astropy import table as at
 from astropy import units as au
+from copy import deepcopy as dc
 from scipy.interpolate import UnivariateSpline as uspline
 from scipy.optimize import root_scalar
-from scipy.signal import savgol_filter as sgf
+from scipy.signal import argrelmin
+#from scipy.signal import savgol_filter as sgf
 from matplotlib import pyplot as plt
 
 #from mpl_toolkits import mplot3d
@@ -111,7 +113,7 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
-        print(peaks.t)
+        #print(peaks.t)
         if len(peaks.t) > 0:
             source = [col]*len(peaks.t)
             from .line_list import LineList
@@ -129,22 +131,20 @@ class CookbookContinuum(object):
         return 0
 
 
-    def peaks_find_new(self, col='y', kind='min', window=101, kappa=2, append=True):
+    def peaks_find_new(self, col='y', window=101, kappa=2):
         """ @brief Find peaks
-        @details Find the peaks in a spectrum column. Peaks are the extrema
-        (minima or maxima) that are more prominent than a given number of
-        standard deviations. They are saved as a list of lines.
+        @details Find the peaks (i.e the regions with prominent absorption
+        features) in a spectral column. Peaks are identified via iterative
+        kappa-sigma clipping.
         @param col Column where to look for peaks
-        @param kind Kind of extrema ('min' or 'max')
-        @param kappa Number of standard deviations
-        @param append Append peaks to existing line list
-        @return 0
+        @param window Rolling window for clipping
+        @param kappa Number of standard deviations to clip peaks
+        @return Selection mask for peaks
         """
 
         try:
             window = int(window)
             kappa = float(kappa)
-            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -158,47 +158,89 @@ class CookbookContinuum(object):
         x = spec.t['x']
         y = spec.t['y']
         dy = spec.t['dy']
-        #plt.plot(spec.x, y)
-        for i in range(100):
-            if i > 0:
-                xsel = np.array(x[~sel])
-                ysel = np.array(y[~sel])
-                ssel = np.sum(sel)
-            else:
-                xsel = np.array(x)
-                ysel = np.array(y)
-                ssel = 0
+        peaks = np.full(y.shape, False)
+        speaks = -1
+        while np.sum(peaks)!=speaks:
+            #if i > 0:
+            xpeaks = np.array(x[~peaks])
+            ypeaks = np.array(y[~peaks])
+            speaks = np.sum(peaks)
+            #else:
+            #    xpeaks = np.array(x)
+            #    ypeaks = np.array(y)
+            #    speaks = 0
             csy = np.cumsum(
-                      np.insert(np.insert(ysel, 0, np.full((window-1)//2+1, ysel[0])),
-                                -1, np.full((window-1)//2, ysel[-1])))
+                      np.insert(np.insert(ypeaks, 0, np.full((window-1)//2+1, ypeaks[0])),
+                                -1, np.full((window-1)//2, ypeaks[-1])))
             fy = (csy[window:]-csy[:-window]) / float(window)
-            iy = np.interp(x, xsel, fy)
+            iy = np.interp(x, xpeaks, fy)
 
-            if kind=='min':
-                sel = y<iy-kappa*dy
-            else:
-                sel = y>iy+kappa*dy
-            #print(np.sum(sel), ssel)
-            if np.sum(sel)==ssel: break
+            peaks = y<iy-kappa*dy
+            #print(np.sum(peaks), speaks)
+            #if np.sum(peaks)==speaks: break
 
             #y = y*1e17
             gy = np.gradient(y)
 
             #ax = plt.axes(projection ="3d")
-            #ax.scatter3D(y[~sel]-fy[~sel], np.log(dy[~sel]), gy[~sel], s=1)
-            #ax.scatter3D(y[sel]-fy[sel], np.log(dy[sel]), gy[sel], s=2)
+            #ax.scatter3D(y[~peaks]-fy[~peaks], np.log(dy[~peaks]), gy[~peaks], s=1)
+            #ax.scatter3D(y[peaks]-fy[peaks], np.log(dy[peaks]), gy[peaks], s=2)
 
-            #plt.plot(spec.x, iy)
+            plt.plot(spec.x, iy, color='C1')
 
         #plt.show()
 
-        peaks = spec._copy(sel)
-        print(type(peaks))
-        print(peaks.t)
-        if len(peaks.t) > 0:
-            source = [col]*len(peaks.t)
+        return peaks
+
+
+    def peaks_merge(self, peaks, col='y', append=True):
+        """ @brief Merge peaks
+        @details Merge the peaks into a list of lines.
+        @param peaks Peaks
+        @param col Column from which peaks were extracted
+        @param append Append peaks to existing line list
+        @return 0
+        """
+
+        try:
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        #if type(peaks) != type(spec):
+        #    logging.error("Peaks must be of Spectrum type.")
+        #    return 0
+        if col not in spec.t.colnames:
+            logging.error("The spectrum has not a column named '%s'. Please "\
+                          "pick another one." % col)
+            return 0
+
+        dist = 1
+
+        merge = dc(peaks)
+        #print(merge)
+        for i in range(dist, len(peaks)-dist):
+            merge[i] = merge[i]+np.logical_and(np.any(peaks[i-dist:i]), np.any(peaks[i+1:i+dist+1]))
+        #print(merge)
+
+        id = merge*(range(len(merge))-np.cumsum(merge))
+        #print(id)
+
+        sel = np.array([], dtype=int)
+        for i in np.unique(id)[1:]:
+            add = argrelmin(spec.t['y'][id==i])[0] if len(spec.t['y'][id==i])>1 else spec.t['y'][id==i]
+            sel = np.append(sel, np.array(add, dtype=int)+np.array(range(len(merge)))[id==i][0])
+        #print(sel)
+
+
+        peaks_spec = spec._copy(sel)
+        if len(peaks_spec.t) > 0:
+            source = [col]*len(peaks_spec.t)
             from .line_list import LineList
-            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
+            lines = LineList(peaks_spec.x, peaks_spec.xmin, peaks_spec.xmax,
+                             peaks_spec.y, peaks_spec.dy,
                              source, spec._xunit, spec._yunit, meta=spec._meta)
             if append and self.sess.lines is not None \
                 and len(self.sess.lines.t) > 0:
@@ -218,7 +260,7 @@ class CookbookContinuum(object):
                    kappa_peaks=5.0, resol=resol_def, append=True):
         """ @brief Find lines
         @details Create a line list by convolving a spectrum with different
-        gaussian profiles and finding the peaks in the convolved spectrum
+        gaussian profiles and finding the peaks in the convolved spectrum.
         @param std_start Start standard deviation of the gaussian (km/s)
         @param std_end End standard deviation of the gaussian (km/s)
         @param col Column to convolve
@@ -254,6 +296,44 @@ class CookbookContinuum(object):
             self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
                             append=append or i>0)
+
+        return 0
+
+
+    def lines_find_new(self, col='y', window=101, kappa=5.0, resol=resol_def,
+                       append=True):
+        """ @brief Find lines
+        @details Detect absorption lines by finding peaks and extracting their
+        minima.
+        @param col Column to convolve
+        @param window Rolling window for clipping
+        @param kappa Number of standard deviations to clip peaks
+        @param resol Resolution
+        @param append Append lines to existing line list
+        @return 0
+        """
+
+        try:
+            window = int(window)
+            kappa = float(kappa)
+            resol = None if resol in [None, 'None'] else float(resol)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        if col not in self.sess.spec.t.colnames:
+            logging.error(msg_col_miss(col))
+            return 0
+
+        #check, resol = resol_check(self.sess.spec, resol)
+        if resol is not None:
+            logging.info("I'm adding column 'resol'.")
+            self.sess.spec._t['resol'] = resol
+
+        #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        peaks = self.peaks_find_new(col, window, kappa)
+        self.peaks_merge(peaks, col, append or i>0)
 
         return 0
 
