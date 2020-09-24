@@ -300,7 +300,7 @@ class CookbookContinuum(object):
         return 0
 
 
-    def lines_find_new(self, col='y', window=101, kappa=5.0, resol=resol_def,
+    def lines_find_new(self, col='y', window=301, kappa=3.0, resol=resol_def,
                        append=True):
         """ @brief Find lines
         @details Detect absorption lines by finding peaks and extracting their
@@ -333,7 +333,7 @@ class CookbookContinuum(object):
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         peaks = self.peaks_find_new(col, window, kappa)
-        self.peaks_merge(peaks, col, append or i>0)
+        self.peaks_merge(peaks, col, append)
 
         return 0
 

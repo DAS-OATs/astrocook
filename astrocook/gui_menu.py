@@ -485,6 +485,8 @@ class GUIMenuRecipes(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
                           'lines_find')
+        self._item_method(self._menu, start_id+202, 'spec', "Find lines (new)",
+                          'lines_find_new')
         self._item_method(self._menu, start_id+201, 'lines',
                           "Continuum from nodes", 'nodes_cont')
         submenu = wx.Menu()
