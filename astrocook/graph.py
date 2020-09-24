@@ -183,6 +183,7 @@ class Graph(object):
                              'cursor_z_series': (GraphCursorZSeries,3,0.5),
                              'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)}
 
+
         #print([self._gui._sess_sel== i for i in self._gui._sess_items])
         c_index = [self._canvas_dict[s][1]\
         #c_index = [(self._canvas_dict[s][1]\
@@ -329,6 +330,13 @@ class Graph(object):
                 self._axt.set_xlim(np.array(self._ax.get_xlim()) \
                                    * (1+sess.spec._rfz))
 
+        for c in self._gui._graph_main._cols_sel.split(','):
+            if c in sess.spec.t.colnames:
+                y = sess.spec.t[c]
+                if norm and 'cont' in sess.spec._t.colnames:
+                    y = y/sess.spec.t['cont']
+                self._ax.plot(sess.spec.x, y)
+
 
 class GraphLineListXY(object):
     def __init__(self, sess, norm=False):
@@ -338,6 +346,7 @@ class GraphLineListXY(object):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.lines._t['cont']
         self._kwargs = {'marker':'+', 'label':sess.name+", lines"}
+
 
 class GraphSpectrumFormX(object):
     def __init__(self, sess):

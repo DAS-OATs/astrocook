@@ -31,6 +31,7 @@ class GUIGraphMain(wx.Frame):
         self._size_x = size_x
         self._size_y = size_y
         self._sel = graph_sel
+        self._cols_sel = graph_cols_sel
 
         self._logx = False
         self._logy = False

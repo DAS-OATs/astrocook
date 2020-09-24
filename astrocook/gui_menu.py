@@ -61,7 +61,8 @@ class GUIMenu(object):
             self._gui._cursor = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
+            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ),
+            item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
@@ -193,6 +194,16 @@ class GUIMenu(object):
                             item.Enable(False)
                     except:
                         pass
+
+    def _sel_graph_cols(self, cols=graph_cols_sel):
+        """ @brief Select graph columns
+        @details Select columns to be displayed on graph
+        @param cols Columns to be displayed
+        @return 0
+        """
+        self._gui._graph_main._cols_sel = cols
+
+        return 0
 
 
 class GUIMenuCook(GUIMenu):
@@ -659,7 +670,11 @@ class GUIMenuView(GUIMenu):
         self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
                                   self._on_legend, key='legend')
         self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
-        self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
+
+        self._item_method(self._menu, start_id+401, 'spec',
+                          "Choose graph columns", '_sel_graph_cols', obj=self)
+
+        self._norm = self._item(self._menu, start_id+402, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
 
     def _on_compress(self, event):
