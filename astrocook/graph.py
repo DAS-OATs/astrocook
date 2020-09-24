@@ -332,7 +332,10 @@ class Graph(object):
 
         for c in self._gui._graph_main._cols_sel.split(','):
             if c in sess.spec.t.colnames:
-                self._ax.plot(sess.spec.x, sess.spec.t[c])
+                y = sess.spec.t[c]
+                if norm and 'cont' in sess.spec._t.colnames:
+                    y = y/sess.spec.t['cont']
+                self._ax.plot(sess.spec.x, y)
 
 
 class GraphLineListXY(object):
