@@ -305,7 +305,7 @@ class CookbookContinuum(object):
         """ @brief Find lines
         @details Detect absorption lines by finding peaks and extracting their
         minima.
-        @param col Column to convolve
+        @param col Column to use
         @param window Rolling window for clipping
         @param kappa Number of standard deviations to clip peaks
         @param resol Resolution
