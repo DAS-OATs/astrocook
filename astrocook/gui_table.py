@@ -1,5 +1,5 @@
 from .functions import get_selected_cells, trans_parse
-from .gui_dialog import GUIDialogMini
+from .gui_dialog import GUIDialogMiniSystems
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -424,11 +424,11 @@ class GUITableSystList(GUITable):
         z = row['z']
         series = trans_parse(row['series'])
         self._gui._graph_det._update(series, z)
-        if not hasattr(self._gui, '_dlg_mini') \
-            or self._gui._dlg_mini == None:
-            GUIDialogMini(self._gui, "System controls", series=row['series'], z=row['z'])
+        if not hasattr(self._gui, '_dlg_mini_systems') \
+            or self._gui._dlg_mini_systems == None:
+            GUIDialogMiniSystems(self._gui, "System controls", series=row['series'], z=row['z'])
         else:
-            self._gui._dlg_mini._refresh(row['series'], row['z'])
+            self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
 
         # Color background of systems in the same group
         mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \

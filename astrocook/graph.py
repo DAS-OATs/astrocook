@@ -167,21 +167,22 @@ class Graph(object):
             self._cursor_lines = []
 
         cmc = plt.cm.get_cmap('tab10').colors
-        self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,0,1.0),
+        self._canvas_dict = {#'spec_x_y': (GraphSpectrumXY,0,1.0),
                              #'spec_x_y_det': (GraphSpectrumXYDetail,0],1.0),
-                             'spec_x_dy': (GraphSpectrumXDy,0,0.5),
-                             'spec_x_conv': (GraphSpectrumXConv,3,0.5),
-                             'lines_x_y': (GraphLineListXY,2,1.0),
-                             'spec_x_ylinemask': (GraphSpectrumXYLinesMask,2,0.5),
-                             'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
-                             'spec_x_cont': (GraphSpectrumXCont,8,1.0),
-                             'spec_form_x': (GraphSpectrumFormX,7,0.5),
-                             'spec_x_model': (GraphSpectrumXModel,9,1.0),
-                             'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
-                             'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
+                             #'spec_x_dy': (GraphSpectrumXDy,0,0.5),
+                             #'spec_x_conv': (GraphSpectrumXConv,3,0.5),
+                             #'lines_x_y': (GraphLineListXY,2,1.0),
+                             #'spec_x_ylinemask': (GraphSpectrumXYLinesMask,2,0.5),
+                             #'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
+                             #'spec_x_cont': (GraphSpectrumXCont,8,1.0),
+                             #'spec_form_x': (GraphSpectrumFormX,7,0.5),
+                             #'spec_x_model': (GraphSpectrumXModel,9,1.0),
+                             #'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
+                             #'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
                              'systs_z_series': (GraphSystListZSeries,2,1.0),
                              'cursor_z_series': (GraphCursorZSeries,3,0.5),
-                             'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)}
+                             'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)
+                             }
 
 
         #print([self._gui._sess_sel== i for i in self._gui._sess_items])
@@ -225,8 +226,6 @@ class Graph(object):
             except:
                 pass
 
-        #print('in', xlim)
-
         if xlim is not None:
             self._ax.set_xlim(xlim)
         if ylim is not None:
@@ -237,14 +236,32 @@ class Graph(object):
         if legend:
             self._ax.legend()
 
-        #print(self._ax)
-        #self._cursor = self._ax.axvline(8000, alpha=0.0)
 
         self._canvas.draw()
         #self._canvas.flush_events()
         #print(dt.datetime.now()-start)
 
     def _seq(self, sess, norm):
+
+        for e in self._gui._graph_main._elem.split('\n'):
+            try:
+                sel, struct, xcol, ycol, mode, style = e.split(',')
+                t = getattr(self._gui._sess_list[int(sel)], struct).t
+                x = t[xcol]
+                y = t[ycol]
+                if norm and 'cont' in t.colnames:
+                    y = y/t['cont']
+                kwargs = {}
+                if mode == 'plot':
+                    kwargs['linestyle'] = style
+                    kwargs['linewidth'] = linewidth
+                if mode == 'scatter':
+                    kwargs['marker'] = style
+                getattr(self._ax, mode)(x, y, **kwargs)
+            except:
+                pass
+
+
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, (s, c, a) \
@@ -330,12 +347,15 @@ class Graph(object):
                 self._axt.set_xlim(np.array(self._ax.get_xlim()) \
                                    * (1+sess.spec._rfz))
 
+        """
         for c in self._gui._graph_main._cols_sel.split(','):
             if c in sess.spec.t.colnames:
                 y = sess.spec.t[c]
                 if norm and 'cont' in sess.spec._t.colnames:
                     y = y/sess.spec.t['cont']
                 self._ax.plot(sess.spec.x, y)
+        """
+
 
 
 class GraphLineListXY(object):

@@ -1,5 +1,6 @@
+from .functions import elem_expand
 from .graph import Graph
-from .gui_dialog import GUIDialogMini
+from .gui_dialog import GUIDialogMiniSystems
 from .syst_list import SystList
 from .vars import *
 from collections import OrderedDict
@@ -32,6 +33,7 @@ class GUIGraphMain(wx.Frame):
         self._size_y = size_y
         self._sel = graph_sel
         self._cols_sel = graph_cols_sel
+        self._elem = elem_expand(graph_elem, 0)
 
         self._logx = False
         self._logy = False
