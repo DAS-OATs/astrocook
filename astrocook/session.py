@@ -14,6 +14,7 @@ from .vars import *
 from astropy import units as au
 from astropy.io import ascii, fits
 from astropy.table import Table
+from collections import OrderedDict
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
@@ -249,7 +250,29 @@ class Session(object):
                     name = root+'_'+s+'.fits'
                     name_dat = root+'_'+s+'.dat'
                     obj = dc(getattr(self, s))
-                    t = obj._t
+                    t = dc(obj._t)
+
+                    for c in t.colnames:
+                        if type(t[c][0]) == np.int64:
+                            pass
+                        elif type(t[c][0]) == str or type(t[c][0]) == np.str_:
+                            pass
+                        elif type(t[c][0]) == OrderedDict:
+                            pass
+                        elif type(t[c][0]) == dict:
+                            pass
+                        else:
+                            if c in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                            'snr']:
+                                format = '%3.3'
+                            else:
+                                format = '%3.7'
+                            if np.abs(t[c][0])<1e-7 and t[c][0]!=0:
+                                format += 'e'
+                            else:
+                                format += 'f'
+                            t[c].info.format = format
+
                     if s!='systs':
                         t['x'] = t['x'].to(au.nm)
                         t['xmin'] = t['xmin'].to(au.nm)
@@ -273,6 +296,7 @@ class Session(object):
                             t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
+                    print(t)
                     t.write(name, format='fits', overwrite=True)
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
