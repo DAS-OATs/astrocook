@@ -245,21 +245,27 @@ class Graph(object):
 
         for e in self._gui._graph_main._elem.split('\n'):
             try:
-                sel, struct, xcol, ycol, mode, style = e.split(',')
+                sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
+                    = e.split(',')
                 t = getattr(self._gui._sess_list[int(sel)], struct).t
-                x = t[xcol]
-                y = t[ycol]
+                x = dc(t[xcol])
+                y = dc(t[ycol])
+                if mcol not in ['None', 'none', None]:
+                    x[t[mcol]==0] = np.nan
                 if norm and 'cont' in t.colnames:
                     y = y/t['cont']
                 kwargs = {}
-                if mode == 'plot':
+                if mode in ['plot', 'step']:
                     kwargs['linestyle'] = style
-                    kwargs['linewidth'] = linewidth
+                    kwargs['linewidth'] = width
                 if mode == 'scatter':
                     kwargs['marker'] = style
+                    kwargs['s'] = (5*float(width))**2
+                kwargs['color'] = color
+                kwargs['alpha'] = float(alpha)
                 getattr(self._ax, mode)(x, y, **kwargs)
             except:
-                pass
+                logging.error("I can't parse this graph specification: %s." % e)
 
 
         self._check_units(sess, 'x')

@@ -65,10 +65,12 @@ class GUI(object):
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
-        self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
-            self._dlg_mini_graph._refresh(self._graph_main._elem)
+            self._dlg_mini_graph._refresh()
+        else:
+            self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
+
         xlim = self._graph_main._graph._ax.get_xlim()
         ylim = self._graph_main._graph._ax.get_ylim()
         goodlim = True

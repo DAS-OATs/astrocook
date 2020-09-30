@@ -643,28 +643,30 @@ class GUIMenuView(GUIMenu):
                    "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
-        self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
-                         'spec_x_y')
+        self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
+                         dlg_mini='graph', alt_title="Graph elements")
+        #self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
+        #                 'spec_x_y')
         #self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
         #                 'spec_x_dy')
         #self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
         #                 'spec_x_conv')
-        self._item_graph(self._submenu, start_id+304, 'lines', "Lines",
-                         'lines_x_y')
+        #self._item_graph(self._submenu, start_id+304, 'lines', "Lines",
+        #                 'lines_x_y')
         #self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
         #                 'spec_x_yfitmask')
         #self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
         #                 'spec_nodes_x_y')
         #self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
         #                 'spec_x_cont')
-        self._item_graph(self._submenu, start_id+308, 'systs', "Systems",
-                         'spec_x_model')
+        #self._item_graph(self._submenu, start_id+308, 'systs', "Systems",
+        #                 'spec_x_model')
         #self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
         #                 'spec_x_yfitmask')
         #self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
         #                 'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+311, None, "Spectral format",
-                         'spec_form_x')
+        #self._item_graph(self._submenu, start_id+311, None, "Spectral format",
+        #                 'spec_form_x')
         #self._item_graph(self._submenu, start_id+312, 'systs', "System list",
         #                 'systs_z_series')
         self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
@@ -674,12 +676,10 @@ class GUIMenuView(GUIMenu):
                          targ=GraphCursorZSeries, alt_title="System controls")
         self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
                                   self._on_legend, key='legend')
-        self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
+        self._menu.AppendSubMenu(self._submenu, "Toggle graph add-ons")
 
-        self._item_method(self._menu, start_id+401, 'spec',
-                          "Edit graph details", '_sel_graph_cols', obj=self)
-        self._item_graph(self._menu, start_id+402, 'spec', "Edit graph details 2",
-                         dlg_mini='graph', alt_title="Graph elements")
+        #self._item_method(self._menu, start_id+401, 'spec',
+        #                  "Edit graph details", '_sel_graph_cols', obj=self)
 
         self._norm = self._item(self._menu, start_id+403, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
