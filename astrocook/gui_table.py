@@ -48,10 +48,18 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    if np.abs(r[n])<1e-7 and r[n]!=0:
-                        self._tab.SetCellValue(j, i, "%3.7e" % r[n])
+                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                             'snr']:
+                        format = '%3.3'
                     else:
-                        self._tab.SetCellValue(j, i, "%3.7f" % r[n])
+                        format = '%3.7'
+                    if np.abs(r[n])<1e-7 and r[n]!=0:
+                        #self._tab.SetCellValue(j, i, "%3.7e" % r[n])
+                        format += 'e'
+                    else:
+                        #self._tab.SetCellValue(j, i, "%3.7f" % r[n])
+                        format += 'f'
+                    self._tab.SetCellValue(j, i, format % r[n])
         self._tab.AutoSizeColumns(True)
 
 
