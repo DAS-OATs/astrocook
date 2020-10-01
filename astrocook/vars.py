@@ -33,6 +33,7 @@ graph_sel = [#'spec_x_y',
 graph_cols_sel = ''
 
 graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
+           "spec,x,dy,None,step,-,1,C0,0.5\n"\
            "lines,x,y,None,scatter,+,1.5,C2,1\n"\
            "spec,x,cont,None,plot,-,1,C8,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\

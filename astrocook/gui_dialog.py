@@ -281,6 +281,9 @@ class GUIDialogMiniGraph(GUIDialogMini):
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         #apply_button.SetDefault()
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label="Back to default")
+        default_button.Bind(wx.EVT_BUTTON, self._on_default)
+        buttons.Add(default_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -289,6 +292,12 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
     def _on_apply(self, e=None, refresh=True):
         self._elem = self._ctrl_elem.GetValue()
+        self._gui._graph_main._elem = self._elem
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_default(self, e=None, refresh=True):
+        self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
