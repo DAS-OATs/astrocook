@@ -296,7 +296,7 @@ class Session(object):
                             t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
-                    print(t)
+                    #print(t)
                     t.write(name, format='fits', overwrite=True)
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)

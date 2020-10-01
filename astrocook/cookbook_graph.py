@@ -20,9 +20,9 @@ class CookbookGraph(object):
         gui = self.sess._gui
         menu = gui._panel_sess._menu
         menu._on_graph(None, "Redshift cursor", 'cursor_z_series', gui._cursor, True, GraphCursorZSeries)
-        gui._dlg_mini._ctrl_z.SetValue(str(z))
-        gui._dlg_mini._ctrl_series.SetValue(str(series))
-        gui._dlg_mini._on_apply(None)
+        gui._dlg_mini_systems._ctrl_z.SetValue(str(z))
+        gui._dlg_mini_systems._ctrl_series.SetValue(str(series))
+        gui._dlg_mini_systems._on_apply(None)
 
     def save(self, name='fig.pdf'):
         self.sess._gui._graph_main._graph._fig.savefig(name)

@@ -1,5 +1,6 @@
-from .functions import trans_parse
+from .functions import elem_expand, trans_parse
 from .message import *
+from .vars import graph_elem
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -224,20 +225,16 @@ class GUIDialogMethods(GUIDialog):
 class GUIDialogMini(wx.Dialog):
     def __init__(self,
                  gui,
-                 title,
-                 targ=None,
-                 series='CIV',
-                 z=2.0):
+                 title):
         self._gui = gui
-        self._gui._dlg_mini = self
-        self._targ = targ
-        self._series = series
-        self._z = z
+        #self._gui._dlg_mini = self
+        #self._targ = targ
+        #self._series = series
+        #self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
         self._core = wx.BoxSizer(wx.VERTICAL)
-        self._shown = False
         self._box_ctrl()
         self._box_buttons()
         self.SetSizer(self._bottom)
@@ -245,10 +242,95 @@ class GUIDialogMini(wx.Dialog):
         self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
 
+class GUIDialogMiniGraph(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title,
+                 elem=graph_elem):
+        self._gui = gui
+        self._gui._dlg_mini_graph = self
+        self._sel = dc(self._gui._panel_sess._sel)
+        #self._elem = '\n'.join([self._sel+','+r for r in elem.split('\n')])
+        self._elem = elem_expand(elem, self._sel)
+        super(GUIDialogMiniGraph, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="Each line define a graph element as a set of\n"
+                          "comma-separated values. Values are: session,\n"
+                          "table, x column, y column, mask column (if any),\n"
+                          "type of graph (plot, step, scatter), line style\n"
+                          "or marker symbol, line width or marker size,\n"
+                          "color, alpha transparency.")
+        self._ctrl_elem = wx.TextCtrl(self._panel, -1, value=self._elem,
+                                      size=(300, 200), style = wx.TE_MULTILINE)
+        #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
+        fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        #apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label="Back to default")
+        default_button.Bind(wx.EVT_BUTTON, self._on_default)
+        buttons.Add(default_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None, refresh=True):
+        self._elem = self._ctrl_elem.GetValue()
+        self._gui._graph_main._elem = self._elem
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_default(self, e=None, refresh=True):
+        self._elem = elem_expand(graph_elem, self._sel)
+        self._gui._graph_main._elem = self._elem
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+            self._elem = elem_expand(graph_elem, self._sel)
+        self._ctrl_elem.SetValue(self._elem)
+        self._on_apply(refresh=False)
+
+class GUIDialogMiniSystems(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title,
+                 targ=None,
+                 series='CIV',
+                 z=2.0):
+        self._gui = gui
+        self._gui._dlg_mini_systems = self
+        self._targ = targ
+        self._series = series
+        self._z = z
+        super(GUIDialogMiniSystems, self).__init__(gui, title)
+        self._shown = False
+
     def _box_ctrl(self):
         fgs = wx.FlexGridSizer(2, 2, 4, 15)
-        #fgs_series = wx.FlexGridSizer(2, 2, 4, 15)
-        #fgs_z = wx.FlexGridSizer(2, 2, 4, 15)
         stat_series = wx.StaticText(self._panel, -1, label="Series:")
         stat_z = wx.StaticText(self._panel, -1, label="Redshift:")
         self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(150, -1))
@@ -256,30 +338,18 @@ class GUIDialogMini(wx.Dialog):
         fgs.AddMany([(stat_series, 1, wx.EXPAND), (self._ctrl_series, 1, wx.EXPAND),
                      (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND)])
         self._gui._sess_sel._series_sel = self._series
-        #self._core.Add(self._ctrl_series, flag=wx.ALL|wx.EXPAND)
-        #self._core.Add(self._ctrl_z, flag=wx.ALL|wx.EXPAND)
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
     def _box_buttons(self):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
-        """
-        cancel_button = wx.Button(self, label='Cancel')
-        cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
-        """
         apply_button = wx.Button(self, label='Apply')
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         apply_button.SetDefault()
-        """
-        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
-        buttons.Add(apply_button)
-        """
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
         self._cursor_button = wx.Button(self, label="Show cursor")
         self._cursor_button.Bind(wx.EVT_BUTTON, self._on_show)
-        #self._cursor_button.SetDefault()
         buttons.Add(self._cursor_button)
-        #"""
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -289,21 +359,15 @@ class GUIDialogMini(wx.Dialog):
         sel = self._gui._graph_main._sel
         if not self._shown:
             sel.append(self._gui._cursor.key)
-            #print('dlg  on ', self._gui._graph_main._sel)
-            #self._gui._cursor.Check(False)
             self._on_apply(e)
             self._cursor_button.SetLabel("Hide cursor")
         else:
             sel.remove(self._gui._cursor.key)
-            #print('dlg  off', self._gui._graph_main._sel)
-            #self._gui._cursor.Check(False)
             self._on_cancel(e)
             self._cursor_button.SetLabel("Show cursor")
         self._shown = not self._shown
-        #self._gui._refresh(init_cursor=True, init_tab=False)
 
     def _on_apply(self, e):
-        #print(self._gui._graph_main._sel)
         series = self._ctrl_series.GetValue()
         z = self._ctrl_z.GetValue()
         self._gui._sess_sel._series_sel = series
@@ -314,28 +378,21 @@ class GUIDialogMini(wx.Dialog):
             series = trans_parse(self._gui._sess_sel._series_sel)
             self._gui._graph_det._graph._fig.clear()
             self._gui._graph_det._update(series, float(z))
-            #if hasattr(self._gui._graph_det._graph, '_cursor'):
-                #self._gui._refresh(init_cursor=True)
         self._gui._refresh(init_cursor=True, init_tab=False)
+
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_cursor'):
-            #print(self._gui._graph_main._sel)
             self._gui._cursor.Check(False)
-            #self._gui._graph_main._sel.remove('cursor_z_series')
             if hasattr(self._gui, '_graph_det'):
                 del self._gui._graph_det._graph._cursor
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
         self._gui._refresh(init_cursor=True, init_tab=False)
-        #self._gui._dlg_mini = None
-        #self.Close()
+
 
     def _refresh(self, series='CIV', z=2.0):
         self._ctrl_series.SetValue(series)
         self._ctrl_z.SetValue("%3.7f" % z)
         if hasattr(self._gui._graph_det._graph, '_cursor'):
-            #self._gui._refresh_graph_det(init_cursor=True)
-            #self._gui._refresh(init_cursor=True)
-            #print('ciao')
             self._on_apply(None)

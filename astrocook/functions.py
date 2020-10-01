@@ -270,6 +270,12 @@ def trans_parse(series):
                 trans.append(t)
     return trans
 
+
+def elem_expand(elem, sess_sel):
+    return '\n'.join([str(sess_sel)+','+r for r in elem.split('\n')])
+    #return '\n'.join([str(sess_sel)+','+r+',C'+str(i%10) \
+    #                 for i,r in enumerate(elem.split('\n'))])
+
 # Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
 def corners_to_cells(top_lefts, bottom_rights):
     """

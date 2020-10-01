@@ -53,15 +53,16 @@ class GUIMenu(object):
             item.Enable(enable)
         return item
 
-    def _item_graph(self, menu, id, append, title, key, enable=False,
-                    dlg_mini=False, targ=None):
+    def _item_graph(self, menu, id, append, title, key=None, enable=False,
+                    dlg_mini=None, targ=None, alt_title=None):
+        if alt_title == None: alt_title = title
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
         if targ == GraphCursorZSeries:
             self._gui._cursor = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ),
+            lambda e: self._on_graph(e, alt_title, key, item, dlg_mini, targ),
             item)
         menu.Append(item)
         if append is not None:
@@ -92,34 +93,40 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
-    def _on_dialog_mini(self, event, title, targ):
-        dlg = GUIDialogMini(self._gui, title, targ)
+    def _on_dialog_mini_graph(self, event, title, targ):
+        dlg = GUIDialogMiniGraph(self._gui, title)
+
+    def _on_dialog_mini_systems(self, event, title, targ):
+        dlg = GUIDialogMiniSystems(self._gui, title, targ)
 
     def _on_graph(self, event, title, key, item, dlg_mini, targ):
         sel = self._gui._graph_main._sel
-        if key in sel:
-            sel.remove(key)
-        else:
-            sel.append(key)
+        if key is not None:
+            if key in sel:
+                sel.remove(key)
+            else:
+                sel.append(key)
         #item.IsChecked() == False
         self._gui._refresh(init_tab=False)
-        if dlg_mini:
+        if dlg_mini is not None:
             #self._gui._cursor = item
-            if item.IsChecked():
-                if not hasattr(self._gui, '_dlg_mini') \
-                    or self._gui._dlg_mini == None:
-                    self._on_dialog_mini(event, "System controls", targ)
-                #print('menu on ', self._gui._graph_main._sel)
-                self._gui._dlg_mini._shown = True
-                #self._gui._graph_main._sel.append(self._gui._cursor.key)
-                self._gui._dlg_mini._on_apply(event)
-                self._gui._dlg_mini._cursor_button.SetLabel("Hide cursor")
+            if item.IsChecked() or key is None:
+                if not hasattr(self._gui, '_dlg_mini_'+dlg_mini) \
+                    or getattr(self._gui, '_dlg_mini_'+dlg_mini) == None \
+                    or not getattr(getattr(self._gui, '_dlg_mini_'+dlg_mini), '_shown'):
+                    getattr(self, '_on_dialog_mini_'+dlg_mini)\
+                        (event, title, targ)
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
+                gui_dlg_mini._shown = True
+                gui_dlg_mini._on_apply(event)
+                if dlg_mini == 'systems':
+                    gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
-                self._gui._dlg_mini._shown = False
-                #print('menu off', self._gui._graph_main._sel)
-                #self._gui._graph_main._sel.remove(self._gui._cursor.key)
-                self._gui._dlg_mini._on_cancel(event)
-                self._gui._dlg_mini._cursor_button.SetLabel("Show cursor")
+                gui_dlg_mini._shown = False
+                gui_dlg_mini._on_cancel(event)
+                if dlg_mini == 'systems':
+                    gui_dlg_mini._cursor_button.SetLabel("Show cursor")
+
 
     def _on_open(self, event, path=None, wildcard=None,
                  action='_on_open_session'):
@@ -636,43 +643,45 @@ class GUIMenuView(GUIMenu):
                    "Toggle log y axis", self._on_logy)
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
-        self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
-                         'spec_x_y')
-        self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
-                         'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
-                         'spec_x_conv')
-        self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
-                         'lines_x_y')
-        self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
-                         'spec_x_yfitmask')
-        self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
-                         'spec_nodes_x_y')
-        self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
-                         'spec_x_cont')
-        self._item_graph(self._submenu, start_id+308, 'systs', "Model",
-                         'spec_x_model')
-        self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
-                         'spec_x_yfitmask')
-        self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
-                         'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+311, None, "Spectral format",
-                         'spec_form_x')
-        self._item_graph(self._submenu, start_id+312, 'systs', "System list",
-                         'systs_z_series')
-        self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
-                         'cursor_z_series', dlg_mini=True,
-                         targ=GraphCursorZSeries)
+        self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
+                         dlg_mini='graph', alt_title="Graph elements")
+        #self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
+        #                 'spec_x_y')
+        #self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
+        #                 'spec_x_dy')
+        #self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
+        #                 'spec_x_conv')
+        #self._item_graph(self._submenu, start_id+304, 'lines', "Lines",
+        #                 'lines_x_y')
+        #self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
+        #                 'spec_x_yfitmask')
+        #self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
+        #                 'spec_nodes_x_y')
+        #self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
+        #                 'spec_x_cont')
+        #self._item_graph(self._submenu, start_id+308, 'systs', "Systems",
+        #                 'spec_x_model')
+        #self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
+        #                 'spec_x_yfitmask')
+        #self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
+        #                 'spec_x_deabs')
+        #self._item_graph(self._submenu, start_id+311, None, "Spectral format",
+        #                 'spec_form_x')
+        #self._item_graph(self._submenu, start_id+312, 'systs', "System list",
+        #                 'systs_z_series')
         self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
                          'spec_h2o_reg')
+        self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
+                         'cursor_z_series', dlg_mini='systems',
+                         targ=GraphCursorZSeries, alt_title="System controls")
         self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
                                   self._on_legend, key='legend')
-        self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
+        self._menu.AppendSubMenu(self._submenu, "Toggle graph add-ons")
 
-        self._item_method(self._menu, start_id+401, 'spec',
-                          "Choose graph columns", '_sel_graph_cols', obj=self)
+        #self._item_method(self._menu, start_id+401, 'spec',
+        #                  "Edit graph details", '_sel_graph_cols', obj=self)
 
-        self._norm = self._item(self._menu, start_id+402, 'spec', "Toggle normalization",
+        self._norm = self._item(self._menu, start_id+403, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
 
     def _on_compress(self, event):
