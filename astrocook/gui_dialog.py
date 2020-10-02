@@ -293,12 +293,16 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_apply(self, e=None, refresh=True):
         self._elem = self._ctrl_elem.GetValue()
         self._gui._graph_main._elem = self._elem
+        self._gui._graph_elem_list[self._sel] = self._elem
+        if hasattr(self._gui, '_graph_det'):
+            self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_default(self, e=None, refresh=True):
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
+        self._gui._graph_elem_list[self._sel] = self._elem
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
@@ -310,7 +314,8 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _refresh(self):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
-            self._elem = elem_expand(graph_elem, self._sel)
+            #self._elem = elem_expand(graph_elem, self._sel)
+            self._elem = self._gui._graph_elem_list[self._sel]
         self._ctrl_elem.SetValue(self._elem)
         self._on_apply(refresh=False)
 

@@ -41,6 +41,7 @@ class GUI(object):
         self._menu_z0_id = []
         self._menu_mods_id = []
         self._menu_tab_id = []
+        self._graph_elem_list = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -70,6 +71,10 @@ class GUI(object):
             self._dlg_mini_graph._refresh()
         else:
             self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            try:
+                self._graph_det._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            except:
+                pass
 
         xlim = self._graph_main._graph._ax.get_xlim()
         ylim = self._graph_main._graph._ax.get_ylim()
@@ -248,6 +253,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._gui._refresh(autolim=False)
+        self._gui._graph_elem_list.append(self._gui._graph_main._elem)
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit

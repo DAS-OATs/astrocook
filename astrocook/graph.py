@@ -243,11 +243,24 @@ class Graph(object):
 
     def _seq(self, sess, norm):
 
-        for e in self._gui._graph_main._elem.split('\n'):
+        detail = self._panel != self._gui._graph_main._panel
+        if detail:
+            focus = self._gui._graph_det
+        else:
+            focus = self._gui._graph_main
+
+        if detail: sess.cb.x_convert(zem=self._zem)
+
+        for e in focus._elem.split('\n'):
+        #for e in self._gui._graph_main._elem.split('\n'):
+
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
-                t = getattr(self._gui._sess_list[int(sel)], struct).t
+                sess = self._gui._sess_list[int(sel)]
+                #sess = self._gui._sess_sel
+                xunit = sess.spec.x.unit
+                t = getattr(sess, struct).t
                 x = dc(t[xcol])
                 y = dc(t[ycol])
                 if mcol not in ['None', 'none', None]:
@@ -266,7 +279,6 @@ class Graph(object):
                 getattr(self._ax, mode)(x, y, **kwargs)
             except:
                 logging.error("I can't parse this graph specification: %s." % e)
-
 
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
