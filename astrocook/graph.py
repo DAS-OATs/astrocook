@@ -570,5 +570,11 @@ class GraphCursorZSeries(object):
             self._z = sess._z_sel
         except:
             self._z = 0
+        """
+        if hasattr(sess, '_hwin_sel'):
+            self._hwin = sess._hwin_sel
+        else:
+            self._hwin = 250.0
+        """
         self._x = self._xem*(1+self._z)*au.nm
         self._kwargs = {'label':self._series, 'linestyle': '--'}

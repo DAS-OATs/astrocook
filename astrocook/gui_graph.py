@@ -137,7 +137,7 @@ class GUIGraphDetail(GUIGraphMain):
 
         return xlim, ylim
 
-    def _update(self, series, z, nmax=15):
+    def _update(self, series, z, hwin, nmax=15):
         graph = self._graph
         if len(series) > nmax:
             logging.warning("I'm discarding the last %i transitions, because I "
@@ -204,7 +204,7 @@ class GUIGraphDetail(GUIGraphMain):
             graph._axes[key] = graph._ax
             self._refresh(
                 self._gui._sess_items, text=key,
-                xlim=(-500, 500), ylim=ylim)
+                xlim=(-hwin,hwin), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 

@@ -431,7 +431,7 @@ class GUITableSystList(GUITable):
         row = self._data.t[event.GetRow()]
         z = row['z']
         series = trans_parse(row['series'])
-        self._gui._graph_det._update(series, z)
+        self._gui._graph_det._update(series, z, hwin_def)
         if not hasattr(self._gui, '_dlg_mini_systems') \
             or self._gui._dlg_mini_systems == None:
             GUIDialogMiniSystems(self._gui, "System controls", series=row['series'], z=row['z'])
