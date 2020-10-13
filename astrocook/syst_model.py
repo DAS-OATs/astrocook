@@ -35,21 +35,27 @@ class SystModel(LMComposite):
 
 
     def _fit(self, fit_kws={}):
-        time_start = datetime.datetime.now()
+        vary = np.any([self._pars[p].vary for p in self._pars])
+        if vary:
+            time_start = datetime.datetime.now()
         #self._pars.pretty_print()
-        fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf,
-                                         fit_kws=fit_kws,
-                                         #fit_kws={'method':'lm'},
-                                         method='least_squares')
-                                         #method='emcee')
-        time_end = datetime.datetime.now()
-        self._pars = fit.params
-        #self._pars.pretty_print()
-        self._ys = self.eval(x=self._xs, params=self._pars)
-        self._chi2r = fit.redchi
-        self._aic = fit.aic
-        self._bic = fit.bic
+            fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                             weights=self._wf,
+                                             fit_kws=fit_kws,
+                                             #fit_kws={'method':'lm'},
+                                             method='least_squares')
+                                             #method='emcee')
+            time_end = datetime.datetime.now()
+            self._pars = fit.params
+            #self._pars.pretty_print()
+            self._ys = self.eval(x=self._xs, params=self._pars)
+            self._chi2r = fit.redchi
+            self._aic = fit.aic
+            self._bic = fit.bic
+            return 0
+        else:
+            return 1
+
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
