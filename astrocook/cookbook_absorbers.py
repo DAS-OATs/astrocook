@@ -344,9 +344,12 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
-            mod._fit(fit_kws={'max_nfev': self._max_nfev})
+            frozen = mod._fit(fit_kws={'max_nfev': self._max_nfev})
             #mod._pars.pretty_print()
-            if verbose:
+            if verbose and frozen:
+                logging.info("I've not fitted 1 model at redshift %2.4f "
+                             "because all the parameters are frozen." % mod._z0)
+            elif verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
         else:
