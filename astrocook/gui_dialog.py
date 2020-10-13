@@ -1,6 +1,6 @@
 from .functions import elem_expand, trans_parse
 from .message import *
-from .vars import graph_elem
+from .vars import graph_elem, hwin_def
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -325,24 +325,30 @@ class GUIDialogMiniSystems(GUIDialogMini):
                  title,
                  targ=None,
                  series='CIV',
-                 z=2.0):
+                 z=2.0,
+                 hwin=hwin_def):
         self._gui = gui
         self._gui._dlg_mini_systems = self
         self._targ = targ
         self._series = series
         self._z = z
+        self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
         self._shown = False
 
     def _box_ctrl(self):
-        fgs = wx.FlexGridSizer(2, 2, 4, 15)
+        fgs = wx.FlexGridSizer(3, 2, 4, 15)
         stat_series = wx.StaticText(self._panel, -1, label="Series:")
         stat_z = wx.StaticText(self._panel, -1, label="Redshift:")
+        stat_hwin = wx.StaticText(self._panel, -1, label="Half window (km/s):")
         self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(150, -1))
         self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % self._z, size=(150, -1))
+        self._ctrl_hwin = wx.TextCtrl(self._panel, -1, value="%3.1f" % self._hwin, size=(150, -1))
         fgs.AddMany([(stat_series, 1, wx.EXPAND), (self._ctrl_series, 1, wx.EXPAND),
-                     (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND)])
+                     (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND),
+                     (stat_hwin, 1, wx.EXPAND), (self._ctrl_hwin, 1, wx.EXPAND)])
         self._gui._sess_sel._series_sel = self._series
+        self._gui._sess_sel._hwin_sel = self._hwin
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
@@ -375,14 +381,16 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _on_apply(self, e):
         series = self._ctrl_series.GetValue()
         z = self._ctrl_z.GetValue()
+        hwin = self._ctrl_hwin.GetValue()
         self._gui._sess_sel._series_sel = series
         self._gui._sess_sel._z_sel = float(z)
+        self._gui._sess_sel._hwin_sel = float(hwin)
         if self._targ != None:
             self._targ(self._gui._sess_sel)
         if hasattr(self._gui, '_graph_det'):
             series = trans_parse(self._gui._sess_sel._series_sel)
             self._gui._graph_det._graph._fig.clear()
-            self._gui._graph_det._update(series, float(z))
+            self._gui._graph_det._update(series, float(z), float(hwin))
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 
@@ -393,6 +401,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
                 del self._gui._graph_det._graph._cursor
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
+        if hasattr(self._gui._sess_sel, '_hwin_sel'):
+            del self._gui._sess_sel._hwin_sel
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 

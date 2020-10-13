@@ -22,6 +22,8 @@ b_def = 10
 resol_def = None
 max_nfev_def = 100
 
+hwin_def = 250.0
+
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
