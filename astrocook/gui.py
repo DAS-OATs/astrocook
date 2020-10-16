@@ -217,6 +217,7 @@ class GUIPanelSession(wx.Frame):
         # Create table
         panel = wx.Panel(self)
         self._tab = GUIControlList(panel, 0)
+        """
         self._tab.InsertColumn(0, "name", width=200)
         self._tab.InsertColumn(1, "object", width=150)
         self._tab.InsertColumn(2, "active range", width=200)
@@ -224,6 +225,12 @@ class GUIPanelSession(wx.Frame):
         self._tab.InsertColumn(4, "# nodes", width=100)
         self._tab.InsertColumn(5, "# lines", width=100)
         self._tab.InsertColumn(6, "# systems", width=100)
+        """
+        self._tab.InsertColumn(0, "name", width=350)
+        self._tab.InsertColumn(1, "active range", width=200)
+        self._tab.InsertColumn(2, "# rows", width=100)
+        self._tab.InsertColumn(3, "# lines", width=100)
+        self._tab.InsertColumn(4, "# systems", width=100)
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
@@ -321,6 +328,7 @@ class GUIPanelSession(wx.Frame):
 
     def _refresh(self):
         for i, s in zip(self._items, self._gui._sess_items):
+            """
             obj = s.spec.meta['object']
             self._tab.SetItem(i, 1, obj)
             x = s.spec._safe(s.spec.x)
@@ -342,7 +350,21 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
-
+            """
+            x = s.spec._safe(s.spec.x)
+            self._tab.SetItem(i, 1, "[%3.2f, %3.2f] %s"
+                              % (x[0].value, x[-1].value, x.unit))
+            self._tab.SetItem(i, 2, str(len(x)))
+            try:
+                x = s.lines._safe(s.lines.x)
+                self._tab.SetItem(i, 3, str(len(x)))
+            except:
+                pass
+            try:
+                x = s.systs.z
+                self._tab.SetItem(i, 4, str(len(x)))
+            except:
+                pass
 
     def _select(self, _sel=0):
 
