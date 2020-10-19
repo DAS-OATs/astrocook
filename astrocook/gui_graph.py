@@ -6,9 +6,10 @@ from .vars import *
 from collections import OrderedDict
 import logging
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-    NavigationToolbar2WxAgg
+from matplotlib.backend_bases import Event
+#from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
+#    NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
@@ -47,10 +48,10 @@ class GUIGraphMain(wx.Frame):
         self._init(**kwargs)
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.40))
 
+
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
                                            size=(self._size_x, self._size_y))
-
 
         self._panel = wx.Panel(self)
         self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
@@ -64,12 +65,14 @@ class GUIGraphMain(wx.Frame):
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
+        #self._graph._toolbar.wx_ids['Home'] = self._home
 
         #self._gui._statusbar = self.CreateStatusBar()
         move_id = self._graph._canvas.mpl_connect('motion_notify_event',
                                                   self._graph._on_move)
         click_id = self._graph._canvas.mpl_connect('button_release_event',
                                                    self._graph._on_click)
+
 
     def _refresh(self, sess, **kwargs):
         if self._closed:

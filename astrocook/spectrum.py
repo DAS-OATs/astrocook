@@ -389,4 +389,8 @@ class Spectrum(Frame):
                                   self.x[w].value,
                                   [self.x[w][0].value, self.x[w][-1].value],
                                   [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+            self._t['dy'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
         return 0

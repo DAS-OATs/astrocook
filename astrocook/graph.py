@@ -27,6 +27,7 @@ class Graph(object):
         self._fig = Figure()
         self._cursor_lines = []
         self._clicks = []
+        self._zoom = False
 
         if init_canvas:
             self._init_canvas()
@@ -49,6 +50,11 @@ class Graph(object):
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
         self._toolbar.Realize()
+        if self._panel is self._gui._graph_main._panel:
+            focus = self._gui._graph_main
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                focus = self._gui._graph_det
         #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _check_units(self, sess, axis='x'):
@@ -109,6 +115,10 @@ class Graph(object):
             focus.PopupMenu(GUITablePopup(self._gui, focus,
                                           event, 'Add line', 'add_line'))
         """
+
+    def _on_zoom(self, event):
+        self._zoom = True
+
 
     def _on_move(self, event):
         if not event.inaxes: return
@@ -249,6 +259,12 @@ class Graph(object):
         self._canvas.draw()
         #self._canvas.flush_events()
         #print(dt.datetime.now()-start)
+
+        self._ax.callbacks.connect('xlim_changed', self._on_zoom)
+        self._ax.callbacks.connect('ylim_changed', self._on_zoom)
+        dl = self._ax.__dict__['dataLim']
+        #print(dl)
+        self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
 
     def _seq(self, sess, norm):
 
