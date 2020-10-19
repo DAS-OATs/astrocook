@@ -356,6 +356,11 @@ class Graph(object):
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=1.5,
                                 **gs._kwargs))
+                        if focus==self._gui._graph_main:
+                            self._ax.axvline(
+                                x.to(self._xunit).value,
+                                color='C3', alpha=0.3, linewidth=10)
+
                     self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(self._ax, gs._type)
