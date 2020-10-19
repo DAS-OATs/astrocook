@@ -81,8 +81,12 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        if autolim and goodlim and _xlim != None:
-            self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
+        #print(autolim, goodlim, _xlim)
+        if autolim and goodlim:
+            if _xlim != None:
+                self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
+            else:
+                self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
             self._graph_main._refresh(self._sess_items)
         if hasattr(self, '_graph_det'):
