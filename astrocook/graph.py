@@ -82,8 +82,14 @@ class Graph(object):
                 attr.append('spec_zap')
             if hasattr(self._gui._sess_sel, 'nodes') \
                 and focus == self._gui._graph_main:
+                nodes = self._gui._sess_sel.nodes
+                dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
+                dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
                 title.append('Add node')
                 attr.append('node_add')
+                if dist_x < 0.1*dist_mean:
+                    title.append('Remove node')
+                    attr.append('node_remove')
             if 'cont' in self._gui._sess_sel.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')

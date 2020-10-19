@@ -127,12 +127,17 @@ class Spectrum(Frame):
 
 
     def _node_add(self, nodes, x, y):
-        sel = self.t[np.abs(self.x.to(self._xunit).value-x).argmin()]
+        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
         row = []
         for c in nodes.t.colnames:
-            row.append(y) if c == 'y' else row.append(sel[c])
+            row.append(y) if c == 'y' else row.append(self.t[sel][c])
         nodes.t.add_row(row)
         nodes.t.sort('x')
+
+
+    def _node_remove(self, nodes, x):
+        sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
+        nodes.t.remove_rows(sel)
 
 
     def _nodes_clean(self, nodes, kappa=5.0):

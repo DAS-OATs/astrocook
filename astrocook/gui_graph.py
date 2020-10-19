@@ -85,7 +85,17 @@ class GUIGraphMain(wx.Frame):
         sess = self._gui._sess_sel
         x, y = self._graph._clicks[-1][0], self._graph._clicks[-1][1]
         sess.spec._node_add(sess.nodes, x, y)
+        sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
+
+
+    def _on_node_remove(self, event):
+        sess = self._gui._sess_sel
+        x, y = self._graph._clicks[-1][0], self._graph._clicks[-1][1]
+        sess.spec._node_remove(sess.nodes, x)
+        sess.spec._nodes_interp(sess.lines, sess.nodes)
+        self._gui._refresh()
+
 
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
@@ -95,16 +105,19 @@ class GUIGraphMain(wx.Frame):
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
+
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         #for s in sess._series_sel.split(';'):
         sess.cb.syst_new(series=sess._series_sel, z=self._graph._cursor._z, refit_n=0)
         self._gui._refresh(init_cursor=True)
 
+
     def _on_close(self, event):
         self._closed = True
         self.Destroy()
         del self._gui._graph_det
+
 
 class GUIGraphDetail(GUIGraphMain):
 
