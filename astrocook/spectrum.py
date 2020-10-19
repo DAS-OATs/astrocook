@@ -126,6 +126,15 @@ class Spectrum(Frame):
         return 0
 
 
+    def _node_add(self, nodes, x, y):
+        sel = self.t[np.abs(self.x.to(self._xunit).value-x).argmin()]
+        row = []
+        for c in nodes.t.colnames:
+            row.append(y) if c == 'y' else row.append(sel[c])
+        nodes.t.add_row(row)
+        nodes.t.sort('x')
+
+
     def _nodes_clean(self, nodes, kappa=5.0):
         """
         y_sel = [True]

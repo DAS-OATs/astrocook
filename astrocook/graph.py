@@ -77,15 +77,18 @@ class Graph(object):
         if event.button == 1:
             self._clicks = [(x,y)]
         if event.button == 3:
-            if len(self._clicks) == 1:
+            if len(self._clicks) > 0 and focus == self._gui._graph_main:
                 title.append('Zap feature')
                 attr.append('spec_zap')
-                self._clicks.append((x,y))
+            if hasattr(self._gui._sess_sel, 'nodes') \
+                and focus == self._gui._graph_main:
+                title.append('Add node')
+                attr.append('node_add')
             if 'cont' in self._gui._sess_sel.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
-
+            self._clicks.append((x,y))
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
