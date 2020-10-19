@@ -267,18 +267,21 @@ class Graph(object):
                     x[t[mcol]==0] = np.nan
                 if norm and 'cont' in t.colnames:
                     y = y/t['cont']
-                kwargs = {}
-                if mode in ['plot', 'step']:
-                    kwargs['linestyle'] = style
-                    kwargs['linewidth'] = width
-                if mode == 'scatter':
-                    kwargs['marker'] = style
-                    kwargs['s'] = (5*float(width))**2
-                kwargs['color'] = color
-                kwargs['alpha'] = float(alpha)
-                getattr(self._ax, mode)(x, y, **kwargs)
+                try:
+                    kwargs = {}
+                    if mode in ['plot', 'step']:
+                        kwargs['linestyle'] = style
+                        kwargs['linewidth'] = width
+                    if mode == 'scatter':
+                        kwargs['marker'] = style
+                        kwargs['s'] = (5*float(width))**2
+                    kwargs['color'] = color
+                    kwargs['alpha'] = float(alpha)
+                    getattr(self._ax, mode)(x, y, **kwargs)
+                except:
+                    logging.error("I can't parse this graph specification: %s." % e)
             except:
-                logging.error("I can't parse this graph specification: %s." % e)
+                pass
 
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
