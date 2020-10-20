@@ -27,6 +27,7 @@ class Graph(object):
         self._fig = Figure()
         self._cursor_lines = []
         self._clicks = []
+        self._stats = False
 
         if init_canvas:
             self._init_canvas()
@@ -77,6 +78,11 @@ class Graph(object):
         if event.button == 1:
             self._clicks = [(x,y)]
         if event.button == 3:
+            title.append('Show stats')
+            attr.append('stats_show')
+            if self._stats:
+                title.append('Hide stats')
+                attr.append('stats_hide')
             if len(self._clicks) == 1:
                 title.append('Zap feature')
                 attr.append('spec_zap')
@@ -288,6 +294,10 @@ class Graph(object):
                     logging.error("I can't parse this graph specification: %s." % e)
             except:
                 pass
+
+        if hasattr(sess.spec, '_stats_text_red'):
+            self._ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
+                          transform=self._ax.transAxes)
 
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')

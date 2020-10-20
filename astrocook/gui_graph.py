@@ -89,6 +89,25 @@ class GUIGraphMain(wx.Frame):
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
+    def _on_stats_show(self, event):
+        sess = self._gui._sess_sel
+        try:
+            x = [self._graph._clicks[-2][0], self._graph._clicks[-1][0]]
+        except:
+            x = (0, np.inf)
+        xmin = np.min(x)
+        xmax = np.max(x)
+        sess.spec._stats_print(xmin, xmax)
+        self._stats = True
+        self._graph._stats = True
+        self._gui._refresh()
+
+    def _on_stats_hide(self, event):
+        sess = self._gui._sess_sel
+        del sess.spec._stats_text_red
+        self._graph._stats = False
+        self._gui._refresh()
+
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         #for s in sess._series_sel.split(';'):
