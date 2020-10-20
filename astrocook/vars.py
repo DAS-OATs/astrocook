@@ -29,7 +29,7 @@ seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
              #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
-             'systs_z_series',
+             #'systs_z_series',
              'spec_h2o_reg'
              ]
 graph_cols_sel = ''
@@ -39,7 +39,8 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "lines,x,y,None,scatter,+,1.5,C2,1\n"\
            "spec,x,cont,None,plot,-,1,C8,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\
-           "spec,x,model,fit_mask,plot,-,3,C9,0.5"
+           "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
+           "systs,z,None,None,axvline,--,0.5,C2,1.0"
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
