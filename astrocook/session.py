@@ -13,7 +13,7 @@ from .vars import *
 #from astropy import constants as ac
 from astropy import units as au
 from astropy.io import ascii, fits
-from astropy.table import Table
+from astropy.table import Column, Table
 from collections import OrderedDict
 from copy import deepcopy as dc
 import logging
@@ -279,13 +279,12 @@ class Session(object):
                         t['xmax'] = t['xmax'].to(au.nm)
                     del_list = []
                     for i, k in enumerate(obj._meta):
-                        if k in ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT',
-                                 'TFIELDS'] \
-                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']:
+                        if k in forbidden_keywords or k[:5] in forbidden_keywords:
                             del_list.append(i)
                     for i in del_list[::-1]:
                         del obj._meta[i]
-                    t.meta = obj._meta
+                    t.meta = dc(obj._meta)
+                    #print(t.meta.comments)
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
@@ -297,7 +296,20 @@ class Session(object):
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     #print(t)
-                    t.write(name, format='fits', overwrite=True)
+                    #t.write(name, format='fits', overwrite=True)
+                    hdr = dc(t.meta)
+                    for c in t.meta:
+                        hdr.comments[c] = t.meta.comments[c]
+                    phdu = fits.PrimaryHDU(header=hdr)
+                    #print([Column(t[c]) for c in t.colnames])
+                    #cols = fits.ColDefs([Column(c) for c in t.columns])
+                    #cols = []
+                    #for c in colnames:
+                    #    cols.append(Columns)
+                    thdu = fits.BinTableHDU(data=t, header=hdr)
+                    hdul = fits.HDUList([phdu, thdu])
+                    hdul.writeto(name, overwrite=True)
+
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')

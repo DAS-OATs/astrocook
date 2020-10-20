@@ -96,6 +96,9 @@ class GUIMenu(object):
     def _on_dialog_mini_graph(self, event, title, targ):
         dlg = GUIDialogMiniGraph(self._gui, title)
 
+    def _on_dialog_mini_meta(self, event, title, targ):
+        dlg = GUIDialogMiniMeta(self._gui, title)
+
     def _on_dialog_mini_systems(self, event, title, targ):
         dlg = GUIDialogMiniSystems(self._gui, title, targ)
 
@@ -617,7 +620,7 @@ class GUIMenuView(GUIMenu):
         self._start_id = start_id
 
         # Add items to View menu here
-        tab_id = [start_id+1, start_id+2, start_id+3]
+        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4]
         self._gui._menu_tab_id = tab_id
         self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
                    lambda e: self._on_tab(e, 'spec'), key='spec')
@@ -625,6 +628,8 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_tab(e, 'lines'), key='lines')
         self._item(self._menu, tab_id[2], 'systs', "System table",
                    lambda e: self._on_tab(e, 'systs'), key='systs')
+        self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
+                         dlg_mini='meta', alt_title="Metadata")
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',

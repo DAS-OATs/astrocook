@@ -182,6 +182,14 @@ def log2_range(start, end, step):
     return np.power(2, log2)
 
 
+def meta_parse(meta):
+    s = ""
+    for m in meta:
+        if m not in forbidden_keywords and m[:5] not in forbidden_keywords:
+            s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
+    return s[:-2]
+
+
 def psf_gauss_wrong(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF

@@ -1,4 +1,4 @@
-from .functions import elem_expand, trans_parse
+from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
 from .vars import graph_elem, hwin_def
 from collections import OrderedDict
@@ -318,6 +318,86 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._elem = self._gui._graph_elem_list[self._sel]
         self._ctrl_elem.SetValue(self._elem)
         self._on_apply(refresh=False)
+
+
+class GUIDialogMiniMeta(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._gui._dlg_mini_meta = self
+        self._sel = dc(self._gui._panel_sess._sel)
+        self._meta = meta_parse(self._gui._sess_sel.spec._meta)
+        self._meta_backup = meta_parse(self._gui._sess_sel.spec._meta_backup)
+        super(GUIDialogMiniMeta, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        """
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="Each line define a graph element as a set of\n"
+                          "comma-separated values. Values are: session,\n"
+                          "table, x column, y column, mask column (if any),\n"
+                          "type of graph (plot, step, scatter), line style\n"
+                          "or marker symbol, line width or marker size,\n"
+                          "color, alpha transparency.")
+        """
+        self._ctrl_meta = wx.TextCtrl(self._panel, -1, value=self._meta,
+                                      size=(400, 300), style = wx.TE_MULTILINE)
+        #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
+        fgs.AddMany([(self._ctrl_meta, 1, wx.EXPAND)])#, (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        #apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label="Back to original")
+        default_button.Bind(wx.EVT_BUTTON, self._on_original)
+        buttons.Add(default_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None):
+        self._meta = self._ctrl_meta.GetValue()
+        for m in self._meta.split('\n'):
+            k = m.split(': ')[0]
+            v = m.split(': ')[1].split(' / ')
+            self._gui._sess_sel.spec.meta[k] = v[0]
+            self._gui._sess_sel.spec.meta.comments[k] = v[1]
+        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_original(self, e=None):
+        self._meta = meta_parse(self._meta_backup)
+        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+            #self._elem = elem_expand(graph_elem, self._sel)
+            self._elem = self._gui._graph_elem_list[self._sel]
+        self._ctrl_elem.SetValue(self._elem)
+        self._on_apply(refresh=False)
+
+
 
 class GUIDialogMiniSystems(GUIDialogMini):
     def __init__(self,
