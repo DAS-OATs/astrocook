@@ -84,12 +84,15 @@ class Graph(object):
             sess._clicks.append((x,y))
 
         if event.button == 3:
-            title.append('Show stats')
-            attr.append('stats_show')
-            if sess._stats:
+            if focus == self._gui._graph_main:
+                title.append('Show stats')
+                attr.append('stats_show')
+            if sess._stats and focus == self._gui._graph_main:
                 title.append('Hide stats')
                 attr.append('stats_hide')
-            if len(sess._clicks) > 1:
+            if len(sess._clicks) > 1 and focus == self._gui._graph_main:
+                title.append('Extract region')
+                attr.append('region_extract')
                 title.append('Zap feature')
                 attr.append('spec_zap')
                 self._reg_shade()

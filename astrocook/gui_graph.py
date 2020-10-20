@@ -81,6 +81,16 @@ class GUIGraphMain(wx.Frame):
     #def _on_line_new(self, event):
     #    print(self._click_xy)
 
+    def _on_region_extract(self, event):
+        sess = self._gui._sess_sel
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
+        xmin = np.min(x)
+        xmax = np.max(x)
+        reg = sess.cb.region_extract(xmin, xmax)
+        #self._gui._refresh()
+        self._gui._panel_sess._on_add(reg, open=False)
+
+
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
         x = [sess._clicks[0][0], sess._clicks[1][0]]
