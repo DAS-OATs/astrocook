@@ -38,7 +38,8 @@ class Frame():
         self._t = t
         self._xunit = xunit
         self._yunit = yunit
-        self._meta = meta
+        self._meta = dc(meta)
+        self._meta_backup = dc(meta)
         self._dtype = dtype
         self._rfz = 0.0
 

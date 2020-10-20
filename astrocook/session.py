@@ -279,13 +279,11 @@ class Session(object):
                         t['xmax'] = t['xmax'].to(au.nm)
                     del_list = []
                     for i, k in enumerate(obj._meta):
-                        if k in ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT',
-                                 'TFIELDS'] \
-                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']:
+                        if k in forbidden_keywords or k[:5] in forbidden_keywords:
                             del_list.append(i)
                     for i in del_list[::-1]:
                         del obj._meta[i]
-                    t.meta = obj._meta
+                    t.meta = dc(obj._meta)
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s

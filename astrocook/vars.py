@@ -76,6 +76,8 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
+forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
+                      'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
 x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
 y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
