@@ -384,7 +384,7 @@ class Spectrum(Frame):
         else:
             temp = (self._stats['min_x'].value, self._stats['max_x'].value,
                     self._stats['min_x'].unit)
-            region = ("REGION %3.4f-%3.4f %s" % temp,)
+            region = ("REGION: %3.4f-%3.4f %s" % temp,)
         red = region+self._stats_tup[10:16]
         self._stats_text_red = "%s\n" \
                                "Mean y: %3.4e %s\n" \

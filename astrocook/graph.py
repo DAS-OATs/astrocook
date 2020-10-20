@@ -26,8 +26,9 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._cursor_lines = []
-        self._clicks = []
-        self._stats = False
+        #self._clicks = []
+        #self._stats = False
+        #self._shade = False
 
         if init_canvas:
             self._init_canvas()
@@ -75,22 +76,51 @@ class Graph(object):
         focus._click_xy = (x,y)
         title = []
         attr = []
+        sess = self._gui._sess_sel
+
         if event.button == 1:
-            self._clicks = [(x,y)]
+            sess._clicks = [(x,y)]
+        if event.button == 3:
+            sess._clicks.append((x,y))
+
         if event.button == 3:
             title.append('Show stats')
             attr.append('stats_show')
-            if self._stats:
+            if sess._stats:
                 title.append('Hide stats')
                 attr.append('stats_hide')
-            if len(self._clicks) == 1:
+            if len(sess._clicks) > 1:
                 title.append('Zap feature')
                 attr.append('spec_zap')
-                self._clicks.append((x,y))
-            if 'cont' in self._gui._sess_sel.spec._t.colnames \
+                self._reg_shade()
+            if 'cont' in sess.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
+
+
+        """
+        if event.button == 1 \
+            or (event.button == 3 and not hasattr(sess, '_clicks')):
+            sess._clicks = [(x,y)]
+        elif not self._gui._sess_sel._shade and hasattr(sess, '_clicks'):
+            del sess._clicks
+        if event.button == 3 and hasattr(sess, '_clicks'):
+            title.append('Show stats')
+            attr.append('stats_show')
+            if sess._stats:
+                title.append('Hide stats')
+                attr.append('stats_hide')
+            if len(sess._clicks) == 1:
+                title.append('Zap feature')
+                attr.append('spec_zap')
+                sess._clicks.append((x,y))
+                self._reg_shade()
+            if 'cont' in sess.spec._t.colnames \
+                and 'cursor_z_series' in self._sel:
+                title.append('New system')
+                attr.append('syst_new')
+        """
 
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event,
@@ -242,10 +272,34 @@ class Graph(object):
         if legend:
             self._ax.legend()
 
+        for s in sess:
+            if s._shade:
+                x = self._gui._sess_sel.spec.x.value
+                trans = transforms.blended_transform_factory(
+                            self._ax.transData, self._ax.transAxes)
+                self._ax.fill_between(x, 0, 1, where=s._shade_where,
+                                      transform=trans, color='C1', alpha=0.2)
+
 
         self._canvas.draw()
         #self._canvas.flush_events()
         #print(dt.datetime.now()-start)
+
+    def _reg_shade(self):
+        sess = self._gui._sess_sel
+        x = sess.spec.x.value
+        sess._shade_where = np.logical_and(x>sess._clicks[0][0],
+                                           x<sess._clicks[1][0])
+        """
+        trans = transforms.blended_transform_factory(
+                    self._ax.transData, self._ax.transAxes)
+        self._ax.fill_between(x, 0, 1, where=self._shade_where,
+                              transform=trans,
+                              color='C1', alpha=0.2)
+        """
+        sess._shade = True
+        self._refresh(sess)
+
 
     def _seq(self, sess, norm):
 
@@ -397,7 +451,6 @@ class Graph(object):
                     y = y/sess.spec.t['cont']
                 self._ax.plot(sess.spec.x, y)
         """
-
 
 
 class GraphLineListXY(object):

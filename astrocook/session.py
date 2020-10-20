@@ -52,6 +52,9 @@ class Session(object):
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
         self._open_twin = twin
+        self._clicks = []
+        self._stats = False
+        self._shade = False
 
 
     def _append(self, frame, append=True):
