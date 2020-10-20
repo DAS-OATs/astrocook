@@ -281,7 +281,7 @@ class Session(object):
                     for i, k in enumerate(obj._meta):
                         if k in ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT',
                                  'TFIELDS'] \
-                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT']:
+                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']:
                             del_list.append(i)
                     for i in del_list[::-1]:
                         del obj._meta[i]
