@@ -267,6 +267,9 @@ class Graph(object):
                     x[t[mcol]==0] = np.nan
                 if norm and 'cont' in t.colnames:
                     y = y/t['cont']
+                if 'z' in t.colnames:
+                    xem = np.array([xem_d[t].value for t in trans_parse(sess._series_sel)])
+                    x = x*(1+xem)*au.nm
                 try:
                     kwargs = {}
                     if mode in ['plot', 'step']:
@@ -277,7 +280,10 @@ class Graph(object):
                         kwargs['s'] = (5*float(width))**2
                     kwargs['color'] = color
                     kwargs['alpha'] = float(alpha)
-                    getattr(self._ax, mode)(x, y, **kwargs)
+                    if mode == 'axvline':
+                        getattr(self._ax, mode)(x, **kwargs)
+                    else:
+                        getattr(self._ax, mode)(x, y, **kwargs)
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
             except:
