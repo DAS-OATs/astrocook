@@ -1,103 +1,89 @@
+from .functions import elem_expand, meta_parse, trans_parse
+from .message import *
+from .vars import graph_elem, hwin_def
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
 import numpy as np
+import datetime as dt
 import wx
 
 class GUIDialog(wx.Dialog):
 
     def __init__(self,
                  gui,
-                 title):
+                 title,
+                 attr,
+                 obj=None):
         self._gui = gui
         self._gui._dlg = self
-
         super(GUIDialog, self).__init__(parent=None, title=title)
-
-class GUIDialogMethod(wx.Dialog):
-
-    def __init__(self,
-                 gui,
-                 title,
-                 attr):
-
-        self._gui = gui
-        self._gui._dlg_method = self
-        super(GUIDialogMethod, self).__init__(parent=None, title=title)
         self._attr = np.array(attr, ndmin=1)
+        self._obj = obj
         self._methods = []
         self._params = []
         self._brief = []
+        self._details = []
         self._doc = []
+        self._ctrl = []
 
-        for a in self._attr:
-            obj = self._gui._sess_sel
-            method = getattr(obj, a)
+        for i, a in enumerate(self._attr):
+            self._sess_sel =  self._gui._sess_sel
+            self._cb =  self._gui._sess_sel.cb
+            if self._obj == None:
+                if hasattr(self._cb, a):
+                    self._obj = self._cb
+                else:
+                    self._obj = self._sess_sel
+            method = getattr(self._obj, a)
             self._methods.append(method)
             self._get_params(method)
+            self._get_last(method)
             self._get_doc(method)
 
-        panel = wx.Panel(self)
-        box = wx.BoxSizer(wx.VERTICAL)
-        core = wx.BoxSizer(wx.VERTICAL)
+        self._panel = wx.Panel(self)
+        self._bottom = wx.BoxSizer(wx.VERTICAL)
+        self._core = wx.BoxSizer(wx.VERTICAL)
 
-        # Description
-        sb = wx.StaticBox(panel, label="Description")
-        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        st = wx.StaticText(sb, 1, label='\n'.join(self._brief))
-        st.Wrap(400)
-        sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
-        core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(core)
-
-        # Parameters
-        sb = wx.StaticBox(panel, label="Parameters")
-        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        len_params = np.sum([len(i) for i in self._params])
-        fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
-        fgs_add = []
-        self._ctrl = []
-        for p_l, d_l in zip(self._params, self._doc):
-            ctrl_l = []
-            for p, d in zip(p_l, d_l):
-                stat = wx.StaticText(panel, -1, label=d+':')
-                ctrl = wx.TextCtrl(panel, -1, value=str(p_l[p]))
-                fgs_add.append((stat, 1, wx.EXPAND))
-                fgs_add.append((ctrl, 1, wx.EXPAND))
-                ctrl_l.append(ctrl)
-            self._ctrl.append(ctrl_l)
-        if np.size(self._ctrl) > 0:
-            fgs.AddMany(fgs_add)
-            sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
-            core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
-        panel.SetSizer(core)
-
-        # Buttons
+    def _box_buttons(self, cancel_run=True):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
-        cancel_button = wx.Button(self, label='Cancel')
-        cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
-        run_button = wx.Button(self, label='Run')
-        run_button.Bind(wx.EVT_BUTTON, self._on_run)
-        run_button.SetDefault()
-        buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
-        buttons.Add(run_button, 0)
+        if cancel_run:
+            cancel_button = wx.Button(self, label='Cancel')
+            cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
+            run_button = wx.Button(self, label='Run')
+            run_button.Bind(wx.EVT_BUTTON, self._on_run)
+            run_button.SetDefault()
+            buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+            buttons.Add(run_button, 0)
+        else:
+            ok_button = wx.Button(self, label='OK')
+            ok_button.Bind(wx.EVT_BUTTON, self._on_ok)
+            ok_button.SetDefault()
+            buttons.Add(ok_button, 0, border=5)
 
-        box.Add(panel, 0, wx.EXPAND|wx.ALL, border=10)
-        box.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
-        box.SetSizeHints(self)
-
-        self.SetSizer(box)
-        self.Centre()
-        self.Show()
+        self._bottom.SetSizeHints(self)
 
     def _get_doc(self, method):
         full = inspect.getdoc(method)
         split = full.split('@')
         self._brief.append([s[6:-1] for s in split \
                            if s[0:5]=='brief'][0].replace('\n', ' '))
+        self._details.append([s[8:-1] for s in split \
+                              if s[0:7]=='details'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
+
+
+    def _get_last(self, method):
+        if self._params_last is not None:
+            for pls in self._params_last:
+                for pl in pls:
+                    for p in self._params[0]:
+                        if p == pl:
+                            self._params[0][p] = pls[pl]
 
     def _get_params(self, method):
         keys = inspect.getargspec(method)[0][1:]
@@ -111,19 +97,397 @@ class GUIDialogMethod(wx.Dialog):
     def _on_cancel(self, e):
         self.Close()
 
-    def _on_run(self, e):
-        for a, p_l, c_l in zip(self._attr, self._params, self._ctrl):
-            obj = self._gui._sess_sel
-            m = getattr(obj, a)
+    def _on_ok(self, e):
+        self._update_params()
+        for pps in self._params_parent:
+            for pp in pps:
+                for p in self._params[0]:
+                    if p == pp:
+                        pps[pp] = self._params[0][p]
+        self.Close()
 
-            for p, c in zip(p_l, c_l):
-                pmod = c.GetValue()
-                p_l[p] = pmod
+    def _on_run(self, e):
+        self._update_params()
+        for a, p_l in zip(self._attr, self._params):
+            m = getattr(self._obj, a)
+            logging.info("I'm launching %s..." % a)
+            start = dt.datetime.now()
             out = m(**p_l)
+            end = dt.datetime.now()
+            logging.info("I completed %s in %3.3f seconds!" \
+                         % (a, (end-start).total_seconds()))
             if out is not None:
                 if out is 0:
-                    self._gui._panel_sess._refresh()
-                    self._gui._graph_main._refresh(self._gui._sess_items)
+                    self._gui._refresh()
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
+
+    def _update_params(self):
+        for p_l, c_l in zip(self._params, self._ctrl):
+            for p, c in zip(p_l, c_l):
+                pmod = c.GetValue()
+                p_l[p] = pmod
+
+
+class GUIDialogMethod(GUIDialog):
+
+    def __init__(self,
+                 gui,
+                 title,
+                 attr,
+                 obj=None,
+                 cancel_run=True,
+                 params_last=None,
+                 params_parent=None):
+
+        self._params_last = params_last
+        self._cancel_run = cancel_run
+        self._params_parent = params_parent
+        super(GUIDialogMethod, self).__init__(gui, title, attr, obj)
+        self._box_descr()
+        self._box_params()
+        self._box_buttons(self._cancel_run)
+        self.SetSizer(self._bottom)
+        self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.Show()
+
+    def _box_descr(self):
+
+        # Description
+        sb = wx.StaticBox(self._panel, label="Description")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        st = wx.StaticText(sb, 1, label='\n'.join(self._details))
+        st.Wrap(400)
+        sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
+        self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
+
+    def _box_params(self):
+        # Parameters
+        sb = wx.StaticBox(self._panel, label="Parameters")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        len_params = np.sum([len(i) for i in self._params])
+        fgs = wx.FlexGridSizer(len_params, 2, 4, 15)
+        fgs_add = []
+        for p_l, d_l in zip(self._params, self._doc):
+            ctrl_l = []
+            for p, d in zip(p_l, d_l):
+                stat = wx.StaticText(self._panel, -1, label=d+':')
+                ctrl = wx.TextCtrl(self._panel, -1, value=str(p_l[p]))
+                fgs_add.append((stat, 1, wx.EXPAND))
+                fgs_add.append((ctrl, 1, wx.EXPAND))
+                ctrl_l.append(ctrl)
+            self._ctrl.append(ctrl_l)
+        if np.size(self._ctrl) > 0:
+            fgs.AddMany(fgs_add)
+            sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
+            self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
+
+
+class GUIDialogMethods(GUIDialog):
+
+    def __init__(self,
+                 gui,
+                 title,
+                 attr,
+                 obj=None,
+                 params_last=None):
+
+        self._params_last = params_last
+        super(GUIDialogMethods, self).__init__(gui, title, attr, obj)
+        self._box_methods()#panel, core)
+        self._box_buttons()
+        self.SetSizer(self._bottom)
+        self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.Show()
+
+    def _box_methods(self):
+        sb = wx.StaticBox(self._panel, label="Methods")
+        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        bbs = wx.BoxSizer(wx.VERTICAL)
+        for a_l, b_l in zip(self._attr, self._brief):
+            button = wx.Button(self._panel, label=b_l)
+            button.Bind(wx.EVT_BUTTON, lambda e, a=[a_l], b=b_l: \
+                        self._on_method(e, a, b))
+            bbs.Add(button, 0, wx.BOTTOM|wx.EXPAND, border=5)
+        sbs.Add(bbs, flag=wx.LEFT|wx.RIGHT|wx.TOP, border=5)
+        self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._panel.SetSizer(self._core)
+
+    def _on_method(self, e, attr, brief):
+        GUIDialogMethod(self._gui, brief, attr, cancel_run=False,
+                        params_last=self._params_last, params_parent=self._params)
+
+class GUIDialogMini(wx.Dialog):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        #self._gui._dlg_mini = self
+        #self._targ = targ
+        #self._series = series
+        #self._z = z
+        super(GUIDialogMini, self).__init__(parent=None, title=title)
+        self._panel = wx.Panel(self)
+        self._bottom = wx.BoxSizer(wx.VERTICAL)
+        self._core = wx.BoxSizer(wx.VERTICAL)
+        self._box_ctrl()
+        self._box_buttons()
+        self.SetSizer(self._bottom)
+        self.Centre()
+        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.Show()
+
+class GUIDialogMiniGraph(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title,
+                 elem=graph_elem):
+        self._gui = gui
+        self._gui._dlg_mini_graph = self
+        self._sel = dc(self._gui._panel_sess._sel)
+        #self._elem = '\n'.join([self._sel+','+r for r in elem.split('\n')])
+        self._elem = elem_expand(elem, self._sel)
+        super(GUIDialogMiniGraph, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="Each line define a graph element as a set of\n"
+                          "comma-separated values. Values are: session,\n"
+                          "table, x column, y column, mask column (if any),\n"
+                          "type of graph (plot, step, scatter), line style\n"
+                          "or marker symbol, line width or marker size,\n"
+                          "color, alpha transparency.")
+        self._ctrl_elem = wx.TextCtrl(self._panel, -1, value=self._elem,
+                                      size=(300, 200), style = wx.TE_MULTILINE)
+        #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
+        fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        #apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label="Back to default")
+        default_button.Bind(wx.EVT_BUTTON, self._on_default)
+        buttons.Add(default_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None, refresh=True):
+        self._elem = self._ctrl_elem.GetValue()
+        self._gui._graph_main._elem = self._elem
+        self._gui._graph_elem_list[self._sel] = self._elem
+        if hasattr(self._gui, '_graph_det'):
+            self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_default(self, e=None, refresh=True):
+        self._elem = elem_expand(graph_elem, self._sel)
+        self._gui._graph_main._elem = self._elem
+        self._gui._graph_elem_list[self._sel] = self._elem
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+            #self._elem = elem_expand(graph_elem, self._sel)
+            self._elem = self._gui._graph_elem_list[self._sel]
+        self._ctrl_elem.SetValue(self._elem)
+        self._on_apply(refresh=False)
+
+
+class GUIDialogMiniMeta(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._gui._dlg_mini_meta = self
+        self._sel = dc(self._gui._panel_sess._sel)
+        self._meta = meta_parse(self._gui._sess_sel.spec._meta)
+        self._meta_backup = meta_parse(self._gui._sess_sel.spec._meta_backup)
+        super(GUIDialogMiniMeta, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        """
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="Each line define a graph element as a set of\n"
+                          "comma-separated values. Values are: session,\n"
+                          "table, x column, y column, mask column (if any),\n"
+                          "type of graph (plot, step, scatter), line style\n"
+                          "or marker symbol, line width or marker size,\n"
+                          "color, alpha transparency.")
+        """
+        self._ctrl_meta = wx.TextCtrl(self._panel, -1, value=self._meta,
+                                      size=(400, 300), style = wx.TE_MULTILINE)
+        #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
+        fgs.AddMany([(self._ctrl_meta, 1, wx.EXPAND)])#, (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        #apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label="Back to original")
+        default_button.Bind(wx.EVT_BUTTON, self._on_original)
+        buttons.Add(default_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None):
+        self._meta = self._ctrl_meta.GetValue()
+        for m in self._meta.split('\n'):
+            k = m.split(': ')[0]
+            v = m.split(': ')[1].split(' / ')
+            self._gui._sess_sel.spec.meta[k] = v[0]
+            self._gui._sess_sel.spec.meta.comments[k] = v[1]
+        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_original(self, e=None):
+        self._meta = meta_parse(self._meta_backup)
+        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+            #self._elem = elem_expand(graph_elem, self._sel)
+            self._elem = self._gui._graph_elem_list[self._sel]
+        self._ctrl_elem.SetValue(self._elem)
+        self._on_apply(refresh=False)
+
+
+
+class GUIDialogMiniSystems(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title,
+                 targ=None,
+                 series='CIV',
+                 z=2.0,
+                 hwin=hwin_def):
+        self._gui = gui
+        self._gui._dlg_mini_systems = self
+        self._targ = targ
+        self._series = series
+        self._z = z
+        self._hwin = hwin
+        super(GUIDialogMiniSystems, self).__init__(gui, title)
+        self._shown = False
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(3, 2, 4, 15)
+        stat_series = wx.StaticText(self._panel, -1, label="Series:")
+        stat_z = wx.StaticText(self._panel, -1, label="Redshift:")
+        stat_hwin = wx.StaticText(self._panel, -1, label="Half window (km/s):")
+        self._ctrl_series = wx.TextCtrl(self._panel, -1, value=self._series, size=(150, -1))
+        self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % self._z, size=(150, -1))
+        self._ctrl_hwin = wx.TextCtrl(self._panel, -1, value="%3.1f" % self._hwin, size=(150, -1))
+        fgs.AddMany([(stat_series, 1, wx.EXPAND), (self._ctrl_series, 1, wx.EXPAND),
+                     (stat_z, 1, wx.EXPAND), (self._ctrl_z, 1, wx.EXPAND),
+                     (stat_hwin, 1, wx.EXPAND), (self._ctrl_hwin, 1, wx.EXPAND)])
+        self._gui._sess_sel._series_sel = self._series
+        self._gui._sess_sel._hwin_sel = self._hwin
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        self._cursor_button = wx.Button(self, label="Show cursor")
+        self._cursor_button.Bind(wx.EVT_BUTTON, self._on_show)
+        buttons.Add(self._cursor_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+    def _on_show(self, e):
+        sel = self._gui._graph_main._sel
+        if not self._shown:
+            sel.append(self._gui._cursor.key)
+            self._on_apply(e)
+            self._cursor_button.SetLabel("Hide cursor")
+        else:
+            sel.remove(self._gui._cursor.key)
+            self._on_cancel(e)
+            self._cursor_button.SetLabel("Show cursor")
+        self._shown = not self._shown
+
+    def _on_apply(self, e):
+        series = self._ctrl_series.GetValue()
+        z = self._ctrl_z.GetValue()
+        hwin = self._ctrl_hwin.GetValue()
+        self._gui._sess_sel._series_sel = series
+        self._gui._sess_sel._z_sel = float(z)
+        self._gui._sess_sel._hwin_sel = float(hwin)
+        if self._targ != None:
+            self._targ(self._gui._sess_sel)
+        if hasattr(self._gui, '_graph_det'):
+            series = trans_parse(self._gui._sess_sel._series_sel)
+            self._gui._graph_det._graph._fig.clear()
+            self._gui._graph_det._update(series, float(z), float(hwin))
+        self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e):
+        if hasattr(self._gui, '_cursor'):
+            self._gui._cursor.Check(False)
+            if hasattr(self._gui, '_graph_det'):
+                del self._gui._graph_det._graph._cursor
+        if hasattr(self._gui._sess_sel, '_series_sel'):
+            del self._gui._sess_sel._series_sel
+        if hasattr(self._gui._sess_sel, '_hwin_sel'):
+            del self._gui._sess_sel._hwin_sel
+        self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _refresh(self, series='CIV', z=2.0):
+        self._ctrl_series.SetValue(series)
+        self._ctrl_z.SetValue("%3.7f" % z)
+        if hasattr(self._gui._graph_det._graph, '_cursor'):
+            self._on_apply(None)

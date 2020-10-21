@@ -33,9 +33,9 @@ s.lines = LineList(x=x_lines,
 
 for x, logN, b in zip(x_lines, logN_lines, b_lines):
     z = x*au.nm/xem_d['Ly_a']-1
-    s.cb._append_syst()
-    s.cb._mod_syst('Ly_a', z, logN, b)
-s.cb._update_spec()
+    s.cb._systs_append()
+    s.cb._syst_mod('Ly_a', z, logN, b)
+s.cb._spec_update()
 
 s.spec.y = s.spec.t['model']+np.random.normal(scale=s.spec.dy)
 

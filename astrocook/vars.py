@@ -1,4 +1,8 @@
 from astropy import units as au
+from astropy import constants as aconst
+from astropy.io import ascii
+import numpy as np
+import os
  #c, e, m_e
 
 xunit_def = au.nm
@@ -7,11 +11,42 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
+equiv_w_v = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/121.567)*aconst.c.to(au.km/au.s),
+              lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*121.567)]
+
+
+logN_def = 14
+b_def = 10
+
+resol_def = None
+max_nfev_def = 100
+
+hwin_def = 250.0
+
+seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+seq_menu = seq + ['y_conv', 'cont', 'z0']
+graph_sel = [#'spec_x_y',
+             #'spec_x_y_det',
+             #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
+             'systs_z_series',
+             'spec_h2o_reg'
+             ]
+graph_cols_sel = ''
+
+graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
+           "spec,x,dy,None,step,-,1,C0,0.5\n"\
+           "lines,x,y,None,scatter,+,1.5,C2,1\n"\
+           "spec,x,cont,None,plot,-,1,C8,1\n"\
+           "spec,x,model,None,plot,-,1,C9,1\n"\
+           "spec,x,model,fit_mask,plot,-,3,C9,0.5"
+
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 0.0, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
-    'z_max': 10.0, 'logN_max': 17, 'b_max': 50.0, 'btur_max': 50.0, 'resol_max': 1e6,
+    'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
+#    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
+    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -41,29 +76,65 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
+forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
+                      'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
+
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
+
+h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
+
+p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+atom_par = ascii.read(p+'/atom_par.dat')
+xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
+fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
+gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
-series_d = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
+trans_d = atom_par['col1']
+series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
+for s in series_d:
+    series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
+
+#trans_d_short = ['SiIV_1393', 'SiIV_1402', 'SiII_1526', 'CIV_1548', 'CIV_1550', 'AlII_1670', 'NiII_1741', 'NiII_1751', 'AlIII_1854', 'AlIII_1862', 'FeII_2344', 'FeII_2374', 'FeII_2382', 'MnII_2576', 'FeII_2586', 'MnII_2594', 'FeII_2600', 'MnII_2606', 'MgII_2796', 'MgII_2803']
+trans_d_short = ['CIV_1548', 'CIV_1550', 'MgII_2796', 'MgII_2803', 'SiIV_1393', 'SiIV_1402', 'AlIII_1854', 'AlIII_1862', 'FeII_2586', 'FeII_2600']
+trans_d_short = ['CIV_1548', 'CIV_1550']
+series_d_short = {}
+for (k,v) in series_d.items():
+    for vi in v:
+        if vi in trans_d_short:
+            if k not in series_d_short:
+                series_d_short[k] = []
+            series_d_short[k].append(vi)
+
+series_d['Ly-a'] = ['Ly_a']
+series_d['Ly-ab'] = ['Ly_b', 'Ly_a']
+series_d['Ly-abg'] = ['Ly_g', 'Ly_b', 'Ly_a']
+
+series_d_old = {'Ly': ['Ly_15', 'Ly_14', 'Ly_13', 'Ly_12', 'Ly_11', 'Ly_10',
                        'Ly_9', 'Ly_8', 'Ly_7', 'Ly_6', 'Ly_e', 'Ly_d', 'Ly_g',
                        'Ly_b', 'Ly_a'],
-               'Ly_abg': ['Ly_g', 'Ly_b', 'Ly_a'],
-               'Ly_ab': ['Ly_b', 'Ly_a'],
-               'Ly_a': ['Ly_a'],
+               'Ly-abg': ['Ly_g', 'Ly_b', 'Ly_a'],
+               'Ly-ab': ['Ly_b', 'Ly_a'],
+               'Ly-a': ['Ly_a'],
                'NV': ['NV_1238', 'NV_1242'],
                'SiII': ['SiII_1260', 'SiII_1304', 'SiII_1526'],
                'OI': ['OI_1302'],
                'SiIV': ['SiIV_1393', 'SiIV_1402'],
                'CIV': ['CIV_1548', 'CIV_1550'],
-               'CIV_1548': ['CIV_1548'],
-               'CIV_1550': ['CIV_1550'],
-               'FeII': ['FeII_2344', 'FeII_2382', 'FeII_2586', 'FeII_2600'],
+               'CIV-1548': ['CIV_1548'],
+               'CIV-1550': ['CIV_1550'],
+               'FeII': ['FeII_2344', 'FeII_2374', 'FeII_2382', 'FeII_2586', 'FeII_2600'],
+               'FeII-2382': ['FeII_2344', 'FeII_2374', 'FeII_2382'],
+               'FeII-2586': ['FeII_2586', 'FeII_2600'],
                'MgII': ['MgII_2796', 'MgII_2803'],
                'CaII': ['CaII_3934', 'CaII_3969'],
                'unknown': ['unknown']}
 
-xem_d = {'Ly_a': 121.567 * au.nm,
+xem_d_old = {'Ly_a': 121.567 * au.nm,
           'Ly_b': 102.5722200 * au.nm,
           'Ly_g': 97.2536700 * au.nm,
              'Ly_d': 94.9743000 * au.nm,
@@ -85,12 +156,15 @@ xem_d = {'Ly_a': 121.567 * au.nm,
              'SiII_1304': 130.43702 * au.nm,
              'SiII_1526': 152.6707 * au.nm,
              'OI_1302': 130.21685 * au.nm,
+             'CII_1334': 133.45323 * au.nm,
              'SiIV_1393': 139.37602 * au.nm,
              'SiIV_1402': 140.27729 * au.nm,
              'CIV': 154.94925 * au.nm,
              'CIV_1548': 154.8204 * au.nm,
              'CIV_1550': 155.0781 * au.nm,
+             'AlII_1670': 167.078861 * au.nm,
              'FeII_2344': 234.42139 * au.nm,
+             'FeII_2374': 237.44612 * au.nm,
              'FeII_2382': 238.27652 * au.nm,
              'FeII_2586': 258.665 * au.nm,
              'FeII_2600': 260.01729 * au.nm,
@@ -100,7 +174,7 @@ xem_d = {'Ly_a': 121.567 * au.nm,
              'CaII_3969': 396.95901 * au.nm}
 
 # Ionic oscillator strengths
-fosc_d = {'Ly_a': 0.416,
+fosc_d_old = {'Ly_a': 0.416,
           'Ly_b': 0.0791000,
           'Ly_g': 0.0290100,
           'Ly_d': 0.0139000,
@@ -119,13 +193,16 @@ fosc_d = {'Ly_a': 0.416,
           'NV_1242': 0.777,
           'SiII_1260': 1.1799999,
           'SiII_1304': 0.0863,
+          'CII_1334': 0.128,
           'SiII_1526': 0.133,
           'OI_1302': 0.048,
           'SiIV_1393': 0.513,
           'SiIV_1402': 0.254,
           'CIV_1548': 0.1899,
           'CIV_1550': 0.09475,
+          'AlII_1670': 1.74,
           'FeII_2344': 0.114,
+          'FeII_2374': 0.0313,
           'FeII_2382': 0.32,
           'FeII_2586': 0.0691,
           'FeII_2600': 0.239,
@@ -137,7 +214,7 @@ fosc_d = {'Ly_a': 0.416,
           'unknown': 0.416}
 
 # Ionic damping lengths
-gamma_d = {'Ly_a': 6.265e+08,
+gamma_d_old = {'Ly_a': 6.265e+08,
               'Ly_b': 1.8970e+08,
               'Ly_g': 8.1260e+07,
               'Ly_d': 4.2040e+07,
@@ -158,11 +235,14 @@ gamma_d = {'Ly_a': 6.265e+08,
               'SiII_1304': 1.01e+09,
               'SiII_1526': 1.13e+09,
               'OI_1302': 5.65e+08,
+              'CII_1334': 2.88e+08,
               'SiIV_1393': 8.8e+08,
               'SiIV_1402': 8.62e+08,
               'CIV_1548': 2.643e+08,
               'CIV_1550': 2.628e+08,
+              'AlII_1670': 1.39e+09,
               'FeII_2344': 2.68e+08,
+              'FeII_2374': 3.090e+08,
               'FeII_2382': 3.13e+08,
               'FeII_2586': 2.72e+08,
               'FeII_2600': 2.70e+08,

@@ -37,7 +37,7 @@
         """
         mod = SystModel2(self.systs)
 
-        self.systs._t.add_row(['voigt_func', series, z, z, logN, b, None, self.systs._id])
+        self.systs._t.add_row(['voigt', series, z, z, logN, b, None, self.systs._id])
         mod.new_voigt(series, z, logN, b, resol)
         mod.fit(fit_kws={'maxfev': maxfev})
         self.systs._fit_save(mod)
@@ -49,7 +49,7 @@
         else:
             z_rem = []
 
-        self._update_spec()
+        self._spec_update()
 
         return 0
 
@@ -89,7 +89,7 @@
         #mods = ModelList()
         self.systs._add_fit(series, z_range, logN, b, resol, chi2r_thres,
                             fit_kws={'maxfev': maxfev}, verb=True)
-        self._update_spec()
+        self._spec_update()
 
         return 0
 
@@ -212,7 +212,7 @@
 
         return mod, mod._pars, ys
 
-    def _update_spec(self, fit=None):#, fit):
+    def _spec_update(self, fit=None):#, fit):
         """ @brief Update spectrum after fitting """
 
         spec = self._spec
@@ -301,7 +301,7 @@
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
 
-        self._update_spec()
+        self._spec_update()
 
         return 0
 
@@ -325,8 +325,8 @@
         thres = float(thres)
 
         spec_deabs = dc(self._spec)
-        spec_deabs.convolve_gauss(input_col='deabs')
-        lines_deabs = spec_deabs.find_peaks()
+        spec_deabs.gauss_convolve(input_col='deabs')
+        lines_deabs = spec_deabs.peaks_find()
 
         z_lines = [[(x.to(au.nm)/xem_d[t].to(au.nm))-1. \
                     for t in series_d[series]] for x in lines_deabs.x]
@@ -346,7 +346,7 @@
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
 
-        self._update_spec()
+        self._spec_update()
 
         return 0
 
@@ -378,7 +378,7 @@
         print(prefix, "I've fitted all systems between redshift %2.4f and "\
               "%2.4f." % (z_start, z_end))
 
-        self._update_spec()
+        self._spec_update()
 
         return 0
 
@@ -468,7 +468,7 @@
                     #plt.plot(xc, yc)
 
                     try:
-                        self._update_spec(mod_f)
+                        self._spec_update(mod_f)
                     except:
                         pass
                     plt.plot(xc, ym)
@@ -514,7 +514,7 @@
         mod, pars = self._fit(mod, pars, xc, yc, wc)
         self._update_systs(mod, pars, group)
         if update:
-            self._update_spec(mod)
+            self._spec_update(mod)
 
         return 0
 
@@ -614,7 +614,7 @@
         #plt.plot(z_range, chi2_n_arr)
         #plt.show()
         try:
-            self._update_spec(mod_f)
+            self._spec_update(mod_f)
         except:
             pass
 
@@ -666,7 +666,7 @@
             plt.plot(z_range, chi2_n_arr)
             plt.show()
             try:
-                self._update_spec(comp_f)
+                self._spec_update(comp_f)
             except:
                 pass
         """

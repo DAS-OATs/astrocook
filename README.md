@@ -1,3 +1,9 @@
+---
+layout: default
+title: Readme
+nav_exclude: true
+---
+
 # Astrocook
 
 A thousand ways to cook a spectrum!
@@ -25,6 +31,7 @@ Astrocook requires the following packages to run:
 * [StatsModels 0.10.1](http://www.statsmodels.org/stable/index.html)
 * [matplotlib 3.1.1](https://matplotlib.org)
 * [Sphinx 2.2.0](http://www.sphinx-doc.org/en/master/)
+* [tqdm 4.36.1](https://github.com/tqdm/tqdm)
 
 
 ## Running the software
@@ -48,8 +55,6 @@ A CONTRIBUTING.md file will be soon uploaded to detail our code of conduct and t
 * **[Guido Cupani](https://github.com/gcupani)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 * **[Giorgio Calderone](https://github.com/gcalderone)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 * **[Stefano Alberto Russo](https://github.com/sarusso)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## Releases
 
