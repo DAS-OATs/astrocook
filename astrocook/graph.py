@@ -198,7 +198,7 @@ class Graph(object):
                              #'spec_x_model': (GraphSpectrumXModel,9,1.0),
                              #'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
                              #'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
-                             'systs_z_series': (GraphSystListZSeries,2,1.0),
+                             #'systs_z_series': (GraphSystListZSeries,2,1.0),
                              'cursor_z_series': (GraphCursorZSeries,3,0.5),
                              'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)
                              }
@@ -278,26 +278,43 @@ class Graph(object):
 
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
-
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
+                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 t = getattr(sess, struct).t
-                x = dc(t[xcol])
-                y = dc(t[ycol])
+                if mode != 'axhline':
+                    x = dc(t[xcol])
+                if mode != 'axvline':
+                    y = dc(t[ycol])
                 if mcol not in ['None', 'none', None]:
                     x[t[mcol]==0] = np.nan
                 if norm and 'cont' in t.colnames:
                     y = y/t['cont']
-                if 'z' in t.colnames:
-                    xem = np.array([xem_d[t].value for t in trans_parse(sess._series_sel)])
-                    x = x*(1+xem)*au.nm
+                if xcol == 'z':
+                    z = sess.systs.z
+                    series = sess.systs.series
+                    z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
+                    series_list = [trans_parse(s) for s in series]
+                    z_flat = np.array([z for zl in z_list for z in zl])
+                    series_flat = np.array([s for sl in series_list for s in sl])
+                    xem = np.array([xem_d[sf].to(au.nm).value \
+                                    for sf in series_flat])
+                    x = xem*(1+z_flat)
+                    if hasattr(self._gui._graph_main, '_z_sel'):
+                        z_sel = self._gui._graph_main._z_sel
+                        series_sel = self._gui._graph_main._series_sel
+                        xem_sel = np.array([xem_d[s].to(au.nm).value \
+                                            for s in series_sel])
+                        x_sel = xem_sel*(1+z_sel)
+                    else:
+                        x_sel = []
                 try:
                     kwargs = {}
-                    if mode in ['plot', 'step']:
+                    if mode in ['plot', 'step', 'axvline']:
                         kwargs['linestyle'] = style
                         kwargs['linewidth'] = width
                     if mode == 'scatter':
@@ -306,7 +323,14 @@ class Graph(object):
                     kwargs['color'] = color
                     kwargs['alpha'] = float(alpha)
                     if mode == 'axvline':
-                        getattr(self._ax, mode)(x, **kwargs)
+                        for xi in x:
+                            getattr(self._ax, mode)(xi, **kwargs)
+                        for xi_sel in x_sel:
+                            kwargs['linestyle'] = '-'
+                            kwargs['linewidth'] = 10.0
+                            kwargs['color'] = 'yellow'
+                            kwargs['alpha'] = 0.3
+                            getattr(self._ax, mode)(xi_sel, **kwargs)
                     else:
                         getattr(self._ax, mode)(x, y, **kwargs)
                 except:
@@ -387,10 +411,12 @@ class Graph(object):
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=1.5,
                                 **gs._kwargs))
+                        """
                         if focus==self._gui._graph_main:
                             self._ax.axvline(
                                 x.to(self._xunit).value,
                                 color='C3', alpha=0.3, linewidth=10)
+                        """
 
                     self._cursor_lines.append(self._cursor_line)
                 else:
