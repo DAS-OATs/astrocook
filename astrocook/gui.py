@@ -43,6 +43,8 @@ class GUI(object):
         self._menu_tab_id = []
         self._graph_elem_list = []
         self._panel_sess = GUIPanelSession(self)
+        self._id_zoom = 9
+        self._data_lim = None
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -64,6 +66,7 @@ class GUI(object):
                  autosort=True, _xlim=None):
         """ Refresh the GUI after an action """
 
+
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
         if hasattr(self, '_dlg_mini_graph') \
@@ -76,15 +79,48 @@ class GUI(object):
             except:
                 pass
 
-        xlim = self._graph_main._graph._ax.get_xlim()
-        ylim = self._graph_main._graph._ax.get_ylim()
+
+        ax = self._graph_main._graph._ax
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        dl = self._data_lim
+        """
+        try:
+            print(xlim[0], dl[0], xlim[1], dl[1])
+            print(ylim[0], dl[2], ylim[1], dl[3])
+        except:
+            pass
+        """
+        if dl is None or ((xlim[0] <= dl[0] or dl[0]==0.) \
+                      and (xlim[1] >= dl[1] or dl[1]==1.) \
+                      and (ylim[0] <= dl[2] or dl[2]==0.) \
+                      and (ylim[1] >= dl[3] or dl[3]==1.)):
+            self._graph_main._graph._zoom = False
+            dl = (xlim[0], xlim[1], ylim[0], ylim[1])
+        #print(self._graph_main._graph._zoom)
+
+
+        #axc.set_xlim(0, 1)
+        #axc.set_ylim(0, 1)
+        #print(self._graph_main._graph._zoom)
+        #if xlim == axc.get_xlim() and ylim == axc.get_ylim():
+        #    print('false')
+        #    self._graph_main._graph._zoom = False
+
+
+
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
+        #print(autolim, goodlim, _xlim)
         if autolim and goodlim and _xlim != None:
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
+        elif autolim and goodlim and self._graph_main._graph._zoom:
+            self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
             self._graph_main._refresh(self._sess_items)
+
         if hasattr(self, '_graph_det'):
             #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
             #"""
@@ -133,6 +169,7 @@ class GUI(object):
 
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
+
 
     def _refresh_graph_det(self, init_cursor=False, autolim=True):
         graph = self._graph_det._graph

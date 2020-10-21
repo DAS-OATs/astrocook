@@ -27,6 +27,7 @@ class Graph(object):
         self._fig = Figure()
         self._cursor_lines = []
         self._clicks = []
+        self._zoom = False
 
         if init_canvas:
             self._init_canvas()
@@ -49,6 +50,11 @@ class Graph(object):
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
         self._toolbar.Realize()
+        if self._panel is self._gui._graph_main._panel:
+            focus = self._gui._graph_main
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                focus = self._gui._graph_det
         #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _check_units(self, sess, axis='x'):
@@ -77,15 +83,24 @@ class Graph(object):
         if event.button == 1:
             self._clicks = [(x,y)]
         if event.button == 3:
-            if len(self._clicks) == 1:
+            if len(self._clicks) > 0 and focus == self._gui._graph_main:
                 title.append('Zap feature')
                 attr.append('spec_zap')
-                self._clicks.append((x,y))
+            if hasattr(self._gui._sess_sel, 'nodes') \
+                and focus == self._gui._graph_main:
+                nodes = self._gui._sess_sel.nodes
+                dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
+                dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
+                title.append('Add node')
+                attr.append('node_add')
+                if dist_x < 0.1*dist_mean:
+                    title.append('Remove node')
+                    attr.append('node_remove')
             if 'cont' in self._gui._sess_sel.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
-
+            self._clicks.append((x,y))
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
@@ -100,6 +115,10 @@ class Graph(object):
             focus.PopupMenu(GUITablePopup(self._gui, focus,
                                           event, 'Add line', 'add_line'))
         """
+
+    def _on_zoom(self, event):
+        self._zoom = True
+
 
     def _on_move(self, event):
         if not event.inaxes: return
@@ -240,6 +259,12 @@ class Graph(object):
         self._canvas.draw()
         #self._canvas.flush_events()
         #print(dt.datetime.now()-start)
+
+        self._ax.callbacks.connect('xlim_changed', self._on_zoom)
+        self._ax.callbacks.connect('ylim_changed', self._on_zoom)
+        dl = self._ax.__dict__['dataLim']
+        #print(dl)
+        self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
 
     def _seq(self, sess, norm):
 
