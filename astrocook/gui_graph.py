@@ -87,14 +87,14 @@ class GUIGraphMain(wx.Frame):
 
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
-        x, y = self._graph._clicks[-1][0], self._graph._clicks[-1][1]
+        x, y = sess._clicks[-1][0], sess._clicks[-1][1]
         sess.spec._node_add(sess.nodes, x, y)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
 
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
-        x, y = self._graph._clicks[-1][0], self._graph._clicks[-1][1]
+        x, y = sess._clicks[-1][0], sess._clicks[-1][1]
         sess.spec._node_remove(sess.nodes, x)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
