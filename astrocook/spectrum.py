@@ -126,6 +126,20 @@ class Spectrum(Frame):
         return 0
 
 
+    def _node_add(self, nodes, x, y):
+        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
+        row = []
+        for c in nodes.t.colnames:
+            row.append(y) if c == 'y' else row.append(self.t[sel][c])
+        nodes.t.add_row(row)
+        nodes.t.sort('x')
+
+
+    def _node_remove(self, nodes, x):
+        sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
+        nodes.t.remove_rows(sel)
+
+
     def _nodes_clean(self, nodes, kappa=5.0):
         """
         y_sel = [True]
@@ -423,4 +437,8 @@ class Spectrum(Frame):
                                   self.x[w].value,
                                   [self.x[w][0].value, self.x[w][-1].value],
                                   [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+            self._t['dy'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
         return 0
