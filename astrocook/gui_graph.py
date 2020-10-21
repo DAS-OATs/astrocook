@@ -84,13 +84,13 @@ class GUIGraphMain(wx.Frame):
     #def _on_line_new(self, event):
     #    print(self._click_xy)
 
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = self._graph._clicks[-1][0], self._graph._clicks[-1][1]
         sess.spec._node_add(sess.nodes, x, y)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
-
 
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
@@ -99,15 +99,45 @@ class GUIGraphMain(wx.Frame):
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
 
+    def _on_region_extract(self, event):
+        sess = self._gui._sess_sel
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
+        xmin = np.min(x)
+        xmax = np.max(x)
+        reg = sess.cb.region_extract(xmin, xmax)
+        #self._gui._refresh()
+        self._gui._panel_sess._on_add(reg, open=False)
 
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
-        x = [self._graph._clicks[-2][0], self._graph._clicks[-1][0]]
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
+    def _on_stats_show(self, event):
+        sess = self._gui._sess_sel
+        try:
+            x = [sess._clicks[-2][0], sess._clicks[-1][0]]
+        except:
+            x = (0, np.inf)
+            sess._shade = False
+        xmin = np.min(x)
+        xmax = np.max(x)
+        sess.spec._stats_print(xmin, xmax)
+        sess._clicks = []
+        sess._stats = True
+        #self._graph._stats = True
+        self._gui._refresh()
+
+    def _on_stats_hide(self, event):
+        sess = self._gui._sess_sel
+        del sess.spec._stats_text_red
+        sess._clicks = []
+        sess._stats = False
+        sess._shade = False
+        self._gui._refresh()
 
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel

@@ -26,7 +26,6 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._cursor_lines = []
-        self._clicks = []
         self._zoom = False
 
         if init_canvas:
@@ -80,12 +79,26 @@ class Graph(object):
         focus._click_xy = (x,y)
         title = []
         attr = []
+        sess = self._gui._sess_sel
+
         if event.button == 1:
-            self._clicks = [(x,y)]
+            sess._clicks = [(x,y)]
         if event.button == 3:
-            if len(self._clicks) > 0 and focus == self._gui._graph_main:
+            sess._clicks.append((x,y))
+
+        if event.button == 3:
+            if focus == self._gui._graph_main:
+                title.append('Show stats')
+                attr.append('stats_show')
+            if sess._stats and focus == self._gui._graph_main:
+                title.append('Hide stats')
+                attr.append('stats_hide')
+            if len(sess._clicks) > 1 and focus == self._gui._graph_main:
+                title.append('Extract region')
+                attr.append('region_extract')
                 title.append('Zap feature')
                 attr.append('spec_zap')
+                self._reg_shade()
             if hasattr(self._gui._sess_sel, 'nodes') \
                 and focus == self._gui._graph_main:
                 nodes = self._gui._sess_sel.nodes
@@ -96,11 +109,11 @@ class Graph(object):
                 if dist_x < 0.1*dist_mean:
                     title.append('Remove node')
                     attr.append('node_remove')
-            if 'cont' in self._gui._sess_sel.spec._t.colnames \
+            if 'cont' in sess.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
-            self._clicks.append((x,y))
+
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event,
                                   #['Add lines', 'Add system'],
@@ -255,6 +268,14 @@ class Graph(object):
         if legend:
             self._ax.legend()
 
+        for s in sess:
+            if s._shade:
+                x = self._gui._sess_sel.spec.x.value
+                trans = transforms.blended_transform_factory(
+                            self._ax.transData, self._ax.transAxes)
+                self._ax.fill_between(x, 0, 1, where=s._shade_where,
+                                      transform=trans, color='C1', alpha=0.2)
+
 
         self._canvas.draw()
         #self._canvas.flush_events()
@@ -266,6 +287,23 @@ class Graph(object):
         #print(dl)
         self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
 
+
+    def _reg_shade(self):
+        sess = self._gui._sess_sel
+        x = sess.spec.x.value
+        sess._shade_where = np.logical_and(x>sess._clicks[0][0],
+                                           x<sess._clicks[1][0])
+        """
+        trans = transforms.blended_transform_factory(
+                    self._ax.transData, self._ax.transAxes)
+        self._ax.fill_between(x, 0, 1, where=self._shade_where,
+                              transform=trans,
+                              color='C1', alpha=0.2)
+        """
+        sess._shade = True
+        self._refresh(sess)
+
+        
     def _seq(self, sess, norm):
 
         detail = self._panel != self._gui._graph_main._panel
@@ -337,6 +375,10 @@ class Graph(object):
                     logging.error("I can't parse this graph specification: %s." % e)
             except:
                 pass
+
+        if hasattr(sess.spec, '_stats_text_red'):
+            self._ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
+                          transform=self._ax.transAxes)
 
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
@@ -438,7 +480,6 @@ class Graph(object):
                     y = y/sess.spec.t['cont']
                 self._ax.plot(sess.spec.x, y)
         """
-
 
 
 class GraphLineListXY(object):

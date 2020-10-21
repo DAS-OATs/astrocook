@@ -361,6 +361,54 @@ class Spectrum(Frame):
         return 0
 
 
+    def _stats_print(self, xmin=0, xmax=np.inf):
+
+        sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
+                                      self.x.to(au.nm).value < xmax))
+        x = self.x[sel]
+        y = self.y[sel]
+        dy = self.dy[sel]
+        self._stats = {'min_x': np.min(x),
+                       'max_x': np.max(x),
+                       'mean_x': np.mean(x),
+                       'min_y': np.min(y),
+                       'max_y': np.max(y),
+                       'mean_y': np.mean(y),
+                       'median_y': np.median(y),
+                       'std_y': np.std(y),
+                       'mean_dy': np.mean(dy),
+                       'median_dy': np.median(dy)}
+        self._stats_tup = tuple(np.ravel([(self._stats[s].value,
+                                          self._stats[s].unit) \
+                                          for s in self._stats]))
+        self._stats_text = "Statistics in the selected region:\n" \
+                           " Minimum x: %3.4f %s\n" \
+                           " Maximum x: %3.4f %s\n" \
+                           " Mean x: %3.4f %s\n" \
+                           " Minimum y: %3.4e %s\n" \
+                           " Maximum y: %3.4e %s\n" \
+                           " Mean y: %3.4e %s\n" \
+                           " Median y: %3.4e %s\n" \
+                           " St. dev. y: %3.4e %s\n" \
+                           " Mean dy: %3.4e %s\n" \
+                           " Median dy: %3.4e %s" \
+                           % self._stats_tup
+        if xmin == 0.0 and np.isinf(xmax):
+            region = ("ALL SPECTRUM",)
+        else:
+            temp = (self._stats['min_x'].value, self._stats['max_x'].value,
+                    self._stats['min_x'].unit)
+            region = ("REGION: %3.4f-%3.4f %s" % temp,)
+        red = region+self._stats_tup[10:16]
+        self._stats_text_red = "%s\n" \
+                               "Mean y: %3.4e %s\n" \
+                               "Median y: %3.4e %s\n" \
+                               "St. dev. y: %3.4e %s" \
+                               % red
+        for s in self._stats_text.split('\n'):
+            logging.info(s)
+
+
     def _template_bb(self, temp=6000, scale=1.0):
         bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
         output_col = 'blackbody'
