@@ -373,6 +373,7 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._meta = self._ctrl_meta.GetValue()
         for m in self._meta.split('\n'):
             k = m.split(': ')[0]
+            #print(k)
             v = m.split(': ')[1].split(' / ')
             self._gui._sess_sel.spec.meta[k] = v[0]
             self._gui._sess_sel.spec.meta.comments[k] = v[1]

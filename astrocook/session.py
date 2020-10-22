@@ -300,9 +300,12 @@ class Session(object):
                         t[c].unit = au.dimensionless_unscaled
                     #print(t)
                     #t.write(name, format='fits', overwrite=True)
-                    hdr = dc(t.meta)
+                    hdr = fits.Header(t.meta)
                     for c in t.meta:
-                        hdr.comments[c] = t.meta.comments[c]
+                        try:
+                            hdr.comments[c] = t.meta.comments[c]
+                        except:
+                            pass
                     phdu = fits.PrimaryHDU(header=hdr)
                     #print([Column(t[c]) for c in t.colnames])
                     #cols = fits.ColDefs([Column(c) for c in t.columns])
