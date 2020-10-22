@@ -21,13 +21,15 @@ class GUI(object):
         """ Constructor """
 
         try:
-            print("┌───────────────────┐")
+            l = ['─']*(16+len(version))
+            print("┌%s┐" % ''.join(l))
             print("│ ASTROCOOK 🍪 v%3s │" % version)
-            print("└───────────────────┘")
+            print("└%s┘" % ''.join(l))
         except:
-            print("-----------------")
+            l = ['-']*(17+len(version))
+            print(''.join(l))
             print(" ASTROCOOK  v%3s " % version)
-            print("-----------------")
+            print(''.join(l))
         print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
