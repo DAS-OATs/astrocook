@@ -21,7 +21,7 @@ To display the data tables, choose `View > Spectrum table` (or `Line table` or `
 
 ⚠️ **Long tables can take a long time to display.**
 
-⚠️ **Closing table windows may cause Astrocook to behave erratically.**
+[//]: # ⚠️ **Closing table windows may cause Astrocook to behave erratically.**
 
 ## Spectra
 
