@@ -49,7 +49,7 @@ You are free to add other columns to the spectrum or edit the existing ones (as 
 
 When you detect spectral lines (either in emission or absorption), they are formatted into a table that is added to the session.
 
-The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra)) where the lines have been detected:
+The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra) where the lines have been detected:
 - `x`: the line center, corresponding to the `x` value of a pixel in the spectrum;
 - `xmin`, `xmax`: the boundaries of the interval covered by the line, also corresponding to the `x` values of two pixels in the spectrum;
 - `y`, `dy`: values of `y` and `dy` at `x` from the spectrum;

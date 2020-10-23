@@ -58,7 +58,7 @@ You can switch between sessions at any time, selecting them on the main window. 
 
 ## Use recipes
 
-Astrocook provides you with (broadly speaking) three kind of recipes for the analysis:
+Astrocook provides you with (broadly speaking) three kinds of recipes for the analysis:
 
 1. recipes to manipulate sessions, combining and sharing data structures among them: these are grouped in the `Edit` menu;
 2. recipes to manage the plot window and the additional windows to display the data: these are grouped in the `View` menu;
