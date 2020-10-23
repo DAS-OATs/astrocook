@@ -21,14 +21,16 @@ class GUI(object):
         """ Constructor """
 
         try:
-            print("┌───────────────────┐")
+            l = ['─']*(16+len(version))
+            print("┌%s┐" % ''.join(l))
             print("│ ASTROCOOK 🍪 v%3s │" % version)
-            print("└───────────────────┘")
+            print("└%s┘" % ''.join(l))
         except:
-            print("-----------------")
+            l = ['-']*(17+len(version))
+            print(''.join(l))
             print(" ASTROCOOK  v%3s " % version)
-            print("-----------------")
-        print("Cupani et al. 2017-2019 * INAF-OATs")
+            print(''.join(l))
+        print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
         self._sess_item_sel = []
@@ -40,7 +42,11 @@ class GUI(object):
         self._menu_systs_id = []
         self._menu_z0_id = []
         self._menu_mods_id = []
+        self._menu_tab_id = []
+        self._graph_elem_list = []
         self._panel_sess = GUIPanelSession(self)
+        self._id_zoom = 9
+        self._data_lim = None
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -59,20 +65,64 @@ class GUI(object):
                     self._panel_sess._on_open(p)
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True):
+                 autosort=True, _xlim=None):
         """ Refresh the GUI after an action """
+
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
-        xlim = self._graph_main._graph._ax.get_xlim()
-        ylim = self._graph_main._graph._ax.get_ylim()
+        if hasattr(self, '_dlg_mini_graph') \
+            and self._dlg_mini_graph._shown:
+            self._dlg_mini_graph._refresh()
+        else:
+            self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            try:
+                self._graph_det._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            except:
+                pass
+
+
+        ax = self._graph_main._graph._ax
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        dl = self._data_lim
+        """
+        try:
+            print(xlim[0], dl[0], xlim[1], dl[1])
+            print(ylim[0], dl[2], ylim[1], dl[3])
+        except:
+            pass
+        """
+        if dl is None or ((xlim[0] <= dl[0] or dl[0]==0.) \
+                      and (xlim[1] >= dl[1] or dl[1]==1.) \
+                      and (ylim[0] <= dl[2] or dl[2]==0.) \
+                      and (ylim[1] >= dl[3] or dl[3]==1.)):
+            self._graph_main._graph._zoom = False
+            dl = (xlim[0], xlim[1], ylim[0], ylim[1])
+        #print(self._graph_main._graph._zoom)
+
+
+        #axc.set_xlim(0, 1)
+        #axc.set_ylim(0, 1)
+        #print(self._graph_main._graph._zoom)
+        #if xlim == axc.get_xlim() and ylim == axc.get_ylim():
+        #    print('false')
+        #    self._graph_main._graph._zoom = False
+
+
+
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        if autolim and goodlim and 1==0:
-            self._graph_main._refresh(self._sess_items, xlim=xlim)
+        #print(autolim, goodlim, _xlim)
+        if autolim and goodlim and _xlim != None:
+            self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
+        elif autolim and goodlim and self._graph_main._graph._zoom:
+            self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
             self._graph_main._refresh(self._sess_items)
+
         if hasattr(self, '_graph_det'):
             #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
             #"""
@@ -107,9 +157,12 @@ class GUI(object):
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
-                    getattr(self, '_tab_'+s)._on_view(event=None,
-                                                      from_scratch=False,
-                                                      autosort=autosort)
+                    if hasattr(getattr(self._sess_sel, s), '_t'):
+                        getattr(self, '_tab_'+s)._on_view(
+                            event=None, from_scratch=False, autosort=autosort)
+                    else:
+                        getattr(self, '_tab_'+s).Destroy()
+
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():
                     self._col_values = \
@@ -118,6 +171,7 @@ class GUI(object):
 
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
+
 
     def _refresh_graph_det(self, init_cursor=False, autolim=True):
         graph = self._graph_det._graph
@@ -202,6 +256,7 @@ class GUIPanelSession(wx.Frame):
         # Create table
         panel = wx.Panel(self)
         self._tab = GUIControlList(panel, 0)
+        """
         self._tab.InsertColumn(0, "name", width=200)
         self._tab.InsertColumn(1, "object", width=150)
         self._tab.InsertColumn(2, "active range", width=200)
@@ -209,9 +264,16 @@ class GUIPanelSession(wx.Frame):
         self._tab.InsertColumn(4, "# nodes", width=100)
         self._tab.InsertColumn(5, "# lines", width=100)
         self._tab.InsertColumn(6, "# systems", width=100)
+        """
+        self._tab.InsertColumn(0, "name", width=350)
+        self._tab.InsertColumn(1, "active range", width=200)
+        self._tab.InsertColumn(2, "# rows", width=100)
+        self._tab.InsertColumn(3, "# lines", width=100)
+        self._tab.InsertColumn(4, "# systems", width=100)
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
+        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_select)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         panel.SetSizer(self._box)
@@ -237,6 +299,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._gui._refresh(autolim=False)
+        self._gui._graph_elem_list.append(self._gui._graph_main._elem)
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
@@ -256,11 +319,11 @@ class GUIPanelSession(wx.Frame):
         #name = path.split('/')[-1][:-5]
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
-        sess = Session(path=path, name=name)
+        sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         if sess._open_twin:
             logging.info("I'm loading twin session %s..." % path)
-            sess = Session(path=path, name=name, twin=True)
+            sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
 
@@ -293,7 +356,8 @@ class GUIPanelSession(wx.Frame):
             self._items.append(item)
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        self._gui._refresh()
+        if self._gui._sess_item_sel != []:
+            self._gui._refresh()
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
@@ -303,6 +367,7 @@ class GUIPanelSession(wx.Frame):
 
     def _refresh(self):
         for i, s in zip(self._items, self._gui._sess_items):
+            """
             obj = s.spec.meta['object']
             self._tab.SetItem(i, 1, obj)
             x = s.spec._safe(s.spec.x)
@@ -324,6 +389,40 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
+            """
+            x = s.spec._safe(s.spec.x)
+            self._tab.SetItem(i, 1, "[%3.2f, %3.2f] %s"
+                              % (x[0].value, x[-1].value, x.unit))
+            self._tab.SetItem(i, 2, str(len(x)))
+            try:
+                x = s.lines._safe(s.lines.x)
+                self._tab.SetItem(i, 3, str(len(x)))
+            except:
+                pass
+            try:
+                x = s.systs.z
+                self._tab.SetItem(i, 4, str(len(x)))
+            except:
+                pass
+
+    def _select(self, _sel=0):
+
+        _sel = int(_sel)
+        """
+        sel = self._gui._sess_item_sel
+        sess_list = self._gui._sess_list
+        if sel == []:
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
+        if sel == []:
+            sel = range(len(sess_list))
+        """
+        evt = wx.ListEvent()
+        evt.SetIndex(_sel)
+        self._on_select(evt)
 
 
     def _struct_parse(self, struct, length=2):
@@ -385,6 +484,7 @@ class GUIPanelSession(wx.Frame):
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
+        sess_list = self._gui._sess_list
         if sel == []:
             try:
                 sel = [int(s) \
@@ -392,18 +492,37 @@ class GUIPanelSession(wx.Frame):
             except:
                 pass
         if sel == []:
-            sel = range(len(self._gui._sess_list))
-        spec = dc(self._gui._sess_list[sel[0]].spec)
+            sel = range(len(sess_list))
+
+        struct_out = {}
+        for struct in sess_list[sel[0]].seq:
+            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+
+
         if name_in[0] == '*':
-            name = self._gui._sess_list[sel[0]].name
+            name = sess_list[sel[0]].name
+
+        logging.info("Combining sessions %s..." % ', '.join(str(s) for s in sel))
         for s in sel[1:]:
-            spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+
+            for struct in sess_list[s].seq:
+                if getattr(sess_list[s], struct) != None:
+                    if struct_out[struct] != None:
+                        struct_out[struct]._append(
+                            getattr(sess_list[s], struct))
+                    else:
+                        struct_out[struct] = dc(getattr(sess_list[s], struct))
+
             if name_in[0] == '*':
-                name += '_' + self._gui._sess_list[s].name
-        spec._t.sort('x')
+                name += '_' + sess_list[s].name
+
+        struct_out['spec']._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        sess = Session(name=name, spec=spec)
+        sess = Session(gui=self._gui, name=name, spec=struct_out['spec'],
+                       nodes=struct_out['nodes'], lines=struct_out['lines'],
+                       systs=struct_out['systs'])
         return sess
 
 
@@ -429,6 +548,8 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
+        logging.info("Equalizing session %i to session %i... "
+                     % (sel[1], sel[0]))
 
         for i,s in enumerate(sel):
             sess = self._gui._sess_list[s]
@@ -440,8 +561,12 @@ class GUIPanelSession(wx.Frame):
                 return(0)
             if i == 0:
                 f = np.median(sess.spec.y[w])
+                #print(np.median(sess.spec.y[w]))
             else:
-                sess.spec.y = f/np.median(sess.spec.y[w])*sess.spec.y
+                f = f/np.median(sess.spec.y[w])
+                #print(np.median(sess.spec.y[w]), f)
+                sess.spec.y = f*sess.spec.y
+                sess.spec.dy = f*sess.spec.dy
 
 
         return 0
@@ -470,6 +595,7 @@ class GUIPanelSession(wx.Frame):
                 out = getattr(cb, r['recipe'])(**r['params'])
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
+                self._refresh()
 
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
@@ -478,9 +604,8 @@ class GUIPanelSession(wx.Frame):
 
     #struct_A='0,systs,z', struct_B='1,systs,z',
                        #struct_out='0,systs,diff_z', op='subtract'):
-        """ @brief Compare structures
-        @details Compare two structures from the same session or two different
-        sessions.
+        """ @brief Modify structures
+        @details Apply a binary operator on structures to create new structures.
         @param struct_A Structure A (session,table,column)
         @param struct_B Structure B (same syntax) or scalar
         @param struct_out Output structure (same syntax)

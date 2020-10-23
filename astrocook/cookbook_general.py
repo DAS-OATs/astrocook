@@ -33,17 +33,22 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rebin(self, dx=10.0, xunit=au.km/au.s, norm=True):
+    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s, norm=True):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given velocity step. A new session is
         created with the rebinned spectrum. Other objects from the old session
         (line lists, etc.) are discarded.
+        @param xstart Start wavelength (nm; None to take the minimum wavelength)
+        @param xend End wavelength (nm; None to take the maximum wavelength)
+        @param dx Step in x
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
         @return 0
         """
 
         try:
+            xstart = None if xstart in [None, 'None'] else float(xstart)
+            xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
         except ValueError:
@@ -66,13 +71,13 @@ class CookbookGeneral(object):
             y = spec_in.y/spec_in.t['cont']
             dy = spec_in.dy/spec_in.t['cont']
 
-        spec_out = spec_in._rebin(dx, xunit, y, dy)
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy)
         if cont:
             spec_out.t['cont'] = 1
 
         # Create a new session
         from .session import Session
-        new = Session(name=self.sess.name+'_rebinned', spec=spec_out)
+        new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned', spec=spec_out)
         return new
 
 
@@ -115,7 +120,16 @@ class CookbookGeneral(object):
         else:
             new = None
         if 'systs' in self.sess.seq and self.sess.systs != None:
-            old = dc(self.sess)
+
+            # This is needed instead of a simple deepcopy because
+            # GUIPanelSession does not support pickling
+            #old = dc(self.sess)
+            old = Session(self.sess._gui)
+            for d in self.sess.__dict__:
+                if d != '_gui' and d != 'cb':
+                    old.__dict__[d] = dc(self.sess.__dict__[d])
+            old.__dict__['cb'] = self.sess.__dict__['cb']
+
             self.sess = new
             self._mods_recreate()
             self.sess = old
@@ -281,6 +295,23 @@ class CookbookGeneral(object):
         for s in self.sess.seq:
             try:
                 getattr(self.sess, s)._y_scale(fact)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0
+
+
+    def y_scale_med(self):
+        """ @brief Scale y axis by median
+        @details Scale the y axis by its median.
+        @return 0
+        """
+
+        fact = 1/np.median(self.sess.spec.y)
+
+        for s in self.sess.seq:
+            try:
+                struct = getattr(self.sess, s)
+                struct._y_scale(fact)
             except:
                 logging.debug(msg_attr_miss(s))
         return 0

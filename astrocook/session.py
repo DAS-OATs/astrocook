@@ -13,6 +13,8 @@ from .vars import *
 #from astropy import constants as ac
 from astropy import units as au
 from astropy.io import ascii, fits
+from astropy.table import Column, Table
+from collections import OrderedDict
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
@@ -28,6 +30,7 @@ class Session(object):
     A Session is a self-sufficient set of analysis operations."""
 
     def __init__(self,
+                 gui=None,
                  path=None,
                  name=None,
                  spec=None,
@@ -37,7 +40,7 @@ class Session(object):
                  systs=None,
                  mods=None,
                  twin=False):
-        #self._gui = gui
+        self._gui = gui
         self.path = path
         self.name = name
         self.spec = spec
@@ -49,6 +52,9 @@ class Session(object):
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
         self._open_twin = twin
+        self._clicks = []
+        self._stats = False
+        self._shade = False
 
 
     def _append(self, frame, append=True):
@@ -66,9 +72,15 @@ class Session(object):
                 arch.extractall(path=root)
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
                 hdr = hdul[1].header
-        else:
+        elif self.path[-4:] == 'fits':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
+        else:
+            t = Table(ascii.read(self.path))
+            hdul = fits.HDUList([fits.PrimaryHDU(),
+                                 fits.BinTableHDU.from_columns(np.array(t))])
+            hdr = hdul[0].header
+
 
         try:
             instr = hdr['INSTRUME']
@@ -130,6 +142,10 @@ class Session(object):
                     pass
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
+
+        # ESO ADP spectrum
+        if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
+            self.spec = format.eso_adp(hdul)
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS':
@@ -209,6 +225,11 @@ class Session(object):
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
 
 
+        # generic
+        if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
+            self.spec = format.generic_spectrum(hdul)
+
+
     def save(self, path):
 
         root = path[:-4]
@@ -230,21 +251,43 @@ class Session(object):
                         except:
                             pass
                     name = root+'_'+s+'.fits'
+                    name_dat = root+'_'+s+'.dat'
                     obj = dc(getattr(self, s))
-                    t = obj._t
+                    t = dc(obj._t)
+
+                    for c in t.colnames:
+                        if type(t[c][0]) == np.int64:
+                            pass
+                        elif type(t[c][0]) == str or type(t[c][0]) == np.str_:
+                            pass
+                        elif type(t[c][0]) == OrderedDict:
+                            pass
+                        elif type(t[c][0]) == dict:
+                            pass
+                        else:
+                            if c in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                            'snr']:
+                                format = '%3.3'
+                            else:
+                                format = '%3.7'
+                            if np.abs(t[c][0])<1e-7 and t[c][0]!=0:
+                                format += 'e'
+                            else:
+                                format += 'f'
+                            t[c].info.format = format
+
                     if s!='systs':
                         t['x'] = t['x'].to(au.nm)
                         t['xmin'] = t['xmin'].to(au.nm)
                         t['xmax'] = t['xmax'].to(au.nm)
                     del_list = []
                     for i, k in enumerate(obj._meta):
-                        if k in ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT',
-                                 'TFIELDS'] \
-                            or k[:5] in ['NAXIS', 'TTYPE', 'TFORM', 'TUNIT']:
+                        if k in forbidden_keywords or k[:5] in forbidden_keywords:
                             del_list.append(i)
                     for i in del_list[::-1]:
                         del obj._meta[i]
-                    t.meta = obj._meta
+                    t.meta = dc(obj._meta)
+                    #print(t.meta.comments)
                     t.meta['ORIGIN'] = 'Astrocook'
                     #t.meta['HIERARCH ASTROCOOK VERSION'] = version
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
@@ -255,10 +298,31 @@ class Session(object):
                             t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
-                    t.write(name, format='fits', overwrite=True)
+                    #print(t)
+                    #t.write(name, format='fits', overwrite=True)
+                    hdr = fits.Header(t.meta)
+                    for c in t.meta:
+                        try:
+                            hdr.comments[c] = t.meta.comments[c]
+                        except:
+                            pass
+                    phdu = fits.PrimaryHDU(header=hdr)
+                    #print([Column(t[c]) for c in t.colnames])
+                    #cols = fits.ColDefs([Column(c) for c in t.columns])
+                    #cols = []
+                    #for c in colnames:
+                    #    cols.append(Columns)
+                    thdu = fits.BinTableHDU(data=t, header=hdr)
+                    hdul = fits.HDUList([phdu, thdu])
+                    hdul.writeto(name, overwrite=True)
+
+                    ascii.write(t, name_dat, names=t.colnames,
+                                format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
+                    arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                     os.remove(name)
+                    os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
                                  % (s, stem+'_'+s+'.fits'))
                 else:
-                    logging.error("I haven't found any frame %s to save." % s)
+                    logging.warning("I haven't found any frame %s to save." % s)

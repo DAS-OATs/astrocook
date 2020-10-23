@@ -1,3 +1,7 @@
+from .message import *
+import logging
+import numpy as np
+
 class CookbookTemplates(object):
     """ Cookbook of spectral templates
     """
@@ -35,7 +39,8 @@ class CookbookTemplates(object):
 
         try:
             ampl = float(ampl)
-            x_ref = float(x_ref)
+            x_ref = np.mean(self.sess.spec.x) if x_ref in [None, 'None'] \
+                else float(x_ref)
             index = float(index)
         except:
             logging.error(msg_param_fail)

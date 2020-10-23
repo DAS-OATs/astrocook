@@ -229,6 +229,9 @@ class CookbookAbsorbers(object):
         else:
             systs_t = systs._t
         systs_t.sort('id')
+        wrong_id = []
+        corr_id = []
+        #print(systs_t)
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
@@ -242,13 +245,20 @@ class CookbookAbsorbers(object):
                         else:
                             vars[k.split('_')[-1]+'_vary'] = False
                 #print(systs._id)
-                #print(systs._mods_t['id'])
-                #print(constr)
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                if any([mod._id in i for i in systs._mods_t['id']]):
+                    wrong_id.append(mod._id)
+                    corr_id.append(np.max(systs_t['id'])+1)
+                    mod._id = np.max(systs_t['id'])+1
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                            b=s['b'], resol=s['resol'])
+                               b=s['b'], resol=s['resol'])
                 self._mods_update(mod)
+                #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
+
+        for w, c in zip(wrong_id, corr_id):
+            logging.warning("System %i had a duplicated id! I changed it to %i."
+                            % (w, c))
 
         systs_t.sort(['z','id'])
         #print(systs._mods_t['id'])
@@ -334,9 +344,12 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
-            mod._fit(fit_kws={'max_nfev': self._max_nfev})
+            frozen = mod._fit(fit_kws={'max_nfev': self._max_nfev})
             #mod._pars.pretty_print()
-            if verbose:
+            if verbose and frozen:
+                logging.info("I've not fitted 1 model at redshift %2.4f "
+                             "because all the parameters are frozen." % mod._z0)
+            elif verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
         else:
@@ -610,7 +623,7 @@ class CookbookAbsorbers(object):
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
                 try:
-                    systs._t[iw]['resol'] = mod._pars['psf_gauss_0_resol'].value
+                    systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:
                     systs._t[iw]['resol'] = np.nan
                 try:
@@ -742,7 +755,7 @@ class CookbookAbsorbers(object):
 
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
-        self._syst_fit(mod)
+        #self._syst_fit(mod)
         self._systs_cycle()
         self._spec_update()
 
@@ -1118,16 +1131,47 @@ class CookbookAbsorbers(object):
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
 
-        for s in series.split(';'):
+        for i, s in enumerate(series.split(';')):
+            #print(i, 'start')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             self._systs_prepare()
+            #print(self.sess.systs._t)
         #self._logN_guess(series, z, b, resol)
         #logN = self._syst_guess(series, z)
+            #print(s, z, logN, b, resol, self._refit_n)
             mod = self._syst_add(s, z, logN, b, resol)
+            #print(i, 'before')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             if mod is None: return 0
-            self._syst_fit(mod)
+            #"""
+            if i==0:
+                k = 'lines_voigt_%i_z' % mod._id
+            else:
+                #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
+                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
+            #"""
+            #print(mod._pars[k])
+            #self._systs_cycle()
+            #self._syst_fit(mod)
+            #print(self.sess.systs._t)
+            #print(self.sess.systs._mods_t['id'])
+            if self._refit_n == 0:
+                self._mods_recreate()
+            #print(self.sess.systs._mods_t['id'])
+            #print(i, 'midway')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
             self._systs_cycle()
-        if self._refit_n == 0:
-            self._mods_recreate()
+            #print(i, 'after')
+            #print(mod._pars.pretty_print())
+            #for m in self.sess.systs._mods_t['mod']:
+            #    m._pars.pretty_print()
+            #print(self.sess.systs._mods_t['id'])
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()

@@ -2,7 +2,7 @@ from .frame import Frame
 from .line_list import LineList
 #from .syst_list import SystList
 from .message import *
-#from .vars import *
+from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
@@ -124,6 +124,20 @@ class Spectrum(Frame):
         self._t['lines_mask'][self._where_safe] = mask
 
         return 0
+
+
+    def _node_add(self, nodes, x, y):
+        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
+        row = []
+        for c in nodes.t.colnames:
+            row.append(y) if c == 'y' else row.append(self.t[sel][c])
+        nodes.t.add_row(row)
+        nodes.t.sort('x')
+
+
+    def _node_remove(self, nodes, x):
+        sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
+        nodes.t.remove_rows(sel)
 
 
     def _nodes_clean(self, nodes, kappa=5.0):
@@ -252,7 +266,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, dx, xunit, y, dy):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -263,7 +277,14 @@ class Spectrum(Frame):
         # Create x, xmin, and xmax
         from .format import Format
         format = Format()
-        xstart, xend = np.nanmin(self.x), np.nanmax(self.x)
+        if xstart is None:
+            xstart = np.nanmin(self.x)
+        else:
+            xstart = (xstart*au.nm).to(xunit, equivalencies=equiv_w_v)
+        if xend is None:
+            xend = np.nanmax(self.x)
+        else:
+            xend = (xend*au.nm).to(xunit, equivalencies=equiv_w_v)
         x = np.arange(xstart.value, xend.value, dx) * xunit
         xmin, xmax = format._create_xmin_xmax(x)
 
@@ -339,6 +360,55 @@ class Spectrum(Frame):
         self._x_convert(xunit=xunit_orig)
         return 0
 
+
+    def _stats_print(self, xmin=0, xmax=np.inf):
+
+        sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
+                                      self.x.to(au.nm).value < xmax))
+        x = self.x[sel]
+        y = self.y[sel]
+        dy = self.dy[sel]
+        self._stats = {'min_x': np.min(x),
+                       'max_x': np.max(x),
+                       'mean_x': np.mean(x),
+                       'min_y': np.min(y),
+                       'max_y': np.max(y),
+                       'mean_y': np.mean(y),
+                       'median_y': np.median(y),
+                       'std_y': np.std(y),
+                       'mean_dy': np.mean(dy),
+                       'median_dy': np.median(dy)}
+        self._stats_tup = tuple(np.ravel([(self._stats[s].value,
+                                          self._stats[s].unit) \
+                                          for s in self._stats]))
+        self._stats_text = "Statistics in the selected region:\n" \
+                           " Minimum x: %3.4f %s\n" \
+                           " Maximum x: %3.4f %s\n" \
+                           " Mean x: %3.4f %s\n" \
+                           " Minimum y: %3.4e %s\n" \
+                           " Maximum y: %3.4e %s\n" \
+                           " Mean y: %3.4e %s\n" \
+                           " Median y: %3.4e %s\n" \
+                           " St. dev. y: %3.4e %s\n" \
+                           " Mean dy: %3.4e %s\n" \
+                           " Median dy: %3.4e %s" \
+                           % self._stats_tup
+        if xmin == 0.0 and np.isinf(xmax):
+            region = ("ALL SPECTRUM",)
+        else:
+            temp = (self._stats['min_x'].value, self._stats['max_x'].value,
+                    self._stats['min_x'].unit)
+            region = ("REGION: %3.4f-%3.4f %s" % temp,)
+        red = region+self._stats_tup[10:16]
+        self._stats_text_red = "%s\n" \
+                               "Mean y: %3.4e %s\n" \
+                               "Median y: %3.4e %s\n" \
+                               "St. dev. y: %3.4e %s" \
+                               % red
+        for s in self._stats_text.split('\n'):
+            logging.info(s)
+
+
     def _template_bb(self, temp=6000, scale=1.0):
         bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
         output_col = 'blackbody'
@@ -356,12 +426,19 @@ class Spectrum(Frame):
         self._t[output_col] = pl(self.x)
 
 
-
     def _zap(self, xmin, xmax):
 
-        w = np.where(np.logical_and(self.x.value>xmin, self.x.value<xmax))
-        self._t['y'][w] = np.interp(
-                              self.x[w].value,
-                              [self.x[w][0].value, self.x[w][-1].value],
-                              [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+        xmin = np.ravel(np.array(xmin))
+        xmax = np.ravel(np.array(xmax))
+
+        for m, M in zip(xmin, xmax):
+            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+            self._t['y'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+            self._t['dy'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
         return 0

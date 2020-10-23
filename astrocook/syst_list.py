@@ -134,12 +134,14 @@ class SystList(object):
 
         return 0
 
-    def _append(self, frame, unique=True):
+    def _append(self, frame, unique=False):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
+
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
-            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+#            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
+            self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
         #print(self._mods_t['z0', 'id'])
         return 0
 
@@ -196,6 +198,12 @@ class SystList(object):
             #print(k, dict[k])
             for m in self._mods_t:
                 if v[0] in m['id']:
+                    """
+                    if k in ['lines_voigt_%i_b' %i for i in (33,34,35,40,41,42)]:
+                        print('inside')
+                        print(v)
+                        m['mod']._pars.pretty_print()
+                    """
                     if v[1]=='expr':
                         #print(k, v[2])
                         m['mod']._pars[k].set(expr=v[2])

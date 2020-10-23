@@ -48,7 +48,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        #print(i, k)
+        print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
@@ -182,6 +182,14 @@ def log2_range(start, end, step):
     return np.power(2, log2)
 
 
+def meta_parse(meta):
+    s = ""
+    for m in meta:
+        if m not in forbidden_keywords and m[:5] not in forbidden_keywords:
+            s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
+    return s[:-2]
+
+
 def psf_gauss_wrong(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF
@@ -269,6 +277,12 @@ def trans_parse(series):
             for t in series_d[s]:
                 trans.append(t)
     return trans
+
+
+def elem_expand(elem, sess_sel):
+    return '\n'.join([str(sess_sel)+','+r for r in elem.split('\n')])
+    #return '\n'.join([str(sess_sel)+','+r+',C'+str(i%10) \
+    #                 for i,r in enumerate(elem.split('\n'))])
 
 # Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
 def corners_to_cells(top_lefts, bottom_rights):
