@@ -302,7 +302,16 @@ class Graph(object):
                               color='C1', alpha=0.2)
         """
         sess._shade = True
-        self._refresh(sess, xlim=self._ax.get_xlim(), ylim=self._ax.get_ylim())
+        #self._refresh(sess, xlim=self._ax.get_xlim(), ylim=self._ax.get_ylim())
+
+        x = self._gui._sess_sel.spec.x.value
+        trans = transforms.blended_transform_factory(
+                    self._ax.transData, self._ax.transAxes)
+        self._ax.fill_between(x, 0, 1, where=sess._shade_where,
+                              transform=trans, color='C1', alpha=0.2)
+
+
+        self._canvas.draw()
 
 
     def _seq(self, sess, norm):
