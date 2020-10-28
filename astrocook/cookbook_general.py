@@ -257,7 +257,6 @@ class CookbookGeneral(object):
             return 0
 
         xunit = au.Unit(xunit)
-
         for s in self.sess.seq:
             try:
                 getattr(self.sess, s)._x_convert(zem, xunit)

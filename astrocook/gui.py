@@ -357,6 +357,10 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
+        try:
+            self._gui._sess_sel.cb.sess = self._gui._sess_sel
+        except:
+            pass
 
         # Enable session equalize/combine depending on how many sessions are selected
         edit = self._menu._edit
@@ -371,6 +375,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         if self._gui._sess_item_sel != []:
             self._gui._refresh()
+
+
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
