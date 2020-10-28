@@ -146,7 +146,7 @@ class GUI(object):
                     graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
-                    if autolim:
+                    if autolim or True:
                         self._graph_det._refresh(self._sess_items, text=key,
                                                  xlim=xlim_det, ylim=ylim_det,
                                                  init_cursor=init_cursor)
