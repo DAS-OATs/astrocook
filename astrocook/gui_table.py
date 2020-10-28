@@ -432,7 +432,7 @@ class GUITableSystList(GUITable):
         z = row['z']
         series = trans_parse(row['series'])
         self._gui._graph_main._z_sel = z
-        self._gui._graph_main._series_sel = series        
+        self._gui._graph_main._series_sel = series
         self._gui._graph_main._refresh(self._gui._sess_sel)
         self._gui._graph_det._update(series, z, hwin_def)
         if not hasattr(self._gui, '_dlg_mini_systems') \
