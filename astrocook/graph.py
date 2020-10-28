@@ -120,6 +120,7 @@ class Graph(object):
                                   #['add_line', 'add_syst']))
                                   #'Add system', 'add_syst'))
                                   title, attr))
+
         """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,
@@ -301,9 +302,9 @@ class Graph(object):
                               color='C1', alpha=0.2)
         """
         sess._shade = True
-        self._refresh(sess)
+        self._refresh(sess, xlim=self._ax.get_xlim(), ylim=self._ax.get_ylim())
 
-        
+
     def _seq(self, sess, norm):
 
         detail = self._panel != self._gui._graph_main._panel
