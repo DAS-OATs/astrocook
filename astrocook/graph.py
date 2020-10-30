@@ -100,6 +100,7 @@ class Graph(object):
                 attr.append('spec_zap')
                 self._reg_shade()
             if hasattr(self._gui._sess_sel, 'nodes') \
+                and hasattr(self._gui._sess_sel.nodes, 'x') \
                 and focus == self._gui._graph_main:
                 nodes = self._gui._sess_sel.nodes
                 dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
