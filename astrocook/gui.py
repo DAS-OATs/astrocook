@@ -32,8 +32,8 @@ class GUI(object):
             print(''.join(l))
         print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
-        self._graph_elem_list = []
-        self._meta_list = []
+        #self._graph_elem_list = []
+        #self._meta_list = []
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
@@ -310,7 +310,9 @@ class GUIPanelSession(wx.Frame):
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
-        self._gui._graph_elem_list.append(self._gui._graph_main._elem)
+        #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
+        self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+        #print(self._gui._sess_sel._graph_elem)
         #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         self._gui._refresh(autolim=False)
 
