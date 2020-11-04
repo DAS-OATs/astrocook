@@ -303,7 +303,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
         self._gui._graph_elem_list[self._sel] = self._elem
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
 
 
     def _on_cancel(self, e=None):
