@@ -125,6 +125,7 @@ class GUIMenu(object):
                 if dlg_mini == 'systems':
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = False
                 gui_dlg_mini._on_cancel(event)
                 if dlg_mini == 'systems':

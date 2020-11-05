@@ -110,6 +110,9 @@ class Graph(object):
                 if dist_x < 0.1*dist_mean:
                     title.append('Remove node')
                     attr.append('node_remove')
+            if 'cursor_z_series' in self._sel:
+                title.append('Stick cursor')
+                attr.append('cursor_stick')
             if 'cont' in sess.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
@@ -334,22 +337,31 @@ class Graph(object):
                 sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
-                t = getattr(sess, struct).t
-                if mode != 'axhline':
-                    x = dc(t[xcol])
-                if mode != 'axvline':
-                    y = dc(t[ycol])
-                if mcol not in ['None', 'none', None]:
-                    x[t[mcol]==0] = np.nan
-                if norm and 'cont' in t.colnames:
-                    y = y/t['cont']
-                if xcol == 'z':
-                    z = sess.systs.z
-                    series = sess.systs.series
-                    z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
-                    series_list = [trans_parse(s) for s in series]
-                    z_flat = np.array([z for zl in z_list for z in zl])
-                    series_flat = np.array([s for sl in series_list for s in sl])
+                if struct in ['spec','lines','nodes','systs']:
+                    t = getattr(sess, struct).t
+                    if mode != 'axhline':
+                        x = dc(t[xcol])
+                    if mode != 'axvline':
+                        y = dc(t[ycol])
+                    if mcol not in ['None', 'none', None]:
+                        x[t[mcol]==0] = np.nan
+                    if norm and 'cont' in t.colnames:
+                        y = y/t['cont']
+                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                if struct in ['systs', 'cursor']:
+                    if xcol == 'z' :
+                    #if struct == 'systs':
+                        z = sess.systs.z
+                        series = sess.systs.series
+                        z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
+                        series_list = [trans_parse(s) for s in series]
+                        z_flat = np.array([z for zl in z_list for z in zl])
+                        series_flat = np.array([s for sl in series_list for s in sl])
+                    else:
+                        z = float(xcol)
+                        series = sess._series_sel
+                        z_flat = np.array([z]*len(trans_parse(series)))
+                        series_flat = trans_parse(series)
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat])
                     x = xem*(1+z_flat)

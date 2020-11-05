@@ -86,6 +86,21 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
+    def _on_cursor_stick(self, event):
+        if not hasattr(self._gui._sess_sel, '_cursors'):
+            self._gui._sess_sel._cursors = [self._graph._cursor]
+        else:
+            self._gui._sess_sel._cursors.append(self._graph._cursor)
+        self._gui._sess_sel._graph_elem += \
+            '\n%i,cursor,%2.6f,None,None,axvline,:,1.0,C3,1.0' \
+            % (self._gui._panel_sess._sel, self._graph._cursor._z)
+        self._elem = self._gui._sess_sel._graph_elem
+
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        self._refresh(self._gui._sess_sel)
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]

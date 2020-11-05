@@ -251,7 +251,10 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._gui._dlg_mini_graph = self
         self._sel = dc(self._gui._panel_sess._sel)
         #self._elem = '\n'.join([self._sel+','+r for r in elem.split('\n')])
-        self._elem = elem_expand(elem, self._sel)
+        if hasattr(self._gui._sess_sel, '_graph_elem'):
+            self._elem = self._gui._sess_sel._graph_elem
+        else:
+            self._elem = elem_expand(elem, self._sel)
         super(GUIDialogMiniGraph, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
@@ -318,7 +321,8 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._sel = self._gui._panel_sess._sel
             #self._elem = elem_expand(graph_elem, self._sel)
             #self._elem = self._gui._graph_elem_list[self._sel]
-            self._elem = self._gui._sess_sel._graph_elem
+        self._elem = self._gui._sess_sel._graph_elem
+
         self._ctrl_elem.SetValue(self._elem)
         self._on_apply(refresh=False)
 
@@ -364,9 +368,9 @@ class GUIDialogMiniMeta(GUIDialogMini):
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         #apply_button.SetDefault()
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
-        default_button = wx.Button(self, label="Back to original")
-        default_button.Bind(wx.EVT_BUTTON, self._on_original)
-        buttons.Add(default_button)
+        orig_button = wx.Button(self, label="Back to original")
+        orig_button.Bind(wx.EVT_BUTTON, self._on_original)
+        buttons.Add(orig_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
