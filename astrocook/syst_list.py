@@ -217,9 +217,9 @@ class SystList(object):
                         else:
                             self._constr[k] = (v[0], k.split('_')[-1], None)
                         #print(v[0], v[1], v[2])
-                        #print(self._constr)
+                        #print(m['mod']._pars[k].__dict__)
         #print(self._constr)
-
+                #m['mod']._pars.pretty_print()
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t

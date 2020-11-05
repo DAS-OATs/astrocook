@@ -21,15 +21,19 @@ class GUI(object):
         """ Constructor """
 
         try:
-            print("┌───────────────────┐")
+            l = ['─']*(16+len(version))
+            print("┌%s┐" % ''.join(l))
             print("│ ASTROCOOK 🍪 v%3s │" % version)
-            print("└───────────────────┘")
+            print("└%s┘" % ''.join(l))
         except:
-            print("-----------------")
+            l = ['-']*(17+len(version))
+            print(''.join(l))
             print(" ASTROCOOK  v%3s " % version)
-            print("-----------------")
+            print(''.join(l))
         print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
+        #self._graph_elem_list = []
+        #self._meta_list = []
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
@@ -41,8 +45,9 @@ class GUI(object):
         self._menu_z0_id = []
         self._menu_mods_id = []
         self._menu_tab_id = []
-        self._graph_elem_list = []
         self._panel_sess = GUIPanelSession(self)
+        self._id_zoom = 9
+        self._data_lim = None
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -64,27 +69,72 @@ class GUI(object):
                  autosort=True, _xlim=None):
         """ Refresh the GUI after an action """
 
+
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._dlg_mini_graph._refresh()
         else:
-            self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            self._graph_main._elem = elem_expand(graph_elem,
+                self._panel_sess._sel)
             try:
-                self._graph_det._elem = elem_expand(graph_elem, self._panel_sess._sel)
+                self._graph_det._elem = elem_expand(graph_elem,
+                    self._panel_sess._sel)
             except:
                 pass
 
-        xlim = self._graph_main._graph._ax.get_xlim()
-        ylim = self._graph_main._graph._ax.get_ylim()
+        if hasattr(self, '_dlg_mini_meta') \
+            and self._dlg_mini_meta._shown:
+            self._dlg_mini_meta._refresh()
+        """
+        else:
+            self._dlg_mini_meta._meta = meta_parse(self._sess_sel.spec._meta)
+            self._dlg_mini_meta._meta_backup = meta_parse(
+                self._sess_sel.spec._meta_backup)
+        """
+
+        ax = self._graph_main._graph._ax
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        dl = self._data_lim
+        """
+        try:
+            print(xlim[0], dl[0], xlim[1], dl[1])
+            print(ylim[0], dl[2], ylim[1], dl[3])
+        except:
+            pass
+        """
+        if dl is None or ((xlim[0] <= dl[0] or dl[0]==0.) \
+                      and (xlim[1] >= dl[1] or dl[1]==1.) \
+                      and (ylim[0] <= dl[2] or dl[2]==0.) \
+                      and (ylim[1] >= dl[3] or dl[3]==1.)):
+            self._graph_main._graph._zoom = False
+            dl = (xlim[0], xlim[1], ylim[0], ylim[1])
+        #print(self._graph_main._graph._zoom)
+
+
+        #axc.set_xlim(0, 1)
+        #axc.set_ylim(0, 1)
+        #print(self._graph_main._graph._zoom)
+        #if xlim == axc.get_xlim() and ylim == axc.get_ylim():
+        #    print('false')
+        #    self._graph_main._graph._zoom = False
+
+
+
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
+        #print(autolim, goodlim, _xlim)
         if autolim and goodlim and _xlim != None:
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
+        elif autolim and goodlim and self._graph_main._graph._zoom:
+            self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
             self._graph_main._refresh(self._sess_items)
+
         if hasattr(self, '_graph_det'):
             #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
             #"""
@@ -96,7 +146,7 @@ class GUI(object):
                     graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
-                    if autolim:
+                    if autolim or True:
                         self._graph_det._refresh(self._sess_items, text=key,
                                                  xlim=xlim_det, ylim=ylim_det,
                                                  init_cursor=init_cursor)
@@ -133,6 +183,7 @@ class GUI(object):
 
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
+
 
     def _refresh_graph_det(self, init_cursor=False, autolim=True):
         graph = self._graph_det._graph
@@ -259,8 +310,11 @@ class GUIPanelSession(wx.Frame):
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
+        #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
+        self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+        #print(self._gui._sess_sel._graph_elem)
+        #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         self._gui._refresh(autolim=False)
-        self._gui._graph_elem_list.append(self._gui._graph_main._elem)
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
@@ -305,6 +359,10 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
+        try:
+            self._gui._sess_sel.cb.sess = self._gui._sess_sel
+        except:
+            pass
 
         # Enable session equalize/combine depending on how many sessions are selected
         edit = self._menu._edit
@@ -319,6 +377,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         if self._gui._sess_item_sel != []:
             self._gui._refresh()
+
+
 
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:

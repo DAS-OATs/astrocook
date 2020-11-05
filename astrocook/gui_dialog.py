@@ -293,7 +293,8 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_apply(self, e=None, refresh=True):
         self._elem = self._ctrl_elem.GetValue()
         self._gui._graph_main._elem = self._elem
-        self._gui._graph_elem_list[self._sel] = self._elem
+        #self._gui._graph_elem_list[self._sel] = self._elem
+        self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
@@ -302,8 +303,9 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_default(self, e=None, refresh=True):
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
-        self._gui._graph_elem_list[self._sel] = self._elem
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        #self._gui._graph_elem_list[self._sel] = self._elem
+        self._gui._sess_sel._graph_elem = self._elem
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
 
 
     def _on_cancel(self, e=None):
@@ -315,7 +317,8 @@ class GUIDialogMiniGraph(GUIDialogMini):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
             #self._elem = elem_expand(graph_elem, self._sel)
-            self._elem = self._gui._graph_elem_list[self._sel]
+            #self._elem = self._gui._graph_elem_list[self._sel]
+            self._elem = self._gui._sess_sel._graph_elem
         self._ctrl_elem.SetValue(self._elem)
         self._on_apply(refresh=False)
 
@@ -327,8 +330,9 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._gui = gui
         self._gui._dlg_mini_meta = self
         self._sel = dc(self._gui._panel_sess._sel)
+
         self._meta = meta_parse(self._gui._sess_sel.spec._meta)
-        self._meta_backup = meta_parse(self._gui._sess_sel.spec._meta_backup)
+        self._meta_backup = dc(self._gui._sess_sel.spec._meta_backup)
         super(GUIDialogMiniMeta, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
@@ -369,19 +373,24 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e=None):
+    def _on_apply(self, e=None, refresh=True):
         self._meta = self._ctrl_meta.GetValue()
+        self._gui._sess_sel.spec._meta = dc(self._meta_backup)
+        #self._gui._meta_list[self._sel] = self._meta
         for m in self._meta.split('\n'):
             k = m.split(': ')[0]
+            #print(k)
             v = m.split(': ')[1].split(' / ')
-            self._gui._sess_sel.spec.meta[k] = v[0]
-            self._gui._sess_sel.spec.meta.comments[k] = v[1]
-        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+            self._gui._sess_sel.spec._meta[k] = v[0]
+            self._gui._sess_sel.spec._meta.comments[k] = v[1]
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
-    def _on_original(self, e=None):
+    def _on_original(self, e=None, refresh=True):
         self._meta = meta_parse(self._meta_backup)
-        #if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        self._gui._sess_sel.spec._meta = dc(self._meta_backup)
+        #print(meta_parse(self._gui._sess_sel.spec.meta))
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_cancel(self, e=None):
@@ -393,8 +402,8 @@ class GUIDialogMiniMeta(GUIDialogMini):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
             #self._elem = elem_expand(graph_elem, self._sel)
-            self._elem = self._gui._graph_elem_list[self._sel]
-        self._ctrl_elem.SetValue(self._elem)
+            self._meta = meta_parse(self._gui._sess_sel.spec.meta)
+        self._ctrl_meta.SetValue(self._meta)
         self._on_apply(refresh=False)
 
 
