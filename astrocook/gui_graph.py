@@ -87,14 +87,14 @@ class GUIGraphMain(wx.Frame):
 
 
     def _on_cursor_stick(self, event):
+        z = "%2.6f" % self._graph._cursor._z
         if not hasattr(self._gui._sess_sel, '_cursors'):
-            self._gui._sess_sel._cursors = [self._graph._cursor]
+            self._gui._sess_sel._cursors = {z: self._graph._cursor}
         else:
-            self._gui._sess_sel._cursors.append(self._graph._cursor)
+            self._gui._sess_sel._cursors[z] = self._graph._cursor
         self._gui._sess_sel._graph_elem += \
-            '\n%i,cursor,%2.6f,None,None,axvline,:,1.0,C%s,1.0' \
-            % (self._gui._panel_sess._sel, self._graph._cursor._z,
-               (len(self._gui._sess_sel._cursors)-1)%10)
+            '\n%i,cursor,%s,None,None,axvline,:,1.0,C%s,1.0' \
+            % (self._gui._panel_sess._sel, z, (len(self._gui._sess_sel._cursors)-1)%10)
         self._elem = self._gui._sess_sel._graph_elem
 
         if hasattr(self._gui, '_dlg_mini_graph'):

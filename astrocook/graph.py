@@ -368,7 +368,7 @@ class Graph(object):
                         series_flat = np.array([s for sl in series_list for s in sl])
                     else:
                         z = float(xcol)
-                        series = sess._series_sel
+                        series = sess._cursors[xcol]._series
                         z_flat = np.array([z]*len(trans_parse(series)))
                         series_flat = trans_parse(series)
                     xem = np.array([xem_d[sf].to(au.nm).value \
