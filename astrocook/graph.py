@@ -70,6 +70,8 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
+        sess = self._gui._sess_sel
+        x = x/(1+sess.spec._rfz)
         from .gui_table import GUITablePopup
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
@@ -79,7 +81,6 @@ class Graph(object):
         focus._click_xy = (x,y)
         title = []
         attr = []
-        sess = self._gui._sess_sel
 
         if event.button == 1:
             sess._clicks = [(x,y)]
@@ -296,6 +297,7 @@ class Graph(object):
     def _reg_shade(self):
         sess = self._gui._sess_sel
         x = sess.spec.x.value
+
         sess._shade_where = np.logical_and(x>sess._clicks[0][0],
                                            x<sess._clicks[1][0])
         """
@@ -308,7 +310,7 @@ class Graph(object):
         sess._shade = True
         #self._refresh(sess, xlim=self._ax.get_xlim(), ylim=self._ax.get_ylim())
 
-        x = self._gui._sess_sel.spec.x.value
+        #x = self._gui._sess_sel.spec.x.value
         trans = transforms.blended_transform_factory(
                     self._ax.transData, self._ax.transAxes)
         self._ax.fill_between(x, 0, 1, where=sess._shade_where,
