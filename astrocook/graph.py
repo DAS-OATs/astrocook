@@ -378,6 +378,8 @@ class Graph(object):
                     if mode in ['plot', 'step', 'axvline']:
                         kwargs['linestyle'] = style
                         kwargs['linewidth'] = width
+                    if mode == 'step':
+                        kwargs['where'] = 'mid'
                     if mode == 'scatter':
                         kwargs['marker'] = style
                         kwargs['s'] = (5*float(width))**2
@@ -394,6 +396,23 @@ class Graph(object):
                             getattr(self._ax, mode)(xi_sel, **kwargs)
                     else:
                         getattr(self._ax, mode)(x, y, **kwargs)
+                    if struct == 'cursor':
+                        trans = transforms.blended_transform_factory(
+                            self._ax.transData, self._ax.transAxes)
+                        for xi, s, z in zip(x, series_flat, z_flat):
+                            kwargs_text = {}
+                            kwargs_text['color'] = color
+                            kwargs_text['alpha'] = float(alpha)
+                            kwargs_text['size'] = (float(width)+1)*4
+                            kwargs_text['transform'] = trans
+                            kwargs_text['rotation'] = 90
+                            kwargs_text['ha'] = 'right'
+                            kwargs_text['va'] = 'center'
+                            self._ax.text(xi, 0.10, s, **kwargs_text)
+                            if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                                z += self._gui._sess_sel.spec._rfz
+                            self._ax.text(xi, 0.10, s, **kwargs_text)
+                            self._ax.text(xi, 0.90, "%3.4f" % z, **kwargs_text)
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
             except:

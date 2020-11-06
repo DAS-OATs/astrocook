@@ -76,11 +76,17 @@ class GUI(object):
             and self._dlg_mini_graph._shown:
             self._dlg_mini_graph._refresh()
         else:
-            self._graph_main._elem = elem_expand(graph_elem,
-                self._panel_sess._sel)
-            try:
-                self._graph_det._elem = elem_expand(graph_elem,
+            if hasattr(self._sess_sel, '_graph_elem'):
+                self._graph_main._elem = self._sess_sel._graph_elem
+            else:
+                self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+            try:
+                if hasattr(self._sess_sel, '_graph_elem'):
+                    self._graph_det._elem = self._sess_sel._graph_elem
+                else:
+                    self._graph_det._elem = elem_expand(graph_elem,
+                        self._panel_sess._sel)
             except:
                 pass
 
@@ -294,6 +300,7 @@ class GUIPanelSession(wx.Frame):
         self.Show()
         self.Bind(wx.EVT_CLOSE, self._on_close)
 
+
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
@@ -385,6 +392,7 @@ class GUIPanelSession(wx.Frame):
             event.Veto()
         else:
             event.Skip()
+
 
     def _refresh(self):
         for i, s in zip(self._items, self._gui._sess_items):

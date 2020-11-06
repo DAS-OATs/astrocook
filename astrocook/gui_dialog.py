@@ -264,14 +264,12 @@ class GUIDialogMiniGraph(GUIDialogMini):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
         descr = wx.StaticText(
                     self._panel, -1,
-                    label="Each line define a graph element as a set of\n"
-                          "comma-separated values. Values are: session,\n"
-                          "table, x column, y column, mask column (if any),\n"
-                          "type of graph (plot, step, scatter), line style\n"
-                          "or marker symbol, line width or marker size,\n"
-                          "color, alpha transparency.")
+                    label="Each line define a graph element as a set of comma-separated\n"
+                          "values. Values are: session, table, x column, y column, mask\n"
+                          "column (if any), type of graph (plot, step, scatter), line style\n"
+                          "or marker symbol, line width or marker size, color, opacity.")
         self._ctrl_elem = wx.TextCtrl(self._panel, -1, value=self._elem,
-                                      size=(300, 200), style = wx.TE_MULTILINE)
+                                      size=(360, 200), style = wx.TE_MULTILINE)
         #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
         fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
