@@ -27,6 +27,7 @@ class Graph(object):
         self._fig = Figure()
         self._cursor_lines = []
         self._zoom = False
+        self._click_1 = False
 
         if init_canvas:
             self._init_canvas()
@@ -84,8 +85,13 @@ class Graph(object):
 
         if event.button == 1:
             sess._clicks = [(x,y)]
+            self._click_1 = True
         if event.button == 3:
-            sess._clicks.append((x,y))
+            if self._click_1:
+                sess._clicks.append((x,y))
+            else:
+                sess._clicks = [(x,y)]
+            sess._click_1 = False
 
         if event.button == 3:
             if focus == self._gui._graph_main:
@@ -313,11 +319,12 @@ class Graph(object):
         #x = self._gui._sess_sel.spec.x.value
         trans = transforms.blended_transform_factory(
                     self._ax.transData, self._ax.transAxes)
-        self._ax.fill_between(x, 0, 1, where=sess._shade_where,
-                              transform=trans, color='C1', alpha=0.2)
 
+        shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
+                                      transform=trans, color='C1', alpha=0.2)
 
         self._canvas.draw()
+        shade.remove()
 
 
     def _seq(self, sess, norm):
