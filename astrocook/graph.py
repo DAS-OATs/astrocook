@@ -409,19 +409,22 @@ class Graph(object):
                         trans = transforms.blended_transform_factory(
                             self._ax.transData, self._ax.transAxes)
                         for xi, s, z in zip(x, series_flat, z_flat):
-                            kwargs_text = {}
-                            kwargs_text['color'] = color
-                            kwargs_text['alpha'] = float(alpha)
-                            kwargs_text['size'] = (float(width)+1)*4
-                            kwargs_text['transform'] = trans
-                            kwargs_text['rotation'] = 90
-                            kwargs_text['ha'] = 'right'
-                            kwargs_text['va'] = 'bottom'
-                            if hasattr(self._gui._sess_sel.spec, '_rfz'):
-                                z += self._gui._sess_sel.spec._rfz
-                            self._ax.text(xi, 0.05, s, **kwargs_text)
-                            kwargs_text['va'] = 'top'
-                            self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                            if xi > self._ax.get_xlim()[0] \
+                                and xi < self._ax.get_xlim()[1]:
+                                kwargs_text = {}
+                                kwargs_text['color'] = color
+                                kwargs_text['alpha'] = float(alpha)
+                                kwargs_text['size'] = (float(width)+1)*5
+                                kwargs_text['transform'] = trans
+                                kwargs_text['rotation'] = 90
+                                kwargs_text['ha'] = 'right'
+                                kwargs_text['va'] = 'bottom'
+                                if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                                    z += self._gui._sess_sel.spec._rfz
+
+                                self._ax.text(xi, 0.05, s, **kwargs_text)
+                                kwargs_text['va'] = 'top'
+                                self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
             except:

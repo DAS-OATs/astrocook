@@ -39,7 +39,21 @@ class CookbookGraph(object):
         gui = self.sess._gui
         self.menu_view_cursor_z_series(z, series)
         gui._dlg_mini_systems._on_stick(None)
+        gui._dlg_mini_systems._on_show(None)
 
+
+    def menu_view_graph_elem_edit(self, row=[0], key=[0], value=""):
+        gui = self.sess._gui
+        menu = gui._panel_sess._menu
+        menu._on_graph(None, "Edit graph elements", None, gui._graph_elem,
+                       'graph', None)
+        key_list = [e.split(',') for e in gui._sess_sel._graph_elem.split('\n')]
+        for r in row:
+            for k in key:
+                key_list[r][k] = value
+        gui._sess_sel._graph_elem = '\n'.join([','.join(k) for k in key_list])
+        gui._dlg_mini_graph._refresh()
+        gui._refresh()
 
     def save(self, name='fig.pdf'):
         self.sess._gui._graph_main._graph._fig.savefig(name)

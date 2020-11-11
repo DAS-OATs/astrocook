@@ -60,6 +60,8 @@ class GUIMenu(object):
         item.key = key
         if targ == GraphCursorZSeries:
             self._gui._cursor = item
+        if dlg_mini == "graph":
+            self._gui._graph_elem = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_graph(e, alt_title, key, item, dlg_mini, targ),
