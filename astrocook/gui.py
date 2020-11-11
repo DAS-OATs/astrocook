@@ -133,7 +133,6 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        #print(autolim, goodlim, _xlim)
         if autolim and goodlim and _xlim != None:
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         elif autolim and goodlim and self._graph_main._graph._zoom:

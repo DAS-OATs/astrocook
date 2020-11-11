@@ -416,12 +416,12 @@ class Graph(object):
                             kwargs_text['transform'] = trans
                             kwargs_text['rotation'] = 90
                             kwargs_text['ha'] = 'right'
-                            kwargs_text['va'] = 'center'
-                            self._ax.text(xi, 0.10, s, **kwargs_text)
+                            kwargs_text['va'] = 'bottom'
                             if hasattr(self._gui._sess_sel.spec, '_rfz'):
                                 z += self._gui._sess_sel.spec._rfz
-                            self._ax.text(xi, 0.10, s, **kwargs_text)
-                            self._ax.text(xi, 0.90, "%3.4f" % z, **kwargs_text)
+                            self._ax.text(xi, 0.05, s, **kwargs_text)
+                            kwargs_text['va'] = 'top'
+                            self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
             except:

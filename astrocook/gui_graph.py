@@ -86,8 +86,9 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
-    def _on_cursor_stick(self, event):
+    def _on_cursor_stick(self, event, cursor_z=None):
         z = "%2.6f" % self._graph._cursor._z
+
         if not hasattr(self._gui._sess_sel, '_cursors'):
             self._gui._sess_sel._cursors = {z: self._graph._cursor}
         else:

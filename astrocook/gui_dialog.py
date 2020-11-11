@@ -451,23 +451,15 @@ class GUIDialogMiniSystems(GUIDialogMini):
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
         self._cursor_button = wx.Button(self, label="Show cursor")
         self._cursor_button.Bind(wx.EVT_BUTTON, self._on_show)
-        buttons.Add(self._cursor_button)
+        buttons.Add(self._cursor_button, border=5)
+        stick_button = wx.Button(self, label="Stick cursor")
+        stick_button.Bind(wx.EVT_BUTTON, self._on_stick)
+        buttons.Add(stick_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
         self._bottom.SetSizeHints(self)
 
-    def _on_show(self, e):
-        sel = self._gui._graph_main._sel
-        if not self._shown:
-            sel.append(self._gui._cursor.key)
-            self._on_apply(e)
-            self._cursor_button.SetLabel("Hide cursor")
-        else:
-            sel.remove(self._gui._cursor.key)
-            self._on_cancel(e)
-            self._cursor_button.SetLabel("Show cursor")
-        self._shown = not self._shown
 
     def _on_apply(self, e):
         series = self._ctrl_series.GetValue()
@@ -483,6 +475,23 @@ class GUIDialogMiniSystems(GUIDialogMini):
             self._gui._graph_det._graph._fig.clear()
             self._gui._graph_det._update(series, float(z), float(hwin))
         self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_show(self, e):
+        sel = self._gui._graph_main._sel
+        if not self._shown:
+            sel.append(self._gui._cursor.key)
+            self._on_apply(e)
+            self._cursor_button.SetLabel("Hide cursor")
+        else:
+            sel.remove(self._gui._cursor.key)
+            self._on_cancel(e)
+            self._cursor_button.SetLabel("Show cursor")
+        self._shown = not self._shown
+
+
+    def _on_stick(self, e):
+        self._gui._graph_main._on_cursor_stick(e)
 
 
     def _on_cancel(self, e):
