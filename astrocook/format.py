@@ -133,7 +133,10 @@ class Format(object):
         x = data['WAVE'][0]
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
-        dy = data['ERR'][0]
+        try:
+            dy = data['ERR_FLUX'][0]
+        except:
+            dy = data['ERR'][0]
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
