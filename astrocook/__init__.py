@@ -1,3 +1,7 @@
+#import locale
+#locale.setlocale(locale.LC_ALL, 'en_US')
+#import wx
+#wx.Locale(wx.LANGUAGE_DEFAULT)
 version = "1.0.0"
 
 from .session import Session

@@ -3,6 +3,7 @@ from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
+import pathlib
  #c, e, m_e
 
 xunit_def = au.nm
@@ -87,8 +88,9 @@ dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
-p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-atom_par = ascii.read(p+'/atom_par.dat')
+#p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
