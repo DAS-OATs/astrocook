@@ -129,6 +129,7 @@ class Format(object):
         """ ESO Advanced Data Product """
 
         hdr = hdul[0].header
+        hdr1 = hdul[1].header
         data = hdul[1].data
         x = data['WAVE'][0]
         xmin, xmax = self._create_xmin_xmax(x)
@@ -137,8 +138,8 @@ class Format(object):
             dy = data['ERR_FLUX'][0]
         except:
             dy = data['ERR'][0]
-        xunit = au.Angstrom
-        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        xunit = au.Unit(hdr1['TUNIT1']) #au.Angstrom
+        yunit = au.Unit(hdr1['TUNIT2']) #au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
         meta = hdr #{'instr': hdr['INSTRUME']}
         """
