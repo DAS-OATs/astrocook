@@ -3,6 +3,7 @@ from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
+import pathlib
  #c, e, m_e
 
 xunit_def = au.nm
