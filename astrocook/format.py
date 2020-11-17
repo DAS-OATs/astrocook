@@ -138,6 +138,10 @@ class Format(object):
             dy = data['ERR_FLUX'][0]
         except:
             dy = data['ERR'][0]
+        try:
+            cont = data['CONTINUUM'][0]
+        except:
+            cont = []
         xunit = au.Unit(hdr1['TUNIT1']) #au.Angstrom
         yunit = au.Unit(hdr1['TUNIT2']) #au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
@@ -149,7 +153,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
 
     def eso_midas_image(self, hdul):
