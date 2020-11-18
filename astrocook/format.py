@@ -156,9 +156,10 @@ class Format(object):
         """
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
-        for c in data.colnames:
+        for i,c in enumerate(data.colnames):
             if c not in ['WAVE', 'FLUX', 'ERR_FLUX', 'ERR', 'CONTINUUM']:
                 spec._t[c] = data[c][0]
+                spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
 
         return spec
 
