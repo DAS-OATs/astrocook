@@ -130,7 +130,7 @@ class Format(object):
 
         hdr = hdul[0].header
         hdr1 = hdul[1].header
-        data = hdul[1].data
+        data = Table(hdul[1].data)
         x = data['WAVE'][0]
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
@@ -142,6 +142,7 @@ class Format(object):
             cont = data['CONTINUUM'][0]
         except:
             cont = []
+
         xunit = au.Unit(hdr1['TUNIT1']) #au.Angstrom
         yunit = au.Unit(hdr1['TUNIT2']) #au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
@@ -153,8 +154,13 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
+        for c in data.colnames:
+            if c not in ['WAVE', 'FLUX', 'ERR_FLUX', 'ERR', 'CONTINUUM']:
+                spec._t[c] = data[c][0]
+
+        return spec
 
     def eso_midas_image(self, hdul):
         logging.info(msg_format('ESO MIDAS image'))
