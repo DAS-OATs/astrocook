@@ -39,8 +39,14 @@ class SystModel(LMComposite):
         if vary:
             time_start = datetime.datetime.now()
         #self._pars.pretty_print()
+            if 'max_nfev' in fit_kws:
+                max_nfev = fit_kws['max_nfev']
+                del fit_kws['max_nfev']
+            else:
+                max_nfev = None
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
+                                             max_nfev=max_nfev,
                                              fit_kws=fit_kws,
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
