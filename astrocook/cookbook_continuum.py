@@ -110,8 +110,9 @@ class CookbookContinuum(object):
         if len(peaks.t) > 0:
             source = [col]*len(peaks.t)
             from .line_list import LineList
-            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                             source, spec._xunit, spec._yunit, meta=spec._meta)
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.t[col],
+                             peaks.dy, source, spec._xunit, spec._yunit,
+                             meta=spec._meta)
             if append and self.sess.lines is not None \
                 and len(self.sess.lines.t) > 0:
                 self.sess.lines._append(lines)
