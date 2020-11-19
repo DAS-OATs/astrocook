@@ -321,7 +321,7 @@ class GUIPanelSession(wx.Frame):
         #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
         edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
-        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>1)
+        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>0)
 
 
     def _on_edit(self, event):
