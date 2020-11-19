@@ -51,7 +51,7 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
-        self.json = '{"set_menu":\n  ['
+        self.json = '{"set_menu":\n  [\n'
         self._open_twin = twin
         self._clicks = []
         self._stats = False
@@ -246,7 +246,7 @@ class Session(object):
         root = path[:-4]
         stem = root.split('/')[-1]
 
-        self.json = self.json+'\n'\
+        self.json = self.json+\
                     '    {\n'\
                     '      "cookbook": "",\n'\
                     '      "recipe": "_refresh",\n'\
