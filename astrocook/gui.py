@@ -47,6 +47,7 @@ class GUI(object):
         self._menu_tab_id = []
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
+        self._json = '{"set_menu":\n  ['
         self._data_lim = None
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -60,9 +61,12 @@ class GUI(object):
         else:
             logging.info("Welcome!")
             for p in paths:
+                self._panel_sess._open_path = p
                 if p[-4:] == 'json':
+                    self._panel_sess._open_rec = 'load_json'
                     self._panel_sess.load_json(p)
                 else:
+                    self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(p)
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
@@ -331,7 +335,14 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        #name = path.split('/')[-1][:-5]
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "load_json",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
+
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
@@ -599,6 +610,14 @@ class GUIPanelSession(wx.Frame):
         @param path Path to file
         @return 0
         """
+
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "_on_open",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
 
         logging.info("I'm loading JSON file %s..." % path)
         with open(path) as json_file:

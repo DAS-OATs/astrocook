@@ -4,6 +4,7 @@ from .vars import graph_elem, hwin_def
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
+import json
 import numpy as np
 import datetime as dt
 import wx
@@ -109,6 +110,18 @@ class GUIDialog(wx.Dialog):
     def _on_run(self, e):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
+
+            json_string = '\n'\
+                          '    {\n'\
+                          '      "cookbook": "cb",\n'\
+                          '      "recipe": "%s",\n'\
+                          '      "params":\n' % a
+
+            json_string += json.dumps(self._params, indent=2)[3:-3]
+            json_string += '      }\n'\
+                           '    },'
+            self._gui._sess_sel.json += json_string
+
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)
             start = dt.datetime.now()
