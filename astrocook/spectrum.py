@@ -236,7 +236,6 @@ class Spectrum(Frame):
 
 
     def _peaks_find(self, col='conv', kind='min', kappa=3.0, **kwargs):
-
         y = self._safe(self._t[col])
         min_idx = np.hstack(argrelmin(y, **kwargs))
         max_idx = np.hstack(argrelmax(y, **kwargs))
