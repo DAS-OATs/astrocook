@@ -63,8 +63,8 @@ class GUI(object):
             for p in paths:
                 self._panel_sess._open_path = p
                 if p[-4:] == 'json':
-                    self._panel_sess._open_rec = 'load_json'
-                    self._panel_sess.load_json(p)
+                    self._panel_sess._open_rec = 'json_load'
+                    self._panel_sess.json_load(p)
                 else:
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(p)
@@ -337,7 +337,7 @@ class GUIPanelSession(wx.Frame):
 
         self._gui._json += '    {\n'\
                      '      "cookbook": "_panel_sess",\n'\
-                     '      "recipe": "load_json",\n'\
+                     '      "recipe": "json_load",\n'\
                      '      "params": {\n'\
                      '        "path": "%s"\n'\
                      '      }\n'\
@@ -604,7 +604,7 @@ class GUIPanelSession(wx.Frame):
         return 0
 
 
-    def load_json(self, path='.'):
+    def json_load(self, path='.'):
         """@brief Load from JSON
         @details Load a set menu from a JSON file.
         @param path Path to file

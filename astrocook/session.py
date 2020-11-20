@@ -39,6 +39,7 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None,
+                 json=None,
                  twin=False):
         self._gui = gui
         self.path = path
@@ -51,7 +52,10 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
-        self.json = '{"set_menu":\n  [\n'
+        if json is None:
+            self.json = '{"set_menu":\n  [\n'
+        else:
+            self.json = json
         self._open_twin = twin
         self._clicks = []
         self._stats = False

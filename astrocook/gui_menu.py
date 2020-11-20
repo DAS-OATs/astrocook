@@ -605,7 +605,7 @@ class GUIMenuCourses(GUIMenu):
         self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
                    lambda e: \
                    self._on_open(e, wildcard="JSON file (*.json)|*.json",
-                                 action='load_json'))
+                                 action='json_load'))
 
 class GUIMenuView(GUIMenu):
 
