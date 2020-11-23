@@ -5,6 +5,7 @@ from .gui_menu import *
 from .gui_table import *
 from .message import *
 from astropy import table as at
+from collections import OrderedDict
 from copy import deepcopy as dc
 import json
 import logging
@@ -68,6 +69,20 @@ class GUI(object):
                 else:
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(p)
+
+    def _json_update(self, cb, rec, params):
+        if not isinstance(params, list):
+            params = [params]
+        json_string = '    {\n'\
+                      '      "cookbook": "%s",\n'\
+                      '      "recipe": "%s",\n'\
+                      '      "params": {\n' % (cb, rec)
+
+        json_string += json.dumps(params, indent=4)[8:-7]
+        json_string += '      }\n'\
+                       '    },\n'
+        return json_string
+
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -636,7 +651,6 @@ class GUIPanelSession(wx.Frame):
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
                 self._refresh()
-
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):

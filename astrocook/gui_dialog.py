@@ -111,15 +111,8 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
 
-            json_string = '    {\n'\
-                          '      "cookbook": "cb",\n'\
-                          '      "recipe": "%s",\n'\
-                          '      "params": {\n' % a
-
-            json_string += json.dumps(self._params, indent=4)[9:-7]
-            json_string += '      }\n'\
-                           '    },\n'
-            self._gui._sess_sel.json += json_string
+            self._gui._sess_sel.json += self._gui._json_update("cb", a,
+                                                               self._params)
 
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)

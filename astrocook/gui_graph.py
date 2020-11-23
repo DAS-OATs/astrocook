@@ -105,6 +105,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("cb", "region_extract",
+                                            {"xmin": xmin, "xmax": xmax})
         reg = sess.cb.region_extract(xmin, xmax)
         #self._gui._refresh()
         self._gui._panel_sess._on_add(reg, open=False)
@@ -114,6 +116,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("_sess_sel.spec", "_zap",
+                                            {"xmin": xmin, "xmax": xmax})
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
