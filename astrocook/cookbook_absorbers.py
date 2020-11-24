@@ -412,7 +412,6 @@ class CookbookAbsorbers(object):
         chi2r_list, z_list = [], []
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
-            print(chi2rav, chi2rav_old, self._chi2rav_thres)
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
                 chi2r_list, z_list = self._systs_fit(verbose=False)
