@@ -110,7 +110,6 @@ class Session(object):
         except:
             catg = 'undefined'
 
-        print(instr, orig, catg)
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
