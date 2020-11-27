@@ -39,6 +39,7 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None,
+                 json=None,
                  twin=False):
         self._gui = gui
         self.path = path
@@ -51,6 +52,10 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
+        if json is None:
+            self.json = '{"set_menu":\n  [\n'
+        else:
+            self.json = json
         self._open_twin = twin
         self._clicks = []
         self._stats = False
@@ -66,6 +71,16 @@ class Session(object):
     def open(self):
 
         format = Format()
+
+        self.json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "%s",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % (self._gui._panel_sess._open_rec,
+                                   self._gui._panel_sess._open_path)
+
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             with tarfile.open(self.path) as arch:
@@ -234,6 +249,20 @@ class Session(object):
 
         root = path[:-4]
         stem = root.split('/')[-1]
+
+        self.json = self.json+\
+                    '    {\n'\
+                    '      "cookbook": "",\n'\
+                    '      "recipe": "_refresh",\n'\
+                    '      "params": {\n'\
+                    '      }\n'\
+                    '    }\n'\
+                    '  ]\n'\
+                    '}'
+        file = open(root+'.json', "w")
+        n = file.write(self.json)
+        file.close()
+
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
                 if hasattr(self, s) and getattr(self, s) is not None:

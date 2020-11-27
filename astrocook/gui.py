@@ -5,6 +5,7 @@ from .gui_menu import *
 from .gui_table import *
 from .message import *
 from astropy import table as at
+from collections import OrderedDict
 from copy import deepcopy as dc
 import json
 import logging
@@ -47,6 +48,7 @@ class GUI(object):
         self._menu_tab_id = []
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
+        self._json = '{"set_menu":\n  ['
         self._data_lim = None
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -60,10 +62,27 @@ class GUI(object):
         else:
             logging.info("Welcome!")
             for p in paths:
+                self._panel_sess._open_path = p
                 if p[-4:] == 'json':
-                    self._panel_sess.load_json(p)
+                    self._panel_sess._open_rec = 'json_load'
+                    self._panel_sess.json_load(p)
                 else:
+                    self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(p)
+
+    def _json_update(self, cb, rec, params):
+        if not isinstance(params, list):
+            params = [params]
+        json_string = '    {\n'\
+                      '      "cookbook": "%s",\n'\
+                      '      "recipe": "%s",\n'\
+                      '      "params": {\n' % (cb, rec)
+
+        json_string += json.dumps(params, indent=4)[8:-7]
+        json_string += '      }\n'\
+                       '    },\n'
+        return json_string
+
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -337,7 +356,14 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        #name = path.split('/')[-1][:-5]
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "json_load",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
+
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
@@ -600,12 +626,20 @@ class GUIPanelSession(wx.Frame):
         return 0
 
 
-    def load_json(self, path='.'):
+    def json_load(self, path='.'):
         """@brief Load from JSON
         @details Load a set menu from a JSON file.
         @param path Path to file
         @return 0
         """
+
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "_on_open",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
 
         logging.info("I'm loading JSON file %s..." % path)
         with open(path) as json_file:
@@ -624,7 +658,6 @@ class GUIPanelSession(wx.Frame):
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
                 self._refresh()
-
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):
