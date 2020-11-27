@@ -413,8 +413,8 @@ class Graph(object):
                         getattr(self._ax, mode)(x, y, **kwargs)
                     if struct == 'cursor':
                         trans = transforms.blended_transform_factory(
-                            self._ax.transData, self._ax.transAxes)
-                        for xi, s, z in zip(x, series_flat, z_flat):
+                                self._ax.transData, self._ax.transAxes)
+                        for xi, s, z in zip(x.value, series_flat, z_flat):
                             if xi > self._ax.get_xlim()[0] \
                                 and xi < self._ax.get_xlim()[1]:
                                 kwargs_text = {}

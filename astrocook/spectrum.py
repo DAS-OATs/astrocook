@@ -222,9 +222,14 @@ class Spectrum(Frame):
         x = nodes.x.value
         y = nodes.y.value
         dy = nodes.dy.value
-        isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
-                              np.isnan(dy))
-        spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
+        #isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
+        #                      np.isnan(dy))
+        isnan = np.logical_or(np.isnan(x),np.isnan(y))
+        dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+        if np.sum(np.isnan(dy)) > 0:
+            spl = uspline(x[~isnan], y[~isnan], s=smooth)
+        else:
+            spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
         cont = spl(self.x)*self._yunit
         logging.info("I'm using interpolation as continuum.")
         if 'cont' not in self._t.colnames:
@@ -260,10 +265,12 @@ class Spectrum(Frame):
 
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
-            sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
+            dy = ext.dy[1:-1]
+            dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+            sel = np.where(np.greater(diff_y_max, dy * kappa))[0]+1
         else:
             sel = []
-            
+
         lines = ext._copy(sel)
 
         return lines
