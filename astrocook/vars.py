@@ -50,6 +50,7 @@ pars_std_d =  {
     'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
 #    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -68,7 +69,7 @@ lines_voigt_d = {
     'z': 0.0, 'N': 1.e13, 'b': 5.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
     'z_min': 0.0, 'N_min': 1.e11, 'b_min': 1.0, 'btur_min': 0.0,
-    'z_max': 10.0, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': 100.0,
+    'z_max': 10.0, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': 100.0,
     'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
 
 # Default values for PSF gaussian Parameters

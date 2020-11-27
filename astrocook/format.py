@@ -176,7 +176,7 @@ class Format(object):
         x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
 
         xmin, xmax = self._create_xmin_xmax(x)
-        dy = y #np.full(len(x), np.nan)
+        dy = 0.05*y #np.full(len(x), np.nan)
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
