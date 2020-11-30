@@ -1,4 +1,5 @@
 from .frame import Frame
+from .functions import _spec_y
 from .line_list import LineList
 #from .syst_list import SystList
 from .message import *
@@ -14,6 +15,7 @@ import logging
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.interpolate import UnivariateSpline as uspline
+from scipy.optimize import minimize
 from scipy.stats import sem
 from tqdm import tqdm
 
@@ -239,6 +241,14 @@ class Spectrum(Frame):
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
         return 0
 
+    def _peaks_fill(self):
+        opt = np.array([])
+        for x in self.x.value:
+            opt = np.append(opt, minimize(_spec_y, x, np.interp(x, self.x.value, self.y.value)).x)
+
+        self.t['opt'] = opt
+        print(opt)
+
 
     def _peaks_find(self, col='conv', kind='min', kappa=3.0, **kwargs):
         y = self._safe(self._t[col])
@@ -274,6 +284,8 @@ class Spectrum(Frame):
         lines = ext._copy(sel)
 
         return lines
+
+
 
     def _rebin(self, xstart, xend, dx, xunit, y, dy):
 
@@ -434,6 +446,21 @@ class Spectrum(Frame):
         if output_col not in self._t.colnames:
             logging.info("I'm adding column '%s'." % output_col)
         self._t[output_col] = pl(self.x)
+
+
+    def _upper_env(self, kappa=3.0, **kwargs):
+        sel = range(len(self.y))
+        x = self.x[sel]
+        y = self.y[sel]
+        dy = self.y[sel]
+        for i in range(1000):
+            max_idx = np.hstack(argrelmax(y, **kwargs))
+            cont = np.interp(x, x[max_idx], y[max_idx])
+            sel = np.where((cont-y)<kappa*dy)
+            x = x[sel]
+            y = y[sel]
+            dy = dy[sel]
+        self.t['cont'] = np.interp(self.x, x, y)
 
 
     def _zap(self, xmin, xmax):

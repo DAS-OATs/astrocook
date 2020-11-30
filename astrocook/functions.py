@@ -36,6 +36,9 @@ def _voigt_par_convert(x, z, N, b, btur, trans):
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
     return tau0, a, u
 
+def _spec_y(x, y):#, spec=None):
+    return y
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
