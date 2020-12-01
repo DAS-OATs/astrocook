@@ -165,8 +165,7 @@ class GUIMenu(object):
 
 
     def _on_open_session(self, path):
-        #name = path.split('/')[-1].split('.')[0]
-        name = os.path.realpath(path).split('/')[-1].split('.')[0]
+        name = path.split('/')[-1].split('.')[0]
         #logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)

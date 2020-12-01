@@ -61,9 +61,9 @@ class GUI(object):
             logging.info("Welcome!")
             for p in paths:
                 if p[-4:] == 'json':
-                    self._panel_sess.load_json(p)
+                    self._panel_sess.load_json(os.path.realpath(p))
                 else:
-                    self._panel_sess._on_open(p)
+                    self._panel_sess._on_open(os.path.realpath(p))
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -332,8 +332,7 @@ class GUIPanelSession(wx.Frame):
         """ Behaviour for Session > Open """
 
         #name = path.split('/')[-1][:-5]
-        #name = path.split('/')[-1].split('.')[0]
-        name = os.path.realpath(path).split('/')[-1].split('.')[0]
+        name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
