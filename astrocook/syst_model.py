@@ -44,6 +44,7 @@ class SystModel(LMComposite):
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
+            fit_kws['ftol'] = 1e-3
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -51,6 +52,8 @@ class SystModel(LMComposite):
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
                                              #method='emcee')
+            #print(fit.result.success)
+            #print(fit.result.message)
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #self._pars.pretty_print()
