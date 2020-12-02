@@ -27,6 +27,7 @@ class GUITable(wx.Frame):
         self._size_x = size_x
         self._size_y = size_y
         self._tab_id = self._gui._menu_tab_id
+        self._gui._tab = self
         self._menu = self._gui._panel_sess._menu._view._menu
         #self._open = {'spec': False, 'lines': False, 'systs': False}
         super(GUITable, self).__init__(parent=None, title=self._title,
@@ -84,6 +85,15 @@ class GUITable(wx.Frame):
         self._tab.AppendCols(coln)
         self._tab.AppendRows(rown)
 
+
+    def _init_data(self, from_scratch=True, autosort=True, attr=None):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+        sess.json += self._gui._json_update("_tab", "_init_data",
+                                            {"from_scratch": from_scratch,
+                                             "autosort": autosort,
+                                             "attr": attr})
+        self._data = getattr(sess, attr)
 
     def _labels_extract(self):
         return np.array([self._tab.GetColLabelValue(i).split('\n')[0] \
@@ -151,8 +161,12 @@ class GUITable(wx.Frame):
 
     def _on_remove(self, event):
         row = self._gui._tab_popup._event.GetRow()
+
+        sess = self._gui._sess_sel
         self._remove_data(row)
-        self._gui._sess_sel.cb._spec_update()
+
+        sess.json += self._gui._json_update("cb", "_spec_update", {})
+        sess.cb._spec_update()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         self._fill()
         self._gui._refresh(init_cursor=True)
@@ -170,8 +184,9 @@ class GUITable(wx.Frame):
         self._data.t['id'] = -1*self._data.t['id']
         self._gui._refresh(autosort=False)
 
-    def _on_view(self, event, from_scratch=True, autosort=True):
-        self._data = getattr(self._gui._sess_sel, self._attr)
+    def _on_view(self, event=None, from_scratch=True, autosort=True):
+        sess = self._gui._sess_sel
+        self._init_data(from_scratch, autosort)
         if autosort:
             if 'z' in self._data.t.colnames: self._data.t.sort(['z','id'])
             if 'x' in self._data.t.colnames: self._data.t.sort('x')
@@ -197,24 +212,18 @@ class GUITable(wx.Frame):
 
 
     def _remove_data(self, row):
+        sess = self._gui._sess_sel
 
-        """
         if self._attr == 'systs':
-            id = self._data.t['id'][row]
-            for i, m in enumerate(self._data._mods_t):
-                if id in m['id']:
-                    if len(m['id']) == 1:
-                        self._data._mods_t.remove_row(i)
-                    else:
-                        self._data._mods_t['id'][i].remove(id)
-        """
-        if self._attr == 'systs':
-            #self._gui._sess_sel.cb._mods_update_old()
-            #self._gui._sess_sel.cb._mods_recreate()
-            self._gui._sess_sel.cb._systs_remove([row])
-            #self._gui._sess_sel.cb._systs_refit(refit_id, max_nfev_def)
-            self._gui._sess_sel.cb._mods_recreate()
+            sess.json += self._gui._json_update("cb", "_systs_remove",
+                                                {"rem": [row]})
+            sess.json += self._gui._json_update("cb", "_mods_recreate", {})
+
+            sess.cb._systs_remove([row])
+            sess.cb._mods_recreate()
         else:
+            sess.json += self._gui._json_update("_tab", "_remove_data",
+                                                {"row": row})
             self._data.t.remove_row(row)
 
 
