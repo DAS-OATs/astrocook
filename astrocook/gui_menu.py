@@ -60,6 +60,8 @@ class GUIMenu(object):
         item.key = key
         if targ == GraphCursorZSeries:
             self._gui._cursor = item
+        if dlg_mini == "graph":
+            self._gui._graph_elem = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_graph(e, alt_title, key, item, dlg_mini, targ),
@@ -125,6 +127,7 @@ class GUIMenu(object):
                 if dlg_mini == 'systems':
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = False
                 gui_dlg_mini._on_cancel(event)
                 if dlg_mini == 'systems':
@@ -605,7 +608,7 @@ class GUIMenuCourses(GUIMenu):
         self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
                    lambda e: \
                    self._on_open(e, wildcard="JSON file (*.json)|*.json",
-                                 action='load_json'))
+                                 action='json_load'))
 
 class GUIMenuView(GUIMenu):
 

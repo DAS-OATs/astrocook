@@ -4,7 +4,7 @@ from .message import *
 from .vars import *
 from astropy import table as at
 from astropy import units as au
-from scipy.interpolate import UnivariateSpline as uspline
+#from scipy.interpolate import UnivariateSpline as uspline
 from scipy.optimize import root_scalar
 from matplotlib import pyplot as plt
 
@@ -100,6 +100,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
+        self._peaks_found = False
         spec = self.sess.spec
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
@@ -108,6 +109,7 @@ class CookbookContinuum(object):
 
         peaks = spec._peaks_find(col, kind, kappa)
         if len(peaks.t) > 0:
+            self._peaks_found = True
             source = [col]*len(peaks.t)
             from .line_list import LineList
             lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.t[col],
@@ -162,11 +164,12 @@ class CookbookContinuum(object):
             self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
             self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
-                            append=append or i>0)
+                            append=append or (i>0 and self._peaks_found))
 
         return 0
 

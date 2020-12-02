@@ -86,6 +86,23 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
+    def _on_cursor_stick(self, event, cursor_z=None):
+        z = "%2.6f" % self._graph._cursor._z
+
+        if not hasattr(self._gui._sess_sel, '_cursors'):
+            self._gui._sess_sel._cursors = {z: self._graph._cursor}
+        else:
+            self._gui._sess_sel._cursors[z] = self._graph._cursor
+        self._gui._sess_sel._graph_elem += \
+            '\n%i,cursor,%s,None,None,axvline,:,1.0,C%s,1.0' \
+            % (self._gui._panel_sess._sel, z, (len(self._gui._sess_sel._cursors)-1)%10)
+        self._elem = self._gui._sess_sel._graph_elem
+
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        self._refresh(self._gui._sess_sel)
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
@@ -105,6 +122,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("cb", "region_extract",
+                                            {"xmin": xmin, "xmax": xmax})
         reg = sess.cb.region_extract(xmin, xmax)
         #self._gui._refresh()
         self._gui._panel_sess._on_add(reg, open=False)
@@ -114,6 +133,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("_sess_sel.spec", "_zap",
+                                            {"xmin": xmin, "xmax": xmax})
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
@@ -220,6 +241,8 @@ class GUIGraphDetail(GUIGraphMain):
             key = s
             x = (1+z)*xem_d[s]
             zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print(x)
+            #print(zem)
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
