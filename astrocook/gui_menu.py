@@ -146,7 +146,7 @@ class GUIMenu(object):
         if wildcard is None:
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
                        "FITS files (*.fits)|*.fits|" \
-                       "Data files (*.data)|*.data|" \
+                       "JSON files (*.json)|*.json|" \
                        "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
@@ -161,12 +161,21 @@ class GUIMenu(object):
             except:
                 getattr(self._gui._panel_sess, action)(self._gui._path)
             """
+        """
         try:
             getattr(self, action)(self._gui._path)
         except:
             getattr(self._gui._panel_sess, action)(self._gui._path)
+        """
+        self._gui._panel_sess._open_path = self._gui._path
+        if self._gui._path[-4:] == 'json':
+            self._gui._panel_sess._open_rec = 'json_load'
+            self._gui._panel_sess.json_load(os.path.realpath(self._gui._path))
+        else:
+            self._gui._panel_sess._open_rec = '_on_open'
+            self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
+    """
     def _on_open_session(self, path):
         name = path.split('/')[-1].split('.')[0]
         #logging.info("I'm loading session %s..." % path)
@@ -177,7 +186,7 @@ class GUIMenu(object):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
         #self._gui._path = path
-
+    """
 
     def _refresh(self):
         # Nested loops! WOOOO!
