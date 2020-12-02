@@ -264,6 +264,9 @@ class Session(object):
                     '    }\n'\
                     '  ]\n'\
                     '}'
+        file = open(root+'.json', "w")
+        n = file.write(self.json)
+        file.close()
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
