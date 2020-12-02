@@ -83,6 +83,7 @@ class Session(object):
 
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
+            #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
@@ -133,6 +134,7 @@ class Session(object):
 
         try:
             prefix = self.path.split('/')[-1][:2]
+            #prefix = os.path.realpath(self.path).split('/')[-1][:2]
             if prefix == 'ql':
                 orig = 'QUBRICS'
         except:
@@ -251,7 +253,7 @@ class Session(object):
     def save(self, path):
 
         root = path[:-4]
-        stem = root.split('/')[-1]
+        stem = pathlib.PurePath(path[:-4]).parts[-1]
 
         self.json = self.json+\
                     '    {\n'\
@@ -262,9 +264,6 @@ class Session(object):
                     '    }\n'\
                     '  ]\n'\
                     '}'
-        file = open(root+'.json', "w")
-        n = file.write(self.json)
-        file.close()
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:

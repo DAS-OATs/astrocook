@@ -65,10 +65,10 @@ class GUI(object):
                 self._panel_sess._open_path = p
                 if p[-4:] == 'json':
                     self._panel_sess._open_rec = 'json_load'
-                    self._panel_sess.json_load(p)
+                    self._panel_sess.load_json(os.path.realpath(p))
                 else:
                     self._panel_sess._open_rec = '_on_open'
-                    self._panel_sess._on_open(p)
+                    self._panel_sess._on_open(os.path.realpath(p))
 
     def _json_update(self, cb, rec, params):
         if not isinstance(params, list):
