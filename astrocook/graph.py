@@ -374,11 +374,20 @@ class Graph(object):
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
                     x = xem*(1+z_flat)
-
+                    #print(x)
+                    #print(graph._xs)
+                    #print(self._zems, self._series, self._axes, self._ax)
+                    #print(zems)
                     if detail:
-                        x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
+                        #print(z, self._zem)
+                        #print((1+self._zem)*121.567)
+                        #print(self._zem)
+                        #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
+                        zem = [self._zems[s] for s in self._zems][-1]
+                        x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
                         #print(x)
-
+                        #print(set(zip(series_flat,x)))
+                    #print(x)
 
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
@@ -401,6 +410,7 @@ class Graph(object):
                     kwargs['color'] = color
                     kwargs['alpha'] = float(alpha)
                     if mode == 'axvline':
+                        #print(self._ax, x.value)
                         for xi in x.value:
                             getattr(self._ax, mode)(xi, **kwargs)
                         for xi_sel in x_sel:

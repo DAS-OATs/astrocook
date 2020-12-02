@@ -241,6 +241,8 @@ class GUIGraphDetail(GUIGraphMain):
             key = s
             x = (1+z)*xem_d[s]
             zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print(x)
+            #print(zem)
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
