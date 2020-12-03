@@ -298,12 +298,16 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
     def _on_apply(self, e=None, refresh=True):
         self._elem = self._ctrl_elem.GetValue()
+        self._set(self._elem)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_dlg_mini_graph", "_on_apply",
+                                            {"e": None, "refresh": refresh})
 
 
     def _on_default(self, e=None, refresh=True):
@@ -328,6 +332,13 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
         self._ctrl_elem.SetValue(self._elem)
         self._on_apply(refresh=False)
+
+    def _set(self, value):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_dlg_mini_graph", "_set",
+                                            {"value": value})
+        self._ctrl_elem.SetValue(value)
+
 
 
 class GUIDialogMiniMeta(GUIDialogMini):

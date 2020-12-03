@@ -16,6 +16,7 @@ class GUIMenu(object):
     def __init__(self,
                  gui):
         self._gui = gui
+        self._gui._menu = self
         self._params_last = None
 
     def bar(self):
@@ -96,6 +97,11 @@ class GUIMenu(object):
         self._params_last = dlg._params
 
     def _on_dialog_mini_graph(self, event, title, targ):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_menu", "_on_dialog_mini_graph",
+                                            {"event": None,
+                                             "title": title,
+                                             "targ": targ})
         dlg = GUIDialogMiniGraph(self._gui, title)
 
     def _on_dialog_mini_meta(self, event, title, targ):
