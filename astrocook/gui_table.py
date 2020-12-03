@@ -64,6 +64,55 @@ class GUITable(wx.Frame):
         self._tab.AutoSizeColumns(True)
 
 
+    def _data_edit(self, row, label, value):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab", "_data_edit",
+                                            {"row": row, "label": label,
+                                             "value": value})
+        self._data.t[label][row] = value
+
+
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+        sess.json += self._gui._json_update("_tab", "_data_init",
+                                            {"from_scratch": from_scratch,
+                                             "autosort": autosort,
+                                             "attr": attr})
+        self._data = getattr(sess, attr)
+
+
+    def _data_remove(self, row):
+        sess = self._gui._sess_sel
+
+        if self._attr == 'systs':
+            sess.json += self._gui._json_update("cb", "_systs_remove",
+                                                {"rem": [row]})
+            sess.json += self._gui._json_update("cb", "_mods_recreate", {})
+
+            sess.cb._systs_remove([row])
+            sess.cb._mods_recreate()
+        else:
+            sess.json += self._gui._json_update("_tab", "_data_remove",
+                                                {"row": row})
+            self._data.t.remove_row(row)
+
+
+    def _data_sort(self, label, reverse=False):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab", "_data_sort",
+                                            {"label": label,
+                                             "reverse": reverse})
+        if reverse and self._attr=="systs":
+            self._data.t['id'] = -1*self._data.t['id']
+        if self._attr=="systs":
+            self._data.t.sort([label, 'id'], reverse=reverse)
+        else:
+            self._data.t.sort(label, reverse=reverse)
+        if reverse and self._attr=="systs":
+            self._data.t['id'] = -1*self._data.t['id']
+
+
     def _init(self, from_scratch=True):
         if not from_scratch:
             try:
@@ -86,16 +135,9 @@ class GUITable(wx.Frame):
         self._tab.AppendRows(rown)
 
 
-    def _init_data(self, from_scratch=True, autosort=True, attr=None):
-        sess = self._gui._sess_sel
-        if attr is None: attr = self._attr
-        sess.json += self._gui._json_update("_tab", "_init_data",
-                                            {"from_scratch": from_scratch,
-                                             "autosort": autosort,
-                                             "attr": attr})
-        self._data = getattr(sess, attr)
-
     def _labels_extract(self):
+        if not hasattr(self, '_tab'):
+            self._init(False)
         return np.array([self._tab.GetColLabelValue(i).split('\n')[0] \
                          for i in range(self._tab.GetNumberCols())])
 
@@ -130,7 +172,9 @@ class GUITable(wx.Frame):
     def _on_edit(self, event):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
-        self._data.t[labels[col]][row] = self._tab.GetCellValue(row, col)
+        value = self._tab.GetCellValue(row, col)
+        self._data_init(from_scratch=False)
+        self._data_edit(row, labels[col], value)
 
 
     def _on_histogram(self, event):
@@ -163,7 +207,7 @@ class GUITable(wx.Frame):
         row = self._gui._tab_popup._event.GetRow()
 
         sess = self._gui._sess_sel
-        self._remove_data(row)
+        self._data_remove(row)
 
         sess.json += self._gui._json_update("cb", "_spec_update", {})
         sess.cb._spec_update()
@@ -174,19 +218,22 @@ class GUITable(wx.Frame):
 
     def _on_sort(self, event):
         labels = self._labels_extract()
-        self._data.t.sort([labels[self._gui._col_sel], 'id'])
+        #self._data.t.sort([labels[self._gui._col_sel], 'id'])
+        self._data_init(from_scratch=False)
+        self._data_sort(labels[self._gui._col_sel])
         self._gui._refresh(autosort=False)
 
     def _on_sort_reverse(self, event):
         labels = self._labels_extract()
-        self._data.t['id'] = -1*self._data.t['id']
-        self._data.t.sort([labels[self._gui._col_sel], 'id'], reverse=True)
-        self._data.t['id'] = -1*self._data.t['id']
+        #self._data.t['id'] = -1*self._data.t['id']
+        #self._data.t.sort([labels[self._gui._col_sel], 'id'], reverse=True)
+        #self._data.t['id'] = -1*self._data.t['id']
+        self._data_sort(labels[self._gui._col_sel], reverse=True)
         self._gui._refresh(autosort=False)
 
-    def _on_view(self, event=None, from_scratch=True, autosort=True):
+    def _on_view(self, event=None, from_scratch=True, autosort=False):
         sess = self._gui._sess_sel
-        self._init_data(from_scratch, autosort)
+        self._data_init(from_scratch, autosort)
         if autosort:
             if 'z' in self._data.t.colnames: self._data.t.sort(['z','id'])
             if 'x' in self._data.t.colnames: self._data.t.sort('x')
@@ -209,24 +256,6 @@ class GUITable(wx.Frame):
         self.Centre()
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
-
-
-    def _remove_data(self, row):
-        sess = self._gui._sess_sel
-
-        if self._attr == 'systs':
-            sess.json += self._gui._json_update("cb", "_systs_remove",
-                                                {"rem": [row]})
-            sess.json += self._gui._json_update("cb", "_mods_recreate", {})
-
-            sess.cb._systs_remove([row])
-            sess.cb._mods_recreate()
-        else:
-            sess.json += self._gui._json_update("_tab", "_remove_data",
-                                                {"row": row})
-            self._data.t.remove_row(row)
-
-
 
 
 class GUITableLineList(GUITable):
@@ -487,6 +516,7 @@ class GUITableSystList(GUITable):
         z = float(self._tab.GetCellValue(row, 3))
         logN = float(self._tab.GetCellValue(row, 5))
         b = float(self._tab.GetCellValue(row, 7))
+        print(z, logN, b)
         cb = self._gui._sess_sel.cb
         mod = self._mod_extract(row)
         cb._syst_fit(mod, max_nfev_def)
