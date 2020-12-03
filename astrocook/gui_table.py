@@ -32,37 +32,6 @@ class GUITable(wx.Frame):
         #self._open = {'spec': False, 'lines': False, 'systs': False}
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
-        print(self, attr)
-
-    def _fill(self):
-        for j, r in enumerate(self._data.t):
-            for i, n in enumerate(self._data.t.colnames):
-                if j == 0:
-                    self._tab.SetColSize(i, 150)
-                    self._tab.SetColLabelValue(i, "%s\n%s" \
-                                              % (n, str(self._data.t[n].unit)))
-                if type(r[n]) == np.int64:
-                    self._tab.SetCellValue(j, i, "%4i" % r[n])
-                elif type(r[n]) == str or type(r[n]) == np.str_:
-                    self._tab.SetCellValue(j, i, r[n])
-                elif type(r[n]) == OrderedDict:
-                    self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
-                elif type(r[n]) == dict:
-                    self._tab.SetCellValue(j, i, pprint.pformat(r[n]))
-                else:
-                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
-                             'snr']:
-                        format = '%3.3'
-                    else:
-                        format = '%3.7'
-                    if np.abs(r[n])<1e-7 and r[n]!=0:
-                        #self._tab.SetCellValue(j, i, "%3.7e" % r[n])
-                        format += 'e'
-                    else:
-                        #self._tab.SetCellValue(j, i, "%3.7f" % r[n])
-                        format += 'f'
-                    self._tab.SetCellValue(j, i, format % r[n])
-        self._tab.AutoSizeColumns(True)
 
 
     def _data_edit(self, row, label, value, attr=None):
@@ -84,6 +53,15 @@ class GUITable(wx.Frame):
                                              "attr": attr})
         tab = getattr(self._gui, '_tab_'+attr)
         tab._data = getattr(sess, attr)
+        if autosort:
+            if 'z' in tab._data.t.colnames: tab._data.t.sort(['z','id'])
+            if 'x' in tab._data.t.colnames: tab._data.t.sort('x')
+        try:
+            tab._tab.DeleteCols(pos=0, numCols=tab._tab.GetNumberCols())
+        except:
+            logging.info("I'm loading table...")
+        self._init(from_scratch, attr)
+        self._fill(attr)
 
 
     def _data_remove(self, row, attr=None):
@@ -125,26 +103,65 @@ class GUITable(wx.Frame):
             tab._data.t['id'] = -1*tab._data.t['id']
 
 
-    def _init(self, from_scratch=True):
+    def _fill(self, attr=None):
+        if attr is None: attr = self._attr
+
+        tab = getattr(self._gui, '_tab_'+attr)
+
+        for j, r in enumerate(tab._data.t):
+            for i, n in enumerate(tab._data.t.colnames):
+                if j == 0:
+                    tab._tab.SetColSize(i, 150)
+                    tab._tab.SetColLabelValue(i, "%s\n%s" \
+                                              % (n, str(tab._data.t[n].unit)))
+                if type(r[n]) == np.int64:
+                    tab._tab.SetCellValue(j, i, "%4i" % r[n])
+                elif type(r[n]) == str or type(r[n]) == np.str_:
+                    tab._tab.SetCellValue(j, i, r[n])
+                elif type(r[n]) == OrderedDict:
+                    tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                elif type(r[n]) == dict:
+                    tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+                else:
+                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                             'snr']:
+                        format = '%3.3'
+                    else:
+                        format = '%3.7'
+                    if np.abs(r[n])<1e-7 and r[n]!=0:
+                        #tab._tab.SetCellValue(j, i, "%3.7e" % r[n])
+                        format += 'e'
+                    else:
+                        #tab._tab.SetCellValue(j, i, "%3.7f" % r[n])
+                        format += 'f'
+                    tab._tab.SetCellValue(j, i, format % r[n])
+        tab._tab.AutoSizeColumns(True)
+
+
+    def _init(self, from_scratch=True, attr=None):
+        if attr is None: attr = self._attr
+
+        tab = getattr(self._gui, '_tab_'+attr)
+
         if not from_scratch:
             try:
-                if self._tab.GetNumberRows() != 0:
-                    self._tab.DeleteRows(0, self._tab.GetNumberRows())
+                if tab._tab.GetNumberRows() != 0:
+                    tab._tab.DeleteRows(0, tab._tab.GetNumberRows())
             except:
                 from_scratch = True
         if from_scratch:
-            super(GUITable, self).__init__(parent=None, title=self._title,
-                                           size=(self._size_x, self._size_y))
+            super(GUITable, tab).__init__(parent=None, title=tab._title,
+                                           size=(tab._size_x, tab._size_y))
 
-            self._panel = wx.Panel(self)
-            self._tab = gridlib.Grid(self._panel)
-            self._tab.CreateGrid(0, 0)
-            self.SetPosition((0, wx.DisplaySize()[1]*0.5))
+            tab._panel = wx.Panel(tab)
+            tab._tab = gridlib.Grid(tab._panel)
+            tab._tab.CreateGrid(0, 0)
+            tab.SetPosition((0, wx.DisplaySize()[1]*0.5))
 
-        coln = len(self._data.t.colnames)
-        rown = len(self._data.t)-self._tab.GetNumberRows()
-        self._tab.AppendCols(coln)
-        self._tab.AppendRows(rown)
+        coln = len(tab._data.t.colnames)
+        rown = len(tab._data.t)-tab._tab.GetNumberRows()
+        tab._tab.AppendCols(coln)
+        tab._tab.AppendRows(rown)
 
 
     def _labels_extract(self):
@@ -246,6 +263,7 @@ class GUITable(wx.Frame):
     def _on_view(self, event=None, from_scratch=True, autosort=False):
         sess = self._gui._sess_sel
         self._data_init(from_scratch, autosort)
+        """
         if autosort:
             if 'z' in self._data.t.colnames: self._data.t.sort(['z','id'])
             if 'x' in self._data.t.colnames: self._data.t.sort('x')
@@ -257,6 +275,7 @@ class GUITable(wx.Frame):
             logging.info("I'm loading table...")
         self._init(from_scratch)
         self._fill()
+        """
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
