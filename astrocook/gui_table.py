@@ -91,7 +91,6 @@ class GUITable(wx.Frame):
                                              "attr": attr})
 
         tab = getattr(self._gui, '_tab_'+attr)
-        print(self, attr, tab)#, tab._data)
 
         if reverse and self._attr=="systs":
             tab._data.t['id'] = -1*tab._data.t['id']
@@ -202,7 +201,6 @@ class GUITable(wx.Frame):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
         value = self._tab.GetCellValue(row, col)
-        self._data_init(from_scratch=False)
         self._data_edit(row, labels[col], value)
 
 
@@ -421,15 +419,127 @@ class GUITableSystList(GUITable):
         self._links_c = {}
         self._cells_sel = []
 
+    def _data_cell_right_click(self, row, col):
+        sel = get_selected_cells(self._tab)
+        if len(sel) == 1:
+            self._tab.SetGridCursor(row, col)
+            sel = get_selected_cells(self._tab)
+        self._cells_sel = []
+        for s in sel:
+            if s[1] in [3, 5, 7]: #self._cells_sel.append(s)
+                row = s[0]
+                col = s[1]
+                self._data_cells_sel(row, col)
+
+
+    def _data_cells_sel(self, row, col):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs", "_data_cells_sel",
+                                            {"row": row, "col": col})
+        self._cells_sel.append((row,col))
+
+
+    def _data_edit(self, row, label, value, update_mod=True):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs", "_data_edit",
+                                            {"row": row, "label": label,
+                                             "value": value,
+                                             "update_mod": update_mod})
+        #self._data_init(attr='systs')
+        self._data.t[label][row] = value
+        if update_mod:
+            id = self._id_extract(row)
+            mod = self._mod_extract(row)
+            try:
+                vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
+                expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
+                mod._pars['lines_voigt_%i_%s' % (id, label)].set(
+                    value=value, vary=vary, expr=expr)
+            except:
+                vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
+                expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
+                mod._pars['psf_gauss_%i_%s' % (id, label)].set(
+                    value=value, vary=vary, expr=expr)
+
+
     def _data_fit(self, row):
         sess = self._gui._sess_sel
         sess.json += self._gui._json_update("_tab_systs", "_data_fit",
                                             {"row": row})
-        self._data_init(attr='systs')
         cb = self._gui._sess_sel.cb
         mod = self._mod_extract(row)
         cb._syst_fit(mod, max_nfev_def)
         cb._spec_update()
+
+
+    def _data_freeze_par(self, row, col):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs", "_data_freeze_par",
+                                            {"row": row, "col": col})
+        for (r, c) in self._cells_sel:
+            id, parn = self._key_extract(r, c)
+            if self._tab.GetCellTextColour(row, col) != 'black':
+                self._freezes_d[parn] = (id, 'vary', True)
+            else:
+                self._freezes_d[parn] = (id, 'vary', False)
+        self._tab.ForceRefresh()
+        systs = self._gui._sess_sel.systs
+
+        for v in self._freezes_d:
+            if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
+                self._freezes_d[v] = (self._freezes_d[v][0],
+                                      self._freezes_d[v][1], False)
+        systs._constrain(self._freezes_d)
+        self._text_colours()
+
+
+    def _data_freeze_par_all(self, col):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs",
+                                            "_data_freeze_par_all",
+                                            {"col": col})
+        for i in range(self._tab.GetNumberRows()):
+            id, parn = self._key_extract(i, col)
+            self._freezes_d[parn] = (id, 'vary', False)
+        self._tab.ForceRefresh()
+        self._gui._sess_sel.systs._constrain(self._freezes_d)
+        self._text_colours()
+
+
+    def _data_link_par(self, row, col):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs", "_data_link_par",
+                                            {"row": row, "col": col})
+        self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
+        ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
+        others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
+        id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
+        labels = self._labels_extract()
+        for (r, c) in others:
+            id, parn = self._key_extract(r, c)
+            if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
+                self._links_d[parn] = (id, 'expr', '')
+                self._links_d[val] = (id_r, 'expr', '')
+            else:
+                if parn != val:
+                    v = self._tab.GetCellValue(self._cells_sel[ref][0],
+                                               self._cells_sel[ref][1])
+                    self._tab.SetCellValue(r, c, v)
+                    self._links_d[parn] = (id, 'expr', val)
+                    self._data_edit(r, labels[c], v, update_mod=False)
+        self._tab.ForceRefresh()
+        systs = self._gui._sess_sel.systs
+        systs._constrain(self._links_d)
+        self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
+        self._text_colours()
+
+
+    def _data_top_label_right_click(self, col):
+        self._gui._col_sel = col
+        self._gui._col_tab = self._tab
+        self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
+                                 self._data.t[self._labels_extract()[col]][i] \
+                                 for i in range(self._tab.GetNumberRows())]
 
 
     def _id_extract(self, row):
@@ -468,13 +578,7 @@ class GUITableSystList(GUITable):
     def _on_cell_right_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
-        sel = get_selected_cells(self._tab)
-        if len(sel) == 1:
-            self._tab.SetGridCursor(row, col)
-            sel = get_selected_cells(self._tab)
-        self._cells_sel = []
-        for s in sel:
-            if s[1] in [3, 5, 7]: self._cells_sel.append(s)
+        self._data_cell_right_click(row, col)
         if col in [3, 5, 7]:
             title = []
             attr = []
@@ -491,6 +595,7 @@ class GUITableSystList(GUITable):
             attr += ['freeze_par']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
+
 
     def _on_close(self, event, **kwargs):
         super(GUITableSystList, self)._on_close(event, **kwargs)
@@ -534,32 +639,15 @@ class GUITableSystList(GUITable):
 
     def _on_edit(self, event):
         row, col = event.GetRow(), event.GetCol()
-        value = float(self._tab.GetCellValue(row, col))
         labels = self._labels_extract()
-        self._data.t[labels[col]][row] = value
-        id = self._id_extract(row)
-        mod = self._mod_extract(row)
-        try:
-            vary = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].vary
-            expr = mod._pars['lines_voigt_%i_%s' % (id, labels[col])].expr
-            mod._pars['lines_voigt_%i_%s' % (id, labels[col])].set(
-                value=value, vary=vary, expr=expr)
-        except:
-            vary = mod._pars['psf_gauss_%i_%s' % (id, labels[col])].vary
-            expr = mod._pars['psf_gauss_%i_%s' % (id, labels[col])].expr
-            mod._pars['psf_gauss_%i_%s' % (id, labels[col])].set(
-                value=value, vary=vary, expr=expr)
+        value = float(self._tab.GetCellValue(row, col))
+        self._data_edit(row, labels[col], value)
 
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
+        self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
-        """
-        cb = self._gui._sess_sel.cb
-        mod = self._mod_extract(row)
-        cb._syst_fit(mod, max_nfev_def)
-        cb._spec_update()
-        """
         self._gui._refresh(init_cursor=True)
 
 
@@ -567,77 +655,35 @@ class GUITableSystList(GUITable):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        """
-        for i in (33,34,35,40,41,42):
-            try:
-                print('Freeze before', self._freezes_d['lines_voigt_%i_b' % i])
-            except:
-                pass
-        """
-        for (r, c) in self._cells_sel:
-            id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(row, col) != 'black':
-                self._freezes_d[parn] = (id, 'vary', True)
-            else:
-                self._freezes_d[parn] = (id, 'vary', False)
-        self._tab.ForceRefresh()
-        systs = self._gui._sess_sel.systs
-        """
-        print('before constrain')
-        for m in systs._mods_t:
-            if (33 in m['id']):
-                m['mod']._pars.pretty_print()
-        """
-
-        for v in self._freezes_d:
-            if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
-                #print(v, self._links_d[v], self._freezes_d[v])
-                self._freezes_d[v] = (self._freezes_d[v][0],
-                                      self._freezes_d[v][1], False)
-                #print(v, self._links_d[v], self._freezes_d[v])
-
-        systs._constrain(self._freezes_d)
-        #systs._constrain(self._links_d)
-        #self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
-        """
-        print('after constrain')
-        for m in systs._mods_t:
-            if (33 in m['id']):
-                m['mod']._pars.pretty_print()
-        for i in (33,34,35,40,41,42):
-            try:
-                print('Freeze after', self._freezes_d['lines_voigt_%i_b' % i])
-            except:
-                pass
-        """
-        self._text_colours()
+        self._data_freeze_par(row, col)
 
 
     def _on_freeze_par_all(self, event=None, col=None):
         if event is not None:
             col = self._gui._tab_popup._event.GetCol()
-        for i in range(self._tab.GetNumberRows()):
-            id, parn = self._key_extract(i, col)
-            self._freezes_d[parn] = (id, 'vary', False)
-        self._tab.ForceRefresh()
-        self._gui._sess_sel.systs._constrain(self._freezes_d)
-        self._text_colours()
+            self._data_freeze_par_all(col)
+
 
     def _on_improve(self, event):
-        row = self._gui._tab_popup._event.GetRow()
-        z = float(self._tab.GetCellValue(row, 3))
-        self._gui._sess_sel.cb.systs_new_from_resids(z_start=z-1e-3, z_end=z+1e-3)
+        #row = self._gui._tab_popup._event.GetRow()
+        #z = float(self._tab.GetCellValue(row, 3))
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("cb", "systs_improve", {})
+        self._gui._sess_sel.cb.systs_improve()
         self._gui._refresh(init_cursor=True)
 
 
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
         if row == -1 and col>1:
+            """
             self._gui._col_sel = col
             self._gui._col_tab = self._tab
             self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
+            """
+            self._data_top_label_right_click(col)
             title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
             attr = ['sort', 'sort_reverse', None, 'histogram']
             if col in [3,5,7]:
@@ -648,51 +694,17 @@ class GUITableSystList(GUITable):
         if col == -1:
             self.PopupMenu(GUITablePopup(
                 self._gui, self, event,
-                ['Fit', 'Improve', 'Remove', 'sep', 'CCF', 'Maximize CCF'],
-                ['fit', 'improve', 'remove', None, 'ccf', 'ccf_max']),
+                ['Fit', 'Remove', 'sep', 'CCF', 'Maximize CCF', 'sep', 'Improve all'],
+                ['fit', 'remove', None, 'ccf', 'ccf_max', None, 'improve']),
                 event.GetPosition())
-
 
     def _on_link_par(self, event):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
         col = popup._event.GetCol()
-        self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
-        ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
-        others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
-        id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
-        """
-        for i in (33,34,35,40,41,42):
-            try:
-                print('Link before  ', self._links_d['lines_voigt_%i_b' % i])
-            except:
-                pass
-        """
-        for (r, c) in others:
-            id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
-                self._links_d[parn] = (id, 'expr', '')
-                self._links_d[val] = (id_r, 'expr', '')
-            else:
-                if parn != val:
-                    self._tab.SetCellValue(r, c, self._tab.GetCellValue(self._cells_sel[ref][0], self._cells_sel[ref][1]))
-                    self._links_d[parn] = (id, 'expr', val)
-        self._tab.ForceRefresh()
-        systs = self._gui._sess_sel.systs
-        systs._constrain(self._links_d)
-        self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
-        self._text_colours()
+        self._data_link_par(row, col)
+        self._data_edit
 
-        """
-        for m in systs._mods_t:
-            if (33 in m['id']):
-                m['mod']._pars.pretty_print()
-        for i in (33,34,35,40,41,42):
-            try:
-                print('Link after  ', self._links_d['lines_voigt_%i_b' % i])
-            except:
-                pass
-        """
 
     def _on_view(self, event, **kwargs):
         super(GUITableSystList, self)._on_view(event, **kwargs)
