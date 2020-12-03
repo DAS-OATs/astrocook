@@ -32,6 +32,8 @@ class Cookbook(CookbookGeneral,
                  sess=None):
         super(Cookbook, self).__init__()
         self.sess = sess
+        self._tag = "cb"
+
 
     def _refresh(self, sess):
         self.sess = sess

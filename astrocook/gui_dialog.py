@@ -111,8 +111,8 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
 
-            self._gui._sess_sel.json += self._gui._json_update("cb", a,
-                                                               self._params)
+            self._gui._sess_sel.json += \
+                self._gui._json_update(self._obj._tag, a, self._params)
 
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)

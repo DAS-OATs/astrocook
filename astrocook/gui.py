@@ -50,6 +50,7 @@ class GUI(object):
         self._id_zoom = 9
         self._json = '{"set_menu":\n  ['
         self._data_lim = None
+        self._tag = ""
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -285,6 +286,8 @@ class GUIPanelSession(wx.Frame):
                                              size=(size_x, size_y))
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
 
+        self._tag = "_panel_sess"
+        
         # Import GUI
         self._gui = gui
         self._gui._panel_sess = self
