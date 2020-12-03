@@ -32,6 +32,7 @@ class GUITable(wx.Frame):
         #self._open = {'spec': False, 'lines': False, 'systs': False}
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
+        print(self, attr)
 
     def _fill(self):
         for j, r in enumerate(self._data.t):
@@ -64,12 +65,14 @@ class GUITable(wx.Frame):
         self._tab.AutoSizeColumns(True)
 
 
-    def _data_edit(self, row, label, value):
+    def _data_edit(self, row, label, value, attr=None):
         sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
         sess.json += self._gui._json_update("_tab", "_data_edit",
                                             {"row": row, "label": label,
-                                             "value": value})
-        self._data.t[label][row] = value
+                                             "value": value, "attr": attr})
+        tab = getattr(self._gui, '_tab_'+attr)
+        tab._data.t[label][row] = value
 
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
@@ -79,11 +82,13 @@ class GUITable(wx.Frame):
                                             {"from_scratch": from_scratch,
                                              "autosort": autosort,
                                              "attr": attr})
-        self._data = getattr(sess, attr)
+        tab = getattr(self._gui, '_tab_'+attr)
+        tab._data = getattr(sess, attr)
 
 
-    def _data_remove(self, row):
+    def _data_remove(self, row, attr=None):
         sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
 
         if self._attr == 'systs':
             sess.json += self._gui._json_update("cb", "_systs_remove",
@@ -94,23 +99,30 @@ class GUITable(wx.Frame):
             sess.cb._mods_recreate()
         else:
             sess.json += self._gui._json_update("_tab", "_data_remove",
-                                                {"row": row})
-            self._data.t.remove_row(row)
+                                                {"row": row, "attr": attr})
+            tab = getattr(self._gui, '_tab_'+attr)
+            tab._data.t.remove_row(row)
 
 
-    def _data_sort(self, label, reverse=False):
+    def _data_sort(self, label, reverse=False, attr=None):
         sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
         sess.json += self._gui._json_update("_tab", "_data_sort",
                                             {"label": label,
-                                             "reverse": reverse})
+                                             "reverse": reverse,
+                                             "attr": attr})
+
+        tab = getattr(self._gui, '_tab_'+attr)
+        print(self, attr, tab)#, tab._data)
+
         if reverse and self._attr=="systs":
-            self._data.t['id'] = -1*self._data.t['id']
+            tab._data.t['id'] = -1*tab._data.t['id']
         if self._attr=="systs":
-            self._data.t.sort([label, 'id'], reverse=reverse)
+            tab._data.t.sort([label, 'id'], reverse=reverse)
         else:
-            self._data.t.sort(label, reverse=reverse)
+            tab._data.t.sort(label, reverse=reverse)
         if reverse and self._attr=="systs":
-            self._data.t['id'] = -1*self._data.t['id']
+            tab._data.t['id'] = -1*tab._data.t['id']
 
 
     def _init(self, from_scratch=True):
@@ -390,6 +402,16 @@ class GUITableSystList(GUITable):
         self._links_c = {}
         self._cells_sel = []
 
+    def _data_fit(self, row):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_tab_systs", "_data_fit",
+                                            {"row": row})
+        self._data_init(attr='systs')
+        cb = self._gui._sess_sel.cb
+        mod = self._mod_extract(row)
+        cb._syst_fit(mod, max_nfev_def)
+        cb._spec_update()
+
 
     def _id_extract(self, row):
         labels = self._labels_extract()
@@ -512,15 +534,13 @@ class GUITableSystList(GUITable):
 
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
-        series = self._tab.GetCellValue(row, 1)
-        z = float(self._tab.GetCellValue(row, 3))
-        logN = float(self._tab.GetCellValue(row, 5))
-        b = float(self._tab.GetCellValue(row, 7))
-        print(z, logN, b)
+        self._data_fit(row)
+        """
         cb = self._gui._sess_sel.cb
         mod = self._mod_extract(row)
         cb._syst_fit(mod, max_nfev_def)
         cb._spec_update()
+        """
         self._gui._refresh(init_cursor=True)
 
 
