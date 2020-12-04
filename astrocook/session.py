@@ -72,15 +72,16 @@ class Session(object):
 
         format = Format()
 
-        self.json += '    {\n'\
-                     '      "cookbook": "_panel_sess",\n'\
-                     '      "recipe": "%s",\n'\
-                     '      "params": {\n'\
-                     '        "path": "%s"\n'\
-                     '      }\n'\
-                     '    },\n' % (self._gui._panel_sess._open_rec,
-                                   self._gui._panel_sess._open_path)
-
+        """
+            self.json += '    {\n'\
+                         '      "cookbook": "_panel_sess",\n'\
+                         '      "recipe": "%s",\n'\
+                         '      "params": {\n'\
+                         '        "path": "%s"\n'\
+                         '      }\n'\
+                         '    },\n' % (self._gui._panel_sess._open_rec,
+                                       self._gui._panel_sess._open_path)
+        """
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])

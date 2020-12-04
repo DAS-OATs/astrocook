@@ -4,6 +4,7 @@ from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
 from .message import *
+from .vars import json_head
 from astropy import table as at
 from collections import OrderedDict
 from copy import deepcopy as dc
@@ -48,7 +49,7 @@ class GUI(object):
         self._menu_tab_id = []
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
-        self._json = '{"set_menu":\n  ['
+        self._json = json_head
         self._data_lim = None
         self._tag = ""
         GUIGraphMain(self)
@@ -362,6 +363,7 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
+        """
         self._gui._json += '    {\n'\
                      '      "cookbook": "_panel_sess",\n'\
                      '      "recipe": "json_load",\n'\
@@ -369,6 +371,7 @@ class GUIPanelSession(wx.Frame):
                      '        "path": "%s"\n'\
                      '      }\n'\
                      '    },\n' % path
+        """
 
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
@@ -378,6 +381,16 @@ class GUIPanelSession(wx.Frame):
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
+
+        if self._open_rec == '_on_open':
+            self._gui._sess_sel.json += '    {\n'\
+                                        '      "cookbook": "_panel_sess",\n'\
+                                        '      "recipe": "%s",\n'\
+                                        '      "params": {\n'\
+                                        '        "path": "%s"\n'\
+                                        '      }\n'\
+                                        '    },\n' % (self._open_rec,
+                                                      self._open_path)
 
 
     def _on_close(self, event):
@@ -639,6 +652,7 @@ class GUIPanelSession(wx.Frame):
         @return 0
         """
 
+        """
         self._gui._json += '    {\n'\
                      '      "cookbook": "_panel_sess",\n'\
                      '      "recipe": "_on_open",\n'\
@@ -646,8 +660,9 @@ class GUIPanelSession(wx.Frame):
                      '        "path": "%s"\n'\
                      '      }\n'\
                      '    },\n' % path
-
+        """
         logging.info("I'm loading JSON file %s..." % path)
+
         with open(path) as json_file:
             d = json.load(json_file)
             for r in d['set_menu']:
@@ -664,6 +679,15 @@ class GUIPanelSession(wx.Frame):
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
                 self._refresh()
+        with open(path) as json_file:
+            json_orig = json_file.read()
+            json_split1 = json_orig.split('[\n')[-1]
+            json_split2 = json_split1.split('\n')[:-8]
+            json_split2.append('')
+            self._gui._sess_sel.json += '\n'.join(json_split2)
+
+        #print(self._gui._json)
+        #print(self._gui._sess_sel.json)
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):
