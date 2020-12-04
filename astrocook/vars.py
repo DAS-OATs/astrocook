@@ -256,3 +256,14 @@ gamma_d_old = {'Ly_a': 6.265e+08,
               'CaII_3969': 1.409e+08,
               'neb': 5e8,
               'unknown': 6.265e+08}
+
+json_head = '{"set_menu":\n  [\n'
+
+json_tail = '    {\n'\
+            '      "cookbook": "",\n'\
+            '      "recipe": "_refresh",\n'\
+            '      "params": {\n'\
+            '      }\n'\
+            '    }\n'\
+            '  ]\n'\
+            '}'

@@ -1,6 +1,6 @@
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def
+from .vars import graph_elem, hwin_def, json_tail
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -360,7 +360,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         self._gui._dlg_mini_log = self
         self._sel = dc(self._gui._panel_sess._sel)
 
-        self._log = self._gui._sess_sel.json + self._gui._json_tail()
+        self._log = self._gui._sess_sel.json + json_tail
         super(GUIDialogMiniLog, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
@@ -381,6 +381,10 @@ class GUIDialogMiniLog(GUIDialogMini):
         close_button = wx.Button(self, label='Close')
         close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
         buttons.Add(close_button, 0, wx.RIGHT, border=5)
+        save_button = wx.Button(self, label="Save")
+        save_button.Bind(wx.EVT_BUTTON, self._on_save)
+        save_button.SetDefault()
+        buttons.Add(save_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -396,10 +400,30 @@ class GUIDialogMiniLog(GUIDialogMini):
         self.Destroy()
 
 
+    def _on_save(self, e=None, path=None):
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save log", path, name,
+                           wildcard="JSON file (*.json)|*.json",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            logging.info("I'm saving log %s..." % path)
+            self._gui._sess_sel.save_json(path)
+
+
     def _refresh(self):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
-        self._log = self._gui._sess_sel.json + self._gui._json_tail()
+        self._log = self._gui._sess_sel.json + json_tail
         self._ctrl_log.SetValue(self._log)
 
 

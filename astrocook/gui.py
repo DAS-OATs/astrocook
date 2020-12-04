@@ -71,6 +71,7 @@ class GUI(object):
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
 
+
     def _json_update(self, cb, rec, params):
         if not isinstance(params, list):
             params = [params]
@@ -83,18 +84,6 @@ class GUI(object):
         json_string += '      }\n'\
                        '    },\n'
         return json_string
-
-    def _json_tail(self):
-        json_string = '    {\n'\
-                      '      "cookbook": "",\n'\
-                      '      "recipe": "_refresh",\n'\
-                      '      "params": {\n'\
-                      '      }\n'\
-                      '    }\n'\
-                      '  ]\n'\
-                      '}'
-        return json_string
-
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):

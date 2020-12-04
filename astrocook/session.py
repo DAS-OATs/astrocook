@@ -53,7 +53,7 @@ class Session(object):
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
         if json is None:
-            self.json = '{"set_menu":\n  [\n'
+            self.json = json_head
         else:
             self.json = json
         self._open_twin = twin
@@ -255,18 +255,6 @@ class Session(object):
         root = path[:-4]
         stem = pathlib.PurePath(path[:-4]).parts[-1]
 
-        self.json = self.json+\
-                    '    {\n'\
-                    '      "cookbook": "",\n'\
-                    '      "recipe": "_refresh",\n'\
-                    '      "params": {\n'\
-                    '      }\n'\
-                    '    }\n'\
-                    '  ]\n'\
-                    '}'
-        file = open(root+'.json', "w")
-        n = file.write(self.json)
-        file.close()
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
@@ -358,5 +346,21 @@ class Session(object):
                     os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
                                  % (s, stem+'_'+s+'.fits'))
-                else:
-                    logging.warning("I haven't found any frame %s to save." % s)
+                #else:
+                #    logging.warning("I haven't found any frame %s to save." % s)
+
+            file = open(root+'.json', "w")
+            n = file.write(self.json + json_tail)
+            file.close()
+            arch.add(root+'.json', arcname=stem+'.json')
+            os.remove(root+'.json')
+
+
+    def save_json(self, path):
+
+        root = path[:-5]
+        stem = pathlib.PurePath(path[:-5]).parts[-1]
+
+        file = open(root+'.json', "w")
+        n = file.write(self.json + json_tail)
+        file.close()
