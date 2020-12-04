@@ -714,7 +714,7 @@ class GUIMenuView(GUIMenu):
         self._gui._graph_main._legend = ~self._gui._graph_main._legend
         self._gui._refresh()
 
-    def _on_logx(self, event, json=True):
+    def _on_logx(self, event, json=False):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
         if json:
             sess = self._gui._sess_sel
@@ -722,7 +722,7 @@ class GUIMenuView(GUIMenu):
                                                 {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_logy(self, event, json=True):
+    def _on_logy(self, event, json=False):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
         if json:
             sess = self._gui._sess_sel
@@ -730,7 +730,7 @@ class GUIMenuView(GUIMenu):
                                                 {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_norm(self, event, json=True):
+    def _on_norm(self, event, json=False):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
         if json:
             sess = self._gui._sess_sel
