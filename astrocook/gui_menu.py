@@ -105,6 +105,11 @@ class GUIMenu(object):
         dlg = GUIDialogMiniGraph(self._gui, title)
 
     def _on_dialog_mini_meta(self, event, title, targ):
+        sess = self._gui._sess_sel
+        sess.json += self._gui._json_update("_menu", "_on_dialog_mini_meta",
+                                            {"event": None,
+                                             "title": title,
+                                             "targ": targ})
         dlg = GUIDialogMiniMeta(self._gui, title)
 
     def _on_dialog_mini_systems(self, event, title, targ):
@@ -129,7 +134,7 @@ class GUIMenu(object):
                         (event, title, targ)
                 gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = True
-                gui_dlg_mini._on_apply(event)
+                gui_dlg_mini._on_apply(event, refresh=False)
                 if dlg_mini == 'systems':
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
