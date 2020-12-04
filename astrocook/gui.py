@@ -679,13 +679,14 @@ class GUIPanelSession(wx.Frame):
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
                 self._refresh()
+                #print(self._gui._sess_sel.json)
+
         with open(path) as json_file:
             json_orig = json_file.read()
-            json_split1 = json_orig.split('[\n')[-1]
-            json_split2 = json_split1.split('\n')[:-8]
+            #json_split1 = json_orig.split('[\n')[-1]
+            json_split2 = json_orig.split('\n')[:-9]
             json_split2.append('')
-            self._gui._sess_sel.json += '\n'.join(json_split2)
-
+            self._gui._sess_sel.json = '\n'.join(json_split2)
         #print(self._gui._json)
         #print(self._gui._sess_sel.json)
 

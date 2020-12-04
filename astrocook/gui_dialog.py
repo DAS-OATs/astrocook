@@ -370,7 +370,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
         self._ctrl_log = wx.TextCtrl(self._panel, -1, value=self._log,
                                      size=(400, 300),
-                                     style = wx.TE_MULTILINE|wx.TE_READONLY)
+                                     style = wx.TE_MULTILINE)#|wx.TE_READONLY)
         fgs.AddMany([(self._ctrl_log, 1, wx.EXPAND)])#, (descr, 1, wx.EXPAND)])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
@@ -421,6 +421,7 @@ class GUIDialogMiniLog(GUIDialogMini):
 
 
     def _refresh(self):
+        print('hey')
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
         self._log = self._gui._sess_sel.json + json_tail

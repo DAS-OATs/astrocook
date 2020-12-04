@@ -263,6 +263,7 @@ json_tail = '    {\n'\
             '      "cookbook": "",\n'\
             '      "recipe": "_refresh",\n'\
             '      "params": {\n'\
+            '        "autosort": false\n'\
             '      }\n'\
             '    }\n'\
             '  ]\n'\
