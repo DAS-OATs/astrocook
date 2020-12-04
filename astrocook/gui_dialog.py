@@ -549,7 +549,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
         self._cursor_button = wx.Button(self, label="Show cursor")
         self._cursor_button.Bind(wx.EVT_BUTTON, self._on_show)
-        buttons.Add(self._cursor_button, border=5)
+        buttons.Add(self._cursor_button, 0, wx.RIGHT, border=5)
         stick_button = wx.Button(self, label="Stick cursor")
         stick_button.Bind(wx.EVT_BUTTON, self._on_stick)
         buttons.Add(stick_button)
