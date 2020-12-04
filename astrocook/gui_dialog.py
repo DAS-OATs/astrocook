@@ -352,6 +352,57 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
 
 
+class GUIDialogMiniLog(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._gui._dlg_mini_log = self
+        self._sel = dc(self._gui._panel_sess._sel)
+
+        self._log = self._gui._sess_sel.json + self._gui._json_tail()
+        super(GUIDialogMiniLog, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        self._ctrl_log = wx.TextCtrl(self._panel, -1, value=self._log,
+                                     size=(400, 300),
+                                     style = wx.TE_MULTILINE|wx.TE_READONLY)
+        fgs.AddMany([(self._ctrl_log, 1, wx.EXPAND)])#, (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        close_button = wx.Button(self, label='Close')
+        close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
+        buttons.Add(close_button, 0, wx.RIGHT, border=5)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None, refresh=True):
+        pass
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+        self._log = self._gui._sess_sel.json + self._gui._json_tail()
+        self._ctrl_log.SetValue(self._log)
+
+
 class GUIDialogMiniMeta(GUIDialogMini):
     def __init__(self,
                  gui,

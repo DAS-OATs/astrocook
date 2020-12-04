@@ -84,6 +84,17 @@ class GUI(object):
                        '    },\n'
         return json_string
 
+    def _json_tail(self):
+        json_string = '    {\n'\
+                      '      "cookbook": "",\n'\
+                      '      "recipe": "_refresh",\n'\
+                      '      "params": {\n'\
+                      '      }\n'\
+                      '    }\n'\
+                      '  ]\n'\
+                      '}'
+        return json_string
+
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -110,6 +121,9 @@ class GUI(object):
             except:
                 pass
 
+        if hasattr(self, '_dlg_mini_log') \
+            and self._dlg_mini_log._shown:
+            self._dlg_mini_log._refresh()
         if hasattr(self, '_dlg_mini_meta') \
             and self._dlg_mini_meta._shown:
             self._dlg_mini_meta._refresh()
@@ -287,7 +301,7 @@ class GUIPanelSession(wx.Frame):
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
 
         self._tag = "_panel_sess"
-        
+
         # Import GUI
         self._gui = gui
         self._gui._panel_sess = self

@@ -105,6 +105,10 @@ class GUIMenu(object):
                                                  "targ": targ, "json": False})
         dlg = GUIDialogMiniGraph(self._gui, title)
 
+    def _on_dialog_mini_log(self, event, title, targ):
+        dlg = GUIDialogMiniLog(self._gui, title)
+
+
     def _on_dialog_mini_meta(self, event, title, targ, json=True):
         if json:
             sess = self._gui._sess_sel
@@ -646,7 +650,7 @@ class GUIMenuView(GUIMenu):
         self._start_id = start_id
 
         # Add items to View menu here
-        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4]
+        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         self._gui._menu_tab_id = tab_id
         self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
                    lambda e: self._on_tab(e, 'spec'), key='spec')
@@ -656,6 +660,8 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_tab(e, 'systs'), key='systs')
         self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
                          dlg_mini='meta', alt_title="Metadata")
+        self._item_graph(self._menu, tab_id[4], 'spec', "Session log",
+                         dlg_mini='log', alt_title="Session log")
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',
