@@ -381,7 +381,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         close_button = wx.Button(self, label='Close')
         close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
         buttons.Add(close_button, 0, wx.RIGHT, border=5)
-        save_button = wx.Button(self, label="Save")
+        save_button = wx.Button(self, label="Save to file")
         save_button.Bind(wx.EVT_BUTTON, self._on_save)
         save_button.SetDefault()
         buttons.Add(save_button)
