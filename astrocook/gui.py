@@ -76,7 +76,7 @@ class GUI(object):
     def _json_init(self, orig):
         split = orig.split('\n')[:-9]
         split.append('')
-        self._sess_sel.json = '\n'.join(split)
+        self._sess_sel.json = '\n'.join(split).replace('"', '"')
 
 
     def _json_run(self, load):

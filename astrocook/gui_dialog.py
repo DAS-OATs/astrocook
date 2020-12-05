@@ -237,6 +237,9 @@ class GUIDialogMini(wx.Dialog):
         #self._series = series
         #self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
+        self._init()
+
+    def _init(self):
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
         self._core = wx.BoxSizer(wx.VERTICAL)
@@ -357,6 +360,7 @@ class GUIDialogMiniLog(GUIDialogMini):
                  gui,
                  title):
         self._gui = gui
+        self._title = title
         self._gui._dlg_mini_log = self
         self._sel = dc(self._gui._panel_sess._sel)
 
@@ -368,6 +372,7 @@ class GUIDialogMiniLog(GUIDialogMini):
 
     def _box_ctrl(self):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        #print(self._log)
         self._ctrl_log = wx.TextCtrl(self._panel, -1, value=self._log,
                                      size=(400, 300),
                                      style = wx.TE_MULTILINE)#|wx.TE_READONLY)
@@ -399,8 +404,26 @@ class GUIDialogMiniLog(GUIDialogMini):
 
 
     def _on_rerun(self, e=None, refresh=True):
-        self._gui._json_run(json.loads(self._ctrl_log.GetValue()))
-        self._gui._json_init(self._ctrl_log.GetValue())
+        log = self._ctrl_log.GetValue()
+        log = log.replace('“', '"')
+        log = log.replace('”', '"')
+        log_bck = dc(log)
+        from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList
+        for a in self._gui.__dict__:
+            if isinstance(self._gui.__dict__[a],
+                          (GUITableSpectrum,
+                           GUITableLineList,
+                           GUITableSystList,
+                           GUIDialogMiniGraph,
+                           GUIDialogMiniMeta,
+                           GUIDialogMiniSystems)):
+                self._gui.__dict__[a].Destroy()
+        self._gui._json_run(json.loads(log))
+        self._log = log_bck
+        self._ctrl_log.SetValue(self._log)
+
+
+
 
     def _on_cancel(self, e=None):
         self._shown = False
