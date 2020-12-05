@@ -58,4 +58,4 @@ $ git fetch origin develop
 $ git checkout develop
 ```
 
-⚠️ **The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the `develop` branch until it gets merged on the `master` branch.**
+❗️ **The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the `develop` branch until it gets merged on the `master` branch.**

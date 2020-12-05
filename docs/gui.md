@@ -26,7 +26,7 @@ This will open a blank main window:
 
 ![Main window](img/main_window.png)
 
-⚠️ **On some macOS systems, `python ac_gui.py` will produce an error message like this:**
+❗️ **On some macOS systems, `python ac_gui.py` will produce an error message like this:**
 ```
 This program needs access to the screen. Please run with a
 Framework build of python, and only when you are logged in
@@ -54,7 +54,7 @@ To perform the analysis, you need to select a session and access one of the seve
 
 You can switch between sessions at any time, selecting them on the main window. When you select a session, you always retrieve the latest snapshot of the analysis, together with all the information extracted so far.
 
-⚠️ **If no session is selected and you click on the first session, it will not be selected unless you hold `ctrl` as well.**
+❗️ **If no session is selected and you click on the first session, it will not be selected unless you hold `ctrl` as well.**
 
 ## Use recipes
 
@@ -68,7 +68,7 @@ Typically, when you choose a recipe from the menu bar a dialog window appears. T
 
 ![Dialog window](img/dialog_window.png)
 
-⚠️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
+❗️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
 
 At the beginning of the analysis, only a limited set of recipes is available from the menu bar, while others are greyed out. This happens because the greyed-out recipes require some piece of information that has not been extracted yet (e.g., to fit an absorption systems you need to detect it first). As you progresses with the analysis, more and more recipes become available.
 
@@ -96,4 +96,4 @@ You can quit Astrocook with `File > Quit...` on the menu bar (`ctrl+Q` or `⌘+Q
 
 Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to [report the bug](mailto:guido.cupani@inaf.it).
 
-⚠️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**
+❗️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**

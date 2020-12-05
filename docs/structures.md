@@ -19,9 +19,9 @@ Astrocook manages three main data structures: *spectra*, *line lists*, and *syst
 
 To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
 
-⚠️ **Long tables can take a long time to display.**
+❗️ **Long tables can take a long time to display.**
 
-[//]: # ⚠️ **Closing table windows may cause Astrocook to behave erratically.**
+[//]: # ❗️ **Closing table windows may cause Astrocook to behave erratically.**
 
 ## Spectra
 

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Setup
+title: Scripting your workflows
 parent: Getting started
 nav_order: 3
 ---
@@ -15,10 +15,6 @@ nav_order: 3
 {:toc}
 ---
 
-## Logging
+## Logging 🚧
 
-🚧
-
-## Re-execution
-
-🚧
+## Re-execution 🚧
