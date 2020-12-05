@@ -14,3 +14,7 @@ nav_order: 2
 1. TOC
 {:toc}
 ---
+
+## Handle graphs 🚧
+
+## Interact with the plots 🚧

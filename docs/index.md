@@ -16,4 +16,4 @@ Astrocook is a software environment to analyze quasar spectra. It includes:
 
 This site serves as a documentation for [Astrocook v1.0.0](https://github.com/DAS-OATs/astrocook). It shows how to [get started](start.md) with the software and its GUI, how to [manage the data](data.md), and how to [perform some common tasks](common.md). It also provides a [reference of the recipes](cookbook.md) available in the code.
 
-The documentation is still sparse, but is constantly improved. An ❗️ highlights an important feature, or sometimes an issue of the code that is going to be solved in the next future. A 🚧 denotes a section of the documentation that is still incomplete.
+The documentation is still sparse, but is constantly improved. An ❗️ highlights an important feature, or sometimes an issue of the code that is going to be solved in the next future. A 🚧 denotes a section of the documentation that needs to be completed.

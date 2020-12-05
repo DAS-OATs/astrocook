@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Tables
+title: Other tools
 parent: Managing data
-nav_order: 3
+nav_order: 4
 ---
 
-# Tables
+# Other tools
 {: .no_toc}
 
 ## Table of contents
@@ -15,6 +15,6 @@ nav_order: 3
 {:toc}
 ---
 
-## Browse tables 🚧
+## Visualization 🚧
 
-## Interact with the data 🚧
+## Metadata 🚧
