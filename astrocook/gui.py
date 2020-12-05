@@ -692,6 +692,7 @@ class GUIPanelSession(wx.Frame):
             log = json_file.read()
             log = log.replace('“', '"')
             log = log.replace('”', '"')
+            log = log.replace('—', '--')
             load = json.loads(log)
 
             self._gui._json_run(load)

@@ -407,6 +407,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         log = self._ctrl_log.GetValue()
         log = log.replace('“', '"')
         log = log.replace('”', '"')
+        log = log.replace('—', '--')
         log_bck = dc(log)
         """
         from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList
