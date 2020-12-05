@@ -89,7 +89,7 @@ $ tar -zxvf /path/to/archive.acs
 
 You can quit Astrocook with `File > Quit...` on the menu bar (`ctrl+Q` or `⌘+Q`, depending on the system) or by closing the main window.
 
-⚠️ **When you quit Astrocook, all unsaved sessions will be lost.**
+❗️ **When you quit Astrocook, all unsaved sessions will be lost.**
 
 
 ## Troubleshooting
