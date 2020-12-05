@@ -6,7 +6,7 @@ nav_exclude: true
 
 # Astrocook 🍪
 
-A thousand recipes to cook as spectrum
+A thousand recipes to cook a spectrum
 {: .fs-6 .fw-300}
 
 Astrocook is a software environment to analyze quasar spectra. It includes:
