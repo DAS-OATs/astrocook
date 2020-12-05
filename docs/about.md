@@ -12,5 +12,5 @@ Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by **Guido Cu
 
 * Cupani et al., *Astrocook: your starred chef for spectral analysis*, SPIE, in press
 * Cupani et al., *Astrocook: quasar spectral analysis made easy*, ADASS XXX, submitted
-* [Cupani et al., *From ESPRESSO to the Future - Analysis of QSO Spectra with the Astrocook Package*, 2020, ADASS XXVII, ASPC 552, 187](https://ui.adsabs.harvard.edu/abs/2020ASPC..522..187C/abstract)
-* [Cupani et al., *Astrocook: a thousand recipes to cook a spectrum*, 2018, Proc. SPIE 10707, 1070723](https://ui.adsabs.harvard.edu/abs/2018SPIE10707E..23C/abstract)
+* Cupani et al., *From ESPRESSO to the Future - Analysis of QSO Spectra with the Astrocook Package*, 2020, ADASS XXVII, ASPC 552, 187 [ads](https://ui.adsabs.harvard.edu/abs/2020ASPC..522..187C/abstract)
+* Cupani et al., *Astrocook: a thousand recipes to cook a spectrum*, 2018, Proc. SPIE 10707, 1070723 [ads](https://ui.adsabs.harvard.edu/abs/2018SPIE10707E..23C/abstract)
