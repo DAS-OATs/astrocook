@@ -103,7 +103,10 @@ class GUIMenu(object):
                                                 {"event": None,
                                                  "title": title,
                                                  "targ": targ, "json": False})
-        dlg = GUIDialogMiniGraph(self._gui, title)
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        else:
+            dlg = GUIDialogMiniGraph(self._gui, title)
 
     def _on_dialog_mini_log(self, event, title, targ):
         dlg = GUIDialogMiniLog(self._gui, title)

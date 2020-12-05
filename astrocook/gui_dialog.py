@@ -408,6 +408,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         log = log.replace('“', '"')
         log = log.replace('”', '"')
         log_bck = dc(log)
+        """
         from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList
         for a in self._gui.__dict__:
             if isinstance(self._gui.__dict__[a],
@@ -417,7 +418,14 @@ class GUIDialogMiniLog(GUIDialogMini):
                            GUIDialogMiniGraph,
                            GUIDialogMiniMeta,
                            GUIDialogMiniSystems)):
-                self._gui.__dict__[a].Destroy()
+                try:
+                    self._gui.__dict__[a]._on_close()
+                    print('closed')
+                    self._gui.__dict__[a]._on_view()
+                    print('reopened')
+                except:
+                    pass
+        """
         self._gui._json_run(json.loads(log))
         self._log = log_bck
         self._ctrl_log.SetValue(self._log)

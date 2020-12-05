@@ -689,7 +689,11 @@ class GUIPanelSession(wx.Frame):
         logging.info("I'm loading JSON file %s..." % path)
 
         with open(path) as json_file:
-            load = json.load(json_file)
+            log = json_file.read()
+            log = log.replace('“', '"')
+            log = log.replace('”', '"')
+            load = json.loads(log)
+
             self._gui._json_run(load)
             """
             for r in d['set_menu']:
