@@ -357,7 +357,7 @@ class Session(object):
             os.remove(root+'.json')
 
 
-    def save_json(self, path):
+    def json_save(self, path):
 
         root = path[:-5]
         stem = pathlib.PurePath(path[:-5]).parts[-1]

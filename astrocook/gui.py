@@ -73,6 +73,31 @@ class GUI(object):
                     self._panel_sess._on_open(os.path.realpath(p))
 
 
+    def _json_init(self, orig):
+        split = orig.split('\n')[:-9]
+        split.append('')
+        self._sess_sel.json = '\n'.join(split)
+
+
+    def _json_run(self, load):
+        for r in load['set_menu']:
+
+            if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
+                cb = self._sess_sel.cb
+            elif r['cookbook'] == '':
+                cb = self
+            else:
+                rs = r['cookbook'].split('.')
+                cb = getattr(self, rs[0])
+                for s in rs[1:]:
+                    cb = getattr(cb, s)
+            #print(cb, r['recipe'],r['params'])
+            out = getattr(cb, r['recipe'])(**r['params'])
+            if out is not None and out != 0:
+                self._on_add(out, open=False)
+            self._refresh()
+
+
     def _json_update(self, cb, rec, params):
         if not isinstance(params, list):
             params = [params]
@@ -664,7 +689,9 @@ class GUIPanelSession(wx.Frame):
         logging.info("I'm loading JSON file %s..." % path)
 
         with open(path) as json_file:
-            d = json.load(json_file)
+            load = json.load(json_file)
+            self._gui._json_run(load)
+            """
             for r in d['set_menu']:
                 if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
                     cb = self._gui._sess_sel.cb
@@ -680,15 +707,20 @@ class GUIPanelSession(wx.Frame):
                     self._on_add(out, open=False)
                 self._refresh()
                 #print(self._gui._sess_sel.json)
+            """
 
         with open(path) as json_file:
+            self._gui._json_init(json_file.read())
+
+            """
             json_orig = json_file.read()
             #json_split1 = json_orig.split('[\n')[-1]
             json_split2 = json_orig.split('\n')[:-9]
             json_split2.append('')
             self._gui._sess_sel.json = '\n'.join(json_split2)
+            """
         #print(self._gui._json)
-        #print(self._gui._sess_sel.json)
+
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
                        struct_out='0,spec,diff', op='subtract'):

@@ -378,13 +378,16 @@ class GUIDialogMiniLog(GUIDialogMini):
 
     def _box_buttons(self):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
-        close_button = wx.Button(self, label='Close')
-        close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
-        buttons.Add(close_button, 0, wx.RIGHT, border=5)
+        rerun_button = wx.Button(self, label='Re-run')
+        rerun_button.Bind(wx.EVT_BUTTON, self._on_rerun)
+        rerun_button.SetDefault()
+        buttons.Add(rerun_button, 0, wx.RIGHT, border=5)
         save_button = wx.Button(self, label="Save to file")
         save_button.Bind(wx.EVT_BUTTON, self._on_save)
-        save_button.SetDefault()
-        buttons.Add(save_button)
+        buttons.Add(save_button, 0, wx.RIGHT, border=5)
+        close_button = wx.Button(self, label='Close')
+        close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
+        buttons.Add(close_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
@@ -395,12 +398,18 @@ class GUIDialogMiniLog(GUIDialogMini):
         pass
 
 
+    def _on_rerun(self, e=None, refresh=True):
+        self._gui._json_run(json.loads(self._ctrl_log.GetValue()))
+        self._gui._json_init(self._ctrl_log.GetValue())
+
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
 
 
     def _on_save(self, e=None, path=None):
+        #load = json.loads(self._ctrl_log.GetValue())
+        self._gui._json_init(self._ctrl_log.GetValue())
         if path is None:
             if hasattr(self._gui, '_path'):
                 path=os.path.basename(self._gui._path)
@@ -417,11 +426,10 @@ class GUIDialogMiniLog(GUIDialogMini):
             path = fileDialog.GetPath()
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving log %s..." % path)
-            self._gui._sess_sel.save_json(path)
+            self._gui._sess_sel.json_save(path)
 
 
     def _refresh(self):
-        print('hey')
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
         self._log = self._gui._sess_sel.json + json_tail
