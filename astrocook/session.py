@@ -39,6 +39,7 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None,
+                 json=None,
                  twin=False):
         self._gui = gui
         self.path = path
@@ -51,6 +52,10 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
+        if json is None:
+            self.json = json_head
+        else:
+            self.json = json
         self._open_twin = twin
         self._clicks = []
         self._stats = False
@@ -66,8 +71,20 @@ class Session(object):
     def open(self):
 
         format = Format()
+
+        """
+            self.json += '    {\n'\
+                         '      "cookbook": "_panel_sess",\n'\
+                         '      "recipe": "%s",\n'\
+                         '      "params": {\n'\
+                         '        "path": "%s"\n'\
+                         '      }\n'\
+                         '    },\n' % (self._gui._panel_sess._open_rec,
+                                       self._gui._panel_sess._open_path)
+        """
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
+            #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
@@ -95,6 +112,7 @@ class Session(object):
         except:
             catg = 'undefined'
 
+
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
             hist = [i for j in hist for i in j]
@@ -117,6 +135,7 @@ class Session(object):
 
         try:
             prefix = self.path.split('/')[-1][:2]
+            #prefix = os.path.realpath(self.path).split('/')[-1][:2]
             if prefix == 'ql':
                 orig = 'QUBRICS'
         except:
@@ -143,97 +162,101 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
 
-        # ESO ADP spectrum
-        if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
-            self.spec = format.eso_adp(hdul)
+        else:
 
-        # ESO-MIDAS spectrum
-        if orig == 'ESO-MIDAS':
-            if len(hdul) == 1:
-                self.spec = format.eso_midas_image(hdul)
-            else:
-                self.spec = format.eso_midas_table(hdul)
+            # ESO ADP spectrum
+            if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
+                self.spec = format.eso_adp(hdul)
 
-        # ESPRESSO DRS spectrum
-        if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
-            self.spec = format.espresso_drs_spectrum(hdul)
-            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-            self.spec_form = format.espresso_spectrum_format(
-                ascii.read(p+'espr_spec_form.dat'))
+            # ESO-MIDAS spectrum
+            if orig == 'ESO-MIDAS':
+                if len(hdul) == 1:
+                    self.spec = format.eso_midas_image(hdul)
+                else:
+                    self.spec = format.eso_midas_table(hdul)
 
-        # ESPRESSO DAS spectrum
-        if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
-            self.spec = format.espresso_das_spectrum(hdul)
-            p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-            self.spec_form = format.espresso_spectrum_format(
-                ascii.read(p+'espr_spec_form.dat'))
+            # ESPRESSO DRS spectrum
+            if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
+                self.spec = format.espresso_drs_spectrum(hdul)
+                p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+                self.spec_form = format.espresso_spectrum_format(
+                    ascii.read(p+'espr_spec_form.dat'))
 
-        # FIRE spectrum
-        if instr == 'FIRE':
-            self.spec = format.firehose_spectrum(hdul)
+            # ESPRESSO DAS spectrum
+            if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
+                self.spec = format.espresso_das_spectrum(hdul)
+                p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+                self.spec_form = format.espresso_spectrum_format(
+                    ascii.read(p+'espr_spec_form.dat'))
 
-
-        # FIRE spectrum
-        if instr == 'MagE':
-            self.spec = format.mage_spectrum(hdul)
+            # FIRE spectrum
+            if instr == 'FIRE':
+                self.spec = format.firehose_spectrum(hdul)
 
 
-        # QUBRICS spectrum
-        if orig == 'QUBRICS':
-            self.spec = format.qubrics_spectrum(hdul)
+            # FIRE spectrum
+            if instr == 'MagE':
+                self.spec = format.mage_spectrum(hdul)
 
 
-        # UVES Spectrum
-        if instr == 'UVES':
-            if 'FLUXCAL_SCI' in self.path:
-                hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
-                                                       'FLUXCAL_ERRORBAR_SCI'))
-                self.spec = format.uves_spectrum(hdul, hdul_err)
+            # QUBRICS spectrum
+            if orig == 'QUBRICS':
+                self.spec = format.qubrics_spectrum(hdul)
 
 
-        # UVES POPLER spectrum
-        if instr == 'UVES' and orig == 'POPLER':
-            self.spec = format.uves_popler_spectrum(hdul)
+            # UVES Spectrum
+            if instr == 'UVES':
+                if 'FLUXCAL_SCI' in self.path:
+                    hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
+                                                           'FLUXCAL_ERRORBAR_SCI'))
+                    self.spec = format.uves_spectrum(hdul, hdul_err)
 
 
-        # WFCCD Spectrum
-        if instr[:5] == 'WFCCD':
-            self.spec = format.wfccd_spectrum(hdul)
-
-        # XSHOOTER MERGE1D spectrum
-        if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
-            if hdul[0].header['NAXIS'] == 0:
-                self.spec = format.xshooter_vacbary_spectrum(hdul)
-            else:
-                self.spec = format.xshooter_merge1d_spectrum(hdul)
+            # UVES POPLER spectrum
+            if instr == 'UVES' and orig == 'POPLER':
+                self.spec = format.uves_popler_spectrum(hdul)
 
 
-        # XQR-30 spectrum
-        if instr == 'XSHOOTER' and orig == 'XQR-30':
-            self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
-            self._open_twin = not self._open_twin
+            # WFCCD Spectrum
+            if instr[:5] == 'WFCCD':
+                self.spec = format.wfccd_spectrum(hdul)
+
+            # XSHOOTER MERGE1D spectrum
+            if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
+                if hdul[0].header['NAXIS'] == 0:
+                    self.spec = format.xshooter_vacbary_spectrum(hdul)
+                else:
+                    self.spec = format.xshooter_merge1d_spectrum(hdul)
 
 
-        # XSHOOTER DAS spectrum
-        if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
-            self.spec = format.xshooter_das_spectrum(hdul)
+            # XQR-30 spectrum
+            if instr == 'XSHOOTER' and orig == 'XQR-30':
+                self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
+                self._open_twin = not self._open_twin
 
 
-        # XSHOOTER_REDUCE spectrum
-        if instr == 'XSHOOTER' and orig == 'REDUCE':
-            hdul_e = fits.open(self.path[:-5]+'e.fits')
-            self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
+            # XSHOOTER DAS spectrum
+            if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
+                self.spec = format.xshooter_das_spectrum(hdul)
 
 
-        # generic
-        if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
-            self.spec = format.generic_spectrum(hdul)
+            # XSHOOTER_REDUCE spectrum
+            if instr == 'XSHOOTER' and orig == 'REDUCE':
+                hdul_e = fits.open(self.path[:-5]+'e.fits')
+                self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
+
+
+            # generic
+            if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
+                self.spec = format.generic_spectrum(hdul)
 
 
     def save(self, path):
 
         root = path[:-4]
-        stem = root.split('/')[-1]
+        stem = pathlib.PurePath(path[:-4]).parts[-1]
+
+
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
                 if hasattr(self, s) and getattr(self, s) is not None:
@@ -324,5 +347,21 @@ class Session(object):
                     os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
                                  % (s, stem+'_'+s+'.fits'))
-                else:
-                    logging.warning("I haven't found any frame %s to save." % s)
+                #else:
+                #    logging.warning("I haven't found any frame %s to save." % s)
+
+            file = open(root+'.json', "w")
+            n = file.write(self.json + json_tail)
+            file.close()
+            arch.add(root+'.json', arcname=stem+'.json')
+            os.remove(root+'.json')
+
+
+    def json_save(self, path):
+
+        root = path[:-5]
+        stem = pathlib.PurePath(path[:-5]).parts[-1]
+
+        file = open(root+'.json', "w")
+        n = file.write(self.json + json_tail)
+        file.close()

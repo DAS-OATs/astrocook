@@ -4,7 +4,9 @@ from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
 from .message import *
+from .vars import json_head
 from astropy import table as at
+from collections import OrderedDict
 from copy import deepcopy as dc
 import json
 import logging
@@ -32,6 +34,8 @@ class GUI(object):
             print(''.join(l))
         print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
+        #self._graph_elem_list = []
+        #self._meta_list = []
         self._sess_sel = None
         self._sess_item_sel = []
         self._menu_spec_id = []
@@ -43,10 +47,11 @@ class GUI(object):
         self._menu_z0_id = []
         self._menu_mods_id = []
         self._menu_tab_id = []
-        self._graph_elem_list = []
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
+        self._json = json_head
         self._data_lim = None
+        self._tag = ""
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -59,10 +64,52 @@ class GUI(object):
         else:
             logging.info("Welcome!")
             for p in paths:
+                self._panel_sess._open_path = p
                 if p[-4:] == 'json':
-                    self._panel_sess.load_json(p)
+                    self._panel_sess._open_rec = 'json_load'
+                    self._panel_sess.json_load(os.path.realpath(p))
                 else:
-                    self._panel_sess._on_open(p)
+                    self._panel_sess._open_rec = '_on_open'
+                    self._panel_sess._on_open(os.path.realpath(p))
+
+
+    def _json_init(self, orig):
+        split = orig.split('\n')[:-9]
+        split.append('')
+        self._sess_sel.json = '\n'.join(split).replace('"', '"')
+
+
+    def _json_run(self, load):
+        for r in load['set_menu']:
+
+            if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
+                cb = self._sess_sel.cb
+            elif r['cookbook'] == '':
+                cb = self
+            else:
+                rs = r['cookbook'].split('.')
+                cb = getattr(self, rs[0])
+                for s in rs[1:]:
+                    cb = getattr(cb, s)
+            #print(cb, r['recipe'],r['params'])
+            out = getattr(cb, r['recipe'])(**r['params'])
+            if out is not None and out != 0:
+                self._on_add(out, open=False)
+            self._refresh()
+
+
+    def _json_update(self, cb, rec, params):
+        if not isinstance(params, list):
+            params = [params]
+        json_string = '    {\n'\
+                      '      "cookbook": "%s",\n'\
+                      '      "recipe": "%s",\n'\
+                      '      "params": {\n' % (cb, rec)
+
+        json_string += json.dumps(params, indent=4)[8:-7]
+        json_string += '      }\n'\
+                       '    },\n'
+        return json_string
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -75,12 +122,32 @@ class GUI(object):
             and self._dlg_mini_graph._shown:
             self._dlg_mini_graph._refresh()
         else:
-            self._graph_main._elem = elem_expand(graph_elem, self._panel_sess._sel)
+            if hasattr(self._sess_sel, '_graph_elem'):
+                self._graph_main._elem = self._sess_sel._graph_elem
+            else:
+                self._graph_main._elem = elem_expand(graph_elem,
+                    self._panel_sess._sel)
             try:
-                self._graph_det._elem = elem_expand(graph_elem, self._panel_sess._sel)
+                if hasattr(self._sess_sel, '_graph_elem'):
+                    self._graph_det._elem = self._sess_sel._graph_elem
+                else:
+                    self._graph_det._elem = elem_expand(graph_elem,
+                        self._panel_sess._sel)
             except:
                 pass
 
+        if hasattr(self, '_dlg_mini_log') \
+            and self._dlg_mini_log._shown:
+            self._dlg_mini_log._refresh()
+        if hasattr(self, '_dlg_mini_meta') \
+            and self._dlg_mini_meta._shown:
+            self._dlg_mini_meta._refresh()
+        """
+        else:
+            self._dlg_mini_meta._meta = meta_parse(self._sess_sel.spec._meta)
+            self._dlg_mini_meta._meta_backup = meta_parse(
+                self._sess_sel.spec._meta_backup)
+        """
 
         ax = self._graph_main._graph._ax
         xlim = ax.get_xlim()
@@ -115,7 +182,6 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        #print(autolim, goodlim, _xlim)
         if autolim and goodlim and _xlim != None:
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         elif autolim and goodlim and self._graph_main._graph._zoom:
@@ -134,7 +200,7 @@ class GUI(object):
                     graph._ax = graph._axes[key]
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
-                    if autolim:
+                    if autolim or True:
                         self._graph_det._refresh(self._sess_items, text=key,
                                                  xlim=xlim_det, ylim=ylim_det,
                                                  init_cursor=init_cursor)
@@ -249,6 +315,8 @@ class GUIPanelSession(wx.Frame):
                                              size=(size_x, size_y))
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
 
+        self._tag = "_panel_sess"
+
         # Import GUI
         self._gui = gui
         self._gui._panel_sess = self
@@ -282,6 +350,7 @@ class GUIPanelSession(wx.Frame):
         self.Show()
         self.Bind(wx.EVT_CLOSE, self._on_close)
 
+
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
@@ -298,15 +367,18 @@ class GUIPanelSession(wx.Frame):
         if open:
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
+        #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
+        self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+        #print(self._gui._sess_sel._graph_elem)
+        #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         self._gui._refresh(autolim=False)
-        self._gui._graph_elem_list.append(self._gui._graph_main._elem)
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
         #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
         edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
-        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>1)
+        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>0)
 
 
     def _on_edit(self, event):
@@ -316,7 +388,16 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        #name = path.split('/')[-1][:-5]
+        """
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "json_load",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
+        """
+
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
@@ -325,6 +406,16 @@ class GUIPanelSession(wx.Frame):
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
+
+        if self._open_rec == '_on_open':
+            self._gui._sess_sel.json += '    {\n'\
+                                        '      "cookbook": "_panel_sess",\n'\
+                                        '      "recipe": "%s",\n'\
+                                        '      "params": {\n'\
+                                        '        "path": "%s"\n'\
+                                        '      }\n'\
+                                        '    },\n' % (self._open_rec,
+                                                      self._open_path)
 
 
     def _on_close(self, event):
@@ -344,6 +435,10 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = self._tab._get_selected_items()
+        try:
+            self._gui._sess_sel.cb.sess = self._gui._sess_sel
+        except:
+            pass
 
         # Enable session equalize/combine depending on how many sessions are selected
         edit = self._menu._edit
@@ -359,11 +454,14 @@ class GUIPanelSession(wx.Frame):
         if self._gui._sess_item_sel != []:
             self._gui._refresh()
 
+
+
     def _on_veto(self, event):
         if event.GetColumn() in [0,2,3,4,5]:
             event.Veto()
         else:
             event.Skip()
+
 
     def _refresh(self):
         for i, s in zip(self._items, self._gui._sess_items):
@@ -572,16 +670,33 @@ class GUIPanelSession(wx.Frame):
         return 0
 
 
-    def load_json(self, path='.'):
+    def json_load(self, path='.'):
         """@brief Load from JSON
         @details Load a set menu from a JSON file.
         @param path Path to file
         @return 0
         """
 
+        """
+        self._gui._json += '    {\n'\
+                     '      "cookbook": "_panel_sess",\n'\
+                     '      "recipe": "_on_open",\n'\
+                     '      "params": {\n'\
+                     '        "path": "%s"\n'\
+                     '      }\n'\
+                     '    },\n' % path
+        """
         logging.info("I'm loading JSON file %s..." % path)
+
         with open(path) as json_file:
-            d = json.load(json_file)
+            log = json_file.read()
+            log = log.replace('“', '"')
+            log = log.replace('”', '"')
+            log = log.replace('—', '--')
+            load = json.loads(log)
+
+            self._gui._json_run(load)
+            """
             for r in d['set_menu']:
                 if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
                     cb = self._gui._sess_sel.cb
@@ -596,6 +711,20 @@ class GUIPanelSession(wx.Frame):
                 if out is not None and out != 0:
                     self._on_add(out, open=False)
                 self._refresh()
+                #print(self._gui._sess_sel.json)
+            """
+
+        with open(path) as json_file:
+            self._gui._json_init(json_file.read())
+
+            """
+            json_orig = json_file.read()
+            #json_split1 = json_orig.split('[\n')[-1]
+            json_split2 = json_orig.split('\n')[:-9]
+            json_split2.append('')
+            self._gui._sess_sel.json = '\n'.join(json_split2)
+            """
+        #print(self._gui._json)
 
 
     def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',

@@ -77,6 +77,7 @@ class GUIGraphMain(wx.Frame):
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
+
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self.Show()
@@ -85,9 +86,33 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
+    def _on_cursor_stick(self, event=None, cursor_z=None):
+        z = "%2.6f" % self._graph._cursor._z
+
+        sess = self._gui._sess_sel
+        if not hasattr(sess, '_cursors'):
+            sess._cursors = {z: self._graph._cursor}
+        else:
+            sess._cursors[z] = self._graph._cursor
+        sess._graph_elem += \
+            '\n%i,cursor,%s,None,None,axvline,:,1.0,C%s,1.0' \
+            % (self._gui._panel_sess._sel, z, (len(sess._cursors)-1)%10)
+        self._elem = sess._graph_elem
+
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        self._refresh(sess)
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
+        sess.json += self._gui._json_update("_sess_sel.spec", "_node_add",
+                                            {"nodes": sess.nodes,
+                                             "x": x, "y": y})
+        sess.json += self._gui._json_update("_sess_sel.spec", "_nodes_interp",
+                                            {"lines": sess.lines,
+                                             "nodes": sess.nodes})
         sess.spec._node_add(sess.nodes, x, y)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
@@ -95,6 +120,11 @@ class GUIGraphMain(wx.Frame):
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
+        sess.json += self._gui._json_update("_sess_sel.spec", "_node_remove",
+                                            {"nodes": sess.nodes, "x": x})
+        sess.json += self._gui._json_update("_sess_sel.spec", "_nodes_interp",
+                                            {"lines": sess.lines,
+                                             "nodes": sess.nodes})
         sess.spec._node_remove(sess.nodes, x)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
@@ -104,6 +134,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("cb", "region_extract",
+                                            {"xmin": xmin, "xmax": xmax})
         reg = sess.cb.region_extract(xmin, xmax)
         #self._gui._refresh()
         self._gui._panel_sess._on_add(reg, open=False)
@@ -113,6 +145,8 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sess.json += self._gui._json_update("_sess_sel.spec", "_zap",
+                                            {"xmin": xmin, "xmax": xmax})
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 
@@ -142,6 +176,10 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
         #for s in sess._series_sel.split(';'):
+        sess.json += self._gui._json_update("cb", "syst_new",
+                                            {"series": sess._series_sel,
+                                             "z": self._graph._cursor._z,
+                                             "refit_n": 0})
         sess.cb.syst_new(series=sess._series_sel, z=self._graph._cursor._z, refit_n=0)
         self._gui._refresh(init_cursor=True)
 
@@ -219,6 +257,8 @@ class GUIGraphDetail(GUIGraphMain):
             key = s
             x = (1+z)*xem_d[s]
             zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print(x)
+            #print(zem)
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x

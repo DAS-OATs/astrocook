@@ -16,6 +16,7 @@ class GUIMenu(object):
     def __init__(self,
                  gui):
         self._gui = gui
+        self._gui._menu = self
         self._params_last = None
 
     def bar(self):
@@ -60,6 +61,8 @@ class GUIMenu(object):
         item.key = key
         if targ == GraphCursorZSeries:
             self._gui._cursor = item
+        if dlg_mini == "graph":
+            self._gui._graph_elem = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
             lambda e: self._on_graph(e, alt_title, key, item, dlg_mini, targ),
@@ -93,10 +96,29 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
-    def _on_dialog_mini_graph(self, event, title, targ):
-        dlg = GUIDialogMiniGraph(self._gui, title)
+    def _on_dialog_mini_graph(self, event, title, targ, json=True):
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu", "_on_dialog_mini_graph",
+                                                {"event": None,
+                                                 "title": title,
+                                                 "targ": targ, "json": False})
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        else:
+            dlg = GUIDialogMiniGraph(self._gui, title)
 
-    def _on_dialog_mini_meta(self, event, title, targ):
+    def _on_dialog_mini_log(self, event, title, targ):
+        dlg = GUIDialogMiniLog(self._gui, title)
+
+
+    def _on_dialog_mini_meta(self, event, title, targ, json=True):
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu", "_on_dialog_mini_meta",
+                                                {"event": None,
+                                                 "title": title,
+                                                 "targ": targ, "json": False})
         dlg = GUIDialogMiniMeta(self._gui, title)
 
     def _on_dialog_mini_systems(self, event, title, targ):
@@ -121,10 +143,11 @@ class GUIMenu(object):
                         (event, title, targ)
                 gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = True
-                gui_dlg_mini._on_apply(event)
+                gui_dlg_mini._on_apply(event, refresh=False)
                 if dlg_mini == 'systems':
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = False
                 gui_dlg_mini._on_cancel(event)
                 if dlg_mini == 'systems':
@@ -143,7 +166,7 @@ class GUIMenu(object):
         if wildcard is None:
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
                        "FITS files (*.fits)|*.fits|" \
-                       "Data files (*.data)|*.data|" \
+                       "JSON files (*.json)|*.json|" \
                        "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
@@ -158,12 +181,21 @@ class GUIMenu(object):
             except:
                 getattr(self._gui._panel_sess, action)(self._gui._path)
             """
+        """
         try:
             getattr(self, action)(self._gui._path)
         except:
             getattr(self._gui._panel_sess, action)(self._gui._path)
+        """
+        self._gui._panel_sess._open_path = self._gui._path
+        if self._gui._path[-4:] == 'json':
+            self._gui._panel_sess._open_rec = 'json_load'
+            self._gui._panel_sess.json_load(os.path.realpath(self._gui._path))
+        else:
+            self._gui._panel_sess._open_rec = '_on_open'
+            self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
+    """
     def _on_open_session(self, path):
         name = path.split('/')[-1].split('.')[0]
         #logging.info("I'm loading session %s..." % path)
@@ -174,7 +206,7 @@ class GUIMenu(object):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
         #self._gui._path = path
-
+    """
 
     def _refresh(self):
         # Nested loops! WOOOO!
@@ -605,7 +637,7 @@ class GUIMenuCourses(GUIMenu):
         self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
                    lambda e: \
                    self._on_open(e, wildcard="JSON file (*.json)|*.json",
-                                 action='load_json'))
+                                 action='json_load'))
 
 class GUIMenuView(GUIMenu):
 
@@ -617,10 +649,11 @@ class GUIMenuView(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
         self._menu_view = self
+        self._gui._menu_view = self
         self._start_id = start_id
 
         # Add items to View menu here
-        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4]
+        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         self._gui._menu_tab_id = tab_id
         self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
                    lambda e: self._on_tab(e, 'spec'), key='spec')
@@ -630,6 +663,8 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_tab(e, 'systs'), key='systs')
         self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
                          dlg_mini='meta', alt_title="Metadata")
+        self._item_graph(self._menu, tab_id[4], 'spec', "Session log",
+                         dlg_mini='log', alt_title="Session log")
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',
@@ -646,34 +681,12 @@ class GUIMenuView(GUIMenu):
                    "Toggle log x axis", self._on_logx)
         self._item(self._menu, start_id+202, 'spec',
                    "Toggle log y axis", self._on_logy)
+        self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
+                                self._on_norm, key='norm')
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
         self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
                          dlg_mini='graph', alt_title="Graph elements")
-        #self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
-        #                 'spec_x_y')
-        #self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
-        #                 'spec_x_dy')
-        #self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
-        #                 'spec_x_conv')
-        #self._item_graph(self._submenu, start_id+304, 'lines', "Lines",
-        #                 'lines_x_y')
-        #self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
-        #                 'spec_x_yfitmask')
-        #self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
-        #                 'spec_nodes_x_y')
-        #self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
-        #                 'spec_x_cont')
-        #self._item_graph(self._submenu, start_id+308, 'systs', "Systems",
-        #                 'spec_x_model')
-        #self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
-        #                 'spec_x_yfitmask')
-        #self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
-        #                 'spec_x_deabs')
-        #self._item_graph(self._submenu, start_id+311, None, "Spectral format",
-        #                 'spec_form_x')
-        #self._item_graph(self._submenu, start_id+312, 'systs', "System list",
-        #                 'systs_z_series')
         self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
                          'spec_h2o_reg')
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
@@ -686,8 +699,6 @@ class GUIMenuView(GUIMenu):
         #self._item_method(self._menu, start_id+401, 'spec',
         #                  "Edit graph details", '_sel_graph_cols', obj=self)
 
-        self._norm = self._item(self._menu, start_id+403, 'spec', "Toggle normalization",
-                                self._on_norm, key='norm')
 
     def _on_compress(self, event):
         if self._menu.GetLabel(self._start_id+101) == "Compress system table":
@@ -706,16 +717,28 @@ class GUIMenuView(GUIMenu):
         self._gui._graph_main._legend = ~self._gui._graph_main._legend
         self._gui._refresh()
 
-    def _on_logx(self, event):
+    def _on_logx(self, event, json=False):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_logx",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_logy(self, event):
+    def _on_logy(self, event, json=False):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_logy",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_norm(self, event):
+    def _on_norm(self, event, json=False):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_norm",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
     def _on_tab(self, event, obj):
