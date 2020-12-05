@@ -5,7 +5,7 @@ parent: Managing data
 nav_order: 2
 ---
 
-# Plots
+# Graphs
 {: .no_toc}
 
 ## Table of contents
