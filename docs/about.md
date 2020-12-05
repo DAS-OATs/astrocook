@@ -12,7 +12,7 @@ Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by **Guido Cu
 
 If you publish scientific results obtained with Astrocook, please cite this article in the references:
 
-**Cupani et al., *Astrocook: a thousand recipes to cook a spectrum*, 2018, Proc. SPIE 10707, 1070723 [ads](https://ui.adsabs.harvard.edu/abs/2018SPIE10707E..23C/abstract)**
+* **Cupani et al., *Astrocook: a thousand recipes to cook a spectrum*, 2018, Proc. SPIE 10707, 1070723 [ads](https://ui.adsabs.harvard.edu/abs/2018SPIE10707E..23C/abstract)**
 
 Other articles about Astrocook are:
 * Cupani et al., *Astrocook: your starred chef for spectral analysis*, SPIE, in press
