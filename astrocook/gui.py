@@ -777,8 +777,9 @@ class GUIPanelSession(wx.Frame):
 
     def struct_import(self, struct='0,systs', mode='replace'):
         """ @brief Import structure
-        @details Import a structure from a session into the current one. The
-        structure is either replaced or appended to the corresponding one.
+        @details Import a structure (spec, lines, systs) from a session into the
+        current one. The structure is either replaced or appended to the
+        corresponding one in the current session.
         @param struct Structure (session number,table)
         @param mode Mode (replace or append)
         @return 0
