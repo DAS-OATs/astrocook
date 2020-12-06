@@ -15,9 +15,10 @@ nav_order: 1
 {:toc}
 ---
 
-### Import structure 🚧
+### Import structure
 
 **Method**
+
 `astrocook.gui.GUIPanelSession.struct_import`
 
 **Parameters**
@@ -25,9 +26,10 @@ nav_order: 1
 * `mode`: Mode (`replace` or `append`)
 
 **Returns**
+
 0
 
-Import a structure (`spec`, `lines`, `systs`) from a session into the current one. The structure is either replaced or appended to the corresponding one in the target session.
+Import a structure (`spec`, `lines`, `systs`) from a session into the current one. The structure is either replaced or appended to the corresponding one in the current session.
 
 ### Modify structures 🚧
 
