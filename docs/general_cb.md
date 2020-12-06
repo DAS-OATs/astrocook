@@ -17,17 +17,11 @@ nav_order: 1
 
 ### Import structure
 
-**Method**
 
-`astrocook.gui.GUIPanelSession.struct_import`
-
-**Parameters**
-* `struct`: Structure (session number,table)
-* `mode`: Mode (`replace` or `append`)
-
-**Returns**
-
-0
+| **Method** | `astrocook.gui.GUIPanelSession.struct_import` |
+| **Parameters** | * `struct`: Structure (session number,table)
+                   * `mode`: Mode (`replace` or `append`) |
+| **Returns** | 0 |
 
 Import a structure (`spec`, `lines`, `systs`) from a session into the current one. The structure is either replaced or appended to the corresponding one in the current session.
 
