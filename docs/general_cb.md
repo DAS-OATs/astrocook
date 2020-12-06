@@ -14,3 +14,25 @@ nav_order: 1
 1. TOC
 {:toc}
 ---
+
+### Import structure 🚧
+
+### Modify structures 🚧
+
+### Apply template 🚧
+
+### Extract region 🚧
+
+### Convert axis 🚧
+
+### Scale y axis 🚧
+
+### Shift to and from frame 🚧
+
+### Rebin spectrum 🚧
+
+### Convolve with gaussian  🚧
+
+### Estimate resolution  🚧
+
+### Estimate SNR 🚧

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Plots
+title: Other tools
 parent: Managing data
-nav_order: 2
+nav_order: 4
 ---
 
-# Plots
+# Other tools
 {: .no_toc}
 
 ## Table of contents
@@ -14,3 +14,7 @@ nav_order: 2
 1. TOC
 {:toc}
 ---
+
+## Visualization 🚧
+
+## Metadata 🚧
