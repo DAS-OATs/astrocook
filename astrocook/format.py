@@ -336,8 +336,6 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            zero
-        except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -368,9 +366,18 @@ class Format(object):
             except:
                 meta['object'] = ''
             """
-            return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-        #except:
-        #    return None
+            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+            for i,c in enumerate(data.colnames):
+                print(c)
+                if c not in [x_col_names[x_col], y_col_names[y_col],
+                             dy_col_names[dy_col]]:
+                    spec._t[c] = data[c][0]
+                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+            return spec
+        except:
+            return None
+
 
 
     def mage_spectrum(self, hdul):

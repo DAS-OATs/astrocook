@@ -168,6 +168,7 @@ class GUIMenu(object):
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
                        "FITS files (*.fits)|*.fits|" \
                        "JSON files (*.json)|*.json|" \
+                       "CSV files (*.csv)|*.csv|" \
                        "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
