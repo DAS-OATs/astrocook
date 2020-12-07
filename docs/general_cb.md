@@ -103,7 +103,7 @@ nav_order: 1
   </tbody>
 </table>
 
-**Convert the x axis to wavelength or velocity units.** The x axis can be expressed in any unit that is convertible to nm or km/s (those are the default units). When converting to and from velocity units, the zero point is set at $`(1+``zem``)\lambda_\textrm{Ly\alpha}`$, where $`\lambda_\textrm{Ly\alpha}\simeq121.567\textrm{nm}`$ is the rest-frame wavelength of the Lyman-$`\alpha`$ transition.
+**Convert the x axis to wavelength or velocity units.** The x axis can be expressed in any unit that is convertible to nm or km/s (those are the default units). When converting to and from velocity units the zero point is set at (1+`zem`)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition).
 
 ## Convert x axis 🚧
 

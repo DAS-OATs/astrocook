@@ -253,9 +253,9 @@ class CookbookGeneral(object):
         @details Convert the x axis to wavelength or velocity units. The x axis
         can be expressed in any unit that is convertible to nm or km/s (those
         are the default units). When converting to and from velocity units the
-        zero point is set at (1+zem)*lambda_Lya (where lambda_Lya=121.567 nm is
-        the rest-frame wavelength of the Lyman-alpha transition).
-        @param zem Emission redshift, to use as a 0-point for velocities
+        zero point is set at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the
+        rest-frame wavelength of the Lyman-alpha transition).
+        @param zem Emission redshift
         @param xunit Unit of wavelength or velocity
         @return 0
         """
