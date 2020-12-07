@@ -727,39 +727,42 @@ class GUIPanelSession(wx.Frame):
         #print(self._gui._json)
 
 
-    def struct_modify(self, struct_A='0,spec,x', struct_B='0,spec,y',
-                       struct_out='0,spec,diff', op='subtract'):
-
-
-    #struct_A='0,systs,z', struct_B='1,systs,z',
-                       #struct_out='0,systs,diff_z', op='subtract'):
-        """ @brief Modify structures
-        @details Apply a binary operator on structures to create new structures.
-        @param struct_A Structure A (session,table,column)
-        @param struct_B Structure B (same syntax) or scalar
-        @param struct_out Output structure (same syntax)
+    def struct_modify(self, col_A='0,spec,x', col_B='0,spec,y',
+                      col_out='0,spec,diff', op='subtract'):
+        """ @brief Modify a data structure using a binary operator
+        @details Modify a data structure using a binary operator. An output
+        column is computed applying a binary operator to two input columns, or
+        an input column and a scalar. Columns are described by a string with the
+        session number, the structure tag (spec, lines, systs), and the column
+        name separated by a comma (e.g. 0,spec,x, meaning "column x of spectrum
+        from session 0"). They can be from different data structures only if
+        they have the same length. If the output column already exists, it is
+        overwritten.
+        @param col_A Structure A (session,table,column)
+        @param col_B Structure B (same syntax) or scalar
+        @param col_out Output structure (same syntax)
         @param op Binary operator
         @return 0
         """
 
-        parse_A = self._struct_parse(struct_A, length=3)
-        parse_out = self._struct_parse(struct_out, length=2)
+        parse_A = self._struct_parse(col_A, length=3)
+        parse_out = self._struct_parse(col_out, length=2)
         if parse_A is None or parse_out is None: return 0
-        coln_A, col_A, _ = parse_A
+        coln_A, colp_A, _ = parse_A
         attrn_out, attr_out, all_out = parse_out
         try:
-            col_B = np.full(np.shape(col_A), float(struct_B))
+            colp_B = np.full(np.shape(colp_A), float(col_B))
         except:
-            parse_B = self._struct_parse(struct_B, length=3)
-            parse_out = self._struct_parse(struct_out, length=2)
+            parse_B = self._struct_parse(col_B, length=3)
+            parse_out = self._struct_parse(col_out, length=2)
             if parse_B is None: return 0
-            coln_B, col_B, _ = parse_B
-            if len(col_A) != len(col_B):
+            coln_B, colp_B, _ = parse_B
+            if len(colp_A) != len(colp_B):
                 logging.error("The two columns have different lengths! %s" \
                             % msg_try_again)
                 return 0
 
-        if len(col_A) != len(attr_out._t):
+        if len(colp_A) != len(attr_out._t):
             logging.error("The output table have different length than the "
                           "input columns! %s" \
                           % msg_try_again)
@@ -770,17 +773,19 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
-            getattr(np, op)(col_A, col_B)
+            getattr(np, op)(colp_A, colp_B)
 
         return 0
 
 
     def struct_import(self, struct='0,systs', mode='replace'):
-        """ @brief Import structure
-        @details Import a data structure (spec, lines, systs) from a session
-        into the current one. The structure is either replaced or appended to
-        the corresponding one in the current session.
-        @param struct Structure (session number,table)
+        """ @brief Import a data structure from a session into the current one
+        @details The structure to be imported is described by a string with the
+        session number and the structure tag (spec, lines, systs) separated by a
+        comma (e.g. 0,spec, meaning "spectrum from session 0"). The imported
+        structure is either replaced or appended to the corresponding one in the
+        current session.
+        @param struct Structure
         @param mode Mode (replace or append)
         @return 0
         """
