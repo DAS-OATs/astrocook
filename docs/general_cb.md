@@ -15,24 +15,84 @@ nav_order: 1
 {:toc}
 ---
 
-### Import structure 🚧
+## Import structure
 
-### Modify structures 🚧
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUIPanelSession.struct_import</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>struct</code>: Structure</li>
+          <li><code>mode</code>: Mode (<code>replace</code> or <code>append</code>)</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-### Apply template 🚧
+**Import a data structure from a session into the current one.** The structure to be imported is described by a string with the session number and the structure tag (`spec`, `lines`, `systs`) separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
 
-### Extract region 🚧
+## Modify structures
 
-### Convert axis 🚧
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUIPanelSession.struct_modify</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>col_A</code>: Column A</li>
+          <li><code>col_B</code>: Column B or scalar</li>
+          <li><code>struct_out</code>: Output column</li>
+          <li><code>op</code>: Binary operator</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-### Scale y axis 🚧
+**Modify a data structure using a binary operator.** An output column is computed applying a binary operator to two input columns, or an input column and a scalar. Columns are described by a string with the session number, the structure tag (`spec`, `lines`, `systs`), and the column name separated by a comma (e.g. `0,spec,x`, meaning "column x of spectrum from session 0").  They can be from different data structures only if they have the same length. If the output column already exists, it is overwritten.
 
-### Shift to and from frame 🚧
+## Extract region
 
-### Rebin spectrum 🚧
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.region_extract</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>xmin</code>: Minimum wavelength (nm)</li>
+          <li><code>xmax</code>: Maximum wavelength (nm)</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-### Convolve with gaussian  🚧
+**Extract a spectral region.** The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines and the absorption systems that fall within). A new session with the extracted data structures is created.
 
-### Estimate resolution  🚧
+## Convert axis 🚧
 
-### Estimate SNR 🚧
+## Scale y axis 🚧
+
+## Shift to and from frame 🚧
+
+## Rebin spectrum 🚧
+
+## Convolve with gaussian  🚧
+
+## Estimate resolution  🚧
+
+## Estimate SNR 🚧
