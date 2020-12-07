@@ -94,7 +94,6 @@ class Session(object):
             hdr = hdul[0].header
         else:
             t = Table(ascii.read(self.path))
-            print(t)
             hdul = fits.HDUList([fits.PrimaryHDU(),
                                  fits.BinTableHDU.from_columns(np.array(t))])
             hdr = hdul[0].header
