@@ -83,7 +83,29 @@ nav_order: 1
 
 **Extract a spectral region.** The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines and the absorption systems that fall within). A new session with the extracted data structures is created.
 
-## Convert axis 🚧
+## Convert x axis
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.x_convert</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>zem</code>: Emission redshift</li>
+          <li><code>xunit</code>: Unit of wavelength or velocity</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Convert the x axis to wavelength or velocity units.** The x axis can be expressed in any unit that is convertible to nm or km/s (those are the default units). When converting to and from velocity units, the zero point is set at $`(1+``zem``)\lambda_\textrm{Ly\alpha}`$, where $`\lambda_\textrm{Ly\alpha}\simeq121.567\textrm{nm}`$ is the rest-frame wavelength of the Lyman-$`\alpha`$ transition.
+
+## Convert x axis 🚧
 
 ## Scale y axis 🚧
 

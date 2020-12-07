@@ -250,7 +250,11 @@ class CookbookGeneral(object):
 
     def x_convert(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert x axis
-        @details Convert the x axis to wavelength or velocity units.
+        @details Convert the x axis to wavelength or velocity units. The x axis
+        can be expressed in any unit that is convertible to nm or km/s (those
+        are the default units). When converting to and from velocity units the
+        zero point is set at (1+zem)*lambda_Lya (where lambda_Lya=121.567 nm is
+        the rest-frame wavelength of the Lyman-alpha transition).
         @param zem Emission redshift, to use as a 0-point for velocities
         @param xunit Unit of wavelength or velocity
         @return 0
