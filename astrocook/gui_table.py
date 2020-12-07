@@ -1,5 +1,5 @@
 from .functions import get_selected_cells, trans_parse
-from .gui_dialog import GUIDialogMiniSystems
+from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
 import logging
@@ -627,12 +627,19 @@ class GUITableSystList(GUITable):
 
 
     def _on_fit(self, event):
+        """
         row = self._gui._tab_popup._event.GetRow()
         sess = self._gui._sess_sel
         sess.json += self._gui._json_update("_tab_systs", "_data_fit",
                                             {"row": row})
         self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
+        """
+        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        #params = [{'series': row['series'], 'z': "%3.7f" % float(row['z']),
+        #           'logN': row['logN'], 'b': row['b'], 'refit_n': 0}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit')
+
         self._gui._refresh(init_cursor=True)
 
 
