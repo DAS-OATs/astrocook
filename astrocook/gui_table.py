@@ -667,9 +667,12 @@ class GUITableSystList(GUITable):
     def _on_improve(self, event):
         #row = self._gui._tab_popup._event.GetRow()
         #z = float(self._tab.GetCellValue(row, 3))
+        """
         sess = self._gui._sess_sel
         sess.json += self._gui._json_update("cb", "systs_improve", {})
         self._gui._sess_sel.cb.systs_improve()
+        """
+        dlg = GUIDialogMethod(self._gui, 'Improve systems', 'systs_improve')
         self._gui._refresh(init_cursor=True)
 
 
