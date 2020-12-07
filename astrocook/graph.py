@@ -416,7 +416,6 @@ class Graph(object):
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
                     x = xem*(1+z_flat)
-                    #print(x)
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
@@ -426,9 +425,10 @@ class Graph(object):
                         #print((1+self._zem)*121.567)
                         #print(self._zem)
                         #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
-                        zem = [self._zems[s] for s in self._zems][-1]
+                        for k in self._axes:
+                            if self._axes[k] == self._ax:
+                                zem = self._zems[k]
                         x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
-                        #print(x)
                         #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat
@@ -568,7 +568,7 @@ class Graph(object):
                         self._cursor_line.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
-                                color=c, alpha=a, linewidth=3,
+                                color=c, alpha=a, linewidth=2,
                                 **gs._kwargs))
                         """
                         if focus==self._gui._graph_main:
