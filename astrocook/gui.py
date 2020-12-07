@@ -738,9 +738,9 @@ class GUIPanelSession(wx.Frame):
         from session 0"). They can be from different data structures only if
         they have the same length. If the output column already exists, it is
         overwritten.
-        @param col_A Structure A (session,table,column)
-        @param col_B Structure B (same syntax) or scalar
-        @param col_out Output structure (same syntax)
+        @param col_A Structure A
+        @param col_B Structure B or scalar
+        @param col_out Output structure
         @param op Binary operator
         @return 0
         """
