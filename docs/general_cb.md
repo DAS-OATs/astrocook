@@ -37,7 +37,7 @@ nav_order: 1
 
 **Import a data structure from a session into the current one**. The structure to be imported is described by a string with the session number and the structure tag ( (`spec`, `lines`, `systs`) separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
 
-### Modify structures 🚧
+### Modify structures
 
 <table>
   <tbody>
