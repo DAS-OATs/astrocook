@@ -20,6 +20,22 @@ def _fadd(a, u):
 
     return np.real(wofz(u + 1j * a))
 
+def _voigt_par_convert(x, z, N, b, btur, trans):
+    if trans == 'unknown':
+        xem = z*au.nm
+        xobs = z*au.nm
+    else:
+        xem = xem_d[trans]
+        xobs = xem*(1+z)
+    fosc = fosc_d[trans]
+    gamma = gamma_d[trans]/au.s
+    b_qs = np.sqrt(b**2 + btur**2)
+    atom = fosc * ac.e.esu**2 / (ac.m_e * ac.c)
+    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    a = 0.25 * gamma * xem / (np.pi * b_qs)
+    u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+    return tau0, a, u
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -32,7 +48,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        #print(i, k)
+        print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
@@ -124,9 +140,10 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
-    model = np.ones(len(x))
+    model = np.ones(np.size(np.array(x)))
     #for t in series_d[series]:
     for t in trans_parse(series):
+        """
         if series == 'unknown':
             xem = z*au.nm
             xobs = z*au.nm
@@ -140,6 +157,8 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+        """
+        tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
         model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
                           * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
@@ -161,6 +180,14 @@ def log2_range(start, end, step):
                         "to %1.0f." % 2**end)
     log2 = np.arange(start, end+step, step)
     return np.power(2, log2)
+
+
+def meta_parse(meta):
+    s = ""
+    for m in meta:
+        if m not in forbidden_keywords and m[:5] not in forbidden_keywords:
+            s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
+    return s[:-2]
 
 
 def psf_gauss_wrong(x, #center, resol):
@@ -196,15 +223,22 @@ def psf_gauss(x, resol, spec=None):
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
-    xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
+    #xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))
     #psf[len(x)//2] = 1
     #ret = [np.array(psf)]
     #plt.plot(xout*10, psf)
+    """
     ret = psf
     return ret
-
+    """
+    if len(psf)==0:
+        #print(x, spec.x.to(xunit_def).value)
+        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
+    else:
+        ret = psf
+        return ret
 
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
@@ -243,6 +277,12 @@ def trans_parse(series):
             for t in series_d[s]:
                 trans.append(t)
     return trans
+
+
+def elem_expand(elem, sess_sel):
+    return '\n'.join([str(sess_sel)+','+r for r in elem.split('\n')])
+    #return '\n'.join([str(sess_sel)+','+r+',C'+str(i%10) \
+    #                 for i,r in enumerate(elem.split('\n'))])
 
 # Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
 def corners_to_cells(top_lefts, bottom_rights):

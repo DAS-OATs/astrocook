@@ -16,6 +16,7 @@ class GUIMenu(object):
     def __init__(self,
                  gui):
         self._gui = gui
+        self._gui._menu = self
         self._params_last = None
 
     def bar(self):
@@ -26,6 +27,7 @@ class GUIMenu(object):
         self._recipes = GUIMenuRecipes(self._gui)
         self._courses = GUIMenuCourses(self._gui)
         self._cook = GUIMenuCook(self._gui)
+        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._file._menu, "File")
         bar.Append(self._edit._menu, "Edit")
         bar.Append(self._view._menu, "View")
@@ -52,13 +54,19 @@ class GUIMenu(object):
             item.Enable(enable)
         return item
 
-    def _item_graph(self, menu, id, append, title, key, enable=False,
-                    dlg_mini=False, targ=None):
+    def _item_graph(self, menu, id, append, title, key=None, enable=False,
+                    dlg_mini=None, targ=None, alt_title=None):
+        if alt_title == None: alt_title = title
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
+        if targ == GraphCursorZSeries:
+            self._gui._cursor = item
+        if dlg_mini == "graph":
+            self._gui._graph_elem = item
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
-            lambda e: self._on_graph(e, title, key, item, dlg_mini, targ), item)
+            lambda e: self._on_graph(e, alt_title, key, item, dlg_mini, targ),
+            item)
         menu.Append(item)
         if append is not None:
             getattr(self._gui, '_menu_'+append+'_id').append(id)
@@ -89,23 +97,62 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
-    def _on_dialog_mini(self, event, title, targ):
-        dlg = GUIDialogMini(self._gui, title, targ)
+    def _on_dialog_mini_graph(self, event, title, targ, json=True):
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu", "_on_dialog_mini_graph",
+                                                {"event": None,
+                                                 "title": title,
+                                                 "targ": targ, "json": False})
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        else:
+            dlg = GUIDialogMiniGraph(self._gui, title)
+
+    def _on_dialog_mini_log(self, event, title, targ):
+        dlg = GUIDialogMiniLog(self._gui, title)
+
+
+    def _on_dialog_mini_meta(self, event, title, targ, json=True):
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu", "_on_dialog_mini_meta",
+                                                {"event": None,
+                                                 "title": title,
+                                                 "targ": targ, "json": False})
+        dlg = GUIDialogMiniMeta(self._gui, title)
+
+    def _on_dialog_mini_systems(self, event, title, targ):
+        dlg = GUIDialogMiniSystems(self._gui, title, targ)
 
     def _on_graph(self, event, title, key, item, dlg_mini, targ):
         sel = self._gui._graph_main._sel
-        if key in sel:
-            sel.remove(key)
-        else:
-            sel.append(key)
-        #item.IsChecked() == False
-        self._gui._refresh()
-        if dlg_mini:
-            self._gui._cursor = item
-            if item.IsChecked():
-                self._on_dialog_mini(event, title, targ)
+        if key is not None:
+            if key in sel:
+                sel.remove(key)
             else:
-                self._gui._dlg_mini._on_cancel(event)
+                sel.append(key)
+        #item.IsChecked() == False
+        self._gui._refresh(init_tab=False)
+        if dlg_mini is not None:
+            #self._gui._cursor = item
+            if item.IsChecked() or key is None:
+                if not hasattr(self._gui, '_dlg_mini_'+dlg_mini) \
+                    or getattr(self._gui, '_dlg_mini_'+dlg_mini) == None \
+                    or not getattr(getattr(self._gui, '_dlg_mini_'+dlg_mini), '_shown'):
+                    getattr(self, '_on_dialog_mini_'+dlg_mini)\
+                        (event, title, targ)
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
+                gui_dlg_mini._shown = True
+                gui_dlg_mini._on_apply(event, refresh=False)
+                if dlg_mini == 'systems':
+                    gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
+            else:
+                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
+                gui_dlg_mini._shown = False
+                gui_dlg_mini._on_cancel(event)
+                if dlg_mini == 'systems':
+                    gui_dlg_mini._cursor_button.SetLabel("Show cursor")
 
 
     def _on_open(self, event, path=None, wildcard=None,
@@ -119,7 +166,9 @@ class GUIMenu(object):
                 path='.'
         if wildcard is None:
             wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                       "FITS files (*.fits)|*.fits"
+                       "FITS files (*.fits)|*.fits|" \
+                       "JSON files (*.json)|*.json|" \
+                       "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
@@ -133,23 +182,32 @@ class GUIMenu(object):
             except:
                 getattr(self._gui._panel_sess, action)(self._gui._path)
             """
+        """
         try:
             getattr(self, action)(self._gui._path)
         except:
             getattr(self._gui._panel_sess, action)(self._gui._path)
+        """
+        self._gui._panel_sess._open_path = self._gui._path
+        if self._gui._path[-4:] == 'json':
+            self._gui._panel_sess._open_rec = 'json_load'
+            self._gui._panel_sess.json_load(os.path.realpath(self._gui._path))
+        else:
+            self._gui._panel_sess._open_rec = '_on_open'
+            self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
+    """
     def _on_open_session(self, path):
         name = path.split('/')[-1].split('.')[0]
         #logging.info("I'm loading session %s..." % path)
-        sess = Session(path=path, name=name)
+        sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         if sess._open_twin:
             #logging.info("I'm loading twin session %s..." % path)
-            sess = Session(path=path, name=name, twin=True)
+            sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
         #self._gui._path = path
-
+    """
 
     def _refresh(self):
         # Nested loops! WOOOO!
@@ -161,21 +219,34 @@ class GUIMenu(object):
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable() \
-                            and item.key not in ['legend', 'norm']:
+                            and item.key not in self._key_list:
                             item.Check(False)
                         if hasattr(self._gui._sess_sel, a):
                             cond = getattr(self._gui._sess_sel, a) != None
                         else:
-                            cond = a in self._gui._sess_sel.spec.t.colnames
+                            try:
+                                cond = a in self._gui._sess_sel.systs.t.colnames
+                            except:
+                                cond = a in self._gui._sess_sel.spec.t.colnames
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
-                                if item.key not in ['legend', 'norm']:
+                                if item.key not in self._key_list:
                                     item.Check(item.key in sel)
                         else:
                             item.Enable(False)
                     except:
                         pass
+
+    def _sel_graph_cols(self, cols=graph_cols_sel):
+        """ @brief Select graph columns
+        @details Select columns to be displayed on graph
+        @param cols Columns to be displayed
+        @return 0
+        """
+        self._gui._graph_main._cols_sel = cols
+
+        return 0
 
 
 class GUIMenuCook(GUIMenu):
@@ -344,32 +415,47 @@ class GUIMenuEdit(GUIMenu):
         # Add items to Edit menu here
         #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
         self._item_method(self._menu, start_id+300, None,
-                          "Compare structures", 'struct_compare',
-                          enable=len(self._gui._sess_list)>0,
+                          "Equalize sessions", 'equalize',
+                          enable=len(self._gui._sess_item_sel)==2,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+301, None,
-                          "Import structure", 'struct_import',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+302, None,
                           "Combine sessions", 'combine',
                           enable=len(self._gui._sess_item_sel)>1,
                           obj=self._gui._panel_sess)
         self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+310, 'spec',
-                          "Extract region", 'region_extract')
+        self._item_method(self._menu, start_id+310, None,
+                          "Import structure", 'struct_import',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+311, None,
+                          "Modify structures", 'struct_modify',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        submenu = wx.Menu()
+        self._item_method(submenu, start_id+312, 'spec',
+                          "Blackbody", 'bb')
+        self._item_method(submenu, start_id+313, 'spec',
+                          "Power-law", 'pl')
+        self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+320, 'spec',
-                          "Convert x axis", 'x_convert')
-        self._item_method(self._menu, start_id+321, 'spec',
-                          "Convert y axis", 'y_convert')
+                          "Extract region", 'region_extract')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+330, 'spec',
-                          "Scale y axis", 'y_scale')
+                          "Convert x axis", 'x_convert')
+        self._item_method(self._menu, start_id+331, 'spec',
+                          "Convert y axis", 'y_convert')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+340, 'spec',
-                          "Shift to rest frame", 'shift_to_rf')
+                          "Scale y axis by median", 'y_scale_med')
         self._item_method(self._menu, start_id+341, 'spec',
+                          "Scale y axis", 'y_scale')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+350, 'spec',
+                          "Shift to barycentric frame", 'shift_bary')
+        self._item_method(self._menu, start_id+351, 'spec',
+                          "Shift to rest frame", 'shift_to_rf')
+        self._item_method(self._menu, start_id+352, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
 
 
@@ -437,6 +523,8 @@ class GUIMenuRecipes(GUIMenu):
         super(GUIMenuRecipes, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        #sess = self._gui._sess_sel
+
 
         # Add items to Recipes menu here
         self._item_method(self._menu, start_id+100, 'spec',
@@ -445,6 +533,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+102, 'spec',
                           "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+103, 'spec',
+                          "Estimate SNR", 'snr_est')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
@@ -465,7 +555,7 @@ class GUIMenuRecipes(GUIMenu):
 
         #self._item_method(self._menu, start_id+301, 'lines',
         #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+300, 'cont',
+        self._item_method(self._menu, start_id+300, 'z0',
                           "New system", 'syst_new')
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
@@ -473,19 +563,34 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(self._menu, start_id+301, 'lines',
                           "New systems from lines",
                           'systs_new_from_lines')
+        self._item_method(self._menu, start_id+302, 'lines',
+                          "Find candidate systems", 'cands_find')
+        self._item_method(self._menu, start_id+303, 'z0',
+                          "Improve systems", 'systs_improve')
+        self._item_method(self._menu, start_id+304, 'z0',
+                          "Complete systems", 'systs_complete')
+        self._item_method(self._menu, start_id+305, 'z0',
+                          "Fit systems", 'systs_fit')
         submenu = wx.Menu()
         #self._item_method(submenu, start_id+310, 'systs',
         #                  "Fit system", 'syst_fit')
-        self._item_method(submenu, start_id+311, 'systs',
+        self._item_method(submenu, start_id+311, 'z0',
                           "Recreate models", 'mods_recreate')
-        self._item_method(submenu, start_id+312, 'systs',
-                          "Fit systems", 'systs_fit')
-        self._item_method(submenu, start_id+313, 'systs',
-                          "Clean systems", 'systs_clean')
-        self._item_method(submenu, start_id+314, 'systs',
-                          "Extract systems", 'comp_extract')
+        self._item_method(submenu, start_id+312, 'z0',
+                          "Estimate SNR of systems", 'systs_snr')
+        self._item_method(submenu, start_id+313, 'z0', "Update lines",
+                          'lines_update')
+        self._item_method(submenu, start_id+314, 'z0',
+                          "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
-        self._item_method(submenu,start_id+321, 'systs', "Compute CCF",
+        self._item_method(submenu, start_id+322, 'z0',
+                          "Clean systems", 'systs_clean')
+        self._item_method(submenu, start_id+323, 'z0',
+                          "Extract systems", 'comp_extract')
+        self._item_method(submenu, start_id+324, 'systs',
+                          "Select systems", 'systs_select')
+        submenu.AppendSeparator()
+        self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         #self._item_method(self._menu, start_id+303, 'systs',
@@ -533,7 +638,7 @@ class GUIMenuCourses(GUIMenu):
         self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
                    lambda e: \
                    self._on_open(e, wildcard="JSON file (*.json)|*.json",
-                                 action='load_json'))
+                                 action='json_load'))
 
 class GUIMenuView(GUIMenu):
 
@@ -545,60 +650,65 @@ class GUIMenuView(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
         self._menu_view = self
+        self._gui._menu_view = self
+        self._start_id = start_id
 
         # Add items to View menu here
-        self._item(self._menu, start_id+1, 'spec', "Spectrum table",
-                   lambda e: self._on_tab(e, 'spec'))
-        self._item(self._menu, start_id+2, 'lines', "Line table",
-                   lambda e: self._on_tab(e, 'lines'))
-        self._item(self._menu, start_id+3, 'systs', "System table",
-                   lambda e: self._on_tab(e, 'systs'))
+        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
+        self._gui._menu_tab_id = tab_id
+        self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
+                   lambda e: self._on_tab(e, 'spec'), key='spec')
+        self._item(self._menu, tab_id[1], 'lines', "Line table",
+                   lambda e: self._on_tab(e, 'lines'), key='lines')
+        self._item(self._menu, tab_id[2], 'systs', "System table",
+                   lambda e: self._on_tab(e, 'systs'), key='systs')
+        self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
+                         dlg_mini='meta', alt_title="Metadata")
+        self._item_graph(self._menu, tab_id[4], 'spec', "Session log",
+                         dlg_mini='log', alt_title="Session log")
         self._menu.AppendSeparator()
+        """
         self._item(self._menu, start_id+101, 'systs',
                    "System detection correctness",
                    lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+101, 'systs',
+        self._item(self._menu, start_id+102, 'systs',
                    "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
+        """
+        self._item(self._menu, start_id+101, 'systs', "Compress system table",
+                   self._on_compress)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)
         self._item(self._menu, start_id+202, 'spec',
                    "Toggle log y axis", self._on_logy)
+        self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
+                                self._on_norm, key='norm')
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
-        self._item_graph(self._submenu, start_id+301, 'spec', "Spectrum",
-                         'spec_x_y')
-        self._item_graph(self._submenu, start_id+302, 'spec', "Spectrum error",
-                         'spec_x_dy')
-        self._item_graph(self._submenu, start_id+303, 'y_conv', "Convolved spectrum",
-                         'spec_x_conv')
-        self._item_graph(self._submenu, start_id+304, 'lines', "Line list",
-                         'lines_x_y')
-        self._item_graph(self._submenu, start_id+305, 'lines', "Spectrum masked for lines",
-                         'spec_x_yfitmask')
-        self._item_graph(self._submenu, start_id+306, 'nodes', "Nodes",
-                         'spec_nodes_x_y')
-        self._item_graph(self._submenu, start_id+307, 'spec', "Continuum",
-                         'spec_x_cont')
-        self._item_graph(self._submenu, start_id+308, 'systs', "Model",
-                         'spec_x_model')
-        self._item_graph(self._submenu, start_id+309, 'lines', "Spectrum masked for fitting",
-                         'spec_x_yfitmask')
-        self._item_graph(self._submenu, start_id+310, 'systs', "De-absorbed",
-                         'spec_x_deabs')
-        self._item_graph(self._submenu, start_id+311, None, "Spectral format",
-                         'spec_form_x')
-        self._item_graph(self._submenu, start_id+312, 'systs', "System list",
-                         'systs_z_series')
+        self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
+                         dlg_mini='graph', alt_title="Graph elements")
+        self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
+                         'spec_h2o_reg')
         self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
-                         'cursor_z_series', dlg_mini=True,
-                         targ=GraphCursorZSeries)
-        self._legend = self._item(self._submenu, start_id+314, 'spec', "Legend",
+                         'cursor_z_series', dlg_mini='systems',
+                         targ=GraphCursorZSeries, alt_title="System controls")
+        self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
                                   self._on_legend, key='legend')
-        self._menu.AppendSubMenu(self._submenu, "Toggle graph elements")
-        self._norm = self._item(self._menu, start_id+401, 'spec', "Toggle normalization",
-                                self._on_norm, key='norm')
+        self._menu.AppendSubMenu(self._submenu, "Toggle graph add-ons")
+
+        #self._item_method(self._menu, start_id+401, 'spec',
+        #                  "Edit graph details", '_sel_graph_cols', obj=self)
+
+
+    def _on_compress(self, event):
+        if self._menu.GetLabel(self._start_id+101) == "Compress system table":
+            self._menu.SetLabel(self._start_id+101, "Uncompress system table")
+        else:
+            self._menu.SetLabel(self._start_id+101, "Compress system table")
+
+        self._gui._sess_sel.systs._compress()
+        self._gui._refresh()
 
     def _on_ima(self, event, obj):
         method = '_ima_'+obj
@@ -608,18 +718,35 @@ class GUIMenuView(GUIMenu):
         self._gui._graph_main._legend = ~self._gui._graph_main._legend
         self._gui._refresh()
 
-    def _on_logx(self, event):
+    def _on_logx(self, event, json=False):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_logx",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_logy(self, event):
+    def _on_logy(self, event, json=False):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_logy",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_norm(self, event):
+    def _on_norm(self, event, json=False):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
+        if json:
+            sess = self._gui._sess_sel
+            sess.json += self._gui._json_update("_menu_view", "_on_norm",
+                                                {"event": None, "json": False})
         self._gui._refresh()
 
     def _on_tab(self, event, obj):
         method = '_tab_'+obj
-        getattr(self._gui, method)._on_view(event)
+        index = ['spec', 'lines', 'systs'].index(obj)
+        item = self._menu.FindItemById(self._gui._menu_tab_id[index])
+        if item.IsChecked():
+            getattr(self._gui, method)._on_view(event)
+        else:
+            getattr(self._gui, method)._on_close(event)

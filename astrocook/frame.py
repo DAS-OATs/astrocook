@@ -38,7 +38,8 @@ class Frame():
         self._t = t
         self._xunit = xunit
         self._yunit = yunit
-        self._meta = meta
+        self._meta = dc(meta)
+        self._meta_backup = dc(meta)
         self._dtype = dtype
         self._rfz = 0.0
 
@@ -103,6 +104,10 @@ class Frame():
 
 
     def _append(self, frame):
+        if self._xunit != frame._xunit:
+            frame._t['x'] = frame._t['x'].to(self._xunit)
+            frame._t['xmin'] = frame._t['xmax'].to(self._xunit)
+            frame._t['xmax'] = frame._t['xmax'].to(self._xunit)
         vstack = at.vstack([self._t, frame._t])
         if len(self._t) > 0:
             self._t = at.unique(vstack, keys=['x'])
@@ -170,6 +175,18 @@ class Frame():
         self._rfz = z
         return 0
 
+
+    def _shift_bary(self, v):
+        """ @brief Shift to and from barycentic frame.
+        @param v Velocity in the barycentric frame (km/s)
+        @return 0
+        """
+
+        fact = 1+v/aconst.c.to(au.km/au.s).value
+        self.x = self.x*fact
+        self.xmin = self.xmin*fact
+        self.xmax = self.xmax*fact
+        return 0
 
     def _x_convert(self, zem=0, xunit=au.km/au.s):
 

@@ -1,7 +1,9 @@
 from astropy import units as au
+from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
+import pathlib
  #c, e, m_e
 
 xunit_def = au.nm
@@ -10,24 +12,45 @@ zunit_def = au.nm / au.nm
 Nunit_def = 1 / au.cm**2
 bunit_def = au.km / au.s
 
+equiv_w_v = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/121.567)*aconst.c.to(au.km/au.s),
+              lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*121.567)]
+
+
 logN_def = 14
 b_def = 10
 
 resol_def = None
 max_nfev_def = 100
 
+hwin_def = 250.0
+
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
-seq_menu = seq + ['y_conv', 'cont']
-graph_sel = ['spec_x_y',
+seq_menu = seq + ['y_conv', 'cont', 'z0']
+graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
-             'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
-             'systs_z_series']
+             #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
+             #'systs_z_series',
+             'spec_h2o_reg'
+             ]
+graph_cols_sel = ''
+
+graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
+           "spec,x,dy,None,step,-,1,C1,0.5\n"\
+           "lines,x,y,None,scatter,+,1.5,C2,1\n"\
+           "nodes,x,y,None,scatter,o,1,C3,1\n"\
+           "spec,x,cont,None,plot,-,1,C8,1\n"\
+           "spec,x,model,None,plot,-,1,C9,1\n"\
+           "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
+           "systs,z,None,None,axvline,--,0.8,C2,1.0"
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 1e-4, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
-    'z_max': 1e-4, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
+    'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
+#    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
+    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -46,7 +69,7 @@ lines_voigt_d = {
     'z': 0.0, 'N': 1.e13, 'b': 5.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
     'z_min': 0.0, 'N_min': 1.e11, 'b_min': 1.0, 'btur_min': 0.0,
-    'z_max': 10.0, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': 100.0,
+    'z_max': 10.0, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': 100.0,
     'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
 
 # Default values for PSF gaussian Parameters
@@ -57,20 +80,39 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
-p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-atom_par = ascii.read(p+'/atom_par.dat')
+forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
+                      'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
+
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
+
+h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
+
+p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 
-
-
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
+trans_d = atom_par['col1']
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
+
+#trans_d_short = ['SiIV_1393', 'SiIV_1402', 'SiII_1526', 'CIV_1548', 'CIV_1550', 'AlII_1670', 'NiII_1741', 'NiII_1751', 'AlIII_1854', 'AlIII_1862', 'FeII_2344', 'FeII_2374', 'FeII_2382', 'MnII_2576', 'FeII_2586', 'MnII_2594', 'FeII_2600', 'MnII_2606', 'MgII_2796', 'MgII_2803']
+trans_d_short = ['CIV_1548', 'CIV_1550', 'MgII_2796', 'MgII_2803', 'SiIV_1393', 'SiIV_1402', 'AlIII_1854', 'AlIII_1862', 'FeII_2586', 'FeII_2600']
+trans_d_short = ['CIV_1548', 'CIV_1550']
+series_d_short = {}
+for (k,v) in series_d.items():
+    for vi in v:
+        if vi in trans_d_short:
+            if k not in series_d_short:
+                series_d_short[k] = []
+            series_d_short[k].append(vi)
 
 series_d['Ly-a'] = ['Ly_a']
 series_d['Ly-ab'] = ['Ly_b', 'Ly_a']
@@ -214,3 +256,15 @@ gamma_d_old = {'Ly_a': 6.265e+08,
               'CaII_3969': 1.409e+08,
               'neb': 5e8,
               'unknown': 6.265e+08}
+
+json_head = '{"set_menu":\n  [\n'
+
+json_tail = '    {\n'\
+            '      "cookbook": "",\n'\
+            '      "recipe": "_refresh",\n'\
+            '      "params": {\n'\
+            '        "autosort": false\n'\
+            '      }\n'\
+            '    }\n'\
+            '  ]\n'\
+            '}'

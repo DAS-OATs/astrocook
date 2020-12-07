@@ -2,8 +2,10 @@ from .frame import Frame
 from .line_list import LineList
 #from .syst_list import SystList
 from .message import *
-#from .vars import *
+from .vars import *
 from astropy import units as au
+from astropy.modeling.models import BlackBody
+from astropy.modeling.powerlaws import PowerLaw1D
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
@@ -39,6 +41,7 @@ class Spectrum(Frame):
         if resol != []:
             self._t['resol'] = resol
 
+
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
         cols = [c for c in self._t.colnames \
@@ -65,7 +68,7 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
-        safe = self._safe(conv)
+        safe = np.array(self._safe(conv), dtype=float)
         conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
                                               *self._t[input_col].unit
         self._t[output_col] = conv
@@ -121,6 +124,20 @@ class Spectrum(Frame):
         self._t['lines_mask'][self._where_safe] = mask
 
         return 0
+
+
+    def _node_add(self, nodes, x, y):
+        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
+        row = []
+        for c in nodes.t.colnames:
+            row.append(y) if c == 'y' else row.append(self.t[sel][c])
+        nodes.t.add_row(row)
+        nodes.t.sort('x')
+
+
+    def _node_remove(self, nodes, x):
+        sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
+        nodes.t.remove_rows(sel)
 
 
     def _nodes_clean(self, nodes, kappa=5.0):
@@ -205,9 +222,14 @@ class Spectrum(Frame):
         x = nodes.x.value
         y = nodes.y.value
         dy = nodes.dy.value
-        isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
-                              np.isnan(dy))
-        spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
+        #isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
+        #                      np.isnan(dy))
+        isnan = np.logical_or(np.isnan(x),np.isnan(y))
+        dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+        if np.sum(np.isnan(dy)) > 0:
+            spl = uspline(x[~isnan], y[~isnan], s=smooth)
+        else:
+            spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
         cont = spl(self.x)*self._yunit
         logging.info("I'm using interpolation as continuum.")
         if 'cont' not in self._t.colnames:
@@ -219,7 +241,6 @@ class Spectrum(Frame):
 
 
     def _peaks_find(self, col='conv', kind='min', kappa=3.0, **kwargs):
-
         y = self._safe(self._t[col])
         min_idx = np.hstack(argrelmin(y, **kwargs))
         max_idx = np.hstack(argrelmax(y, **kwargs))
@@ -240,17 +261,21 @@ class Spectrum(Frame):
         #for m,M,l,r in zip(ext.xmin, ext.xmax, diff_y_left, diff_y_right):
 
         #    print(m,M,l,r)
-        diff_y_max = np.minimum(diff_y_left, diff_y_right)
+            diff_y_max = np.minimum(diff_y_left, diff_y_right)
 
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
-        sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
+            dy = ext.dy[1:-1]
+            dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+            sel = np.where(np.greater(diff_y_max, dy * kappa))[0]+1
+        else:
+            sel = []
+
         lines = ext._copy(sel)
 
         return lines
 
-
-    def _rebin(self, dx, xunit, y, dy):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -261,7 +286,14 @@ class Spectrum(Frame):
         # Create x, xmin, and xmax
         from .format import Format
         format = Format()
-        xstart, xend = np.nanmin(self.x), np.nanmax(self.x)
+        if xstart is None:
+            xstart = np.nanmin(self.x)
+        else:
+            xstart = (xstart*au.nm).to(xunit, equivalencies=equiv_w_v)
+        if xend is None:
+            xend = np.nanmax(self.x)
+        else:
+            xend = (xend*au.nm).to(xunit, equivalencies=equiv_w_v)
         x = np.arange(xstart.value, xend.value, dx) * xunit
         xmin, xmax = format._create_xmin_xmax(x)
 
@@ -270,8 +302,8 @@ class Spectrum(Frame):
         iM = 1
         xmin_in = self.xmin[iM].value
         xmax_in = self.xmax[im].value
-        y_out = np.array([])
-        dy_out = np.array([])
+        y_out = np.array([]) * y.unit
+        dy_out = np.array([]) * y.unit
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
@@ -289,7 +321,10 @@ class Spectrum(Frame):
                     break
             ysel = y[im:iM+1]
             dysel = dy[im:iM+1]
-            y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
+            if np.any(np.isnan(dysel)):
+                y_out = np.append(y_out, np.average(ysel))
+            else:
+                y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
             dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
                                                /np.sum(1/dysel**2))
 
@@ -332,4 +367,88 @@ class Spectrum(Frame):
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
         self._x_convert(xunit=xunit_orig)
+        return 0
+
+
+    def _stats_print(self, xmin=0, xmax=np.inf):
+
+        sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
+                                      self.x.to(au.nm).value < xmax))
+        x = self.x[sel]
+        y = self.y[sel]
+        dy = self.dy[sel]
+
+        self._stats = {'min_x': np.min(x),
+                       'max_x': np.max(x),
+                       'mean_x': np.mean(x),
+                       'min_y': np.min(y),
+                       'max_y': np.max(y),
+                       'mean_y': np.mean(y),
+                       'median_y': np.median(y),
+                       'std_y': np.std(y),
+                       'mean_dy': np.mean(dy),
+                       'median_dy': np.median(dy.value)*dy.unit}
+        self._stats_tup = tuple(np.ravel([(self._stats[s].value,
+                                          self._stats[s].unit) \
+                                          for s in self._stats]))
+        self._stats_text = "Statistics in the selected region:\n" \
+                           " Minimum x: %3.4f %s\n" \
+                           " Maximum x: %3.4f %s\n" \
+                           " Mean x: %3.4f %s\n" \
+                           " Minimum y: %3.4e %s\n" \
+                           " Maximum y: %3.4e %s\n" \
+                           " Mean y: %3.4e %s\n" \
+                           " Median y: %3.4e %s\n" \
+                           " St. dev. y: %3.4e %s\n" \
+                           " Mean dy: %3.4e %s\n" \
+                           " Median dy: %3.4e %s" \
+                           % self._stats_tup
+        if xmin == 0.0 and np.isinf(xmax):
+            region = ("ALL SPECTRUM",)
+        else:
+            temp = (self._stats['min_x'].value, self._stats['max_x'].value,
+                    self._stats['min_x'].unit)
+            region = ("REGION: %3.4f-%3.4f %s" % temp,)
+        red = region+self._stats_tup[10:16]
+        self._stats_text_red = "%s\n" \
+                               "Mean y: %3.4e %s\n" \
+                               "Median y: %3.4e %s\n" \
+                               "St. dev. y: %3.4e %s" \
+                               % red
+        for s in self._stats_text.split('\n'):
+            logging.info(s)
+
+
+    def _template_bb(self, temp=6000, scale=1.0):
+        bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))
+        output_col = 'blackbody'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = bb(self.x)
+
+
+    def _template_pl(self, ampl=1.0, x_ref=None, index=-1.0):
+        if x_ref == None: x_ref = np.mean(self.x)
+        pl = PowerLaw1D(amplitude=ampl, x_0=x_ref, alpha=-index)
+        output_col = 'power_law'
+        if output_col not in self._t.colnames:
+            logging.info("I'm adding column '%s'." % output_col)
+        self._t[output_col] = pl(self.x)
+
+
+    def _zap(self, xmin, xmax):
+
+        xmin = np.ravel(np.array(xmin))
+        xmax = np.ravel(np.array(xmax))
+
+        for m, M in zip(xmin, xmax):
+            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+            self._t['y'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+            self._t['dy'][w] = np.interp(
+                                  self.x[w].value,
+                                  [self.x[w][0].value, self.x[w][-1].value],
+                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
         return 0

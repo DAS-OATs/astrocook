@@ -19,9 +19,9 @@ Astrocook manages three main data structures: *spectra*, *line lists*, and *syst
 
 To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
 
-⚠️ **Long tables can take a long time to display.**
+❗️ **Long tables can take a long time to display.**
 
-⚠️ **Closing table windows may cause Astrocook to behave erratically.**
+[//]: # ❗️ **Closing table windows may cause Astrocook to behave erratically.**
 
 ## Spectra
 
@@ -49,7 +49,7 @@ You are free to add other columns to the spectrum or edit the existing ones (as 
 
 When you detect spectral lines (either in emission or absorption), they are formatted into a table that is added to the session.
 
-The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra)) where the lines have been detected:
+The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra) where the lines have been detected:
 - `x`: the line center, corresponding to the `x` value of a pixel in the spectrum;
 - `xmin`, `xmax`: the boundaries of the interval covered by the line, also corresponding to the `x` values of two pixels in the spectrum;
 - `y`, `dy`: values of `y` and `dy` at `x` from the spectrum;

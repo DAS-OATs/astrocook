@@ -37,7 +37,18 @@ Selecting both spectra and zooming again, you can check that they are now matchi
 
 You may need to rescale a spectrum several times to find a good matching.
 
-⚠️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with inverse factor.**
+❗️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with inverse factor.**
+
+## Equalize the spectra
+
+Two spectra can also be rescaled automatically. In the main window, select the two sessions and choose `Edit > Equalize sessions...`. You will be asked to define a spectral region to be used as reference:
+
+![Equalize sessions](img/merging_equalize_sessions.png)
+
+On `Run`, the recipe will compute the median fluxes of the two spectra in the reference region, and use their ratio to equalize them. By default, the spectrum of the last-selected region is rescaled to the other one.
+
+❗️ **Equalization can be performed only on two sessions at a time.**
+
 
 ## Combine the spectra
 
@@ -45,7 +56,7 @@ Once spectra are rescaled, you need to create a combined session out of the indi
 
 ![Combine sessions](img/merging_combine_sessions.png)
 
-The asterisk will be replaced by a concatenation of the selected names (`qso_NIR_qso_VIS` in this case). You can also define your own name.
+The asterisk will be replaced by a concatenation of the selected names (`qso_NIR_qso_VIS` in this case). You can alternatively define a different name.
 
 On `Run`, a new session will be created:
 
@@ -53,9 +64,9 @@ On `Run`, a new session will be created:
 
 The spectrum of this new session contains all the entries of the combined spectra. This means that the pixels of the combined spectrum may overlap with each other (as they keep their original size, defined by `xmin` and `xmax` in the spectrum table).
 
-The same method can be of course used to combine more than two spectra.
+The same method can be used to combine more than two spectra.
 
-⚠️ **When sessions are combined, only the spectra are actually combined. All other data structures are not considered.**
+❗️ **When sessions are combined, the data structures associated with the spectrum (line lists and system lists) are merged.**
 
 ## Rebin the combined spectrum
 
@@ -67,8 +78,8 @@ In this case, the spectrum will be rebinned into a grid with a fixed step of 10 
 
 ![Rebinned](img/merging_rebinned.png)
 
-⚠️ **Rebinning may take a long time if the grid is fine and/or the wavelength range is wide.**
+❗️ **Rebinning may take a long time if the grid is fine and/or the wavelength range is wide.**
 
 You can rebin any spectrum in any session using the same procedure.
 
-⚠️ **Please remember that the rebinning procedure interferes with the statistics of your data, as it introduces correlation among adjacent pixels. If accurate flux statistics is required, please avoid rebinning your spectra when it is not absolutely necessary.**
+❗️ **Please remember that the rebinning procedure interferes with the statistics of your data, as it introduces correlation among adjacent pixels. If accurate flux statistics is required, please avoid rebinning your spectra when it is not absolutely necessary.**

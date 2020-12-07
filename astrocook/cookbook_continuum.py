@@ -1,8 +1,12 @@
 from .functions import *
+from .functions import _voigt_par_convert, _fadd
 from .message import *
 from .vars import *
+from astropy import table as at
 from astropy import units as au
-from scipy.interpolate import UnivariateSpline as uspline
+#from scipy.interpolate import UnivariateSpline as uspline
+from scipy.optimize import root_scalar
+from matplotlib import pyplot as plt
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -10,6 +14,15 @@ class CookbookContinuum(object):
 
     def __init__(self):
         super(CookbookContinuum, self).__init__()
+
+
+    def _voigt_fwhm(self, l):
+        x = np.arange(l['x']-1.0, l['x']+1.0, 1e-4)#*au.nm
+        mod = 1-lines_voigt(x, l['z'], l['logN'], l['b'], 0.0, l['series'])
+        hm = 0.5*(np.max(mod))
+        xw = x[np.where(mod>hm)]
+        fwhm = xw[-1]-xw[0]
+        return fwhm
 
 
 ### Basic
@@ -87,6 +100,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
+        self._peaks_found = False
         spec = self.sess.spec
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
@@ -94,20 +108,22 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
-        source = [col]*len(peaks.t)
-        from .line_list import LineList
-        lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                         source, spec._xunit, spec._yunit, meta=spec._meta)
+        if len(peaks.t) > 0:
+            self._peaks_found = True
+            source = [col]*len(peaks.t)
+            from .line_list import LineList
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.t[col],
+                             peaks.dy, source, spec._xunit, spec._yunit,
+                             meta=spec._meta)
+            if append and self.sess.lines is not None \
+                and len(self.sess.lines.t) > 0:
+                self.sess.lines._append(lines)
+                self.sess.lines._clean()
+            else:
+                self.sess.lines = lines
 
-        if append and self.sess.lines is not None \
-            and len(self.sess.lines.t) > 0:
-            self.sess.lines._append(lines)
-            self.sess.lines._clean()
-        else:
-            self.sess.lines = lines
-
-        self.sess.lines_kind = 'peaks'
-        spec._lines_mask(self.sess.lines, source=col)
+            self.sess.lines_kind = 'peaks'
+            spec._lines_mask(self.sess.lines, source=col)
         return 0
 
 
@@ -148,11 +164,77 @@ class CookbookContinuum(object):
             self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
-            self.gauss_convolve(std=std, input_col=col, output_col=col+'_conv')
+            self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
-                            append=append or i>0)
+                            append=append or (i>0 and self._peaks_found))
+
+        return 0
+
+
+    def lines_update(self):
+        """ @brief Update line list
+        @details Update line list after the systems have been fitted, copying
+        fitting parameters and computing the line FWHM. The recipe only works if
+        the systems were extracted from the line list that is to be updated.
+        @return 0
+        """
+
+        systs = self.sess.systs
+        lines = self.sess.lines
+        spec = self.sess.spec
+
+        systs_x = np.array([])
+
+        # Create new columns in line list (if needed)
+        cols = np.append(['syst_id'],
+                         np.append(systs._t.colnames[0:2],
+                                   systs._t.colnames[3:9]))
+        for c in cols:
+            if c not in lines._t.colnames:
+                logging.info("I'm adding column '%s'." % c)
+                if c in ['syst_id']:
+                    lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=int)
+                elif c in ['func']:
+                    lines._t[c] = at.Column(np.array('None', ndmin=1), dtype='S5')
+                elif c in ['series']:
+                    lines._t[c] = at.Column(np.array('None', ndmin=1), dtype='S100')
+                else:
+                    lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+        lines._t['fwhm'] = at.Column(np.array(np.nan, ndmin=1), dtype=float)
+
+        count = 0
+        for s in systs._t:
+            for trans in trans_parse(s['series']):
+                #systs_x = np.append(systs_x,
+                #                    to_x(s['z0'], trans).to(xunit_def).value)
+                systs_x = to_x(s['z0'], trans).to(xunit_def).value
+                diff_x = np.abs(lines.x.to(xunit_def).value - systs_x)
+                if diff_x.min() == 0:
+                    count += 1
+                    for c in cols:
+                        if c == 'syst_id':
+                            lines._t[c][diff_x.argmin()] = s['id']
+                        elif c == 'series':
+                            lines._t[c][diff_x.argmin()] = trans
+                        else:
+                            lines._t[c][diff_x.argmin()] = s[c]
+
+        if count==0:
+            logging.warning("I couldn't copy the fitting parameters and "
+                            "removed the columns. Please check that the "
+                            "systems have been extracted from the line list "
+                            "that is to be updated.")
+            lines._t.remove_columns(np.append(cols, 'fwhm'))
+            return 0
+
+        for l in lines._t:
+            if l['series'] != 'None':
+                fwhm = self._voigt_fwhm(l)
+                xpix = np.median(spec._t['xmax']-spec._t['xmin'])
+                l['fwhm'] = fwhm
 
         return 0
 
