@@ -433,7 +433,6 @@ class GUIDialogMiniLog(GUIDialogMini):
 
 
 
-
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()

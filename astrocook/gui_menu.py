@@ -92,7 +92,6 @@ class GUIMenu(object):
             dlg = GUIDialogMethods(self._gui, title, attr, obj,
                                    params_last=self._params_last)
         else:
-            print(self._params_last)
             dlg = GUIDialogMethod(self._gui, title, attr, obj,
                                   params_last=self._params_last)
         self._params_last = dlg._params

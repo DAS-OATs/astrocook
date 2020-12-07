@@ -91,7 +91,7 @@ class GUI(object):
                 cb = getattr(self, rs[0])
                 for s in rs[1:]:
                     cb = getattr(cb, s)
-            #print(cb, r['recipe'],r['params'])
+            print(cb, r['recipe'],r['params'])
             out = getattr(cb, r['recipe'])(**r['params'])
             if out is not None and out != 0:
                 self._on_add(out, open=False)
