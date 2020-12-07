@@ -84,7 +84,11 @@ class CookbookGeneral(object):
 
     def region_extract(self, xmin, xmax):
         """ @brief Extract region
-        @details Extract a spectral region as a new frame.
+        @details The region between a minimum and a maximum wavelength is
+        extracted from the data structures in the current session (these include
+        the selected spectral range with all the lines and the absorption
+        systems that fall within). A new session with the extracted data
+        structures is created.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return Spectral region
