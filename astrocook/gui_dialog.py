@@ -624,7 +624,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e):
+    def _on_apply(self, e, refresh=True):
         series = self._ctrl_series.GetValue()
         z = self._ctrl_z.GetValue()
         hwin = self._ctrl_hwin.GetValue()
@@ -637,7 +637,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
             series = trans_parse(self._gui._sess_sel._series_sel)
             self._gui._graph_det._graph._fig.clear()
             self._gui._graph_det._update(series, float(z), float(hwin))
-        self._gui._refresh(init_cursor=True, init_tab=False)
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_show(self, e):

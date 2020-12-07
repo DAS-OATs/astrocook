@@ -149,6 +149,20 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
+
+        # Identify which axis was clicked on; compute shift in x based for
+        # detail graph with respect to the last axis
+        if hasattr(self, '_axes'):
+            klast = tuple(self._axes)[-1]
+            for k in self._axes:
+                if self._axes[k] == event.inaxes:
+                    ax = self._axes[k]
+                    dx = aconst.c*(xem_d[k]/xem_d[klast]-1)
+        else:
+            ax = self._ax
+            dx = 0*au.nm
+
+
         sess = self._gui._sess_sel
         x = x/(1+sess.spec._rfz)
         if self._panel is self._gui._graph_main._panel:
@@ -157,6 +171,35 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         #print(self._cursor_lines)
+
+        """
+            for curve in self._ax.get_lines():
+                print(curve)
+                if curve.contains(event)[0]:
+                    try:
+                        self._ciao.remove()
+                    except:
+                        pass
+                    self._ciao = self._ax.text(x,y, "ciao")
+        """
+
+        # Make system id appear when you hover close enough to a system axvline
+        xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
+        argmin = np.argmin(xdiff)
+        try:
+            self._tag.remove()
+        except:
+            pass
+        if self._systs_x.si.unit == au.m: thres = 0.5
+        if self._systs_x.si.unit == au.m/au.s: thres = 5
+        if xdiff[argmin] < thres:
+            self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
+                                % (self._systs_series[argmin],
+                                   self._systs_l[argmin].value,
+                                   self._systs_l[argmin].unit,
+                                   self._systs_z[argmin]),
+                                color=self._systs_color)
+
         if 'cursor_z_series' in self._sel:
             if hasattr(self, '_xs'):
                 for l, key in zip(self._cursor_lines, self._xs):
@@ -326,7 +369,6 @@ class Graph(object):
         self._canvas.draw()
         shade.remove()
 
-
     def _seq(self, sess, norm):
 
         detail = self._panel != self._gui._graph_main._panel
@@ -374,20 +416,23 @@ class Graph(object):
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
                     x = xem*(1+z_flat)
-                    #print(x)
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
+                    self._systs_l = x
                     if detail:
                         #print(z, self._zem)
                         #print((1+self._zem)*121.567)
                         #print(self._zem)
                         #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
-                        zem = [self._zems[s] for s in self._zems][-1]
+                        for k in self._axes:
+                            if self._axes[k] == self._ax:
+                                zem = self._zems[k]
                         x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
-                        #print(x)
                         #print(set(zip(series_flat,x)))
-                    #print(x)
+                    self._systs_series = series_flat
+                    self._systs_z = z_flat
+                    self._systs_x = x
 
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
@@ -441,6 +486,8 @@ class Graph(object):
                                 self._ax.text(xi, 0.05, s, **kwargs_text)
                                 kwargs_text['va'] = 'top'
                                 self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                    if struct == 'systs':
+                        self._systs_color = color
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
             except:
@@ -521,7 +568,7 @@ class Graph(object):
                         self._cursor_line.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
-                                color=c, alpha=a, linewidth=1.5,
+                                color=c, alpha=a, linewidth=2,
                                 **gs._kwargs))
                         """
                         if focus==self._gui._graph_main:
