@@ -17,6 +17,23 @@ nav_order: 1
 
 ### Import structure
 
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top">>**Method**</td>
+      <td style="vertical-align:top">`astrocook.gui.GUIPanelSession.struct_import`</td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top">**Parameters**</td>
+      <td style="vertical-align:top">
+        <ul>
+          <li>`struct`: Structure (session number,table)</li>
+          <li>`mode`: Mode (`replace` or `append`)</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 **Method** `astrocook.gui.GUIPanelSession.struct_import`
 
