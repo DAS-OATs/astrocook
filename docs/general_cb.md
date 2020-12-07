@@ -21,14 +21,14 @@ nav_order: 1
   <tbody>
     <tr>
       <td style="vertical-align:top"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>astrocook.gui.GUIPanelSession.struct_import<code></td>
+      <td style="vertical-align:top"><code>astrocook.gui.GUIPanelSession.struct_import</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>struct<code>: Structure (session number,table)</li>
-          <li><code>mode<code>: Mode (<code>replace<code> or <code>append<code>)</li>
+          <li><code>struct</code>: Structure (session number,table)</li>
+          <li><code>mode</code>: Mode (<code>replace</code> or <code>append</code>)</li>
         </ul>
       </td>
     </tr>
