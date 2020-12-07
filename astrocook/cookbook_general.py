@@ -251,10 +251,10 @@ class CookbookGeneral(object):
     def x_convert(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert x axis
         @details Convert the x axis to wavelength or velocity units. The x axis
-        can be expressed in any unit that is convertible to nm or km/s (those
-        are the default units). When converting to and from velocity units the
-        zero point is set at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the
-        rest-frame wavelength of the Lyman-alpha transition).
+        can be converted to any unit of wavelength or velocity (default: nm and
+        km/s). When converting to and from velocity units the zero point is set
+        at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength
+        of the Lyman-alpha transition).
         @param zem Emission redshift
         @param xunit Unit of wavelength or velocity
         @return 0
@@ -277,7 +277,10 @@ class CookbookGeneral(object):
 
     def y_convert(self, yunit=au.electron/au.nm):
         """ @brief Convert y axis
-        @details Convert the y axis to flux density units.
+        @details Convert the y axis to different units. The y axis can be
+        expressed in different units depending on how it was calibrated
+        (default: erg/(cm^2 s nm)). It can be converted to any unit of the same
+        physical quantity.
         @param yunit Unit of flux density
         @return 0
         """
