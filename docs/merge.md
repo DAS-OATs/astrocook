@@ -26,7 +26,7 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 <table>
   <tbody>
     <tr>
-      <td><strong>This procedure can be executed automatically with <code>$ python ac_gui.py merge.json</code> in the <code>test/</code> directory.</strong></td>
+      <td><strong>This procedure can be executed automatically with <code>$ python ac_gui.py rescale.json</code> in the <code>test/</code> directory.</strong></td>
     </tr>
   </tbody>
 </table>
