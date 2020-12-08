@@ -33,7 +33,7 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 
 The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose `View > Edit graph elements`, then modify the text in the box as follows (for more details on how to edit the graph elements, see [Visualization](other.md#visualization)):
 
-<img src="img/merging_graph_elements.png" width="400">
+<img src="img/merging_graph_elements.png" width="515">
 
 Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS superposition region the flux is slightly mismatched:
 
@@ -41,7 +41,7 @@ Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS 
 
 To rescale the NIR spectra to the VIS one, select it on the main window and choose `Edit > Scale y axis...`. In the dialog window, insert a suitable multiplicative factor and click on `Run`:
 
-![Scale y axis](img/merging_scale_y_axis.png)
+<img src="img/merging_scale_y_axis.png" width="422">
 
 Selecting both spectra and zooming again, you can check that they are now matching:
 
