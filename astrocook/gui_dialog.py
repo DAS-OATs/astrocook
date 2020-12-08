@@ -266,7 +266,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._elem = elem_expand(elem, self._sel)
         super(GUIDialogMiniGraph, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
-        self._shown = False
+        self._shown = True
 
 
     def _box_ctrl(self):
@@ -308,7 +308,8 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        if refresh:
+            self._gui._refresh(init_cursor=True, init_tab=False)
         if json:
             sess = self._gui._sess_sel
             sess.json += self._gui._json_update("_dlg_mini_graph", "_on_apply",
@@ -351,8 +352,9 @@ class GUIDialogMiniGraph(GUIDialogMini):
             sess = self._gui._sess_sel
             sess.json += self._gui._json_update("_dlg_mini_graph", "_set",
                                                 {"value": value, "json": False})
-        self._ctrl_elem.SetValue(value)
 
+        self._elem = value
+        self._ctrl_elem.SetValue(value)
 
 
 class GUIDialogMiniLog(GUIDialogMini):

@@ -97,7 +97,7 @@ class GUI(object):
             #print(self._sess_sel)
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
-            self._refresh()
+            #self._refresh()
 
 
     def _json_update(self, cb, rec, params):
@@ -122,6 +122,7 @@ class GUI(object):
         self._panel_sess._menu._refresh()
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
+            self._graph_main._elem = self._sess_sel._graph_elem
             self._dlg_mini_graph._refresh()
         else:
             if hasattr(self._sess_sel, '_graph_elem'):
@@ -129,6 +130,7 @@ class GUI(object):
             else:
                 self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+            """
             try:
                 if hasattr(self._sess_sel, '_graph_elem'):
                     self._graph_det._elem = self._sess_sel._graph_elem
@@ -137,6 +139,7 @@ class GUI(object):
                         self._panel_sess._sel)
             except:
                 pass
+            """
 
         if hasattr(self, '_dlg_mini_log') \
             and self._dlg_mini_log._shown:
