@@ -15,7 +15,7 @@ nav_order: 1
 {:toc}
 ---
 
-*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, VIS and NIR arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
+*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, UVB and VIS arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
 
 We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in Astrocook:
 
@@ -23,7 +23,11 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 
 ## Rescale the spectra
 
-The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. If you select both spectra by holding `ctrl` while clicking on the main window and zoom into the plot, you will see that in the VIS/NIR superposition region the flux is mismatched:
+The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose `View > Edit graph elements`, then modify the text in the box as follows (for more details on how to edit the graph elements, see [Visualization](other.md#visualization)):
+
+![Graph elements](img/merging_graph_elements.png)
+
+Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS superposition region the flux is slightly mismatched:
 
 ![Mismatch](img/merging_mismatch.png)
 
@@ -37,7 +41,13 @@ Selecting both spectra and zooming again, you can check that they are now matchi
 
 You may need to rescale a spectrum several times to find a good matching.
 
-❗️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with inverse factor.**
+❗️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with an inverse factor.**
+
+This procedure can be executed automatically with
+```
+$ python ac_gui.py merge.json
+```
+in the `test/` directory.
 
 ## Equalize the spectra
 
