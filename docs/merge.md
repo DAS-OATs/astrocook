@@ -51,12 +51,6 @@ You may need to rescale a spectrum several times to find a good matching.
 
 ❗️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with an inverse factor.**
 
-This procedure can be executed automatically with
-```
-$ python ac_gui.py merge.json
-```
-in the `test/` directory.
-
 ## Equalize the spectra
 
 Two spectra can also be rescaled automatically. In the main window, select the two sessions and choose `Edit > Equalize sessions...`. You will be asked to define a spectral region to be used as reference:
