@@ -23,6 +23,14 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 
 ## Rescale the spectra
 
+<table>
+  <tbody>
+    <tr>
+      <td>This procedure can be executed automatically with <code>$ python ac_gui.py merge.json</code> in the <code>test/</code> directory.</td>
+    </tr>
+  </tbody>
+</table>
+
 The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose `View > Edit graph elements`, then modify the text in the box as follows (for more details on how to edit the graph elements, see [Visualization](other.md#visualization)):
 
 ![Graph elements](img/merging_graph_elements.png)
