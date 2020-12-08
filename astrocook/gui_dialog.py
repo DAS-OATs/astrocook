@@ -427,10 +427,12 @@ class GUIDialogMiniLog(GUIDialogMini):
                 except:
                     pass
         """
+        #print(self._gui._panel_sess._sel)
+        self._gui._panel_sess._tab.DeleteItem(self._gui._panel_sess._sel)
+        del self._gui._sess_list[self._gui._panel_sess._sel]
         self._gui._json_run(json.loads(log))
         self._log = log_bck
         self._ctrl_log.SetValue(self._log)
-
 
 
 

@@ -184,21 +184,24 @@ class Graph(object):
         """
 
         # Make system id appear when you hover close enough to a system axvline
-        xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
-        argmin = np.argmin(xdiff)
         try:
-            self._tag.remove()
+            xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
+            argmin = np.argmin(xdiff)
+            try:
+                self._tag.remove()
+            except:
+                pass
+            if self._systs_x.si.unit == au.m: thres = 0.5
+            if self._systs_x.si.unit == au.m/au.s: thres = 5
+            if xdiff[argmin] < thres:
+                self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
+                                    % (self._systs_series[argmin],
+                                       self._systs_l[argmin].value,
+                                       self._systs_l[argmin].unit,
+                                       self._systs_z[argmin]),
+                                    color=self._systs_color)
         except:
             pass
-        if self._systs_x.si.unit == au.m: thres = 0.5
-        if self._systs_x.si.unit == au.m/au.s: thres = 5
-        if xdiff[argmin] < thres:
-            self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
-                                % (self._systs_series[argmin],
-                                   self._systs_l[argmin].value,
-                                   self._systs_l[argmin].unit,
-                                   self._systs_z[argmin]),
-                                color=self._systs_color)
 
         if 'cursor_z_series' in self._sel:
             if hasattr(self, '_xs'):

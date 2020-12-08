@@ -93,8 +93,10 @@ class GUI(object):
                     cb = getattr(cb, s)
             #print(cb, r['recipe'],r['params'])
             out = getattr(cb, r['recipe'])(**r['params'])
+            #print(self._sess_list[0])
+            #print(self._sess_sel)
             if out is not None and out != 0:
-                self._on_add(out, open=False)
+                self._panel_sess._on_add(out, open=False)
             self._refresh()
 
 
@@ -771,7 +773,6 @@ class GUIPanelSession(wx.Frame):
         if not hasattr(np, op):
             logging.error("Numpy doesn't have a %s operator." % op)
             return 0
-
         getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
             getattr(np, op)(colp_A, colp_B)
 
