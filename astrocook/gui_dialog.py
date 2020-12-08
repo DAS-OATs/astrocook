@@ -411,6 +411,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         log = log.replace('”', '"')
         log = log.replace('—', '--')
         log_bck = dc(log)
+        #print(log_bck)
         """
         from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList
         for a in self._gui.__dict__:
@@ -429,10 +430,11 @@ class GUIDialogMiniLog(GUIDialogMini):
                 except:
                     pass
         """
-        #print(self._gui._panel_sess._sel)
+        json_bck = dc(self._gui._sess_sel.json)
         self._gui._panel_sess._tab.DeleteItem(self._gui._panel_sess._sel)
         del self._gui._sess_list[self._gui._panel_sess._sel]
         self._gui._json_run(json.loads(log))
+        self._gui._sess_sel.json = json_bck
         self._log = log_bck
         self._ctrl_log.SetValue(self._log)
 

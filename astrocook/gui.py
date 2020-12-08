@@ -74,10 +74,13 @@ class GUI(object):
 
 
     def _json_init(self, orig):
-        split = orig.split('\n')[:-9]
+        #split = orig.split('\n')[:-9]
+        #split.append('')
+        #self._sess_sel.json = '\n'.join(split).replace('"', '"')
+        split = orig.split('},')[:-1]
         split.append('')
-        self._sess_sel.json = '\n'.join(split).replace('"', '"')
-
+        self._sess_sel.json = '},'.join(split)+'\n'
+        #print(self._sess_sel.json)
 
     def _json_run(self, load):
         for r in load['set_menu']:
