@@ -101,6 +101,7 @@ class GUI(object):
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
             #self._refresh()
+        #self._sess_sel._json_sel = self._sess_item_sel
 
 
     def _json_update(self, cb, rec, params):
@@ -363,7 +364,6 @@ class GUIPanelSession(wx.Frame):
         # _sel is the last selection; _items is the list of all selections.
         self._sel = self._tab.GetItemCount()
         self._items = [self._sel]
-
         self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
@@ -371,6 +371,7 @@ class GUIPanelSession(wx.Frame):
         # Similarly, _sess_sel contains the last selected session; _sess_items
         # contains all selected sessions
         self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_sel._json_sel = [self._sel]
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
             self._gui._sess_sel.open()
@@ -415,15 +416,16 @@ class GUIPanelSession(wx.Frame):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
-        if self._open_rec == '_on_open':
-            self._gui._sess_sel.json += '    {\n'\
-                                        '      "cookbook": "_panel_sess",\n'\
-                                        '      "recipe": "%s",\n'\
-                                        '      "params": {\n'\
-                                        '        "path": "%s"\n'\
-                                        '      }\n'\
-                                        '    },\n' % (self._open_rec,
-                                                      self._open_path)
+        self._gui._sess_sel.json += '    {\n'\
+                                    '      "cookbook": "_panel_sess",\n'\
+                                    '      "recipe": "%s",\n'\
+                                    '      "params": {\n'\
+                                    '        "path": "%s"\n'\
+                                    '      }\n'\
+                                    '    },\n' % ("_on_open", path)
+                                    #'    },\n' % (self._open_rec,
+                                    #              self._open_path)
+
 
 
     def _entry_select(self):
@@ -472,6 +474,7 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel.append(self._sel)
         self._entry_select()
+
 
 
     def _on_veto(self, event):
@@ -661,11 +664,12 @@ class GUIPanelSession(wx.Frame):
             return None
 
         sel = self._gui._sess_item_sel
-        if sel == [] and isinstance(_sel, list):
+        if isinstance(_sel, list) and _sel != []:
             sel = _sel
-        if sel == [] and isinstance(_sel, str):
+        if isinstance(_sel, str) and _sel != '':
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
+        self._gui._sess_item_sel = sel
         logging.info("Equalizing session %i to session %i... "
                      % (sel[1], sel[0]))
 

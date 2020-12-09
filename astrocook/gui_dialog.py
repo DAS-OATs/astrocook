@@ -127,6 +127,8 @@ class GUIDialog(wx.Dialog):
                                    '     "recipe": "_on_open",\n      "params"'\
                                    ': {'
                     #print(self._gui._sess_list[i].__dict__)
+                    if i not in self._gui._sess_sel._json_sel:
+                        self._gui._sess_sel._json_sel.append(i)
                 self._gui._sess_sel.json = '{'.join(json)
             self._gui._sess_sel.json += \
                 self._gui._json_update(self._obj._tag, a, p_json)
@@ -448,10 +450,14 @@ class GUIDialogMiniLog(GUIDialogMini):
                     pass
         """
         json_bck = dc(self._gui._sess_sel.json)
-        self._gui._panel_sess._tab.DeleteItem(self._gui._panel_sess._sel)
-        del self._gui._sess_list[self._gui._panel_sess._sel]
+        json_sel_bck = dc(self._gui._sess_sel._json_sel)
+        sel = np.sort(self._gui._sess_sel._json_sel)[::-1]
+        for i in sel:
+            self._gui._panel_sess._tab.DeleteItem(i)
+            del self._gui._sess_list[i]
         self._gui._json_run(json.loads(log))
         self._gui._sess_sel.json = json_bck
+        self._gui._sess_sel._json_sel = json_sel_bck
         self._log = log_bck
         self._ctrl_log.SetValue(self._log)
 
