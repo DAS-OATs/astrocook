@@ -34,6 +34,7 @@ class GUI(object):
             print(''.join(l))
         print("Cupani et al. 2017-2020 * INAF-OATs")
         self._sess_list = []
+        self._sess_item_list = []
         #self._graph_elem_list = []
         #self._meta_list = []
         self._sess_sel = None
@@ -94,7 +95,11 @@ class GUI(object):
                 cb = getattr(self, rs[0])
                 for s in rs[1:]:
                     cb = getattr(cb, s)
-            #print(cb, r['recipe'],r['params'])
+
+            if '_sel' in r['params']:
+                for i in r['params']['_sel']:
+                    if i not in self._sess_sel._json_sel:
+                        self._sess_sel._json_sel.append(i)
             out = getattr(cb, r['recipe'])(**r['params'])
             #print(self._sess_list[0])
             #print(self._sess_sel)
@@ -362,11 +367,19 @@ class GUIPanelSession(wx.Frame):
 
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
-        self._sel = self._tab.GetItemCount()
+        for i in range(self._tab.GetItemCount()+1):
+            if i not in self._gui._sess_item_list:
+                self._sel = i
         self._items = [self._sel]
         self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
+        self._gui._sess_item_list.append(self._sel)
+
+        sel_sort = np.argsort(self._gui._sess_item_list)
+        self._gui._sess_list = list(np.array(self._gui._sess_list)[sel_sort])
+        self._gui._sess_item_list = \
+            list(np.array(self._gui._sess_item_list)[sel_sort])
 
         # Similarly, _sess_sel contains the last selected session; _sess_items
         # contains all selected sessions

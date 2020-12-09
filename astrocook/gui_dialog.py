@@ -455,6 +455,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         for i in sel:
             self._gui._panel_sess._tab.DeleteItem(i)
             del self._gui._sess_list[i]
+            del self._gui._sess_item_list[i]
         self._gui._json_run(json.loads(log))
         self._gui._sess_sel.json = json_bck
         self._gui._sess_sel._json_sel = json_sel_bck
