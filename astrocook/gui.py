@@ -96,17 +96,19 @@ class GUI(object):
                 for s in rs[1:]:
                     cb = getattr(cb, s)
 
-            if '_sel' in r['params']:
-                for i in r['params']['_sel']:
-                    if i not in self._sess_sel._json_sel:
-                        self._sess_sel._json_sel.append(i)
             out = getattr(cb, r['recipe'])(**r['params'])
             #print(self._sess_list[0])
             #print(self._sess_sel)
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
             #self._refresh()
-        #self._sess_sel._json_sel = self._sess_item_sel
+
+            if '_sel' in r['params']:
+                for i in r['params']['_sel']:
+                    if i not in self._sess_sel._json_sel:
+                        self._sess_sel._json_sel.append(i)
+
+        #print(self._sess_sel._json_sel)# = self._sess_item_sel
 
 
     def _json_update(self, cb, rec, params):
@@ -367,9 +369,14 @@ class GUIPanelSession(wx.Frame):
 
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
+        #print(self._gui._sess_item_list)
+        missing = []
         for i in range(self._tab.GetItemCount()+1):
             if i not in self._gui._sess_item_list:
-                self._sel = i
+                missing.append(i)
+
+        self._sel = missing[0]
+        #print(self._sel)
         self._items = [self._sel]
         self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
@@ -424,6 +431,7 @@ class GUIPanelSession(wx.Frame):
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
+
         if sess._open_twin:
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
@@ -486,6 +494,9 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel.append(self._sel)
+        #print(self._gui._sess_sel)
+        #print(self._gui._sess_item_sel)
+        #print(self._gui._sess_sel._json_sel)
         self._entry_select()
 
 
@@ -617,7 +628,9 @@ class GUIPanelSession(wx.Frame):
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
         sess_list = self._gui._sess_list
-        if sel == []:
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
             try:
                 sel = [int(s) \
                        for s in _sel.replace('[','').replace(']','').split(',')]
@@ -625,6 +638,7 @@ class GUIPanelSession(wx.Frame):
                 pass
         if sel == []:
             sel = range(len(sess_list))
+        self._gui._sess_item_sel = sel
 
         struct_out = {}
         for struct in sess_list[sel[0]].seq:

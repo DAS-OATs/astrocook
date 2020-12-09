@@ -111,28 +111,6 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
 
-            # When recipes are applied to multiple sessions, the JSON is updated
-            # accordingly
-            p_json = dc(p_l)
-            if '_sel' in p_json:
-                p_json['_sel'] = self._gui._sess_item_sel
-                json = dc(self._gui._sess_sel.json.split('{'))
-                json[3] = ''
-                for i in range(len(self._gui._sess_item_sel)):
-                    path = self._gui._sess_list[i].path
-                    json[3] += '\n        "path": "%s"\n      }\n    },\n' \
-                               % path
-                    if i != len(self._gui._sess_item_sel)-1:
-                        json[3] += '    {\n      "cookbook": "_panel_sess",\n '\
-                                   '     "recipe": "_on_open",\n      "params"'\
-                                   ': {'
-                    #print(self._gui._sess_list[i].__dict__)
-                    if i not in self._gui._sess_sel._json_sel:
-                        self._gui._sess_sel._json_sel.append(i)
-                self._gui._sess_sel.json = '{'.join(json)
-            self._gui._sess_sel.json += \
-                self._gui._json_update(self._obj._tag, a, p_json)
-
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)
             start = dt.datetime.now()
@@ -140,12 +118,47 @@ class GUIDialog(wx.Dialog):
             end = dt.datetime.now()
             logging.info("I completed %s in %3.3f seconds!" \
                          % (a, (end-start).total_seconds()))
+
+            path_bck = dc([s.path for s in self._gui._sess_list])
+            json_bck = dc(self._gui._sess_sel.json)
+            sess_item_sel_bck = dc(self._gui._sess_item_sel)
+
             if out is not None:
                 if out is 0:
                     self._gui._refresh()
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
+
+            # When recipes are applied to multiple sessions, the JSON is updated
+            # accordingly
+            p_json = dc(p_l)
+            if '_sel' in p_json:
+                p_json['_sel'] = sess_item_sel_bck
+                #json = dc(self._gui._sess_sel.json.split('{'))
+                json = json_bck.split('{')
+                json[3] = ''
+                for i in range(len(sess_item_sel_bck)):
+                    #path = self._gui._sess_list[i].path
+                    path = path_bck[i]
+                    #print(path)
+                    if path not in self._gui._sess_sel._json_paths:
+                        #print('yes')
+                        self._gui._sess_sel._json_paths.append(path)
+                        json[3] += '\n        "path": "%s"\n      }\n    },\n' \
+                                   % path
+                        if i != len(sess_item_sel_bck)-1:
+                            json[3] += '    {\n      "cookbook": "_panel_sess",\n '\
+                                       '     "recipe": "_on_open",\n      "params"'\
+                                       ': {'
+                    #print(self._gui._sess_list[i].__dict__)
+                    if i not in self._gui._sess_sel._json_sel:
+                        self._gui._sess_sel._json_sel.append(i)
+                    #print('{'.join(json))
+                self._gui._sess_sel.json = '{'.join(json)
+            self._gui._sess_sel.json += \
+                self._gui._json_update(self._obj._tag, a, p_json)
+
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):
@@ -452,10 +465,12 @@ class GUIDialogMiniLog(GUIDialogMini):
         json_bck = dc(self._gui._sess_sel.json)
         json_sel_bck = dc(self._gui._sess_sel._json_sel)
         sel = np.sort(self._gui._sess_sel._json_sel)[::-1]
+        #print(sel)
         for i in sel:
             self._gui._panel_sess._tab.DeleteItem(i)
             del self._gui._sess_list[i]
             del self._gui._sess_item_list[i]
+        #print(self._gui._sess_list)
         self._gui._json_run(json.loads(log))
         self._gui._sess_sel.json = json_bck
         self._gui._sess_sel._json_sel = json_sel_bck
