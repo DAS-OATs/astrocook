@@ -1,6 +1,6 @@
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def, json_tail
+from .vars import graph_elem, hwin_def, json_head, json_tail
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -111,8 +111,25 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
 
+            # When recipes are applied to multiple sessions, the JSON is updated
+            # accordingly
+            p_json = dc(p_l)
+            if '_sel' in p_json:
+                p_json['_sel'] = self._gui._sess_item_sel
+                json = dc(self._gui._sess_sel.json.split('{'))
+                json[3] = ''
+                for i in range(len(self._gui._sess_item_sel)):
+                    path = self._gui._sess_list[i].path
+                    json[3] += '\n        "path": "%s"\n      }\n    },\n' \
+                               % path
+                    if i != len(self._gui._sess_item_sel)-1:
+                        json[3] += '    {\n      "cookbook": "_panel_sess",\n '\
+                                   '     "recipe": "_on_open",\n      "params"'\
+                                   ': {'
+                    #print(self._gui._sess_list[i].__dict__)
+                self._gui._sess_sel.json = '{'.join(json)
             self._gui._sess_sel.json += \
-                self._gui._json_update(self._obj._tag, a, self._params)
+                self._gui._json_update(self._obj._tag, a, p_json)
 
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)

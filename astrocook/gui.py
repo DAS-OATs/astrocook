@@ -349,7 +349,7 @@ class GUIPanelSession(wx.Frame):
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
-        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_select)
+        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_deselect)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         panel.SetSizer(self._box)
@@ -426,23 +426,7 @@ class GUIPanelSession(wx.Frame):
                                                       self._open_path)
 
 
-    def _on_close(self, event):
-        logging.info("Bye!")
-        self.Destroy()
-        """
-        self._gui._panel_sess.Close()
-        self._gui._graph_main.Close()
-        self._gui._tab_spec.Close()
-        self._gui._tab_lines.Close()
-        self._gui._tab_systs.Close()
-        self._gui._tab_mods.Close()
-        """
-        exit()
-
-    def _on_select(self, event):
-        self._sel = event.GetIndex()
-        self._gui._sess_sel = self._gui._sess_list[self._sel]
-        self._gui._sess_item_sel = self._tab._get_selected_items()
+    def _entry_select(self):
         try:
             self._gui._sess_sel.cb.sess = self._gui._sess_sel
         except:
@@ -462,6 +446,32 @@ class GUIPanelSession(wx.Frame):
         if self._gui._sess_item_sel != []:
             self._gui._refresh()
 
+
+    def _on_close(self, event):
+        logging.info("Bye!")
+        self.Destroy()
+        """
+        self._gui._panel_sess.Close()
+        self._gui._graph_main.Close()
+        self._gui._tab_spec.Close()
+        self._gui._tab_lines.Close()
+        self._gui._tab_systs.Close()
+        self._gui._tab_mods.Close()
+        """
+        exit()
+
+    def _on_deselect(self, event):
+        self._sel = event.GetIndex()
+        self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_item_sel = []
+        self._entry_select()
+
+
+    def _on_select(self, event):
+        self._sel = event.GetIndex()
+        self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_item_sel.append(self._sel)
+        self._entry_select()
 
 
     def _on_veto(self, event):
@@ -651,7 +661,9 @@ class GUIPanelSession(wx.Frame):
             return None
 
         sel = self._gui._sess_item_sel
-        if sel == []:
+        if sel == [] and isinstance(_sel, list):
+            sel = _sel
+        if sel == [] and isinstance(_sel, str):
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
         logging.info("Equalizing session %i to session %i... "
