@@ -484,8 +484,11 @@ class GUIDialogMiniLog(GUIDialogMini):
             json_sel_bck.append(dc(s._json_sel))
         sel = np.sort(self._gui._sess_sel._json_sel)[::-1]
         #print(sel)
+        #print(len(json_bck))
+        #print(sel)
 
         # Remove sessions
+        #print(self._gui._sess_list)
         for i in sel:
             self._gui._panel_sess._tab.DeleteItem(i)
             del self._gui._sess_list[i]

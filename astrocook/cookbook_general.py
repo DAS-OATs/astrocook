@@ -33,7 +33,8 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s, norm=True):
+    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
+              norm=True, _sel=''):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given velocity step. A new session is
         created with the rebinned spectrum. Other objects from the old session
@@ -55,6 +56,15 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return None
 
+        sel = self.sess._gui._sess_item_sel
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+        if sel == []:
+            sel = [self.sess._gui._panel_sess._tab.GetItemCount()-1]
+        self.sess._gui._sess_item_sel = sel
 
         # A deep copy is created, so the original spectrum is preserved
         spec_in = dc(self.sess.spec)
