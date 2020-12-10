@@ -121,7 +121,9 @@ class GUIDialog(wx.Dialog):
 
             path_bck = dc([s.path for s in self._gui._sess_list])
             json_bck = dc(self._gui._sess_sel.json)
+            #json_bck = dc([s.json for s in self._gui._sess_list])
             sess_item_sel_bck = dc(self._gui._sess_item_sel)
+            sel_bck = self._gui._panel_sess._sel
 
             if out is not None:
                 if out is 0:
@@ -134,14 +136,39 @@ class GUIDialog(wx.Dialog):
             # When recipes are applied to multiple sessions, the JSON is updated
             # accordingly
             p_json = dc(p_l)
+            #print(sess_item_sel_bck)
             if '_sel' in p_json:
+                """
                 p_json['_sel'] = sess_item_sel_bck
+                #self._gui._sess_sel.json = json_head
+                json_temp = '['.join(json_bck[sess_item_sel_bck[-1]].split('[')[1:])[1:]
+                self._gui._sess_sel.json = json_bck[sess_item_sel_bck[0]]
+                self._gui._sess_sel.json += json_temp
+                """
+                """
+                json_old = json.loads(self._gui._sess_sel.json+json_tail)
+                recipe_old = [i['recipe'] for i in json_old['set_menu']]
+                params_old = [j['params'] for j in json_old['set_menu']]
+                paths_old = [k['path'] for k in params_old if 'path' in k]
+                for i in range(len(sess_item_sel_bck)):
+                    path = path_bck[i]
+                    if path not in paths_old:
+                        self._gui._sess_sel.json += \
+                            '['.join(json_bck[i].split('[')[1:])[1:]
+
+                for i in sess_item_sel_bck:
+                """
+                p_json['_sel'] = sess_item_sel_bck
+                #print(sess_item_sel_bck)
                 #json = dc(self._gui._sess_sel.json.split('{'))
                 json_old = json.loads(json_bck+json_tail)
                 params_old = [i['params'] for i in json_old['set_menu']]
                 paths_old = [j['path'] for j in params_old if 'path' in j]
                 #json_new = json.loads(self._gui._sess_sel.json+json_tail)
                 #params_new = [i['params'] for i in json_new['set_menu']]
+                #sel_new = list(np.ravel([k['_sel'] for k in params_old \
+                #                         if '_sel' in k]))
+                #print(sel_new)
                 #paths_new = [j['path'] for j in params_new if 'path' in j]
                 #print(paths_old)
                 #print(paths_new)
@@ -150,7 +177,11 @@ class GUIDialog(wx.Dialog):
                 json_split = json_bck.split('{')
                 json_split2 = json_bck.split('{')
                 json_split[3] = ''
+
+                #print(json.dumps(json_old, indent=4))
+
                 for i in range(len(sess_item_sel_bck)):
+                    #print(i)
                     #path = self._gui._sess_list[i].path
                     path = path_bck[i]
                     if path not in paths_old:
@@ -166,12 +197,28 @@ class GUIDialog(wx.Dialog):
                                    '     "recipe": "_on_open",\n      "params"'\
                                    ': {'
                     #print(self._gui._sess_list[i].__dict__)
+                    """
                     if i not in self._gui._sess_sel._json_sel:
                         self._gui._sess_sel._json_sel.append(i)
+                    """
+                #print(self._gui._sess_item_sel, self._gui._sess_sel._json_sel)
                 self._gui._sess_sel.json = '{'.join(json_split2)
+                #self._gui._sess_item_sel = dc(self._gui._sess_sel._json_sel)
                 #print('{'.join(json_split2))
             self._gui._sess_sel.json += \
                 self._gui._json_update(self._obj._tag, a, p_json)
+
+            if '_sel' in p_json:
+                json_new = json.loads(self._gui._sess_sel.json+json_tail)
+                params_new = [i['params'] for i in json_new['set_menu']]
+                sel_new = np.array([], dtype=int)
+                for k in params_new:
+                    if '_sel' in k: sel_new = np.append(sel_new, k['_sel'])
+                sel_new = list(np.unique(sel_new))
+                for i in sel_new:
+                    if i not in self._gui._sess_sel._json_sel:
+                        self._gui._sess_sel._json_sel.append(i)
+
             self._gui._refresh()
 
     def _update_params(self):

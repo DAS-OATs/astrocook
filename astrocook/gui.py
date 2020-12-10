@@ -104,13 +104,15 @@ class GUI(object):
                 self._panel_sess._on_add(out, open=False)
             #self._refresh()
 
-            #print(r['recipe'], self._sess_list, self._sess_sel)
+            #print(r['recipe'], self._sess_list, self._sess_sel, out)
             #print(self._sess_sel.path)
 
+            """
             if '_sel' in r['params']:
                 for i in r['params']['_sel']:
                     if i not in self._sess_sel._json_sel:
                         self._sess_sel._json_sel.append(i)
+            """
 
             path_bck = [self._sess_list[i].path \
                         for i in self._sess_sel._json_sel]
@@ -118,7 +120,20 @@ class GUI(object):
             if cb._tag != '_panel_sess' or r['recipe'] != '_on_open':
                 self._sess_sel.json += \
                     self._json_update(cb._tag, r['recipe'], r['params'])
+
             if '_sel' in r['params']:
+                json_new = json.loads(self._sess_sel.json+json_tail)
+                params_new = [i['params'] for i in json_new['set_menu']]
+                sel_new = np.array([], dtype=int)
+                for k in params_new:
+                    if '_sel' in k: sel_new = np.append(sel_new, k['_sel'])
+                sel_new = list(np.unique(sel_new))
+                for i in sel_new:
+                    if i not in self._sess_sel._json_sel:
+                        self._sess_sel._json_sel.append(i)
+
+            if '_sel' in r['params']:
+                #print(r['params']['_sel'])
                 for p in path_bck:
                     if p != self._sess_sel.path:
                         json_bck = dc(self._sess_sel.json)
@@ -129,6 +144,7 @@ class GUI(object):
                                    ': {\n        "path": "%s"\n      }\n    },\n    ' \
                                           % p
                         self._sess_sel.json = '{'.join(json_split)
+
 
         #print(self._sess_sel._json_sel)# = self._sess_item_sel
 

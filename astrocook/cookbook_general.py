@@ -62,7 +62,7 @@ class CookbookGeneral(object):
         if isinstance(_sel, str) and _sel != '':
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
-        if sel == []:
+        if sel == [] or len(sel)>1:
             sel = [self.sess._gui._panel_sess._tab.GetItemCount()-1]
         self.sess._gui._sess_item_sel = sel
 
