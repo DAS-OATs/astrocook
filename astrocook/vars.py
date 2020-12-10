@@ -259,6 +259,10 @@ gamma_d_old = {'Ly_a': 6.265e+08,
 
 json_head = '{"set_menu":\n  [\n'
 
+log_head = '{"set_menu":\n  [\n'
+
+log_seed = {'set_menu': []}
+
 json_tail = '    {\n'\
             '      "cookbook": "",\n'\
             '      "recipe": "_refresh",\n'\
@@ -268,3 +272,13 @@ json_tail = '    {\n'\
             '    }\n'\
             '  ]\n'\
             '}'
+
+log_tail = '    {\n'\
+           '      "cookbook": "",\n'\
+           '      "recipe": "_refresh",\n'\
+           '      "params": {\n'\
+           '        "autosort": false\n'\
+           '      }\n'\
+           '    }\n'\
+           '  ]\n'\
+           '}'

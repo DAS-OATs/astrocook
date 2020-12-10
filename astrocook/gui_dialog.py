@@ -119,12 +119,16 @@ class GUIDialog(wx.Dialog):
             logging.info("I completed %s in %3.3f seconds!" \
                          % (a, (end-start).total_seconds()))
 
+
+
             path_bck = dc([s.path for s in self._gui._sess_list])
             json_bck = dc(self._gui._sess_sel.json)
             #json_bck = dc([s.json for s in self._gui._sess_list])
             sess_item_sel_bck = dc(self._gui._sess_item_sel)
             sel_bck = self._gui._panel_sess._sel
 
+            print(self._gui._sess_list)
+            print(self._gui._sess_sel)
             if out is not None:
                 if out is 0:
                     #self._gui._refresh()
@@ -132,6 +136,23 @@ class GUIDialog(wx.Dialog):
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
+            #print(self._gui._sess_list)
+            #print(self._gui._sess_sel)
+
+            self._gui._sess_sel.log.trim()
+            self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
+            #print(self._gui._sess_sel.log.json)
+            if self._obj._tag=='_panel_sess' and a=='equalize':
+                sess_list = [self._gui._sess_list[s] for s in sess_item_sel_bck][::-1]
+                print('sess_list',sess_list)
+                self._gui._sess_sel.log.merge(sess_list)
+            if self._obj._tag=='_panel_sess' and a=='combine':
+                #sess_list = [self._gui._sess_list[-2]]
+                sess_list = [self._gui._sess_list[s] for s in sess_item_sel_bck][::-1]
+                print('sess_list',sess_list)
+                self._gui._sess_sel.log.merge(sess_list)
+            self._gui._sess_sel.log.close()
+
 
             # When recipes are applied to multiple sessions, the JSON is updated
             # accordingly

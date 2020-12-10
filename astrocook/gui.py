@@ -1,6 +1,7 @@
 from . import * #version
 from .gui_graph import *
 from .gui_image import *
+from .gui_log import *
 from .gui_menu import *
 from .gui_table import *
 from .message import *
@@ -408,6 +409,9 @@ class GUIPanelSession(wx.Frame):
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         #print(self._gui._sess_item_list)
+
+        sess.log = GUILog(self._gui)
+
         missing = []
         for i in range(self._tab.GetItemCount()+1):
             if i not in self._gui._sess_item_list:
@@ -475,6 +479,7 @@ class GUIPanelSession(wx.Frame):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
+        sess.log.append_full('_panel_sess', '_on_open', {'path': path})
 
         self._gui._sess_sel.json += '    {\n'\
                                     '      "cookbook": "_panel_sess",\n'\
@@ -536,6 +541,7 @@ class GUIPanelSession(wx.Frame):
         #print(self._gui._sess_sel)
         #print(self._gui._sess_item_sel)
         #print(self._gui._sess_sel._json_sel)
+        print(self._gui._sess_sel.log.str)
         self._entry_select()
 
 
