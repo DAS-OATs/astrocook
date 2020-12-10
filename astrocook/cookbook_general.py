@@ -41,8 +41,8 @@ class CookbookGeneral(object):
         @param xstart Start wavelength (nm; None to take the minimum wavelength)
         @param xend End wavelength (nm; None to take the maximum wavelength)
         @param dx Step in x
-        @param dx Step in x
         @param xunit Unit of wavelength or velocity
+        @param norm Return normalized spectrum, if continuum exists
         @return 0
         """
 

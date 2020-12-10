@@ -61,7 +61,6 @@ class Session(object):
         self._stats = False
         self._shade = False
 
-        self._json_paths = []
 
     def _append(self, frame, append=True):
         if append and hasattr(self, frame.__name__):

@@ -125,7 +125,8 @@ class GUIDialog(wx.Dialog):
 
             if out is not None:
                 if out is 0:
-                    self._gui._refresh()
+                    #self._gui._refresh()
+                    pass
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
@@ -136,29 +137,42 @@ class GUIDialog(wx.Dialog):
             if '_sel' in p_json:
                 p_json['_sel'] = sess_item_sel_bck
                 #json = dc(self._gui._sess_sel.json.split('{'))
-                json = json_bck.split('{')
-                json[3] = ''
+                json_old = json.loads(json_bck+json_tail)
+                params_old = [i['params'] for i in json_old['set_menu']]
+                paths_old = [j['path'] for j in params_old if 'path' in j]
+                #json_new = json.loads(self._gui._sess_sel.json+json_tail)
+                #params_new = [i['params'] for i in json_new['set_menu']]
+                #paths_new = [j['path'] for j in params_new if 'path' in j]
+                #print(paths_old)
+                #print(paths_new)
+                #print(path_bck)
+
+                json_split = json_bck.split('{')
+                json_split2 = json_bck.split('{')
+                json_split[3] = ''
                 for i in range(len(sess_item_sel_bck)):
                     #path = self._gui._sess_list[i].path
                     path = path_bck[i]
-                    #print(path)
-                    if path not in self._gui._sess_sel._json_paths:
-                        #print('yes')
-                        self._gui._sess_sel._json_paths.append(path)
-                        json[3] += '\n        "path": "%s"\n      }\n    },\n' \
-                                   % path
-                        if i != len(sess_item_sel_bck)-1:
-                            json[3] += '    {\n      "cookbook": "_panel_sess",\n '\
-                                       '     "recipe": "_on_open",\n      "params"'\
-                                       ': {'
+                    if path not in paths_old:
+                        json_split2[3] += '    {\n      "cookbook": "_panel_sess",\n '\
+                                   '     "recipe": "_on_open",\n      "params"'\
+                                   ': {\n        "path": "%s"\n      }\n    },\n' \
+                                          % path
+
+                    json_split[3] += '\n        "path": "%s"\n      }\n    },\n' \
+                               % path
+                    if i != len(sess_item_sel_bck)-1:
+                        json_split[3] += '    {\n      "cookbook": "_panel_sess",\n '\
+                                   '     "recipe": "_on_open",\n      "params"'\
+                                   ': {'
                     #print(self._gui._sess_list[i].__dict__)
                     if i not in self._gui._sess_sel._json_sel:
                         self._gui._sess_sel._json_sel.append(i)
-                    #print('{'.join(json))
-                self._gui._sess_sel.json = '{'.join(json)
+                self._gui._sess_sel.json = '{'.join(json_split2)
+                #print('{'.join(json_split2))
             self._gui._sess_sel.json += \
                 self._gui._json_update(self._obj._tag, a, p_json)
-
+            self._gui._refresh()
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):
@@ -462,18 +476,30 @@ class GUIDialogMiniLog(GUIDialogMini):
                 except:
                     pass
         """
-        json_bck = dc(self._gui._sess_sel.json)
-        json_sel_bck = dc(self._gui._sess_sel._json_sel)
+        # Save original logs
+        json_bck = []
+        json_sel_bck = []
+        for s in self._gui._sess_list:
+            json_bck.append(dc(s.json))
+            json_sel_bck.append(dc(s._json_sel))
         sel = np.sort(self._gui._sess_sel._json_sel)[::-1]
         #print(sel)
+
+        # Remove sessions
         for i in sel:
             self._gui._panel_sess._tab.DeleteItem(i)
             del self._gui._sess_list[i]
             del self._gui._sess_item_list[i]
         #print(self._gui._sess_list)
+
+        # Run selected JSON
         self._gui._json_run(json.loads(log))
-        self._gui._sess_sel.json = json_bck
-        self._gui._sess_sel._json_sel = json_sel_bck
+
+        # Copy original logs
+        for i,s in enumerate(self._gui._sess_list):
+            s.json = json_bck[i]
+            s._json_sel = json_sel_bck[i]
+
         self._log = log_bck
         self._ctrl_log.SetValue(self._log)
 

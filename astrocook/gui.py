@@ -78,6 +78,7 @@ class GUI(object):
         #split = orig.split('\n')[:-9]
         #split.append('')
         #self._sess_sel.json = '\n'.join(split).replace('"', '"')
+        #print(orig)
         split = orig.split('},')[:-1]
         split.append('')
         self._sess_sel.json = '},'.join(split)+'\n'
@@ -103,10 +104,31 @@ class GUI(object):
                 self._panel_sess._on_add(out, open=False)
             #self._refresh()
 
+            #print(r['recipe'], self._sess_list, self._sess_sel)
+            #print(self._sess_sel.path)
+
             if '_sel' in r['params']:
                 for i in r['params']['_sel']:
                     if i not in self._sess_sel._json_sel:
                         self._sess_sel._json_sel.append(i)
+
+            path_bck = [self._sess_list[i].path \
+                        for i in self._sess_sel._json_sel]
+
+            if cb._tag != '_panel_sess' or r['recipe'] != '_on_open':
+                self._sess_sel.json += \
+                    self._json_update(cb._tag, r['recipe'], r['params'])
+            if '_sel' in r['params']:
+                for p in path_bck:
+                    if p != self._sess_sel.path:
+                        json_bck = dc(self._sess_sel.json)
+                        json_split = json_bck.split('{')
+                        #print(json_split)
+                        json_split[1] += '{\n      "cookbook": "_panel_sess",\n '\
+                                   '     "recipe": "_on_open",\n      "params"'\
+                                   ': {\n        "path": "%s"\n      }\n    },\n    ' \
+                                          % p
+                        self._sess_sel.json = '{'.join(json_split)
 
         #print(self._sess_sel._json_sel)# = self._sess_item_sel
 
@@ -436,6 +458,7 @@ class GUIPanelSession(wx.Frame):
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
+
 
         self._gui._sess_sel.json += '    {\n'\
                                     '      "cookbook": "_panel_sess",\n'\
