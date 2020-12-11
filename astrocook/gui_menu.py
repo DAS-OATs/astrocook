@@ -96,13 +96,17 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
-    def _on_dialog_mini_graph(self, event, title, targ, json=True):
+    def _on_dialog_mini_graph(self, event, title, targ, log=True):
         if json:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_menu", "_on_dialog_mini_graph",
                                                 {"event": None,
                                                  "title": title,
                                                  "targ": targ, "json": False})
+            """
+            sess.log.append_full('_menu', '_on_dialog_mini_graph',
+                                 {'event': None, 'title': title, 'targ': targ})
         if hasattr(self._gui, '_dlg_mini_graph'):
             self._gui._dlg_mini_graph._refresh()
         else:

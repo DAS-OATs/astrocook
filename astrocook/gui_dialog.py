@@ -132,19 +132,6 @@ class GUIDialog(wx.Dialog):
 
             sel_old = self._gui._sess_list.index(self._gui._sess_sel)
 
-            """
-            path_bck = dc([s.path for s in self._gui._sess_list])
-            json_bck = dc(self._gui._sess_sel.json)
-            #json_bck = dc([s.json for s in self._gui._sess_list])
-            sess_item_sel_bck = dc(self._gui._sess_item_sel)
-            sel_bck = self._gui._panel_sess._sel
-
-            run_list = np.sort([self._gui._panel_sess._sel] \
-                                + self._gui._sess_sel._thread)
-            #print(self._gui._sess_item_sel)
-            #print(self._gui._sess_list)
-            #print(self._gui._sess_sel)
-            """
             if out is not None:
                 if out is 0:
                     #self._gui._refresh()
@@ -152,10 +139,7 @@ class GUIDialog(wx.Dialog):
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
-            #print(self._gui._sess_list)
-            #print(self._gui._sess_sel)
-            #run_list = np.sort([self._gui._panel_sess._sel] \
-            #                    + self._gui._sess_sel._thread)
+
             if out is None or out==0:
                 if '_sel' in p_l:
                     sess_list = [self._gui._sess_list[s] for s in p_l['_sel']]
@@ -176,119 +160,6 @@ class GUIDialog(wx.Dialog):
                                                        sess_list,
                                                        self._gui._sess_sel)
 
-
-            #print(run_list, self._gui._panel_sess._sel, self._gui._sess_sel)
-            #self._gui._sess_sel.log.update(self._gui._sess_list,
-            #                               self._gui._sess_sel,
-            #                               run_list,
-            #                               self._obj._tag, a, p_l)
-            """
-            self._gui._sess_sel.log.trim()
-            #print(self._gui._sess_sel.log.json)
-            if self._obj._tag=='_panel_sess' and a=='equalize':
-                #p_l['_sel'] = sess_item_sel_bck
-                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
-                sess_list = [self._gui._sess_list[s] for s in np.sort(sess_item_sel_bck)]
-                self._gui._sess_sel.log.merge(sess_list)
-            elif self._obj._tag=='_panel_sess' and a=='combine':
-                #p_l['_sel'] = sess_item_sel_bck
-                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
-                sess_list = [self._gui._sess_list[s] for s in np.sort(sess_item_sel_bck)]
-                self._gui._sess_sel.log.merge(sess_list)
-            else:
-                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
-            self._gui._sess_sel.log.close()
-            """
-            """
-            # When recipes are applied to multiple sessions, the JSON is updated
-            # accordingly
-            p_json = dc(p_l)
-            #print(sess_item_sel_bck)
-            if '_sel' in p_json:
-                "
-                p_json['_sel'] = sess_item_sel_bck
-                #self._gui._sess_sel.json = json_head
-                json_temp = '['.join(json_bck[sess_item_sel_bck[-1]].split('[')[1:])[1:]
-                self._gui._sess_sel.json = json_bck[sess_item_sel_bck[0]]
-                self._gui._sess_sel.json += json_temp
-                "
-                "
-                json_old = json.loads(self._gui._sess_sel.json+json_tail)
-                recipe_old = [i['recipe'] for i in json_old['set_menu']]
-                params_old = [j['params'] for j in json_old['set_menu']]
-                paths_old = [k['path'] for k in params_old if 'path' in k]
-                for i in range(len(sess_item_sel_bck)):
-                    path = path_bck[i]
-                    if path not in paths_old:
-                        self._gui._sess_sel.json += \
-                            '['.join(json_bck[i].split('[')[1:])[1:]
-
-                for i in sess_item_sel_bck:
-                "
-                p_json['_sel'] = sess_item_sel_bck
-                #print(sess_item_sel_bck)
-                #json = dc(self._gui._sess_sel.json.split('{'))
-                json_old = json.loads(json_bck+json_tail)
-                params_old = [i['params'] for i in json_old['set_menu']]
-                paths_old = [j['path'] for j in params_old if 'path' in j]
-                #json_new = json.loads(self._gui._sess_sel.json+json_tail)
-                #params_new = [i['params'] for i in json_new['set_menu']]
-                #sel_new = list(np.ravel([k['_sel'] for k in params_old \
-                #                         if '_sel' in k]))
-                #print(sel_new)
-                #paths_new = [j['path'] for j in params_new if 'path' in j]
-                #print(paths_old)
-                #print(paths_new)
-                #print(path_bck)
-
-                json_split = json_bck.split('{')
-                json_split2 = json_bck.split('{')
-                json_split[3] = ''
-
-                #print(json.dumps(json_old, indent=4))
-
-                for i in range(len(sess_item_sel_bck)):
-                    #print(i)
-                    #path = self._gui._sess_list[i].path
-                    path = path_bck[i]
-                    if path not in paths_old:
-                        json_split2[3] += '    {\n      "cookbook": "_panel_sess",\n '\
-                                   '     "recipe": "_on_open",\n      "params"'\
-                                   ': {\n        "path": "%s"\n      }\n    },\n' \
-                                          % path
-
-                    json_split[3] += '\n        "path": "%s"\n      }\n    },\n' \
-                               % path
-                    if i != len(sess_item_sel_bck)-1:
-                        json_split[3] += '    {\n      "cookbook": "_panel_sess",\n '\
-                                   '     "recipe": "_on_open",\n      "params"'\
-                                   ': {'
-                    #print(self._gui._sess_list[i].__dict__)
-                    "
-                    if i not in self._gui._sess_sel._json_sel:
-                        self._gui._sess_sel._json_sel.append(i)
-                    "
-                #print(self._gui._sess_item_sel, self._gui._sess_sel._json_sel)
-                self._gui._sess_sel.json = '{'.join(json_split2)
-                #self._gui._sess_item_sel = dc(self._gui._sess_sel._json_sel)
-                #print('{'.join(json_split2))
-            self._gui._sess_sel.json += \
-                self._gui._json_update(self._obj._tag, a, p_json)
-            """
-            """
-            p_json = p_l
-            if '_sel' in p_json:
-                json_new = json.loads(self._gui._sess_sel.json+json_tail)
-                params_new = [i['params'] for i in json_new['set_menu']]
-                sel_new = np.array([], dtype=int)
-                for k in params_new:
-                    if '_sel' in k: sel_new = np.append(sel_new, k['_sel'])
-                sel_new = list(np.unique(sel_new))
-                for i in sel_new:
-                    if i not in self._gui._sess_sel._json_sel:
-                        self._gui._sess_sel._json_sel.append(i)
-            #print(self._gui._sess_sel._json_sel)
-            """
             self._gui._refresh()
 
     def _update_params(self):
@@ -463,7 +334,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e=None, refresh=True, json=True):
+    def _on_apply(self, e=None, refresh=True, log=True):
         self._elem = self._ctrl_elem.GetValue()
         self._set(self._elem)
         self._gui._graph_main._elem = self._elem
@@ -473,25 +344,33 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
         if refresh:
             self._gui._refresh(init_cursor=True, init_tab=False)
-        if json:
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_graph", "_on_apply",
                                                 {"e": None, "refresh": refresh,
                                                  "json": False})
+            #"""
+            sess.log.append_full('_dlg_mini_graph', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
 
 
-    def _on_default(self, e=None, refresh=True, json=True):
+    def _on_default(self, e=None, refresh=True, log=True):
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
-        if json:
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_graph",
                                                 "_on_default",
                                                 {"e": None, "refresh": refresh,
                                                  "json": False})
+            """
+            sess.log.append_full('_dlg_mini_graph', '_on_default',
+                                 {'e': None, 'refresh': refresh})
 
 
     def _on_cancel(self, e=None):
@@ -510,11 +389,17 @@ class GUIDialogMiniGraph(GUIDialogMini):
         #self._on_apply(refresh=False)
 
 
-    def _set(self, value, json=True):
-        if json:
+    def _set(self, value, log=True):
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_graph", "_set",
                                                 {"value": value, "json": False})
+            """
+            i = self._gui._sess_list.index(self._gui._sess_sel)
+            value_log = '\nSESS_SEL,'.join(('\n'+value).split('\n%i,' % i))[1:]
+            sess.log.append_full('_dlg_mini_graph', '_set',
+                                 {'value': value_log, 'log': False})
 
         self._elem = value
         self._ctrl_elem.SetValue(value)
@@ -575,55 +460,6 @@ class GUIDialogMiniLog(GUIDialogMini):
         log = log.replace('”', '"')
         log = log.replace('—', '--')
         log_bck = dc(log)
-        #print(log_bck)
-        """
-        from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList
-        for a in self._gui.__dict__:
-            if isinstance(self._gui.__dict__[a],
-                          (GUITableSpectrum,
-                           GUITableLineList,
-                           GUITableSystList,
-                           GUIDialogMiniGraph,
-                           GUIDialogMiniMeta,
-                           GUIDialogMiniSystems)):
-                try:
-                    self._gui.__dict__[a]._on_close()
-                    print('closed')
-                    self._gui.__dict__[a]._on_view()
-                    print('reopened')
-                except:
-                    pass
-        """
-        # Save original logs
-        """
-        json_bck = []
-        json_sel_bck = []
-        for s in self._gui._sess_list:
-            json_bck.append(dc(s.json))
-            json_sel_bck.append(dc(s._json_sel))
-        sel = np.sort(self._gui._sess_sel._json_sel)[::-1]
-        #print(sel)
-        #print(len(json_bck))
-        #print(sel)
-        """
-
-        # Remove sessions
-        #print(self._gui._sess_list)
-        """
-        for i in sel:
-            self._gui._panel_sess._tab.DeleteItem(i)
-            del self._gui._sess_list[i]
-            del self._gui._sess_item_list[i]
-        """
-        """
-        del_list = np.sort([self._gui._panel_sess._sel] \
-                            + self._gui._sess_sel._thread)[::-1]
-        for i in del_list:
-            self._gui._panel_sess._tab.DeleteItem(i)
-            del self._gui._sess_list[i]
-            del self._gui._sess_item_list[i]
-        #print(self._gui._sess_list)
-        """
         i = self._gui._sess_list.index(self._gui._sess_sel)
         self._gui._panel_sess._tab.DeleteItem(i)
         del self._gui._sess_list[i]
@@ -632,14 +468,6 @@ class GUIDialogMiniLog(GUIDialogMini):
         # Run selected JSON
         self._gui._json_run(json.loads(log))
 
-        # Copy original logs
-        """
-        for i,s in enumerate(self._gui._sess_list):
-            s.json = json_bck[i]
-            s._json_sel = json_sel_bck[i]
-
-        self._log = log_bck
-        """
         self._ctrl_log.SetValue(self._log)
 
 
@@ -729,7 +557,7 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e=None, refresh=True, json=True):
+    def _on_apply(self, e=None, refresh=True, log=True):
         self._meta = self._ctrl_meta.GetValue()
         self._set(self._meta)
         self._gui._sess_sel.spec._meta = dc(self._meta_backup)
@@ -741,25 +569,34 @@ class GUIDialogMiniMeta(GUIDialogMini):
             self._gui._sess_sel.spec._meta[k] = v[0]
             self._gui._sess_sel.spec._meta.comments[k] = v[1]
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
-        if json:
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_meta", "_on_apply",
                                                 {"e": None, "refresh": refresh,
                                                  "json": False})
+            """
+            sess.log.append_full('_dlg_mini_meta', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
 
 
-    def _on_original(self, e=None, refresh=True, json=True):
+    def _on_original(self, e=None, refresh=True, log=True):
         self._meta = meta_parse(self._meta_backup)
         self._set(self._meta)
         self._gui._sess_sel.spec._meta = dc(self._meta_backup)
         #print(meta_parse(self._gui._sess_sel.spec.meta))
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
-        if json:
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_meta",
                                                 "_on_original",
                                                 {"e": None, "refresh": refresh,
                                                  "json": False})
+            """
+            sess.log.append_full('_dlg_mini_meta', '_on_original',
+                                 {'e': None, 'refresh': refresh})
+
 
 
     def _on_cancel(self, e=None):
@@ -776,11 +613,15 @@ class GUIDialogMiniMeta(GUIDialogMini):
         #self._on_apply(refresh=False)
 
 
-    def _set(self, value, json=True):
-        if json:
+    def _set(self, value, log=True):
+        if log:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_dlg_mini_meta", "_set",
                                                 {"value": value, "json": False})
+            """
+            sess.log.append_full('_dlg_mini_graph', '_set',
+                                 {'value': value, 'log': False})
         self._ctrl_meta.SetValue(value)
 
 

@@ -88,6 +88,10 @@ class GUI(object):
     def _json_run(self, load):
         for r in load['set_menu']:
 
+            if 'value' in r['params']:
+                i = self._sess_list.index(self._sess_sel)
+                r['params']['value'] = \
+                    ('%i,'%i).join(r['params']['value'].split('SESS_SEL,'))
 
             if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
                 cb = self._sess_sel.cb
@@ -99,31 +103,29 @@ class GUI(object):
                 for s in rs[1:]:
                     cb = getattr(cb, s)
 
-            #run_list = self._sess_sel._thread
-
             out = getattr(cb, r['recipe'])(**r['params'])
-            #print(self._sess_list[0])
-            #print(self._sess_sel)
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
             if out is None or out==0:
-                if cb._tag=='cb':
+                if hasattr(cb, '_tag') and cb._tag=='cb':
                     self._sess_sel.log.append_full(cb._tag, r['recipe'],
                                                    r['params'])
-                if cb._tag=='_panel_sess' and r['recipe']=='equalize':
+                if hasattr(cb, '_tag') and cb._tag=='_panel_sess' \
+                    and r['recipe']=='equalize':
                     sess_list = [self._sess_list[s] \
                                  for s in r['params']['_sel']]
                     self._sess_sel.log.merge_full(cb._tag, r['recipe'],
                                                   r['params'], sess_list,
                                                   self._sess_sel)
             else:
-                if cb._tag=='cb':
+                if hasattr(cb, '_tag') and cb._tag=='cb':
                     sess_list = [self._sess_list[sel_old]]
                     self._sess_sel.log.merge_full(cb._tag, r['recipe'],
                                                   r['params'], sess_list,
                                                   self._sess_sel)
-                if cb._tag=='_panel_sess' and r['recipe']=='combine':
+                if hasattr(cb, '_tag') and cb._tag=='_panel_sess' \
+                    and r['recipe']=='combine':
                     sess_list = [self._sess_list[s] \
                                  for s in r['params']['_sel']]
                     self._sess_sel.log.merge_full(cb._tag, r['recipe'],
@@ -133,81 +135,6 @@ class GUI(object):
 
             sel_old = self._sess_list.index(self._sess_sel)
 
-            """
-            if '_sel' in r['params']:
-                #print(r['recipe'])
-                #print(self._sess_sel.log.str)
-                #print(sel)
-                if cb._tag=='_panel_sess' and r['recipe']=='combine':
-                    sel = [i for i in range(len(self._sess_list)) \
-                           if self._sess_list[i]==self._sess_sel]
-                    #run_list = r['params']['_sel']+sel
-                if cb._tag=='_panel_sess' and r['recipe']=='equalize':
-                    sel = r['params']['_sel']
-                    run_list = sel
-                    print([self._sess_list[i]._thread for i in run_list], run_list)
-                    #r['params']['_sel']
-                #print(self._panel_sess._sel, self._sess_sel._thread, run_list)
-                #print(self._sess_sel, self._sess_list)
-                if cb._tag=='cb' and  r['recipe']=='rebin':
-                    sel = [i for i in range(len(self._sess_list)) \
-                           if self._sess_list[i]==self._sess_sel]
-                    #run_list = np.unique(._thread+sel)
-                #print(run_list)
-                sess_sel = self._sess_list[run_list[-1]]
-                self._sess_sel.log.update(self._sess_list,
-                                          sess_sel,
-                                          run_list,
-                                          cb._tag, r['recipe'], r['params'])
-            #print(self._sess_sel.log.str)
-
-
-            #self._refresh()
-
-            #print(r['recipe'], self._sess_list, self._sess_sel, out)
-            #print(self._sess_sel.path)
-            """
-            """
-            if '_sel' in r['params']:
-                for i in r['params']['_sel']:
-                    if i not in self._sess_sel._json_sel:
-                        self._sess_sel._json_sel.append(i)
-            """
-
-            """
-            path_bck = [self._sess_list[i].path \
-                        for i in self._sess_sel._json_sel]
-
-            if cb._tag != '_panel_sess' or r['recipe'] != '_on_open':
-                self._sess_sel.json += \
-                    self._json_update(cb._tag, r['recipe'], r['params'])
-
-            if '_sel' in r['params']:
-                json_new = json.loads(self._sess_sel.json+json_tail)
-                params_new = [i['params'] for i in json_new['set_menu']]
-                sel_new = np.array([], dtype=int)
-                for k in params_new:
-                    if '_sel' in k: sel_new = np.append(sel_new, k['_sel'])
-                sel_new = list(np.unique(sel_new))
-                for i in sel_new:
-                    if i not in self._sess_sel._json_sel:
-                        self._sess_sel._json_sel.append(i)
-
-            if '_sel' in r['params']:
-                #print(r['params']['_sel'])
-                for p in path_bck:
-                    if p != self._sess_sel.path:
-                        json_bck = dc(self._sess_sel.json)
-                        json_split = json_bck.split('{')
-                        #print(json_split)
-                        json_split[1] += '{\n      "cookbook": "_panel_sess",\n '\
-                                   '     "recipe": "_on_open",\n      "params"'\
-                                   ': {\n        "path": "%s"\n      }\n    },\n    ' \
-                                          % p
-                        self._sess_sel.json = '{'.join(json_split)
-            """
-
-        #print(self._sess_sel._json_sel)# = self._sess_item_sel
 
 
     def _json_update(self, cb, rec, params):
