@@ -77,27 +77,40 @@ class GUILog(object):
                 menu = dc(s.log.json['set_menu'])
                 trim = self._trim(menu)
                 for m in trim:
+                    #print(m)
                     if m not in json_new['set_menu']:
                         json_new['set_menu'].append(m)
+        #print(json_new)
         self.trim()
         for m in self.json['set_menu']:
             if m not in json_new['set_menu']:
                 json_new['set_menu'].append(m)
         self.json = json_new
-        self.json = self._sort(sess_list)
+        #print(self.json)
+        #self.json = self._sort(sess_list)
+        #print(self.json)
         self.str = json.dumps(self.json, indent=self._indent)
+
+    def merge_full(self, cb, rec, params, sess_list, sess_sel):
+        self.append(cb, rec, params)
+        self.merge(sess_list, sess_sel)
+        self.close()
+
 
     def update(self, sess_list, sess_sel, sess_item_sel, cb, rec, params):
         sess_sel.log.trim()
         #print(self._gui._sess_sel.log.json)
-        if cb=='_panel_sess' and rec=='equalize':
+        if cb=='_panel_sess' and rec=='combine':
             sess_sel.log.append(cb, rec, params)
             sl = [sess_list[s] for s in np.sort(sess_item_sel)]
             sess_sel.log.merge(sl, sess_sel)
-        elif cb=='_panel_sess' and rec=='combine':
+        elif cb=='_panel_sess' and rec=='equalize':
             sess_sel.log.append(cb, rec, params)
             sl = [sess_list[s] for s in np.sort(sess_item_sel)]
-            print(sl)
+            sess_sel.log.merge(sl, sess_sel)
+        elif cb=='cb' and rec=='rebin':
+            sess_sel.log.append(cb, rec, params)
+            sl = [sess_list[s] for s in np.sort(sess_item_sel)]
             sess_sel.log.merge(sl, sess_sel)
         else:
             sess_sel.log.append(cb, rec, params)

@@ -57,7 +57,6 @@ class Session(object):
             self.json = json_head
         else:
             self.json = json
-        self._thread = thread
         self._open_twin = twin
         self._clicks = []
         self._stats = False

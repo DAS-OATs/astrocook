@@ -88,6 +88,7 @@ class GUI(object):
     def _json_run(self, load):
         for r in load['set_menu']:
 
+
             if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
                 cb = self._sess_sel.cb
             elif r['cookbook'] == '':
@@ -98,25 +99,61 @@ class GUI(object):
                 for s in rs[1:]:
                     cb = getattr(cb, s)
 
+            #run_list = self._sess_sel._thread
+
             out = getattr(cb, r['recipe'])(**r['params'])
             #print(self._sess_list[0])
             #print(self._sess_sel)
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
+            if out is None or out==0:
+                if cb._tag=='cb':
+                    self._sess_sel.log.append_full(cb._tag, r['recipe'],
+                                                   r['params'])
+                if cb._tag=='_panel_sess' and r['recipe']=='equalize':
+                    sess_list = [self._sess_list[s] \
+                                 for s in r['params']['_sel']]
+                    self._sess_sel.log.merge_full(cb._tag, r['recipe'],
+                                                  r['params'], sess_list,
+                                                  self._sess_sel)
+            else:
+                if cb._tag=='cb':
+                    sess_list = [self._sess_list[sel_old]]
+                    self._sess_sel.log.merge_full(cb._tag, r['recipe'],
+                                                  r['params'], sess_list,
+                                                  self._sess_sel)
+                if cb._tag=='_panel_sess' and r['recipe']=='combine':
+                    sess_list = [self._sess_list[s] \
+                                 for s in r['params']['_sel']]
+                    self._sess_sel.log.merge_full(cb._tag, r['recipe'],
+                                                  r['params'], sess_list,
+                                                  self._sess_sel)
+
+
+            sel_old = self._sess_list.index(self._sess_sel)
+
+            """
             if '_sel' in r['params']:
                 #print(r['recipe'])
                 #print(self._sess_sel.log.str)
                 #print(sel)
-                if r['recipe']=='equalize':
-                    run_list = r['params']['_sel']
-                #print(self._panel_sess._sel, self._sess_sel._thread, run_list)
-                #print(self._sess_sel, self._sess_list)
-                if r['recipe']=='combine':
+                if cb._tag=='_panel_sess' and r['recipe']=='combine':
                     sel = [i for i in range(len(self._sess_list)) \
                            if self._sess_list[i]==self._sess_sel]
-                    run_list = r['params']['_sel']+sel
-                print(run_list)
+                    #run_list = r['params']['_sel']+sel
+                if cb._tag=='_panel_sess' and r['recipe']=='equalize':
+                    sel = r['params']['_sel']
+                    run_list = sel
+                    print([self._sess_list[i]._thread for i in run_list], run_list)
+                    #r['params']['_sel']
+                #print(self._panel_sess._sel, self._sess_sel._thread, run_list)
+                #print(self._sess_sel, self._sess_list)
+                if cb._tag=='cb' and  r['recipe']=='rebin':
+                    sel = [i for i in range(len(self._sess_list)) \
+                           if self._sess_list[i]==self._sess_sel]
+                    #run_list = np.unique(._thread+sel)
+                #print(run_list)
                 sess_sel = self._sess_list[run_list[-1]]
                 self._sess_sel.log.update(self._sess_list,
                                           sess_sel,
@@ -129,7 +166,7 @@ class GUI(object):
 
             #print(r['recipe'], self._sess_list, self._sess_sel, out)
             #print(self._sess_sel.path)
-
+            """
             """
             if '_sel' in r['params']:
                 for i in r['params']['_sel']:
@@ -565,7 +602,7 @@ class GUIPanelSession(wx.Frame):
         #print(self._gui._sess_item_sel)
         #print(self._gui._sess_sel._json_sel)
         #print(self._gui._sess_sel.log.str)
-        #print(self._gui._sess_sel, self._gui._sess_sel._thread)
+        #print(self._gui._sess_sel._thread)
         self._entry_select()
 
 
@@ -741,7 +778,7 @@ class GUIPanelSession(wx.Frame):
             name += name_in[1:]
         sess = Session(gui=self._gui, name=name, spec=struct_out['spec'],
                        nodes=struct_out['nodes'], lines=struct_out['lines'],
-                       systs=struct_out['systs'], thread=sel)
+                       systs=struct_out['systs'])
         return sess
 
 
@@ -792,7 +829,6 @@ class GUIPanelSession(wx.Frame):
                 #print(np.median(sess.spec.y[w]), f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
-                sess._thread = sess._thread + [sel[0]]
 
         return 0
 
