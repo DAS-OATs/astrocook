@@ -1,6 +1,7 @@
 from .vars import log_seed
 from copy import deepcopy as dc
 import json
+import numpy as np
 
 class GUILog(object):
 
@@ -51,11 +52,15 @@ class GUILog(object):
         self.close()
 
 
+    def clear(self):
+        self._init()
+
+
     def close(self):
         self.append('', '_refresh', {})
 
 
-    def merge(self, sess_list):
+    def merge(self, sess_list, sess_sel):
         """
         self.trim()
         for s in sess_list:
@@ -68,7 +73,7 @@ class GUILog(object):
         """
         json_new = {'set_menu': []}
         for s in sess_list:
-            if s != self._gui._sess_sel:
+            if s != sess_sel:
                 menu = dc(s.log.json['set_menu'])
                 trim = self._trim(menu)
                 for m in trim:
@@ -81,6 +86,22 @@ class GUILog(object):
         self.json = json_new
         self.json = self._sort(sess_list)
         self.str = json.dumps(self.json, indent=self._indent)
+
+    def update(self, sess_list, sess_sel, sess_item_sel, cb, rec, params):
+        sess_sel.log.trim()
+        #print(self._gui._sess_sel.log.json)
+        if cb=='_panel_sess' and rec=='equalize':
+            sess_sel.log.append(cb, rec, params)
+            sl = [sess_list[s] for s in np.sort(sess_item_sel)]
+            sess_sel.log.merge(sl, sess_sel)
+        elif cb=='_panel_sess' and rec=='combine':
+            sess_sel.log.append(cb, rec, params)
+            sl = [sess_list[s] for s in np.sort(sess_item_sel)]
+            print(sl)
+            sess_sel.log.merge(sl, sess_sel)
+        else:
+            sess_sel.log.append(cb, rec, params)
+        sess_sel.log.close()
 
 
     def trim(self):

@@ -113,9 +113,15 @@ class GUIDialog(wx.Dialog):
 
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)
+            try:
+                p_l['_sel'] = self._gui._sess_item_sel
+            except:
+                logging.info('No selected session.')
+
             start = dt.datetime.now()
             out = m(**p_l)
             end = dt.datetime.now()
+
             logging.info("I completed %s in %3.3f seconds!" \
                          % (a, (end-start).total_seconds()))
 
@@ -127,8 +133,9 @@ class GUIDialog(wx.Dialog):
             sess_item_sel_bck = dc(self._gui._sess_item_sel)
             sel_bck = self._gui._panel_sess._sel
 
-            print(self._gui._sess_list)
-            print(self._gui._sess_sel)
+            #print(self._gui._sess_item_sel)
+            #print(self._gui._sess_list)
+            #print(self._gui._sess_sel)
             if out is not None:
                 if out is 0:
                     #self._gui._refresh()
@@ -138,35 +145,44 @@ class GUIDialog(wx.Dialog):
                 self.Close()
             #print(self._gui._sess_list)
             #print(self._gui._sess_sel)
-
+            run_list = np.sort([self._gui._panel_sess._sel] \
+                                + self._gui._sess_sel._thread)
+            print(run_list)
+            self._gui._sess_sel.log.update(self._gui._sess_list,
+                                           self._gui._sess_sel,
+                                           run_list,
+                                           self._obj._tag, a, p_l)
+            """
             self._gui._sess_sel.log.trim()
-            self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
             #print(self._gui._sess_sel.log.json)
             if self._obj._tag=='_panel_sess' and a=='equalize':
-                sess_list = [self._gui._sess_list[s] for s in sess_item_sel_bck][::-1]
-                print('sess_list',sess_list)
+                #p_l['_sel'] = sess_item_sel_bck
+                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
+                sess_list = [self._gui._sess_list[s] for s in np.sort(sess_item_sel_bck)]
                 self._gui._sess_sel.log.merge(sess_list)
-            if self._obj._tag=='_panel_sess' and a=='combine':
-                #sess_list = [self._gui._sess_list[-2]]
-                sess_list = [self._gui._sess_list[s] for s in sess_item_sel_bck][::-1]
-                print('sess_list',sess_list)
+            elif self._obj._tag=='_panel_sess' and a=='combine':
+                #p_l['_sel'] = sess_item_sel_bck
+                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
+                sess_list = [self._gui._sess_list[s] for s in np.sort(sess_item_sel_bck)]
                 self._gui._sess_sel.log.merge(sess_list)
+            else:
+                self._gui._sess_sel.log.append(self._obj._tag, a, p_l)
             self._gui._sess_sel.log.close()
-
-
+            """
+            """
             # When recipes are applied to multiple sessions, the JSON is updated
             # accordingly
             p_json = dc(p_l)
             #print(sess_item_sel_bck)
             if '_sel' in p_json:
-                """
+                "
                 p_json['_sel'] = sess_item_sel_bck
                 #self._gui._sess_sel.json = json_head
                 json_temp = '['.join(json_bck[sess_item_sel_bck[-1]].split('[')[1:])[1:]
                 self._gui._sess_sel.json = json_bck[sess_item_sel_bck[0]]
                 self._gui._sess_sel.json += json_temp
-                """
-                """
+                "
+                "
                 json_old = json.loads(self._gui._sess_sel.json+json_tail)
                 recipe_old = [i['recipe'] for i in json_old['set_menu']]
                 params_old = [j['params'] for j in json_old['set_menu']]
@@ -178,7 +194,7 @@ class GUIDialog(wx.Dialog):
                             '['.join(json_bck[i].split('[')[1:])[1:]
 
                 for i in sess_item_sel_bck:
-                """
+                "
                 p_json['_sel'] = sess_item_sel_bck
                 #print(sess_item_sel_bck)
                 #json = dc(self._gui._sess_sel.json.split('{'))
@@ -218,17 +234,18 @@ class GUIDialog(wx.Dialog):
                                    '     "recipe": "_on_open",\n      "params"'\
                                    ': {'
                     #print(self._gui._sess_list[i].__dict__)
-                    """
+                    "
                     if i not in self._gui._sess_sel._json_sel:
                         self._gui._sess_sel._json_sel.append(i)
-                    """
+                    "
                 #print(self._gui._sess_item_sel, self._gui._sess_sel._json_sel)
                 self._gui._sess_sel.json = '{'.join(json_split2)
                 #self._gui._sess_item_sel = dc(self._gui._sess_sel._json_sel)
                 #print('{'.join(json_split2))
             self._gui._sess_sel.json += \
                 self._gui._json_update(self._obj._tag, a, p_json)
-
+            """
+            p_json = p_l
             if '_sel' in p_json:
                 json_new = json.loads(self._gui._sess_sel.json+json_tail)
                 params_new = [i['params'] for i in json_new['set_menu']]
@@ -239,6 +256,7 @@ class GUIDialog(wx.Dialog):
                 for i in sel_new:
                     if i not in self._gui._sess_sel._json_sel:
                         self._gui._sess_sel._json_sel.append(i)
+            #print(self._gui._sess_sel._json_sel)
 
             self._gui._refresh()
 
@@ -480,7 +498,8 @@ class GUIDialogMiniLog(GUIDialogMini):
         self._gui._dlg_mini_log = self
         self._sel = dc(self._gui._panel_sess._sel)
 
-        self._log = self._gui._sess_sel.json + json_tail
+        #self._log = self._gui._sess_sel.json + json_tail
+        self._log = self._gui._sess_sel.log.str
         super(GUIDialogMiniLog, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
@@ -545,6 +564,7 @@ class GUIDialogMiniLog(GUIDialogMini):
                     pass
         """
         # Save original logs
+        """
         json_bck = []
         json_sel_bck = []
         for s in self._gui._sess_list:
@@ -554,10 +574,19 @@ class GUIDialogMiniLog(GUIDialogMini):
         #print(sel)
         #print(len(json_bck))
         #print(sel)
+        """
 
         # Remove sessions
         #print(self._gui._sess_list)
+        """
         for i in sel:
+            self._gui._panel_sess._tab.DeleteItem(i)
+            del self._gui._sess_list[i]
+            del self._gui._sess_item_list[i]
+        """
+        del_list = np.sort([self._gui._panel_sess._sel] \
+                            + self._gui._sess_sel._thread)[::-1]
+        for i in del_list:
             self._gui._panel_sess._tab.DeleteItem(i)
             del self._gui._sess_list[i]
             del self._gui._sess_item_list[i]
@@ -567,11 +596,13 @@ class GUIDialogMiniLog(GUIDialogMini):
         self._gui._json_run(json.loads(log))
 
         # Copy original logs
+        """
         for i,s in enumerate(self._gui._sess_list):
             s.json = json_bck[i]
             s._json_sel = json_sel_bck[i]
 
         self._log = log_bck
+        """
         self._ctrl_log.SetValue(self._log)
 
 
@@ -606,7 +637,8 @@ class GUIDialogMiniLog(GUIDialogMini):
     def _refresh(self):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
-        self._log = self._gui._sess_sel.json + json_tail
+        #self._log = self._gui._sess_sel.json + json_tail
+        self._log = self._gui._sess_sel.log.str
         self._ctrl_log.SetValue(self._log)
 
 

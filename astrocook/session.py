@@ -40,6 +40,7 @@ class Session(object):
                  systs=None,
                  mods=None,
                  json=None,
+                 thread=[],
                  twin=False):
         self._gui = gui
         self.path = path
@@ -56,6 +57,7 @@ class Session(object):
             self.json = json_head
         else:
             self.json = json
+        self._thread = thread
         self._open_twin = twin
         self._clicks = []
         self._stats = False

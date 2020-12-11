@@ -103,6 +103,28 @@ class GUI(object):
             #print(self._sess_sel)
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
+
+            if '_sel' in r['params']:
+                #print(r['recipe'])
+                #print(self._sess_sel.log.str)
+                #print(sel)
+                if r['recipe']=='equalize':
+                    run_list = r['params']['_sel']
+                #print(self._panel_sess._sel, self._sess_sel._thread, run_list)
+                #print(self._sess_sel, self._sess_list)
+                if r['recipe']=='combine':
+                    sel = [i for i in range(len(self._sess_list)) \
+                           if self._sess_list[i]==self._sess_sel]
+                    run_list = r['params']['_sel']+sel
+                print(run_list)
+                sess_sel = self._sess_list[run_list[-1]]
+                self._sess_sel.log.update(self._sess_list,
+                                          sess_sel,
+                                          run_list,
+                                          cb._tag, r['recipe'], r['params'])
+            #print(self._sess_sel.log.str)
+
+
             #self._refresh()
 
             #print(r['recipe'], self._sess_list, self._sess_sel, out)
@@ -115,6 +137,7 @@ class GUI(object):
                         self._sess_sel._json_sel.append(i)
             """
 
+            """
             path_bck = [self._sess_list[i].path \
                         for i in self._sess_sel._json_sel]
 
@@ -145,7 +168,7 @@ class GUI(object):
                                    ': {\n        "path": "%s"\n      }\n    },\n    ' \
                                           % p
                         self._sess_sel.json = '{'.join(json_split)
-
+            """
 
         #print(self._sess_sel._json_sel)# = self._sess_item_sel
 
@@ -541,7 +564,8 @@ class GUIPanelSession(wx.Frame):
         #print(self._gui._sess_sel)
         #print(self._gui._sess_item_sel)
         #print(self._gui._sess_sel._json_sel)
-        print(self._gui._sess_sel.log.str)
+        #print(self._gui._sess_sel.log.str)
+        #print(self._gui._sess_sel, self._gui._sess_sel._thread)
         self._entry_select()
 
 
@@ -673,6 +697,8 @@ class GUIPanelSession(wx.Frame):
         #sel = self._tab._get_selected_items()
         sel = self._gui._sess_item_sel
         sess_list = self._gui._sess_list
+
+        """
         if isinstance(_sel, list) and _sel != []:
             sel = _sel
         if isinstance(_sel, str) and _sel != '':
@@ -684,6 +710,8 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = range(len(sess_list))
         self._gui._sess_item_sel = sel
+        """
+        sel = _sel
 
         struct_out = {}
         for struct in sess_list[sel[0]].seq:
@@ -713,7 +741,7 @@ class GUIPanelSession(wx.Frame):
             name += name_in[1:]
         sess = Session(gui=self._gui, name=name, spec=struct_out['spec'],
                        nodes=struct_out['nodes'], lines=struct_out['lines'],
-                       systs=struct_out['systs'])
+                       systs=struct_out['systs'], thread=sel)
         return sess
 
 
@@ -735,6 +763,7 @@ class GUIPanelSession(wx.Frame):
             logging.error(msg_param_fail)
             return None
 
+        """
         sel = self._gui._sess_item_sel
         if isinstance(_sel, list) and _sel != []:
             sel = _sel
@@ -742,6 +771,8 @@ class GUIPanelSession(wx.Frame):
             sel = [int(s) \
                 for s in _sel.replace('[','').replace(']','').split(',')]
         self._gui._sess_item_sel = sel
+        """
+        sel = _sel
         logging.info("Equalizing session %i to session %i... "
                      % (sel[1], sel[0]))
 
@@ -761,7 +792,7 @@ class GUIPanelSession(wx.Frame):
                 #print(np.median(sess.spec.y[w]), f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
-
+                sess._thread = sess._thread + [sel[0]]
 
         return 0
 
