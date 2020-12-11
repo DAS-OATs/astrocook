@@ -116,13 +116,17 @@ class GUIMenu(object):
         dlg = GUIDialogMiniLog(self._gui, title)
 
 
-    def _on_dialog_mini_meta(self, event, title, targ, json=True):
+    def _on_dialog_mini_meta(self, event, title, targ, log=True):
         if json:
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_menu", "_on_dialog_mini_meta",
                                                 {"event": None,
                                                  "title": title,
                                                  "targ": targ, "json": False})
+            """
+            sess.log.append_full('_menu', '_on_dialog_mini_meta',
+                                 {'event': None, 'title': title, 'targ': targ})
         dlg = GUIDialogMiniMeta(self._gui, title)
 
     def _on_dialog_mini_systems(self, event, title, targ):

@@ -346,11 +346,6 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_graph", "_on_apply",
-                                                {"e": None, "refresh": refresh,
-                                                 "json": False})
-            #"""
             sess.log.append_full('_dlg_mini_graph', '_on_apply',
                                  {'e': None, 'refresh': refresh})
 
@@ -363,12 +358,6 @@ class GUIDialogMiniGraph(GUIDialogMini):
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_graph",
-                                                "_on_default",
-                                                {"e": None, "refresh": refresh,
-                                                 "json": False})
-            """
             sess.log.append_full('_dlg_mini_graph', '_on_default',
                                  {'e': None, 'refresh': refresh})
 
@@ -392,10 +381,6 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _set(self, value, log=True):
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_graph", "_set",
-                                                {"value": value, "json": False})
-            """
             i = self._gui._sess_list.index(self._gui._sess_sel)
             value_log = '\nSESS_SEL,'.join(('\n'+value).split('\n%i,' % i))[1:]
             sess.log.append_full('_dlg_mini_graph', '_set',
@@ -466,7 +451,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         del self._gui._sess_item_list[i]
 
         # Run selected JSON
-        self._gui._json_run(json.loads(log))
+        self._gui._log_run(json.loads(log))
 
         self._ctrl_log.SetValue(self._log)
 
@@ -571,11 +556,6 @@ class GUIDialogMiniMeta(GUIDialogMini):
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_meta", "_on_apply",
-                                                {"e": None, "refresh": refresh,
-                                                 "json": False})
-            """
             sess.log.append_full('_dlg_mini_meta', '_on_apply',
                                  {'e': None, 'refresh': refresh})
 
@@ -588,12 +568,6 @@ class GUIDialogMiniMeta(GUIDialogMini):
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_meta",
-                                                "_on_original",
-                                                {"e": None, "refresh": refresh,
-                                                 "json": False})
-            """
             sess.log.append_full('_dlg_mini_meta', '_on_original',
                                  {'e': None, 'refresh': refresh})
 
@@ -616,11 +590,7 @@ class GUIDialogMiniMeta(GUIDialogMini):
     def _set(self, value, log=True):
         if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_dlg_mini_meta", "_set",
-                                                {"value": value, "json": False})
-            """
-            sess.log.append_full('_dlg_mini_graph', '_set',
+            sess.log.append_full('_dlg_mini_meta', '_set',
                                  {'value': value, 'log': False})
         self._ctrl_meta.SetValue(value)
 

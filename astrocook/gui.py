@@ -85,7 +85,7 @@ class GUI(object):
         self._sess_sel.json = '},'.join(split)+'\n'
         #print(self._sess_sel.json)
 
-    def _json_run(self, load):
+    def _log_run(self, load):
         for r in load['set_menu']:
 
             if 'value' in r['params']:
@@ -785,7 +785,7 @@ class GUIPanelSession(wx.Frame):
             log = log.replace('—', '--')
             load = json.loads(log)
 
-            self._gui._json_run(load)
+            self._gui._log_run(load)
             """
             for r in d['set_menu']:
                 if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
