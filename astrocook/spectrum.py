@@ -127,6 +127,9 @@ class Spectrum(Frame):
 
 
     def _node_add(self, nodes, x, y):
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
         sel = np.abs(self.x.to(self._xunit).value-x).argmin()
         row = []
         for c in nodes.t.colnames:
@@ -136,6 +139,9 @@ class Spectrum(Frame):
 
 
     def _node_remove(self, nodes, x):
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
         sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
         nodes.t.remove_rows(sel)
 
@@ -218,6 +224,12 @@ class Spectrum(Frame):
         @return 0
         """
 
+        if isinstance(lines, str):
+            spl = nodes.split('.')
+            lines = getattr(getattr(self._gui, spl[0]), spl[1])
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
 
         x = nodes.x.value
         y = nodes.y.value

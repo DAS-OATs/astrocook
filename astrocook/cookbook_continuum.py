@@ -25,6 +25,23 @@ class CookbookContinuum(object):
         return fwhm
 
 
+    def node_add(self, x, y):
+        self.sess.spec._node_add(self.sess.nodes, x, y)
+
+
+    def node_remove(self, x):
+        self.sess.spec._node_remove(self.sess.nodes, x)
+
+
+    def node_interp(self):
+        self.sess.spec._node_interp(self.sess.nodes, self.sess.lines)
+
+
+
+
+
+
+
 ### Basic
 
     def nodes_clean(self, kappa=5.0):
@@ -237,7 +254,6 @@ class CookbookContinuum(object):
                 l['fwhm'] = fwhm
 
         return 0
-
 
     def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
                    smooth=0):

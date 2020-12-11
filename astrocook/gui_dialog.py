@@ -1,6 +1,6 @@
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def, json_head, json_tail
+from .vars import graph_elem, hwin_def
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -399,7 +399,6 @@ class GUIDialogMiniLog(GUIDialogMini):
         self._gui._dlg_mini_log = self
         self._sel = dc(self._gui._panel_sess._sel)
 
-        #self._log = self._gui._sess_sel.json + json_tail
         self._log = self._gui._sess_sel.log.str
         super(GUIDialogMiniLog, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
@@ -450,7 +449,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         del self._gui._sess_list[i]
         del self._gui._sess_item_list[i]
 
-        # Run selected JSON
+        # Run selected log
         self._gui._log_run(json.loads(log))
 
         self._ctrl_log.SetValue(self._log)
@@ -463,8 +462,6 @@ class GUIDialogMiniLog(GUIDialogMini):
 
 
     def _on_save(self, e=None, path=None):
-        #load = json.loads(self._ctrl_log.GetValue())
-        self._gui._json_init(self._ctrl_log.GetValue())
         if path is None:
             if hasattr(self._gui, '_path'):
                 path=os.path.basename(self._gui._path)
@@ -481,13 +478,12 @@ class GUIDialogMiniLog(GUIDialogMini):
             path = fileDialog.GetPath()
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving log %s..." % path)
-            self._gui._sess_sel.json_save(path)
+            self._gui._sess_sel.log.save(path)
 
 
     def _refresh(self):
         if self._sel != self._gui._panel_sess._sel:
             self._sel = self._gui._panel_sess._sel
-        #self._log = self._gui._sess_sel.json + json_tail
         self._log = self._gui._sess_sel.log.str
         self._ctrl_log.SetValue(self._log)
 

@@ -13,6 +13,10 @@ class CookbookGeneral(object):
         super(CookbookGeneral, self).__init__()
 
 
+    def feature_zap(self, xmin, xmax):
+        self.sess.spec._zap(xmin, xmax)
+
+
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
@@ -67,7 +71,7 @@ class CookbookGeneral(object):
             sel = [self.sess._gui._panel_sess._tab.GetItemCount()-1]
         self.sess._gui._sess_item_sel = sel
         """
-        
+
         #print(self.sess)
         # A deep copy is created, so the original spectrum is preserved
         spec_in = dc(self.sess.spec)

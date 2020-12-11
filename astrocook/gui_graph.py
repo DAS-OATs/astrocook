@@ -107,12 +107,8 @@ class GUIGraphMain(wx.Frame):
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
-        sess.json += self._gui._json_update("_sess_sel.spec", "_node_add",
-                                            {"nodes": sess.nodes,
-                                             "x": x, "y": y})
-        sess.json += self._gui._json_update("_sess_sel.spec", "_nodes_interp",
-                                            {"lines": sess.lines,
-                                             "nodes": sess.nodes})
+        sess.log.append_full('cb', 'node_add', {'x': x, 'y': y})
+        sess.log.append_full('cb', 'nodes_interp', {})
         sess.spec._node_add(sess.nodes, x, y)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
@@ -120,11 +116,8 @@ class GUIGraphMain(wx.Frame):
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
-        sess.json += self._gui._json_update("_sess_sel.spec", "_node_remove",
-                                            {"nodes": sess.nodes, "x": x})
-        sess.json += self._gui._json_update("_sess_sel.spec", "_nodes_interp",
-                                            {"lines": sess.lines,
-                                             "nodes": sess.nodes})
+        sess.log.append_full('cb', 'node_remove', {'x': x})
+        sess.log.append_full('cb', 'nodes_interp', {})
         sess.spec._node_remove(sess.nodes, x)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
@@ -134,19 +127,22 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
-        sess.json += self._gui._json_update("cb", "region_extract",
-                                            {"xmin": xmin, "xmax": xmax})
+        sel_old = self._gui._sess_list.index(sess)
         reg = sess.cb.region_extract(xmin, xmax)
         #self._gui._refresh()
         self._gui._panel_sess._on_add(reg, open=False)
+
+        sess = self._gui._sess_sel
+        sess_list = [self._gui._sess_list[sel_old]]
+        sess.log.merge_full('cb', 'region_extract',
+                             {'xmin': xmin, 'xmax': xmax}, sess_list, sess)
 
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
-        sess.json += self._gui._json_update("_sess_sel.spec", "_zap",
-                                            {"xmin": xmin, "xmax": xmax})
+        sess.log.append_full('cb', 'feature_zap', {'xmin': xmin, 'xmax': xmax})
         sess.spec._zap(xmin, xmax)
         self._gui._refresh()
 

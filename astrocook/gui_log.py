@@ -2,6 +2,8 @@ from .vars import log_seed
 from copy import deepcopy as dc
 import json
 import numpy as np
+import pathlib
+import wx
 
 class GUILog(object):
 
@@ -95,6 +97,16 @@ class GUILog(object):
         self.append(cb, rec, params)
         self.merge(sess_list, sess_sel)
         self.close()
+
+
+    def save(self, path):
+
+        root = path[:-5]
+        stem = pathlib.PurePath(path[:-5]).parts[-1]
+
+        file = open(root+'.json', "w")
+        n = file.write(self.str)
+        file.close()
 
 
     def update(self, sess_list, sess_sel, sess_item_sel, cb, rec, params):
