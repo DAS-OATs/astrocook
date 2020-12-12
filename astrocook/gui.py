@@ -108,8 +108,12 @@ class GUI(object):
                                                   r['params'], sess_list,
                                                   self._sess_sel)
                 if hasattr(cb, '_tab_id'):
-                    self._sess_sel.log.append_full('_tab', r['recipe'],
-                                                   r['params'])
+                    if cb._attr == 'systs':
+                        self._sess_sel.log.append_full('_tab_systs',
+                                                       r['recipe'], r['params'])
+                    else:
+                        self._sess_sel.log.append_full('_tab', r['recipe'],
+                                                       r['params'])
             else:
                 if hasattr(cb, '_tag') and cb._tag=='cb':
                     sess_list = [self._sess_list[sel_old]]
