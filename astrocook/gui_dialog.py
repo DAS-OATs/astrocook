@@ -86,6 +86,7 @@ class GUIDialog(wx.Dialog):
                         if p == pl:
                             self._params[0][p] = pls[pl]
 
+
     def _get_params(self, method):
         keys = inspect.getargspec(method)[0][1:]
         defs = inspect.getargspec(method)[-1]

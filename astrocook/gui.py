@@ -5,7 +5,6 @@ from .gui_log import *
 from .gui_menu import *
 from .gui_table import *
 from .message import *
-from .vars import json_head
 from astropy import table as at
 from collections import OrderedDict
 from copy import deepcopy as dc
@@ -51,7 +50,6 @@ class GUI(object):
         self._menu_tab_id = []
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
-        self._json = json_head
         self._data_lim = None
         self._tag = ""
         GUIGraphMain(self)
@@ -73,17 +71,6 @@ class GUI(object):
                 else:
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
-
-
-    def _json_init(self, orig):
-        #split = orig.split('\n')[:-9]
-        #split.append('')
-        #self._sess_sel.json = '\n'.join(split).replace('"', '"')
-        #print(orig)
-        split = orig.split('},')[:-1]
-        split.append('')
-        self._sess_sel.json = '},'.join(split)+'\n'
-        #print(self._sess_sel.json)
 
     def _log_run(self, load):
         for r in load['set_menu']:
@@ -107,7 +94,9 @@ class GUI(object):
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
+            #print(r['recipe'])
             if out is None or out==0:
+                #print(cb.__dict__)
                 if hasattr(cb, '_tag') and cb._tag=='cb':
                     self._sess_sel.log.append_full(cb._tag, r['recipe'],
                                                    r['params'])
@@ -118,6 +107,9 @@ class GUI(object):
                     self._sess_sel.log.merge_full(cb._tag, r['recipe'],
                                                   r['params'], sess_list,
                                                   self._sess_sel)
+                if hasattr(cb, '_tab_id'):
+                    self._sess_sel.log.append_full('_tab', r['recipe'],
+                                                   r['params'])
             else:
                 if hasattr(cb, '_tag') and cb._tag=='cb':
                     sess_list = [self._sess_list[sel_old]]
@@ -135,20 +127,6 @@ class GUI(object):
 
             sel_old = self._sess_list.index(self._sess_sel)
 
-
-
-    def _json_update(self, cb, rec, params):
-        if not isinstance(params, list):
-            params = [params]
-        json_string = '    {\n'\
-                      '      "cookbook": "%s",\n'\
-                      '      "recipe": "%s",\n'\
-                      '      "params": {\n' % (cb, rec)
-
-        json_string += json.dumps(params, indent=4)[8:-7]
-        json_string += '      }\n'\
-                       '    },\n'
-        return json_string
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
                  autosort=True, _xlim=None):
@@ -265,8 +243,10 @@ class GUI(object):
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
+                    #print(getattr(self._sess_sel, s))
+                    #print(getattr(self, '_tab_'+s))
                     if hasattr(getattr(self._sess_sel, s), '_t'):
-                        getattr(self, '_tab_'+s)._on_view(
+                        getattr(self, '_tab_'+s)._view(
                             event=None, from_scratch=False, autosort=autosort)
                     else:
                         getattr(self, '_tab_'+s).Destroy()
@@ -420,7 +400,6 @@ class GUIPanelSession(wx.Frame):
         # Similarly, _sess_sel contains the last selected session; _sess_items
         # contains all selected sessions
         self._gui._sess_sel = self._gui._sess_list[self._sel]
-        self._gui._sess_sel._json_sel = [self._sel]
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
             self._gui._sess_sel.open()
@@ -429,7 +408,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
         #print(self._gui._sess_sel._graph_elem)
         #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
-        self._gui._refresh(autolim=False)
+        #self._gui._refresh(autolim=False)
+        self._gui._refresh(init_tab=False, autolim=False)
 
         # Enable import from depending on how many sessions are present
         edit = self._menu._edit
@@ -446,16 +426,6 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        """
-        self._gui._json += '    {\n'\
-                     '      "cookbook": "_panel_sess",\n'\
-                     '      "recipe": "json_load",\n'\
-                     '      "params": {\n'\
-                     '        "path": "%s"\n'\
-                     '      }\n'\
-                     '    },\n' % path
-        """
-
         name = path.split('/')[-1].split('.')[0]
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
@@ -467,17 +437,6 @@ class GUIPanelSession(wx.Frame):
             self._gui._panel_sess._on_add(sess, open=True)
 
         sess.log.append_full('_panel_sess', '_on_open', {'path': path})
-
-        self._gui._sess_sel.json += '    {\n'\
-                                    '      "cookbook": "_panel_sess",\n'\
-                                    '      "recipe": "%s",\n'\
-                                    '      "params": {\n'\
-                                    '        "path": "%s"\n'\
-                                    '      }\n'\
-                                    '    },\n' % ("_on_open", path)
-                                    #'    },\n' % (self._open_rec,
-                                    #              self._open_path)
-
 
 
     def _entry_select(self):
@@ -525,11 +484,6 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel.append(self._sel)
-        #print(self._gui._sess_sel)
-        #print(self._gui._sess_item_sel)
-        #print(self._gui._sess_sel._json_sel)
-        #print(self._gui._sess_sel.log.str)
-        #print(self._gui._sess_sel._thread)
         self._entry_select()
 
 
@@ -767,15 +721,6 @@ class GUIPanelSession(wx.Frame):
         @return 0
         """
 
-        """
-        self._gui._json += '    {\n'\
-                     '      "cookbook": "_panel_sess",\n'\
-                     '      "recipe": "_on_open",\n'\
-                     '      "params": {\n'\
-                     '        "path": "%s"\n'\
-                     '      }\n'\
-                     '    },\n' % path
-        """
         logging.info("I'm loading JSON file %s..." % path)
 
         with open(path) as json_file:
@@ -786,35 +731,6 @@ class GUIPanelSession(wx.Frame):
             load = json.loads(log)
 
             self._gui._log_run(load)
-            """
-            for r in d['set_menu']:
-                if r['cookbook'][:8]=='cookbook' or r['cookbook']=='cb':
-                    cb = self._gui._sess_sel.cb
-                elif r['cookbook'] == '':
-                    cb = self._gui
-                else:
-                    rs = r['cookbook'].split('.')
-                    cb = getattr(self._gui, rs[0])
-                    for s in rs[1:]:
-                        cb = getattr(cb, s)
-                out = getattr(cb, r['recipe'])(**r['params'])
-                if out is not None and out != 0:
-                    self._on_add(out, open=False)
-                self._refresh()
-                #print(self._gui._sess_sel.json)
-            """
-
-        with open(path) as json_file:
-            self._gui._json_init(json_file.read())
-
-            """
-            json_orig = json_file.read()
-            #json_split1 = json_orig.split('[\n')[-1]
-            json_split2 = json_orig.split('\n')[:-9]
-            json_split2.append('')
-            self._gui._sess_sel.json = '\n'.join(json_split2)
-            """
-        #print(self._gui._json)
 
 
     def struct_modify(self, col_A='0,spec,x', col_B='0,spec,y',

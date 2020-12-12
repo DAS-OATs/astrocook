@@ -56,15 +56,11 @@ class GUITable(wx.Frame):
         self._fill(attr)
 
 
-    def _data_remove(self, row, attr=None, json=True):
+    def _data_remove(self, row, attr=None, log=True):
         sess = self._gui._sess_sel
         if attr is None: attr = self._attr
 
         if self._attr == 'systs':
-            #sess.json += self._gui._json_update("cb", "_systs_remove",
-            #                                    {"rem": [row]})
-            #sess.json += self._gui._json_update("cb", "_mods_recreate", {})
-
             sess.cb._systs_remove([row])
             sess.cb._mods_recreate()
         else:
@@ -72,7 +68,7 @@ class GUITable(wx.Frame):
             tab._data.t.remove_row(row)
 
 
-    def _data_sort(self, label, reverse=False, attr=None, json=True):
+    def _data_sort(self, label, reverse=False, attr=None, log=True):
         if attr is None: attr = self._attr
         tab = getattr(self._gui, '_tab_'+attr)
 
@@ -188,12 +184,18 @@ class GUITable(wx.Frame):
         label = labels[col]
         value = self._tab.GetCellValue(row, col)
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab", "_data_init",
                                             {"attr": self._attr})
         sess.json += self._gui._json_update("_tab", "_data_edit",
                                             {"row": row, "label": label,
                                              "value": value,
                                              "attr": self._attr})
+        """
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_edit',
+                             {'row': row, 'label': label, 'value': value,
+                              'attr': self._attr})
         self._data_edit(row, label, value, self._attr)
 
 
@@ -228,17 +230,31 @@ class GUITable(wx.Frame):
 
         sess = self._gui._sess_sel
         if self._attr == 'systs':
+            """
             sess.json += self._gui._json_update("_tab", "_data_init",
                                                 {"attr": self._attr})
             sess.json += self._gui._json_update("cb", "_systs_remove",
                                                 {"rem": [row]})
             sess.json += self._gui._json_update("cb", "_mods_recreate", {})
+            """
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+            sess.log.append_full('cb', '_systs_remove', {'rem': [row]})
+            sess.log.append_full('cb', '_mods_recreate', {})
         else:
+            """
             sess.json += self._gui._json_update("_tab", "_data_init",
                                                 {"attr": self._attr})
             sess.json += self._gui._json_update("_tab", "_data_remove",
                                                 {"row": row, "attr": self._attr})
+            """
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+            sess.log.append_full('_tab', '_data_remove',
+                                 {'row': row, 'attr': self._attr})
+        """
         sess.json += self._gui._json_update("cb", "_spec_update", {})
+        """
+        sess.log.append_full('cb', '_spec_update', {})
+
         self._data_remove(row, self._attr)
         sess.cb._spec_update()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
@@ -252,11 +268,16 @@ class GUITable(wx.Frame):
 
         label = labels[self._gui._col_sel]
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab", "_data_init",
                                             {"attr": self._attr})
         sess.json += self._gui._json_update("_tab", "_data_sort",
                                             {"label": label,
                                              "attr": self._attr})
+        """
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_sort',
+                             {'label': label, 'attr': self._attr})
         self._data_sort(label=label, attr=self._attr)
         self._gui._refresh(autosort=False)
 
@@ -265,19 +286,29 @@ class GUITable(wx.Frame):
         labels = self._labels_extract()
         label = labels[self._gui._col_sel]
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab", "_data_init",
                                             {"attr": self._attr})
         sess.json += self._gui._json_update("_tab", "_data_sort",
                                             {"label": label,
                                              "attr": self._attr,
                                              "reverse": True})
+        """
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_sort',
+            {'label': label, 'attr': self._attr, 'reverse': True})
         self._data_sort(label=label, attr=self._attr, reverse=True)
         self._gui._refresh(autosort=False)
 
     def _on_view(self, event=None, from_scratch=True, autosort=False):
         sess = self._gui._sess_sel
-        sess.json += self._gui._json_update("_tab", "_data_init",
-                                            {"attr": self._attr})
+        #print('on_view')
+        #sess.json += self._gui._json_update("_tab", "_data_init",
+        #                                    {"attr": self._attr})
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        self._view(event, from_scratch, autosort)
+
+    def _view(self, event=None, from_scratch=True, autosort=False):
         self._data_init(from_scratch, autosort)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
@@ -315,6 +346,7 @@ class GUITableLineList(GUITable):
 
 
     def _on_view(self, event, **kwargs):
+        print('on_view_lines')
         super(GUITableLineList, self)._on_view(event, **kwargs)
 
 
@@ -380,6 +412,8 @@ class GUITableSpectrum(GUITable):
 
 
     def _on_view(self, event, **kwargs):
+        print('on_view_spec')
+
         super(GUITableSpectrum, self)._on_view(event, **kwargs)
 
 
@@ -418,20 +452,32 @@ class GUITableSystList(GUITable):
                 self._data_cells_sel(row, col)
 
 
-    def _data_cells_sel(self, row, col, json=True):
+    def _data_cells_sel(self, row, col, log=True):
+        """
         if json:
             sess = self._gui._sess_sel
             sess.json += self._gui._json_update("_tab_systs", "_data_cells_sel",
                                                 {"row": row, "col": col,
                                                  "json": False})
+        """
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_tab_systs', '_data_cells_sel',
+                                 {'row': row, 'col': col, 'log': False})
         self._cells_sel.append((row,col))
 
 
-    def _data_cells_desel(self, json=True):
+    def _data_cells_desel(self, log=True):
+        """
         if json:
             sess = self._gui._sess_sel
             sess.json += self._gui._json_update("_tab_systs", "_data_cells_desel",
                                                 {"json": False})
+        """
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_tab_systs', '_data_cells_desel',
+                                 {'log': False})
         self._cells_sel = []
 
 
@@ -620,9 +666,14 @@ class GUITableSystList(GUITable):
         label = labels[col]
         value = float(self._tab.GetCellValue(row, col))
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab_systs", "_data_edit",
                                             {"row": row, "label": label,
                                              "value": value})
+        """
+        sess.log.append_full('_tab_systs', '_data_edit',
+                             {'row': row, 'label': label, 'value': value})
+
         self._data_edit(row, label, value)
 
 
@@ -635,10 +686,12 @@ class GUITableSystList(GUITable):
         self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
         """
-        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        #print(row._index)
         #params = [{'series': row['series'], 'z': "%3.7f" % float(row['z']),
         #           'logN': row['logN'], 'b': row['b'], 'refit_n': 0}]
-        dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit')
+        dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
+                              params_last=[{'num': row._index}])
 
         self._gui._refresh(init_cursor=True)
 
@@ -648,9 +701,14 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab_systs",
                                             "_data_freeze_par",
                                             {"row": row, "col": col})
+        """
+        sess.log.append_full('_tab_systs', '_data_freeze_par',
+                             {'row': row, 'col': col})
+
         self._data_freeze_par(row, col)
 
 
@@ -658,9 +716,13 @@ class GUITableSystList(GUITable):
         if event is not None:
             col = self._gui._tab_popup._event.GetCol()
             sess = self._gui._sess_sel
+            """
             sess.json += self._gui._json_update("_tab_systs",
                                                 "_data_freeze_par_all",
                                                 {"col": col})
+            """
+            sess.log.append_full('_tab_systs', '_data_freeze_par_all',
+                                 {'col': col})
             self._data_freeze_par_all(col)
 
 
@@ -706,12 +768,17 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab_systs", "_data_link_par",
                                             {"row": row, "col": col})
+        """
+        sess.log.append_full('_tab_systs', '_data_link_par',
+                             {'row': row, 'col': col})
         self._data_link_par(row, col)
 
 
     def _on_view(self, event, **kwargs):
+
         super(GUITableSystList, self)._on_view(event, **kwargs)
         #self._open['systs'] = True
         #sess = self._gui._sess_sel

@@ -95,7 +95,7 @@ class CookbookGeneral(object):
         # Create a new session
         from .session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned',
-                      spec=spec_out, json=self.sess.json)
+                      spec=spec_out)
         return new
 
 
@@ -124,8 +124,7 @@ class CookbookGeneral(object):
             xmax = temp
             logging.warning(msg_param_swap)
 
-        kwargs = {'path': self.sess.path, 'name': self.sess.name,
-                  'json': self.sess.json}
+        kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
                 kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
