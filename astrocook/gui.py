@@ -257,6 +257,12 @@ class GUI(object):
                         [float(self._col_tab.GetCellValue(i, self._col_sel)) \
                          for i in range(self._col_tab.GetNumberRows())]
 
+        if hasattr(self, '_tab_systs'):
+            try:
+                self._tab_systs._text_colours()
+            except:
+                pass
+
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
 

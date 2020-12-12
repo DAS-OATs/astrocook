@@ -34,8 +34,7 @@ class GUILog(object):
     def _trim(self, menu):
         menu_new = []
         for m in menu:
-            if m['cookbook']!='' or m['recipe']!='_refresh' or m['params']!={}\
-                or m!=menu[-1]:
+            if m['cookbook']!='' or m['recipe']!='_refresh' or m!=menu[-1]:
                 menu_new.append(m)
         return menu_new
 
@@ -59,7 +58,7 @@ class GUILog(object):
 
 
     def close(self):
-        self.append('', '_refresh', {})
+        self.append('', '_refresh', {'autosort': False})
 
 
     def merge(self, sess_list, sess_sel):
