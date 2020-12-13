@@ -196,6 +196,7 @@ class GUITable(wx.Frame):
         sess.log.append_full('_tab', '_data_edit',
                              {'row': row, 'label': label, 'value': value,
                               'attr': self._attr})
+        self._gui._dlg_mini_log._refresh()
         self._data_edit(row, label, value, self._attr)
 
 
@@ -300,12 +301,14 @@ class GUITable(wx.Frame):
         self._data_sort(label=label, attr=self._attr, reverse=True)
         self._gui._refresh(autosort=False)
 
+
     def _on_view(self, event=None, from_scratch=True, autosort=False):
         sess = self._gui._sess_sel
         #print('on_view')
         #sess.json += self._gui._json_update("_tab", "_data_init",
         #                                    {"attr": self._attr})
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        self._gui._dlg_mini_log._refresh()
         self._view(event, from_scratch, autosort)
 
     def _view(self, event=None, from_scratch=True, autosort=False):
@@ -464,6 +467,7 @@ class GUITableSystList(GUITable):
             sess = self._gui._sess_sel
             sess.log.append_full('_tab_systs', '_data_cells_sel',
                                  {'row': row, 'col': col, 'log': False})
+            self._gui._dlg_mini_log._refresh()
         self._cells_sel.append((row,col))
 
 
@@ -478,10 +482,11 @@ class GUITableSystList(GUITable):
             sess = self._gui._sess_sel
             sess.log.append_full('_tab_systs', '_data_cells_desel',
                                  {'log': False})
+            self._gui._dlg_mini_log._refresh()
         self._cells_sel = []
 
 
-    def _data_detail(self, row_z, row_series, row_id, span=30, log=True):
+    def _data_detail(self, row_z, row_series, row_id, span=30):
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
@@ -513,13 +518,6 @@ class GUITableSystList(GUITable):
                 else:
                     self._tab.SetCellBackgroundColour(j, i, None)
         self._tab.ForceRefresh()
-
-        if log:
-            sess = self._gui._sess_sel
-            sess.log.append_full('_tab_systs', '_data_detail',
-                                 {'row_z': row_z, 'row_series': row_series,
-                                  'row_id': row_id, 'span': span, 'log': False})
-
 
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
@@ -673,7 +671,12 @@ class GUITableSystList(GUITable):
         row_z = row['z']
         row_series = row['series']
         row_id = int(row['id'])
-        self._data_detail(row_z, row_series, row_id, span, log)
+        sess = self._gui._sess_sel
+        sess.log.append_full('_tab_systs', '_data_detail',
+                             {'row_z': row_z, 'row_series': row_series,
+                              'row_id': row_id, 'span': span})
+        self._gui._dlg_mini_log._refresh()
+        self._data_detail(row_z, row_series, row_id, span)
 
 
     def _on_edit(self, event):
@@ -689,7 +692,7 @@ class GUITableSystList(GUITable):
         """
         sess.log.append_full('_tab_systs', '_data_edit',
                              {'row': row, 'label': label, 'value': value})
-
+        self._gui._dlg_mini_log._refresh()
         self._data_edit(row, label, value)
 
 
@@ -724,7 +727,7 @@ class GUITableSystList(GUITable):
         """
         sess.log.append_full('_tab_systs', '_data_freeze_par',
                              {'row': row, 'col': col})
-
+        self._gui._dlg_mini_log._refresh()
         self._data_freeze_par(row, col)
 
 
@@ -739,6 +742,7 @@ class GUITableSystList(GUITable):
             """
             sess.log.append_full('_tab_systs', '_data_freeze_par_all',
                                  {'col': col})
+            self._gui._dlg_mini_log._refresh()
             self._data_freeze_par_all(col)
 
 
@@ -790,6 +794,7 @@ class GUITableSystList(GUITable):
         """
         sess.log.append_full('_tab_systs', '_data_link_par',
                              {'row': row, 'col': col})
+        self._gui._dlg_mini_log._refresh()
         self._data_link_par(row, col)
 
 

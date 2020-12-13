@@ -343,12 +343,12 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
-        if refresh:
-            self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_graph', '_on_apply',
                                  {'e': None, 'refresh': refresh})
+        if refresh:
+            self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_default(self, e=None, refresh=True, log=True):
@@ -356,11 +356,11 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_graph', '_on_default',
                                  {'e': None, 'refresh': refresh})
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
 
 
     def _on_cancel(self, e=None):
@@ -550,11 +550,11 @@ class GUIDialogMiniMeta(GUIDialogMini):
             v = m.split(': ')[1].split(' / ')
             self._gui._sess_sel.spec._meta[k] = v[0]
             self._gui._sess_sel.spec._meta.comments[k] = v[1]
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_meta', '_on_apply',
                                  {'e': None, 'refresh': refresh})
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_original(self, e=None, refresh=True, log=True):
@@ -562,11 +562,11 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._set(self._meta)
         self._gui._sess_sel.spec._meta = dc(self._meta_backup)
         #print(meta_parse(self._gui._sess_sel.spec.meta))
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_meta', '_on_original',
                                  {'e': None, 'refresh': refresh})
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
 
