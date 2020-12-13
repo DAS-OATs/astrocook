@@ -178,7 +178,7 @@ class GUIGraphMain(wx.Frame):
         self._gui._refresh(init_cursor=True)
 
 
-    def _on_close(self, event):
+    def _on_close(self, event=None):
         self._closed = True
         self.Destroy()
         del self._gui._graph_det

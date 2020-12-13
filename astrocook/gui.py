@@ -73,6 +73,9 @@ class GUI(object):
                     self._panel_sess._on_open(os.path.realpath(p))
 
     def _log_run(self, load):
+        if hasattr(self, '_graph_det'):
+            self._graph_det._on_close()
+            
         for r in load['set_menu']:
 
             if 'value' in r['params']:

@@ -481,6 +481,46 @@ class GUITableSystList(GUITable):
         self._cells_sel = []
 
 
+    def _data_detail(self, row_z, row_series, row_id, span=30, log=True):
+        if not hasattr(self._gui, '_graph_det'):
+            from .gui_graph import GUIGraphDetail
+            GUIGraphDetail(self._gui, init_ax=False)
+        else:
+            self._gui._graph_det._graph._fig.clear()
+
+        z = row_z #row['z']
+        series = trans_parse(row_series) #row['series'])
+        self._gui._graph_main._z_sel = z
+        self._gui._graph_main._series_sel = series
+        self._gui._graph_main._refresh(self._gui._sess_sel)
+        self._gui._graph_det._update(series, z, hwin_def)
+        if not hasattr(self._gui, '_dlg_mini_systems') \
+            or self._gui._dlg_mini_systems == None:
+            #GUIDialogMiniSystems(self._gui, "System controls", series=row['series'], z=row['z'])
+            GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
+        else:
+            #self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
+            self._gui._dlg_mini_systems._refresh(row_series, row_z)
+
+        # Color background of systems in the same group
+        #mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
+        mods_sel = np.where([row_id in i \
+                             for i in self._gui._sess_sel.systs._mods_t['id']])
+        for j, r in enumerate(self._data.t):
+            for i in range(len(self._data.t.colnames)):
+                if r['id'] in np.array(self._gui._sess_sel.systs._mods_t['id'][mods_sel][0]):
+                    self._tab.SetCellBackgroundColour(j, i, 'cyan')
+                else:
+                    self._tab.SetCellBackgroundColour(j, i, None)
+        self._tab.ForceRefresh()
+
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_tab_systs', '_data_detail',
+                                 {'row_z': row_z, 'row_series': row_series,
+                                  'row_id': row_id, 'span': span, 'log': False})
+
+
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
         if update_mod:
@@ -627,37 +667,13 @@ class GUITableSystList(GUITable):
         #self._open['systs'] = False
 
 
-    def _on_detail(self, event, span=30):
+    def _on_detail(self, event, span=30, log=True):
         if event.GetRow() == -1: return
-        if not hasattr(self._gui, '_graph_det'):
-            from .gui_graph import GUIGraphDetail
-            GUIGraphDetail(self._gui, init_ax=False)
-        else:
-            self._gui._graph_det._graph._fig.clear()
-
         row = self._data.t[event.GetRow()]
-        z = row['z']
-        series = trans_parse(row['series'])
-        self._gui._graph_main._z_sel = z
-        self._gui._graph_main._series_sel = series
-        self._gui._graph_main._refresh(self._gui._sess_sel)
-        self._gui._graph_det._update(series, z, hwin_def)
-        if not hasattr(self._gui, '_dlg_mini_systems') \
-            or self._gui._dlg_mini_systems == None:
-            GUIDialogMiniSystems(self._gui, "System controls", series=row['series'], z=row['z'])
-        else:
-            self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
-
-        # Color background of systems in the same group
-        mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
-                             for i in self._gui._sess_sel.systs._mods_t['id']])
-        for j, r in enumerate(self._data.t):
-            for i in range(len(self._data.t.colnames)):
-                if r['id'] in np.array(self._gui._sess_sel.systs._mods_t['id'][mods_sel][0]):
-                    self._tab.SetCellBackgroundColour(j, i, 'cyan')
-                else:
-                    self._tab.SetCellBackgroundColour(j, i, None)
-        self._tab.ForceRefresh()
+        row_z = row['z']
+        row_series = row['series']
+        row_id = int(row['id'])
+        self._data_detail(row_z, row_series, row_id, span, log)
 
 
     def _on_edit(self, event):
