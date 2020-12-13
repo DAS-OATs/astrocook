@@ -75,7 +75,7 @@ class GUI(object):
     def _log_run(self, load):
         if hasattr(self, '_graph_det'):
             self._graph_det._on_close()
-            
+
         for r in load['set_menu']:
 
             if 'value' in r['params']:
@@ -163,11 +163,9 @@ class GUI(object):
                 pass
             """
 
-        if hasattr(self, '_dlg_mini_log') \
-            and self._dlg_mini_log._shown:
+        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
             self._dlg_mini_log._refresh()
-        if hasattr(self, '_dlg_mini_meta') \
-            and self._dlg_mini_meta._shown:
+        if hasattr(self, '_dlg_mini_meta') and self._dlg_mini_meta._shown:
             self._dlg_mini_meta._refresh()
         """
         else:
