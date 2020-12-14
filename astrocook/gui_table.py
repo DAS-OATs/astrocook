@@ -724,20 +724,27 @@ class GUITableSystList(GUITable):
 
 
     def _on_fit(self, event):
-        """
         row = self._gui._tab_popup._event.GetRow()
         sess = self._gui._sess_sel
+        """
         sess.json += self._gui._json_update("_tab_systs", "_data_fit",
                                             {"row": row})
+        """
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                    'from_scratch': False})
+        sess.log.append_full('_tab_systs', '_data_fit', {'row': row})
         self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
-        """
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_fit_dialog(self, event):
         row = self._data.t[self._gui._tab_popup._event.GetRow()]
         #print(row._index)
         #params = [{'series': row['series'], 'z': "%3.7f" % float(row['z']),
         #           'logN': row['logN'], 'b': row['b'], 'refit_n': 0}]
         dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
-                              params_last=[{'num': row._index}])
+                              params_last=[{'num': row._index+1}])
 
         self._gui._refresh(init_cursor=True)
 
@@ -810,8 +817,8 @@ class GUITableSystList(GUITable):
         if col == -1:
             self.PopupMenu(GUITablePopup(
                 self._gui, self, event,
-                ['Fit', 'Remove', 'sep', 'CCF', 'Maximize CCF', 'sep', 'Improve all'],
-                ['fit', 'remove', None, 'ccf', 'ccf_max', None, 'improve']),
+                ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF', 'Maximize CCF', 'sep', 'Improve all'],
+                ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max', None, 'improve']),
                 event.GetPosition())
 
     def _on_link_par(self, event):
