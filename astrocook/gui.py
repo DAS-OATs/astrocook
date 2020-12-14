@@ -72,6 +72,16 @@ class GUI(object):
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
 
+    def _log_rerun(self, log):
+        i = self._sess_list.index(self._sess_sel)
+        self._panel_sess._tab.DeleteItem(i)
+        del self._sess_list[i]
+        del self._sess_item_list[i]
+
+        # Run selected log
+        self._log_run(json.loads(log), skip_tab=True)
+
+
     def _log_run(self, load, skip_tab=False):
 
 #        for obj in ['spec', 'lines', 'systs']:
@@ -415,6 +425,7 @@ class GUIPanelSession(wx.Frame):
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
         self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_deselect)
+        self._tab.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_right_click)
         self._box = wx.BoxSizer(wx.VERTICAL)
         self._box.Add(self._tab, 1, wx.EXPAND)
         panel.SetSizer(self._box)
@@ -530,6 +541,21 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_item_sel = []
         self._entry_select()
 
+
+    def _on_rerun(self, event):
+        from .gui_dialog import GUIDialogMiniLog
+        self._gui._log_rerun(self._gui._sess_sel.log.str)
+
+
+    def _on_right_click(self, event):
+        from .gui_table import GUITablePopup
+        self.PopupMenu(GUITablePopup(self._gui, self, event,
+                                     ['Re-run', 'Save'],
+                                     ['rerun', 'save']))
+
+
+    def _on_save(self, event):
+        self._gui._menu_file._on_save(event)
 
     def _on_select(self, event):
         self._sel = event.GetIndex()

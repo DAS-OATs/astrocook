@@ -444,7 +444,8 @@ class GUIDialogMiniLog(GUIDialogMini):
         log = log.replace('“', '"')
         log = log.replace('”', '"')
         log = log.replace('—', '--')
-        log_bck = dc(log)
+        #log_bck = dc(log)
+        """
         i = self._gui._sess_list.index(self._gui._sess_sel)
         self._gui._panel_sess._tab.DeleteItem(i)
         del self._gui._sess_list[i]
@@ -452,7 +453,8 @@ class GUIDialogMiniLog(GUIDialogMini):
 
         # Run selected log
         self._gui._log_run(json.loads(log), skip_tab=True)
-
+        """
+        self._gui._log_rerun(log)
         self._ctrl_log.SetValue(self._log)
 
 

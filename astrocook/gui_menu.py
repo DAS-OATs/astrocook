@@ -466,6 +466,7 @@ class GUIMenuFile(GUIMenu):
         super(GUIMenuFile, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
+        self._gui._menu_file = self
         self._start_id = start_id
 
         # Add items to File menu here
