@@ -86,6 +86,7 @@ class GUIDialog(wx.Dialog):
                         if p == pl:
                             self._params[0][p] = pls[pl]
 
+
     def _get_params(self, method):
         keys = inspect.getargspec(method)[0][1:]
         defs = inspect.getargspec(method)[-1]
@@ -111,22 +112,56 @@ class GUIDialog(wx.Dialog):
         self._update_params()
         for a, p_l in zip(self._attr, self._params):
 
-            self._gui._sess_sel.json += self._gui._json_update("cb", a,
-                                                               self._params)
-
             m = getattr(self._obj, a)
             logging.info("I'm launching %s..." % a)
+
+            if '_sel' in p_l:
+                p_l['_sel'] = self._gui._sess_item_sel
+            """
+            try:
+                p_l['_sel'] = self._gui._sess_item_sel
+            except:
+                logging.info('No selected session.')
+            """
+
             start = dt.datetime.now()
             out = m(**p_l)
             end = dt.datetime.now()
+
             logging.info("I completed %s in %3.3f seconds!" \
                          % (a, (end-start).total_seconds()))
+
+            sel_old = self._gui._sess_list.index(self._gui._sess_sel)
+
             if out is not None:
                 if out is 0:
-                    self._gui._refresh()
+                    #self._gui._refresh()
+                    pass
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
                 self.Close()
+
+            if out is None or out==0:
+                if '_sel' in p_l:
+                    sess_list = [self._gui._sess_list[s] for s in p_l['_sel']]
+                    self._gui._sess_sel.log.merge_full(self._obj._tag, a, p_l,
+                                                       sess_list,
+                                                       self._gui._sess_sel)
+                else:
+                    self._gui._sess_sel.log.append_full(self._obj._tag, a, p_l)
+            else:
+                if '_sel' in p_l:
+                    sess_list = [self._gui._sess_list[s] for s in p_l['_sel']]
+                    self._gui._sess_sel.log.merge_full(self._obj._tag, a, p_l,
+                                                       sess_list,
+                                                       self._gui._sess_sel)
+                else:
+                    sess_list = [self._gui._sess_list[sel_old]]
+                    self._gui._sess_sel.log.merge_full(self._obj._tag, a, p_l,
+                                                       sess_list,
+                                                       self._gui._sess_sel)
+
+            self._gui._refresh()
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):
@@ -237,6 +272,9 @@ class GUIDialogMini(wx.Dialog):
         #self._series = series
         #self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
+        self._init()
+
+    def _init(self):
         self._panel = wx.Panel(self)
         self._bottom = wx.BoxSizer(wx.VERTICAL)
         self._core = wx.BoxSizer(wx.VERTICAL)
@@ -246,6 +284,7 @@ class GUIDialogMini(wx.Dialog):
         self.Centre()
         self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
+
 
 class GUIDialogMiniGraph(GUIDialogMini):
     def __init__(self,
@@ -262,7 +301,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._elem = elem_expand(elem, self._sel)
         super(GUIDialogMiniGraph, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
-        self._shown = False
+        self._shown = True
 
 
     def _box_ctrl(self):
@@ -296,21 +335,31 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e=None, refresh=True):
+    def _on_apply(self, e=None, refresh=True, log=True):
         self._elem = self._ctrl_elem.GetValue()
+        self._set(self._elem)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
-        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_graph', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
+        if refresh:
+            self._gui._refresh(init_cursor=True, init_tab=False)
 
 
-    def _on_default(self, e=None, refresh=True):
+    def _on_default(self, e=None, refresh=True, log=True):
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_graph', '_on_default',
+                                 {'e': None, 'refresh': refresh})
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False, autolim=False)
 
 
@@ -327,7 +376,119 @@ class GUIDialogMiniGraph(GUIDialogMini):
         self._elem = self._gui._sess_sel._graph_elem
 
         self._ctrl_elem.SetValue(self._elem)
-        self._on_apply(refresh=False)
+        #self._on_apply(refresh=False)
+
+
+    def _set(self, value, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            i = self._gui._sess_list.index(self._gui._sess_sel)
+            value_log = '\nSESS_SEL,'.join(('\n'+value).split('\n%i,' % i))[1:]
+            sess.log.append_full('_dlg_mini_graph', '_set',
+                                 {'value': value_log, 'log': False})
+
+        self._elem = value
+        self._ctrl_elem.SetValue(value)
+
+
+class GUIDialogMiniLog(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._title = title
+        self._gui._dlg_mini_log = self
+        self._sel = dc(self._gui._panel_sess._sel)
+
+        self._log = self._gui._sess_sel.log.str
+        super(GUIDialogMiniLog, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = False
+
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        #print(self._log)
+        self._ctrl_log = wx.TextCtrl(self._panel, -1, value=self._log,
+                                     size=(400, 300),
+                                     style = wx.TE_MULTILINE)#|wx.TE_READONLY)
+        fgs.AddMany([(self._ctrl_log, 1, wx.EXPAND)])#, (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        rerun_button = wx.Button(self, label='Re-run')
+        rerun_button.Bind(wx.EVT_BUTTON, self._on_rerun)
+        rerun_button.SetDefault()
+        buttons.Add(rerun_button, 0, wx.RIGHT, border=5)
+        save_button = wx.Button(self, label="Save to file")
+        save_button.Bind(wx.EVT_BUTTON, self._on_save)
+        buttons.Add(save_button, 0, wx.RIGHT, border=5)
+        close_button = wx.Button(self, label='Close')
+        close_button.Bind(wx.EVT_BUTTON, self._on_cancel)
+        buttons.Add(close_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+
+    def _on_apply(self, e=None, refresh=True):
+        pass
+
+
+    def _on_rerun(self, e=None, refresh=True):
+        log = self._ctrl_log.GetValue()
+        log = log.replace('“', '"')
+        log = log.replace('”', '"')
+        log = log.replace('—', '--')
+        #log_bck = dc(log)
+        """
+        i = self._gui._sess_list.index(self._gui._sess_sel)
+        self._gui._panel_sess._tab.DeleteItem(i)
+        del self._gui._sess_list[i]
+        del self._gui._sess_item_list[i]
+
+        # Run selected log
+        self._gui._log_run(json.loads(log), skip_tab=True)
+        """
+        self._gui._log_rerun(log)
+        self._ctrl_log.SetValue(self._log)
+
+
+
+    def _on_cancel(self, e=None):
+        self._shown = False
+        self.Destroy()
+
+
+    def _on_save(self, e=None, path=None):
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save log", path, name,
+                           wildcard="JSON file (*.json)|*.json",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            logging.info("I'm saving log %s..." % path)
+            self._gui._sess_sel.log.save(path)
+
+
+    def _refresh(self):
+        if self._sel != self._gui._panel_sess._sel:
+            self._sel = self._gui._panel_sess._sel
+        self._log = self._gui._sess_sel.log.str
+        self._ctrl_log.SetValue(self._log)
 
 
 class GUIDialogMiniMeta(GUIDialogMini):
@@ -380,8 +541,9 @@ class GUIDialogMiniMeta(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e=None, refresh=True):
+    def _on_apply(self, e=None, refresh=True, log=True):
         self._meta = self._ctrl_meta.GetValue()
+        self._set(self._meta)
         self._gui._sess_sel.spec._meta = dc(self._meta_backup)
         #self._gui._meta_list[self._sel] = self._meta
         for m in self._meta.split('\n'):
@@ -390,14 +552,24 @@ class GUIDialogMiniMeta(GUIDialogMini):
             v = m.split(': ')[1].split(' / ')
             self._gui._sess_sel.spec._meta[k] = v[0]
             self._gui._sess_sel.spec._meta.comments[k] = v[1]
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_meta', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
-    def _on_original(self, e=None, refresh=True):
+    def _on_original(self, e=None, refresh=True, log=True):
         self._meta = meta_parse(self._meta_backup)
+        self._set(self._meta)
         self._gui._sess_sel.spec._meta = dc(self._meta_backup)
         #print(meta_parse(self._gui._sess_sel.spec.meta))
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_meta', '_on_original',
+                                 {'e': None, 'refresh': refresh})
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
 
 
     def _on_cancel(self, e=None):
@@ -411,8 +583,15 @@ class GUIDialogMiniMeta(GUIDialogMini):
             #self._elem = elem_expand(graph_elem, self._sel)
             self._meta = meta_parse(self._gui._sess_sel.spec.meta)
         self._ctrl_meta.SetValue(self._meta)
-        self._on_apply(refresh=False)
+        #self._on_apply(refresh=False)
 
+
+    def _set(self, value, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_meta', '_set',
+                                 {'value': value, 'log': False})
+        self._ctrl_meta.SetValue(value)
 
 
 class GUIDialogMiniSystems(GUIDialogMini):
@@ -456,7 +635,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
         self._cursor_button = wx.Button(self, label="Show cursor")
         self._cursor_button.Bind(wx.EVT_BUTTON, self._on_show)
-        buttons.Add(self._cursor_button, border=5)
+        buttons.Add(self._cursor_button, 0, wx.RIGHT, border=5)
         stick_button = wx.Button(self, label="Stick cursor")
         stick_button.Bind(wx.EVT_BUTTON, self._on_stick)
         buttons.Add(stick_button)
@@ -466,7 +645,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
-    def _on_apply(self, e):
+    def _on_apply(self, e, refresh=True):
         series = self._ctrl_series.GetValue()
         z = self._ctrl_z.GetValue()
         hwin = self._ctrl_hwin.GetValue()
@@ -479,7 +658,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
             series = trans_parse(self._gui._sess_sel._series_sel)
             self._gui._graph_det._graph._fig.clear()
             self._gui._graph_det._update(series, float(z), float(hwin))
-        self._gui._refresh(init_cursor=True, init_tab=False)
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
     def _on_show(self, e):

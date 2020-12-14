@@ -15,7 +15,7 @@ nav_order: 1
 {:toc}
 ---
 
-*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, VIS and NIR arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
+*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, UVB and VIS arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
 
 We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in Astrocook:
 
@@ -23,13 +23,25 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 
 ## Rescale the spectra
 
-The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. If you select both spectra by holding `ctrl` while clicking on the main window and zoom into the plot, you will see that in the VIS/NIR superposition region the flux is mismatched:
+<table>
+  <tbody>
+    <tr>
+      <td><strong>This procedure can be executed automatically with <code>$ python ac_gui.py rescale.json</code> in the <code>test/</code> directory.</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose `View > Edit graph elements`, then modify the text in the box as follows (for more details on how to edit the graph elements, see [Visualization](other.md#visualization)):
+
+<img src="img/merging_graph_elements.png" width="515">
+
+Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS superposition region the flux is slightly mismatched:
 
 ![Mismatch](img/merging_mismatch.png)
 
 To rescale the NIR spectra to the VIS one, select it on the main window and choose `Edit > Scale y axis...`. In the dialog window, insert a suitable multiplicative factor and click on `Run`:
 
-![Scale y axis](img/merging_scale_y_axis.png)
+<img src="img/merging_scale_y_axis.png" width="422">
 
 Selecting both spectra and zooming again, you can check that they are now matching:
 
@@ -37,7 +49,7 @@ Selecting both spectra and zooming again, you can check that they are now matchi
 
 You may need to rescale a spectrum several times to find a good matching.
 
-⚠️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with inverse factor.**
+❗️ **Please note that the spectra are rescaled in place, without starting a new session. To undo a rescaling, you need to rescale the spectrum again with an inverse factor.**
 
 ## Equalize the spectra
 
@@ -47,7 +59,7 @@ Two spectra can also be rescaled automatically. In the main window, select the t
 
 On `Run`, the recipe will compute the median fluxes of the two spectra in the reference region, and use their ratio to equalize them. By default, the spectrum of the last-selected region is rescaled to the other one.
 
-⚠️ **Equalization can be performed only on two sessions at a time.**
+❗️ **Equalization can be performed only on two sessions at a time.**
 
 
 ## Combine the spectra
@@ -66,7 +78,7 @@ The spectrum of this new session contains all the entries of the combined spectr
 
 The same method can be used to combine more than two spectra.
 
-⚠️ **When sessions are combined, the data structures associated with the spectrum (line lists and system lists) are merged.**
+❗️ **When sessions are combined, the data structures associated with the spectrum (line lists and system lists) are merged.**
 
 ## Rebin the combined spectrum
 
@@ -78,8 +90,8 @@ In this case, the spectrum will be rebinned into a grid with a fixed step of 10 
 
 ![Rebinned](img/merging_rebinned.png)
 
-⚠️ **Rebinning may take a long time if the grid is fine and/or the wavelength range is wide.**
+❗️ **Rebinning may take a long time if the grid is fine and/or the wavelength range is wide.**
 
 You can rebin any spectrum in any session using the same procedure.
 
-⚠️ **Please remember that the rebinning procedure interferes with the statistics of your data, as it introduces correlation among adjacent pixels. If accurate flux statistics is required, please avoid rebinning your spectra when it is not absolutely necessary.**
+❗️ **Please remember that the rebinning procedure interferes with the statistics of your data, as it introduces correlation among adjacent pixels. If accurate flux statistics is required, please avoid rebinning your spectra when it is not absolutely necessary.**

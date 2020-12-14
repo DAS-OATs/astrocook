@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Tables
+title: Graphs
 parent: Managing data
-nav_order: 3
+nav_order: 2
 ---
 
-# Tables
+# Graphs
 {: .no_toc}
 
 ## Table of contents
@@ -15,6 +15,6 @@ nav_order: 3
 {:toc}
 ---
 
-## Browse tables 🚧
+## Handle graphs 🚧
 
-## Interact with the data 🚧
+## Interact with the plots 🚧

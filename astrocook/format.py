@@ -138,11 +138,13 @@ class Format(object):
             dy = data['ERR_FLUX'][0]
         except:
             dy = data['ERR'][0]
+
+        """
         try:
             cont = data['CONTINUUM'][0]
         except:
             cont = []
-
+        """
         xunit = au.Unit(hdr1['TUNIT1']) #au.Angstrom
         yunit = au.Unit(hdr1['TUNIT2']) #au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
@@ -154,7 +156,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
-        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
         for i,c in enumerate(data.colnames):
             if c not in ['WAVE', 'FLUX', 'ERR_FLUX', 'ERR', 'CONTINUUM']:
@@ -336,8 +338,6 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            zero
-        except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -368,9 +368,17 @@ class Format(object):
             except:
                 meta['object'] = ''
             """
-            return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-        #except:
-        #    return None
+            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+            for i,c in enumerate(data.colnames):
+                if c not in [x_col_names[x_col], y_col_names[y_col],
+                             dy_col_names[dy_col]]:
+                    spec._t[c] = data[c]
+                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+            return spec
+        except:
+            return None
+
 
 
     def mage_spectrum(self, hdul):

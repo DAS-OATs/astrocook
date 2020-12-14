@@ -13,6 +13,10 @@ class CookbookGeneral(object):
         super(CookbookGeneral, self).__init__()
 
 
+    def feature_zap(self, xmin, xmax):
+        self.sess.spec._zap(xmin, xmax)
+
+
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
@@ -33,7 +37,8 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s, norm=True):
+    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
+              norm=True):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given velocity step. A new session is
         created with the rebinned spectrum. Other objects from the old session
@@ -41,8 +46,8 @@ class CookbookGeneral(object):
         @param xstart Start wavelength (nm; None to take the minimum wavelength)
         @param xend End wavelength (nm; None to take the maximum wavelength)
         @param dx Step in x
-        @param dx Step in x
         @param xunit Unit of wavelength or velocity
+        @param norm Return normalized spectrum, if continuum exists
         @return 0
         """
 
@@ -55,7 +60,19 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return None
 
+        """
+        sel = self.sess._gui._sess_item_sel
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+        if sel == [] or len(sel)>1:
+            sel = [self.sess._gui._panel_sess._tab.GetItemCount()-1]
+        self.sess._gui._sess_item_sel = sel
+        """
 
+        #print(self.sess)
         # A deep copy is created, so the original spectrum is preserved
         spec_in = dc(self.sess.spec)
 
@@ -78,13 +95,17 @@ class CookbookGeneral(object):
         # Create a new session
         from .session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned',
-                      spec=spec_out, json=self.sess.json)
+                      spec=spec_out)
         return new
 
 
     def region_extract(self, xmin, xmax):
         """ @brief Extract region
-        @details Extract a spectral region as a new frame.
+        @details The region between a minimum and a maximum wavelength is
+        extracted from the data structures in the current session (these include
+        the selected spectral range with all the lines and the absorption
+        systems that fall within). A new session with the extracted data
+        structures is created.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return Spectral region
@@ -103,8 +124,7 @@ class CookbookGeneral(object):
             xmax = temp
             logging.warning(msg_param_swap)
 
-        kwargs = {'path': self.sess.path, 'name': self.sess.name,
-                  'json': self.sess.json}
+        kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
                 kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
@@ -246,8 +266,12 @@ class CookbookGeneral(object):
 
     def x_convert(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert x axis
-        @details Convert the x axis to wavelength or velocity units.
-        @param zem Emission redshift, to use as a 0-point for velocities
+        @details Convert the x axis to wavelength or velocity units. The x axis
+        can be converted to any unit of wavelength or velocity (default: nm and
+        km/s). When converting to and from velocity units the zero point is set
+        at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength
+        of the Lyman-alpha transition).
+        @param zem Emission redshift
         @param xunit Unit of wavelength or velocity
         @return 0
         """
@@ -269,7 +293,10 @@ class CookbookGeneral(object):
 
     def y_convert(self, yunit=au.electron/au.nm):
         """ @brief Convert y axis
-        @details Convert the y axis to flux density units.
+        @details Convert the y axis to different units. The y axis can be
+        expressed in different units depending on how it was calibrated
+        (default: erg/(cm^2 s nm)). It can be converted to any unit of the same
+        physical quantity.
         @param yunit Unit of flux density
         @return 0
         """

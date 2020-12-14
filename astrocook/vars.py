@@ -85,7 +85,7 @@ forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
 
 x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
 y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
@@ -256,3 +256,6 @@ gamma_d_old = {'Ly_a': 6.265e+08,
               'CaII_3969': 1.409e+08,
               'neb': 5e8,
               'unknown': 6.265e+08}
+
+
+log_seed = {'set_menu': []}
