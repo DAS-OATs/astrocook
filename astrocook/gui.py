@@ -72,13 +72,19 @@ class GUI(object):
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
 
-    def _log_run(self, load):
+    def _log_run(self, load, skip_tab=False):
+
+#        for obj in ['spec', 'lines', 'systs']:
+#            if hasattr(self, '_tab_'+obj) and hasattr(getattr(self, '_tab_'+obj), '_data'):
+#                tab = getattr(self, '_tab_'+obj)
+#                tab._on_close(None)
+
         if hasattr(self, '_graph_det'):
             self._graph_det._on_close()
 
         for r in load['set_menu']:
 
-            if 'value' in r['params']:
+            if r['cookbook']=='_dlg_mini_meta' and 'value' in r['params']:
                 i = self._sess_list.index(self._sess_sel)
                 r['params']['value'] = \
                     ('%i,'%i).join(r['params']['value'].split('SESS_SEL,'))
@@ -93,7 +99,33 @@ class GUI(object):
                 for s in rs[1:]:
                     cb = getattr(cb, s)
 
-            out = getattr(cb, r['recipe'])(**r['params'])
+            skip = False
+            #if hasattr(cb, '_menu_view'): print(getattr(self, '_tab_'+r['params']['obj']+'_shown'))
+            if hasattr(cb, '_menu_view'):
+                try:
+                    if getattr(self, '_tab_'+r['params']['obj']+'_shown') \
+                        and r['params']['check']==True:
+                        skip = True
+                except:
+                    pass
+            #print(r['recipe'], skip)
+
+            """
+            if hasattr(cb, '_tab_id'):
+                try:
+                    attr = r['params']['attr']
+                except:
+                    attr = cb._attr
+                tab = '_tab_'+attr
+                if cb._attr == 'systs':
+                    tab_tag = '_tab_systs'
+                else:
+                    tab_tag = '_tab'
+
+                if r['recipe']=='_data_init' and getattr(self, tab)._shown:
+                    skip = True
+            """
+            if not skip: out = getattr(cb, r['recipe'])(**r['params'])
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
@@ -111,12 +143,20 @@ class GUI(object):
                                                   r['params'], sess_list,
                                                   self._sess_sel)
                 if hasattr(cb, '_tab_id'):
+                    try:
+                        attr = r['params']['attr']
+                    except:
+                        attr = cb._attr
+                    tab = '_tab_'+attr
                     if cb._attr == 'systs':
-                        self._sess_sel.log.append_full('_tab_systs',
-                                                       r['recipe'], r['params'])
+                        tab_tag = '_tab_systs'
                     else:
-                        self._sess_sel.log.append_full('_tab', r['recipe'],
-                                                       r['params'])
+                        tab_tag = '_tab'
+                    self._sess_sel.log.append_full(tab_tag, r['recipe'],
+                                                   r['params'])
+                if cb!=self and hasattr(cb, '_menu_view'):
+                    self._sess_sel.log.append_full('_menu_view', r['recipe'],
+                                                   r['params'])
             else:
                 if hasattr(cb, '_tag') and cb._tag=='cb':
                     sess_list = [self._sess_list[sel_old]]

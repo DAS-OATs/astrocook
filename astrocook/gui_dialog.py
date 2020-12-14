@@ -451,7 +451,7 @@ class GUIDialogMiniLog(GUIDialogMini):
         del self._gui._sess_item_list[i]
 
         # Run selected log
-        self._gui._log_run(json.loads(log))
+        self._gui._log_run(json.loads(log), skip_tab=True)
 
         self._ctrl_log.SetValue(self._log)
 

@@ -32,6 +32,7 @@ class GUITable(wx.Frame):
         #self._open = {'spec': False, 'lines': False, 'systs': False}
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
+        self._shown = False
 
 
     def _data_edit(self, row, label, value, attr=None):
@@ -151,7 +152,9 @@ class GUITable(wx.Frame):
 
 
     def _on_close(self, event):
+        self._shown = False
         self.Destroy()
+        #self.Close()
 
 
     def _on_detail(self, event):
@@ -192,7 +195,8 @@ class GUITable(wx.Frame):
                                              "value": value,
                                              "attr": self._attr})
         """
-        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                    'from_scratch': False})
         sess.log.append_full('_tab', '_data_edit',
                              {'row': row, 'label': label, 'value': value,
                               'attr': self._attr})
@@ -239,7 +243,8 @@ class GUITable(wx.Frame):
                                                 {"rem": [row]})
             sess.json += self._gui._json_update("cb", "_mods_recreate", {})
             """
-            sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
             sess.log.append_full('cb', '_systs_remove', {'rem': [row]})
             sess.log.append_full('cb', '_mods_recreate', {})
         else:
@@ -249,7 +254,8 @@ class GUITable(wx.Frame):
             sess.json += self._gui._json_update("_tab", "_data_remove",
                                                 {"row": row, "attr": self._attr})
             """
-            sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
             sess.log.append_full('_tab', '_data_remove',
                                  {'row': row, 'attr': self._attr})
         """
@@ -277,7 +283,8 @@ class GUITable(wx.Frame):
                                             {"label": label,
                                              "attr": self._attr})
         """
-        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                    'from_scratch': False})
         sess.log.append_full('_tab', '_data_sort',
                              {'label': label, 'attr': self._attr})
         self._data_sort(label=label, attr=self._attr)
@@ -296,7 +303,8 @@ class GUITable(wx.Frame):
                                              "attr": self._attr,
                                              "reverse": True})
         """
-        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                    'from_scratch': False})
         sess.log.append_full('_tab', '_data_sort',
             {'label': label, 'attr': self._attr, 'reverse': True})
         self._data_sort(label=label, attr=self._attr, reverse=True)
@@ -304,13 +312,13 @@ class GUITable(wx.Frame):
 
 
     def _on_view(self, event=None, from_scratch=True, autosort=False):
-        sess = self._gui._sess_sel
+        #sess = self._gui._sess_sel
         #print('on_view')
         #sess.json += self._gui._json_update("_tab", "_data_init",
         #                                    {"attr": self._attr})
-        sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
-            self._gui._dlg_mini_log._refresh()
+        #sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
+        #if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        #    self._gui._dlg_mini_log._refresh()
         self._view(event, from_scratch, autosort)
 
     def _view(self, event=None, from_scratch=True, autosort=False):
@@ -326,6 +334,8 @@ class GUITable(wx.Frame):
         self.Centre()
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
         self.Show()
+        self._shown = True
+        #print(self, self._shown)
 
 
 class GUITableLineList(GUITable):
@@ -346,12 +356,11 @@ class GUITableLineList(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableLineList, self)._on_close(event, **kwargs)
-        del self._gui._tab_lines._data
+        #del self._gui._tab_lines._data
         self._menu.FindItemById(self._tab_id[1]).Check(False)
 
 
     def _on_view(self, event, **kwargs):
-        print('on_view_lines')
         super(GUITableLineList, self)._on_view(event, **kwargs)
 
 
@@ -412,13 +421,11 @@ class GUITableSpectrum(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableSpectrum, self)._on_close(event, **kwargs)
-        del self._gui._tab_spec._data
+        #del self._gui._tab_spec._data
         self._menu.FindItemById(self._tab_id[0]).Check(False)
 
 
     def _on_view(self, event, **kwargs):
-        print('on_view_spec')
-
         super(GUITableSpectrum, self)._on_view(event, **kwargs)
 
 
@@ -467,6 +474,8 @@ class GUITableSystList(GUITable):
         """
         if log:
             sess = self._gui._sess_sel
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
             sess.log.append_full('_tab_systs', '_data_cells_sel',
                                  {'row': row, 'col': col, 'log': False})
             if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
@@ -483,6 +492,8 @@ class GUITableSystList(GUITable):
         """
         if log:
             sess = self._gui._sess_sel
+            sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
             sess.log.append_full('_tab_systs', '_data_cells_desel',
                                  {'log': False})
             if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
@@ -664,7 +675,10 @@ class GUITableSystList(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableSystList, self)._on_close(event, **kwargs)
-        del self._gui._tab_systs._data
+        #print(self)
+        #self.Destroy()
+        #self.Close()
+        #del self._gui._tab_systs._data
         self._menu.FindItemById(self._tab_id[2]).Check(False)
         #self._open['systs'] = False
 
@@ -695,6 +709,8 @@ class GUITableSystList(GUITable):
                                             {"row": row, "label": label,
                                              "value": value})
         """
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                    'from_scratch': False})
         sess.log.append_full('_tab_systs', '_data_edit',
                              {'row': row, 'label': label, 'value': value})
         if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:

@@ -746,11 +746,27 @@ class GUIMenuView(GUIMenu):
                                                 {"event": None, "json": False})
         self._gui._refresh()
 
-    def _on_tab(self, event, obj):
+    def _on_tab(self, event, obj, check=None, log=True):
         method = '_tab_'+obj
         index = ['spec', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
-        if item.IsChecked():
+
+        if check is not None:
+            view = check
+            item.Check(view)
+        else:
+            view = item.IsChecked()
+
+        sess = self._gui._sess_sel
+        if view:
+            if log:
+                sess.log.append_full('_menu_view', '_on_tab',
+                    {'event': None, 'obj': obj, 'check': True, 'log': False})
+            setattr(self._gui, '_tab_'+obj+'_shown', True)
             getattr(self._gui, method)._on_view(event)
         else:
+            if log:
+                sess.log.append_full('_menu_view', '_on_tab',
+                    {'event': None, 'obj': obj, 'check': False, 'log': False})
+            setattr(self._gui, '_tab_'+obj+'_shown', False)
             getattr(self._gui, method)._on_close(event)
