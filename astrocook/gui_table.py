@@ -200,7 +200,8 @@ class GUITable(wx.Frame):
         sess.log.append_full('_tab', '_data_edit',
                              {'row': row, 'label': label, 'value': value,
                               'attr': self._attr})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_edit(row, label, value, self._attr)
 
@@ -478,7 +479,8 @@ class GUITableSystList(GUITable):
                                                         'from_scratch': False})
             sess.log.append_full('_tab_systs', '_data_cells_sel',
                                  {'row': row, 'col': col, 'log': False})
-            if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+            if hasattr(self._gui, '_dlg_mini_log') \
+                and self._gui._dlg_mini_log._shown:
                 self._gui._dlg_mini_log._refresh()
         self._cells_sel.append((row,col))
 
@@ -496,7 +498,8 @@ class GUITableSystList(GUITable):
                                                         'from_scratch': False})
             sess.log.append_full('_tab_systs', '_data_cells_desel',
                                  {'log': False})
-            if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+            if hasattr(self._gui, '_dlg_mini_log') \
+                and self._gui._dlg_mini_log._shown:
                 self._gui._dlg_mini_log._refresh()
         self._cells_sel = []
 
@@ -693,7 +696,8 @@ class GUITableSystList(GUITable):
         sess.log.append_full('_tab_systs', '_data_detail',
                              {'row_z': row_z, 'row_series': row_series,
                               'row_id': row_id, 'span': span})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_detail(row_z, row_series, row_id, span)
 
@@ -713,7 +717,8 @@ class GUITableSystList(GUITable):
                                                     'from_scratch': False})
         sess.log.append_full('_tab_systs', '_data_edit',
                              {'row': row, 'label': label, 'value': value})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_edit(row, label, value)
 
@@ -749,7 +754,8 @@ class GUITableSystList(GUITable):
         """
         sess.log.append_full('_tab_systs', '_data_freeze_par',
                              {'row': row, 'col': col})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_freeze_par(row, col)
 
@@ -765,7 +771,8 @@ class GUITableSystList(GUITable):
             """
             sess.log.append_full('_tab_systs', '_data_freeze_par_all',
                                  {'col': col})
-            if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+            if hasattr(self._gui, '_dlg_mini_log') \
+                and self._gui._dlg_mini_log._shown:
                 self._gui._dlg_mini_log._refresh()
             self._data_freeze_par_all(col)
 
@@ -818,7 +825,8 @@ class GUITableSystList(GUITable):
         """
         sess.log.append_full('_tab_systs', '_data_link_par',
                              {'row': row, 'col': col})
-        if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_link_par(row, col)
 

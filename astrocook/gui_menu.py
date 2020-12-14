@@ -97,14 +97,8 @@ class GUIMenu(object):
         self._params_last = dlg._params
 
     def _on_dialog_mini_graph(self, event, title, targ, log=True):
-        if json:
+        if log:
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_menu", "_on_dialog_mini_graph",
-                                                {"event": None,
-                                                 "title": title,
-                                                 "targ": targ, "json": False})
-            """
             sess.log.append_full('_menu', '_on_dialog_mini_graph',
                                  {'event': None, 'title': title, 'targ': targ})
         if hasattr(self._gui, '_dlg_mini_graph'):
@@ -117,7 +111,7 @@ class GUIMenu(object):
 
 
     def _on_dialog_mini_meta(self, event, title, targ, log=True):
-        if json:
+        if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_meta',
                                  {'event': None, 'title': title, 'targ': targ})
@@ -722,28 +716,28 @@ class GUIMenuView(GUIMenu):
         self._gui._graph_main._legend = ~self._gui._graph_main._legend
         self._gui._refresh()
 
-    def _on_logx(self, event, json=False):
+    def _on_logx(self, event, log=False):
         self._gui._graph_main._logx = ~self._gui._graph_main._logx
-        if json:
+        if log:
             sess = self._gui._sess_sel
-            sess.json += self._gui._json_update("_menu_view", "_on_logx",
-                                                {"event": None, "json": False})
+            sess.log.append_full('_menu_view', '_on_logx',
+                                 {'event': None, 'log': False})
         self._gui._refresh()
 
-    def _on_logy(self, event, json=False):
+    def _on_logy(self, event, log=False):
         self._gui._graph_main._logy = ~self._gui._graph_main._logy
-        if json:
+        if log:
             sess = self._gui._sess_sel
-            sess.json += self._gui._json_update("_menu_view", "_on_logy",
-                                                {"event": None, "json": False})
+            sess.log.append_full('_menu_view', '_on_logy',
+                                 {'event': None, 'log': False})
         self._gui._refresh()
 
-    def _on_norm(self, event, json=False):
+    def _on_norm(self, event, log=True):
         self._gui._graph_main._norm = ~self._gui._graph_main._norm
-        if json:
+        if log:
             sess = self._gui._sess_sel
-            sess.json += self._gui._json_update("_menu_view", "_on_norm",
-                                                {"event": None, "json": False})
+            sess.log.append_full('_menu_view', '_on_norm',
+                                 {'event': None, 'log': False})
         self._gui._refresh()
 
     def _on_tab(self, event, obj, check=None, log=True):
@@ -770,3 +764,6 @@ class GUIMenuView(GUIMenu):
                     {'event': None, 'obj': obj, 'check': False, 'log': False})
             setattr(self._gui, '_tab_'+obj+'_shown', False)
             getattr(self._gui, method)._on_close(event)
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
+            self._gui._dlg_mini_log._refresh()
