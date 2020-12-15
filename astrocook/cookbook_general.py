@@ -110,7 +110,6 @@ class CookbookGeneral(object):
         @param xmax Maximum wavelength (nm)
         @return Spectral region
         """
-
         try:
             xmin = float(xmin) * au.nm
             xmax = float(xmax) * au.nm
