@@ -34,6 +34,11 @@ on the main display of your Mac.
 ```
 **If this happens, use `pythonw ac_gui.py` instead.**
 
+❗️ **You are encouraged to add an `astrocook` command to your shell configuration. On macOS, you can type:**
+```
+echo "alias astrocook='pythonw /your/path/to/astrocook-1.0.0-rc.1/ac_gui.py'" >> ~/.bash_profile
+```
+
 To load data, you can choose `File > Open...` on the menu bar (`ctrl+O` or `⌘+O`, depending on the system) and browse through your file system. Alternatively, you can specify one or more paths directly at launch:
 ```
 $ python ac_gui.py /path/to/1st_spec.fits /path/to/2nd_spec.fits
@@ -66,7 +71,7 @@ Astrocook provides you with (broadly speaking) three kinds of recipes for the an
 
 Typically, when you choose a recipe from the menu bar a dialog window appears. The dialog window displays a brief description of the recipe and allows you to edit the parameters.
 
-![Dialog window](img/dialog_window.png)
+<img src="img/dialog_window.png" width="596">
 
 ❗️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
 
@@ -90,10 +95,3 @@ $ tar -zxvf /path/to/archive.acs
 You can quit Astrocook with `File > Quit...` on the menu bar (`ctrl+Q` or `⌘+Q`, depending on the system) or by closing the main window.
 
 ❗️ **When you quit Astrocook, all unsaved sessions will be lost.**
-
-
-## Troubleshooting
-
-Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to [report the bug](mailto:guido.cupani@inaf.it).
-
-❗️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**

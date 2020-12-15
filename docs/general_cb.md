@@ -15,12 +15,56 @@ nav_order: 1
 {:toc}
 ---
 
+## Equalize sessions
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUIPanelSession.equalize</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>xmin</code>: Minimum wavelength (nm)</li>
+          <li><code>xmax</code>: Maximum wavelength (nm)</li>
+          <li><code>_sel</code>: Selected sessions</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Equalize the flux level of one session to another one.** The last-selected session is equalized to the first-selected one. The equalization factor is the ratio of the median flux within the specified wavelength interval. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the two input sessions.
+
+## Combine sessions
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUIPanelSession.combine</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>name</code>: Name of the output session</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Combine two or more sessions.** A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the input sessions.
+
 ## Import structure
 
 <table>
   <tbody>
     <tr>
-      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
       <td style="vertical-align:top"><code>GUIPanelSession.struct_import</code></td>
     </tr>
     <tr>
@@ -35,14 +79,14 @@ nav_order: 1
   </tbody>
 </table>
 
-**Import a data structure from a session into the current one.** The structure to be imported is described by a string with the session number and the structure tag (`spec`, `lines`, `systs`) separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
+**Import a data structure from a session into the current one.** The structure to be imported is described by a string with the session number and the structure tag (`spec`, `lines`, `systs`), separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
 
 ## Modify structures
 
 <table>
   <tbody>
     <tr>
-      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
       <td style="vertical-align:top"><code>GUIPanelSession.struct_modify</code></td>
     </tr>
     <tr>
@@ -66,7 +110,7 @@ nav_order: 1
 <table>
   <tbody>
     <tr>
-      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
       <td style="vertical-align:top"><code>CookbookGeneral.region_extract</code></td>
     </tr>
     <tr>
@@ -81,14 +125,14 @@ nav_order: 1
   </tbody>
 </table>
 
-**Extract a spectral region.** The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines and the absorption systems that fall within). A new session with the extracted data structures is created.
+**Extract a spectral region.** The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines, and the absorption systems that fall within). A new session with the extracted data structures is created.
 
 ## Convert x axis
 
 <table>
   <tbody>
     <tr>
-      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
       <td style="vertical-align:top"><code>CookbookGeneral.x_convert</code></td>
     </tr>
     <tr>
@@ -103,14 +147,14 @@ nav_order: 1
   </tbody>
 </table>
 
-**Convert the x axis to wavelength or velocity units.** The x axis can be converted to any unit of wavelength or velocity (default: nm and km/s). When converting to and from velocity units the zero point is set at (1+`zem`)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition).
+**Convert the x axis to wavelength or velocity units.** The x axis can be converted to any unit of wavelength or velocity (default: nm and km/s). The conversion applies to both the spectrum and the line list. When converting to and from velocity units, the zero point is set at (1+`zem`)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition).
 
 ## Convert y axis
 
 <table>
   <tbody>
     <tr>
-      <td style="vertical-align:top"><strong>Method</strong></td>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
       <td style="vertical-align:top"><code>CookbookGeneral.y_convert</code></td>
     </tr>
     <tr>
@@ -124,13 +168,57 @@ nav_order: 1
   </tbody>
 </table>
 
-**Convert the y axis to different units.** The y axis can be expressed in different units depending on how it was calibrated (default: erg/(cm^2 s nm)). It can be converted to any unit of the same physical quantity.
+**Convert the y axis to different units.** The y axis can be expressed in different units depending on how it was calibrated (default: erg/(cm^2 s nm)). It can be converted to any unit of the same physical quantity. The conversion applies to both the spectrum and the line list.
 
-## Scale y axis 🚧
+## Scale y axis
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.y_scale</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>fact</code>: Multiplicative factor</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Scale the y axis by a constant factor.** The spectrum and the line list are rescaled in place, without starting a new session.
+
+## Scale y axis to median 🚧
 
 ## Shift to and from frame 🚧
 
-## Rebin spectrum 🚧
+## Rebin spectrum
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.rebin</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>xstart</code>: Start wavelength (nm)</li>
+          <li><code>xend</code>: End wavelength (nm)</li>
+          <li><code>dx</code>: Step in x</li>
+          <li><code>xunit</code>: Unit of wavelength or velocity</li>
+          <li><code>norm</code>: Return normalized spectrum, if continuum exists</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Rebin a spectrum with a given step.** The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are `None`, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.
 
 ## Convolve with gaussian  🚧
 

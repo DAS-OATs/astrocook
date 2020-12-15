@@ -77,7 +77,6 @@ class GUIDialog(wx.Dialog):
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
-
     def _get_last(self, method):
         if self._params_last is not None:
             for pls in self._params_last:
@@ -196,13 +195,18 @@ class GUIDialogMethod(GUIDialog):
     def _box_descr(self):
 
         # Description
-        sb = wx.StaticBox(self._panel, label="Description")
-        sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
-        st = wx.StaticText(sb, 1, label='\n'.join(self._details))
+        #sb = wx.StaticBox(self._panel, label="Description")
+        #sbs = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        sbs = wx.StaticBoxSizer(wx.VERTICAL, self._panel, label="Description")
+
+        st = wx.StaticText(sbs.GetStaticBox(), 1, label='')
+        st.SetLabel('\n'.join(self._details))
         st.Wrap(400)
         sbs.Add(st, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.EXPAND, border=8)
+        #st.SetLabel(''.join(self._details))
         self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
         self._panel.SetSizer(self._core)
+
 
     def _box_params(self):
         # Parameters
@@ -224,6 +228,7 @@ class GUIDialogMethod(GUIDialog):
             fgs.AddMany(fgs_add)
             sbs.Add(fgs, flag=wx.ALL|wx.EXPAND, border=8)
             self._core.Add(sbs, flag=wx.ALL|wx.EXPAND, border=5)
+        self._core.SetMinSize(width=450, height=100)
         self._panel.SetSizer(self._core)
 
 

@@ -681,7 +681,7 @@ class GUIPanelSession(wx.Frame):
 
     def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
-        @details When sessions are combined, a new session is created, with a
+        @details Combine two or more sessions. A new session is created, with a
         new spectrum containing all entries from the spectra of the combined
         sessions. Other objects from the sessions (line lists, etc.) are
         discarded.
@@ -742,10 +742,10 @@ class GUIPanelSession(wx.Frame):
 
     def equalize(self, xmin, xmax, _sel=''):
         """ @brief Equalize two sessions
-        @details Equalize the flux level of one session to another session. The
+        @details Equalize the flux level of one session to another one. The
         last-selected session is equalized to the first-selected one. The
-        equalization factor is the ratio of the median flux within a wavelength
-        interval.
+        equalization factor is the ratio of the median flux within the
+        specified wavelength interval.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return 0
@@ -863,8 +863,8 @@ class GUIPanelSession(wx.Frame):
     def struct_import(self, struct='0,systs', mode='replace'):
         """ @brief Import a data structure from a session into the current one
         @details The structure to be imported is described by a string with the
-        session number and the structure tag (spec, lines, systs) separated by a
-        comma (e.g. 0,spec, meaning "spectrum from session 0"). The imported
+        session number and the structure tag (spec, lines, systs), separated by
+        a comma (e.g. 0,spec, meaning "spectrum from session 0"). The imported
         structure is either replaced or appended to the corresponding one in the
         current session.
         @param struct Structure

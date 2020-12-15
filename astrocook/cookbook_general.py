@@ -40,11 +40,15 @@ class CookbookGeneral(object):
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
               norm=True):
         """ @brief Rebin spectrum
-        @details Rebin a spectrum with a given velocity step. A new session is
-        created with the rebinned spectrum. Other objects from the old session
-        (line lists, etc.) are discarded.
-        @param xstart Start wavelength (nm; None to take the minimum wavelength)
-        @param xend End wavelength (nm; None to take the maximum wavelength)
+        @details Rebin a spectrum with a given step. The step can be expressed
+        in any unit of wavelength or velocity. Start and end wavelength may be
+        specified, e.g. to align the rebinned spectrum to other spectra. If
+        start or end wavelength are None, rebinning is performed from the first
+        to the last wavelength of the input spectrum. A new session is created
+        with the rebinned spectrum. Other objects from the old session (line
+        lists, etc.) are discarded.
+        @param xstart Start wavelength (nm)
+        @param xend End wavelength (nm)
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
         @param norm Return normalized spectrum, if continuum exists
@@ -268,8 +272,9 @@ class CookbookGeneral(object):
         """ @brief Convert x axis
         @details Convert the x axis to wavelength or velocity units. The x axis
         can be converted to any unit of wavelength or velocity (default: nm and
-        km/s). When converting to and from velocity units the zero point is set
-        at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength
+        km/s). The conversion applies to both the spectrum and the line list.
+        When converting to and from velocity units, the zero point is set at
+        (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength
         of the Lyman-alpha transition).
         @param zem Emission redshift
         @param xunit Unit of wavelength or velocity
@@ -296,7 +301,8 @@ class CookbookGeneral(object):
         @details Convert the y axis to different units. The y axis can be
         expressed in different units depending on how it was calibrated
         (default: erg/(cm^2 s nm)). It can be converted to any unit of the same
-        physical quantity.
+        physical quantity. The conversion applies to both the spectrum and the
+        line list.
         @param yunit Unit of flux density
         @return 0
         """
@@ -313,7 +319,8 @@ class CookbookGeneral(object):
 
     def y_scale(self, fact=1.0):
         """ @brief Scale y axis
-        @details Scale the y axis by a constant factor.
+        @details Scale the y axis by a constant factor. The spectrum and the
+        line list are rescaled in place, without starting a new session.
         @param fact Multiplicative factor
         @return 0
         """
