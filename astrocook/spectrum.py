@@ -127,6 +127,9 @@ class Spectrum(Frame):
 
 
     def _node_add(self, nodes, x, y):
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
         sel = np.abs(self.x.to(self._xunit).value-x).argmin()
         row = []
         for c in nodes.t.colnames:
@@ -136,6 +139,9 @@ class Spectrum(Frame):
 
 
     def _node_remove(self, nodes, x):
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
         sel = np.abs(nodes.x.to(self._xunit).value-x).argmin()
         nodes.t.remove_rows(sel)
 
@@ -218,13 +224,24 @@ class Spectrum(Frame):
         @return 0
         """
 
+        if isinstance(lines, str):
+            spl = nodes.split('.')
+            lines = getattr(getattr(self._gui, spl[0]), spl[1])
+        if isinstance(nodes, str):
+            spl = nodes.split('.')
+            nodes = getattr(getattr(self._gui, spl[0]), spl[1])
 
         x = nodes.x.value
         y = nodes.y.value
         dy = nodes.dy.value
-        isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
-                              np.isnan(dy))
-        spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
+        #isnan = np.logical_or(np.logical_or(np.isnan(x),np.isnan(y)),
+        #                      np.isnan(dy))
+        isnan = np.logical_or(np.isnan(x),np.isnan(y))
+        dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+        if np.sum(np.isnan(dy)) > 0:
+            spl = uspline(x[~isnan], y[~isnan], s=smooth)
+        else:
+            spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
         cont = spl(self.x)*self._yunit
         logging.info("I'm using interpolation as continuum.")
         if 'cont' not in self._t.colnames:
@@ -236,7 +253,6 @@ class Spectrum(Frame):
 
 
     def _peaks_find(self, col='conv', kind='min', kappa=3.0, **kwargs):
-
         y = self._safe(self._t[col])
         min_idx = np.hstack(argrelmin(y, **kwargs))
         max_idx = np.hstack(argrelmax(y, **kwargs))
@@ -257,11 +273,16 @@ class Spectrum(Frame):
         #for m,M,l,r in zip(ext.xmin, ext.xmax, diff_y_left, diff_y_right):
 
         #    print(m,M,l,r)
-        diff_y_max = np.minimum(diff_y_left, diff_y_right)
+            diff_y_max = np.minimum(diff_y_left, diff_y_right)
 
         # +1 is needed because sel is referred to the [1:-1] range of rows
         # in the spectrum
-        sel = np.where(np.greater(diff_y_max, ext.dy[1:-1] * kappa))[0]+1
+            dy = ext.dy[1:-1]
+            dy[np.isnan(dy)] = np.median(dy[~np.isnan(dy)])
+            sel = np.where(np.greater(diff_y_max, dy * kappa))[0]+1
+        else:
+            sel = []
+
         lines = ext._copy(sel)
 
         return lines
@@ -368,6 +389,7 @@ class Spectrum(Frame):
         x = self.x[sel]
         y = self.y[sel]
         dy = self.dy[sel]
+
         self._stats = {'min_x': np.min(x),
                        'max_x': np.max(x),
                        'mean_x': np.mean(x),
@@ -377,7 +399,7 @@ class Spectrum(Frame):
                        'median_y': np.median(y),
                        'std_y': np.std(y),
                        'mean_dy': np.mean(dy),
-                       'median_dy': np.median(dy)}
+                       'median_dy': np.median(dy.value)*dy.unit}
         self._stats_tup = tuple(np.ravel([(self._stats[s].value,
                                           self._stats[s].unit) \
                                           for s in self._stats]))

@@ -412,7 +412,6 @@ class CookbookAbsorbers(object):
         chi2r_list, z_list = [], []
         for i,_ in enum_tqdm(range(self._refit_n), self._refit_n,
                               'cookbook_absorbers: Cycling'):
-            print(chi2rav, chi2rav_old, self._chi2rav_thres)
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
                 chi2r_list, z_list = self._systs_fit(verbose=False)
@@ -735,7 +734,7 @@ class CookbookAbsorbers(object):
         self.sess.systs._collapse()
         return 0
 
-    def syst_fit(self, num=0, refit_n=0, chi2rav_thres=1e-2,
+    def syst_fit(self, num=1, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit a systems
         @details Fit all Voigt model from a list of systems.
@@ -747,7 +746,7 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            num = int(num)
+            num = int(num)-1
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)

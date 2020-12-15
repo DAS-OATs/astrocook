@@ -23,7 +23,7 @@ Astrocook is written in Python 3 and requires the following packages:
 * [SciPy 1.3.1](https://www.scipy.org)
 * [Specutils 0.6](http://specutils.readthedocs.io/en/latest/)
 * [NumPy 1.17.3](http://www.numpy.org)
-* [LmFit 0.9.14](https://lmfit.github.io/lmfit-py/)
+* [LmFit 1.0.0](https://lmfit.github.io/lmfit-py/)
 * [Cycler 0.10.0](https://pypi.python.org/pypi/Cycler)
 * [StatsModels 0.10.1](http://www.statsmodels.org/stable/index.html)
 * [matplotlib 3.1.1](https://matplotlib.org)
@@ -58,4 +58,4 @@ $ git fetch origin develop
 $ git checkout develop
 ```
 
-⚠️ **The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the `develop` branch until it gets merged on the `master` branch.**
+❗️ **The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the `develop` branch until it gets merged on the `master` branch.**

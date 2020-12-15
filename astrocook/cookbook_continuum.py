@@ -4,7 +4,7 @@ from .message import *
 from .vars import *
 from astropy import table as at
 from astropy import units as au
-from scipy.interpolate import UnivariateSpline as uspline
+#from scipy.interpolate import UnivariateSpline as uspline
 from scipy.optimize import root_scalar
 from matplotlib import pyplot as plt
 
@@ -23,6 +23,23 @@ class CookbookContinuum(object):
         xw = x[np.where(mod>hm)]
         fwhm = xw[-1]-xw[0]
         return fwhm
+
+
+    def node_add(self, x, y):
+        self.sess.spec._node_add(self.sess.nodes, x, y)
+
+
+    def node_remove(self, x):
+        self.sess.spec._node_remove(self.sess.nodes, x)
+
+
+    def node_interp(self):
+        self.sess.spec._node_interp(self.sess.nodes, self.sess.lines)
+
+
+
+
+
 
 
 ### Basic
@@ -100,6 +117,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
+        self._peaks_found = False
         spec = self.sess.spec
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
@@ -108,10 +126,12 @@ class CookbookContinuum(object):
 
         peaks = spec._peaks_find(col, kind, kappa)
         if len(peaks.t) > 0:
+            self._peaks_found = True
             source = [col]*len(peaks.t)
             from .line_list import LineList
-            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                             source, spec._xunit, spec._yunit, meta=spec._meta)
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.t[col],
+                             peaks.dy, source, spec._xunit, spec._yunit,
+                             meta=spec._meta)
             if append and self.sess.lines is not None \
                 and len(self.sess.lines.t) > 0:
                 self.sess.lines._append(lines)
@@ -161,11 +181,12 @@ class CookbookContinuum(object):
             self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
             self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
-                            append=append or i>0)
+                            append=append or (i>0 and self._peaks_found))
 
         return 0
 
@@ -233,7 +254,6 @@ class CookbookContinuum(object):
                 l['fwhm'] = fwhm
 
         return 0
-
 
     def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
                    smooth=0):

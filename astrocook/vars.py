@@ -3,6 +3,7 @@ from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
+import pathlib
  #c, e, m_e
 
 xunit_def = au.nm
@@ -41,7 +42,7 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,cont,None,plot,-,1,C8,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
-           "systs,z,None,None,axvline,--,0.5,C2,1.0"
+           "systs,z,None,None,axvline,--,0.8,C2,1.0"
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
@@ -49,6 +50,7 @@ pars_std_d =  {
     'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
 #    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -67,7 +69,7 @@ lines_voigt_d = {
     'z': 0.0, 'N': 1.e13, 'b': 5.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
     'z_min': 0.0, 'N_min': 1.e11, 'b_min': 1.0, 'btur_min': 0.0,
-    'z_max': 10.0, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': 100.0,
+    'z_max': 10.0, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': 100.0,
     'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
 
 # Default values for PSF gaussian Parameters
@@ -83,12 +85,12 @@ forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
 
 x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
 y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
-p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-atom_par = ascii.read(p+'/atom_par.dat')
+p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
@@ -254,3 +256,6 @@ gamma_d_old = {'Ly_a': 6.265e+08,
               'CaII_3969': 1.409e+08,
               'neb': 5e8,
               'unknown': 6.265e+08}
+
+
+log_seed = {'set_menu': []}
