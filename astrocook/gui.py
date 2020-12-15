@@ -94,7 +94,7 @@ class GUI(object):
 
         for r in load['set_menu']:
 
-            if r['cookbook']=='_dlg_mini_meta' and 'value' in r['params']:
+            if r['cookbook']=='_dlg_mini_graph' and 'value' in r['params']:
                 i = self._sess_list.index(self._sess_sel)
                 r['params']['value'] = \
                     ('%i,'%i).join(r['params']['value'].split('SESS_SEL,'))
