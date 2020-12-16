@@ -15,6 +15,39 @@ nav_order: 1
 {:toc}
 ---
 
+## Open session
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUIPanelSession._on_open</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>path</code>: Path to an <code>.acs</code>, <code>.fits</code>, or <code>.json</code> file</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        "cookbook": "_panel_sess",
+        "recipe": "_on_open",
+        "params": {
+          "path": "XXX"
+        }
+      },
+    </code></td>
+    </tr>
+  </tbody>
+</table>
+
+**Open a new session.** Session can be opened from previously saved Astrocook archive (`.acs`), a FITS file (`.fits`), or a JSON file (`.json`). In the last case, the session is built by running the workflow in the JSON file, and the workflow is inherited in the session log.
+
 ## Equalize sessions
 
 <table>
@@ -32,6 +65,23 @@ nav_order: 1
           <li><code>_sel</code>: Selected sessions</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "equalize",
+      "params": {
+        "xmin": "XXX",
+        "xmax": "XXX",
+        "_sel": [
+          XXX,
+          XXX
+        ]
+      }
+    }
+    </code></td>
     </tr>
   </tbody>
 </table>
@@ -225,3 +275,42 @@ nav_order: 1
 ## Estimate resolution  🚧
 
 ## Estimate SNR 🚧
+
+## Refresh the GUI
+
+_refresh(self, init_cursor=False, init_tab=True, autolim=True,
+                 autosort=True, _xlim=None):
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUI._refresh</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>init_cursor</code>: Initialize system cursor</li>
+          <li><code>init_tab</code>: Initialize tables</li>
+          <li><code>autolim</code>: Automatically set limits to the plot axes</li>
+          <li><code>autosort</code>: Automatically sort tables</li>
+          <li><code>_xlim</code>: Limits for the plot x axis</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        "cookbook": "",
+        "recipe": "_refresh",
+        "params": {
+          "autosort": false
+        }
+      }
+    </code></td>
+    </tr>
+  </tbody>
+</table>
+
+**Refresh the GUI.** This recipe is designed for internal use. The user should call it only at the end of a workflow, to update the visualization of the data in the GUI. `autosort` should be set to `false` not to interfere with other possible sorting of the tables in the workflow. Other parameters should be disregarded.
