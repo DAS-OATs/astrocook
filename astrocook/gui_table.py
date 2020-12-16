@@ -623,7 +623,8 @@ class GUITableSystList(GUITable):
 
     def _id_extract(self, row):
         labels = self._labels_extract()
-        return int(self._tab.GetCellValue(row, np.where(labels == 'id')[0][0]))
+        return int(float(self._tab.GetCellValue(
+                   row, np.where(labels == 'id')[0][0])))
 
 
     def _key_extract(self, row, col):
@@ -857,8 +858,9 @@ class GUITableSystList(GUITable):
 
     def _row_extract(self, id):
         labels = self._labels_extract()
-        ids = np.array([int(self._tab.GetCellValue(i, np.where(labels == 'id')[0][0])) \
-               for i in range(self._tab.GetNumberRows())])
+        ids = np.array([int(float(self._tab.GetCellValue(
+                  i, np.where(labels == 'id')[0][0]))) \
+                  for i in range(self._tab.GetNumberRows())])
         return np.where(id==ids)[0][0]
 
 

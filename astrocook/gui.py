@@ -311,13 +311,11 @@ class GUI(object):
                     self._col_values = \
                         [float(self._col_tab.GetCellValue(i, self._col_sel)) \
                          for i in range(self._col_tab.GetNumberRows())]
-
-        if hasattr(self, '_tab_systs'):
+        if hasattr(self, '_tab_systs') and self._tab_systs._shown:
             try:
                 self._tab_systs._text_colours()
             except:
                 pass
-
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
 
