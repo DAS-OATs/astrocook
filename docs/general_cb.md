@@ -69,18 +69,18 @@ nav_order: 1
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
       <td style="vertical-align:top"><code>
-    {
-      "cookbook": "_panel_sess",
-      "recipe": "equalize",
-      "params": {
-        "xmin": "XXX",
-        "xmax": "XXX",
-        "_sel": [
-          XXX,
-          XXX
-        ]
+      {
+        "cookbook": "_panel_sess",
+        "recipe": "equalize",
+        "params": {
+          "xmin": "XXX",
+          "xmax": "XXX",
+          "_sel": [
+            XXX,
+            XXX
+          ]
+        }
       }
-    }
     </code></td>
     </tr>
   </tbody>
@@ -101,8 +101,25 @@ nav_order: 1
       <td style="vertical-align:top">
         <ul>
           <li><code>name</code>: Name of the output session</li>
+          <li><code>_sel</code>: Selected sessions</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          XXX,
+          ...add as many items as you want
+        ]
+      }
+    }
+      </code></td>
     </tr>
   </tbody>
 </table>
@@ -125,6 +142,19 @@ nav_order: 1
           <li><code>mode</code>: Mode (<code>replace</code> or <code>append</code>)</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        "cookbook": "_panel_sess",
+        "recipe": "struct_import",
+        "params": {
+          "struct": "0,systs",
+          "mode": "replace"
+        }
+      }
+      </code></td>
     </tr>
   </tbody>
 </table>
@@ -150,6 +180,21 @@ nav_order: 1
         </ul>
       </td>
     </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        “cookbook”: “_panel_sess”,
+        “recipe”: “struct_modify”,
+        “params”: {
+          “col_A”: “0,spec,x”,
+          “col_B”: “0,spec,y”,
+          “col_out”: “0,spec,diff”,
+          “op”: “subtract”
+        }
+      },
+      </code></td>
+    </tr>
   </tbody>
 </table>
 
@@ -171,6 +216,22 @@ nav_order: 1
           <li><code>xmax</code>: Maximum wavelength (nm)</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          XXX,
+          ...add as many items as you want
+        ]
+      }
+    }
+      </code></td>
     </tr>
   </tbody>
 </table>
@@ -194,6 +255,19 @@ nav_order: 1
         </ul>
       </td>
     </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        “cookbook”: “cb”,
+        “recipe”: “region_extract”,
+        “params”: {
+          “xmin”: “XXX”,
+          “xmax”: “XXX”
+        }
+      },
+      </code></td>
+    </tr>
   </tbody>
 </table>
 
@@ -215,6 +289,22 @@ nav_order: 1
         </ul>
       </td>
     </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          XXX,
+          ...add as many items as you want
+        ]
+      }
+    }
+      </code></td>
+    </tr>
   </tbody>
 </table>
 
@@ -235,6 +325,22 @@ nav_order: 1
           <li><code>fact</code>: Multiplicative factor</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          XXX,
+          ...add as many items as you want
+        ]
+      }
+    }
+      </code></td>
     </tr>
   </tbody>
 </table>
@@ -264,6 +370,22 @@ nav_order: 1
           <li><code>norm</code>: Return normalized spectrum, if continuum exists</li>
         </ul>
       </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          XXX,
+          ...add as many items as you want
+        ]
+      }
+    }
+      </code></td>
     </tr>
   </tbody>
 </table>

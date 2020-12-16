@@ -151,43 +151,43 @@
   },"25": {
     "doc": "General cookbook",
     "title": "Combine sessions",
-    "content": "| Method | GUIPanelSession.combine | . | Parameters | . | name: Name of the output session | . | . Combine two or more sessions. A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded. When the recipe is called from the GUI, the _sel parameter is defined automatically by clicking on the input sessions. ",
+    "content": "| Method | GUIPanelSession.combine | . | Parameters | . | name: Name of the output session | _sel: Selected sessions | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"combine\", \"params\": { \"name\": \"*_combined\", \"_sel\": [ XXX, ...add as many items as you want ] } } | . Combine two or more sessions. A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded. When the recipe is called from the GUI, the _sel parameter is defined automatically by clicking on the input sessions. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#combine-sessions",
     "relUrl": "/general_cb.html#combine-sessions"
   },"26": {
     "doc": "General cookbook",
     "title": "Import structure",
-    "content": "| Method | GUIPanelSession.struct_import | . | Parameters | . | struct: Structure | mode: Mode (replace or append) | . | . Import a data structure from a session into the current one. The structure to be imported is described by a string with the session number and the structure tag (spec, lines, systs), separated by a comma (e.g. 0,spec, meaning “spectrum from session 0”). The imported structure is either replaced or appended to the corresponding one in the current session. ",
+    "content": "| Method | GUIPanelSession.struct_import | . | Parameters | . | struct: Structure | mode: Mode (replace or append) | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"struct_import\", \"params\": { \"struct\": \"0,systs\", \"mode\": \"replace\" } } | . Import a data structure from a session into the current one. The structure to be imported is described by a string with the session number and the structure tag (spec, lines, systs), separated by a comma (e.g. 0,spec, meaning “spectrum from session 0”). The imported structure is either replaced or appended to the corresponding one in the current session. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#import-structure",
     "relUrl": "/general_cb.html#import-structure"
   },"27": {
     "doc": "General cookbook",
     "title": "Modify structures",
-    "content": "| Method | GUIPanelSession.struct_modify | . | Parameters | . | col_A: Column A | col_B: Column B or scalar | struct_out: Output column | op: Binary operator | . | . Modify a data structure using a binary operator. An output column is computed applying a binary operator to two input columns, or an input column and a scalar. Columns are described by a string with the session number, the structure tag (spec, lines, systs), and the column name separated by a comma (e.g. 0,spec,x, meaning “column x of spectrum from session 0”). They can be from different data structures only if they have the same length. If the output column already exists, it is overwritten. ",
+    "content": "| Method | GUIPanelSession.struct_modify | . | Parameters | . | col_A: Column A | col_B: Column B or scalar | struct_out: Output column | op: Binary operator | . | . | JSON template | { “cookbook”: “_panel_sess”, “recipe”: “struct_modify”, “params”: { “col_A”: “0,spec,x”, “col_B”: “0,spec,y”, “col_out”: “0,spec,diff”, “op”: “subtract” } }, | . Modify a data structure using a binary operator. An output column is computed applying a binary operator to two input columns, or an input column and a scalar. Columns are described by a string with the session number, the structure tag (spec, lines, systs), and the column name separated by a comma (e.g. 0,spec,x, meaning “column x of spectrum from session 0”). They can be from different data structures only if they have the same length. If the output column already exists, it is overwritten. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#modify-structures",
     "relUrl": "/general_cb.html#modify-structures"
   },"28": {
     "doc": "General cookbook",
     "title": "Extract region",
-    "content": "| Method | CookbookGeneral.region_extract | . | Parameters | . | xmin: Minimum wavelength (nm) | xmax: Maximum wavelength (nm) | . | . Extract a spectral region. The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines, and the absorption systems that fall within). A new session with the extracted data structures is created. ",
+    "content": "| Method | CookbookGeneral.region_extract | . | Parameters | . | xmin: Minimum wavelength (nm) | xmax: Maximum wavelength (nm) | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"combine\", \"params\": { \"name\": \"*_combined\", \"_sel\": [ XXX, ...add as many items as you want ] } } | . Extract a spectral region. The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines, and the absorption systems that fall within). A new session with the extracted data structures is created. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#extract-region",
     "relUrl": "/general_cb.html#extract-region"
   },"29": {
     "doc": "General cookbook",
     "title": "Convert x axis",
-    "content": "| Method | CookbookGeneral.x_convert | . | Parameters | . | zem: Emission redshift | xunit: Unit of wavelength or velocity | . | . Convert the x axis to wavelength or velocity units. The x axis can be converted to any unit of wavelength or velocity (default: nm and km/s). The conversion applies to both the spectrum and the line list. When converting to and from velocity units, the zero point is set at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition). ",
+    "content": "| Method | CookbookGeneral.x_convert | . | Parameters | . | zem: Emission redshift | xunit: Unit of wavelength or velocity | . | . | JSON template | { “cookbook”: “cb”, “recipe”: “region_extract”, “params”: { “xmin”: “XXX”, “xmax”: “XXX” } }, | . Convert the x axis to wavelength or velocity units. The x axis can be converted to any unit of wavelength or velocity (default: nm and km/s). The conversion applies to both the spectrum and the line list. When converting to and from velocity units, the zero point is set at (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition). ",
     "url": "http://localhost:4000/astrocook/general_cb.html#convert-x-axis",
     "relUrl": "/general_cb.html#convert-x-axis"
   },"30": {
     "doc": "General cookbook",
     "title": "Convert y axis",
-    "content": "| Method | CookbookGeneral.y_convert | . | Parameters | . | yunit: Unit (of flux density) | . | . Convert the y axis to different units. The y axis can be expressed in different units depending on how it was calibrated (default: erg/(cm^2 s nm)). It can be converted to any unit of the same physical quantity. The conversion applies to both the spectrum and the line list. ",
+    "content": "| Method | CookbookGeneral.y_convert | . | Parameters | . | yunit: Unit (of flux density) | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"combine\", \"params\": { \"name\": \"*_combined\", \"_sel\": [ XXX, ...add as many items as you want ] } } | . Convert the y axis to different units. The y axis can be expressed in different units depending on how it was calibrated (default: erg/(cm^2 s nm)). It can be converted to any unit of the same physical quantity. The conversion applies to both the spectrum and the line list. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#convert-y-axis",
     "relUrl": "/general_cb.html#convert-y-axis"
   },"31": {
     "doc": "General cookbook",
     "title": "Scale y axis",
-    "content": "| Method | CookbookGeneral.y_scale | . | Parameters | . | fact: Multiplicative factor | . | . Scale the y axis by a constant factor. The spectrum and the line list are rescaled in place, without starting a new session. ",
+    "content": "| Method | CookbookGeneral.y_scale | . | Parameters | . | fact: Multiplicative factor | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"combine\", \"params\": { \"name\": \"*_combined\", \"_sel\": [ XXX, ...add as many items as you want ] } } | . Scale the y axis by a constant factor. The spectrum and the line list are rescaled in place, without starting a new session. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#scale-y-axis",
     "relUrl": "/general_cb.html#scale-y-axis"
   },"32": {
@@ -205,7 +205,7 @@
   },"34": {
     "doc": "General cookbook",
     "title": "Rebin spectrum",
-    "content": "| Method | CookbookGeneral.rebin | . | Parameters | . | xstart: Start wavelength (nm) | xend: End wavelength (nm) | dx: Step in x | xunit: Unit of wavelength or velocity | norm: Return normalized spectrum, if continuum exists | . | . Rebin a spectrum with a given step. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded. ",
+    "content": "| Method | CookbookGeneral.rebin | . | Parameters | . | xstart: Start wavelength (nm) | xend: End wavelength (nm) | dx: Step in x | xunit: Unit of wavelength or velocity | norm: Return normalized spectrum, if continuum exists | . | . | JSON template | { \"cookbook\": \"_panel_sess\", \"recipe\": \"combine\", \"params\": { \"name\": \"*_combined\", \"_sel\": [ XXX, ...add as many items as you want ] } } | . Rebin a spectrum with a given step. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded. ",
     "url": "http://localhost:4000/astrocook/general_cb.html#rebin-spectrum",
     "relUrl": "/general_cb.html#rebin-spectrum"
   },"35": {
@@ -505,7 +505,7 @@
   },"84": {
     "doc": "Managing workflows",
     "title": "Scripting",
-    "content": "You can of course create your own workflows outside of Astrocook, following the same JSON syntax used by the automatic log tool. The cookbook with all the current recipes and their parameters is available here. To use a recipe, you can copy-paste the JSON template and put proper values in the XXX placeholders. Shell scripting can be effectively used to create and/or edit JSON files at runtime and feed them to Astrocook. This may be useful, for instance, to run the same workflow on different input data, possibly with different parameters. Not all custom-made workflows are guaranteed to run smoothly on Astrocook. When writing your JSON script, please adhere to the following rules: . | the workflow must start with a call to GUIPanelSess._on_open and must end with a call to GUI._refresh; | whenever a recipe spawn a new session, all subsequent recipes are run on the new session; to continue running recipes on the previous session, you must write a separate workflow. | . It is a good practice to design a workflow through the GUI first, and use the automatic log generated by Astrocook as a template for custom-made workflows. ",
+    "content": "You can of course create your own workflows outside of Astrocook, following the same JSON syntax used by the automatic log tool. The cookbook with all the current recipes and their parameters is available here. To use a recipe, you can copy-paste the JSON template and put proper parameter values instead of defaults and XXX placeholders. Shell scripting can be effectively used to create and/or edit JSON files at runtime and feed them to Astrocook. This may be useful, for instance, to run the same workflow on different input data, possibly with different parameters. Not all custom-made workflows are guaranteed to run smoothly on Astrocook. When writing your JSON script, please adhere to the following rules: . | the workflow must start with a call to GUIPanelSess._on_open and must end with a call to GUI._refresh; | whenever a recipe spawn a new session, all subsequent recipes are run on the new session; to continue running recipes on the previous session, you must write a separate workflow. | . It is a good practice to design a workflow through the GUI first, and use the automatic log generated by Astrocook as a template for custom-made workflows. ",
     "url": "http://localhost:4000/astrocook/workflows.html#scripting",
     "relUrl": "/workflows.html#scripting"
   }

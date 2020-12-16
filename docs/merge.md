@@ -33,7 +33,7 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
 
 The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose [`View > Edit graph elements`](other.md#visualization), then modify the text in the box as follows:
 
-<img src="img/merging_graph_elements.png" width="515">
+![Graph elements](img/merging_graph_elements.png)
 
 Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS superposition region the flux is slightly mismatched:
 
@@ -41,7 +41,7 @@ Clicking on `Apply` and zooming into the plot, you will see that in the UVB/VIS 
 
 To rescale the NIR spectra to the VIS one, select it on the main window and choose [`Edit > Scale y axis...`](general_cb.md#scale-y-axis). In the dialog window, insert a suitable multiplicative factor and click on `Run`:
 
-<img src="img/merging_scale_y_axis.png" width="582">
+![Scale y axis](img/merging_scale_y_axis.png)
 
 Selecting both spectra and zooming again, you can check that they are now matching:
 
@@ -63,7 +63,7 @@ You may need to rescale a spectrum several times to find a good matching.
 
 Two spectra can also be rescaled automatically. In the main window, select the two sessions and choose [`Edit > Equalize sessions...`](general_cb.md#equalize-sessions). You will be asked to define a spectral region to be used as reference:
 
-<img src="img/merging_equalize_sessions.png" width="582">
+![Equalize sessions](img/merging_equalize_sessions.png)
 
 On `Run`, the recipe will compute the median fluxes of the two spectra in the reference region, and use their ratio to equalize them. By default, the spectrum of the last-selected region is rescaled to the other one.
 
@@ -82,7 +82,7 @@ On `Run`, the recipe will compute the median fluxes of the two spectra in the re
 
 Once spectra are rescaled, you need to create a combined session out of the individual ones. In the main window, select both sessions and choose [`Edit > Combine sessions...`](general_cb.md#combine-sessions). You will be asked for a name for the combination:
 
-<img src="img/merging_combine_sessions.png" width="582">
+![Combine sessions](img/merging_combine_sessions.png)
 
 The asterisk will be replaced by a concatenation of the selected names (`qso_NIR_qso_VIS` in this case). You can alternatively define a different name.
 
@@ -108,7 +108,7 @@ The same method can be used to combine more than two spectra.
 
 It is generally useful to rebin the combined spectrum into a new wavelength grid, to avoid dealing with overlapping pixels. This is done by selecting the combined session in the main window and choosing [`Recipes > Rebin spectrum...`](general_cb.md#rebin-spectrum). You will be asked to provide a step in `x` and a unit of wavelength or velocity for the output spectrum (and optionally a wavelength range):
 
-<img src="img/merging_rebin_spectrum.png" width="596">
+![Rebin spectrum](img/merging_rebin_spectrum.png)
 
 In this case, the spectrum will be rebinned into a grid with a fixed step of 10 km/s. The grid is designed to cover the whole wavelength range of the input spectrum. The rebinned spectrum will appear on the plot after completion:
 

@@ -71,7 +71,7 @@ Astrocook provides you with (broadly speaking) three kinds of recipes for the an
 
 Typically, when you choose a recipe from the menu bar a dialog window appears. The dialog window displays a brief description of the recipe and allows you to edit the parameters.
 
-<img src="img/dialog_window.png" width="596">
+![Dialog window](img/dialog_window.png)
 
 ❗️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
 
