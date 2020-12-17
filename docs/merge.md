@@ -8,18 +8,15 @@ nav_order: 1
 # Merging spectra
 {: .no_toc}
 
+*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, UVB and VIS arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 ---
-
-*Merging* is what you do to combine two or more spectra into a single one. In this tutorial, you will learn how to merge two spectra with different wavelength range, like those obtained from different arms of the same instrument (in our case, UVB and VIS arm of VLT X-shooter). The same procedure can be applied to the case of several spectra with the same wavelength range.
-
-We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in Astrocook:
-
-![Start](img/merging_start.png)
 
 ## Rescale the spectra
 
@@ -31,7 +28,7 @@ We assume that the spectra have already been [loaded](gui.md#launch-the-gui) in 
   </tbody>
 </table>
 
-The first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose [`View > Edit graph elements`](other.md#visualization), then modify the text in the box as follows:
+Once the spectra have been [loaded](gui.md#launch-the-gui) in Astrocook, the first step is to rescale the spectra to the same flux level, to correct for inaccuracies in flux calibration. To display both spectra in the main graph, select the second one and choose [`View > Edit graph elements`](other.md#visualization), then modify the text in the box as follows:
 
 <img src="img/merging_graph_elements.png" width="515">
 

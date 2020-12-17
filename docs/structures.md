@@ -8,20 +8,17 @@ nav_order: 1
 # Data structures
 {: .no_toc}
 
+Astrocook manages three main data structures: *spectra*, *line lists*, and *system lists*. All three structures include a data table (actually an [Astropy Table](https://docs.astropy.org/en/stable/table/) object) and a metadata dictionary. They are formatted as FITS files and bundled into a `.acs` archive when you save a snapshot of a session. To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
+
+❗️ **Long tables can take a long time to display.**
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 ---
-
-Astrocook manages three main data structures: *spectra*, *line lists*, and *system lists*. All three structures include a data table (actually an [Astropy Table](https://docs.astropy.org/en/stable/table/) object) and a metadata dictionary. They are formatted as FITS files and bundled into a `.acs` archive when you save a snapshot of a session. The `.acs` archive may also contain other ancillary data, as described below.
-
-To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
-
-❗️ **Long tables can take a long time to display.**
-
-[//]: # ❗️ **Closing table windows may cause Astrocook to behave erratically.**
 
 ## Spectra
 

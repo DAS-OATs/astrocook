@@ -8,6 +8,9 @@ nav_order: 2
 # Using the GUI
 {: .no_toc}
 
+The Graphical User Interface (GUI) is the foremost way to perform your analysis with Astrocook, letting you visually interact with the data and launch the analysis operations in the most straightforward way. The Astrocook GUI is based on [wxPython](https://www.wxpython.org/), which provides a native look-and-feel of the graphical elements across many platforms (Linux, macOS, Windows), and uses [Matplotlib](https://matplotlib.org/) for plotting.
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -17,7 +20,7 @@ nav_order: 2
 
 ## Launch the GUI
 
-You can launch the Astrocook GUI:
+To launch the Astrocook GUI:
 ```
 $ cd /your/path/astrocook/
 $ python ac_gui.py
