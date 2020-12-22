@@ -243,7 +243,6 @@ class Graph(object):
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
         sess = np.array(sess, ndmin=1)
-
         #import datetime as dt
         #start = dt.datetime.now()
         self._text = text
@@ -373,7 +372,6 @@ class Graph(object):
         shade.remove()
 
     def _seq(self, sess, norm):
-
         detail = self._panel != self._gui._graph_main._panel
         if detail:
             focus = self._gui._graph_det
@@ -381,15 +379,17 @@ class Graph(object):
             focus = self._gui._graph_main
 
         xunit_orig = dc(sess.spec.x.unit)
-        if detail: sess.cb.x_convert(zem=self._zem)
-
+        #print(detail, sess.spec.x.unit)
+        #print(self._zem)
+        #if detail: sess.cb.x_convert(zem=self._zem)
+        #print(detail, sess.spec.x.unit)
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
-                sess = self._gui._sess_list[int(sel)]
+                #sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 if struct in ['spec','lines','nodes','systs']:
@@ -500,7 +500,6 @@ class Graph(object):
         if hasattr(sess.spec, '_stats_text_red'):
             self._ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
                           transform=self._ax.transAxes)
-
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, (s, c, a) \
@@ -594,7 +593,7 @@ class Graph(object):
                                    * (1+sess.spec._rfz))
 
 
-        if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
+        #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
 
         """
         for c in self._gui._graph_main._cols_sel.split(','):

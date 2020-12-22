@@ -276,6 +276,7 @@ class GUI(object):
                 if hasattr(graph, '_axes'):
                     for key in graph._zems:
                         xunit = self._sess_sel.spec.x.unit
+                        #print('before', xunit)
                         self._sess_sel.cb.x_convert(zem=graph._zems[key])
                         graph._ax = graph._axes[key]
                         xlim_det = graph._ax.get_xlim()
@@ -289,6 +290,7 @@ class GUI(object):
                                                      init_cursor=init_cursor)
                         init_cursor = False
                         self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+                        #print('after', xunit)
                 else:
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()

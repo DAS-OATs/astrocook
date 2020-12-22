@@ -295,7 +295,6 @@ class GUIGraphDetail(GUIGraphMain):
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
-
 class GUIGraphHistogram(GUIGraphMain):
 
     def __init__(self,
