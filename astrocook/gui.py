@@ -267,44 +267,58 @@ class GUI(object):
         if hasattr(self, '_graph_det'):
             #self._refresh_graph_det(init_cursor=init_cursor, autolim=autolim)
             #"""
-            graph = self._graph_det._graph
-            if hasattr(graph, '_axes'):
-                for key in graph._zems:
-                    xunit = self._sess_sel.spec.x.unit
-                    self._sess_sel.cb.x_convert(zem=graph._zems[key])
-                    graph._ax = graph._axes[key]
+            #print(self._sess_sel.__dict__)
+            if self._sess_sel.systs is None:
+                self._graph_det._on_close()
+            else:
+
+                graph = self._graph_det._graph
+                if hasattr(graph, '_axes'):
+                    for key in graph._zems:
+                        xunit = self._sess_sel.spec.x.unit
+                        #print('before', xunit)
+                        self._sess_sel.cb.x_convert(zem=graph._zems[key])
+                        graph._ax = graph._axes[key]
+                        xlim_det = graph._ax.get_xlim()
+                        ylim_det = graph._ax.get_ylim()
+                        if autolim or True:
+                            self._graph_det._refresh(self._sess_items, text=key,
+                                                     xlim=xlim_det, ylim=ylim_det,
+                                                     init_cursor=init_cursor)
+                        else:
+                            self._graph_det._refresh(self._sess_items, text=key,
+                                                     init_cursor=init_cursor)
+                        init_cursor = False
+                        self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+                        #print('after', xunit)
+                else:
                     xlim_det = graph._ax.get_xlim()
                     ylim_det = graph._ax.get_ylim()
-                    if autolim or True:
-                        self._graph_det._refresh(self._sess_items, text=key,
-                                                 xlim=xlim_det, ylim=ylim_det,
+                    if autolim:
+                        self._graph_det._refresh(self._sess_items, xlim=xlim_det,
+                                                 ylim=ylim_det,
                                                  init_cursor=init_cursor)
                     else:
-                        self._graph_det._refresh(self._sess_items, text=key,
+                        self._graph_det._refresh(self._sess_items,
                                                  init_cursor=init_cursor)
-                    init_cursor = False
-                    self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
-            else:
-                xlim_det = graph._ax.get_xlim()
-                ylim_det = graph._ax.get_ylim()
-                if autolim:
-                    self._graph_det._refresh(self._sess_items, xlim=xlim_det,
-                                             ylim=ylim_det,
-                                             init_cursor=init_cursor)
-                else:
-                    self._graph_det._refresh(self._sess_items,
-                                             init_cursor=init_cursor)
-            #"""
+                #"""
         for s in ['spec', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     #print(getattr(self._sess_sel, s))
                     #print(getattr(self, '_tab_'+s))
                     if hasattr(getattr(self._sess_sel, s), '_t'):
-                        getattr(self, '_tab_'+s)._view(
-                            event=None, from_scratch=False, autosort=autosort)
+                        index = ['spec', 'lines', 'systs'].index(s)
+                        item = self._menu_view._menu.FindItemById(self._menu_tab_id[index])
+                        view = item.IsChecked()
+                        if view:
+                            getattr(self, '_tab_'+s)._view(
+                                event=None, from_scratch=False, autosort=autosort)
                     else:
-                        getattr(self, '_tab_'+s).Destroy()
+                        try:
+                            getattr(self, '_tab_'+s).Destroy()
+                        except:
+                            pass
 
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():

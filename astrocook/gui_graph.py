@@ -197,6 +197,7 @@ class GUIGraphDetail(GUIGraphMain):
                                              main=False, **kwargs)
         self._norm = True
         self._gui._graph_det = self
+        #self._gui._sess_sel._graph_det = self
         self._graph._legend = False
         self._graph._cursor_lines = []
         sel = len(self._gui._sess_list)
@@ -293,7 +294,6 @@ class GUIGraphDetail(GUIGraphMain):
                 xlim=(-hwin,hwin), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
-
 
 class GUIGraphHistogram(GUIGraphMain):
 
