@@ -380,6 +380,7 @@ class Graph(object):
         else:
             focus = self._gui._graph_main
 
+        xunit_orig = dc(sess.spec.x.unit)
         if detail: sess.cb.x_convert(zem=self._zem)
 
         for e in focus._elem.split('\n'):
@@ -591,6 +592,9 @@ class Graph(object):
             if self._axt != None:
                 self._axt.set_xlim(np.array(self._ax.get_xlim()) \
                                    * (1+sess.spec._rfz))
+
+
+        if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
 
         """
         for c in self._gui._graph_main._cols_sel.split(','):
