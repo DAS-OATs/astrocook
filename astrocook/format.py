@@ -346,7 +346,7 @@ class Format(object):
                 try:
                     x = data[x_col_names[x_col][0]]
                     y = data[y_col_names[y_col][0]]
-                    dy = data[dy_col_names[dy_col][0]] if dy_col is not [] \
+                    dy = data[dy_col_names[dy_col][0]] if len(dy_col)==1 \
                         else np.full(len(y), np.nan)
                 except:
                     logging.error("I can't recognize columns.")

@@ -101,6 +101,7 @@ nav_order: 1
       <td style="vertical-align:top">
         <ul>
           <li><code>name</code>: Name of the output session</li>
+          <li><code>_sel</code>: Selected sessions</li>
         </ul>
       </td>
     </tr>

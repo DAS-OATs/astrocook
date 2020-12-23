@@ -21,11 +21,11 @@ Astrocook is equipped with a built-in logging tool, to keep track of the analysi
 
 Each session is logged separately. To visualize the current log of a session, select it on the main window and choose `View > Session log`:
 
-<img src="img/session_log.png" width="532">
+![Session log basic](img/session_log_basic.png)
 
 Like the example above, every workflow starts with a call to recipe [`GUIPanelSess._on_open`](general_cb.md#open-session) (which opens a new session) and ends with a call to recipe [`GUI._refresh`](general_cb.md#refresh-the-gui) (which refreshes the GUI to reflect any change in the data). Other recipes are inserted between these two, with all their relevant parameters:
 
-<img src="img/session_log_add.png" width="532">
+![Session log](img/session_log.png)
 
 Through the `Session log` window, you can:
 
@@ -40,7 +40,7 @@ Workflows follow a strict inheritance rule: when a new session is created, it is
 Workflows can be re-run at any moment, either by clicking on the `Re-run` button in the `Session log` window, or by right-clicking on the session list and choosing `Re-run`. When this is done, the session is destroyed and re-built from scratch using its log. If the workflow included recipes spawning new sessions, these are also re-built.
 
 ## Scripting
-You can of course create your own workflows outside of Astrocook, following the same JSON syntax used by the automatic log tool. The cookbook with all the current recipes and their parameters is available [here](cookbook.md). To use a recipe, you can copy-paste the JSON template and put proper values in the XXX placeholders.
+You can of course create your own workflows outside of Astrocook, following the same JSON syntax used by the automatic log tool. The cookbook with all the current recipes and their parameters is available [here](cookbook.md). To use a recipe, you can copy-paste the JSON template and put proper parameter values instead of defaults and XXX placeholders.
 
 Shell scripting can be effectively used to create and/or edit JSON files at runtime and feed them to Astrocook. This may be useful, for instance, to run the same workflow on different input data, possibly with different parameters.
 
