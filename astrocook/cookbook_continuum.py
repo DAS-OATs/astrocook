@@ -37,11 +37,6 @@ class CookbookContinuum(object):
         self.sess.spec._node_interp(self.sess.nodes, self.sess.lines)
 
 
-
-
-
-
-
 ### Basic
 
     def nodes_clean(self, kappa=5.0):
