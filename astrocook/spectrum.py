@@ -247,7 +247,8 @@ class Spectrum(Frame):
         if 'cont' not in self._t.colnames:
             logging.info("I'm adding column 'cont'.")
         self._t['cont'] = cont #spl(self.x)
-        lines._t['cont'] = np.interp(lines.x, self.x, cont)
+        if hasattr(lines, '_t'):
+            lines._t['cont'] = np.interp(lines.x, self.x, cont)
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
         return 0
 
