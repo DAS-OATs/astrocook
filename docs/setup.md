@@ -29,6 +29,7 @@ Astrocook is written in Python 3 and requires the following packages:
 * [matplotlib 3.1.1](https://matplotlib.org)
 * [Sphinx 2.2.0](http://www.sphinx-doc.org/en/master/)
 * [wxPython 4.0.4](https://wxpython.org/)
+* [tqdm 4.36.1](https://github.com/tqdm/tqdm)
 
 You are suggested to manage the dependencies using [Conda](https://docs.conda.io/projects/conda/en/latest/).
 The quickest way to do it is to get the Miniconda installer (instructions [here](https://docs.conda.io/en/latest/miniconda.html)) and to open an environment dedicated to Astrocook:
@@ -44,24 +45,18 @@ $ conda install -c anaconda package-name=package-version
 If this doesn't work, look for the package in the [Anaconda Cloud](https://anaconda.org/).
 
 
-## Install the software
+## Install the package
 
-You can download the latest release of Astrocook (**v1.0.0-rc.1**) from [this page](https://github.com/DAS-OATs/astrocook/releases/tag/v1.0.0-rc.1). Alternatively, you can clone the GitHub repository on your local machine and checkout the specific tag:
+1. Clone the GitHub repository on your local machine:
 ```
 $ cd /your/path/
 $ git clone https://github.com/DAS-OATs/astrocook
-$ git checkout tag/v1.0.0-rc.1
 ```
-
-Some additional features may be available in the `develop` branch before they are included in an official release. To fetch the last commit of the `develop` branch:
+2. Fetch the last commit of the `develop` branch
 ```
 $ cd /your/path/astrocook/
 $ git fetch origin develop
 $ git checkout develop
 ```
 
-## Troubleshooting
-
-Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to [report the bug](mailto:guido.cupani@inaf.it).
-
-❗️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**
+❗️ **The current documentation applies to v1.0.0, which has not been released yet. You are suggested to work on the `develop` branch until it gets merged on the `master` branch.**
