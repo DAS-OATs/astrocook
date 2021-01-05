@@ -455,6 +455,9 @@ class GUIMenuEdit(GUIMenu):
                           "Shift to rest frame", 'shift_to_rf')
         self._item_method(self._menu, start_id+352, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+360, 'spec',
+                          "Deredden", 'deredden')
 
 
 class GUIMenuFile(GUIMenu):

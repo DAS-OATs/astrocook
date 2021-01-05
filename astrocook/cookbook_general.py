@@ -12,6 +12,25 @@ class CookbookGeneral(object):
     def __init__(self):
         super(CookbookGeneral, self).__init__()
 
+    def deredden(self, ebv=0.03, rv=3.1):
+        """@brief Deredden spectrum
+        @details Deredden the spectrum using the parametrization by Cardelli,
+        Clayton, and Mathis (1989) and O'Donnell (1994).
+        @param ebv Color excess E(B-V)
+        @param rv Ratio of total selective extinction R(V)=A(V)/E(B-V)
+        @return 0
+        """
+
+        try:
+            ebv = float(ebv)
+            rv = float(rv)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.spec._deredden(ebv, rv)
+        return 0
+
 
     def feature_zap(self, xmin, xmax):
         self.sess.spec._zap(xmin, xmax)

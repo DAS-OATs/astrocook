@@ -50,6 +50,64 @@ class Spectrum(Frame):
             copy._t[c] = self._t[c][sel]
         return copy
 
+    def _deredden(self, ebv=0.03, rv=3.1):
+
+        invx = 1/self.x.to(au.micron).value
+        a = np.zeros(len(invx))
+        b = np.zeros(len(invx))
+
+        # IR
+        ir_w = np.where(np.logical_and(invx>0.3, invx<1.1))
+        a[ir_w] = 0.574 * invx[ir_w]**1.61
+        b[ir_w] = -0.527 * invx[ir_w]**1.61
+
+        # Visual/NIR (0'Donnell 1994)
+        vis_w = np.where(np.logical_and(invx>1.1, invx<3.3))
+        c1 = [1., 0.104, -0.609, 0.701, 1.137, -1.718, -0.827, 1.647, -0.505]
+        c2 = [0., 1.952, 2.908, -3.989, -7.985, 11.102, 5.491, -10.805, 3.347]
+        a[vis_w] = np.polyval(c1[::-1], invx[vis_w]-1.82)
+        b[vis_w] = np.polyval(c2[::-1], invx[vis_w]-1.82)
+
+        # Mid UV
+        muv_w = np.where(np.logical_and(invx>3.3, invx<8.0))
+        f_a = np.zeros(len(muv_w[0]))
+        f_b = np.zeros(len(muv_w[0]))
+        f_w = np.where(invx[muv_w]>5.9)
+        invx_w = invx[muv_w][f_w]-5.9
+        f_a[f_w] = -0.04473 * invx_w**2 - 0.009779 * invx_w**3
+        f_b[f_w] = 0.2130 * invx_w**2 + 0.1207 * invx_w**3
+        a[muv_w] = 1.752 - 0.316*invx[muv_w] \
+                   - (0.104 / ((invx[muv_w]-4.67)**2 + 0.341)) + f_a
+        b[muv_w] = -3.090 + 1.825*invx[muv_w] \
+                   + (1.206 / ((invx[muv_w]-4.62)**2 + 0.263)) + f_b
+
+        # Far UV
+        fuv_w = np.where(np.logical_and(invx>8.0, invx<11.0))
+        c1 = [-1.073, -0.628, 0.137, -0.070]
+        c2 = [13.670, 4.257, -0.420, 0.374]
+        a[fuv_w] = np.polyval(c1[::-1], invx[fuv_w]-8.0)
+        b[fuv_w] = np.polyval(c2[::-1], invx[fuv_w]-8.0)
+
+        av = rv*ebv
+        al = av * (a+b/rv)
+
+        self.y = self.y * 10**(0.4*al)
+
+        return 0
+
+        """
+
+; Now apply extinction correction to input flux vector
+
+  A_V = R_V * EBV
+  A_lambda = A_V * (a + b/R_V)
+  if N_params() EQ 3 then flux = flux * 10.^(0.4*A_lambda) else $
+        funred = flux * 10.^(0.4*A_lambda)       ;Derive unreddened flux
+
+ return
+ end
+        """
+
     def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
                         verb=True):
 
