@@ -74,7 +74,7 @@ class Session(object):
                 arch.extractall(path=root)
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
                 hdr = hdul[1].header
-        elif self.path[-4:] == 'fits':
+        elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
         else:
