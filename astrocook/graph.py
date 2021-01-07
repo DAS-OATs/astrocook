@@ -218,16 +218,19 @@ class Graph(object):
                         c.set_xdata(xi)
                         c.set_alpha(0.5)
                     #self._canvas.draw()
+                    z_obs = z*(1+sess.spec._rfz)
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                            % (x, y, self._cursor._series, z))
+                                            % (x, y, self._cursor._series, z_obs))
             else:
-                z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
+                z = (x/self._cursor._xmean.to(sess.spec._xunit).value-1)#*(1+sess.spec._rfz)
+                #print(z)
                 for c, xem in zip(self._cursor_line, self._cursor._xem):
                     c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                     c.set_alpha(0.5)
                 #self._canvas.draw()
+                z_obs = z*(1+sess.spec._rfz)
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                        % (x, y, self._cursor._series, z))
+                                        % (x, y, self._cursor._series, z_obs))
             self._cursor._z = z
         else:
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))

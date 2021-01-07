@@ -511,7 +511,6 @@ class Spectrum(Frame):
 
         xmin = np.ravel(np.array(xmin))
         xmax = np.ravel(np.array(xmax))
-
         for m, M in zip(xmin, xmax):
             w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
             self._t['y'][w] = np.interp(

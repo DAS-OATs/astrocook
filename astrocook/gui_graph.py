@@ -94,9 +94,10 @@ class GUIGraphMain(wx.Frame):
             sess._cursors = {z: self._graph._cursor}
         else:
             sess._cursors[z] = self._graph._cursor
+        z_obs = z*(1+sess.spec._rfz)
         sess._graph_elem += \
             '\n%i,cursor,%s,None,None,axvline,:,1.0,C%s,1.0' \
-            % (self._gui._panel_sess._sel, z, (len(sess._cursors)-1)%10)
+            % (self._gui._panel_sess._sel, z_obs, (len(sess._cursors)-1)%10)
         self._elem = sess._graph_elem
 
         if hasattr(self._gui, '_dlg_mini_graph'):
