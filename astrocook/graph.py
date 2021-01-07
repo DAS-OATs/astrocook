@@ -409,7 +409,7 @@ class Graph(object):
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
                     #if struct == 'systs':
-                        z = sess.systs.z
+                        z = sess.systs.z/(1+self._gui._sess_sel.spec._rfz)
                         series = sess.systs.series
                         z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
                         series_list = [trans_parse(s) for s in series]
@@ -422,7 +422,7 @@ class Graph(object):
                         series_flat = trans_parse(series)
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
-                    x = xem*(1+z_flat)
+                    x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
