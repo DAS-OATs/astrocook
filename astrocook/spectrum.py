@@ -236,7 +236,7 @@ class Spectrum(Frame):
         return nodes
 
 
-    def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
+    def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s, mode='std'):
 
         self._slice(delta_x, xunit)
         x_ave = []
@@ -247,15 +247,23 @@ class Spectrum(Frame):
         if 'lines_mask' not in self._t.colnames:
             logging.warning("Lines weren't masked. I'm taking all spectrum.")
 
+
         for s in self._slice_range:
-            try:
-                where_s = np.where(np.logical_and(self._t['slice']==s,
-                                                  self._t['lines_mask']==0))
-            except:
+            if mode=='std':
+                try:
+                    where_s = np.where(np.logical_and(self._t['slice']==s,
+                                                    self._t['lines_mask']==0))
+                except:
+                    where_s = np.where(self._t['slice']==s)
+            elif mode=='cont':
                 where_s = np.where(self._t['slice']==s)
 
             # Use deabs column if present
-            y = self._t['deabs'] if 'deabs' in self._t.colnames else self.y.value
+            if mode == 'std':
+                y = self._t['deabs'] if 'deabs' in self._t.colnames else self.y.value
+            elif mode == 'cont':
+                y = self._t['cont']
+
 
             if len(where_s[0])>0.1*len(np.where(self._t['slice']==s)[0]):
                 x_where_s = self.x[where_s].value
@@ -264,13 +272,17 @@ class Spectrum(Frame):
                 x_ave.append(np.median(x_where_s))
                 xmin_ave.append(x_where_s[0])
                 xmax_ave.append(x_where_s[-1])
-                y_ave.append(np.median(y_where_s))
+                if mode == 'std':
+                    y_ave.append(np.median(y_where_s))
+                elif mode == 'cont':
+                    y_ave.append(np.interp(np.median(x_where_s), x_where_s, y_where_s))
                 dy_ave.append(sem(y_where_s))
         x = np.array(x_ave) * self._xunit
         xmin = np.array(xmin_ave) * self._xunit
         xmax = np.array(xmax_ave) * self._xunit
         y = np.array(y_ave) * self._yunit
         dy = np.array(dy_ave) * self._yunit
+
 
         return Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
 

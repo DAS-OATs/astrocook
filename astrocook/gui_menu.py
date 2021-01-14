@@ -543,14 +543,18 @@ class GUIMenuRecipes(GUIMenu):
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'spec',
                           "Continuum from nodes", 'nodes_cont')
+        self._item_method(self._menu, start_id+202, 'spec',
+                          "Continuum from absorbers", 'abs_cont')
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+210, 'spec', "Find peaks",
+        self._item_method(submenu, start_id+210, 'spec', "Correct flux for Ly-a opacity",
+                          'corr_lya')
+        self._item_method(submenu, start_id+211, 'spec', "Find peaks",
                           'peaks_find')
-        self._item_method(submenu, start_id+211, 'lines', "Extract nodes",
+        self._item_method(submenu, start_id+212, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(submenu, start_id+212, 'lines', "Clean nodes",
+        self._item_method(submenu, start_id+213, 'lines', "Clean nodes",
                           'nodes_clean')
-        self._item_method(submenu, start_id+213, 'nodes',
+        self._item_method(submenu, start_id+214, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSubMenu(submenu, "Other recipes")
         self._menu.AppendSeparator()

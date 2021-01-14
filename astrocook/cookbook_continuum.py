@@ -39,6 +39,42 @@ class CookbookContinuum(object):
 
 ### Basic
 
+    def corr_lya(self, zem, logN_thres=100, input_col='y', mode='basic'):
+        """ @brief Correct flux for Lyman-alpha opacity
+        @details Correct flux for Lyman-alpha opacity, using the prescriptions
+        by Inoue et al. 2014
+        @param zem Emisson redshift
+        @param logN_col Threshold for logarithmic column density
+        @param input_col Column to correct
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+            logN_thres = None if logN_thres in [None, 'None'] else float(logN_thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        if logN_thres is None:
+            try:
+                #logN_thres = np.median(self.sess.systs._t['logN'])
+                logN_thres = np.percentile(self.sess.systs._t['logN'], 30)
+                logging.info("I estimated the threshold column density from "
+                             "the system table: logN_thres = %s." % logN_thres)
+            except:
+                logN_thres = 100
+                logging.warning("No systems: I couldn't estimate the threshold "
+                                "column density. I am using logN_thres = %s." \
+                                % logN_thres)
+        getattr(spec, '_corr_lya_'+mode)(zem, logN_thres, input_col)
+
+        return 0
+
+
     def nodes_clean(self, kappa=5.0):
         """ @brief Clean nodes
         @details Clean the list of nodes from outliers.
@@ -54,12 +90,14 @@ class CookbookContinuum(object):
         self.sess.nodes = self.sess.spec._nodes_clean(self.sess.nodes, kappa)
         return 0
 
-    def nodes_extract(self, delta_x=500, xunit=au.km/au.s):
+    def nodes_extract(self, delta_x=500, xunit=au.km/au.s, mode='std'):
         """ @brief Extract nodes
         @details Extract nodes from a spectrum. Nodes are averages of x and y in
         slices, computed after masking lines.
         @param delta_x Size of slices
         @param xunit Unit of wavelength or velocity
+        @param mode Mode ('std' for extracting nodes from spectrum, 'cont' for
+        converting continuum into nodes)
         @return 0
         """
         try:
@@ -69,7 +107,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
-        self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit)
+        self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit, mode)
         #print(len(self.sess.nodes.t))
 
         return 0
@@ -140,6 +178,7 @@ class CookbookContinuum(object):
 
 
 ### Advanced
+
 
     def lines_find(self, std_start=100.0, std_end=0.0, col='y', kind='min',
                    kappa_peaks=5.0, resol=resol_def, append=True):
@@ -250,8 +289,7 @@ class CookbookContinuum(object):
 
         return 0
 
-    def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
-                   smooth=0):
+    def nodes_cont(self, delta_x=500, kappa_nodes=5.0, smooth=0):
         """ @brief Continuum from nodes
         @details Estimate a continuum by extracting, cleaning, and interpolating
         nodes from regions not affected by lines
@@ -272,5 +310,42 @@ class CookbookContinuum(object):
         self.nodes_extract(delta_x, au.km/au.s)
         self.nodes_clean(kappa_nodes)
         self.nodes_interp(smooth)
+
+        return 0
+
+    def abs_cont(self, zem, std=1000.0, resol=resol_def, reest_n=4):
+        """ @brief Continuum from absorbers
+        @details Estimate a continuum by iteratively fitting and removing
+        absorbers
+        @param zem Emisson redshift
+        @param reest_n Number of re-estimation cycles
+        @param std Standard deviation of the gaussian (km/s)
+        @param resol Resolution
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+            std = float(std)
+            resol = None if resol in [None, 'None'] else float(resol)
+            reest_n = int(reest_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        systs = self.sess.systs
+        spec = self.sess.spec
+
+        self.corr_lya(zem, logN_thres=100, input_col='y')
+        self.gauss_convolve(std, input_col='y_taucorr', output_col='cont')
+        self.lines_find(resol)
+        self.systs_new_from_lines(refit_n=0, resol=resol)
+        for i in range(reest_n):
+            spec._t['cont%i' % i] = spec._t['cont']
+            self.corr_lya(zem, logN_thres=None, input_col='deabs')
+            self.gauss_convolve(std, input_col='deabs_taucorr',
+                                output_col='cont')
+            self.systs_fit(refit_n=1)
+        self.nodes_extract(delta_x=1000.0, mode='cont')
 
         return 0
