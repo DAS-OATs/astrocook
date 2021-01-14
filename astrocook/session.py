@@ -150,15 +150,17 @@ class Session(object):
         else:
 
             # ESO ADP spectrum
-            if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
+            if orig == 'ESO': #and hdr['ARCFILE'][:3]=='ADP':
                 self.spec = format.eso_adp(hdul)
 
-            # ESO-MIDAS spectrum
+            # ESO-MIDAS spectrum+
             if orig == 'ESO-MIDAS':
                 if len(hdul) == 1:
-                    self.spec = format.eso_midas_image(hdul)
+                    #self.spec = format.eso_midas_image(hdul)
+                    self.spec = format.generic_spectrum(hdul)
                 else:
-                    self.spec = format.eso_midas_table(hdul)
+                    #self.spec = format.eso_midas_table(hdul)
+                    self.spec = format.generic_spectrum(hdul)
 
             # ESPRESSO DRS spectrum
             if instr == 'ESPRESSO' and catg[0:3] == 'S1D':

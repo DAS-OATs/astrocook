@@ -161,6 +161,7 @@ class CookbookGeneral(object):
         if kwargs['spec'] != None:
             from .session import Session
             new = Session(**kwargs)
+            new._gui = self.sess._gui
         else:
             new = None
         if 'systs' in self.sess.seq and self.sess.systs != None:
