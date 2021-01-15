@@ -133,7 +133,7 @@ class Frame():
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
 
-    def _corr_lya_basic(self, zem, logN_thres, input_col='y', verb=True):
+    def _lya_corr_basic(self, zem, logN_thres, input_col='y', verb=True):
 
         dv_prox = 1e4
         zprox = zem - (1.0+zem) * dv_prox / aconst.c.to(au.km/au.s).value
@@ -214,8 +214,9 @@ class Frame():
         taucorr *= corr
         self._t[input_col+'_taucorr'] = taucorr
 
+        return corr
 
-    def _corr_lya_inoue(self, zem, logN_thres, input_col='y'):
+    def _lya_corr_inoue(self, zem, logN_thres, input_col='y'):
 
         x = self.x.to(au.nm).value
         y = self.y

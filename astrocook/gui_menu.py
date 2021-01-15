@@ -547,7 +547,7 @@ class GUIMenuRecipes(GUIMenu):
                           "Continuum from absorbers", 'abs_cont')
         submenu = wx.Menu()
         self._item_method(submenu, start_id+210, 'spec', "Correct flux for Ly-a opacity",
-                          'corr_lya')
+                          'lya_corr')
         self._item_method(submenu, start_id+211, 'spec', "Find peaks",
                           'peaks_find')
         self._item_method(submenu, start_id+212, 'lines', "Extract nodes",

@@ -39,7 +39,7 @@ class CookbookContinuum(object):
 
 ### Basic
 
-    def corr_lya(self, zem, logN_thres=100, input_col='y', mode='basic'):
+    def lya_corr(self, zem, logN_thres=100, input_col='y', mode='basic'):
         """ @brief Correct flux for Lyman-alpha opacity
         @details Correct flux for Lyman-alpha opacity, using the prescriptions
         by Inoue et al. 2014
@@ -62,7 +62,7 @@ class CookbookContinuum(object):
         if logN_thres is None:
             try:
                 #logN_thres = np.median(self.sess.systs._t['logN'])
-                logN_thres = np.percentile(self.sess.systs._t['logN'], 30)
+                logN_thres = np.percentile(self.sess.systs._t['logN'], 95)
                 logging.info("I estimated the threshold column density from "
                              "the system table: logN_thres = %s." % logN_thres)
             except:
@@ -70,7 +70,8 @@ class CookbookContinuum(object):
                 logging.warning("No systems: I couldn't estimate the threshold "
                                 "column density. I am using logN_thres = %s." \
                                 % logN_thres)
-        getattr(spec, '_corr_lya_'+mode)(zem, logN_thres, input_col)
+        self._lya_corr = getattr(spec, '_lya_corr_'+mode)\
+                             (zem, logN_thres, input_col)
 
         return 0
 
@@ -336,15 +337,17 @@ class CookbookContinuum(object):
         systs = self.sess.systs
         spec = self.sess.spec
 
-        self.corr_lya(zem, logN_thres=100, input_col='y')
+        self.lya_corr(zem, logN_thres=100, input_col='y')
         self.gauss_convolve(std, input_col='y_taucorr', output_col='cont')
         self.lines_find(resol)
-        self.systs_new_from_lines(refit_n=0, resol=resol)
+        self.systs_new_from_lines(refit_n=1, resol=resol)
         for i in range(reest_n):
+            spec._t['decorr'] = spec._t['deabs']/self._lya_corr
             spec._t['cont%i' % i] = spec._t['cont']
-            self.corr_lya(zem, logN_thres=None, input_col='deabs')
-            self.gauss_convolve(std, input_col='deabs_taucorr',
+            self.lya_corr(zem, logN_thres=None, input_col='decorr')
+            self.gauss_convolve(std, input_col='decorr_taucorr',
                                 output_col='cont')
+            self.lines_find(resol, col='deabs')
             self.systs_fit(refit_n=1)
         self.nodes_extract(delta_x=1000.0, mode='cont')
 
