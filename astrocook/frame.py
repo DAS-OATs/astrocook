@@ -133,7 +133,8 @@ class Frame():
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
 
-    def _lya_corr_basic(self, zem, logN_thres, input_col='y', verb=True):
+    def _lya_corr_basic(self, zem, logN_thres, input_col='y', apply=True,
+                        verb=True):
 
         dv_prox = 1e4
         zprox = zem - (1.0+zem) * dv_prox / aconst.c.to(au.km/au.s).value
@@ -206,20 +207,19 @@ class Frame():
                      + np.exp(tau_norm * np.power(1+zprox, tau_index) \
                               * num / den) * fact_0
 
-        logging.info("Mean correction: %3.2f." % np.mean(corr))
-        if verb:
-            if input_col+'_taucorr' not in self._t.colnames:
-                logging.info("I'm adding column %s_taucorr." % input_col)
-        taucorr = dc(self._t[input_col])
-        taucorr *= corr
-        self._t[input_col+'_taucorr'] = taucorr
+        if apply:
+            if verb:
+                if input_col+'_taucorr' not in self._t.colnames:
+                    logging.info("I'm adding column %s_taucorr." % input_col)
+            taucorr = dc(self._t[input_col])
+            taucorr *= corr
+            self._t[input_col+'_taucorr'] = taucorr
 
         return corr
 
-    def _lya_corr_inoue(self, zem, logN_thres, input_col='y'):
+    def _lya_corr_inoue(self, zem, input_col='y', apply=True):
 
         x = self.x.to(au.nm).value
-        y = self.y
 
         x_ll = xem_d['Ly_lim'].to(au.nm).value
 
@@ -282,10 +282,16 @@ class Frame():
 
         tau = tau_ls_laf + tau_ls_dla + tau_lc_laf + tau_lc_dla
 
-        corr = np.ones(len(y))
+        corr = np.ones(len(x))
         z = (x/xem_d['Ly_a']).value - 1
         corr[z<zem] = np.exp(tau[z<zem])
-        print(corr)
+
+        if apply:
+            taucorr = dc(self._t[input_col])
+            taucorr *= corr
+            self._t[input_col+'_taucorr'] = taucorr
+
+        return corr
 
     def _region_extract(self, xmin, xmax):
         """ @brief Extract a spectral region as a new frame.
