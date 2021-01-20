@@ -9,6 +9,8 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+import warnings
+warnings.filterwarnings("ignore")
 
 thres = 1e-2
 

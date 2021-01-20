@@ -6,8 +6,10 @@ from astropy import table as at
 from astropy import units as au
 #from scipy.interpolate import UnivariateSpline as uspline
 from copy import deepcopy as dc
+import cProfile
 from scipy.optimize import root_scalar
 from matplotlib import pyplot as plt
+import pstats
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -40,13 +42,17 @@ class CookbookContinuum(object):
 
 ### Basic
 
-    def lya_corr(self, zem, logN_thres=100, input_col='y', mode='basic'):
+    def lya_corr(self, zem, input_col='y', mode='basic', logN_thres=100,
+                 percentile=100):
         """ @brief Correct flux for Lyman-alpha opacity
         @details Correct flux for Lyman-alpha opacity, using the prescriptions
         by Inoue et al. 2014
         @param zem Emisson redshift
-        @param logN_col Threshold for logarithmic column density
         @param input_col Column to correct
+        @param mode Correction mode ('basic' or 'inoue')
+        @param logN_col Threshold for logarithmic column density
+        @param percentile Percentile to compute the threshold from the column
+        density distribution (only if logN_col is None)
         @return 0
         """
 
@@ -63,31 +69,34 @@ class CookbookContinuum(object):
         if logN_thres is None:
             try:
                 #logN_thres = np.median(self.sess.systs._t['logN'])
-                logN_thres = np.percentile(self.sess.systs._t['logN'], 50)
+                logN_thres = np.percentile(self.sess.systs._t['logN'], percentile)
                 logging.info("I estimated the threshold column density from "
-                             "the system table: logN_thres = %s." % logN_thres)
+                             "the system table: logN_thres = %2.2f." \
+                             % logN_thres)
             except:
                 logN_thres = 100
                 logging.warning("No systems: I couldn't estimate the threshold "
-                                "column density. I am using logN_thres = %s." \
-                                % logN_thres)
+                                "column density. I am using logN_thres = "\
+                                "%2.2f." % logN_thres)
         if mode == 'inoue':
             inoue_all = getattr(spec, '_lya_corr_inoue')(zem, input_col,
                                                          apply=False)
             basic_all = getattr(spec, '_lya_corr_basic')(zem, 100, input_col,
                                                          apply=False)
         else:
-            inoue_all = np.ones(len(spec.x))
-            basic_all = np.ones(len(spec.x))
+            inoue_all = np.zeros(len(spec.x))
+            basic_all = np.zeros(len(spec.x))
         basic = getattr(spec, '_lya_corr_basic')(zem, logN_thres, input_col,
                                                  apply=False)
 
 
         self._lya_corr = 1+(inoue_all-1)*(basic-1)/(basic_all-1)
+        """
         plt.plot(spec.x, inoue_all)
         plt.plot(spec.x, basic_all)
         plt.plot(spec.x, basic)
         plt.plot(spec.x, self._lya_corr, linewidth=3)
+        """
         #plt.show()
         taucorr = dc(spec._t[input_col])
         taucorr *= self._lya_corr
@@ -182,6 +191,7 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
+        #print(len(peaks.t))
         if len(peaks.t) > 0:
             self._peaks_found = True
             source = [col]*len(peaks.t)
@@ -237,7 +247,6 @@ class CookbookContinuum(object):
         if resol is not None:
             logging.info("I'm adding column 'resol'.")
             self.sess.spec._t['resol'] = resol
-
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
@@ -337,17 +346,19 @@ class CookbookContinuum(object):
 
         return 0
 
-    def abs_cont(self, zem, std=1000.0, resol=resol_def, reest_n=4):
+    def abs_cont(self, zem, std=1000.0, resol=resol_def, mode='basic', reest_n=4):
         """ @brief Continuum from absorbers
         @details Estimate a continuum by iteratively fitting and removing
         absorbers
         @param zem Emisson redshift
         @param std Standard deviation of the gaussian (km/s)
         @param resol Resolution
+        @param mode Correction mode ('basic' or 'inoue')
         @param reest_n Number of re-estimation cycles
         @return 0
         """
-
+        profile = cProfile.Profile()
+        profile.enable()
         try:
             zem = float(zem)
             std = float(std)
@@ -361,23 +372,25 @@ class CookbookContinuum(object):
         lines = self.sess.lines
         systs = self.sess.systs
 
-        self.lya_corr(zem, logN_thres=13.8, input_col='y', mode='inoue')
+        self.lya_corr(zem, input_col='y', mode=mode, logN_thres=13.8)
         self.gauss_convolve(std, input_col='y_taucorr', output_col='cont')
-        self.lines_find(resol)
-        print('lines', len(self.sess.lines._t))
-        self.systs_new_from_lines(refit_n=0, resol=resol)
-        print('systs', len(self.sess.systs._t))
+        self.lines_find(resol=resol)
+        #print('lines', len(self.sess.lines._t))
+        self.systs_new_from_lines(refit_n=1, resol=resol)
+        #print('systs', len(self.sess.systs._t))
         for i in range(reest_n):
             spec._t['decorr'] = spec._t['deabs']/self._lya_corr
             spec._t['cont%i' % i] = spec._t['cont']
-            self.lya_corr(zem, logN_thres=None, input_col='decorr', mode='inoue')
+            self.lya_corr(zem, input_col='decorr', mode=mode, logN_thres=None, percentile=100)
             self.gauss_convolve(std, input_col='decorr_taucorr',
                                 output_col='cont')
-            self.lines_find(resol, col='deabs')
-            print('lines', len(self.sess.lines._t))
-            self.systs_new_from_lines(refit_n=0, resol=resol, append=False)
-            print('systs', len(self.sess.systs._t))
+            self.lines_find(resol=resol, col='deabs')
+            #print('lines', len(self.sess.lines._t))
+            self.systs_new_from_lines(refit_n=1, resol=resol, append=False)
+            #print('systs', len(self.sess.systs._t))
             #self.systs_fit(refit_n=1)
         self.nodes_extract(delta_x=1000.0, mode='cont')
-
+        profile.disable()
+        ps = pstats.Stats(profile)
+        ps.print_stats()
         return 0
