@@ -156,8 +156,8 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
-        #spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
-        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        #spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
         for i,c in enumerate(data.colnames):
             if c not in ['WAVE', 'FLUX', 'ERR_FLUX', 'ERR', 'CONTINUUM']:
