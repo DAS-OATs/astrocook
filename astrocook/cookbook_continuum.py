@@ -346,7 +346,8 @@ class CookbookContinuum(object):
 
         return 0
 
-    def abs_cont(self, zem, std=1000.0, resol=resol_def, mode='basic', reest_n=4):
+    def abs_cont(self, zem, std=1000.0, resol=resol_def, mode='basic',
+                 reest_n=4, _refit_n=0, _percentile=100, _print_stats=True):
         """ @brief Continuum from absorbers
         @details Estimate a continuum by iteratively fitting and removing
         absorbers
@@ -364,6 +365,9 @@ class CookbookContinuum(object):
             std = float(std)
             resol = None if resol in [None, 'None'] else float(resol)
             reest_n = int(reest_n)
+            refit_n = int(_refit_n)
+            percentile = float(_percentile)
+            print_stats = str(_print_stats) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -372,25 +376,31 @@ class CookbookContinuum(object):
         lines = self.sess.lines
         systs = self.sess.systs
 
-        self.lya_corr(zem, input_col='y', mode=mode, logN_thres=13.8)
+        self.lya_corr(zem, input_col='y', mode=mode, logN_thres=100)
         self.gauss_convolve(std, input_col='y_taucorr', output_col='cont')
         self.lines_find(resol=resol)
         #print('lines', len(self.sess.lines._t))
-        self.systs_new_from_lines(refit_n=1, resol=resol)
+        self.systs_new_from_lines(refit_n=refit_n, resol=resol)
         #print('systs', len(self.sess.systs._t))
         for i in range(reest_n):
             spec._t['decorr'] = spec._t['deabs']/self._lya_corr
             spec._t['cont%i' % i] = spec._t['cont']
-            self.lya_corr(zem, input_col='decorr', mode=mode, logN_thres=None, percentile=100)
+            spec._t['deabs%i' % i] = spec._t['deabs']
+            self.lya_corr(zem, input_col='decorr', mode=mode, logN_thres=None,
+                          percentile=percentile)
             self.gauss_convolve(std, input_col='decorr_taucorr',
                                 output_col='cont')
             self.lines_find(resol=resol, col='deabs')
             #print('lines', len(self.sess.lines._t))
-            self.systs_new_from_lines(refit_n=1, resol=resol, append=False)
+            if i == reest_n-1 or True:
+                self.systs_new_from_lines(refit_n=refit_n, resol=resol, append=False)
+            else:
+                self.systs_new_from_lines(refit_n=0, resol=resol, append=False)
             #print('systs', len(self.sess.systs._t))
             #self.systs_fit(refit_n=1)
         self.nodes_extract(delta_x=1000.0, mode='cont')
         profile.disable()
         ps = pstats.Stats(profile)
-        ps.print_stats()
+        if print_stats:
+            ps.sort_stats('cumtime').print_stats()
         return 0
