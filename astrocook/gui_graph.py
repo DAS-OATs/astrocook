@@ -7,9 +7,9 @@ from collections import OrderedDict
 import logging
 from matplotlib import pyplot as plt
 from matplotlib.backend_bases import Event
-#from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-#    NavigationToolbar2WxAgg
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
+    NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
@@ -376,7 +376,7 @@ class GUIGraphHistogram(GUIGraphMain):
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
-        step=2/3
+        step=2/3 #2/3
         min = -5 #np.floor(np.min(values))
         max = 5 #np.ceil(np.max(values))
         bins = np.arange(min-0.0*step, max+1.0*step, step)
