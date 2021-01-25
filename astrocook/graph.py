@@ -408,7 +408,7 @@ class Graph(object):
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
-                #sess = self._gui._sess_list[int(sel)]
+                sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 if struct in ['spec','lines','nodes','systs']:
