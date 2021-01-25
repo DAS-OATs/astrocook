@@ -292,12 +292,15 @@ class Graph(object):
         self._yunit = GraphSpectrumXY(sess[0], norm)._y.unit
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
+
+        # Rest frame axis
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
                                 % sess[0].spec._rfz)
             if self._axt == None:
                 self._axt = self._ax.twiny()
                 self._axt.set_xlabel(str(self._xunit))
+            self._axt_mode = 'rf'
         else:
             try:
                 self._axt.remove()
@@ -305,6 +308,19 @@ class Graph(object):
                 pass
             self._axt = None
         #self._c = 0  # Color
+
+        # Redshift axis
+        if hasattr(sess[0], '_ztrans'):
+            self._axt = self._ax.twiny()
+            self._axt.set_xlabel('Redshift')
+            self._axt_mode = 'z'
+        else:
+            try:
+                self._axt.remove()
+            except:
+                pass
+            self._axt = None
+
         if logx:
             self._ax.set_xscale('log')
             try:
@@ -595,8 +611,12 @@ class Graph(object):
             except:
                 pass
             if self._axt != None:
-                self._axt.set_xlim(np.array(self._ax.get_xlim()) \
-                                   * (1+sess.spec._rfz))
+                if self._axt_mode == 'rf':
+                    self._axt.set_xlim(np.array(self._ax.get_xlim()) \
+                                       * (1+sess.spec._rfz))
+                if self._axt_mode == 'z':
+                    self._axt.set_xlim((np.array(self._ax.get_xlim())*self._xunit \
+                        / xem_d[sess._ztrans]).to(au.dimensionless_unscaled)-1)
 
 
         #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)

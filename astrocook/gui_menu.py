@@ -687,6 +687,11 @@ class GUIMenuView(GUIMenu):
         self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
         self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+301, 'spec', "Set redshift axis",
+                              'z_ax')
+        self._item(self._menu, start_id+302, 'spec', "Hide redshift axis",
+                   self._on_z_ax_remove)
+        self._menu.AppendSeparator()
         self._submenu = wx.Menu()
         self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
                          dlg_mini='graph', alt_title="Graph elements")
@@ -771,3 +776,7 @@ class GUIMenuView(GUIMenu):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+
+    def _on_z_ax_remove(self, event, log=False):
+        delattr(self._gui._sess_sel, '_ztrans')
+        self._gui._refresh()
