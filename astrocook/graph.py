@@ -312,7 +312,7 @@ class Graph(object):
         # Redshift axis
         if hasattr(sess[0], '_ztrans'):
             self._axt = self._ax.twiny()
-            self._axt.set_xlabel('Redshift')
+            self._axt.set_xlabel('%s redshift' % sess[0]._ztrans)
             self._axt_mode = 'z'
         else:
             try:
