@@ -21,6 +21,7 @@ class SystModel(LMComposite):
                  psf_func=psf_gauss,
                  cont_func=None):
         self._spec = spec
+        self._systs = systs
         try:
             self._mods_t = systs._mods_t
         except:
@@ -190,6 +191,7 @@ class SystModel(LMComposite):
         spec = self._spec
 
         mods_t = self._mods_t
+        systs_t = self._systs._t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
 
         #print(self.__dict__)
@@ -198,45 +200,77 @@ class SystModel(LMComposite):
         self._group = self._lines
         self._group_list = []
 
-        #print(mods_t['id'])
+        mods_x = [[xem_d[t].to(au.nm).value*(1+mod['z0']) \
+                   for t in trans_parse(mod['mod']._series)] for mod in mods_t]
+        systs_x = [[xem_d[t].to(au.nm).value*(1+s['z']) \
+                    for t in trans_parse(s['series'])] for s in systs_t]
+        new_x = [xem_d[t].to(au.nm).value*(1+self._pars['lines_voigt_%i_z' % self._id]) \
+                 for t in trans_parse(self._series)]
+
+        #sel_x = np.ravel([np.abs(x/new_x-1)<np.inf for x in mods_x])
+        #sel_x = np.ravel([np.abs(x/new_x-1)<0.01 for x in mods_x])
+        #sel_x = np.ravel([np.abs(x/new_x-1)<0 for x in mods_x])
+        #sel_x = [np.any([np.abs(x/xn-1)<np.inf for xn in new_x]) for x in mods_x]
+        #sel_x = [np.any([np.abs(x/xn-1)<0.01 for xn in new_x]) for x in mods_x]
+        #sel_x = [np.any([np.abs(x/xn-1)<0 for xn in new_x]) for x in mods_x]
+
+
+        #systs_s = [np.any([np.abs(xs/xn-1)<np.inf for xn in new_x]) for xs in systs_x]
+        systs_s = [np.any([np.abs(xs/xn-1)<0.01 for xn in new_x]) for xs in systs_x]
+        #systs_s = [np.any([np.abs(xs/xn-1)<0 for xn in new_x]) for xs in systs_x]
+
+
+        mods_s = [[i in systs_t['id'][systs_s] for i in id] for id in mods_t['id']]
+        #print(mods_s)
+        #print('')
+        #print(self._id in np.ravel(mods_t['id']))
+        #print(self._id in np.ravel(mods_t[sel_x]['id']))
+        #print(self._id, self._pars)
         for i, s in enumerate(mods_t):
-            #print(s['id'])
-            mod = s['mod']
-            ys_s = mod._ys
-            ymax = np.maximum(ys, ys_s)
-            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-            pars_cond = False
-            for p,v in self._constr.items():
-                for mod_p,mod_v in mod._pars.items():
-                    pars_cond = pars_cond or v==mod_p
-            if y_cond or pars_cond:
-                #print('mod')
-                #mod._pars.pretty_print()
-                #print('self')
-                #self._pars.pretty_print()
-                #try:
-                self._group *= mod._group
-                #except:
-                #    self._group_sel = -1
-                #    return
+            if np.any(mods_s[i]):
+                #print(s['id'])
                 mod = s['mod']
-                for p,v in mod._pars.items():
-                    if v.expr != None:
-                        self._constr[p] = v.expr
-                        v.expr = ''
-                self._pars.update(mod._pars)
-                if pars_cond or self._constr != {}:
-                    for p,v in self._constr.items():
-                        self._pars[p].expr = v
-                        if v != '':
-                            try:
-                                self._pars[p].min = self._pars[v].min
-                                self._pars[p].max = self._pars[v].max
-                                self._pars[p].value = self._pars[v].value
-                            except:
-                                self._pars[p].expr = ''
-                self._group_list.append(i)
-                mod._ys = self._group.eval(x=self._xs, params=self._pars)
+                ys_s = mod._ys
+                ymax = np.maximum(ys, ys_s)
+                y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+                pars_cond = False
+                for p,v in self._constr.items():
+                    for mod_p,mod_v in mod._pars.items():
+                        pars_cond = pars_cond or v==mod_p
+                if y_cond or pars_cond:
+                #if (y_cond or pars_cond) and sel_x[i]:
+                    #print('mod')
+                    #mod._pars.pretty_print()
+                    #print('self')
+                    #self._pars.pretty_print()
+                    #try:
+                    #print('self')
+                    #print(self._id, self._pars)
+                    #print('mod')
+                    #print(s['id'], s['mod']._pars)
+                    self._group *= mod._group
+                    #except:
+                    #    self._group_sel = -1
+                    #    return
+                    mod = s['mod']
+                    for p,v in mod._pars.items():
+                        if v.expr != None:
+                            self._constr[p] = v.expr
+                            v.expr = ''
+                    self._pars.update(mod._pars)
+                    if pars_cond or self._constr != {}:
+                        for p,v in self._constr.items():
+                            self._pars[p].expr = v
+                            if v != '':
+                                try:
+                                    self._pars[p].min = self._pars[v].min
+                                    self._pars[p].max = self._pars[v].max
+                                    self._pars[p].value = self._pars[v].value
+                                except:
+                                    self._pars[p].expr = ''
+                    self._group_list.append(i)
+                    group_eval = self._group.eval(x=self._xs, params=self._pars)
+                    mod._ys = group_eval
 
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
@@ -247,7 +281,14 @@ class SystModel(LMComposite):
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
-        self._ys = self._group.eval(x=self._xs, params=self._pars)
+
+        try:
+            self._ys = group_eval
+        except:
+            self._ys = self._group.eval(x=self._xs, params=self._pars)
+
+
+        #return mods_s
 
 
     def _make_lines(self):
@@ -344,7 +385,7 @@ class SystModel(LMComposite):
              d['resol_min'], d['resol_max'], d['resol_expr']))
         #"""
 
-    def _make_regions(self, mod, xs, thres=thres):
+    def _make_regions(self, mod, xs=None, thres=thres):
         spec = self._spec
         if 'fit_mask' not in spec.t.colnames:
             #logging.info("I'm adding column 'fit_mask' to spectrum.")
@@ -353,7 +394,11 @@ class SystModel(LMComposite):
 
         #self._pars.pretty_print()
         #print(xs)
-        ys = mod.eval(x=xs, params=self._pars)
+        if xs is None:
+            xs = self._xs
+            ys = self._ys
+        else:
+            ys = mod.eval(x=xs, params=self._pars)
         c = []
         t = thres
         while len(c)==0:
@@ -401,6 +446,7 @@ class SystModel(LMComposite):
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
+
         self._resol = resol
         self._series = series
 
@@ -419,9 +465,12 @@ class SystModel(LMComposite):
         #self._make_comp()
         self._make_comp2()
 
-        self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
+        #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
+        self._xr, self._yr, self._wr, self._ys = self._make_regions(self)
 
         #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
         #self._pars.pretty_print()
         #self._ys = self.eval(x=self._xs, params=self._pars)
+
+        #return mods_s

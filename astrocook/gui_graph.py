@@ -173,7 +173,8 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
 
-        params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
+        params = [{'series': sess._series_sel, 'z': self._graph._cursor._z,
+                   'refit_n': 0, 'sel_fit': True}]
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
                               params_last = params)
         self._gui._refresh(init_cursor=True)

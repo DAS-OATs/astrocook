@@ -7,12 +7,14 @@ from astropy import constants as aconst
 from astropy import table as at
 from astropy import units as au
 from copy import deepcopy as dc
+import cProfile
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 import sys
+import pstats
 
 prefix = "[INFO] cookbook_absorbers:"
 
@@ -177,8 +179,12 @@ class CookbookAbsorbers(object):
                          % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
-    def _mods_recreate2(self, only_constr=False, verbose=True):
+    def _mods_recreate2(self, new=None, only_constr=False, verbose=True):
         """ Create new system models from a system list """
+
+        profile = cProfile.Profile()
+        profile.enable()
+
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
@@ -215,8 +221,39 @@ class CookbookAbsorbers(object):
             #print(mod_sel)
 
         else:
-            mod_w = range(len(systs._mods_t))
-            mod_sel = np.array(systs._t['id'])
+            if new is not None:
+                mod_w = np.array([new._group_sel])
+                mod_sel = np.array(new._mods_t['id'][new._group_sel])
+            else:
+                mod_w = range(len(systs._mods_t))
+                mod_sel = np.array(systs._t['id'])
+            """
+            else:
+                systs_x = [[xem_d[t].to(au.nm).value*(1+s['z']) \
+                            for t in trans_parse(s['series'])]\
+                           for s in systs._t]
+                new_x = [xem_d[t].to(au.nm).value\
+                         *(1+new._pars['lines_voigt_%i_z' % new._id]) \
+                         for t in trans_parse(new._series)]
+
+                systs_s = [np.any([np.abs(xs/xn-1)<0.01 for xn in new_x]) \
+                           for xs in systs_x]
+                #print(systs_s)
+                mod_s = [[i in systs._t['id'][systs_s] for i in id] for id in systs._mods_t['id']]
+                #print(mod_s)
+                self._fit_list = [np.any(m) for m in mod_s]
+                mod_w = np.where(self._fit_list)[0]
+                print(mod_w)
+                print(new._group_sel)
+                mod_sel = np.array([], dtype=int)
+                for w in mod_w:
+                    mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
+                #self._fit_list = mod_s
+                print(mod_sel)
+                print(new._mods_t['id'][new._group_sel])
+                #print(self._fit_list)
+            """
+
         #print(mod_w)
         #print(mod_sel)
 
@@ -261,11 +298,15 @@ class CookbookAbsorbers(object):
                             % (w, c))
 
         systs_t.sort(['z','id'])
-        #print(systs._mods_t['id'])
+        #systs._mods_t['id'].pprint(max_lines=-1)
+        #print(len(systs._mods_t))
         mods_n = len(mod_w)#len(self.sess.systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s." \
                          % (mods_n, '' if mods_n==1 else 's'))
+        profile.disable()
+        ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
         return 0
 
 
@@ -337,6 +378,7 @@ class CookbookAbsorbers(object):
         mod = SystModel(spec, systs, z0=z)
         mod._new_voigt(series, z, logN, b, resol)
 
+        #print(mod._mods_t['id'][mod._group_sel])
         # When a single system is added, it is stored only on the model table
         self._mods_update(mod, incr=False)
         return mod
@@ -406,7 +448,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_cycle(self, verbose=True):
+    def _systs_cycle(self, new=None, verbose=True):
         chi2rav = np.inf
         chi2rav_old = 0
         chi2r_list, z_list = [], []
@@ -422,7 +464,7 @@ class CookbookAbsorbers(object):
                 self._systs_reject(verbose=False)
                 self._mods_recreate(verbose=False)
             #print(chi2rav, chi2rav_old)
-        chi2r_list, z_list = self._systs_fit(verbose=False)
+        chi2r_list, z_list = self._systs_fit(new=new, verbose=False)
         self._systs_reject(verbose=False)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
@@ -432,22 +474,38 @@ class CookbookAbsorbers(object):
                              % chi2rav)
 
 
-    def _systs_fit(self, verbose=True):
+    def _systs_fit(self, new=None, verbose=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
         if self._max_nfev > 0:
+            """
             fit_list = []
-            for i,m in enumerate(mods_t):
-                if self._sel_fit:
-                    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
-                          for id in m['id']]
-                    fit_list.append(np.isnan(dz).any())
-                else:
-                    fit_list.append(True)
+
+            if self._sel_fit:
+                try:
+                    fit_list = np.array(self._fit_list)
+                except:
+                    fit_list = []
+                    for i,m in enumerate(mods_t):
+                        if self._sel_fit:
+                            dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
+                                  for id in m['id']]
+                            fit_list.append(np.isnan(dz).any())
+            else:
+                fit_list = np.ones(len(mods_t), dtype=bool)
+            #print(fit_list)
+            #print(np.array([new._group_sel]))
+            """
+            if new is not None:
+                sel = np.array([new._group_sel])
+            else:
+                sel = range(len(mods_t))
 
             z_list = []
             chi2r_list = []
-            for i,m in enum_tqdm(mods_t, np.sum(fit_list),
+            #for i,m in enum_tqdm(mods_t, np.sum(fit_list),
+            #                     "cookbook_absorbers: Fitting"):
+            for i,m in enum_tqdm(mods_t[sel], len(sel),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
                 """
@@ -459,13 +517,14 @@ class CookbookAbsorbers(object):
                     fit = True
                 """
                 z_list.append(m['z0'])
-                if fit_list[i]:
-                    self._syst_fit(m['mod'], verbose=False)
-                    chi2r_list.append(m['mod']._chi2r)
+                #if fit_list[i]:
+                    #print(i, m['z0'], m['id'])
+                self._syst_fit(m['mod'], verbose=False)
+                chi2r_list.append(m['mod']._chi2r)
 
             if verbose:
                 logging.info("I've fitted %i model%s." \
-                             % (len(mods_t), msg_z_range(z_list)))
+                             % (len(sel), msg_z_range(z_list)))
         else:
             if verbose:
                 logging.info("I've not fitted any model because you choose "
@@ -737,7 +796,7 @@ class CookbookAbsorbers(object):
     def syst_fit(self, num=1, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit a systems
-        @details Fit all Voigt model from a list of systems.
+        @details Fit a Voigt model from a list of systems.
         @param num Number of the system in the list
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
@@ -757,7 +816,7 @@ class CookbookAbsorbers(object):
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
         #self._syst_fit(mod)
-        self._systs_cycle()
+        self._systs_cycle(new=mod)
         self._spec_update()
 
         return 0
@@ -1097,7 +1156,8 @@ class CookbookAbsorbers(object):
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                 sel_fit=False):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
         @param series Series of transitions
@@ -1110,6 +1170,7 @@ class CookbookAbsorbers(object):
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
+        @param sel_fit Selective fit (only new systems will be fitted)
         @return 0
         """
 
@@ -1124,6 +1185,7 @@ class CookbookAbsorbers(object):
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
+            self._sel_fit = str(sel_fit) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -1161,13 +1223,13 @@ class CookbookAbsorbers(object):
             #print(self.sess.systs._t)
             #print(self.sess.systs._mods_t['id'])
             if self._refit_n == 0:
-                self._mods_recreate()
+                self._mods_recreate(new=mod)
             #print(self.sess.systs._mods_t['id'])
             #print(i, 'midway')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
             #    m._pars.pretty_print()
-            self._systs_cycle()
+            self._systs_cycle(new=mod)
             #print(i, 'after')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
