@@ -9,6 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+from scipy.signal import decimate as dcm
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -97,8 +98,11 @@ class SystModel(LMComposite):
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
         #ys = self._lines.eval(x=self._xs, params=self._pars)
 
-        ys = self._lines.eval(x=self._xs, params=self._pars)
+        #ys = self._lines.eval(x=self._xs, params=self._pars)
         #self._pars.pretty_print()
+
+        ys = self._lines.eval(x=self._xs, params=self._pars)
+
 
         self._group = self._lines
         self._group_list = []
@@ -193,9 +197,13 @@ class SystModel(LMComposite):
         mods_t = self._mods_t
         systs_t = self._systs._t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
+        xs = self._xs
 
         #print(self.__dict__)
-        ys = self._lines.eval(x=self._xs, params=self._pars)
+        #ys = self._lines.eval(x=self._xs, params=self._pars)
+
+
+
 
         self._group = self._lines
         self._group_list = []
@@ -207,6 +215,12 @@ class SystModel(LMComposite):
         new_x = [xem_d[t].to(au.nm).value*(1+self._pars['lines_voigt_%i_z' % self._id]) \
                  for t in trans_parse(self._series)]
 
+
+        ws = np.sum([np.abs(xs/xn-1)<0.1 for xn in new_x], axis=0, dtype=bool)
+
+        ys = np.ones(len(xs))
+        ys[ws] = self._lines.eval(x=xs[ws], params=self._pars)
+
         #sel_x = np.ravel([np.abs(x/new_x-1)<np.inf for x in mods_x])
         #sel_x = np.ravel([np.abs(x/new_x-1)<0.01 for x in mods_x])
         #sel_x = np.ravel([np.abs(x/new_x-1)<0 for x in mods_x])
@@ -215,19 +229,19 @@ class SystModel(LMComposite):
         #sel_x = [np.any([np.abs(x/xn-1)<0 for xn in new_x]) for x in mods_x]
 
 
-        systs_s = [np.any([np.abs(xs/xn-1)<np.inf for xn in new_x]) for xs in systs_x]
-        #systs_s = [np.any([np.abs(xs/xn-1)<0.05 for xn in new_x]) for xs in systs_x]
+        #systs_s = [np.any([np.abs(x/xn-1)<np.inf for xn in new_x]) for x in systs_x]
+        #systs_s = [np.any([np.abs(xs/xn-1)<0.05 for xn in new_x]) for x in systs_x]
         #systs_s = [np.any([np.abs(xs/xn-1)<0 for xn in new_x]) for xs in systs_x]
 
 
-        mods_s = [[i in systs_t['id'][systs_s] for i in id] for id in mods_t['id']]
+        #mods_s = [[i in systs_t['id'][systs_s] for i in id] for id in mods_t['id']]
         #print(mods_s)
         #print('')
         #print(self._id in np.ravel(mods_t['id']))
         #print(self._id in np.ravel(mods_t[sel_x]['id']))
         #print(self._id, self._pars)
         for i, s in enumerate(mods_t):
-            if np.any(mods_s[i]):
+            if True:
                 #print(s['id'])
                 mod = s['mod']
                 ys_s = mod._ys
@@ -269,7 +283,8 @@ class SystModel(LMComposite):
                                 except:
                                     self._pars[p].expr = ''
                     self._group_list.append(i)
-                    group_eval = self._group.eval(x=self._xs, params=self._pars)
+                    group_eval = np.ones(len(self._xs))
+                    group_eval[ws] = self._group.eval(x=self._xs[ws], params=self._pars)
                     mod._ys = group_eval
 
         if len(self._group_list) > 1:
