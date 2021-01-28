@@ -254,8 +254,8 @@ class CookbookAbsorbers(object):
                 #print(self._fit_list)
             """
 
-        print(mod_w)
-        print(mod_sel)
+        #print(mod_w)
+        #print(mod_sel)
 
         #print(systs._mods_t)
         systs._mods_t.remove_rows(mod_w)

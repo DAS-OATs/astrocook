@@ -215,8 +215,8 @@ class SystModel(LMComposite):
         #sel_x = [np.any([np.abs(x/xn-1)<0 for xn in new_x]) for x in mods_x]
 
 
-        #systs_s = [np.any([np.abs(xs/xn-1)<np.inf for xn in new_x]) for xs in systs_x]
-        systs_s = [np.any([np.abs(xs/xn-1)<0.01 for xn in new_x]) for xs in systs_x]
+        systs_s = [np.any([np.abs(xs/xn-1)<np.inf for xn in new_x]) for xs in systs_x]
+        #systs_s = [np.any([np.abs(xs/xn-1)<0.05 for xn in new_x]) for xs in systs_x]
         #systs_s = [np.any([np.abs(xs/xn-1)<0 for xn in new_x]) for xs in systs_x]
 
 
