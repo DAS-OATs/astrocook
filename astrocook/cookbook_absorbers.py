@@ -232,7 +232,7 @@ class CookbookAbsorbers(object):
         wrong_id = []
         corr_id = []
         #print(systs_t)
-        for i,s in enum_tqdm(systs_t, len(systs_t),
+        for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             if systs._id in mod_sel:
@@ -261,11 +261,17 @@ class CookbookAbsorbers(object):
                             % (w, c))
 
         systs_t.sort(['z','id'])
-        #print(systs._mods_t['id'])
-        mods_n = len(mod_w)#len(self.sess.systs._mods_t)
+        #systs._mods_t['id'].pprint(max_lines=-1)
+        #print(len(systs._mods_t))
+        systs_n = len(systs._t)
+        mods_n = len(systs._mods_t)
         if verbose:
-            logging.info("I've recreated %i model%s." \
-                         % (mods_n, '' if mods_n==1 else 's'))
+            logging.info("I've recreated %i model%s (including %i system%s)." \
+                         % (mods_n, '' if mods_n==1 else 's',
+                            systs_n, '' if systs_n==1 else 's'))
+        #profile.disable()
+        #ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
         return 0
 
 
