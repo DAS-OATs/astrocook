@@ -245,6 +245,7 @@ class Graph(object):
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
+
         sess = np.array(sess, ndmin=1)
         #import datetime as dt
         #start = dt.datetime.now()
@@ -346,6 +347,7 @@ class Graph(object):
         dl = self._ax.__dict__['dataLim']
         #print(dl)
         self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
+
 
 
     def _reg_shade(self):
@@ -466,8 +468,10 @@ class Graph(object):
                     kwargs['alpha'] = float(alpha)
                     if mode == 'axvline':
                         #print(self._ax, x.value)
+                        xlim = self._ax.get_xlim()
                         for xi in x.value:
-                            getattr(self._ax, mode)(xi, **kwargs)
+                            if xi>xlim[0] and xi<xlim[1]:
+                                getattr(self._ax, mode)(xi, **kwargs)
                         for xi_sel in x_sel:
                             kwargs['linestyle'] = '-'
                             kwargs['linewidth'] = 10.0

@@ -697,6 +697,8 @@ class GUITableSystList(GUITable):
 
 
     def _on_detail(self, event, span=30, log=True):
+        profile = cProfile.Profile()
+        profile.enable()
         if event.GetRow() == -1: return
         row = self._data.t[event.GetRow()]
         row_z = row['z']
@@ -710,6 +712,9 @@ class GUITableSystList(GUITable):
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_detail(row_z, row_series, row_id, span)
+        profile.disable()
+        ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
 
 
     def _on_edit(self, event):

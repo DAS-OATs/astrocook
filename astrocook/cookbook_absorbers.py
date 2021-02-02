@@ -292,6 +292,10 @@ class CookbookAbsorbers(object):
                 self._mods_update(mod)
                 #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
+            else:
+                w = np.where([systs._id in s for s in systs._mods_t['id']])[0]
+                mod = systs._mods_t['mod'][w][0]
+                mod._make_regions(mod)
 
         for w, c in zip(wrong_id, corr_id):
             logging.warning("System %i had a duplicated id! I changed it to %i."
