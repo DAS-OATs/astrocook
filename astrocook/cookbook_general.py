@@ -81,6 +81,7 @@ class CookbookGeneral(object):
             logging.info("I'm adding column %s." % col)
         else:
             logging.info("I'm updating column %s." % col)
+        print(mask)
         spec._t[col] = mask
 
         if new_sess:

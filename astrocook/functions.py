@@ -122,32 +122,46 @@ def detect_local_minima(arr):
     #return np.where(detected_minima)
     return detected_minima
 
-def to_array(ast_list):
-    return np.asarray([float(i.n) for i in ast_list.elts])
+def expr_check(node):
+    if isinstance(node, list):
+        iter = node
+    elif isinstance(node, ast.List):
+        iter = node.elts
+    else:
+        return expr_eval(node)
+
+    ret = []
+    for i in iter:
+        if isinstance(node, ast.Num):
+            ret.append(float(i.n))
+        else:
+            ret.append(expr_eval(i))
+    return np.ravel(ret)
 
 def expr_eval(node):
     if isinstance(node, ast.Num): # <number>
         return node.n
-    elif isinstance(node, ast.Compare):
-        if isinstance(node.left, ast.List):
-            left = to_array(node.left)
-        else:
-            left = expr_eval(node.left)
-        #print(node.ops[0], left)
-        return py_ops[type(node.ops[0])](left, expr_eval(node.comparators[0]))
 
     elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-        if isinstance(node.left, ast.List):
-            #print(node.left.elts)
-            left = to_array(node.left)
-        else:
-            left = expr_eval(node.left)
-        if isinstance(node.right, ast.List):
-            right = to_array(node.right)
-        else:
-            left = expr_eval(node.right)
-        #print(left, right)
-        return py_ops[type(node.op)](left, right)
+        return py_ops[type(node.op)](expr_check(node.left),
+                                     expr_check(node.right))
+
+    elif isinstance(node, ast.Call):
+        return getattr(np, expr_eval(node.func))(expr_check(node.args))
+
+    elif isinstance(node, ast.Compare):
+        left = expr_check(node.left)
+        for i, (o,c) in enumerate(zip(node.ops, node.comparators)):
+            if i == 0:
+                cond = py_ops[type(o)](left, expr_eval(c))
+            else:
+                cond = np.logical_and(cond, py_ops[type(o)](left, expr_eval(c)))
+            left = expr_eval(c)
+        return cond
+
+    elif isinstance(node, ast.Name):
+        return node.id
+
     elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
         return py_ops[type(node.op)](expr_eval(node.operand))
     else:
