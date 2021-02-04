@@ -72,8 +72,9 @@ class CookbookGeneral(object):
 
         spec = self.sess.spec
 
-        for c in spec._t.colnames:
+        for c in sorted(spec._t.colnames, key=len, reverse=True):
             cond = cond.replace(c, str(list(np.array(spec._t[c]))))
+            #print(c, cond)
         mask = expr_eval(ast.parse(cond, mode='eval').body)
 
         if col not in spec._t.colnames:

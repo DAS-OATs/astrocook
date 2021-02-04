@@ -123,7 +123,7 @@ def detect_local_minima(arr):
     return detected_minima
 
 def to_array(ast_list):
-    return np.asarray([int(i.n) for i in ast_list.elts])
+    return np.asarray([float(i.n) for i in ast_list.elts])
 
 def expr_eval(node):
     if isinstance(node, ast.Num): # <number>
@@ -133,10 +133,21 @@ def expr_eval(node):
             left = to_array(node.left)
         else:
             left = expr_eval(node.left)
+        #print(node.ops[0], left)
         return py_ops[type(node.ops[0])](left, expr_eval(node.comparators[0]))
 
     elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-        return py_ops[type(node.op)](expr_eval(node.left), expr_eval(node.right))
+        if isinstance(node.left, ast.List):
+            #print(node.left.elts)
+            left = to_array(node.left)
+        else:
+            left = expr_eval(node.left)
+        if isinstance(node.right, ast.List):
+            right = to_array(node.right)
+        else:
+            left = expr_eval(node.right)
+        #print(left, right)
+        return py_ops[type(node.op)](left, right)
     elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
         return py_ops[type(node.op)](expr_eval(node.operand))
     else:
