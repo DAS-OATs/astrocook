@@ -347,7 +347,7 @@ class CookbookContinuum(object):
         return 0
 
     def abs_cont(self, zem, std=1000.0, resol=resol_def, mode='basic',
-                 reest_n=4, _refit_n=0, _percentile=100, _print_stats=True):
+                 reest_n=4, _refit_n=0, _percentile=100, _print_stats=False):
         """ @brief Continuum from absorbers
         @details Estimate a continuum by iteratively fitting and removing
         absorbers

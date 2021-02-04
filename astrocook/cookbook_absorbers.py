@@ -505,10 +505,11 @@ class CookbookAbsorbers(object):
             if new is not None:
                 sel = np.array([new._group_sel])
             else:
-                sel = range(len(mods_t))
+                sel = np.array(range(len(mods_t)))
 
             z_list = []
             chi2r_list = []
+            #print(mods_t[sel])
             #for i,m in enum_tqdm(mods_t, np.sum(fit_list),
             #                     "cookbook_absorbers: Fitting"):
             for i,m in enum_tqdm(mods_t[sel], len(sel),
