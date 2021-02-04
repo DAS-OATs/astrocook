@@ -1,6 +1,9 @@
 from .message import *
 from .vars import *
+import ast
 from astropy import constants as ac
+from copy import deepcopy as dc
+import cProfile
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -118,6 +121,26 @@ def detect_local_minima(arr):
     detected_minima = local_min #- eroded_background
     #return np.where(detected_minima)
     return detected_minima
+
+def to_array(ast_list):
+    return np.asarray([int(i.n) for i in ast_list.elts])
+
+def expr_eval(node):
+    if isinstance(node, ast.Num): # <number>
+        return node.n
+    elif isinstance(node, ast.Compare):
+        if isinstance(node.left, ast.List):
+            left = to_array(node.left)
+        else:
+            left = expr_eval(node.left)
+        return py_ops[type(node.ops[0])](left, expr_eval(node.comparators[0]))
+
+    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        return py_ops[type(node.op)](expr_eval(node.left), expr_eval(node.right))
+    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        return py_ops[type(node.op)](expr_eval(node.operand))
+    else:
+        raise TypeError(node)
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a

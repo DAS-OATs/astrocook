@@ -1,10 +1,43 @@
+import ast
 from astropy import units as au
 from astropy import constants as aconst
 from astropy.io import ascii
 import numpy as np
 import os
+import operator as op
 import pathlib
  #c, e, m_e
+
+"""
+ac_ops = {'>': operator.gt,
+          '<': operator.lt,
+          '==': operator.eq,
+          '+': operator.add,
+          '-': operator.sub,
+          '*': operator.mul,
+          '/': operator.truediv,  # use operator.div for Python 2
+          '%': operator.mod,
+          '^': operator.xor}
+"""
+py_ops = {ast.Add: op.add,
+          ast.Sub: op.sub,
+          ast.Mult: op.mul,
+          ast.Div: op.truediv,
+          ast.Pow: op.pow,
+          ast.Lt: op.lt,
+          ast.Gt: op.gt,
+          ast.BitXor: op.xor,
+          ast.USub: op.neg}
+
+np_ops = {ast.Add: op.add,
+          ast.Sub: op.sub,
+          ast.Mult: op.mul,
+          ast.Div: op.truediv,
+          ast.Pow: op.pow,
+          ast.Lt: np.less,
+          ast.Gt: op.gt,
+          ast.BitXor: op.xor,
+          ast.USub: op.neg}
 
 xunit_def = au.nm
 yunit_def = au.erg / (au.Angstrom * au.cm**2 * au.s)
