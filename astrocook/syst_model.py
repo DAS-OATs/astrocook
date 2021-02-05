@@ -216,7 +216,7 @@ class SystModel(LMComposite):
                  for t in trans_parse(self._series)]
 
 
-        ws = np.sum([np.abs(xs/xn-1)<0.1 for xn in new_x], axis=0, dtype=bool)
+        ws = np.sum([np.abs(xs/xn-1)<np.inf for xn in new_x], axis=0, dtype=bool)
 
         ys = np.ones(len(xs))
         ys[ws] = self._lines.eval(x=xs[ws], params=self._pars)
