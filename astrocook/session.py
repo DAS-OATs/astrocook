@@ -146,7 +146,8 @@ class Session(object):
                     pass
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
-
+                self.cb._spec_update()
+                
         else:
 
             # ESO ADP spectrum
