@@ -426,7 +426,7 @@ class GUIMenuEdit(GUIMenu):
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+311, None,
-                          "Modify structures", 'struct_modify',
+                          "Modify structures", 'struct_modify2',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         submenu = wx.Menu()

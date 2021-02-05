@@ -1,4 +1,5 @@
 from . import * #version
+from .functions import expr_eval
 from .gui_graph import *
 from .gui_image import *
 from .gui_log import *
@@ -845,6 +846,7 @@ class GUIPanelSession(wx.Frame):
 
         parse_A = self._struct_parse(col_A, length=3)
         parse_out = self._struct_parse(col_out, length=2)
+        #print(parse_A, parse_out)
         if parse_A is None or parse_out is None: return 0
         coln_A, colp_A, _ = parse_A
         attrn_out, attr_out, all_out = parse_out
@@ -871,6 +873,45 @@ class GUIPanelSession(wx.Frame):
             return 0
         getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
             getattr(np, op)(colp_A, colp_B)
+
+        return 0
+
+
+    def struct_modify2(self, col='', expr=''):
+        """ @brief Modify a data structure using a binary operator
+        @details Modify a data structure using a binary operator. An output
+        column is computed from an expression with input columns as arguments.
+        The expression must be parsable by AST, with columns described by a
+        string with the session number, the structure tag (spec, lines, systs),
+        and the column name separated by a comma (e.g. 0,spec,x, meaning "column
+        x of spectrum from session 0"). Columns can be from different data
+        structures only if they have the same length. If the output column
+        already exists, it is overwritten.
+        @param col Output column
+        @param expr Expression
+        @return 0
+        """
+
+        for i, s in enumerate(self._gui._sess_list):
+            if s.spec is not None:
+                for c in sorted(s.spec._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (i, c),
+                                        str(list(np.array(s.spec._t[c]))))
+            if s.lines is not None:
+                for c in sorted(s.lines._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (i, c),
+                                        str(list(np.array(s.lines._t[c]))))
+            if s.systs is not None:
+                for c in sorted(s.systs._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (i, c),
+                                        str(list(np.array(s.systs._t[c]))))
+
+        #print(expr)
+        #out = expr_eval(ast.parse(expr, mode='eval').body)
+
+        _, _, all_out = self._struct_parse(col, length=2)
+        getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] \
+            = expr_eval(ast.parse(expr, mode='eval').body)
 
         return 0
 
