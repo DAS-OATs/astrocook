@@ -163,6 +163,7 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     x = x * au.nm
     z = z * au.dimensionless_unscaled
     N = 10**logN / au.cm**2
+    #N = 10**logN
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(np.size(np.array(x)))
@@ -184,6 +185,7 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
         """
         tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
+        #tau0, a, u = _voigt_par_convert_new(x, z, N, b, btur, t)
         #print(tau0)#, tau0.to(au.dimensionless_unscaled))
         #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
         #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
@@ -248,12 +250,14 @@ def psf_gauss_wrong(x, #center, resol):
     return ret
 
 def psf_gauss(x, resol, spec=None):
+#def psf_gauss(x, resol, specx=None):
     #profile = cProfile.Profile()
     #profile.enable()
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
+    #psf = np.exp(-0.5*((specx-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
     #xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0

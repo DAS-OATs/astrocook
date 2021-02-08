@@ -332,6 +332,8 @@ class SystModel(LMComposite):
         line = LMModel(self._lines_func, prefix=self._lines_pref,
                        series=self._series)
         psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+        #psf = LMModel(self._psf_func, prefix=self._psf_pref,
+        #              specx=self._spec.x.to(xunit_def).value)
         line_psf = LMComposite(line, psf, convolve_simple)
 
         d = self._defs
