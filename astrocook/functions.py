@@ -165,7 +165,9 @@ def expr_eval(node):
     elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
         return py_ops[type(node.op)](expr_eval(node.operand))
     else:
-        raise TypeError(node)
+        #raise TypeError(node)
+        return expr_check(node)
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a

@@ -907,11 +907,16 @@ class GUIPanelSession(wx.Frame):
                                         str(list(np.array(s.systs._t[c]))))
 
         #print(expr)
+        #print(len(expr))
         #out = expr_eval(ast.parse(expr, mode='eval').body)
 
         _, _, all_out = self._struct_parse(col, length=2)
-        getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] \
-            = expr_eval(ast.parse(expr, mode='eval').body)
+        struct = getattr(self._gui._sess_list[all_out[0]], all_out[1])
+        if all_out[2] in struct._t.colnames: # and False:
+            col_out = struct._t[all_out[2]]
+            struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body) * col_out.unit
+        else:
+            struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
 
         return 0
 

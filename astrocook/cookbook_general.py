@@ -38,6 +38,34 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin, xmax)
 
 
+    def flux_ccf(self, col1='y', col2='y', vstart=-20, vend=20, dv=1e-1):
+        """@brief Compute the flux CCF
+        @details Convolve the cross-correlation function between two columns
+        with flux information. Typically, the second column contain the flux
+        density from a different spectrum, but it can be equal to the first
+        column (in which case auto-correlation is computed). Cross-correlation
+        is computed in velocity space, within a given range and with a given
+        step.
+        @param y First column
+        @param y Second column
+        @param vstart Start velocity
+        @param vend End velocity
+        @param dv Velocity step
+        @return 0
+        """
+
+        try:
+            vstart = float(vstart) * au.km/au.s
+            vend = float(vend) * au.km/au.s
+            dv = float(dv) * au.km/au.s
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.spec._flux_ccf(col1, col2, vstart, vend, dv)
+        return 0
+
+
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT

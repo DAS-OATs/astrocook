@@ -539,6 +539,9 @@ class GUIMenuRecipes(GUIMenu):
                           "Estimate resolution", 'resol_est')
         self._item_method(self._menu, start_id+104, 'spec',
                           "Estimate SNR", 'snr_est')
+        submenu = wx.Menu()
+        self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
+        self._menu.AppendSubMenu(submenu, "Other general recipes")
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
@@ -554,7 +557,7 @@ class GUIMenuRecipes(GUIMenu):
                           'nodes_clean')
         self._item_method(submenu, start_id+213, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for continuum")
         self._menu.AppendSeparator()
 
         #self._item_method(self._menu, start_id+301, 'lines',
@@ -596,7 +599,7 @@ class GUIMenuRecipes(GUIMenu):
         submenu.AppendSeparator()
         self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for absorbers")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
