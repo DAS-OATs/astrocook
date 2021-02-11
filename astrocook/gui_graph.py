@@ -376,12 +376,12 @@ class GUIGraphHistogram(GUIGraphMain):
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
-        step=2/3
-        #min = -5
-        min = np.floor(np.min(values))
-        #max = 5
-        max = np.ceil(np.max(values))
-        bins = np.arange(min-0.0*step, max+1.0*step, step)
+        step= 1/3
+        min = -5 #np.floor(np.min(values))
+        max = 5 #np.ceil(np.max(values))
+        #bins = np.arange(min-0.0*step, max+1.0*step, step)
+        bins = np.arange(min+0.5*step, max+0.5*step, step)
+        print(bins)
         n, bins, patches = self._ax.hist(values, align='mid', bins=bins)
         #print(n, bins)
         #mu = np.average(bins[:-1]+0.25, weights=n)

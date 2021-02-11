@@ -280,11 +280,12 @@ class Session(object):
                                 format = '%3.3'
                             else:
                                 format = '%3.7'
-                            if np.abs(t[c][0])<1e-7 and t[c][0]!=0:
+                            if np.abs(np.nanmedian(t[c]))<1e-7:# and t[c][0]!=0:
                                 format += 'e'
                             else:
                                 format += 'f'
                             t[c].info.format = format
+                        #print(c, type(t[c][0]), np.abs(np.median(t[c])), format)
 
                     if s!='systs':
                         t['x'] = t['x'].to(au.nm)
@@ -325,7 +326,7 @@ class Session(object):
                     thdu = fits.BinTableHDU(data=t, header=hdr)
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
-
+                    #print([t[c].format for c in t.colnames] )
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')
