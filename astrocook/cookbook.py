@@ -4,6 +4,7 @@ from .cookbook_continuum import CookbookContinuum
 from .cookbook_general import CookbookGeneral
 from .cookbook_graph import CookbookGraph
 from .cookbook_sandbox import CookbookSandbox
+from .cookbook_synthetic import CookbookSynthetic
 from .cookbook_templates import CookbookTemplates
 from .format import Format
 from .spectrum import Spectrum
@@ -22,6 +23,7 @@ class Cookbook(CookbookGeneral,
                CookbookContinuum,
                CookbookAbsorbers,
                CookbookGraph,
+               CookbookSynthetic,
                CookbookTemplates):
     """ Main cookbook, combining specific cookbooks.
 

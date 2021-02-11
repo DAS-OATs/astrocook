@@ -429,6 +429,11 @@ class GUIMenuEdit(GUIMenu):
                           "Modify structures", 'struct_modify2',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+312, None,
+                          "Synthetic spectrum from structure",
+                          'spec_from_struct',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
         submenu = wx.Menu()
         self._item_method(submenu, start_id+312, 'spec',
                           "Blackbody", 'bb')

@@ -87,6 +87,12 @@ def convolve_simple(dat, kernel):
     return ret
 
 
+def create_xmin_xmax(x):
+    mean = 0.5*(x[1:]+x[:-1])
+    xmin = np.append(x[0], mean)
+    xmax = np.append(mean, x[-1])
+    return xmin, xmax
+
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
     # https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array/3689710#3689710

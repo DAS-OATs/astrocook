@@ -95,7 +95,7 @@ class CookbookGeneral(object):
         @param col Column with the mask
         @param cond Condition
         @param new_sess Create a new session from masked spectrum
-        @return 0
+        @return Session with masked spectrum
         """
 
         spec = self.sess.spec
@@ -137,7 +137,7 @@ class CookbookGeneral(object):
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
         @param norm Return normalized spectrum, if continuum exists
-        @return 0
+        @return Session with rebinned spectrum
         """
 
         try:
