@@ -441,6 +441,8 @@ class CookbookAbsorbers(object):
     def _systs_fit(self, verbose=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
+        z_list = []
+        chi2r_list = []
         if self._max_nfev > 0:
             fit_list = []
             for i,m in enumerate(mods_t):
@@ -451,8 +453,6 @@ class CookbookAbsorbers(object):
                 else:
                     fit_list.append(True)
 
-            z_list = []
-            chi2r_list = []
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
@@ -473,6 +473,8 @@ class CookbookAbsorbers(object):
                 logging.info("I've fitted %i model%s." \
                              % (len(mods_t), msg_z_range(z_list)))
         else:
+            for i,m in enumerate(mods_t):
+                z_list.append(m['z0'])
             if verbose:
                 logging.info("I've not fitted any model because you choose "
                              "max_nfev=0.")
