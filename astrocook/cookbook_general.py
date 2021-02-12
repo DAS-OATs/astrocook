@@ -38,7 +38,8 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin, xmax)
 
 
-    def flux_ccf(self, col1='y', col2='y', vstart=-20, vend=20, dv=1e-1):
+    def flux_ccf(self, col1='y', col2='y', dcol1='dy', dcol2='dy', vstart=-20,
+                 vend=20, dv=1e-1):
         """@brief Compute the flux CCF
         @details Convolve the cross-correlation function between two columns
         with flux information. Typically, the second column contain the flux
@@ -46,8 +47,10 @@ class CookbookGeneral(object):
         column (in which case auto-correlation is computed). Cross-correlation
         is computed in velocity space, within a given range and with a given
         step.
-        @param y First column
-        @param y Second column
+        @param col1 First column
+        @param col2 Second column
+        @param dcol1 Error for first column
+        @param dcol2 Error for second column
         @param vstart Start velocity
         @param vend End velocity
         @param dv Velocity step
@@ -62,7 +65,12 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return 0
 
-        self.sess.spec._flux_ccf(col1, col2, vstart, vend, dv)
+        v_shift, ccf = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
+                                                vend, dv)
+        with open(self.sess.name+'.npy', 'wb') as f:
+            np.save(f, v_shift)
+            np.save(f, ccf)
+
         return 0
 
 

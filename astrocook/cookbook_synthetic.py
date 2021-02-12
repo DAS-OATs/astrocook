@@ -26,15 +26,15 @@ class CookbookSynthetic(object):
         spectrum.
         @param x Expression for wavelength-like array
         @param y Expression for flux-like array
-        @param snr Signal-to-noise ratio
+        @param snr Signal-to-noise ratio (single value or expression)
         @return Session with synthetic spectrum
         """
 
         try:
             snr = float(snr)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return None
+            snr_expr = False
+        except:
+            snr_expr = True
 
         for i, s in enumerate(self.sess._gui._sess_list):
             if s.spec is not None:
@@ -44,6 +44,9 @@ class CookbookSynthetic(object):
                                   str(list(np.array(s.spec._t[c]))))
                     y = y.replace('%i,spec,%s' % (i, c),
                                   str(list(np.array(s.spec._t[c]))))
+                    if snr_expr:
+                        snr = snr.replace('%i,spec,%s' % (i, c),
+                                          str(list(np.array(s.spec._t[c]))))
                     if x != xold:
                         xunit = s.spec._t[c].unit
                     if y != xold:
@@ -51,6 +54,8 @@ class CookbookSynthetic(object):
 
         x = expr_eval(ast.parse(x, mode='eval').body)
         y = expr_eval(ast.parse(y, mode='eval').body)
+        if snr_expr: snr = expr_eval(ast.parse(snr, mode='eval').body)
+
         xmin, xmax = create_xmin_xmax(x)
         dy = y/snr
 

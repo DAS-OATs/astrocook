@@ -96,7 +96,7 @@ class Spectrum(Frame):
         return 0
 
 
-    def _flux_ccf(self, col1, col2, vstart, vend, dv):
+    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv):
         vstart = vstart.to(au.km/au.s).value
         vend = vend.to(au.km/au.s).value
         dv = dv.to(au.km/au.s).value
@@ -115,6 +115,8 @@ class Spectrum(Frame):
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
+        dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
+        dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
         #print(y1_osampl)
         #print(y2_osampl)
         #print(len(x_shift))
@@ -133,12 +135,19 @@ class Spectrum(Frame):
             #print('ciao')
             y1 = y1_osampl[pan:-pan-1]-np.mean(y1_osampl)
             y2 = y2_osampl[i:-2*pan+i-1]-np.mean(y2_osampl)
+            dy1 = dy1_osampl[pan:-pan-1]
+            dy2 = dy2_osampl[i:-2*pan+i-1]
             #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
             ccf.append(np.mean(y2 * y1)/np.sqrt(np.mean(y2**2) * np.mean(y1**2)))
+            #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
 
         #ccf = ccf/np.max(ccf)
-        plt.plot(v_shift, ccf)
-        plt.show()
+        #plt.plot(v_shift, ccf)
+        #plt.show()
+        #print(np.min(ccf), np.mean(ccf), np.max(ccf))
+        logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
+                     % (np.min(ccf), np.max(ccf), np.mean(ccf)))
+        return np.array(v_shift), np.array(ccf)
         """
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
