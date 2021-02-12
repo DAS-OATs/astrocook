@@ -186,7 +186,7 @@ class GUI(object):
 
 
     def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True, _xlim=None):
+                 autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
 
 
@@ -257,7 +257,10 @@ class GUI(object):
         goodlim = True
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
-        if autolim and goodlim and _xlim != None:
+        if autolim and goodlim and _xlim != None and _ylim != None:
+            self._graph_main._refresh(self._sess_items, xlim=list(_xlim),
+                                      ylim=list(_ylim))
+        elif autolim and goodlim and _xlim != None:
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         elif autolim and goodlim and self._graph_main._graph._zoom:
             self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
