@@ -474,22 +474,28 @@ class Spectrum(Frame):
                 iM += 1
                 try:
                     xmin_in = self.xmin[iM].value
+                    #print(xmin_in)
                 except:
                     break
             while xmax_in < m:
                 im += 1
                 try:
                     xmax_in = self.xmax[im].value
+                    #print(xmax_in)
                 except:
                     break
-            ysel = y[im:iM+1]
-            dysel = dy[im:iM+1]
+            frac = (np.minimum(M, self.xmax[im:iM].value)\
+                    -np.maximum(m, self.xmin[im:iM].value))/dx
+            ysel = y[im:iM]
+            #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
+            #print(frac)
+            dysel = dy[im:iM]
             if np.any(np.isnan(dysel)):
-                y_out = np.append(y_out, np.average(ysel))
+                y_out = np.append(y_out, np.average(ysel, weights=frac))
             else:
-                y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
-            dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
-                                               /np.sum(1/dysel**2))
+                y_out = np.append(y_out, np.average(ysel, weights=frac/dysel**2))
+            dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2*dysel**2/dysel**4))\
+                                               /np.sum(frac/dysel**2))
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,

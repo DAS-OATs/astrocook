@@ -14,7 +14,7 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
-    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', snr=100):
+    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', snr=100, ron=0.01):
         """@brief Create a synthetic spectrum
         @details Create a synthetic spectrum from existing structures (a
         wavelenght-like array and a flux-like array). The structure expressions
@@ -27,6 +27,8 @@ class CookbookSynthetic(object):
         @param x Expression for wavelength-like array
         @param y Expression for flux-like array
         @param snr Signal-to-noise ratio (single value or expression)
+        @param ron Read-out noise
+        @param ks Kernel size
         @return Session with synthetic spectrum
         """
 
@@ -61,8 +63,8 @@ class CookbookSynthetic(object):
 
         # Add gaussian noise
         rng = np.random.default_rng()
-        noise = rng.standard_normal(size=y.size)
-        y = y*(1+noise/snr)
+        norm = rng.standard_normal(size=y.size)
+        y = y+np.sqrt(dy**2+ron**2)*norm
 
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
         from .session import Session
