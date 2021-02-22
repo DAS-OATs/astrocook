@@ -489,13 +489,19 @@ class Spectrum(Frame):
             ysel = y[im:iM]
             #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
             #print(frac)
+            w = np.where(frac>0)
+            #print(frac[w],frac)
             dysel = dy[im:iM]
-            if np.any(np.isnan(dysel)):
-                y_out = np.append(y_out, np.average(ysel, weights=frac))
+            if len(frac[w]) > 0:
+                if np.any(np.isnan(dysel)):
+                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
+                else:
+                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
+                dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2*dysel**2/dysel**4))\
+                                                   /np.sum(frac/dysel**2))
             else:
-                y_out = np.append(y_out, np.average(ysel, weights=frac/dysel**2))
-            dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2*dysel**2/dysel**4))\
-                                               /np.sum(frac/dysel**2))
+                y_out = np.append(y_out, np.nan)
+                dy_out = np.append(dy_out, np.nan)
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,

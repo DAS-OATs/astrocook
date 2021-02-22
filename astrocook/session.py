@@ -163,9 +163,16 @@ class Session(object):
                     #self.spec = format.eso_midas_table(hdul)
                     self.spec = format.generic_spectrum(hdul)
 
-            # ESPRESSO DRS spectrum
+            # ESPRESSO S1D spectrum
             if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
-                self.spec = format.espresso_drs_spectrum(hdul)
+                self.spec = format.espresso_s1d_spectrum(hdul)
+                p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+                self.spec_form = format.espresso_spectrum_format(
+                    ascii.read(p+'espr_spec_form.dat'))
+
+            # ESPRESSO S2D spectrum
+            if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
+                self.spec = format.espresso_s2d_spectrum(hdul)
                 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
                 self.spec_form = format.espresso_spectrum_format(
                     ascii.read(p+'espr_spec_form.dat'))

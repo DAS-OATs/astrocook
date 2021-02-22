@@ -267,7 +267,7 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol,
                         cont=cont)
 
-    def espresso_drs_spectrum(self, hdul):
+    def espresso_s1d_spectrum(self, hdul):
         """ ESPRESSO DRS S1D format """
         logging.info(msg_format('ESPRESSO DRS S1D'))
 
@@ -294,6 +294,41 @@ class Format(object):
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def espresso_s2d_spectrum(self, hdul):
+        """ ESPRESSO DRS S2D format """
+        logging.info(msg_format('ESPRESSO DRS S2D'))
+        hdr = hdul[0].header
+        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
+        y = np.ravel(hdul['SCIDATA'].data)
+        dy = np.ravel(hdul['ERRDATA'].data)
+
+        w = np.where(y!=0)
+        x,y,dy = x[w],y[w],dy[w]
+
+        xmin, xmax = self._create_xmin_xmax(x)
+        w = np.where(xmax-xmin > 0)
+        x,xmin,xmax = x[w],xmin[w],xmax[w]
+        y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+        dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+
+        argsort = np.argsort(x)
+        x,xmin,xmax,y,dy = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort]
+
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.erg / au.Angstrom / au.cm**2 / au.s
+        meta = hdr #{'instr': 'ESPRESSO'}
+        """
+        try:
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
 
 
     def espresso_spectrum_format(self, data):
