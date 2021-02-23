@@ -251,6 +251,8 @@ class Session(object):
         root = path[:-4]
         stem = pathlib.PurePath(path[:-4]).parts[-1]
 
+        import warnings
+        warnings.filterwarnings("ignore")
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:

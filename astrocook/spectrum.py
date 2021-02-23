@@ -107,6 +107,7 @@ class Spectrum(Frame):
         xmax = spec_x[-1]
         xmean = 0.5*(xmin+xmax)
         v_shift = np.arange(vstart, vend+dv, dv)
+        #v_shift = np.sort(v_shift)
         x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
         xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
