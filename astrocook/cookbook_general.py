@@ -121,7 +121,8 @@ class CookbookGeneral(object):
 
         if new_sess:
             spec_out = dc(spec)
-            spec_out._t = spec._t[mask]
+            spec_out._t['x'][~mask] = np.nan #
+            #spec_out._t = .spec._t[mask]
             from .session import Session
             new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,
                           spec=spec_out)

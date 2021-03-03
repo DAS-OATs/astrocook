@@ -134,12 +134,12 @@ class Spectrum(Frame):
             #      for i in range(0, len(spec_x))]
 
             #print('ciao')
-            y1 = y1_osampl[pan:-pan-1]-np.mean(y1_osampl)
-            y2 = y2_osampl[i:-2*pan+i-1]-np.mean(y2_osampl)
+            y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
+            y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
             dy1 = dy1_osampl[pan:-pan-1]
             dy2 = dy2_osampl[i:-2*pan+i-1]
             #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
-            ccf.append(np.mean(y2 * y1)/np.sqrt(np.mean(y2**2) * np.mean(y1**2)))
+            ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
             #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
 
         #ccf = ccf/np.max(ccf)
@@ -494,12 +494,17 @@ class Spectrum(Frame):
             #print(frac[w],frac)
             dysel = dy[im:iM]
             if len(frac[w]) > 0:
-                if np.any(np.isnan(dysel)):
+                weights = (frac[w]/dysel[w]**2).value
+                #print(frac[w], np.sum(frac[w])/len(frac[w]))
+                if np.any(np.isnan(dysel)) and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
-                dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2*dysel**2/dysel**4))\
-                                                   /np.sum(frac/dysel**2))
+                    y_out = np.append(y_out, np.average(ysel[w], weights=weights))
+                    #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
+                dy_out = np.append(dy_out, np.sqrt(np.sum(weights**2*dysel[w].value**2))\
+                                                   /np.sum(weights)*y.unit)
+                #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
+                #                                   /np.sum(frac/dysel**2))
             else:
                 y_out = np.append(y_out, np.nan)
                 dy_out = np.append(dy_out, np.nan)

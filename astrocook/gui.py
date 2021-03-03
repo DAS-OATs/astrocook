@@ -549,7 +549,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._tab_systs.Close()
         self._gui._tab_mods.Close()
         """
-        exit()
+        #exit()
+        os._exit(1)
 
     def _on_deselect(self, event):
         self._sel = event.GetIndex()
@@ -906,7 +907,7 @@ class GUIPanelSession(wx.Frame):
                     expr = expr.replace('%i,spec,%s' % (i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
-        #print(expr)
+        #print(type(expr))
         #print(len(expr))
         #out = expr_eval(ast.parse(expr, mode='eval').body)
 

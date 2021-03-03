@@ -14,7 +14,7 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
-    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', snr=100, ron=0.01):
+    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,y', snr=100, ron=0.01):
         """@brief Create a synthetic spectrum
         @details Create a synthetic spectrum from existing structures (a
         wavelenght-like array and a flux-like array). The structure expressions
@@ -46,6 +46,8 @@ class CookbookSynthetic(object):
                                   str(list(np.array(s.spec._t[c]))))
                     y = y.replace('%i,spec,%s' % (i, c),
                                   str(list(np.array(s.spec._t[c]))))
+                    dy = dy.replace('%i,spec,%s' % (i, c),
+                                    str(list(np.array(s.spec._t[c]))))
                     if snr_expr:
                         snr = snr.replace('%i,spec,%s' % (i, c),
                                           str(list(np.array(s.spec._t[c]))))
@@ -56,15 +58,16 @@ class CookbookSynthetic(object):
 
         x = expr_eval(ast.parse(x, mode='eval').body)
         y = expr_eval(ast.parse(y, mode='eval').body)
+        dy = expr_eval(ast.parse(dy, mode='eval').body)
         if snr_expr: snr = expr_eval(ast.parse(snr, mode='eval').body)
 
         xmin, xmax = create_xmin_xmax(x)
-        dy = y/snr
+        #dy = y/snr
 
         # Add gaussian noise
         rng = np.random.default_rng()
         norm = rng.standard_normal(size=y.size)
-        y = y+np.sqrt(dy**2+ron**2)*norm
+        y = y+dy*norm
 
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
         from .session import Session

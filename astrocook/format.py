@@ -297,7 +297,7 @@ class Format(object):
 
 
     def espresso_s2d_spectrum(self, hdul):
-        
+
         """ ESPRESSO DRS S2D format """
         logging.info(msg_format('ESPRESSO DRS S2D'))
         hdr = hdul[0].header

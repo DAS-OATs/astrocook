@@ -51,7 +51,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        print(i, k)
+        #print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
@@ -142,7 +142,7 @@ def expr_check(node):
             ret.append(float(i.n))
         else:
             ret.append(expr_eval(i))
-    return np.ravel(ret)
+    return np.ravel(np.asarray(ret, dtype='float64'))
 
 def expr_eval(node):
     if isinstance(node, ast.Num): # <number>
