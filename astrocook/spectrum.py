@@ -133,11 +133,13 @@ class Spectrum(Frame):
             #ym = [y2_osampl[digitized == i].mean() \
             #      for i in range(0, len(spec_x))]
 
-            #print('ciao')
             y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
             y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
-            dy1 = dy1_osampl[pan:-pan-1]
-            dy2 = dy2_osampl[i:-2*pan+i-1]
+
+            #dy1 = dy1_osampl[pan:-pan-1]
+            #dy2 = dy2_osampl[i:-2*pan+i-1]
+            #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
+            #y2 = y2_osampl[i:-2*pan+i-1]+dy2-np.nanmean(y2_osampl)
             #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
             ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
             #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
