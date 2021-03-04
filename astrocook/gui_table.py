@@ -894,6 +894,8 @@ class GUITableSystList(GUITable):
                 if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
                     c = np.where(labels==p.split('_')[-1])[0][0]
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
+                    #    print(id, p,v)
                     if v.vary == False:
                         self._tab.SetCellTextColour(r, c, 'grey')
                     if v.expr != None:
