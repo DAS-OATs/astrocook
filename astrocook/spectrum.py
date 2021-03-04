@@ -454,13 +454,16 @@ class Spectrum(Frame):
 
 
     def _stats_print(self, xmin=0, xmax=np.inf):
-
+        try:
+            xmin = xmin.to(au.nm).value
+            xmax = xmax.to(au.nm).value
+        except:
+            pass
         sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
                                       self.x.to(au.nm).value < xmax))
         x = self.x[sel]
         y = self.y[sel]
         dy = self.dy[sel]
-
         self._stats = {'min_x': np.min(x),
                        'max_x': np.max(x),
                        'mean_x': np.mean(x),
