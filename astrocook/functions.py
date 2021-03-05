@@ -302,6 +302,8 @@ def resol_check(spec, resol, prefix=prefix):
     print(msg_resol(check, prefix))
     return np.logical_or(*check), resol
 
+
+
 def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
 

@@ -549,6 +549,10 @@ class GUIMenuRecipes(GUIMenu):
         self._menu.AppendSubMenu(submenu, "Other general recipes")
 
         self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+150, 'spec', "Clip flux",
+                          'flux_clip')
+
+        self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'spec',
