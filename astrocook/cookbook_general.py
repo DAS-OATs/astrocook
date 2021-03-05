@@ -361,6 +361,40 @@ class CookbookGeneral(object):
         return 0
 
 
+    def telluric_mask(self, shift=0, apply=True):
+        """ @brief Mask telluric absorption
+        @details Mask telluric absorption
+        @param shift Shift to the heliocentric frame (km/s)
+        @param apply Apply mask to flux
+        @return 0
+        """
+
+        try:
+            shift = float(shift)
+            apply = str(apply) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        if 'telluric' not in spec._t.colnames:
+            logging.info("I'm adding column 'telluric'.")
+        else:
+            logging.info("I'm updating column 'telluric'.")
+
+        #p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+        #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
+        #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
+        x = np.array(telluric['WAVEL'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        mask = np.array([t!=0 for t in telluric['MASK']], dtype=float)
+        tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
+        spec._t['telluric'] = np.array(tell!=1, dtype=bool)
+
+        if apply:
+            spec._t['y'][np.where(np.array(tell==1, dtype=bool))] = np.nan
+
+        return 0
+
 
     def x_convert(self, zem=0, xunit=au.km/au.s):
         """ @brief Convert x axis

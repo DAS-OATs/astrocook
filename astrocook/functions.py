@@ -308,8 +308,19 @@ def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
 
     n = 2*h+1
-    cs = np.cumsum(np.insert(x, 0, 0))
-    rm = (cs[n:] - cs[:-n]) / float(n)
+    cs = np.nancumsum(np.insert(x, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
+    return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+
+
+def running_rms(x, h=1):
+    n = 2*h+1
+    cs = np.nancumsum(np.insert(x**2, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rm = np.sqrt((cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n]))
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 

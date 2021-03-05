@@ -1,7 +1,7 @@
 import ast
 from astropy import units as au
 from astropy import constants as aconst
-from astropy.io import ascii
+from astropy.io import ascii, fits
 import numpy as np
 import os
 import operator as op
@@ -122,11 +122,15 @@ dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERR
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
+
+
 p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
 atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+
+telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}

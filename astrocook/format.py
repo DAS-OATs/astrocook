@@ -301,6 +301,13 @@ class Format(object):
         """ ESPRESSO DRS S2D format """
         logging.info(msg_format('ESPRESSO DRS S2D'))
         hdr = hdul[0].header
+        #print(hdul['WAVEDATA_VAC_BARY'].data)
+        #print(hdul['WAVEDATA_VAC_BARY'].data[:,:-10])
+        """
+        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,200:-200])
+        y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
+        dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
+        """
         x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
         y = np.ravel(hdul['SCIDATA'].data)
         dy = np.ravel(hdul['ERRDATA'].data)

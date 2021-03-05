@@ -164,12 +164,15 @@ class CookbookContinuum(object):
         spec = self.sess.spec
 
         y_rm = running_mean(spec._t['y'], h=window)
+        #plt.plot(spec._t['x'], spec._t['y'])
+        #plt.plot(spec._t['x'], y_rm)
+        #plt.show()
 
         if 'y_rm' not in spec._t.colnames:
             logging.info("I'm adding column 'y_rm'.")
         else:
-            logging.warning("I'm overwriting column 'y_rm'.")
-        spec._t['y_rm'] = at.Column(np.array(None, ndmin=1), dtype=float)
+            logging.warning("I'm updating column 'y_rm'.")
+        spec._t['y_rm'] = at.Column(y_rm, dtype=float)
 
         if 'y_em' not in spec._t.colnames:
             logging.info("I'm adding column 'y_em'.")

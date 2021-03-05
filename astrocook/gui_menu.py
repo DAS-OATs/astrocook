@@ -537,12 +537,14 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(self._menu, start_id+100, 'spec',
                           "Create spectral mask", 'mask')
         self._item_method(self._menu, start_id+101, 'spec',
-                          "Rebin spectrum", 'rebin')
+                          "Mask telluric absorption", 'telluric_mask')
         self._item_method(self._menu, start_id+102, 'spec',
-                          "Convolve with gaussian", 'gauss_convolve')
+                          "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+103, 'spec',
-                          "Estimate resolution", 'resol_est')
+                          "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+104, 'spec',
+                          "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+105, 'spec',
                           "Estimate SNR", 'snr_est')
         submenu = wx.Menu()
         self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
