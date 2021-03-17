@@ -142,10 +142,10 @@ class CookbookContinuum(object):
 ### Advanced
 
 
-    def flux_clip(self, window=100, kappa=5, iter=100, std=500):
+    def flux_clip(self, hwindow=100, kappa=5, iter=100, std=500):
         """ @brief Clip flux in spectrum
         @details Select flux pixels to find outliers
-        @param window Window size in pixels for running mean
+        @param hwindow Half-window size in pixels for running mean
         @param kappa Number of standar deviations for clipping
         @param iter Number of iterations
         @param std Standard deviation for gaussian convolution (km/s)
@@ -153,7 +153,7 @@ class CookbookContinuum(object):
         """
 
         try:
-            window = int(window)
+            hwindow = int(hwindow)
             kappa = float(kappa)
             iter = int(iter)
             std = float(std)
@@ -163,7 +163,7 @@ class CookbookContinuum(object):
 
         spec = self.sess.spec
 
-        y_rm = running_mean(spec._t['y'], h=window)
+        y_rm = running_mean(spec._t['y'], h=hwindow)
         #plt.plot(spec._t['x'], spec._t['y'])
         #plt.plot(spec._t['x'], y_rm)
         #plt.show()
@@ -194,7 +194,7 @@ class CookbookContinuum(object):
             spec._t['y_em'][sel] = 0
             spec._t['y_abs'][sel] = 1
             x_rm = spec._t['x'][~sel]
-            y_rm = running_mean(spec._t['y'][~sel], h=window)
+            y_rm = running_mean(spec._t['y'][~sel], h=hwindow)
 
             if i == iter-1 and sum_sel != np.sum(sel):
                 logging.warning("Clipping not converged after %i iterations. "

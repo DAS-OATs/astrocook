@@ -12,6 +12,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
+from scipy.special import erf, erfc
 import sys
 
 prefix = "[INFO] cookbook_absorbers:"
@@ -399,10 +401,17 @@ class CookbookAbsorbers(object):
 
         # Improve
         mods_t = self.sess.systs._mods_t
-        if verbose:
-            logging.info("I've added %i system%s in %i model%s." \
-                         % (systs_n, '' if systs_n==1 else 's',
-                            len(mods_t), msg_z_range(z_list)))
+
+        if verbose and systs_n>0:
+            if len(np.unique(series_list))==1:
+                logging.info("I've added %i %s system%s in %i model%s." \
+                             % (systs_n, series_list[0],
+                             '' if systs_n==1 else 's',
+                             len(mods_t), msg_z_range(z_list)))
+            else:
+                logging.info("I've added %i system%s in %i model%s." \
+                             % (systs_n, '' if systs_n==1 else 's',
+                             len(mods_t), msg_z_range(z_list)))
         return 0
 
 
@@ -1367,7 +1376,353 @@ class CookbookAbsorbers(object):
         return count
 
 
+    def _abs_like(self, series='Ly-a', z_start=0, z_end=6, dz=1e-4, modul=1):
+        """ @brief Assign likelihood to absorbers
+        @details For each spectral bin, compute the likelihood that it has been
+        absorbed by a given species.
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param modul Modulation of the error function
+        @return likes Likelihood in redshift space for each series
+        """
 
+        try:
+            #series = series.replace(';',',')
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            dz = float(dz)
+            #resol = None if resol in [None, 'None'] else float(resol)
+            modul = float(modul)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #check, resol = resol_check(self.sess.spec, resol)
+        #if not check: return 0
+
+        if series == 'all':
+            series = ';'.join(trans_d)
+
+        spec = self.sess.spec
+        likes = {}
+        z_likes = {}
+
+        for s in series.split(';'):
+            abs = spec._t #[np.where(spec._t['y_abs'])]
+            trans = trans_parse(s)
+            z_all = [to_z(spec._t['x'], t) for t in trans]
+            z_int = np.arange(z_start, z_end, dz)
+            #z_int = np.arange(z_end, z_start, -dz)
+            z_sel, abs_sel, abs_int = [], [], []
+            for z in z_all:
+                sel = np.where(np.logical_and(z>z_start, z<z_end))
+                if len(sel[0])>0:
+                    #print(z, sel, len(sel))
+                    z_sel.append(z[sel])
+                    er = (spec._t['cont'][sel]-spec._t['y'][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
+                    er = erf(er)
+
+                    interp = np.interp(z_int, z[sel], er)
+                    interp[z_int<np.min(z[sel])] = np.nan
+                    interp[z_int>np.max(z[sel])] = np.nan
+                    #print(interp)
+                    abs_int.append(interp)
+                    #print(np.min(z_int), np.max(z_int), np.min(z[sel]), np.max(z[sel]))
+
+            #like = 1-np.power(1-np.nanprod(abs_int, axis=0), np.sum(~np.isnan(abs_int), axis=0))
+            if len(abs_int) > 0:
+                like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
+                likes[s] = like
+                z_likes[s] = z_int
+                for t in trans:
+                    if t not in spec._t.colnames:
+                        logging.info("I'm adding column '%s' to spectrum." % t)
+                        spec._t[t] = np.zeros(len(spec._t))
+                    #else:
+                    #    logging.warning("I'm updating column '%s' in spectrum." % t)
+                    if len(np.ravel([like]))==len(z_int):
+                        x_int = to_x(z_int, t)
+                        sel = np.logical_and(spec._t['x']>np.min(x_int),
+                                             spec._t['x']<np.max(x_int))
+                        cand_t = np.interp(spec._t['x'][sel], x_int, like)
+                        #cand_t = 1 - np.power(1-cand_t, len(trans))
+                        spec._t[t][sel] = cand_t
+
+            #plt.step(z_sel[0], abs_sel[0], color='blue', alpha=0.2)
+            #plt.step(z_sel[1], abs_sel[1], color='red', alpha=0.2)
+            #plt.step(z_int, abs_int[0], color='blue', alpha=0.4)
+            #plt.step(z_int, abs_int[-1], color='red', alpha=0.4)
+            #plt.step(z_int, like)
+
+            #plt.step(z_int, prod, color='black')
+            #plt.step(spec._t['x'], cand_t, color='black')
+
+        #plt.show()
+        return likes, z_likes
+
+    def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
+                                 z_end=6, binz=1e-2, dz=1e-4,
+                                 modul=1, thres=0.997, distance=10,
+                                 logN=logN_def, b=b_def, resol=resol_def,
+                                 chi2r_thres=np.inf, dlogN_thres=np.inf,
+                                 refit_n=0, chi2rav_thres=1e-2,
+                                 max_nfev=max_nfev_def, append=True):
+        """ @brief Complete systems from likelihood
+        @details TBD
+        @param series Series of transitions
+        @param series_ref Reference series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param binz Bin size to group existing redshifts
+        @param dz Threshold for redshift coincidence
+        @param modul Modulation of the error function
+        @param thres Threshold for accepting
+        @param distance Distance between systems in pixels
+        @param logN Guess (logarithmic) column density
+        @param b Guess doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            binz = float(binz)
+            dz = float(dz)
+            modul = float(modul)
+            thres = float(thres)
+            distance = float(distance)
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            resol = None if resol in [None, 'None'] else float(resol)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        if series == 'all':
+            trans_ex = np.unique(np.ravel([trans_parse(s)
+                                           for s in systs._t['series']]))
+            trans_n = list(set(trans_d)-set(trans_ex))
+            #print(trans_n)
+            series = ';'.join(trans_n)
+
+        if series_ref != None:
+            w = np.where(systs._t['series']==series_ref)
+            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+        else:
+            hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 10, binz))
+
+        w_z = np.logical_and(edges>z_start, edges<z_end)
+
+
+        self._likes, self._z_likes = {}, {}
+        for z in edges[:-1][hist>0]:
+            if z>z_start and z+binz<z_end:
+                z_s = z
+                z_e = z+binz
+            elif z<z_start and z+binz>z_end:
+                z_s = z_start
+                z_e = z_end
+            elif z<z_start and z+binz>z_start:
+                z_s = z_start
+                z_e = z+binz
+            elif z<z_end and z+binz>z_end:
+                z_s = z
+                z_e = z_end
+            else:
+                z_s = np.nan
+                z_e = np.nan
+            #print(z, z+binz, z_start, z_end, z_s, z_e)
+            if not np.isnan(z_s) and not np.isnan(z_e):
+                likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
+                """
+            for s in likes.keys():
+                if s not in self._likes.keys():
+                    self._likes[s] = likes[s]
+                    self._z_likes[s] = z_likes[s]
+                else:
+                    self._likes[s] = np.append(self._likes[s], likes[s])
+                    self._z_likes[s] = np.append(self._z_likes[s], likes[s])
+                """
+                self._likes = likes
+                self._z_likes = z_likes
+                self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+                                 dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
+        """
+        logging.info("I'm completing systems with %i additional transitions." \
+                     % len(self._likes))
+        self._systs_like(series, thres, logN, b, resol, chi2r_thres,
+                         dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
+        """
+        return 0
+
+
+    def systs_new_from_like(self, series='Ly-a', z_start=0, z_end=6,
+                            dz=1e-4, modul=1, thres=0.997, distance=10,
+                            logN=logN_def, b=b_def, resol=resol_def,
+                            chi2r_thres=np.inf, dlogN_thres=np.inf,
+                            refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
+                            append=True):
+        """ @brief New systems from likelihood
+        @details TBD
+        @param series Series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dz Threshold for redshift coincidence
+        @param modul Modulation of the error function
+        @param thres Threshold for accepting likelihood
+        @param distance Distance between systems in pixels
+        @param logN Guess (logarithmic) column density
+        @param b Guess doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            dz = float(dz)
+            modul = float(modul)
+            thres = float(thres)
+            distance = float(distance)
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            resol = None if resol in [None, 'None'] else float(resol)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        check, resol = resol_check(self.sess.spec, resol)
+        if not check: return 0
+
+        self._likes, self._z_likes = self._abs_like(series, z_start, z_end, dz,
+                                                    modul)
+        self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+                         dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
+
+    def _systs_like(self, series='Ly-a', thres=0.997, distance=10, logN=logN_def,
+                    b=b_def, resol=resol_def, chi2r_thres=np.inf,
+                    dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
+                    max_nfev=max_nfev_def, append=True):
+
+        try:
+            thres = float(thres)
+            distance = float(distance)
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            resol = None if resol in [None, 'None'] else float(resol)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        if series == 'all':
+            series = ';'.join(trans_d)
+
+        spec = self.sess.spec
+        likes = self._likes
+        z_likes = self._z_likes
+        series_split = series.split(';')
+        for s in series_split:
+            #series_o = list(set(series_split) - set([s]))
+            trans = trans_parse(s)
+            #z_int = np.arange(z_start, z_end, dz)
+            #plt.plot(z_int, likes[s])
+            if s in likes.keys():
+                #print(likes[s])
+                z_int = z_likes[s]
+                w = np.where(likes[s]>thres)
+
+                """
+                for s_o in series_o:
+                    trans_o = trans_parse(s_o)
+                    for t in trans_o:
+                        print(t)
+                        t_o = np.interp(x_w, spec._t['x'], spec._t[t])
+                        print(likes_o)
+                """
+
+                p0, _ = find_peaks(likes[s][w], distance=10)
+
+                # Check if likelihood peaks are higher than those of all other
+                # transitions at those wavelengths
+                x_w = np.array([to_x(z_int[w][p0], t) for t in trans])
+                t_all = np.array([])
+                #for so in np.array(series_split):
+                for so in likes.keys():
+                    t_all = np.append(t_all, trans_parse(so))
+                #t_all = np.ravel([trans_parse(so) for so in np.array(series_split)])
+                liket = np.array([])
+                for to in t_all:
+                    liket = np.append(liket, np.interp(x_w, spec._t['x'], spec._t[to]))
+                    #print(to, liket)
+                liket = np.reshape(liket, (len(t_all), len(np.ravel(x_w))))
+                liket[np.isnan(liket)] = -9999
+                check = [t in trans for t in t_all[np.argmax(liket, axis=0)]]
+                sel = np.prod(np.reshape(check, (len(trans), len(p0))), axis=0)
+                #print(sel)
+                #print(p0)
+                #print(p0[np.where(sel)])
+                p = p0
+
+                s_list = [s]*len(p)
+                z_list = z_int[w][p]
+                logN_list = [logN]*len(p)
+                resol_list = [resol]*len(z_list)
+                if len(s_list)>0:
+                    self._systs_prepare(append)
+                    self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
+                    self._spec_update()
+        #plt.show()
+
+        return 0
 
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,

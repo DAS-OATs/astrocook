@@ -403,7 +403,7 @@ class Graph(object):
                         y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames:
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit:
                         y = y/t['cont']
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 if struct in ['systs', 'cursor']:

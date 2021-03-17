@@ -504,7 +504,7 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        name = path.split('/')[-1].split('.')[0]
+        name = '.'.join(path.split('/')[-1].split('.')[:-1])
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
@@ -680,8 +680,8 @@ class GUIPanelSession(wx.Frame):
 
         attr = getattr(sess, attrn)
         if attr is None:
-            logging.error("Attribute %s is None." % attrn)
-            return None
+            logging.warning("Attribute %s is None." % attrn)
+            return attrn, attr, parse
 
 
         if length==3:
@@ -907,15 +907,18 @@ class GUIPanelSession(wx.Frame):
                     expr = expr.replace('%i,spec,%s' % (i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
-        #print(type(expr))
+        #print(expr)
         #print(len(expr))
-        #out = expr_eval(ast.parse(expr, mode='eval').body)
+        out = expr_eval(ast.parse(expr, mode='eval').body)
 
         _, _, all_out = self._struct_parse(col, length=2)
         struct = getattr(self._gui._sess_list[all_out[0]], all_out[1])
         if all_out[2] in struct._t.colnames: # and False:
             col_out = struct._t[all_out[2]]
-            struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body) * col_out.unit
+            try:
+                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body) * col_out.unit
+            except:
+                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
         else:
             struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
 
@@ -946,6 +949,10 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         if mode=='replace':
+            if attr is None:
+                logging.warning("I'm replacing structure with None.")
+                setattr(self._gui._sess_sel, attrn, attr)
+                return 0
             if attrn in ['lines', 'systs']:
                 #spec = self._gui._sess_sel.spec
                 x = self._gui._sess_sel.spec.x.to(au.nm)
@@ -962,12 +969,17 @@ class GUIPanelSession(wx.Frame):
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
+            if attr is None:
+                logging.warning("I'm not appending None.")
+                return 0
             attr_dc = dc(attr)
             if attrn == 'systs':
                 id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
                 attr_dc._t['id'] = attr_dc._t['id']+id_max
             #print(len(attr_dc._t))
             #print(len(np.unique(attr_dc._t['id'])))
+            #print(len(attr_dc._t))
+            #print(len(getattr(self._gui._sess_sel, attrn)._t))
             getattr(self._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':

@@ -49,6 +49,7 @@ class SystModel(LMComposite):
                                              weights=self._wf,
                                              max_nfev=max_nfev,
                                              fit_kws=fit_kws,
+                                             nan_policy='omit',
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
                                              #method='emcee')

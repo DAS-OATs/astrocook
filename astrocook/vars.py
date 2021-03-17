@@ -135,7 +135,7 @@ telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
-trans_d = atom_par['col1']
+trans_d = np.array([t for t in atom_par['col1'] if '-' not in t])
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]

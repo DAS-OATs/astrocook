@@ -77,7 +77,6 @@ class GUIGraphMain(wx.Frame):
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
-
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self.Show()

@@ -103,8 +103,8 @@ class Spectrum(Frame):
         sd = -1*int(np.floor(np.log10(dv)))-1
         spec_x = self.x.value
 
-        xmin = spec_x[0]
-        xmax = spec_x[-1]
+        xmin = spec_x[~np.isnan(spec_x)][0]
+        xmax = spec_x[~np.isnan(spec_x)][-1]
         xmean = 0.5*(xmin+xmax)
         v_shift = np.arange(vstart, vend+dv, dv)
         #v_shift = np.sort(v_shift)
@@ -113,6 +113,7 @@ class Spectrum(Frame):
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
+        #print(xmin+xstart, xmax+xend, dx)
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
@@ -222,8 +223,11 @@ class Spectrum(Frame):
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = np.array(self._safe(conv), dtype=float)
-        conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
-                                              *self._t[input_col].unit
+        try:
+            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
+                                                 *self._t[input_col].unit
+        except:
+            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')
         self._t[output_col] = conv
         self._x_convert(xunit=xunit)
 

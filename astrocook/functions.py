@@ -140,6 +140,8 @@ def expr_check(node):
     for i in iter:
         if isinstance(node, ast.Num):
             ret.append(float(i.n))
+        elif isinstance(node, ast.Constant):
+            ret.append(float(i.n))
         else:
             ret.append(expr_eval(i))
     return np.ravel(np.asarray(ret, dtype='float64'))
@@ -147,6 +149,9 @@ def expr_check(node):
 def expr_eval(node):
     if isinstance(node, ast.Num): # <number>
         return node.n
+
+    elif isinstance(node, ast.NameConstant): # <number>
+        return node.value
 
     elif isinstance(node, ast.BinOp): # <left> <operator> <right>
         return py_ops[type(node.op)](expr_check(node.left),
@@ -315,13 +320,13 @@ def running_mean(x, h=1):
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 
-def running_rms(x, h=1):
+def running_rms(x, xm, h=1):
     n = 2*h+1
-    cs = np.nancumsum(np.insert(x**2, 0, 0))
+    rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
     #rm = (cs[n:] - cs[:-n]) / float(n)
-    rm = np.sqrt((cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n]))
-    return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+    rms = np.sqrt((rs[n:] - rs[:-n]) / (norm[n:]-norm[:-n]))
+    return np.concatenate((h*[rms[0]], rms, h*[rms[-1]]))
 
 
 def to_x(z, trans):

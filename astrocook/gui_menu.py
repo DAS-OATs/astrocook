@@ -545,6 +545,8 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(self._menu, start_id+104, 'spec',
                           "Estimate resolution", 'resol_est')
         self._item_method(self._menu, start_id+105, 'spec',
+                          "Estimate error from RMS", 'rms_est')
+        self._item_method(self._menu, start_id+106, 'spec',
                           "Estimate SNR", 'snr_est')
         submenu = wx.Menu()
         self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
@@ -578,6 +580,9 @@ class GUIMenuRecipes(GUIMenu):
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
         #                  'add_syst_from_lines')
+        self._item_method(self._menu, start_id+3005, 'cont',
+                          "New systems from likelihood",
+                          'systs_new_from_like')
         self._item_method(self._menu, start_id+301, 'lines',
                           "New systems from lines",
                           'systs_new_from_lines')

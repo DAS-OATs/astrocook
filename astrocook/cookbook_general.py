@@ -1,7 +1,8 @@
-from .functions import expr_eval
+from .functions import expr_eval, running_mean, running_rms
 from .message import *
 from .vars import *
 import ast
+from astropy import table as at
 from copy import deepcopy as dc
 import numpy as np
 import sys
@@ -246,7 +247,7 @@ class CookbookGeneral(object):
             #old = dc(self.sess)
             old = Session(self.sess._gui)
             for d in self.sess.__dict__:
-                if d != '_gui' and d != 'cb':
+                if d != '_gui' and d != 'cb' and d != 'log':
                     old.__dict__[d] = dc(self.sess.__dict__[d])
             old.__dict__['cb'] = self.sess.__dict__['cb']
 
@@ -276,6 +277,32 @@ class CookbookGeneral(object):
         self.sess.spec._resol_est(px, update)
 
         return 0
+
+    def rms_est(self, hwindow=100):
+        """ @brief Estimate error from RMS
+        @details Estimate flux error by computing the running RMS of the flux.
+        @param hwindow Half-window size in pixels for running mean
+        @return 0
+        """
+
+        try:
+            hwindow = int(hwindow)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+
+        y_rm = running_mean(spec._t['y'], h=5)
+        y_rms = running_rms(spec._t['y'], y_rm, h=hwindow)
+        if 'y_rms' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_rms'.")
+        else:
+            logging.warning("I'm updating column 'y_rms'.")
+        spec._t['y_rms'] = at.Column(y_rms, dtype=float)
+
+        return 0
+
 
     def shift_from_rf(self, z=0):
         """ @brief Shift from rest frame
