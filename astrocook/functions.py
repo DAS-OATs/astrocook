@@ -14,6 +14,11 @@ import numpy as np
 
 prefix = 'functions'
 
+def _gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+
 def _fadd(a, u):
     """ @brief Real part of the Faddeeva function Re(F)
     @param a First abstract variable

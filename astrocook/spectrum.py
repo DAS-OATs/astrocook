@@ -149,8 +149,8 @@ class Spectrum(Frame):
         #plt.plot(v_shift, ccf)
         #plt.show()
         #print(np.min(ccf), np.mean(ccf), np.max(ccf))
-        logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
-                     % (np.min(ccf), np.max(ccf), np.mean(ccf)))
+        #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
+        #             % (np.min(ccf), np.max(ccf), np.mean(ccf)))
         return np.array(v_shift), np.array(ccf)
         """
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)

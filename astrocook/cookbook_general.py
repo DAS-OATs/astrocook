@@ -1,10 +1,12 @@
-from .functions import expr_eval, running_mean, running_rms
+from .functions import _gauss, expr_eval, running_mean, running_rms
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
 from copy import deepcopy as dc
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 import sys
 from tqdm import tqdm
 
@@ -68,9 +70,76 @@ class CookbookGeneral(object):
 
         v_shift, ccf = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
                                                 vend, dv)
+        logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
+                     % (np.min(ccf), np.max(ccf), np.mean(ccf)))
         with open(self.sess.name+'.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
+        #plt.show()
+
+        return 0
+
+
+    def flux_ccf_stats(self, n=1e1, col1='y', col2='y', dcol1='dy', dcol2='dy',
+                       vstart=-20, vend=20, dv=1e-1):
+        """@brief Compute statistics of the flux CCF
+        @details Compute statistics of the flux CCF by bootstrapping a number
+        of realizations for the spectrum. Realizations are created by selecting
+        entries at random, preserving wavelength order and rejecting duplicates.
+        Compare with Peterson et al. 1998.
+        @param n Number of realizations
+        @param col1 First column
+        @param col2 Second column
+        @param dcol1 Error for first column
+        @param dcol2 Error for second column
+        @param vstart Start velocity
+        @param vend End velocity
+        @param dv Velocity step
+        @return 0
+        """
+
+        try:
+            n = int(n)
+            vstart = float(vstart) * au.km/au.s
+            vend = float(vend) * au.km/au.s
+            dv = float(dv) * au.km/au.s
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        peaks = np.array([])
+        shifts = np.array([])
+        #for i in range(n):
+        for i in enum_tqdm(range(n), len(range(n)), "cookbook_general: Bootstrapping"):
+            spec = dc(self.sess.spec)
+            rng = np.random.default_rng()
+            rint = rng.integers(0, len(spec.t), size=len(spec.t))
+            sel = np.sort(np.unique(rint))
+            #sel = np.unique(rint)
+            spec._t = spec._t[sel]
+            v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
+                                          vend, dv)
+
+            try:
+                p0 = [1., 0., 1.]
+                fit_sel = np.logical_and(v_shift>-1., v_shift<1.)
+                coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
+                fit = _gauss(v_shift[fit_sel], *coeff)
+                plt.plot(v_shift[fit_sel], fit, linestyle=':')
+                #perr = np.sqrt(np.diag(var_matrix))
+                peak, shift = coeff[:2]
+            except:
+                peak, shift = np.nan, np.nan
+            peaks = np.append(peaks, peak)
+            shifts = np.append(shifts, shift)
+
+            #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, "
+            #             "mean %3.4f, shift %3.4f." \
+            #             % (np.min(ccf), np.max(ccf), np.mean(ccf), shift))
+
+        logging.info("Peak: %3.4f±%3.4f; shift: %3.4f±%3.4f" \
+            % (np.nanmean(peaks), np.nanstd(peaks), np.nanmean(shifts), np.nanstd(shifts)))
+        #plt.show()
 
         return 0
 
