@@ -316,7 +316,11 @@ class CookbookAbsorbers(object):
         for i, r in enumerate(systs._mods_t):
             mod = r['mod']
             model[s] = mod.eval(x=systs._xs, params=mod._pars) * model[s]
-        deabs[s] = cont[s] + y[s] - model[s]
+        #print(cont[s],y[s],model[s])
+        try:
+            deabs[s] = cont[s] + y[s] - model[s]
+        except:
+            deabs[s] = np.array(cont[s]) + np.array(y[s]) - np.array(model[s])
         return 0
 
 
@@ -444,6 +448,8 @@ class CookbookAbsorbers(object):
     def _systs_fit(self, verbose=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
+        z_list = []
+        chi2r_list = []
         if self._max_nfev > 0:
             fit_list = []
             for i,m in enumerate(mods_t):
@@ -454,8 +460,6 @@ class CookbookAbsorbers(object):
                 else:
                     fit_list.append(True)
 
-            z_list = []
-            chi2r_list = []
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
@@ -871,7 +875,7 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=18.0,
+    def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=22.0,
                      b_min=1.0, b_max=100.0, col=None, col_min=None,
                      col_max=None):
         """ @brief Select systems

@@ -349,6 +349,30 @@ class CookbookGeneral(object):
 
         return 0
 
+    def _rm_est(self, hwindow=100):
+        """ @brief Compute running mean
+        @details Compute running mean of the flux.
+        @param hwindow Half-window size in pixels for running mean
+        @return 0
+        """
+
+        try:
+            hwindow = int(hwindow)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+
+        y_rm = running_mean(spec._t['y'], h=hwindow)
+        if 'y_rm' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_rm'.")
+        else:
+            logging.warning("I'm updating column 'y_rm'.")
+        spec._t['y_rm'] = at.Column(y_rm, dtype=float)
+
+        return 0
+
     def rms_est(self, hwindow=100):
         """ @brief Estimate error from RMS
         @details Estimate flux error by computing the running RMS of the flux.

@@ -82,8 +82,8 @@ pars_std_d =  {
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
     'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
 #    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
-    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
-#    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
+    'z_max': 1e-3, 'logN_max': 22, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
