@@ -445,7 +445,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, xstart, xend, dx, xunit, y, dy):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy, filling=np.nan):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -512,8 +512,8 @@ class Spectrum(Frame):
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
-                y_out = np.append(y_out, np.nan)
-                dy_out = np.append(dy_out, np.nan)
+                y_out = np.append(y_out, filling)
+                dy_out = np.append(dy_out, filling)
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,

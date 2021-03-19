@@ -297,6 +297,9 @@ class Graph(object):
                                 % sess[0].spec._rfz)
             if self._axt == None:
                 self._axt = self._ax.twiny()
+            try:
+                self._axt.set_xlabel(str(self._gui._sess_sel.spec._xunit))
+            except:
                 self._axt.set_xlabel(str(self._xunit))
         else:
             try:
@@ -392,7 +395,7 @@ class Graph(object):
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
-                #sess = self._gui._sess_list[int(sel)]
+                sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 if struct in ['spec','lines','nodes','systs']:
@@ -426,6 +429,7 @@ class Graph(object):
                         x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     else:
                         x = xem*(1+z_flat)
+                    x = x.to(sess.spec._xunit)
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
@@ -438,7 +442,7 @@ class Graph(object):
                         for k in self._axes:
                             if self._axes[k] == self._ax:
                                 zem = self._zems[k]
-                        x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                        x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
                         #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat

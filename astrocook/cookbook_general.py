@@ -202,7 +202,7 @@ class CookbookGeneral(object):
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=True):
+              norm=True, filling=np.nan):
         """ @brief Rebin spectrum
         @details Rebin a spectrum with a given step. The step can be expressed
         in any unit of wavelength or velocity. Start and end wavelength may be
@@ -216,6 +216,7 @@ class CookbookGeneral(object):
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
         @param norm Return normalized spectrum, if continuum exists
+        @param filling Value to fill region without data
         @return Session with rebinned spectrum
         """
 
@@ -224,6 +225,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            filling = float(filling)
         except ValueError:
             logging.error(msg_param_fail)
             return None
@@ -256,7 +258,7 @@ class CookbookGeneral(object):
             y = spec_in.y/spec_in.t['cont']
             dy = spec_in.dy/spec_in.t['cont']
 
-        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy)
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
         if cont:
             spec_out.t['cont'] = 1
 
@@ -566,6 +568,29 @@ class CookbookGeneral(object):
         """
 
         fact = 1/np.median(self.sess.spec.y)
+
+        for s in self.sess.seq:
+            try:
+                struct = getattr(self.sess, s)
+                struct._y_scale(fact)
+            except:
+                logging.debug(msg_attr_miss(s))
+        return 0
+
+    def y_scale_x(self, x):
+        """ @brief Scale y axis by its value at a given x
+        @details Scale the y axis by its value at a given x.
+        @param x x (nm)
+        @return 0
+        """
+
+        try:
+            x = float(x)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        fact = 1/np.interp(x, self.sess.spec.x.to(au.nm).value, self.sess.spec.y)
 
         for s in self.sess.seq:
             try:

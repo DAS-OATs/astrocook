@@ -893,18 +893,20 @@ class GUIPanelSession(wx.Frame):
         @return 0
         """
 
-        for i, s in enumerate(self._gui._sess_list):
+        # Reversed to parse sessions with higher number first, and avoid overwriting
+        sess_list = self._gui._sess_list[::-1]
+        for i, s in enumerate(sess_list):
             if s.spec is not None:
                 for c in sorted(s.spec._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (i, c),
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.spec._t[c]))))
             if s.lines is not None:
                 for c in sorted(s.lines._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (i, c),
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.lines._t[c]))))
             if s.systs is not None:
                 for c in sorted(s.systs._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (i, c),
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
         #print(expr)
