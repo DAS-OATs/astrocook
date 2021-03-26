@@ -1488,7 +1488,7 @@ class CookbookAbsorbers(object):
         @param thres Threshold for accepting
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
-        @param b Guess doppler broadening
+        @param b Guess Doppler broadening
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
@@ -1602,7 +1602,7 @@ class CookbookAbsorbers(object):
         @param thres Threshold for accepting likelihood
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
-        @param b Guess doppler broadening
+        @param b Guess Doppler broadening
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
@@ -1741,7 +1741,7 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param logN Guess (logarithmic) column density
-        @param b Guess doppler broadening
+        @param b Guess Doppler broadening
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model
@@ -1812,7 +1812,7 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param logN Guess (logarithmic) column density
-        @param b Guess doppler broadening
+        @param b Guess Doppler broadening
         @param resol Resolution
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
         @param dlogN_thres Column density error threshold to accept the fitted model

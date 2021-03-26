@@ -20,10 +20,15 @@ class Format(object):
         xmax = np.append(mean, x[-1])
         return xmin, xmax
 
-    def astrocook(self, hdul, struct):
+    def astrocook(self, frame, struct):
         logging.info(msg_format('Astrocook %s' % struct))
-        hdr = hdul[1].header
-        data = hdul[1].data
+        try:
+            hdr = frame[1].header
+            data = frame[1].data
+        except:
+            hdr = {}
+            data = frame
+
 
         if struct in ['spec', 'nodes', 'lines']:
 

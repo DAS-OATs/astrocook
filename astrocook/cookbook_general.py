@@ -72,7 +72,7 @@ class CookbookGeneral(object):
                                                 vend, dv)
         logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
                      % (np.min(ccf), np.max(ccf), np.mean(ccf)))
-        with open(self.sess.name+'.npy', 'wb') as f:
+        with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
         #plt.show()
@@ -125,7 +125,7 @@ class CookbookGeneral(object):
                 fit_sel = np.logical_and(v_shift>-1., v_shift<1.)
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
-                plt.plot(v_shift[fit_sel], fit, linestyle=':')
+                #plt.plot(v_shift[fit_sel], fit, linestyle=':')
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
             except:
@@ -140,6 +140,9 @@ class CookbookGeneral(object):
         logging.info("Peak: %3.4f±%3.4f; shift: %3.4f±%3.4f" \
             % (np.nanmean(peaks), np.nanstd(peaks), np.nanmean(shifts), np.nanstd(shifts)))
         #plt.show()
+        with open(self.sess.name+'_ccf_stats.npy', 'wb') as f:
+            np.save(f, peaks)
+            np.save(f, shifts)
 
         return 0
 

@@ -67,13 +67,17 @@ class Session(object):
 
         format = Format()
 
+        dat = False
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
-                hdul = fits.open(self.path[:-4]+'_spec.fits')
-                hdr = hdul[1].header
+                try:
+                    hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    hdr = hdul[1].header
+                except:
+                    dat = True
         elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
@@ -136,14 +140,19 @@ class Session(object):
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
-        if orig[:9] == 'Astrocook':
+        if orig[:9] == 'Astrocook' or dat:
             for s in self.seq:
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
                     os.remove(self.path[:-4]+'_'+s+'.fits')
                 except:
-                    pass
+                    try:
+                        data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                        setattr(self, s, format.astrocook(data, s))
+                        #os.remove(self.path[:-4]+'_'+s+'.dat')
+                    except:
+                        pass
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
                 self.cb._spec_update()
