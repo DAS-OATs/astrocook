@@ -166,7 +166,7 @@ class CookbookGeneral(object):
         self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
 
-    def mask(self, col='mask', cond='', new_sess=True):
+    def mask(self, col='mask', cond='', new_sess=True, masked_col='x'):
         """ @brief Create a spectral mask
         @details Create a spectral mask by applying a given condition. The
         condition must be parsable by AST, with spectrum columns denoted by
@@ -194,7 +194,9 @@ class CookbookGeneral(object):
 
         if new_sess:
             spec_out = dc(spec)
-            spec_out._t['x'][~mask] = np.nan #
+            #spec_out._t['x'][~mask] = np.nan #
+            for c in ['y', 'dy', 'cont']:
+                spec_out._t[c][~mask] = np.nan #
             #spec_out._t = .spec._t[mask]
             from .session import Session
             new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,

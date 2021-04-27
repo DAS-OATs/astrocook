@@ -499,10 +499,11 @@ class Spectrum(Frame):
             w = np.where(frac>0)
             #print(frac[w],frac)
             dysel = dy[im:iM]
+            #print(dysel)
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
-                if np.any(np.isnan(dysel)) and False:
+                if np.any(np.isnan(dysel)):# and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
                     y_out = np.append(y_out, np.average(ysel[w], weights=weights))

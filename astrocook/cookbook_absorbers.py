@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
+from scipy.signal import argrelmin, argrelmax, find_peaks
 from scipy.special import erf, erfc
 import sys
 
@@ -52,6 +52,15 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
+    def _feat_ccf(self, x, y, ym, verbose=True, plot=False):
+        ccf = np.dot(ym, y)
+        if plot:
+            plt.plot(x, ym)
+        if verbose:
+            logging.info("The data-model CCF is %2.3f." % ccf)
+        return ccf
+
+
     def _mod_ccf(self, mod, ym=None, y=None, verbose=True, plot=False):
         if ym is None:
             ym = mod.eval(x=mod._xf, params=mod._pars)
@@ -64,6 +73,76 @@ class CookbookAbsorbers(object):
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
+
+
+    def _feat_ccf_max(self, xc, yc, dyc, modelc, vstart=-5, vend=5, dv=1e-2,
+                     weight=True, verbose=True):
+        sd = -1*int(np.floor(np.log10(dv)))-1
+
+        xmin = xc[0]
+        xmax = xc[-1]
+        xmean = 0.5*(xmin+xmax)
+        v_shift = np.arange(vstart, vend, dv)
+        x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
+        xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
+        xend = xmean * vend/aconst.c.to(au.km/au.s).value
+        dx = xmean * dv/aconst.c.to(au.km/au.s).value
+
+        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
+        eval_osampl = 1-np.interp(x_osampl, xc, modelc)
+        ccf = []
+
+        y = (1-yc)
+        w = 1/dyc
+        if weight:
+            #w = np.abs(np.gradient(eval_osampl))
+            #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
+            y = y*w
+
+        #y = (1-mod._yf)#*grad/np.sum(grad)
+
+        for i, xs in enumerate(x_shift):
+            plot = False
+            x = x_osampl+xs
+            digitized = np.digitize(x, xc)
+            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(xc))]
+            ccf1 = self._feat_ccf(x, y, ym, verbose=False, plot=plot)
+            if plot:
+                plt.scatter(xmean+xs, ccf1)
+
+            ccf.append(ccf1)
+
+        #plt.plot(xc, yc, linewidth=4, c='g')
+        if weight:
+            color = 'r'
+        else:
+            color = 'black'
+        #plt.scatter(xmean+x_shift, ccf/np.max(ccf), c=color)
+        try:
+            p0 = [np.max(ccf), xmean, 5e-4]
+            coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
+            fit = gauss(xmean+x_shift, *coeff)
+            ccf_max = coeff[0]
+            deltax = coeff[1]-xmean
+            deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
+            #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
+        except:
+            amax = np.argmax(ccf)
+            ccf_max = ccf[amax]
+            deltax = x_shift[amax]
+            deltav = v_shift[amax]
+            #plt.scatter(xmean+x_shift[amax], 1)
+
+        if deltav < vstart or deltav > vend:
+            ccf_max = np.nan
+            deltax = np.nan
+            deltav = np.nan
+
+        if verbose:
+            logging.info(("I maximized the data model CCF with a shift of "
+                          "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
+                          % (deltax, deltav))
+        return ccf_max, deltax, deltav
 
 
     def _mod_ccf_max(self, mod, vstart=-5, vend=5, dv=1e-2, weight=True,
@@ -129,6 +208,47 @@ class CookbookAbsorbers(object):
                           % (deltax, deltav))
         return ccf_max, deltax, deltav
 
+
+    def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
+                       dycol='dy', contcol='cont', modelcol='model', thr=1e-3):
+        weight = str(weight) == 'True'
+        spec = self.sess.spec
+        systs = self.sess.systs
+        feats = np.hstack(([0], systs._bounds, [-1]))
+        #plt.plot(spec._t['x'], spec._t['model'])
+        #plt.scatter(spec._t['x'][systs._bounds], spec._t['model'][systs._bounds])
+        #plt.show()
+        deltav_arr = np.array([])
+        for i, f in enum_tqdm(feats[:-1], len(feats)-1,
+                              "cookbook_absorbers: Computing CCF for features"):
+            fe = feats[i+1]
+            sel = np.s_[f:fe]
+            cut = np.where(spec._t[modelcol][sel]/spec._t[contcol][sel]<1-thr)
+            xc = spec._t[xcol][sel][cut]
+            yc = spec._t[ycol][sel][cut]/spec._t[contcol][sel][cut]
+            dyc = spec._t[dycol][sel][cut]/spec._t[contcol][sel][cut]
+            modelc = spec._t[modelcol][sel][cut]/spec._t[contcol][sel][cut]
+            #print(sel)
+            #print(spec._t[modelcol][sel]/spec._t[contcol][sel])
+            #print(cut)
+            if len(xc)>0:
+                ccf, deltax, deltav = self._feat_ccf_max(xc, yc, dyc, modelc,
+                                                         vstart, vend, dv,
+                                                         weight, verbose=False)
+            else:
+                #print('xc len 0')
+                deltav = 0.0
+            deltav_arr = np.append(deltav_arr, deltav)
+            """
+            for i in m['id']:
+                w = np.where(systs._t['id']==i)
+                systs._t['ccf_deltav'][w] = deltav
+            """
+        #print(deltav_arr)
+        #plt.show()
+        with open(self.sess.name+'_deltav.npy', 'wb') as f:
+            np.save(f, deltav_arr)
+        return 0
 
     def _mods_ccf_max(self, vstart, vend, dv, weight):
         systs = self.sess.systs
@@ -317,6 +437,7 @@ class CookbookAbsorbers(object):
             mod = r['mod']
             model[s] = mod.eval(x=systs._xs, params=mod._pars) * model[s]
         #print(cont[s],y[s],model[s])
+        systs._bounds = argrelmax(model[s]/cont[s])[0]
         try:
             deabs[s] = cont[s] + y[s] - model[s]
         except:
@@ -874,6 +995,57 @@ class CookbookAbsorbers(object):
         self._mods_recreate()
 
         return 0
+
+
+    def _feats_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=22.0,
+                      b_min=1.0, b_max=100.0, col=None, col_min=None,
+                      col_max=None):
+
+        try:
+            z_min = float(z_min)
+            z_max = float(z_max)
+            logN_min = float(logN_min)
+            logN_max = float(logN_max)
+            b_min = float(b_min)
+            b_max = float(b_max)
+            col = None if col in [None, 'None'] else str(col)
+            col_min = None if col_min in [None, 'None'] else float(col_min)
+            col_max = None if col_max in [None, 'None'] else float(col_max)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
+        z_sel = np.logical_and(systs._t['z']>z_min, systs._t['z']<z_max)
+        logN_sel = np.logical_and(systs._t['logN']>logN_min, systs._t['logN']<logN_max)
+        b_sel = np.logical_and(systs._t['b']>b_min, systs._t['b']<b_max)
+        cond = np.logical_and(z_sel, np.logical_and(logN_sel, b_sel))
+
+        if col is not None:
+            cond = np.logical_and(cond, np.logical_and(systs._t[col]>col_min,
+                                                       systs._t[col]<col_max))
+
+        xs = np.array([])
+        for s in systs._t[cond]:
+            for si in trans_parse(s['series']):
+                xs = np.append(xs, to_x(s['z'],si).value)
+
+        feats = np.hstack(([0], systs._bounds, [-1]))
+        sel = np.histogram(xs, spec._t['x'][feats])[0]>0
+        #print(sel)
+        with open(self.sess.name+'_feats_sel.npy', 'wb') as f:
+            np.save(f, sel)
+
+        return 0
+
 
     def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=22.0,
                      b_min=1.0, b_max=100.0, col=None, col_min=None,
@@ -1678,10 +1850,10 @@ class CookbookAbsorbers(object):
             #series_o = list(set(series_split) - set([s]))
             trans = trans_parse(s)
             #z_int = np.arange(z_start, z_end, dz)
-            #plt.plot(z_int, likes[s])
             if s in likes.keys():
                 #print(likes[s])
                 z_int = z_likes[s]
+                #plt.plot(z_int, likes[s])
                 w = np.where(likes[s]>thres)
 
                 """
@@ -1693,7 +1865,8 @@ class CookbookAbsorbers(object):
                         print(likes_o)
                 """
 
-                p0, _ = find_peaks(likes[s][w], distance=10)
+                p0, _ = find_peaks(likes[s][w], distance=distance)
+                #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
                 # Check if likelihood peaks are higher than those of all other
                 # transitions at those wavelengths
@@ -1797,7 +1970,6 @@ class CookbookAbsorbers(object):
             #self._systs_fit()
             self._systs_cycle()
             self._spec_update()
-
         return 0
 
     def syst_new_from_resids_new(self, series='Ly-a', z_start=0, z_end=6,

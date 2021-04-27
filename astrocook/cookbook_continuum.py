@@ -162,6 +162,7 @@ class CookbookContinuum(object):
             return 0
 
         spec = self.sess.spec
+        lines = self.sess.lines
 
         y_rm = running_mean(spec._t['y'], h=hwindow)
         #plt.plot(spec._t['x'], spec._t['y'])
@@ -209,6 +210,8 @@ class CookbookContinuum(object):
         x_cont = spec._t['x'][np.where(spec._t['y_em'])]
         y_cont = spec._t['y'][np.where(spec._t['y_em'])]
         spec._t['y_cont'] = np.interp(spec._t['x'], x_rm, y_rm)*spec._t['y'].unit
+        if lines is not None:
+            lines._t['y_cont'] = np.interp(lines._t['x'], x_rm, y_rm)*lines._t['y'].unit
 
         spec._gauss_convolve(std=std, input_col='y_cont', output_col='cont')
 

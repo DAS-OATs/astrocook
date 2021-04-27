@@ -284,6 +284,7 @@ def psf_gauss_wrong(x, #center, resol):
     return ret
 
 def psf_gauss(x, resol, spec=None):
+    #print('in ', len(x), x)
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
