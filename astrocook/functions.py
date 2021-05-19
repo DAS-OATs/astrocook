@@ -163,6 +163,8 @@ def expr_eval(node):
                                      expr_check(node.right))
 
     elif isinstance(node, ast.Call):
+        #print(node.args)
+        #print(type(node.args))
         return getattr(np, expr_eval(node.func))(expr_check(node.args))
 
     elif isinstance(node, ast.Compare):

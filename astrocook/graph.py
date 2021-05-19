@@ -497,9 +497,13 @@ class Graph(object):
                                 if hasattr(self._gui._sess_sel.spec, '_rfz'):
                                     z += self._gui._sess_sel.spec._rfz
 
-                                self._ax.text(xi, 0.05, s, **kwargs_text)
-                                kwargs_text['va'] = 'top'
-                                self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                                if z > 1e-10:
+                                    self._ax.text(xi, 0.05, s, **kwargs_text)
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                                else:
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, s, **kwargs_text)
                     if struct == 'systs':
                         self._systs_color = color
                 except:

@@ -52,10 +52,10 @@ class CookbookAbsorbers(object):
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
 
-    def _feat_ccf(self, x, y, ym, verbose=True, plot=False):
+    def _feat_ccf(self, xc, y, ym, verbose=True, plot=False):
         ccf = np.dot(ym, y)
         if plot:
-            plt.plot(x, ym)
+            plt.plot(xc, ym)
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
@@ -78,6 +78,7 @@ class CookbookAbsorbers(object):
     def _feat_ccf_max(self, xc, yc, dyc, modelc, vstart=-5, vend=5, dv=1e-2,
                      weight=True, verbose=True):
         sd = -1*int(np.floor(np.log10(dv)))-1
+        if sd<0: sd=0
 
         xmin = xc[0]
         xmax = xc[-1]
@@ -88,7 +89,11 @@ class CookbookAbsorbers(object):
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
+        #print(vstart, vend, xstart, xend)
+        #x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
+        #print()
+        #print(x_osampl)
         eval_osampl = 1-np.interp(x_osampl, xc, modelc)
         ccf = []
 
@@ -99,20 +104,38 @@ class CookbookAbsorbers(object):
             #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
             y = y*w
 
+        #print()
+        rc = range(len(xc))
+        rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
-
+        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
         for i, xs in enumerate(x_shift):
             plot = False
             x = x_osampl+xs
-            digitized = np.digitize(x, xc)
-            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(xc))]
-            ccf1 = self._feat_ccf(x, y, ym, verbose=False, plot=plot)
+            #print(x)
+            #print(np.array(xc))
+            digitized = np.digitize(x, xc-xdiff)-1
+            #print(digitized)
+            #print(len(digitized))
+            #xm = [x[digitized == j].mean() for j in range(len(xc))]
+            #print(np.array(xm))
+            ym = [eval_osampl[digitized == j].mean() for j in range(len(xc))]
+            #print(len(xc), len(ym))
+            #if np.abs(xs)<3e-10:
+            #    plt.plot(rc, y, linewidth=4, color='r')
+            #    plt.scatter(rc, ym, linewidth=3, color='black')
+            #    plt.plot(x, eval_osampl, linewidth=4, color='r')
+            #    plt.scatter(x, digitized/100, linewidth=4, color='r')
+            ccf1 = self._feat_ccf(xc, y, ym, verbose=False, plot=plot)
             if plot:
                 plt.scatter(xmean+xs, ccf1)
+            #print(xs,ccf1)
 
             ccf.append(ccf1)
 
-        #plt.plot(xc, yc, linewidth=4, c='g')
+        #plt.plot(rc, y, linewidth=2, c='b')
+        #plt.scatter(rc, 1-modelc, linewidth=2, c='lightblue')
+        #plt.plot(x_osampl, eval_osampl, linewidth=1, c='green')
         if weight:
             color = 'r'
         else:
@@ -127,6 +150,7 @@ class CookbookAbsorbers(object):
             deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
             #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
         except:
+            #print(ccf)
             amax = np.argmax(ccf)
             ccf_max = ccf[amax]
             deltax = x_shift[amax]
@@ -137,11 +161,13 @@ class CookbookAbsorbers(object):
             ccf_max = np.nan
             deltax = np.nan
             deltav = np.nan
-
+        #print()
+        #print(deltax,deltav)
         if verbose:
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
+        #plt.show()
         return ccf_max, deltax, deltav
 
 
@@ -219,6 +245,7 @@ class CookbookAbsorbers(object):
         #plt.scatter(spec._t['x'][systs._bounds], spec._t['model'][systs._bounds])
         #plt.show()
         deltav_arr = np.array([])
+        xmean_arr = np.array([])
         for i, f in enum_tqdm(feats[:-1], len(feats)-1,
                               "cookbook_absorbers: Computing CCF for features"):
             fe = feats[i+1]
@@ -238,6 +265,7 @@ class CookbookAbsorbers(object):
             else:
                 #print('xc len 0')
                 deltav = 0.0
+            xmean_arr = np.append(xmean_arr, np.mean(xc))
             deltav_arr = np.append(deltav_arr, deltav)
             """
             for i in m['id']:
@@ -246,7 +274,9 @@ class CookbookAbsorbers(object):
             """
         #print(deltav_arr)
         #plt.show()
+
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
+            np.save(f, xmean_arr)
             np.save(f, deltav_arr)
         return 0
 
@@ -1040,7 +1070,6 @@ class CookbookAbsorbers(object):
 
         feats = np.hstack(([0], systs._bounds, [-1]))
         sel = np.histogram(xs, spec._t['x'][feats])[0]>0
-        #print(sel)
         with open(self.sess.name+'_feats_sel.npy', 'wb') as f:
             np.save(f, sel)
 

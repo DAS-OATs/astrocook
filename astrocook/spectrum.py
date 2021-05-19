@@ -6,9 +6,11 @@ from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
+import bisect
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
+from time import time
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
@@ -450,6 +452,7 @@ class Spectrum(Frame):
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
 
+
         self.t.sort('x')
         self._x_convert(xunit=xunit)
 
@@ -474,9 +477,17 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
+        print_time = False
+        xmin_value = np.array(self.xmin.value)
+        xmax_value = np.array(self.xmax.value)
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
+            if print_time:
+                print('')
+                t1 = time()
+                print(t1)
+            """
             while xmin_in < M:
                 iM += 1
                 try:
@@ -491,8 +502,19 @@ class Spectrum(Frame):
                     #print(xmax_in)
                 except:
                     break
-            frac = (np.minimum(M, self.xmax[im:iM].value)\
-                    -np.maximum(m, self.xmin[im:iM].value))/dx
+            """
+            im = bisect.bisect_left(xmax_value, m)
+            iM = bisect.bisect_right(xmin_value, M)
+            #print('im  ',im, iM)
+            if print_time:
+                t15 = time()
+                print(t15, t15-t1)
+
+            frac = (np.minimum(M, xmax_value[im:iM])\
+                    -np.maximum(m, xmin_value[im:iM]))/dx
+            if print_time:
+                t17 = time()
+                print(t17, t17-t15)
             ysel = y[im:iM]
             #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
             #print(frac)
@@ -500,6 +522,9 @@ class Spectrum(Frame):
             #print(frac[w],frac)
             dysel = dy[im:iM]
             #print(dysel)
+            if print_time:
+                t2 = time()
+                print(t2, t2-t16)
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
@@ -515,6 +540,9 @@ class Spectrum(Frame):
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
+            if print_time:
+                t3 = time()
+                print(t3, t3-t2)
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,

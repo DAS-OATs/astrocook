@@ -81,7 +81,7 @@ class CookbookGeneral(object):
 
 
     def flux_ccf_stats(self, n=1e1, col1='y', col2='y', dcol1='dy', dcol2='dy',
-                       vstart=-20, vend=20, dv=1e-1):
+                       vstart=-20, vend=20, dv=1e-1, fit_hw=1.):
         """@brief Compute statistics of the flux CCF
         @details Compute statistics of the flux CCF by bootstrapping a number
         of realizations for the spectrum. Realizations are created by selecting
@@ -92,9 +92,10 @@ class CookbookGeneral(object):
         @param col2 Second column
         @param dcol1 Error for first column
         @param dcol2 Error for second column
-        @param vstart Start velocity
-        @param vend End velocity
-        @param dv Velocity step
+        @param vstart Start velocity (km/s)
+        @param vend End velocity (km/s)
+        @param dv Velocity step (km/s)
+        @param fit_hw Half-window used for fitting the CCF (km/s)
         @return 0
         """
 
@@ -103,6 +104,7 @@ class CookbookGeneral(object):
             vstart = float(vstart) * au.km/au.s
             vend = float(vend) * au.km/au.s
             dv = float(dv) * au.km/au.s
+            fit_hw = float(fit_hw) * au.km/au.s
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -121,13 +123,16 @@ class CookbookGeneral(object):
                                           vend, dv)
 
             try:
+            #    ciao
+            #except:
                 p0 = [1., 0., 1.]
-                fit_sel = np.logical_and(v_shift>-1., v_shift<1.)
+                fit_sel = np.logical_and(v_shift>-fit_hw.value, v_shift<fit_hw.value)
+                #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
-                #plt.plot(v_shift[fit_sel], fit, linestyle=':')
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
+                #print(peak, shift)
             except:
                 peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
