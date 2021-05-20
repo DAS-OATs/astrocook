@@ -192,6 +192,7 @@ class CookbookContinuum(object):
         sum_sel = len(spec._t)
         for i in range(iter):
             sel = spec._t['y']-spec._t['y_rm']<-kappa*spec._t['dy']
+            sel = np.logical_or(sel, spec._t['y']-spec._t['y_rm']>kappa*2*spec._t['dy'])
             spec._t['y_em'][sel] = 0
             spec._t['y_abs'][sel] = 1
             x_rm = spec._t['x'][~sel]

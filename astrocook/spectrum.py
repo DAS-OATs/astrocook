@@ -6,6 +6,7 @@ from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
+from astropy.stats import sigma_clip
 import bisect
 #from astropy import constants as aconst
 #from astropy import table as at
@@ -518,10 +519,17 @@ class Spectrum(Frame):
             ysel = y[im:iM]
             #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
             #print(frac)
-            w = np.where(frac>0)
+
             #print(frac[w],frac)
             dysel = dy[im:iM]
             #print(dysel)
+            #mask = sigma_clip(ysel, masked=True).mask
+            #if np.sum(~mask)>0:
+            #    frac = frac[~mask]
+            #    ysel = ysel[~mask]
+            #    dysel = dysel[~mask]
+            w = np.where(frac>0)
+
             if print_time:
                 t2 = time()
                 print(t2, t2-t16)

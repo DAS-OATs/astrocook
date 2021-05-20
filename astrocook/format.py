@@ -316,8 +316,9 @@ class Format(object):
         x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
         y = np.ravel(hdul['SCIDATA'].data)
         dy = np.ravel(hdul['ERRDATA'].data)
+        q = np.ravel(hdul['QUALDATA'].data)
 
-        w = np.where(y!=0)
+        w = np.where(np.logical_and(y!=0,True))
         x,y,dy = x[w],y[w],dy[w]
 
         xmin, xmax = self._create_xmin_xmax(x)
@@ -325,9 +326,9 @@ class Format(object):
         x,xmin,xmax = x[w],xmin[w],xmax[w]
         y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
         dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
-
+        q = q[w]
         argsort = np.argsort(x)
-        x,xmin,xmax,y,dy = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort]
+        x,xmin,xmax,y,dy,q = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort],q[argsort]
 
         resol = []*len(x)
         xunit = au.Angstrom
@@ -340,8 +341,9 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        spec._t['quality'] = q
+        return spec
 
 
     def espresso_spectrum_format(self, data):

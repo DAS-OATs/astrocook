@@ -149,7 +149,11 @@ def expr_check(node):
             ret.append(float(i.n))
         else:
             ret.append(expr_eval(i))
-    return np.ravel(np.asarray(ret, dtype='float64'))
+    try:
+        ret = np.ravel(np.asarray(ret, dtype='float64'))
+    except:
+        ret = tuple([np.asarray(r, dtype='float64') for r in ret])
+    return ret
 
 def expr_eval(node):
     if isinstance(node, ast.Num): # <number>
@@ -165,7 +169,11 @@ def expr_eval(node):
     elif isinstance(node, ast.Call):
         #print(node.args)
         #print(type(node.args))
-        return getattr(np, expr_eval(node.func))(expr_check(node.args))
+        try:
+            ret = getattr(np, expr_eval(node.func))(expr_check(node.args))
+        except:
+            ret = getattr(np, expr_eval(node.func))(*expr_check(node.args))
+        return ret
 
     elif isinstance(node, ast.Compare):
         left = expr_check(node.left)
