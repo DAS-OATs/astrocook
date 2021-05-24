@@ -587,6 +587,12 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
 
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
+        labels = self._labels_extract()
+        self._ids = np.array([int(float(self._tab.GetCellValue(
+                              i, np.where(labels == 'id')[0][0]))) \
+                              for i in range(self._tab.GetNumberRows())])
 
     def _data_link_par(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
@@ -857,13 +863,16 @@ class GUITableSystList(GUITable):
 
 
     def _row_extract(self, id):
+        """
         labels = self._labels_extract()
         ids = np.array([int(float(self._tab.GetCellValue(
                   i, np.where(labels == 'id')[0][0]))) \
                   for i in range(self._tab.GetNumberRows())])
         return np.where(id==ids)[0][0]
+        """
+        return np.where(id==self._ids)[0][0]
 
-
+        
     def _text_colours(self):
         labels = self._labels_extract()
         for (r,c) in self._cells_sel:
