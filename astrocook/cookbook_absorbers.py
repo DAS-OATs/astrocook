@@ -157,6 +157,10 @@ class CookbookAbsorbers(object):
             deltav = v_shift[amax]
             #plt.scatter(xmean+x_shift[amax], 1)
 
+        xshift = x_osampl+deltax
+        digitized = np.digitize(xshift, xc-xdiff)-1
+        yshift = 1-np.array([eval_osampl[digitized == j].mean() for j in range(len(xc))])
+
         if deltav < vstart or deltav > vend:
             ccf_max = np.nan
             deltax = np.nan
@@ -168,7 +172,7 @@ class CookbookAbsorbers(object):
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
         #plt.show()
-        return ccf_max, deltax, deltav
+        return ccf_max, deltax, deltav, yshift
 
 
     def _mod_ccf_max(self, mod, vstart=-5, vend=5, dv=1e-2, weight=True,
@@ -236,7 +240,8 @@ class CookbookAbsorbers(object):
 
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
-                       dycol='dy', contcol='cont', modelcol='model', thr=1e-3):
+                       dycol='dy', contcol='cont', modelcol='model', thr=1e-3,
+                       update_modelcol=False):
         weight = str(weight) == 'True'
         spec = self.sess.spec
         systs = self.sess.systs
@@ -246,6 +251,8 @@ class CookbookAbsorbers(object):
         #plt.show()
         deltav_arr = np.array([])
         xmean_arr = np.array([])
+        if update_modelcol:
+            spec._t[modelcol+'_shift'] = spec._t[modelcol]
         for i, f in enum_tqdm(feats[:-1], len(feats)-1,
                               "cookbook_absorbers: Computing CCF for features"):
             fe = feats[i+1]
@@ -259,12 +266,13 @@ class CookbookAbsorbers(object):
             #print(spec._t[modelcol][sel]/spec._t[contcol][sel])
             #print(cut)
             if len(xc)>0:
-                ccf, deltax, deltav = self._feat_ccf_max(xc, yc, dyc, modelc,
+                ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
             else:
                 #print('xc len 0')
                 deltav = 0.0
+                modelshift = modelc
             xmean_arr = np.append(xmean_arr, np.mean(xc))
             deltav_arr = np.append(deltav_arr, deltav)
             """
@@ -272,6 +280,12 @@ class CookbookAbsorbers(object):
                 w = np.where(systs._t['id']==i)
                 systs._t['ccf_deltav'][w] = deltav
             """
+            if update_modelcol:
+                #print(modelshift)
+                #print(modelc)
+                #print(spec._t[modelcol][sel][cut])
+                spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
+                #print(spec._t[modelcol][sel][cut])
         #print(deltav_arr)
         #plt.show()
 
