@@ -872,7 +872,7 @@ class GUITableSystList(GUITable):
         """
         return np.where(id==self._ids)[0][0]
 
-        
+
     def _text_colours(self):
         labels = self._labels_extract()
         for (r,c) in self._cells_sel:

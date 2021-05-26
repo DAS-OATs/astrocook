@@ -524,12 +524,13 @@ class CookbookAbsorbers(object):
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
         else:
+            frozen = 1
             logging.info("I'm not fitting the system because you choose "
                          "max_nfev=0.")
 
         # When a single system is fitted, it is stored also the system table
         self._systs_update(mod)
-        return 0
+        return frozen
 
 
     def _syst_guess(self, series, z):
@@ -638,8 +639,8 @@ class CookbookAbsorbers(object):
                 """
                 z_list.append(m['z0'])
                 if fit_list[i]:
-                    self._syst_fit(m['mod'], verbose=False)
-                    chi2r_list.append(m['mod']._chi2r)
+                    frozen = self._syst_fit(m['mod'], verbose=False)
+                    if not frozen: chi2r_list.append(m['mod']._chi2r)
 
             if verbose:
                 logging.info("I've fitted %i model%s." \
@@ -1388,6 +1389,7 @@ class CookbookAbsorbers(object):
             else:
                 #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
+
             #"""
             #print(mod._pars[k])
             #self._systs_cycle()
