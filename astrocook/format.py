@@ -117,10 +117,12 @@ class Format(object):
             for k in hdr:
                 ks = k.split(' ')
                 if 'CONSTR' in ks:
-                    if 'ID' in ks: id = int(hdr[k])
-                    if 'PAR' in ks: par = hdr[k]
-                    if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
-                        = (id, par, hdr[k])
+                    id_check = 'AC CONSTR ID '+ks[-1]
+                    if 'id' in out._t.colnames and hdr[id_check] in out._t['id']:
+                        if 'ID' in ks: id = int(hdr[k])
+                        if 'PAR' in ks: par = hdr[k]
+                        if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
+                            = (id, par, hdr[k])
             #print(out._constr)
         return out
 
