@@ -85,6 +85,14 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
+    def _on_bin_zap(self, event):
+        sess = self._gui._sess_sel
+        x = sess._clicks[-1][0]
+        sess.log.append_full('cb', 'bin_zap', {'x': x})
+        sess.spec._zap(x, None)
+        self._gui._refresh()
+
+
     def _on_cursor_stick(self, event=None, cursor_z=None):
         sess = self._gui._sess_sel
         #print(self._graph._cursor._z * sess.spec._rfz)

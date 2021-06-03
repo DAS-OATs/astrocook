@@ -56,6 +56,7 @@ class CookbookAbsorbers(object):
         ccf = np.dot(ym, y)
         if plot:
             plt.plot(xc, ym)
+            plt.scatter(xc, ym)
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
@@ -109,27 +110,16 @@ class CookbookAbsorbers(object):
         rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
         xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        #print(len(xc), len(x_osampl), len(yc), len(y), len(eval_osampl))
         for i, xs in enumerate(x_shift):
             plot = False
             x = x_osampl+xs
-            #print(x)
-            #print(np.array(xc))
-            digitized = np.digitize(x, xc-xdiff)-1
-            #print(digitized)
-            #print(len(digitized))
-            #xm = [x[digitized == j].mean() for j in range(len(xc))]
-            #print(np.array(xm))
-            ym = [eval_osampl[digitized == j].mean() for j in range(len(xc))]
-            #print(len(xc), len(ym))
-            #if np.abs(xs)<3e-10:
-            #    plt.plot(rc, y, linewidth=4, color='r')
-            #    plt.scatter(rc, ym, linewidth=3, color='black')
-            #    plt.plot(x, eval_osampl, linewidth=4, color='r')
-            #    plt.scatter(x, digitized/100, linewidth=4, color='r')
+            #digitized = np.digitize(x, xc-xdiff)-1
+            #ym = [eval_osampl[digitized == j].mean() for j in range(len(xc))]
+            ym = np.interp(xc, x, eval_osampl)
             ccf1 = self._feat_ccf(xc, y, ym, verbose=False, plot=plot)
             if plot:
-                plt.scatter(xmean+xs, ccf1)
-            #print(xs,ccf1)
+                plt.scatter(xmean+xs, ccf1/500)
 
             ccf.append(ccf1)
 
@@ -171,7 +161,7 @@ class CookbookAbsorbers(object):
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
-        #plt.show()
+        if plot: plt.show()
         return ccf_max, deltax, deltav, yshift
 
 
@@ -240,7 +230,7 @@ class CookbookAbsorbers(object):
 
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
-                       dycol='dy', contcol='cont', modelcol='model', thr=1e-3,
+                       dycol='dy', contcol='cont', modelcol='model', thr=1e-1,
                        update_modelcol=False):
         weight = str(weight) == 'True'
         spec = self.sess.spec

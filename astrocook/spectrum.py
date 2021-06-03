@@ -663,15 +663,22 @@ class Spectrum(Frame):
     def _zap(self, xmin, xmax):
 
         xmin = np.ravel(np.array(xmin))
-        xmax = np.ravel(np.array(xmax))
-        for m, M in zip(xmin, xmax):
-            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
-            self._t['y'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
-            self._t['dy'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        if xmax is not None:
+            xmax = np.ravel(np.array(xmax))
+            for m, M in zip(xmin, xmax):
+                w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+                self._t['y'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+                self._t['dy'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        else:
+            #self._t.remove_row(np.abs(self._t['x'] - xmin).argmin())
+            for x in xmin:
+                r = np.nanargmin(np.abs(self._t['x'] - x))
+                self._t['x'][r] = np.nan
+
         return 0

@@ -94,6 +94,8 @@ class Graph(object):
             sess._click_1 = False
 
         if event.button == 3:
+            title.append('Zap bin')
+            attr.append('bin_zap')
             if focus == self._gui._graph_main:
                 title.append('Show stats')
                 attr.append('stats_show')

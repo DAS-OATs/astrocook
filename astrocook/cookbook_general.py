@@ -17,6 +17,10 @@ class CookbookGeneral(object):
     def __init__(self):
         super(CookbookGeneral, self).__init__()
 
+    def bin_zap(self, x):
+        self.sess.spec._zap(xmin=x, xmax=None)
+
+
     def deredden(self, ebv=0.03, rv=3.1):
         """@brief Deredden spectrum
         @details Deredden the spectrum using the parametrization by Cardelli,

@@ -396,7 +396,8 @@ class SystModel(LMComposite):
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
-        self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        #self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        self._wf = np.array(np.power(spec._t['cont'][c]/spec.dy[c], 2))
         try:
             self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
                                       for x in self._xr])
