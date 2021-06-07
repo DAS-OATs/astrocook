@@ -601,17 +601,16 @@ class Spectrum(Frame):
         x = self.x[sel]
         y = self.y[sel]
         dy = self.dy[sel]
-
-        self._stats = {'min_x': np.min(x),
-                       'max_x': np.max(x),
-                       'mean_x': np.mean(x),
-                       'min_y': np.min(y),
-                       'max_y': np.max(y),
-                       'mean_y': np.mean(y),
-                       'median_y': np.median(y),
-                       'std_y': np.std(y),
-                       'mean_dy': np.mean(dy),
-                       'median_dy': np.median(dy.value)*dy.unit}
+        self._stats = {'min_x': np.nanmin(x),
+                       'max_x': np.nanmax(x),
+                       'mean_x': np.nanmean(x),
+                       'min_y': np.nanmin(y),
+                       'max_y': np.nanmax(y),
+                       'mean_y': np.nanmean(y),
+                       'median_y': np.nanmedian(y),
+                       'std_y': np.nanstd(y),
+                       'mean_dy': np.nanmean(dy),
+                       'median_dy': np.nanmedian(dy.value)*dy.unit}
         self._stats_tup = tuple(np.ravel([(self._stats[s].value,
                                           self._stats[s].unit) \
                                           for s in self._stats]))

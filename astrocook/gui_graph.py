@@ -161,8 +161,9 @@ class GUIGraphMain(wx.Frame):
         except:
             x = (0, np.inf)
             sess._shade = False
-        xmin = np.min(x)
-        xmax = np.max(x)
+        xunit = sess.spec._xunit
+        xmin = (np.min(x)*xunit).to(au.nm).value
+        xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
         sess._clicks = []
         sess._stats = True
