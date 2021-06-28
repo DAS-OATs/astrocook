@@ -319,8 +319,8 @@ class Format(object):
         dy = np.ravel(hdul['ERRDATA'].data)
         q = np.ravel(hdul['QUALDATA'].data)
 
-        w = np.where(np.logical_and(y!=0,True))
-        x,y,dy = x[w],y[w],dy[w]
+        w = np.where(q<4**7)
+        x,y,dy,q = x[w],y[w],dy[w],q[w]
 
         xmin, xmax = self._create_xmin_xmax(x)
         w = np.where(xmax-xmin > 0)

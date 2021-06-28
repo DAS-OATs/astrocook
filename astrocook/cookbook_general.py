@@ -387,6 +387,22 @@ class CookbookGeneral(object):
 
         return 0
 
+    def _rfz_set(self, z=0.0):
+        """ @brief Set redshift for a rest-frame spectrum
+        @details Set a redshift value for a spectrum shifted to rest frame.
+        @param z redhisft
+        @return 0
+        """
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._rfz_man = z
+            except:
+                logging.debug(msg_attr_miss(s))
+
+        return 0
+
+
     def rms_est(self, hwindow=100):
         """ @brief Estimate error from RMS
         @details Estimate flux error by computing the running RMS of the flux.

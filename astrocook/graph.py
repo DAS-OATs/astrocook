@@ -504,13 +504,16 @@ class Graph(object):
                                 kwargs_text['rotation'] = 90
                                 kwargs_text['ha'] = 'right'
                                 kwargs_text['va'] = 'bottom'
-                                if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                                if hasattr(self._gui._sess_sel.spec, '_rfz_man'):
+                                    zz = self._gui._sess_sel.spec._rfz_man
+                                    z = z*(1+zz)+zz
+                                elif hasattr(self._gui._sess_sel.spec, '_rfz'):
                                     z += self._gui._sess_sel.spec._rfz
 
-                                if z > 1e-10:
+                                if z > 1e-10 or True:
                                     self._ax.text(xi, 0.05, s, **kwargs_text)
                                     kwargs_text['va'] = 'top'
-                                    self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                                    self._ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
                                 else:
                                     kwargs_text['va'] = 'top'
                                     self._ax.text(xi, 0.95, s, **kwargs_text)

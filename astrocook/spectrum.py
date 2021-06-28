@@ -522,6 +522,11 @@ class Spectrum(Frame):
 
             #print(frac[w],frac)
             dysel = dy[im:iM]
+
+            nw = np.where(~np.isnan(ysel))
+            ysel = ysel[nw]
+            dysel = dysel[nw]
+            frac = frac[nw]
             #print(dysel)
             #mask = sigma_clip(ysel, masked=True).mask
             #if np.sum(~mask)>0:
@@ -536,13 +541,14 @@ class Spectrum(Frame):
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
+                #nw = np.where(~np.isnan(ysel[w]))
                 if np.any(np.isnan(dysel)):# and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
                     y_out = np.append(y_out, np.average(ysel[w], weights=weights))
                     #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
-                dy_out = np.append(dy_out, np.sqrt(np.sum(weights**2*dysel[w].value**2))\
-                                                   /np.sum(weights)*y.unit)
+                dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
+                                                   /np.nansum(weights)*y.unit)
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
