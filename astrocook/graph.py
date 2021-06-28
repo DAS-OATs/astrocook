@@ -26,7 +26,8 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._cursor_lines = []
-        self._clicks = []
+        self._zoom = False
+        self._click_1 = False
 
         if init_canvas:
             self._init_canvas()
@@ -49,6 +50,11 @@ class Graph(object):
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
         #                      linewidth=0.5)
         self._toolbar.Realize()
+        if self._panel is self._gui._graph_main._panel:
+            focus = self._gui._graph_main
+        if hasattr(self._gui, '_graph_det'):
+            if self._panel is self._gui._graph_det._panel:
+                focus = self._gui._graph_det
         #cid =  plt.connect('motion_notify_event', self._on_move)
 
     def _check_units(self, sess, axis='x'):
@@ -65,6 +71,8 @@ class Graph(object):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
+        sess = self._gui._sess_sel
+        x = x/(1+sess.spec._rfz)
         from .gui_table import GUITablePopup
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
@@ -74,14 +82,47 @@ class Graph(object):
         focus._click_xy = (x,y)
         title = []
         attr = []
+
         if event.button == 1:
-            self._clicks = [(x,y)]
+            sess._clicks = [(x,y)]
+            self._click_1 = True
         if event.button == 3:
-            if len(self._clicks) == 1:
+            if self._click_1:
+                sess._clicks.append((x,y))
+            else:
+                sess._clicks = [(x,y)]
+            sess._click_1 = False
+
+        if event.button == 3:
+            title.append('Zap bin')
+            attr.append('bin_zap')
+            if focus == self._gui._graph_main:
+                title.append('Show stats')
+                attr.append('stats_show')
+            if sess._stats and focus == self._gui._graph_main:
+                title.append('Hide stats')
+                attr.append('stats_hide')
+            if len(sess._clicks) > 1 and focus == self._gui._graph_main:
+                title.append('Extract region')
+                attr.append('region_extract')
                 title.append('Zap feature')
                 attr.append('spec_zap')
-                self._clicks.append((x,y))
-            if 'cont' in self._gui._sess_sel.spec._t.colnames \
+                self._reg_shade()
+            if hasattr(self._gui._sess_sel, 'nodes') \
+                and hasattr(self._gui._sess_sel.nodes, 'x') \
+                and focus == self._gui._graph_main:
+                nodes = self._gui._sess_sel.nodes
+                dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
+                dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
+                title.append('Add node')
+                attr.append('node_add')
+                if dist_x < 0.1*dist_mean:
+                    title.append('Remove node')
+                    attr.append('node_remove')
+            if 'cursor_z_series' in self._sel:
+                title.append('Stick cursor')
+                attr.append('cursor_stick')
+            if 'cont' in sess.spec._t.colnames \
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
@@ -92,6 +133,7 @@ class Graph(object):
                                   #['add_line', 'add_syst']))
                                   #'Add system', 'add_syst'))
                                   title, attr))
+
         """
         elif 'cursor_z_series' in self._sel:
             focus.PopupMenu(GUITablePopup(self._gui, focus,
@@ -101,10 +143,28 @@ class Graph(object):
                                           event, 'Add line', 'add_line'))
         """
 
+    def _on_zoom(self, event):
+        self._zoom = True
+
+
     def _on_move(self, event):
         if not event.inaxes: return
         x = float(event.xdata)
         y = float(event.ydata)
+
+        # Identify which axis was clicked on; compute shift in x based for
+        # detail graph with respect to the last axis
+        if hasattr(self, '_axes'):
+            klast = tuple(self._axes)[-1]
+            for k in self._axes:
+                if self._axes[k] == event.inaxes:
+                    ax = self._axes[k]
+                    dx = aconst.c*(xem_d[k]/xem_d[klast]-1)
+        else:
+            ax = self._ax
+            dx = 0*au.nm
+
+
         sess = self._gui._sess_sel
         x = x/(1+sess.spec._rfz)
         if self._panel is self._gui._graph_main._panel:
@@ -113,6 +173,38 @@ class Graph(object):
             if self._panel is self._gui._graph_det._panel:
                 focus = self._gui._graph_det
         #print(self._cursor_lines)
+
+        """
+            for curve in self._ax.get_lines():
+                print(curve)
+                if curve.contains(event)[0]:
+                    try:
+                        self._ciao.remove()
+                    except:
+                        pass
+                    self._ciao = self._ax.text(x,y, "ciao")
+        """
+
+        # Make system id appear when you hover close enough to a system axvline
+        try:
+            xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
+            argmin = np.argmin(xdiff)
+            try:
+                self._tag.remove()
+            except:
+                pass
+            if self._systs_x.si.unit == au.m: thres = 0.5
+            if self._systs_x.si.unit == au.m/au.s: thres = 5
+            if xdiff[argmin] < thres:
+                self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
+                                    % (self._systs_series[argmin],
+                                       self._systs_l[argmin].value,
+                                       self._systs_l[argmin].unit,
+                                       self._systs_z[argmin]),
+                                    color=self._systs_color)
+        except:
+            pass
+
         if 'cursor_z_series' in self._sel:
             if hasattr(self, '_xs'):
                 for l, key in zip(self._cursor_lines, self._xs):
@@ -128,16 +220,19 @@ class Graph(object):
                         c.set_xdata(xi)
                         c.set_alpha(0.5)
                     #self._canvas.draw()
+                    z_obs = z*(1+sess.spec._rfz)
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                            % (x, y, self._cursor._series, z))
+                                            % (x, y, self._cursor._series, z_obs))
             else:
-                z = (x/self._cursor._xmean.to(sess.spec._xunit).value)-1
+                z = (x/self._cursor._xmean.to(sess.spec._xunit).value-1)#*(1+sess.spec._rfz)
+                #print(z)
                 for c, xem in zip(self._cursor_line, self._cursor._xem):
                     c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
                     c.set_alpha(0.5)
                 #self._canvas.draw()
+                z_obs = z*(1+sess.spec._rfz)
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
-                                        % (x, y, self._cursor._series, z))
+                                        % (x, y, self._cursor._series, z_obs))
             self._cursor._z = z
         else:
             focus._textbar.SetLabel("x=%2.4f, y=%2.4e" % (x, y))
@@ -153,7 +248,6 @@ class Graph(object):
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
         sess = np.array(sess, ndmin=1)
-
         #import datetime as dt
         #start = dt.datetime.now()
         self._text = text
@@ -167,21 +261,23 @@ class Graph(object):
             self._cursor_lines = []
 
         cmc = plt.cm.get_cmap('tab10').colors
-        self._canvas_dict = {'spec_x_y': (GraphSpectrumXY,0,1.0),
+        self._canvas_dict = {#'spec_x_y': (GraphSpectrumXY,0,1.0),
                              #'spec_x_y_det': (GraphSpectrumXYDetail,0],1.0),
-                             'spec_x_dy': (GraphSpectrumXDy,0,0.5),
-                             'spec_x_conv': (GraphSpectrumXConv,3,0.5),
-                             'lines_x_y': (GraphLineListXY,2,1.0),
-                             'spec_x_ylinemask': (GraphSpectrumXYLinesMask,2,0.5),
-                             'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
-                             'spec_x_cont': (GraphSpectrumXCont,8,1.0),
-                             'spec_form_x': (GraphSpectrumFormX,7,0.5),
-                             'spec_x_model': (GraphSpectrumXModel,9,1.0),
-                             'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
-                             'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
-                             'systs_z_series': (GraphSystListZSeries,2,1.0),
+                             #'spec_x_dy': (GraphSpectrumXDy,0,0.5),
+                             #'spec_x_conv': (GraphSpectrumXConv,3,0.5),
+                             #'lines_x_y': (GraphLineListXY,2,1.0),
+                             #'spec_x_ylinemask': (GraphSpectrumXYLinesMask,2,0.5),
+                             #'spec_nodes_x_y': (GraphSpectrumNodesXY,1,1.0),
+                             #'spec_x_cont': (GraphSpectrumXCont,8,1.0),
+                             #'spec_form_x': (GraphSpectrumFormX,7,0.5),
+                             #'spec_x_model': (GraphSpectrumXModel,9,1.0),
+                             #'spec_x_yfitmask': (GraphSpectrumXYFitMask,9,0.5),
+                             #'spec_x_deabs': (GraphSpectrumXDeabs,9,0.5),
+                             #'systs_z_series': (GraphSystListZSeries,2,1.0),
                              'cursor_z_series': (GraphCursorZSeries,3,0.5),
-                             'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)}
+                             'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)
+                             }
+
 
         #print([self._gui._sess_sel== i for i in self._gui._sess_items])
         c_index = [self._canvas_dict[s][1]\
@@ -203,6 +299,9 @@ class Graph(object):
                                 % sess[0].spec._rfz)
             if self._axt == None:
                 self._axt = self._ax.twiny()
+            try:
+                self._axt.set_xlabel(str(self._gui._sess_sel.spec._xunit))
+            except:
                 self._axt.set_xlabel(str(self._xunit))
         else:
             try:
@@ -224,8 +323,6 @@ class Graph(object):
             except:
                 pass
 
-        #print('in', xlim)
-
         if xlim is not None:
             self._ax.set_xlim(xlim)
         if ylim is not None:
@@ -236,14 +333,200 @@ class Graph(object):
         if legend:
             self._ax.legend()
 
-        #print(self._ax)
-        #self._cursor = self._ax.axvline(8000, alpha=0.0)
+        for s in sess:
+            if s._shade:
+                x = self._gui._sess_sel.spec.x.value
+                trans = transforms.blended_transform_factory(
+                            self._ax.transData, self._ax.transAxes)
+                self._ax.fill_between(x, 0, 1, where=s._shade_where,
+                                      transform=trans, color='C1', alpha=0.2)
+
 
         self._canvas.draw()
         #self._canvas.flush_events()
         #print(dt.datetime.now()-start)
 
+        self._ax.callbacks.connect('xlim_changed', self._on_zoom)
+        self._ax.callbacks.connect('ylim_changed', self._on_zoom)
+        dl = self._ax.__dict__['dataLim']
+        #print(dl)
+        self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
+
+
+    def _reg_shade(self):
+        sess = self._gui._sess_sel
+        x = sess.spec.x.value
+
+        sess._shade_where = np.logical_and(x>sess._clicks[0][0],
+                                           x<sess._clicks[1][0])
+        """
+        trans = transforms.blended_transform_factory(
+                    self._ax.transData, self._ax.transAxes)
+        self._ax.fill_between(x, 0, 1, where=self._shade_where,
+                              transform=trans,
+                              color='C1', alpha=0.2)
+        """
+        sess._shade = True
+        #self._refresh(sess, xlim=self._ax.get_xlim(), ylim=self._ax.get_ylim())
+
+        #x = self._gui._sess_sel.spec.x.value
+        trans = transforms.blended_transform_factory(
+                    self._ax.transData, self._ax.transAxes)
+
+        shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
+                                      transform=trans, color='C1', alpha=0.2)
+
+        self._canvas.draw()
+        shade.remove()
+
     def _seq(self, sess, norm):
+        detail = self._panel != self._gui._graph_main._panel
+        if detail:
+            focus = self._gui._graph_det
+        else:
+            focus = self._gui._graph_main
+
+        xunit_orig = dc(sess.spec.x.unit)
+        #print(detail, sess.spec.x.unit)
+        #print(self._zem)
+        #if detail: sess.cb.x_convert(zem=self._zem)
+        #print(detail, sess.spec.x.unit)
+        for e in focus._elem.split('\n'):
+        #for e in self._gui._graph_main._elem.split('\n'):
+            try:
+                sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
+                    = e.split(',')
+                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                sess = self._gui._sess_list[int(sel)]
+                #sess = self._gui._sess_sel
+                xunit = sess.spec.x.unit
+                if struct in ['spec','lines','nodes','systs']:
+                    t = getattr(sess, struct).t
+                    if mode != 'axhline':
+                        x = dc(t[xcol])
+                    if mode != 'axvline':
+                        y = dc(t[ycol])
+                    if mcol not in ['None', 'none', None]:
+                        x[t[mcol]==0] = np.nan
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit:
+                        y = y/t['cont']
+                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                if struct in ['systs', 'cursor']:
+                    if xcol == 'z' :
+                    #if struct == 'systs':
+                        z = sess.systs.z
+                        series = sess.systs.series
+                        z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
+                        series_list = [trans_parse(s) for s in series]
+                        z_flat = np.array([z for zl in z_list for z in zl])
+                        series_flat = np.array([s for sl in series_list for s in sl])
+                    else:
+                        z = float(xcol)
+                        series = sess._cursors[xcol]._series
+                        z_flat = np.array([z]*len(trans_parse(series)))
+                        series_flat = trans_parse(series)
+                    xem = np.array([xem_d[sf].to(au.nm).value \
+                                    for sf in series_flat]) * au.nm
+                    if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                        x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
+                    else:
+                        x = xem*(1+z_flat)
+                    try:
+                        x = x.to(sess.spec._xunit)
+                        x_iswave = True
+                    except:
+                        x_iswave = False
+                    #print(graph._xs)
+                    #print(self._zems, self._series, self._axes, self._ax)
+                    #print(zems)
+                    self._systs_l = x
+                    if detail:
+                        #print(z, self._zem)
+                        #print((1+self._zem)*121.567)
+                        #print(self._zem)
+                        #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
+                        for k in self._axes:
+                            if self._axes[k] == self._ax:
+                                zem = self._zems[k]
+                        if x_iswave:
+                            x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                        else:
+                            x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+
+                        #print(set(zip(series_flat,x)))
+                    self._systs_series = series_flat
+                    self._systs_z = z_flat
+                    self._systs_x = x
+
+                    if hasattr(self._gui._graph_main, '_z_sel'):
+                        z_sel = self._gui._graph_main._z_sel
+                        series_sel = self._gui._graph_main._series_sel
+                        xem_sel = np.array([xem_d[s].to(au.nm).value \
+                                            for s in series_sel])
+                        x_sel = xem_sel*(1+z_sel)
+                    else:
+                        x_sel = []
+                try:
+                    kwargs = {}
+                    if mode in ['plot', 'step', 'axvline']:
+                        kwargs['linestyle'] = style
+                        kwargs['linewidth'] = width
+                    if mode == 'step':
+                        kwargs['where'] = 'mid'
+                    if mode == 'scatter':
+                        kwargs['marker'] = style
+                        kwargs['s'] = (5*float(width))**2
+                    kwargs['color'] = color
+                    kwargs['alpha'] = float(alpha)
+                    if mode == 'axvline':
+                        #print(self._ax, x.value)
+                        for xi in x.value:
+                            getattr(self._ax, mode)(xi, **kwargs)
+                        for xi_sel in x_sel:
+                            kwargs['linestyle'] = '-'
+                            kwargs['linewidth'] = 10.0
+                            kwargs['color'] = 'yellow'
+                            kwargs['alpha'] = 0.3
+                            getattr(self._ax, mode)(xi_sel, **kwargs)
+                    else:
+                        getattr(self._ax, mode)(x, y, **kwargs)
+                    if struct == 'cursor':
+                        trans = transforms.blended_transform_factory(
+                                self._ax.transData, self._ax.transAxes)
+                        for xi, s, z in zip(x.value, series_flat, z_flat):
+                            if xi > self._ax.get_xlim()[0] \
+                                and xi < self._ax.get_xlim()[1]:
+                                kwargs_text = {}
+                                kwargs_text['color'] = color
+                                kwargs_text['alpha'] = float(alpha)
+                                kwargs_text['size'] = (float(width)+1)*5
+                                kwargs_text['transform'] = trans
+                                kwargs_text['rotation'] = 90
+                                kwargs_text['ha'] = 'right'
+                                kwargs_text['va'] = 'bottom'
+                                if hasattr(self._gui._sess_sel.spec, '_rfz_man'):
+                                    zz = self._gui._sess_sel.spec._rfz_man
+                                    z = z*(1+zz)+zz
+                                elif hasattr(self._gui._sess_sel.spec, '_rfz'):
+                                    z += self._gui._sess_sel.spec._rfz
+
+                                if z > 1e-10 or True:
+                                    self._ax.text(xi, 0.05, s, **kwargs_text)
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
+                                else:
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, s, **kwargs_text)
+                    if struct == 'systs':
+                        self._systs_color = color
+                except:
+                    logging.error("I can't parse this graph specification: %s." % e)
+            except:
+                pass
+
+        if hasattr(sess.spec, '_stats_text_red'):
+            self._ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
+                          transform=self._ax.transAxes)
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, (s, c, a) \
@@ -315,8 +598,15 @@ class Graph(object):
                         self._cursor_line.append(
                             self._ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
-                                color=c, alpha=a, linewidth=1.5,
+                                color=c, alpha=a, linewidth=2,
                                 **gs._kwargs))
+                        """
+                        if focus==self._gui._graph_main:
+                            self._ax.axvline(
+                                x.to(self._xunit).value,
+                                color='C3', alpha=0.3, linewidth=10)
+                        """
+
                     self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(self._ax, gs._type)
@@ -326,8 +616,23 @@ class Graph(object):
             except:
                 pass
             if self._axt != None:
-                self._axt.set_xlim(np.array(self._ax.get_xlim()) \
-                                   * (1+sess.spec._rfz))
+                if self._axt_mode == 'rf':
+                    self._axt.set_xlim(np.array(self._ax.get_xlim()) \
+                                       * (1+sess.spec._rfz))
+                if self._axt_mode == 'z':
+                    self._axt.set_xlim((np.array(self._ax.get_xlim())*self._xunit \
+                        / xem_d[sess._ztrans]).to(au.dimensionless_unscaled)-1)
+
+        #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
+
+        """
+        for c in self._gui._graph_main._cols_sel.split(','):
+            if c in sess.spec.t.colnames:
+                y = sess.spec.t[c]
+                if norm and 'cont' in sess.spec._t.colnames:
+                    y = y/sess.spec.t['cont']
+                self._ax.plot(sess.spec.x, y)
+        """
 
 
 class GraphLineListXY(object):
@@ -338,6 +643,7 @@ class GraphLineListXY(object):
         if norm and 'cont' in sess.spec._t.colnames:
             self._y = self._y/sess.lines._t['cont']
         self._kwargs = {'marker':'+', 'label':sess.name+", lines"}
+
 
 class GraphSpectrumFormX(object):
     def __init__(self, sess):
@@ -523,5 +829,11 @@ class GraphCursorZSeries(object):
             self._z = sess._z_sel
         except:
             self._z = 0
+        """
+        if hasattr(sess, '_hwin_sel'):
+            self._hwin = sess._hwin_sel
+        else:
+            self._hwin = 250.0
+        """
         self._x = self._xem*(1+self._z)*au.nm
         self._kwargs = {'label':self._series, 'linestyle': '--'}

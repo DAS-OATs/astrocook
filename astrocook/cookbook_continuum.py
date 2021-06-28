@@ -4,7 +4,7 @@ from .message import *
 from .vars import *
 from astropy import table as at
 from astropy import units as au
-from scipy.interpolate import UnivariateSpline as uspline
+#from scipy.interpolate import UnivariateSpline as uspline
 from scipy.optimize import root_scalar
 from matplotlib import pyplot as plt
 
@@ -23,6 +23,18 @@ class CookbookContinuum(object):
         xw = x[np.where(mod>hm)]
         fwhm = xw[-1]-xw[0]
         return fwhm
+
+
+    def node_add(self, x, y):
+        self.sess.spec._node_add(self.sess.nodes, x, y)
+
+
+    def node_remove(self, x):
+        self.sess.spec._node_remove(self.sess.nodes, x)
+
+
+    def node_interp(self):
+        self.sess.spec._node_interp(self.sess.nodes, self.sess.lines)
 
 
 ### Basic
@@ -100,6 +112,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
+        self._peaks_found = False
         spec = self.sess.spec
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
@@ -108,10 +121,12 @@ class CookbookContinuum(object):
 
         peaks = spec._peaks_find(col, kind, kappa)
         if len(peaks.t) > 0:
+            self._peaks_found = True
             source = [col]*len(peaks.t)
             from .line_list import LineList
-            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
-                             source, spec._xunit, spec._yunit, meta=spec._meta)
+            lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.t[col],
+                             peaks.dy, source, spec._xunit, spec._yunit,
+                             meta=spec._meta)
             if append and self.sess.lines is not None \
                 and len(self.sess.lines.t) > 0:
                 self.sess.lines._append(lines)
@@ -125,6 +140,85 @@ class CookbookContinuum(object):
 
 
 ### Advanced
+
+
+    def flux_clip(self, hwindow=100, kappa=5, iter=100, std=500):
+        """ @brief Clip flux in spectrum
+        @details Select flux pixels to find outliers
+        @param hwindow Half-window size in pixels for running mean
+        @param kappa Number of standar deviations for clipping
+        @param iter Number of iterations
+        @param std Standard deviation for gaussian convolution (km/s)
+        @return 0
+        """
+
+        try:
+            hwindow = int(hwindow)
+            kappa = float(kappa)
+            iter = int(iter)
+            std = float(std)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        lines = self.sess.lines
+
+        y_rm = running_mean(spec._t['y'], h=hwindow)
+        #plt.plot(spec._t['x'], spec._t['y'])
+        #plt.plot(spec._t['x'], y_rm)
+        #plt.show()
+
+        if 'y_rm' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_rm'.")
+        else:
+            logging.warning("I'm updating column 'y_rm'.")
+        spec._t['y_rm'] = at.Column(y_rm, dtype=float)
+
+        if 'y_em' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_em'.")
+        spec._t['y_em'] = at.Column(np.ones(len(spec._t)), dtype=int)
+        if 'y_abs' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_abs'.")
+        spec._t['y_abs'] = at.Column(np.zeros(len(spec._t)), dtype=int)
+        if 'y_cont' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_cont'.")
+        spec._t['y_cont'] = spec._t['y']
+        if 'cont' not in spec._t.colnames:
+            logging.info("I'm adding column 'cont'.")
+        spec._t['cont'] = at.Column(np.array(None, ndmin=1), dtype=float)
+        #spec._t['cont'].unit = spec._t['y'].unit
+
+        sum_sel = len(spec._t)
+        for i in range(iter):
+            sel = spec._t['y']-spec._t['y_rm']<-kappa*spec._t['dy']
+            sel = np.logical_or(sel, spec._t['y']-spec._t['y_rm']>kappa*2*spec._t['dy'])
+            spec._t['y_em'][sel] = 0
+            spec._t['y_abs'][sel] = 1
+            x_rm = spec._t['x'][~sel]
+            y_rm = running_mean(spec._t['y'][~sel], h=hwindow)
+
+            if i == iter-1 and sum_sel != np.sum(sel):
+                logging.warning("Clipping not converged after %i iterations. "
+                                "Try iterating more." % (i+1))
+            if sum_sel != np.sum(sel):
+                sum_sel = np.sum(sel)
+            else:
+                logging.info("Clipping converged after %i iterations." % (i+1))
+                break
+
+            spec._t['y_rm'] = np.interp(spec._t['x'], x_rm, y_rm)
+        x_cont = spec._t['x'][np.where(spec._t['y_em'])]
+        y_cont = spec._t['y'][np.where(spec._t['y_em'])]
+        spec._t['y_cont'] = np.interp(spec._t['x'], x_rm, y_rm)*spec._t['y'].unit
+        if lines is not None:
+            lines._t['y_cont'] = np.interp(lines._t['x'], x_rm, y_rm)*lines._t['y'].unit
+
+        spec._gauss_convolve(std=std, input_col='y_cont', output_col='cont')
+
+        return 0
+
+
 
     def lines_find(self, std_start=100.0, std_end=0.0, col='y', kind='min',
                    kappa_peaks=5.0, resol=resol_def, append=True):
@@ -161,11 +255,12 @@ class CookbookContinuum(object):
             self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
             self.gauss_convolve(std=std, input_col=col, output_col=col_conv)
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
-                            append=append or i>0)
+                            append=append or (i>0 and self._peaks_found))
 
         return 0
 
@@ -233,7 +328,6 @@ class CookbookContinuum(object):
                 l['fwhm'] = fwhm
 
         return 0
-
 
     def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
                    smooth=0):

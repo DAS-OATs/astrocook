@@ -5,7 +5,7 @@ parent: Managing data
 nav_order: 3
 ---
 
-# Playing with tables
+# Tables
 {: .no_toc}
 
 ## Table of contents
@@ -14,3 +14,7 @@ nav_order: 3
 1. TOC
 {:toc}
 ---
+
+## Browse tables 🚧
+
+## Interact with the data 🚧

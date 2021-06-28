@@ -1,10 +1,12 @@
+from .functions import elem_expand
 from .graph import Graph
-from .gui_dialog import GUIDialogMini
+from .gui_dialog import * #GUIDialogMini
 from .syst_list import SystList
 from .vars import *
 from collections import OrderedDict
 import logging
 from matplotlib import pyplot as plt
+from matplotlib.backend_bases import Event
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg
@@ -31,6 +33,10 @@ class GUIGraphMain(wx.Frame):
         self._size_x = size_x
         self._size_y = size_y
         self._sel = graph_sel
+        self._cols_sel = graph_cols_sel
+        sel = len(self._gui._sess_list)
+        if sel>0: sel -= 1
+        self._elem = elem_expand(graph_elem, sel)
 
         self._logx = False
         self._logy = False
@@ -42,10 +48,10 @@ class GUIGraphMain(wx.Frame):
         self._init(**kwargs)
         self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.40))
 
+
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
                                            size=(self._size_x, self._size_y))
-
 
         self._panel = wx.Panel(self)
         self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
@@ -59,12 +65,14 @@ class GUIGraphMain(wx.Frame):
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
+        #self._graph._toolbar.wx_ids['Home'] = self._home
 
         #self._gui._statusbar = self.CreateStatusBar()
         move_id = self._graph._canvas.mpl_connect('motion_notify_event',
                                                   self._graph._on_move)
         click_id = self._graph._canvas.mpl_connect('button_release_event',
                                                    self._graph._on_click)
+
 
     def _refresh(self, sess, **kwargs):
         if self._closed:
@@ -76,24 +84,114 @@ class GUIGraphMain(wx.Frame):
     #def _on_line_new(self, event):
     #    print(self._click_xy)
 
-    def _on_spec_zap(self, event):
+
+    def _on_bin_zap(self, event):
         sess = self._gui._sess_sel
-        x = [self._graph._clicks[0][0], self._graph._clicks[1][0]]
+        x = sess._clicks[-1][0]
+        sess.log.append_full('cb', 'bin_zap', {'x': x})
+        sess.spec._zap(x, None)
+        self._gui._refresh()
+
+
+    def _on_cursor_stick(self, event=None, cursor_z=None):
+        sess = self._gui._sess_sel
+        #print(self._graph._cursor._z * sess.spec._rfz)
+        z = "%2.6f" % (self._graph._cursor._z*(1+sess.spec._rfz))
+
+        if not hasattr(sess, '_cursors'):
+            sess._cursors = {z: self._graph._cursor}
+        else:
+            sess._cursors[z] = self._graph._cursor
+        sess._graph_elem += \
+            '\n%i,cursor,%s,None,None,axvline,:,1.0,C%s,1.0' \
+            % (self._gui._panel_sess._sel, z, (len(sess._cursors)-1)%10)
+        self._elem = sess._graph_elem
+
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_graph._refresh()
+        self._refresh(sess)
+
+
+    def _on_node_add(self, event):
+        sess = self._gui._sess_sel
+        x, y = sess._clicks[-1][0], sess._clicks[-1][1]
+        sess.log.append_full('cb', 'node_add', {'x': x, 'y': y})
+        sess.log.append_full('cb', 'nodes_interp', {})
+        sess.spec._node_add(sess.nodes, x, y)
+        sess.spec._nodes_interp(sess.lines, sess.nodes)
+        self._gui._refresh()
+
+    def _on_node_remove(self, event):
+        sess = self._gui._sess_sel
+        x, y = sess._clicks[-1][0], sess._clicks[-1][1]
+        sess.log.append_full('cb', 'node_remove', {'x': x})
+        sess.log.append_full('cb', 'nodes_interp', {})
+        sess.spec._node_remove(sess.nodes, x)
+        sess.spec._nodes_interp(sess.lines, sess.nodes)
+        self._gui._refresh()
+
+    def _on_region_extract(self, event):
+        sess = self._gui._sess_sel
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
+        sel_old = self._gui._sess_list.index(sess)
+        reg = sess.cb.region_extract(xmin, xmax)
+        #self._gui._refresh()
+        self._gui._panel_sess._on_add(reg, open=False)
+
+        sess = self._gui._sess_sel
+        sess_list = [self._gui._sess_list[sel_old]]
+        sess.log.merge_full('cb', 'region_extract',
+                             {'xmin': xmin, 'xmax': xmax}, sess_list, sess)
+
+    def _on_spec_zap(self, event):
+        sess = self._gui._sess_sel
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
+        xmin = np.min(x)
+        xmax = np.max(x)
+        sess.log.append_full('cb', 'feature_zap', {'xmin': xmin, 'xmax': xmax})
         sess.spec._zap(xmin, xmax)
+        self._gui._refresh()
+
+    def _on_stats_show(self, event):
+        sess = self._gui._sess_sel
+        try:
+            x = [sess._clicks[-2][0], sess._clicks[-1][0]]
+        except:
+            x = (0, np.inf)
+            sess._shade = False
+        xunit = sess.spec._xunit
+        xmin = (np.min(x)*xunit).to(au.nm).value
+        xmax = (np.max(x)*xunit).to(au.nm).value
+        sess.spec._stats_print(xmin, xmax)
+        sess._clicks = []
+        sess._stats = True
+        #self._graph._stats = True
+        self._gui._refresh()
+
+    def _on_stats_hide(self, event):
+        sess = self._gui._sess_sel
+        del sess.spec._stats_text_red
+        sess._clicks = []
+        sess._stats = False
+        sess._shade = False
         self._gui._refresh()
 
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
-        #for s in sess._series_sel.split(';'):
-        sess.cb.syst_new(series=sess._series_sel, z=self._graph._cursor._z, refit_n=0)
+
+        params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
+        dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
+                              params_last = params)
         self._gui._refresh(init_cursor=True)
 
-    def _on_close(self, event):
+
+    def _on_close(self, event=None):
         self._closed = True
         self.Destroy()
         del self._gui._graph_det
+
 
 class GUIGraphDetail(GUIGraphMain):
 
@@ -108,8 +206,12 @@ class GUIGraphDetail(GUIGraphMain):
                                              main=False, **kwargs)
         self._norm = True
         self._gui._graph_det = self
+        #self._gui._sess_sel._graph_det = self
         self._graph._legend = False
         self._graph._cursor_lines = []
+        sel = len(self._gui._sess_list)
+        if sel>0: sel -= 1
+        self._elem = elem_expand(graph_elem, sel)
         #self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):#, norm=False):
@@ -129,7 +231,7 @@ class GUIGraphDetail(GUIGraphMain):
 
         return xlim, ylim
 
-    def _update(self, series, z, nmax=15):
+    def _update(self, series, z, hwin, nmax=15):
         graph = self._graph
         if len(series) > nmax:
             logging.warning("I'm discarding the last %i transitions, because I "
@@ -159,6 +261,8 @@ class GUIGraphDetail(GUIGraphMain):
             key = s
             x = (1+z)*xem_d[s]
             zem = (1+z)*xem_d[s]/xem_d['Ly_a']-1
+            #print(x)
+            #print(zem)
             #print('out', xem_d[s], graph._zem, graph._x)
             graph._zems[key] = zem
             graph._xs[key] = x
@@ -196,10 +300,9 @@ class GUIGraphDetail(GUIGraphMain):
             graph._axes[key] = graph._ax
             self._refresh(
                 self._gui._sess_items, text=key,
-                xlim=(-500, 500), ylim=ylim)
+                xlim=(-hwin,hwin), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
-
 
 class GUIGraphHistogram(GUIGraphMain):
 
@@ -281,7 +384,7 @@ class GUIGraphHistogram(GUIGraphMain):
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
-        step=2/3
+        step=2/3 #2/3
         min = -5 #np.floor(np.min(values))
         max = 5 #np.ceil(np.max(values))
         bins = np.arange(min-0.0*step, max+1.0*step, step)

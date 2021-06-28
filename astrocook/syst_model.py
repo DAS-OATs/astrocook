@@ -35,21 +35,44 @@ class SystModel(LMComposite):
 
 
     def _fit(self, fit_kws={}):
-        time_start = datetime.datetime.now()
-        #self._pars.pretty_print()
-        fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf,
-                                         fit_kws=fit_kws,
-                                         #fit_kws={'method':'lm'},
-                                         method='least_squares')
-                                         #method='emcee')
-        time_end = datetime.datetime.now()
-        self._pars = fit.params
-        #self._pars.pretty_print()
-        self._ys = self.eval(x=self._xs, params=self._pars)
-        self._chi2r = fit.redchi
-        self._aic = fit.aic
-        self._bic = fit.bic
+        vary = np.any([self._pars[p].vary for p in self._pars])
+        if vary:
+            time_start = datetime.datetime.now()
+            #for p in self._pars:
+            #    if '_z' in p:
+            #        print(self._pars[p])
+            #self._pars.pretty_print()
+            if 'max_nfev' in fit_kws:
+                max_nfev = fit_kws['max_nfev']
+                del fit_kws['max_nfev']
+            else:
+                max_nfev = None
+            fit_kws['ftol'] = 1e-3
+            #print('out', len(self._xf), self._xf)
+            fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                             weights=self._wf,
+                                             max_nfev=max_nfev,
+                                             fit_kws=fit_kws,
+                                             nan_policy='omit',
+                                             #fit_kws={'method':'lm'},
+                                             method='least_squares')
+                                             #method='emcee')
+            #print(fit.result.success)
+            #print(fit.result.message)
+            time_end = datetime.datetime.now()
+            self._pars = fit.params
+            #for p in self._pars:
+            #    if '_z' in p:
+            #        print(self._pars[p])
+            #self._pars.pretty_print()
+            self._ys = self.eval(x=self._xs, params=self._pars)
+            self._chi2r = fit.redchi
+            self._aic = fit.aic
+            self._bic = fit.bic
+            return 0
+        else:
+            return 1
+
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
@@ -373,7 +396,8 @@ class SystModel(LMComposite):
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
-        self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        #self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        self._wf = np.array(np.power(spec._t['cont'][c]/spec.dy[c], 2))
         try:
             self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
                                       for x in self._xr])

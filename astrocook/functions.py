@@ -1,6 +1,10 @@
 from .message import *
 from .vars import *
+import ast
 from astropy import constants as ac
+from copy import deepcopy as dc
+import cProfile
+import datetime
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -10,6 +14,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 prefix = 'functions'
+
+def _gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
 
 def _fadd(a, u):
     """ @brief Real part of the Faddeeva function Re(F)
@@ -48,7 +57,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        print(i, k)
+        #print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
@@ -84,6 +93,12 @@ def convolve_simple(dat, kernel):
     return ret
 
 
+def create_xmin_xmax(x):
+    mean = 0.5*(x[1:]+x[:-1])
+    xmin = np.append(x[0], mean)
+    xmax = np.append(mean, x[-1])
+    return xmin, xmax
+
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
     # https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array/3689710#3689710
@@ -118,6 +133,68 @@ def detect_local_minima(arr):
     detected_minima = local_min #- eroded_background
     #return np.where(detected_minima)
     return detected_minima
+
+def expr_check(node):
+    if isinstance(node, list):
+        iter = node
+    elif isinstance(node, ast.List):
+        iter = node.elts
+    else:
+        return expr_eval(node)
+
+    ret = []
+    for i in iter:
+        if isinstance(node, ast.Num):
+            ret.append(float(i.n))
+        elif isinstance(node, ast.Constant):
+            ret.append(float(i.n))
+        else:
+            ret.append(expr_eval(i))
+    try:
+        ret = np.ravel(np.asarray(ret, dtype='float64'))
+    except:
+        ret = tuple([np.asarray(r, dtype='float64') for r in ret])
+    return ret
+
+def expr_eval(node):
+    if isinstance(node, ast.Num): # <number>
+        return node.n
+
+    elif isinstance(node, ast.NameConstant): # <number>
+        return node.value
+
+    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        return py_ops[type(node.op)](expr_check(node.left),
+                                     expr_check(node.right))
+
+    elif isinstance(node, ast.Call):
+        #print(node.args)
+        #print(type(node.args))
+        try:
+            ret = getattr(np, expr_eval(node.func))(expr_check(node.args))
+        except:
+            ret = getattr(np, expr_eval(node.func))(*expr_check(node.args))
+        return ret
+
+    elif isinstance(node, ast.Compare):
+        left = expr_check(node.left)
+        for i, (o,c) in enumerate(zip(node.ops, node.comparators)):
+            if i == 0:
+                cond = py_ops[type(o)](left, expr_eval(c))
+            else:
+                cond = np.logical_and(cond, py_ops[type(o)](left, expr_eval(c)))
+            left = expr_eval(c)
+        return cond
+
+    elif isinstance(node, ast.Name):
+        return node.id
+
+    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        return py_ops[type(node.op)](expr_eval(node.operand))
+    else:
+        #raise TypeError(node)
+        return expr_check(node)
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
@@ -182,6 +259,14 @@ def log2_range(start, end, step):
     return np.power(2, log2)
 
 
+def meta_parse(meta):
+    s = ""
+    for m in meta:
+        if m not in forbidden_keywords and m[:5] not in forbidden_keywords:
+            s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
+    return s[:-2]
+
+
 def psf_gauss_wrong(x, #center, resol):
               resol, reg=None):
     """ @brief Gaussian PSF
@@ -210,6 +295,7 @@ def psf_gauss_wrong(x, #center, resol):
     return ret
 
 def psf_gauss(x, resol, spec=None):
+    #print('in ', len(x), x)
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
@@ -238,13 +324,26 @@ def resol_check(spec, resol, prefix=prefix):
     print(msg_resol(check, prefix))
     return np.logical_or(*check), resol
 
+
+
 def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
 
     n = 2*h+1
-    cs = np.cumsum(np.insert(x, 0, 0))
-    rm = (cs[n:] - cs[:-n]) / float(n)
+    cs = np.nancumsum(np.insert(x, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+
+
+def running_rms(x, xm, h=1):
+    n = 2*h+1
+    rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rms = np.sqrt((rs[n:] - rs[:-n]) / (norm[n:]-norm[:-n]))
+    return np.concatenate((h*[rms[0]], rms, h*[rms[-1]]))
 
 
 def to_x(z, trans):
@@ -269,6 +368,12 @@ def trans_parse(series):
             for t in series_d[s]:
                 trans.append(t)
     return trans
+
+
+def elem_expand(elem, sess_sel):
+    return '\n'.join([str(sess_sel)+','+r for r in elem.split('\n')])
+    #return '\n'.join([str(sess_sel)+','+r+',C'+str(i%10) \
+    #                 for i,r in enumerate(elem.split('\n'))])
 
 # Adapted from http://ginstrom.com/scribbles/2008/09/07/getting-the-selected-cells-from-a-wxpython-grid/
 def corners_to_cells(top_lefts, bottom_rights):

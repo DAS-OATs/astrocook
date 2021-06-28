@@ -19,7 +19,7 @@
 # in the templates via {{ site.myvariable }}.
 
 title: Astrocook
-email: guido.cupani@inaf.oats
+email: guido.cupani@inaf.it
 description: >- # this means to ignore newlines until "baseurl:"
   A thousand recipes to cook a spectrum
 baseurl: "/astrocook/" # the subpath of your site, e.g. /blog

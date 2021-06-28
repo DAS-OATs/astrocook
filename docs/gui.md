@@ -8,6 +8,9 @@ nav_order: 2
 # Using the GUI
 {: .no_toc}
 
+The Graphical User Interface (GUI) is the foremost way to perform your analysis with Astrocook, letting you visually interact with the data and launch the analysis operations in the most straightforward way. The Astrocook GUI is based on [wxPython](https://www.wxpython.org/), which provides a native look-and-feel of the graphical elements across many platforms (Linux, macOS, Windows), and uses [Matplotlib](https://matplotlib.org/) for plotting.
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -17,7 +20,7 @@ nav_order: 2
 
 ## Launch the GUI
 
-You can launch the Astrocook GUI:
+To launch the Astrocook GUI:
 ```
 $ cd /your/path/astrocook/
 $ python ac_gui.py
@@ -26,13 +29,18 @@ This will open a blank main window:
 
 ![Main window](img/main_window.png)
 
-⚠️ **On some macOS systems, `python ac_gui.py` will produce an error message like this:**
+❗️ **On some macOS systems, `python ac_gui.py` will produce an error message like this:**
 ```
 This program needs access to the screen. Please run with a
 Framework build of python, and only when you are logged in
 on the main display of your Mac.
 ```
 **If this happens, use `pythonw ac_gui.py` instead.**
+
+❗️ **You are encouraged to add an `astrocook` command to your shell configuration. On macOS, you can type:**
+```
+echo "alias astrocook='pythonw /your/path/to/astrocook-1.0.0-rc.1/ac_gui.py'" >> ~/.bash_profile
+```
 
 To load data, you can choose `File > Open...` on the menu bar (`ctrl+O` or `⌘+O`, depending on the system) and browse through your file system. Alternatively, you can specify one or more paths directly at launch:
 ```
@@ -54,11 +62,11 @@ To perform the analysis, you need to select a session and access one of the seve
 
 You can switch between sessions at any time, selecting them on the main window. When you select a session, you always retrieve the latest snapshot of the analysis, together with all the information extracted so far.
 
-⚠️ **If no session is selected and you click on the first session, it will not be selected unless you hold `ctrl` as well.**
+❗️ **If no session is selected and you click on the first session, it will not be selected unless you hold `ctrl` as well.**
 
 ## Use recipes
 
-Astrocook provides you with (broadly speaking) three kind of recipes for the analysis:
+Astrocook provides you with (broadly speaking) three kinds of recipes for the analysis:
 
 1. recipes to manipulate sessions, combining and sharing data structures among them: these are grouped in the `Edit` menu;
 2. recipes to manage the plot window and the additional windows to display the data: these are grouped in the `View` menu;
@@ -68,7 +76,7 @@ Typically, when you choose a recipe from the menu bar a dialog window appears. T
 
 ![Dialog window](img/dialog_window.png)
 
-⚠️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
+❗️ **When you click on the `run` button in a dialog window, the whole GUI freezes until the operation is complete. You should consider this before using recipes that require long running times.**
 
 At the beginning of the analysis, only a limited set of recipes is available from the menu bar, while others are greyed out. This happens because the greyed-out recipes require some piece of information that has not been extracted yet (e.g., to fit an absorption systems you need to detect it first). As you progresses with the analysis, more and more recipes become available.
 
@@ -89,11 +97,4 @@ $ tar -zxvf /path/to/archive.acs
 
 You can quit Astrocook with `File > Quit...` on the menu bar (`ctrl+Q` or `⌘+Q`, depending on the system) or by closing the main window.
 
-⚠️ **When you quit Astrocook, all unsaved sessions will be lost.**
-
-
-## Troubleshooting
-
-Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to [report the bug](mailto:guido.cupani@inaf.it).
-
-⚠️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**
+❗️ **When you quit Astrocook, all unsaved sessions will be lost.**

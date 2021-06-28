@@ -1,5 +1,6 @@
 from .vars import *
 from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
+from .message import msg_output_fail
 from astropy import table as at
 from astropy import units as au
 #from matplotlib import pyplot as plt
@@ -142,6 +143,9 @@ class SystList(object):
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
 #            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
+        else:
+            self._t = vstack_t
+            self._mods_t = vstack_mods_t
         #print(self._mods_t['z0', 'id'])
         return 0
 
@@ -217,9 +221,9 @@ class SystList(object):
                         else:
                             self._constr[k] = (v[0], k.split('_')[-1], None)
                         #print(v[0], v[1], v[2])
-                        #print(self._constr)
+                        #print(m['mod']._pars[k].__dict__)
         #print(self._constr)
-
+                #m['mod']._pars.pretty_print()
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t

@@ -5,6 +5,7 @@ from .cookbook_general import CookbookGeneral
 from .cookbook_flux import CookbookFlux
 from .cookbook_graph import CookbookGraph
 from .cookbook_sandbox import CookbookSandbox
+from .cookbook_synthetic import CookbookSynthetic
 from .cookbook_templates import CookbookTemplates
 from .format import Format
 from .spectrum import Spectrum
@@ -24,6 +25,7 @@ class Cookbook(CookbookGeneral,
                CookbookAbsorbers,
                CookbookFlux,
                CookbookGraph,
+               CookbookSynthetic,
                CookbookTemplates):
     """ Main cookbook, combining specific cookbooks.
 
@@ -34,6 +36,8 @@ class Cookbook(CookbookGeneral,
                  sess=None):
         super(Cookbook, self).__init__()
         self.sess = sess
+        self._tag = "cb"
+
 
     def _refresh(self, sess):
         self.sess = sess
