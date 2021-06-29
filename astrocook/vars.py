@@ -122,10 +122,14 @@ dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERR
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
-
+filt_x_skymap = {'u': 348.0, 'v': 382.5, 'g': 493.0, 'r': 629.4, 'i': 770.2,
+                 'z': 923.6}
+zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
+                     'r': 29.0143769, 'i': 28.4342476, 'z': 27.9522006}
 
 p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
 atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
+
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}

@@ -2,6 +2,7 @@ from .vars import *
 from .cookbook_absorbers import CookbookAbsorbers
 from .cookbook_continuum import CookbookContinuum
 from .cookbook_general import CookbookGeneral
+from .cookbook_flux import CookbookFlux
 from .cookbook_graph import CookbookGraph
 from .cookbook_sandbox import CookbookSandbox
 from .cookbook_synthetic import CookbookSynthetic
@@ -22,6 +23,7 @@ from tqdm import tqdm
 class Cookbook(CookbookGeneral,
                CookbookContinuum,
                CookbookAbsorbers,
+               CookbookFlux,
                CookbookGraph,
                CookbookSynthetic,
                CookbookTemplates):
