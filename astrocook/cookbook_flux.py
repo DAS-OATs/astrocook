@@ -64,17 +64,18 @@ class CookbookFlux(object):
                 spec_r  = spec._rebin(xsel[0]*self._filt_xunit/spec.x.unit,
                                      (xsel[-1]+cdelt1)*self._filt_xunit/spec.x.unit,
                                      cdelt1, self._filt_xunit, spec.y, spec.dy)
-                #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y)
+                corr = np.sum(ysel)/np.sum(y)
+                #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y*ysel/corr)
                 #plt.plot(spec.x, spec.y)
                 #plt.plot(xsel, ysel.value)
-                corr = np.median(ysel)/np.median(y)
                 #print("%3.8e" % np.median(spec_r.y.value))
-                mag = -2.5 * np.log10(np.median(spec_r.y.value*ysel.value)/corr) + self._zero_point[band]
+                mag = -2.5 * np.log10(np.sum(spec_r.y.value*ysel.value)/corr) + self._zero_point[band]
                 logging.info("AB magnitude in the %s filter: %3.2f."
                              % (band, mag))
                 mags[band] = mag
             except:
                 pass
+        #plt.show()
 
         return mags
 
@@ -89,10 +90,13 @@ class CookbookFlux(object):
         @param deg Degree of polynomial regression
         @return Magnitudes
         """
-        mags_in = self._mags_compute(bands)
 
-        x = [self._filt_x[b] for b in bands]
-        diffs = [refs[b]-mags_in[b] for b in bands]
+        mags_in = self._mags_compute(bands)
+        x = np.array([self._filt_x[b] for b in bands])
+        diffs = np.array([float(refs[b])-mags_in[b] for b in bands])
+
+        x = x[~np.isnan(diffs)]
+        diffs = diffs[~np.isnan(diffs)]
 
         spec = self.sess.spec
         corr = 10**(np.poly1d(np.polyfit(x, diffs, deg)/-2.5)\
