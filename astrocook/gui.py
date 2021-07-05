@@ -797,10 +797,10 @@ class GUIPanelSession(wx.Frame):
                               "both sessions.")
                 return(0)
             if i == 0:
-                f = np.nanmedian(sess.spec.y[w])
+                f = np.nanmedian(sess.spec.y[w]).value
                 #print(np.median(sess.spec.y[w]))
             else:
-                f = f/np.nanmedian(sess.spec.y[w])
+                f = f/np.nanmedian(sess.spec.y[w]).value
                 #print(np.median(sess.spec.y[w]), f)
                 logging.info("Equalization factor: %3.4f." % f)
                 sess.spec.y = f*sess.spec.y

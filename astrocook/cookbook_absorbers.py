@@ -1087,12 +1087,13 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=22.0,
-                     b_min=1.0, b_max=100.0, col=None, col_min=None,
-                     col_max=None):
+    def systs_select(self, series='any', z_min=0.0, z_max=10.0, logN_min=10.0,
+                     logN_max=22.0, b_min=1.0, b_max=100.0, col=None,
+                     col_min=None, col_max=None):
         """ @brief Select systems
         @details Select systems based on their Voigt and fit parameters. A
         logical `and` is applied to all conditions.
+        @param series Series
         @param z_min Minimum redshift
         @param z_max Maximum redshift
         @param logN_min Minimum (logarithmic) column density
@@ -1127,10 +1128,16 @@ class CookbookAbsorbers(object):
             recompress = True
             systs._compress()
 
+        if series != 'any':
+            series_sel = [np.any([t in trans_parse(series)
+                                  for t in trans_parse(s['series'])])
+                          for s in systs._t]
+        else:
+            series_sel = np.ones(len(systs._t))
         z_sel = np.logical_and(systs._t['z']>z_min, systs._t['z']<z_max)
         logN_sel = np.logical_and(systs._t['logN']>logN_min, systs._t['logN']<logN_max)
         b_sel = np.logical_and(systs._t['b']>b_min, systs._t['b']<b_max)
-        cond = np.logical_and(z_sel, np.logical_and(logN_sel, b_sel))
+        cond = np.logical_and(np.logical_and(series_sel, z_sel), np.logical_and(logN_sel, b_sel))
 
         if col is not None:
             cond = np.logical_and(cond, np.logical_and(systs._t[col]>col_min,

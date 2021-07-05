@@ -510,7 +510,7 @@ class Graph(object):
                                 elif hasattr(self._gui._sess_sel.spec, '_rfz'):
                                     z += self._gui._sess_sel.spec._rfz
 
-                                if z > 1e-10 or True:
+                                if z > 1e-10:
                                     self._ax.text(xi, 0.05, s, **kwargs_text)
                                     kwargs_text['va'] = 'top'
                                     self._ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
