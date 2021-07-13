@@ -94,6 +94,8 @@ class Graph(object):
             sess._click_1 = False
 
         if event.button == 3:
+            title.append('Zap bin')
+            attr.append('bin_zap')
             if focus == self._gui._graph_main:
                 title.append('Show stats')
                 attr.append('stats_show')
@@ -299,6 +301,9 @@ class Graph(object):
                                 % sess[0].spec._rfz)
             if self._axt == None:
                 self._axt = self._ax.twiny()
+            try:
+                self._axt.set_xlabel(str(self._gui._sess_sel.spec._xunit))
+            except:
                 self._axt.set_xlabel(str(self._xunit))
             self._axt_mode = 'rf'
         else:
@@ -419,7 +424,7 @@ class Graph(object):
                         y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames:
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit:
                         y = y/t['cont']
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 if struct in ['systs', 'cursor']:
@@ -442,6 +447,11 @@ class Graph(object):
                         x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     else:
                         x = xem*(1+z_flat)
+                    try:
+                        x = x.to(sess.spec._xunit)
+                        x_iswave = True
+                    except:
+                        x_iswave = False
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
@@ -454,7 +464,11 @@ class Graph(object):
                         for k in self._axes:
                             if self._axes[k] == self._ax:
                                 zem = self._zems[k]
-                        x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                        if x_iswave:
+                            x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                        else:
+                            x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+
                         #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat
@@ -506,12 +520,19 @@ class Graph(object):
                                 kwargs_text['rotation'] = 90
                                 kwargs_text['ha'] = 'right'
                                 kwargs_text['va'] = 'bottom'
-                                if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                                if hasattr(self._gui._sess_sel.spec, '_rfz_man'):
+                                    zz = self._gui._sess_sel.spec._rfz_man
+                                    z = z*(1+zz)+zz
+                                elif hasattr(self._gui._sess_sel.spec, '_rfz'):
                                     z += self._gui._sess_sel.spec._rfz
 
-                                self._ax.text(xi, 0.05, s, **kwargs_text)
-                                kwargs_text['va'] = 'top'
-                                self._ax.text(xi, 0.95, "%3.4f" % z, **kwargs_text)
+                                if z > 1e-10:
+                                    self._ax.text(xi, 0.05, s, **kwargs_text)
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
+                                else:
+                                    kwargs_text['va'] = 'top'
+                                    self._ax.text(xi, 0.95, s, **kwargs_text)
                     if struct == 'systs':
                         self._systs_color = color
                 except:
@@ -617,7 +638,6 @@ class Graph(object):
                 if self._axt_mode == 'z':
                     self._axt.set_xlim((np.array(self._ax.get_xlim())*self._xunit \
                         / xem_d[sess._ztrans]).to(au.dimensionless_unscaled)-1)
-
 
         #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
 

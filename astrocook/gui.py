@@ -1,4 +1,5 @@
 from . import * #version
+from .functions import expr_eval
 from .gui_graph import *
 from .gui_image import *
 from .gui_log import *
@@ -503,7 +504,7 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path):
         """ Behaviour for Session > Open """
 
-        name = path.split('/')[-1].split('.')[0]
+        name = '.'.join(path.split('/')[-1].split('.')[:-1])
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
@@ -548,7 +549,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._tab_systs.Close()
         self._gui._tab_mods.Close()
         """
-        exit()
+        #exit()
+        os._exit(1)
 
     def _on_deselect(self, event):
         self._sel = event.GetIndex()
@@ -678,8 +680,8 @@ class GUIPanelSession(wx.Frame):
 
         attr = getattr(sess, attrn)
         if attr is None:
-            logging.error("Attribute %s is None." % attrn)
-            return None
+            logging.warning("Attribute %s is None." % attrn)
+            return attrn, attr, parse
 
 
         if length==3:
@@ -795,11 +797,12 @@ class GUIPanelSession(wx.Frame):
                               "both sessions.")
                 return(0)
             if i == 0:
-                f = np.median(sess.spec.y[w])
+                f = np.nanmedian(sess.spec.y[w]).value
                 #print(np.median(sess.spec.y[w]))
             else:
-                f = f/np.median(sess.spec.y[w])
+                f = f/np.nanmedian(sess.spec.y[w]).value
                 #print(np.median(sess.spec.y[w]), f)
+                logging.info("Equalization factor: %3.4f." % f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
 
@@ -845,6 +848,7 @@ class GUIPanelSession(wx.Frame):
 
         parse_A = self._struct_parse(col_A, length=3)
         parse_out = self._struct_parse(col_out, length=2)
+        #print(parse_A, parse_out)
         if parse_A is None or parse_out is None: return 0
         coln_A, colp_A, _ = parse_A
         attrn_out, attr_out, all_out = parse_out
@@ -875,6 +879,55 @@ class GUIPanelSession(wx.Frame):
         return 0
 
 
+    def struct_modify2(self, col='', expr=''):
+        """ @brief Modify a data structure using a binary operator
+        @details Modify a data structure using a binary operator. An output
+        column is computed from an expression with input columns as arguments.
+        The expression must be parsable by AST, with columns described by a
+        string with the session number, the structure tag (spec, lines, systs),
+        and the column name separated by a comma (e.g. 0,spec,x, meaning "column
+        x of spectrum from session 0"). Columns can be from different data
+        structures only if they have the same length. If the output column
+        already exists, it is overwritten.
+        @param col Output column
+        @param expr Expression
+        @return 0
+        """
+
+        # Reversed to parse sessions with higher number first, and avoid overwriting
+        sess_list = self._gui._sess_list[::-1]
+        for i, s in enumerate(sess_list):
+            if s.spec is not None:
+                for c in sorted(s.spec._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                                        str(list(np.array(s.spec._t[c]))))
+            if s.lines is not None:
+                for c in sorted(s.lines._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                                        str(list(np.array(s.lines._t[c]))))
+            if s.systs is not None:
+                for c in sorted(s.systs._t.colnames, key=len, reverse=True):
+                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                                        str(list(np.array(s.systs._t[c]))))
+
+        #print(expr)
+        #print(len(expr))
+        out = expr_eval(ast.parse(expr, mode='eval').body)
+
+        _, _, all_out = self._struct_parse(col, length=2)
+        struct = getattr(self._gui._sess_list[all_out[0]], all_out[1])
+        if all_out[2] in struct._t.colnames: # and False:
+            col_out = struct._t[all_out[2]]
+            try:
+                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body) * col_out.unit
+            except:
+                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
+        else:
+            struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
+
+        return 0
+
+
     def struct_import(self, struct='0,systs', mode='replace'):
         """ @brief Import a data structure from a session into the current one
         @details The structure to be imported is described by a string with the
@@ -899,6 +952,10 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         if mode=='replace':
+            if attr is None:
+                logging.warning("I'm replacing structure with None.")
+                setattr(self._gui._sess_sel, attrn, attr)
+                return 0
             if attrn in ['lines', 'systs']:
                 #spec = self._gui._sess_sel.spec
                 x = self._gui._sess_sel.spec.x.to(au.nm)
@@ -915,12 +972,17 @@ class GUIPanelSession(wx.Frame):
             setattr(self._gui._sess_sel, attrn, attr)
 
         if mode=='append':
+            if attr is None:
+                logging.warning("I'm not appending None.")
+                return 0
             attr_dc = dc(attr)
             if attrn == 'systs':
                 id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
                 attr_dc._t['id'] = attr_dc._t['id']+id_max
             #print(len(attr_dc._t))
             #print(len(np.unique(attr_dc._t['id'])))
+            #print(len(attr_dc._t))
+            #print(len(getattr(self._gui._sess_sel, attrn)._t))
             getattr(self._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':

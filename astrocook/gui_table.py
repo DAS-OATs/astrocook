@@ -589,6 +589,12 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
 
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
+        labels = self._labels_extract()
+        self._ids = np.array([int(float(self._tab.GetCellValue(
+                              i, np.where(labels == 'id')[0][0]))) \
+                              for i in range(self._tab.GetNumberRows())])
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
         super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)

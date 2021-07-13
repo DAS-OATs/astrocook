@@ -77,13 +77,20 @@ class GUIGraphMain(wx.Frame):
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
-
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self.Show()
 
     #def _on_line_new(self, event):
     #    print(self._click_xy)
+
+
+    def _on_bin_zap(self, event):
+        sess = self._gui._sess_sel
+        x = sess._clicks[-1][0]
+        sess.log.append_full('cb', 'bin_zap', {'x': x})
+        sess.spec._zap(x, None)
+        self._gui._refresh()
 
 
     def _on_cursor_stick(self, event=None, cursor_z=None):

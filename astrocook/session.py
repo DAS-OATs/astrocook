@@ -67,13 +67,17 @@ class Session(object):
 
         format = Format()
 
+        dat = False
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
-                hdul = fits.open(self.path[:-4]+'_spec.fits')
-                hdr = hdul[1].header
+                try:
+                    hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    hdr = hdul[1].header
+                except:
+                    dat = True
         elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
@@ -133,17 +137,24 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
+        #print(instr, catg, orig)
+
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
-        if orig[:9] == 'Astrocook':
+        if orig[:9] == 'Astrocook' or dat:
             for s in self.seq:
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
                     os.remove(self.path[:-4]+'_'+s+'.fits')
                 except:
-                    pass
+                    try:
+                        data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                        setattr(self, s, format.astrocook(data, s))
+                        #os.remove(self.path[:-4]+'_'+s+'.dat')
+                    except:
+                        pass
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
                 self.cb._spec_update()
@@ -151,7 +162,7 @@ class Session(object):
         else:
 
             # ESO ADP spectrum
-            if orig == 'ESO': #and hdr['ARCFILE'][:3]=='ADP':
+            if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
                 self.spec = format.eso_adp(hdul)
 
             # ESO-MIDAS spectrum+
@@ -163,9 +174,16 @@ class Session(object):
                     #self.spec = format.eso_midas_table(hdul)
                     self.spec = format.generic_spectrum(hdul)
 
-            # ESPRESSO DRS spectrum
+            # ESPRESSO S1D spectrum
             if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
-                self.spec = format.espresso_drs_spectrum(hdul)
+                self.spec = format.espresso_s1d_spectrum(hdul)
+                p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+                self.spec_form = format.espresso_spectrum_format(
+                    ascii.read(p+'espr_spec_form.dat'))
+
+            # ESPRESSO S2D spectrum
+            if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
+                self.spec = format.espresso_s2d_spectrum(hdul)
                 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
                 self.spec_form = format.espresso_spectrum_format(
                     ascii.read(p+'espr_spec_form.dat'))
@@ -190,6 +208,11 @@ class Session(object):
             # QUBRICS spectrum
             if orig == 'QUBRICS':
                 self.spec = format.qubrics_spectrum(hdul)
+
+
+            # TNG LRS spectrum
+            if instr == 'LRS' and orig == 'ESO-MIDAS':
+                self.spec = format.lrs_spectrum(hdul)
 
 
             # UVES Spectrum
@@ -244,6 +267,8 @@ class Session(object):
         root = path[:-4]
         stem = pathlib.PurePath(path[:-4]).parts[-1]
 
+        import warnings
+        warnings.filterwarnings("ignore")
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:

@@ -6,11 +6,14 @@ from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
+from astropy.stats import sigma_clip
+import bisect
 #from astropy import constants as aconst
 #from astropy import table as at
 from copy import deepcopy as dc
+from time import time
 import logging
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import argrelmin, argrelmax, fftconvolve
 from scipy.interpolate import UnivariateSpline as uspline
@@ -95,17 +98,113 @@ class Spectrum(Frame):
 
         return 0
 
+
+    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv):
+        vstart = vstart.to(au.km/au.s).value
+        vend = vend.to(au.km/au.s).value
+        dv = dv.to(au.km/au.s).value
+        sd = -1*int(np.floor(np.log10(dv)))-1
+        spec_x = self.x.value
+
+        xmin = spec_x[~np.isnan(spec_x)][0]
+        xmax = spec_x[~np.isnan(spec_x)][-1]
+        xmean = 0.5*(xmin+xmax)
+        v_shift = np.arange(vstart, vend+dv, dv)
+        #v_shift = np.sort(v_shift)
+        x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
+        xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
+        xend = xmean * vend/aconst.c.to(au.km/au.s).value
+        dx = xmean * dv/aconst.c.to(au.km/au.s).value
+
+        #print(xmin+xstart, xmax+xend, dx)
+        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
+        y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
+        y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
+        dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
+        dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
+        #print(y1_osampl)
+        #print(y2_osampl)
+        #print(len(x_shift))
+        pan = len(x_shift)//2
+        ccf = []
+        #print(v_shift[0], v_shift[-1], v_shift[pan], len(v_shift), pan)
+        #print(x_shift[0], x_shift[-1], x_shift[pan], len(x_shift), pan)
+        for i, xs in enumerate(x_shift):
+            #print(v_shift[i])
+            x = x_osampl+xs
+            #digitized = np.digitize(x, spec_x)
+            #print(len(digitized))
+            #ym = [y2_osampl[digitized == i].mean() \
+            #      for i in range(0, len(spec_x))]
+
+            y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
+            y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
+
+            #dy1 = dy1_osampl[pan:-pan-1]
+            #dy2 = dy2_osampl[i:-2*pan+i-1]
+            #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
+            #y2 = y2_osampl[i:-2*pan+i-1]+dy2-np.nanmean(y2_osampl)
+            #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
+            ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
+            #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
+
+        #ccf = ccf/np.max(ccf)
+        #plt.plot(v_shift, ccf)
+        #plt.show()
+        #print(np.min(ccf), np.mean(ccf), np.max(ccf))
+        #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
+        #             % (np.min(ccf), np.max(ccf), np.mean(ccf)))
+        return np.array(v_shift), np.array(ccf)
         """
+        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
+        eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
+        ccf = []
 
-; Now apply extinction correction to input flux vector
+        y = (1-mod._yf)
+        if weight:
+            #w = np.abs(np.gradient(eval_osampl))
+            #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
+            y = y*mod._wf
 
-  A_V = R_V * EBV
-  A_lambda = A_V * (a + b/R_V)
-  if N_params() EQ 3 then flux = flux * 10.^(0.4*A_lambda) else $
-        funred = flux * 10.^(0.4*A_lambda)       ;Derive unreddened flux
+        #y = (1-mod._yf)#*grad/np.sum(grad)
 
- return
- end
+        for i, xs in enumerate(x_shift):
+            plot = False
+            x = x_osampl+xs
+            digitized = np.digitize(x, mod._xf)
+            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(mod._xf))]
+            ccf1 = self._mod_ccf(mod, ym, y, verbose=False, plot=plot)
+            if plot:
+                plt.scatter(xmean+xs, ccf1)
+
+            ccf.append(ccf1)
+
+        #plt.plot(mod._xf, y, linewidth=4)
+        if weight:
+            color = 'r'
+        else:
+            color = 'g'
+        #plt.scatter(xmean+x_shift, ccf/np.max(ccf), c=color)
+        try:
+            p0 = [np.max(ccf), xmean, 5e-4]
+            coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
+            fit = gauss(xmean+x_shift, *coeff)
+            ccf_max = coeff[0]
+            deltax = coeff[1]-xmean
+            deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
+            #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
+        except:
+            amax = np.argmax(ccf)
+            ccf_max = ccf[amax]
+            deltax = x_shift[amax]
+            deltav = v_shift[amax]
+            #plt.scatter(xmean+x_shift[amax], 1)
+
+        if verbose:
+            logging.info(("I maximized the data model CCF with a shift of "
+                          "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
+                          % (deltax, deltav))
+        return ccf_max, deltax, deltav
         """
 
     def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
@@ -127,8 +226,11 @@ class Spectrum(Frame):
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = np.array(self._safe(conv), dtype=float)
-        conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
-                                              *self._t[input_col].unit
+        try:
+            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
+                                                 *self._t[input_col].unit
+        except:
+            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')
         self._t[output_col] = conv
         self._x_convert(xunit=xunit)
 
@@ -358,10 +460,11 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, xstart, xend, dx, xunit, y, dy):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy, filling=np.nan):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
+
 
         self.t.sort('x')
         self._x_convert(xunit=xunit)
@@ -387,29 +490,85 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
+        print_time = False
+        xmin_value = np.array(self.xmin.value)
+        xmax_value = np.array(self.xmax.value)
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
+            if print_time:
+                print('')
+                t1 = time()
+                print(t1)
+            """
             while xmin_in < M:
                 iM += 1
                 try:
                     xmin_in = self.xmin[iM].value
+                    #print(xmin_in)
                 except:
                     break
             while xmax_in < m:
                 im += 1
                 try:
                     xmax_in = self.xmax[im].value
+                    #print(xmax_in)
                 except:
                     break
-            ysel = y[im:iM+1]
-            dysel = dy[im:iM+1]
-            if np.any(np.isnan(dysel)):
-                y_out = np.append(y_out, np.average(ysel))
+            """
+            im = bisect.bisect_left(xmax_value, m)
+            iM = bisect.bisect_right(xmin_value, M)
+            #print('im  ',im, iM)
+            if print_time:
+                t15 = time()
+                print(t15, t15-t1)
+
+            frac = (np.minimum(M, xmax_value[im:iM])\
+                    -np.maximum(m, xmin_value[im:iM]))/dx
+            if print_time:
+                t17 = time()
+                print(t17, t17-t15)
+            ysel = y[im:iM]
+            #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
+            #print(frac)
+
+            #print(frac[w],frac)
+            dysel = dy[im:iM]
+
+            nw = np.where(~np.isnan(ysel))
+            ysel = ysel[nw]
+            dysel = dysel[nw]
+            frac = frac[nw]
+            #print(dysel)
+            #mask = sigma_clip(ysel, masked=True).mask
+            #if np.sum(~mask)>0:
+            #    frac = frac[~mask]
+            #    ysel = ysel[~mask]
+            #    dysel = dysel[~mask]
+            w = np.where(frac>0)
+
+            if print_time:
+                t2 = time()
+                print(t2, t2-t16)
+            if len(frac[w]) > 0:
+                weights = (frac[w]/dysel[w]**2).value
+                #print(frac[w], np.sum(frac[w])/len(frac[w]))
+                #nw = np.where(~np.isnan(ysel[w]))
+                if np.any(np.isnan(dysel)):# and False:
+                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
+                else:
+                    y_out = np.append(y_out, np.average(ysel[w], weights=weights))
+                    #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
+                dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
+                                                   /np.nansum(weights)*y.unit)
+                #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
+                #                                   /np.sum(frac/dysel**2))
             else:
-                y_out = np.append(y_out, np.average(ysel, weights=1/dysel**2))
-            dy_out = np.append(dy_out, np.sqrt(np.sum(dysel**2/dysel**4))\
-                                               /np.sum(1/dysel**2))
+                y_out = np.append(y_out, filling)
+                dy_out = np.append(dy_out, filling)
+            if print_time:
+                t3 = time()
+                print(t3, t3-t2)
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
@@ -525,15 +684,22 @@ class Spectrum(Frame):
     def _zap(self, xmin, xmax):
 
         xmin = np.ravel(np.array(xmin))
-        xmax = np.ravel(np.array(xmax))
-        for m, M in zip(xmin, xmax):
-            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
-            self._t['y'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
-            self._t['dy'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        if xmax is not None:
+            xmax = np.ravel(np.array(xmax))
+            for m, M in zip(xmin, xmax):
+                w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+                self._t['y'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+                self._t['dy'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        else:
+            #self._t.remove_row(np.abs(self._t['x'] - xmin).argmin())
+            for x in xmin:
+                r = np.nanargmin(np.abs(self._t['x'] - x))
+                self._t['x'][r] = np.nan
+
         return 0
