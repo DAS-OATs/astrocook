@@ -66,6 +66,7 @@ class CookbookFlux(object):
                                      cdelt1, self._filt_xunit, spec.y, spec.dy)
                 corr = np.sum(ysel)/np.sum(y)
                 #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y*ysel/corr)
+                #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y)
                 #plt.plot(spec.x, spec.y)
                 #plt.plot(xsel, ysel.value)
                 #print("%3.8e" % np.median(spec_r.y.value))

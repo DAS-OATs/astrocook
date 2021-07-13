@@ -162,7 +162,7 @@ class Session(object):
         else:
 
             # ESO ADP spectrum
-            if orig == 'ESO': #and hdr['ARCFILE'][:3]=='ADP':
+            if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
                 self.spec = format.eso_adp(hdul)
 
             # ESO-MIDAS spectrum+

@@ -54,7 +54,7 @@ logN_def = 14
 b_def = 10
 
 resol_def = None
-max_nfev_def = 100
+max_nfev_def = 1000
 
 hwin_def = 250.0
 
