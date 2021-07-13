@@ -388,7 +388,7 @@ class CookbookAbsorbers(object):
         wrong_id = []
         corr_id = []
         #print(systs_t)
-        for i,s in enum_tqdm(systs_t, len(systs_t),
+        for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
             if systs._id in mod_sel:
@@ -401,6 +401,7 @@ class CookbookAbsorbers(object):
                         else:
                             vars[k.split('_')[-1]+'_vary'] = False
                 #print(systs._id)
+                #if systs._id == 46: print(systs._constr.items())
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                 if any([mod._id in i for i in systs._mods_t['id']]):
                     wrong_id.append(mod._id)
@@ -417,11 +418,17 @@ class CookbookAbsorbers(object):
                             % (w, c))
 
         systs_t.sort(['z','id'])
-        #print(systs._mods_t['id'])
-        mods_n = len(mod_w)#len(self.sess.systs._mods_t)
+        #systs._mods_t['id'].pprint(max_lines=-1)
+        #print(len(systs._mods_t))
+        systs_n = len(systs._t)
+        mods_n = len(systs._mods_t)
         if verbose:
-            logging.info("I've recreated %i model%s." \
-                         % (mods_n, '' if mods_n==1 else 's'))
+            logging.info("I've recreated %i model%s (including %i system%s)." \
+                         % (mods_n, '' if mods_n==1 else 's',
+                            systs_n, '' if systs_n==1 else 's'))
+        #profile.disable()
+        #ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
         return 0
 
 
@@ -636,6 +643,8 @@ class CookbookAbsorbers(object):
                 logging.info("I've fitted %i model%s." \
                              % (len(mods_t), msg_z_range(z_list)))
         else:
+            for i,m in enumerate(mods_t):
+                z_list.append(m['z0'])
             if verbose:
                 logging.info("I've not fitted any model because you choose "
                              "max_nfev=0.")
@@ -769,6 +778,7 @@ class CookbookAbsorbers(object):
 
     def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
+        #print(systs._constr.items())
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
@@ -782,7 +792,6 @@ class CookbookAbsorbers(object):
         systs._t.remove_rows(rem)
         for k in k_del:
             del systs._constr[k]
-
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs

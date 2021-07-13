@@ -294,6 +294,8 @@ class Graph(object):
         self._yunit = GraphSpectrumXY(sess[0], norm)._y.unit
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
+
+        # Rest frame axis
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
                                 % sess[0].spec._rfz)
@@ -303,6 +305,7 @@ class Graph(object):
                 self._axt.set_xlabel(str(self._gui._sess_sel.spec._xunit))
             except:
                 self._axt.set_xlabel(str(self._xunit))
+            self._axt_mode = 'rf'
         else:
             try:
                 self._axt.remove()
@@ -310,6 +313,19 @@ class Graph(object):
                 pass
             self._axt = None
         #self._c = 0  # Color
+
+        # Redshift axis
+        if hasattr(sess[0], '_ztrans'):
+            self._axt = self._ax.twiny()
+            self._axt.set_xlabel('%s redshift' % sess[0]._ztrans)
+            self._axt_mode = 'z'
+        else:
+            try:
+                self._axt.remove()
+            except:
+                pass
+            self._axt = None
+
         if logx:
             self._ax.set_xscale('log')
             try:

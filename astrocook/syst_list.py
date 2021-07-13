@@ -139,6 +139,10 @@ class SystList(object):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
 
+        #print(np.array(self._mods_t['z0']))
+        #print(np.array(frame._mods_t['id']))
+        #print(np.array(vstack_mods_t['id']))
+
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
 #            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
@@ -147,6 +151,7 @@ class SystList(object):
             self._t = vstack_t
             self._mods_t = vstack_mods_t
         #print(self._mods_t['z0', 'id'])
+        #print(len(self._mods_t))
         return 0
 
 

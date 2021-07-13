@@ -2,10 +2,12 @@ from .functions import get_selected_cells, trans_parse
 from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
+import cProfile
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pprint
+import pstats
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -594,6 +596,13 @@ class GUITableSystList(GUITable):
                               i, np.where(labels == 'id')[0][0]))) \
                               for i in range(self._tab.GetNumberRows())])
 
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
+        labels = self._labels_extract()
+        self._ids = np.array([int(float(self._tab.GetCellValue(
+                              i, np.where(labels == 'id')[0][0]))) \
+                              for i in range(self._tab.GetNumberRows())])
+
     def _data_link_par(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
@@ -846,6 +855,8 @@ class GUITableSystList(GUITable):
 
 
     def _on_view(self, event, **kwargs):
+        profile = cProfile.Profile()
+        profile.enable()
 
         super(GUITableSystList, self)._on_view(event, **kwargs)
         #self._open['systs'] = True
@@ -860,6 +871,9 @@ class GUITableSystList(GUITable):
                 self._freezes_d[k]=(v[0], 'vary', False)
             else:
                 self._links_d[k]=(v[0], 'expr', v[2])
+        profile.disable()
+        ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
 
 
     def _row_extract(self, id):
@@ -886,6 +900,8 @@ class GUITableSystList(GUITable):
                 if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
                     c = np.where(labels==p.split('_')[-1])[0][0]
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
+                    #    print(id, p,v)
                     if v.vary == False:
                         self._tab.SetCellTextColour(r, c, 'grey')
                     if v.expr != None:

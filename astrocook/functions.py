@@ -4,7 +4,6 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
-import datetime
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -12,6 +11,7 @@ from scipy.special import wofz
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
+import pstats
 
 prefix = 'functions'
 
@@ -26,7 +26,6 @@ def _fadd(a, u):
     @param u Second abstrac variable
     @return Re(F(a, u))
     """
-
     return np.real(wofz(u + 1j * a))
 
 def _voigt_par_convert(x, z, N, b, btur, trans):
@@ -43,6 +42,30 @@ def _voigt_par_convert(x, z, N, b, btur, trans):
     tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
     a = 0.25 * gamma * xem / (np.pi * b_qs)
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+    return tau0, a, u
+
+def _voigt_par_convert_new(x, z, N, b, btur, trans):
+    if trans == 'unknown':
+        xem = z #*au.nm
+        xobs = z #*au.nm
+    else:
+        xem = xem_d[trans].value
+        xobs = xem*(1+z)
+    fosc = fosc_d[trans]
+    gamma = gamma_d[trans] #/au.s
+    b_qs = np.sqrt(b**2 + btur**2)
+    atom = fosc *  844.7972564303736 #* au.Fr**2 * au.s / (au.kg * au.m)
+    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    #print(z, N, b, btur, fosc, gamma, atom, xem)
+    a = 0.25 * gamma * xem / (np.pi * b_qs)
+    #print(b_qs, x, xobs)
+    u = 299792458/b_qs * (x/xobs - 1)
+    #tau0 = tau0 * au.Fr**2 * au.nm * au.s**2 / (au.cm**2 * au.kg * au.km * au.m)
+    #a = a * au.nm / au.km
+    #u = u * au.m / au.km
+    tau0 = tau0 * 1e-17
+    a = a * 1e-12
+    u = u * 1e-3
     return tau0, a, u
 
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
@@ -235,9 +258,14 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
         """
-        tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
-        model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
-                          * _fadd(a, u)))
+        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
+        #print(tau0)#, tau0.to(au.dimensionless_unscaled))
+        #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
+        #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
+        #print(a, u, a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled))
+        model *= np.array(np.exp(-tau0 * _fadd(a, u)))
+        #model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
+        #                  * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
 
     return model
@@ -295,7 +323,6 @@ def psf_gauss_wrong(x, #center, resol):
     return ret
 
 def psf_gauss(x, resol, spec=None):
-    #print('in ', len(x), x)
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
@@ -317,6 +344,9 @@ def psf_gauss(x, resol, spec=None):
     else:
         ret = psf
         return ret
+    #profile.disable()
+    #ps = pstats.Stats(profile)
+    #ps.print_stats()
 
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
