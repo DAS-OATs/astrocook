@@ -9,6 +9,7 @@ from astropy import units as au
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
+import multiprocessing as mp
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
@@ -21,6 +22,36 @@ prefix = "[INFO] cookbook_absorbers:"
 def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+def _mods_recreate_loop(i, spec, systs):
+    #spec = self.sess.spec
+    #systs = self.sess.systs
+    s = systs._t[i]
+    systs._id = s['id']
+    if True: #systs._id in mod_sel:
+        vars = {}
+        constr = {}
+        for k, v in systs._constr.items():
+            if v[0]==systs._id:
+                if v[2]!=None:
+                    constr[k] = v[2]
+                else:
+                    vars[k.split('_')[-1]+'_vary'] = False
+        #print(systs._id)
+        #if systs._id == 46: print(systs._constr.items())
+        mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+        if any([mod._id in i for i in systs._mods_t['id']]):
+            wrong_id.append(mod._id)
+            corr_id.append(np.max(systs_t['id'])+1)
+            mod._id = np.max(systs_t['id'])+1
+        mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                   b=s['b'], resol=s['resol'])
+        return mod
+    else:
+        return None
+    #self._mods_update(mod)
+    #print(mod._pars.pretty_print())
+    #print(systs._mods_t['id'])
 
 
 class CookbookAbsorbers(object):
@@ -388,30 +419,14 @@ class CookbookAbsorbers(object):
         wrong_id = []
         corr_id = []
         #print(systs_t)
+        mods = []
         for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
                              "cookbook_absorbers: Recreating"):
-            systs._id = s['id']
-            if systs._id in mod_sel:
-                vars = {}
-                constr = {}
-                for k, v in systs._constr.items():
-                    if v[0]==systs._id:
-                        if v[2]!=None:
-                            constr[k] = v[2]
-                        else:
-                            vars[k.split('_')[-1]+'_vary'] = False
-                #print(systs._id)
-                #if systs._id == 46: print(systs._constr.items())
-                mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
-                if any([mod._id in i for i in systs._mods_t['id']]):
-                    wrong_id.append(mod._id)
-                    corr_id.append(np.max(systs_t['id'])+1)
-                    mod._id = np.max(systs_t['id'])+1
-                mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                               b=s['b'], resol=s['resol'])
-                self._mods_update(mod)
-                #print(mod._pars.pretty_print())
-                #print(systs._mods_t['id'])
+            mod = _mods_recreate_loop(i, spec, systs)
+            if mod is not None:
+                mods.append(mod)
+        for mod in mods:
+            self._mods_update(mod)
 
         for w, c in zip(wrong_id, corr_id):
             logging.warning("System %i had a duplicated id! I changed it to %i."
