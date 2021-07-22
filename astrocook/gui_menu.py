@@ -435,9 +435,9 @@ class GUIMenuEdit(GUIMenu):
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+312, 'spec',
-                          "Blackbody", 'bb')
         self._item_method(submenu, start_id+313, 'spec',
+                          "Blackbody", 'bb')
+        self._item_method(submenu, start_id+314, 'spec',
                           "Power-law", 'pl')
         self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
