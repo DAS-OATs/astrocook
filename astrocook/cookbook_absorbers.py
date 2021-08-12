@@ -1879,6 +1879,9 @@ class CookbookAbsorbers(object):
         self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
+        return 0
+        
+
     def _systs_like(self, series='Ly-a', thres=0.997, distance=10, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
