@@ -831,10 +831,17 @@ class GUITableSystList(GUITable):
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
         if col == -1:
-            self.PopupMenu(GUITablePopup(
-                self._gui, self, event,
-                ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF', 'Maximize CCF', 'sep', 'Improve all'],
-                ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max', None, 'improve']),
+            if self._gui._sess_sel.systs._compressed:
+                title = ['Fit', 'Fit (open dialog)', 'Remove', 'Merge', 'sep',
+                         'CCF', 'Maximize CCF', 'sep', 'Improve all']
+                attr = ['fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
+                        'ccf_max', None, 'improve']
+            else:
+                title = ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF',
+                         'Maximize CCF', 'sep', 'Improve all']
+                attr = ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
+                        None, 'improve']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 
     def _on_link_par(self, event):
@@ -853,6 +860,13 @@ class GUITableSystList(GUITable):
             self._gui._dlg_mini_log._refresh()
         self._data_link_par(row, col)
 
+
+    def _on_merge(self, event):
+        row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        dlg = GUIDialogMethod(self._gui, 'Merge systems', 'systs_merge',
+                              params_last=[{'num1': row._index+1}])
+
+        self._gui._refresh(init_cursor=True)
 
     def _on_view(self, event, **kwargs):
         profile = cProfile.Profile()
