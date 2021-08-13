@@ -1,6 +1,7 @@
+import astropy.units as au
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def
+from .vars import graph_elem, hwin_def, xem_d
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -616,12 +617,18 @@ class GUIDialogMiniSystems(GUIDialogMini):
                  title,
                  targ=None,
                  series='CIV',
-                 z=2.0,
+                 z=None,
                  hwin=hwin_def):
         self._gui = gui
         self._gui._dlg_mini_systems = self
         self._targ = targ
         self._series = series
+        if z is None:
+            try:
+                z = np.mean(self._gui._sess_sel.spec.t['x'].to(au.nm))\
+                        /xem_d['CIV_1548']-1
+            except:
+                z = 2.0
         self._z = z
         self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
