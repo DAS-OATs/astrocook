@@ -185,7 +185,13 @@ class GUIGraphMain(wx.Frame):
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
                               params_last = params)
         self._gui._refresh(init_cursor=True)
-
+        """
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
+        """
 
     def _on_close(self, event=None):
         self._closed = True

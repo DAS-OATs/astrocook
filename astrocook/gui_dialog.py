@@ -161,6 +161,12 @@ class GUIDialog(wx.Dialog):
                                                        self._gui._sess_sel)
 
             self._gui._refresh()
+            if hasattr(self._gui, '_dlg_mini_systems'):
+                self._gui._dlg_mini_systems._shown = False
+                self._gui._dlg_mini_systems._on_cancel(e=None)
+                self._gui._dlg_mini_systems._shown = True
+                self._gui._dlg_mini_systems._on_apply(e=None)
+            
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):

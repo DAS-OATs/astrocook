@@ -345,7 +345,7 @@ class Graph(object):
             self._ax.set_ylim(ylim)
 
         for s in sess:
-            self._seq(s, norm)
+            self._seq(s, norm, init_cursor=init_cursor)
         if legend:
             self._ax.legend()
 
@@ -395,7 +395,7 @@ class Graph(object):
         self._canvas.draw()
         shade.remove()
 
-    def _seq(self, sess, norm):
+    def _seq(self, sess, norm, init_cursor=True):
         detail = self._panel != self._gui._graph_main._panel
         if detail:
             focus = self._gui._graph_det
@@ -591,15 +591,23 @@ class Graph(object):
                         gs._kwargs.pop('label', None)
                         #print("after", x,t)
                 elif gs._type == 'axvline_special':
+                    try:
+                        cz = self._cursor._z
+                    except:
+                        pass
+
                     self._cursor = gs
+
                     self._cursor_line = []
                     if gs._z == 0:
                         #break
                         #gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
                         #print('gs_xem', gs._xem)
                         #gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
-                        gs._z = self._z
-                        #print(gs._z)
+                        try:
+                            gs._z = cz
+                        except:
+                            gs._z = self._z
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
                         #xem = self._x

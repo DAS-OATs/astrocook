@@ -275,7 +275,6 @@ class GUI(object):
             if self._sess_sel.systs is None:
                 self._graph_det._on_close()
             else:
-
                 graph = self._graph_det._graph
                 if hasattr(graph, '_axes'):
                     for key in graph._zems:
