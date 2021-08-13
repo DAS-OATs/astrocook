@@ -1771,7 +1771,12 @@ class CookbookAbsorbers(object):
 
         if series_ref != None:
             w = np.where(systs._t['series']==series_ref)
-            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+            #hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+
+            # Rebecca's fix
+            median_z = np.nanmedian(systs._t['z'][w])
+            z_lower_boundary = np.round(((median_z + 0.5 * binz) % binz) / dz) * dz
+            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(z_lower_boundary, 10, binz))
         else:
             hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 10, binz))
 
@@ -1880,7 +1885,7 @@ class CookbookAbsorbers(object):
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         return 0
-        
+
 
     def _systs_like(self, series='Ly-a', thres=0.997, distance=10, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
