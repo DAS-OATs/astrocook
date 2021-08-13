@@ -181,11 +181,21 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
 
+        # Freeze cursors
+        self._gui._graph_main._graph._cursor_frozen = True
+        self._gui._graph_det._graph._cursor_frozen = True
+
         params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
                               params_last = params)
         self._gui._refresh(init_cursor=True)
-
+        """
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
+        """
 
     def _on_close(self, event=None):
         self._closed = True
