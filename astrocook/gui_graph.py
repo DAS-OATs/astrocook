@@ -107,10 +107,22 @@ class GUIGraphMain(wx.Frame):
             % (self._gui._panel_sess._sel, z, (len(sess._cursors)-1)%10)
         self._elem = sess._graph_elem
 
+        self._gui._refresh()
+        """
         if hasattr(self._gui, '_dlg_mini_graph'):
             self._gui._dlg_mini_graph._refresh()
         self._refresh(sess)
+        """
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            # Unfreeze cursors in case they were frozen
+            self._gui._graph_main._graph._cursor_frozen = False
+            self._gui._graph_det._graph._cursor_frozen = False
 
+            # Refresh cursor
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
 
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
