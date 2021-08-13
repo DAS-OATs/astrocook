@@ -26,6 +26,7 @@ class Graph(object):
         self._sel = sel
         self._fig = Figure()
         self._cursor_lines = []
+        self._cursor_frozen = False
         self._zoom = False
         self._click_1 = False
 
@@ -205,7 +206,7 @@ class Graph(object):
         except:
             pass
 
-        if 'cursor_z_series' in self._sel:
+        if 'cursor_z_series' in self._sel and self._cursor_frozen == False:
             if hasattr(self, '_xs'):
                 for l, key in zip(self._cursor_lines, self._xs):
                     if self._text != None:

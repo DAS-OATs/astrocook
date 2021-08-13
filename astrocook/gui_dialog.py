@@ -162,11 +162,16 @@ class GUIDialog(wx.Dialog):
 
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
+                # Unfreeze cursors in case they were frozen
+                self._gui._graph_main._graph._cursor_frozen = False
+                self._gui._graph_det._graph._cursor_frozen = False
+
+                # Refresh cursor
                 self._gui._dlg_mini_systems._shown = False
                 self._gui._dlg_mini_systems._on_cancel(e=None)
                 self._gui._dlg_mini_systems._shown = True
                 self._gui._dlg_mini_systems._on_apply(e=None)
-            
+
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):
