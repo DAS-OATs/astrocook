@@ -188,21 +188,22 @@ class Graph(object):
 
         # Make system id appear when you hover close enough to a system axvline
         try:
-            xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
-            argmin = np.argmin(xdiff)
-            try:
-                self._tag.remove()
-            except:
-                pass
-            if self._systs_x.si.unit == au.m: thres = 0.5
-            if self._systs_x.si.unit == au.m/au.s: thres = 5
-            if xdiff[argmin] < thres:
-                self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
-                                    % (self._systs_series[argmin],
-                                       self._systs_l[argmin].value,
-                                       self._systs_l[argmin].unit,
-                                       self._systs_z[argmin]),
-                                    color=self._systs_color)
+            if self._systs_id:
+                xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
+                argmin = np.argmin(xdiff)
+                try:
+                    self._tag.remove()
+                except:
+                    pass
+                if self._systs_x.si.unit == au.m: thres = 0.5
+                if self._systs_x.si.unit == au.m/au.s: thres = 5
+                if xdiff[argmin] < thres:
+                    self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
+                                        % (self._systs_series[argmin],
+                                           self._systs_l[argmin].value,
+                                           self._systs_l[argmin].unit,
+                                           self._systs_z[argmin]),
+                                        color=self._systs_color)
         except:
             pass
 
@@ -408,6 +409,7 @@ class Graph(object):
         #print(self._zem)
         #if detail: sess.cb.x_convert(zem=self._zem)
         #print(detail, sess.spec.x.unit)
+        self._systs_id = False
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
@@ -417,6 +419,7 @@ class Graph(object):
                 sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
+                if struct == 'systs': self._systs_id = True
                 if struct in ['spec','lines','nodes','systs']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
