@@ -14,6 +14,7 @@ import logging
 from matplotlib import pyplot as plt
 import numpy as np
 from sphinx.util import docstrings as ds
+from time import time
 import wx
 import wx.lib.mixins.listctrl as listmix
 
@@ -895,6 +896,7 @@ class GUIPanelSession(wx.Frame):
 
         # Reversed to parse sessions with higher number first, and avoid overwriting
         sess_list = self._gui._sess_list[::-1]
+        #print(time())
         for i, s in enumerate(sess_list):
             if s.spec is not None:
                 for c in sorted(s.spec._t.colnames, key=len, reverse=True):
@@ -902,16 +904,18 @@ class GUIPanelSession(wx.Frame):
                                         str(list(np.array(s.spec._t[c]))))
             if s.lines is not None:
                 for c in sorted(s.lines._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,lines,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.lines._t[c]))))
             if s.systs is not None:
                 for c in sorted(s.systs._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,systs,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
+        #print(time())
         #print(expr)
         #print(len(expr))
         out = expr_eval(ast.parse(expr, mode='eval').body)
+        #print(time())
 
         _, _, all_out = self._struct_parse(col, length=2)
         struct = getattr(self._gui._sess_list[all_out[0]], all_out[1])
@@ -923,6 +927,8 @@ class GUIPanelSession(wx.Frame):
                 struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
         else:
             struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
+
+        #print(time())
 
         return 0
 
