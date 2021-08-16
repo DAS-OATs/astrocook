@@ -1374,6 +1374,13 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
@@ -1424,6 +1431,9 @@ class CookbookAbsorbers(object):
         #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
+        if recompress:
+            systs._compress()
+
         return 0
 
 
@@ -1459,6 +1469,12 @@ class CookbookAbsorbers(object):
         #trans_arr = np.array(np.meshgrid(t_d, t_d)).T.reshape(-1,2)
 
         systs = dc(self.sess.systs)
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
         count = 0
         #for j, syst in enum_tqdm(systs._t[3:4], len(systs._t[3:4]),
         for j, syst in enum_tqdm(systs._t, len(systs._t),
@@ -1494,10 +1510,15 @@ class CookbookAbsorbers(object):
         self._systs_unify()
         #self._mods_recreate()
         self._spec_update()
+
+        if compressed:
+            systs._compress()
+
         logging.info("I completed %i systems (transitions considered: %s)." \
                      % (count, series))
         #self._refit_n = refit_n_temp
         #self._max_nfev = max_nfev_temp
+
 
         return 0
 
@@ -1516,6 +1537,13 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
         logging.info("I will improve systems in at most %i iterations." \
                      % self._impr_n)
         counts = 0
@@ -1526,6 +1554,9 @@ class CookbookAbsorbers(object):
             i += 1
             counts += c
             self.systs_fit(refit_n=refit_n)
+
+        if compressed:
+            systs._compress()
 
         logging.info("I improved systems in %i iterations, adding %i "
                      "components" % (i,counts))
@@ -1545,6 +1576,11 @@ class CookbookAbsorbers(object):
         self.lines_find(col='deabs', append=False)
 
         dx_thres = np.max(spec.xmax.value-spec.xmin.value)
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
 
         mods_sel = []
         count = 0
@@ -1610,6 +1646,10 @@ class CookbookAbsorbers(object):
         self.sess.lines = lines
         self.lines_find(col='deabs', append=True)
         self._spec_update()
+
+        if compressed:
+            systs._compress()
+
         logging.info("I added %i systems." % count)
         return count
 
@@ -1762,6 +1802,11 @@ class CookbookAbsorbers(object):
         spec = self.sess.spec
         systs = self.sess.systs
 
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
         if series == 'all':
             trans_ex = np.unique(np.ravel([trans_parse(s)
                                            for s in systs._t['series']]))
@@ -1816,6 +1861,9 @@ class CookbookAbsorbers(object):
                 self._z_likes = z_likes
                 self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
                                  dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
+
+        if compressed:
+            systs._compress()
         """
         logging.info("I'm completing systems with %i additional transitions." \
                      % len(self._likes))
@@ -1913,6 +1961,14 @@ class CookbookAbsorbers(object):
             series = ';'.join(trans_d)
 
         spec = self.sess.spec
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
+
         likes = self._likes
         z_likes = self._z_likes
         series_split = series.split(';')
@@ -1968,6 +2024,9 @@ class CookbookAbsorbers(object):
                     self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
                     self._spec_update()
         #plt.show()
+
+        if compressed:
+            systs._compress()
 
         return 0
 
@@ -2049,6 +2108,14 @@ class CookbookAbsorbers(object):
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
 
+        systs = self.sess.systs
+
+        recompress = False
+        if systs._compressed:
+            recompress = True
+            systs._compress()
+
+
         for s in series.split(';'):
             z_list, y_list = self._lines_cands_find(s, z_start, z_end, dz)
             z_list, logN_list, _ = self.sess.lines._cands_find2(s, z_start, z_end,
@@ -2069,6 +2136,10 @@ class CookbookAbsorbers(object):
             #self._systs_fit()
             self._systs_cycle()
             self._spec_update()
+
+        if compressed:
+            systs._compress()
+
         return 0
 
     def syst_new_from_resids_new(self, series='Ly-a', z_start=0, z_end=6,
