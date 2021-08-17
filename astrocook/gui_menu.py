@@ -96,6 +96,18 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
+    def _on_dialog_mini_defs(self, event, title, targ, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_menu', '_on_dialog_mini_defs',
+                                 {'event': None, 'title': title, 'targ': targ,
+                                  'log': False})
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_defs._refresh()
+        else:
+            dlg = GUIDialogMiniDefaults(self._gui, title)
+
+
     def _on_dialog_mini_graph(self, event, title, targ, log=True):
         if log:
             sess = self._gui._sess_sel
@@ -693,8 +705,14 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_tab(e, 'systs'), key='systs')
         self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
                          dlg_mini='meta', alt_title="Metadata")
-        self._item_graph(self._menu, tab_id[4], 'spec', "Session log",
+        self._item(self._menu, tab_id[4], 'systs', "Compress system table",
+                   self._on_compress)
+        self._menu.AppendSeparator()
+        info_id = [start_id+101, start_id+102, start_id+103]
+        self._item_graph(self._menu, info_id[0], 'spec', "Session log",
                          dlg_mini='log', alt_title="Session log")
+        self._item_graph(self._menu, info_id[1], 'spec', "Session defaults",
+                         dlg_mini='defs', alt_title="Session defaults")
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',
@@ -704,8 +722,6 @@ class GUIMenuView(GUIMenu):
                    "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
         """
-        self._item(self._menu, start_id+101, 'systs', "Compress system table",
-                   self._on_compress)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)

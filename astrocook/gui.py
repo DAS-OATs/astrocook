@@ -1,4 +1,5 @@
 from . import * #version
+from .defaults import *
 from .functions import expr_eval
 from .gui_graph import *
 from .gui_image import *
@@ -455,6 +456,7 @@ class GUIPanelSession(wx.Frame):
         #print(self._gui._sess_item_list)
 
         sess.log = GUILog(self._gui)
+        sess.defs = Defaults(self._gui)
 
         missing = []
         for i in range(self._tab.GetItemCount()+1):
