@@ -5,11 +5,11 @@
     "b": 10.0,
     "btur": 0.0,
     "resol": 35000,
-    "z_vary": True,
-    "logN_vary": True,
-    "b_vary": True,
-    "btur_vary": False,
-    "resol_vary": False,
+    "z_vary": true,
+    "logN_vary": true,
+    "b_vary": true,
+    "btur_vary": false,
+    "resol_vary": false,
     "z_min": 1e-3,
     "logN_min": 10,
     "b_min": 1.0,
@@ -20,10 +20,10 @@
     "b_max": 100.0,
     "btur_max": 100.0,
     "resol_max": 1e6,
-    "z_expr": None,
-    "logN_expr": None,
-    "b_expr": None,
-    "btur_expr": None,
-    "resol_expr": None
+    "z_expr": null,
+    "logN_expr": null,
+    "b_expr": null,
+    "btur_expr": null,
+    "resol_expr": null
   }
 }

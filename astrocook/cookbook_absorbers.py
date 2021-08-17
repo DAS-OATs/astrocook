@@ -47,7 +47,8 @@ class CookbookAbsorbers(object):
         logN_list = np.arange(12, 14, 0.1)
         for logN in logN_list:
             mod = SystModel(spec, systs, z0=z)
-            mod._new_voigt(series, z, logN, b, resol)
+            mod._new_voigt(series, z, logN, b, resol,
+                           defs=self.sess.defs.dict['voigt'])
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
@@ -325,7 +326,8 @@ class CookbookAbsorbers(object):
                         vars[k.split('_')[-1]+'_vary'] = False
             mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                           b=s['b'], resol=s['resol'])
+                           b=s['b'], resol=s['resol'],
+                           defs=self.sess.defs.dict['voigt'])
             self._mods_update(mod)
         mods_n = len(self.sess.systs._mods_t)
         if verbose:
@@ -338,7 +340,6 @@ class CookbookAbsorbers(object):
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
-
         #print(systs._constr)
         if only_constr:
             mod_sel = np.array([], dtype=int)
@@ -408,7 +409,8 @@ class CookbookAbsorbers(object):
                     corr_id.append(np.max(systs_t['id'])+1)
                     mod._id = np.max(systs_t['id'])+1
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                               b=s['b'], resol=s['resol'])
+                               b=s['b'], resol=s['resol'],
+                               defs=self.sess.defs.dict['voigt'])
                 self._mods_update(mod)
                 #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
@@ -503,7 +505,8 @@ class CookbookAbsorbers(object):
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
+        mod._new_voigt(series, z, logN, b, resol,
+                       defs=self.sess.defs.dict['voigt'])
 
         # When a single system is added, it is stored only on the model table
         self._mods_update(mod, incr=False)

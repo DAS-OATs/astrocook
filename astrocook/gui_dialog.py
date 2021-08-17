@@ -310,6 +310,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         self._gui = gui
         self._gui._dlg_mini_defs = self
         self._sel = dc(self._gui._panel_sess._sel)
+        self._defs_str = self._gui._sess_sel.defs.str
+        self._defs_dict = self._gui._sess_sel.defs.dict
         super(GUIDialogMiniDefaults, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = True
@@ -317,12 +319,11 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _box_ctrl(self):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
         descr = wx.StaticText(
-                    self._panel, -1,
-                    label="Parameters")
-        self._ctrl_elem = wx.TextCtrl(self._panel, -1, value="ciao",
-                                      size=(360, 200), style = wx.TE_MULTILINE)
+                    self._panel, -1)
+        self._ctrl_defs = wx.TextCtrl(self._panel, -1, value=self._defs_str,
+                                      size=(400, 300), style = wx.TE_MULTILINE)
         #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
-        fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
@@ -333,7 +334,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
         #apply_button.SetDefault()
         buttons.Add(apply_button, 0, wx.RIGHT, border=5)
-        default_button = wx.Button(self, label='Load')
+        default_button = wx.Button(self, label='Load from file')
         default_button.Bind(wx.EVT_BUTTON, self._on_load)
         buttons.Add(default_button)
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
@@ -342,7 +343,16 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
     def _on_apply(self, e=None, refresh=True, log=True):
-        pass
+        defs = self._ctrl_defs.GetValue()
+        defs = defs.replace('“', '"')
+        defs = defs.replace('”', '"')
+        defs = defs.replace('—', '--')
+        self._ctrl_defs.SetValue(defs)
+        sd = self._gui._sess_sel.defs
+        defs_dict = dict(sd.dict)
+        sd.update(defs)
+        for i in sd.dict:
+            print({k: sd.dict[i][k] for k, _ in set(sd.dict[i].items()) - set(defs_dict[i].items()) })
 
     def _on_load(self, e=None, refresh=True, log=True):
         pass
@@ -522,8 +532,6 @@ class GUIDialogMiniLog(GUIDialogMini):
         """
         self._gui._log_rerun(log)
         self._ctrl_log.SetValue(self._log)
-
-
 
     def _on_cancel(self, e=None):
         self._shown = False

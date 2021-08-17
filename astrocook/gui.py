@@ -482,12 +482,14 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
             self._gui._sess_sel.open()
+
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
         #print(self._gui._sess_sel._graph_elem)
         #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         #self._gui._refresh(autolim=False)
+
         self._gui._refresh(init_tab=False, autolim=False)
 
         # Enable import from depending on how many sessions are present
@@ -496,6 +498,7 @@ class GUIPanelSession(wx.Frame):
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
         edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
         edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>0)
+
 
 
     def _on_edit(self, event):
