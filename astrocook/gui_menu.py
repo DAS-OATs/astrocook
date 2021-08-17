@@ -735,13 +735,17 @@ class GUIMenuView(GUIMenu):
         #                  "Edit graph details", '_sel_graph_cols', obj=self)
 
 
-    def _on_compress(self, event):
+    def _on_compress(self, event, log=True):
         if self._menu.GetLabel(self._start_id+101) == "Compress system table":
             self._menu.SetLabel(self._start_id+101, "Uncompress system table")
         else:
             self._menu.SetLabel(self._start_id+101, "Compress system table")
 
         self._gui._sess_sel.systs._compress()
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_menu_view', '_on_compress',
+                                 {'event': None, 'log': False})
         self._gui._refresh()
 
     def _on_ima(self, event, obj):
