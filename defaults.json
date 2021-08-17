@@ -1,10 +1,5 @@
 {
   "voigt": {
-    "z": 0.0,
-    "logN": 13,
-    "b": 10.0,
-    "btur": 0.0,
-    "resol": 35000,
     "z_vary": true,
     "logN_vary": true,
     "b_vary": true,

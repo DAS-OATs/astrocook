@@ -318,12 +318,10 @@ class GUIDialogMiniDefaults(GUIDialogMini):
 
     def _box_ctrl(self):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
-        descr = wx.StaticText(
-                    self._panel, -1)
         self._ctrl_defs = wx.TextCtrl(self._panel, -1, value=self._defs_str,
                                       size=(400, 300), style = wx.TE_MULTILINE)
         #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
-        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND)])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
@@ -343,16 +341,32 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
     def _on_apply(self, e=None, refresh=True, log=True):
+        """
         defs = self._ctrl_defs.GetValue()
         defs = defs.replace('“', '"')
         defs = defs.replace('”', '"')
         defs = defs.replace('—', '--')
         self._ctrl_defs.SetValue(defs)
+        """
         sd = self._gui._sess_sel.defs
         defs_dict = dict(sd.dict)
-        sd.update(defs)
+        self._set(self._ctrl_defs.GetValue())
         for i in sd.dict:
-            print({k: sd.dict[i][k] for k, _ in set(sd.dict[i].items()) - set(defs_dict[i].items()) })
+            for k, v in set(sd.dict[i].items()) - set(defs_dict[i].items()):
+                for e in sd._extend:
+                    if k not in sd._extend[e]:
+                        logging.info("I changed parameter %s %s from %s to %s."
+                                     % (i, k, str(defs_dict[i][k]),
+                                        str(sd.dict[i][k])))
+            #diff = {k: sd.dict[i][k] for k, _ \
+            #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_defs', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
+        if refresh:
+            self._gui._refresh(init_cursor=True, init_tab=False)
+
 
     def _on_load(self, e=None, refresh=True, log=True):
         pass
@@ -360,6 +374,20 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
+
+    def _set(self, value, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_defs', '_set',
+                                 {'value': value, 'log': False})
+
+        defs = value
+        defs = defs.replace('“', '"')
+        defs = defs.replace('”', '"')
+        defs = defs.replace('—', '--')
+        self._ctrl_defs.SetValue(defs)
+        self._gui._sess_sel.defs.update(defs)
+
 
 
 class GUIDialogMiniGraph(GUIDialogMini):
