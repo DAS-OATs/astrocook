@@ -377,8 +377,29 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             self._gui._refresh(init_cursor=True, init_tab=False)
 
 
-    def _on_load(self, e=None, refresh=True, log=True):
-        pass
+    def _on_load(self, e=None, path=None, log=True):
+        sess = self._gui._sess_sel
+
+        if path is None:
+            wildcard = "JSON files (*.json)|*.json"
+            with wx.FileDialog(self, "Open file", '.',
+                               wildcard=wildcard,
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
+                               as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                path = fileDialog.GetPath()
+        sess.defs.open(path)
+
+        if log:
+            sess.log.append_full('_dlg_mini_defs', '_on_load',
+                                 {'e': None, 'path': path})
+
+        self._refresh()
+        if hasattr(sess, 'systs'):
+            sess.cb._mods_recreate2()
+        self._gui._refresh(init_cursor=True, init_tab=False)
+
 
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False

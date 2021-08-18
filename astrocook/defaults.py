@@ -15,11 +15,12 @@ class Defaults(object):
                         "resol": 35000}}
         self.open()
 
-    def open(self, file='defaults.json'):
+    def open(self, path=None, file='defaults.json'):
 
-        p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
-            + '/../' + file
-        with open(p) as json_file:
+        if path is None:
+            path = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
+                   + '/../' + file
+        with open(path) as json_file:
             self.str = json_file.read()
             self.str = self.str.replace('“', '"')
             self.str = self.str.replace('”', '"')
