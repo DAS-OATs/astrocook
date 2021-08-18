@@ -318,10 +318,16 @@ class GUIDialogMiniDefaults(GUIDialogMini):
 
     def _box_ctrl(self):
         fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="When clicking on “Apply”, the GUI is refreshed and the\n"
+                          "system models are recreated, but not re-fitted (so the\n"
+                          "fitting parameters in the system table may not reflect\n"
+                          "the changes). Try “fit systems” to re-fit them.")
         self._ctrl_defs = wx.TextCtrl(self._panel, -1, value=self._defs_str,
                                       size=(400, 300), style = wx.TE_MULTILINE)
         #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
-        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND)])
+        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
@@ -348,16 +354,17 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs = defs.replace('—', '--')
         self._ctrl_defs.SetValue(defs)
         """
+        sess = self._gui._sess_sel
         sd = self._gui._sess_sel.defs
-        defs_dict = dict(sd.dict)
+        defs_dict = dict(sess.defs.dict)
         self._set(self._ctrl_defs.GetValue())
-        for i in sd.dict:
-            for k, v in set(sd.dict[i].items()) - set(defs_dict[i].items()):
-                for e in sd._extend:
-                    if k not in sd._extend[e]:
+        for i in sess.defs.dict:
+            for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
+                for e in sess.defs._extend:
+                    if k not in sess.defs._extend[e]:
                         logging.info("I changed parameter %s %s from %s to %s."
                                      % (i, k, str(defs_dict[i][k]),
-                                        str(sd.dict[i][k])))
+                                        str(sess.defs.dict[i][k])))
             #diff = {k: sd.dict[i][k] for k, _ \
             #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
         if log:
@@ -365,6 +372,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             sess.log.append_full('_dlg_mini_defs', '_on_apply',
                                  {'e': None, 'refresh': refresh})
         if refresh:
+            if hasattr(sess, 'systs'):
+                sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
 
 
@@ -374,6 +383,9 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
+
+    def _refresh(self):
+        self._ctrl_defs.SetValue(self._defs_str)
 
     def _set(self, value, log=True):
         if log:

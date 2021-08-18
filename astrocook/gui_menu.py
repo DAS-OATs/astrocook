@@ -100,8 +100,7 @@ class GUIMenu(object):
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_defs',
-                                 {'event': None, 'title': title, 'targ': targ,
-                                  'log': False})
+                                 {'event': None, 'title': title, 'targ': targ})
         if hasattr(self._gui, '_dlg_mini_graph'):
             self._gui._dlg_mini_defs._refresh()
         else:
@@ -153,7 +152,7 @@ class GUIMenu(object):
                         (event, title, targ)
                 gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = True
-                gui_dlg_mini._on_apply(event, refresh=True)
+                gui_dlg_mini._on_apply(event, refresh=False)
                 if dlg_mini == 'systems':
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
             else:
