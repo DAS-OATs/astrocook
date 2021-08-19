@@ -194,6 +194,9 @@ class GUI(object):
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
+        if hasattr(self, '_dlg_mini_defs') \
+            and self._dlg_mini_defs._shown:
+            self._dlg_mini_defs._refresh()
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._graph_main._elem = self._sess_sel._graph_elem
