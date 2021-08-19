@@ -88,8 +88,11 @@ class SystModel(LMComposite):
         #self._pars.pretty_print()
 
 
-    def _make_defs(self):
-        self._defs = dc(pars_std_d)
+    def _make_defs(self, defs=None):
+        if defs is None:
+            self._defs = dc(pars_std_d)
+        else:
+            self._defs = defs
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
@@ -406,7 +409,7 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None):
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None, defs=None):
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
@@ -416,7 +419,7 @@ class SystModel(LMComposite):
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
-        self._make_defs()
+        self._make_defs(defs)
 
         #self._make_lines()
         self._make_lines_psf()
