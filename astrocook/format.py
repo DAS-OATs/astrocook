@@ -434,6 +434,7 @@ class Format(object):
 
     def generic_spectrum(self, hdul):
         """ Generic spectrum """
+
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
@@ -469,11 +470,12 @@ class Format(object):
             """
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
-            for i,c in enumerate(data.colnames):
-                if c not in [x_col_names[x_col], y_col_names[y_col],
-                             dy_col_names[dy_col]]:
-                    spec._t[c] = data[c]
-                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+            if len(hdul)>1:
+                for i,c in enumerate(data.colnames):
+                    if c not in [x_col_names[x_col], y_col_names[y_col],
+                                 dy_col_names[dy_col]]:
+                        spec._t[c] = data[c]
+                        #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
         except:
             return None
