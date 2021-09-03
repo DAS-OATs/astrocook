@@ -22,8 +22,8 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.96,
-                 size_y=wx.DisplaySize()[1]*0.5,
+                 size_x=wx.DisplaySize()[0]*0.8,#*0.96,
+                 size_y=wx.DisplaySize()[1]*0.52,#*0.5,
                  main=True,
                  **kwargs):
         """ Constructor """
@@ -116,7 +116,8 @@ class GUIGraphMain(wx.Frame):
         if hasattr(self._gui, '_dlg_mini_systems'):
             # Unfreeze cursors in case they were frozen
             self._gui._graph_main._graph._cursor_frozen = False
-            self._gui._graph_det._graph._cursor_frozen = False
+            if hasattr(self._gui, '_graph_det'):
+                self._gui._graph_det._graph._cursor_frozen = False
 
             # Refresh cursor
             self._gui._dlg_mini_systems._shown = False
