@@ -15,7 +15,9 @@ nav_order: 1
 {:toc}
 ---
 
-## Open session
+## Session and GUI handling
+
+### Open session
 
 <table>
   <tbody>
@@ -48,7 +50,7 @@ nav_order: 1
 
 **Open a new session.** Session can be opened from previously saved Astrocook archive (`.acs`), a FITS file (`.fits`), or a JSON file (`.json`). In the last case, the session is built by running the workflow in the JSON file, and the workflow is inherited in the session log.
 
-## Equalize sessions
+### Equalize sessions
 
 <table>
   <tbody>
@@ -88,7 +90,7 @@ nav_order: 1
 
 **Equalize the flux level of one session to another one.** The last-selected session is equalized to the first-selected one. The equalization factor is the ratio of the median flux within the specified wavelength interval. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the two input sessions.
 
-## Combine sessions
+### Combine sessions
 
 <table>
   <tbody>
@@ -126,7 +128,48 @@ nav_order: 1
 
 **Combine two or more sessions.** A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the input sessions.
 
-## Import structure
+### Refresh the GUI
+
+_refresh(self, init_cursor=False, init_tab=True, autolim=True,
+                 autosort=True, _xlim=None):
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>GUI._refresh</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>init_cursor</code>: Initialize system cursor</li>
+          <li><code>init_tab</code>: Initialize tables</li>
+          <li><code>autolim</code>: Automatically set limits to the plot axes</li>
+          <li><code>autosort</code>: Automatically sort tables</li>
+          <li><code>_xlim</code>: Limits for the plot x axis</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        "cookbook": "",
+        "recipe": "_refresh",
+        "params": {
+          "autosort": false
+        }
+      }
+    </code></td>
+    </tr>
+  </tbody>
+</table>
+
+**Refresh the GUI.** This recipe is designed for internal use. The user should call it only at the end of a workflow, to update the visualization of the data in the GUI. `autosort` should be set to `false` not to interfere with other possible sorting of the tables in the workflow. Other parameters should be disregarded.
+
+## Structure handling
+
+### Import structure
 
 <table>
   <tbody>
@@ -161,7 +204,7 @@ nav_order: 1
 
 **Import a data structure from a session into the current one.** The structure to be imported is described by a string with the session number and the structure tag (`spec`, `lines`, `systs`), separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
 
-## Modify structures
+### Modify structures
 
 <table>
   <tbody>
@@ -336,7 +379,34 @@ nav_order: 1
 
 **Scale the y axis by a constant factor.** The spectrum and the line list are rescaled in place, without starting a new session.
 
-## Scale y axis to median 🚧
+## Scale y axis to median
+
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.y_scale_med</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        –
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><code>
+      {
+        "cookbook": "cb",
+        "recipe": "y_scale_med",
+        "params": { }
+      }
+    </code></td>
+    </tr>
+  </tbody>
+</table>
+
+**Scale the y axis to its median.** The spectrum and the line list are rescaled in place, without starting a new session.
 
 ## Shift to and from frame 🚧
 
@@ -386,42 +456,3 @@ nav_order: 1
 ## Estimate resolution  🚧
 
 ## Estimate SNR 🚧
-
-## Refresh the GUI
-
-_refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True, _xlim=None):
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUI._refresh</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        <ul>
-          <li><code>init_cursor</code>: Initialize system cursor</li>
-          <li><code>init_tab</code>: Initialize tables</li>
-          <li><code>autolim</code>: Automatically set limits to the plot axes</li>
-          <li><code>autosort</code>: Automatically sort tables</li>
-          <li><code>_xlim</code>: Limits for the plot x axis</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "",
-        "recipe": "_refresh",
-        "params": {
-          "autosort": false
-        }
-      }
-    </code></td>
-    </tr>
-  </tbody>
-</table>
-
-**Refresh the GUI.** This recipe is designed for internal use. The user should call it only at the end of a workflow, to update the visualization of the data in the GUI. `autosort` should be set to `false` not to interfere with other possible sorting of the tables in the workflow. Other parameters should be disregarded.
