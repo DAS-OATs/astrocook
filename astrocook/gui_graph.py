@@ -22,8 +22,8 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.8,#*0.96,
-                 size_y=wx.DisplaySize()[1]*0.52,#*0.5,
+                 size_x=wx.DisplaySize()[0]*0.96, #0.87
+                 size_y=wx.DisplaySize()[1]*0.5,  #0.4
                  main=True,
                  **kwargs):
         """ Constructor """

@@ -13,10 +13,17 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
     NavigationToolbar2WxAgg, _convert_agg_to_wx_bitmap
 from matplotlib.figure import Figure
+import matplotlib.ticker as mticker
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
 import wx
+
+# Force a given format in axis - currently not uses
+# From https://stackoverflow.com/questions/49351275/matplotlib-use-fixed-number-of-decimals-with-scientific-notation-in-tick-labels
+class ScalarFormatterForceFormat(mticker.ScalarFormatter):
+    def _set_format(self):  # Override function that finds format to use.
+        self.format = "%1.2f"  # Give format here
 
 class Graph(object):
 
@@ -297,6 +304,17 @@ class Graph(object):
         self._ax.set_xlabel(self._xunit)
         self._ax.set_ylabel(self._yunit)
 
+        #self._ax.yaxis.set_major_formatter(mticker.StrMethodFormatter('{x:,.2e}'))
+
+        #f = mticker.ScalarFormatter(useOffset=False, useMathText=True)
+        #g = lambda x,pos : "${}$".format(f._formatSciNotation('%1.10e' % x))
+        #self._ax.yaxis.set_major_formatter(mticker.FuncFormatter(g))
+
+        yfmt = ScalarFormatterForceFormat()
+        yfmt.set_powerlimits((0,0))
+        self._ax.yaxis.set_major_formatter(yfmt)
+
+
         # Rest frame axis
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
@@ -575,7 +593,10 @@ class Graph(object):
                     ylim = self._ax.get_ylim()
                     trans = transforms.blended_transform_factory(
                                 self._ax.transData, self._ax.transAxes)
-                    reg = h2o_reg/(1+sess.spec._rfz)
+                    if hasattr(sess.spec, '_rfz_man'):
+                        reg = h2o_reg/(1+sess.spec._rfz_man)
+                    else:
+                        reg = h2o_reg/(1+sess.spec._rfz)
                     x = gs._x.to(au.nm).value
                     where = np.logical_and(x>reg[0][0], x<reg[0][1])\
                                 +np.logical_and(x>reg[1][0], x<reg[1][1])\
