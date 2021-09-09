@@ -56,4 +56,4 @@ class CookbookGraph(object):
         gui._refresh()
 
     def save(self, name='fig.pdf'):
-        self.sess._gui._graph_main._graph._fig.savefig(name)
+        self.sess._gui._graph_main._graph._fig.savefig(name, bbox_inches='tight')

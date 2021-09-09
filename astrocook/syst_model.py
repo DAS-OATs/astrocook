@@ -9,6 +9,8 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+import warnings
+warnings.filterwarnings("ignore")
 
 thres = 1e-2
 
@@ -38,17 +40,22 @@ class SystModel(LMComposite):
         vary = np.any([self._pars[p].vary for p in self._pars])
         if vary:
             time_start = datetime.datetime.now()
-        #self._pars.pretty_print()
+            #for p in self._pars:
+            #    if '_z' in p:
+            #        print(self._pars[p])
+            #self._pars.pretty_print()
             if 'max_nfev' in fit_kws:
                 max_nfev = fit_kws['max_nfev']
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
             fit_kws['ftol'] = 1e-3
+            #print('out', len(self._xf), self._xf)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
                                              fit_kws=fit_kws,
+                                             nan_policy='omit',
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
                                              #method='emcee')
@@ -56,6 +63,9 @@ class SystModel(LMComposite):
             #print(fit.result.message)
             time_end = datetime.datetime.now()
             self._pars = fit.params
+            #for p in self._pars:
+            #    if '_z' in p:
+            #        print(self._pars[p])
             #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
             self._chi2r = fit.redchi
@@ -78,8 +88,11 @@ class SystModel(LMComposite):
         #self._pars.pretty_print()
 
 
-    def _make_defs(self):
-        self._defs = dc(pars_std_d)
+    def _make_defs(self, defs=None):
+        if defs is None:
+            self._defs = dc(pars_std_d)
+        else:
+            self._defs = defs
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
@@ -388,14 +401,15 @@ class SystModel(LMComposite):
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
-        self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        #self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
+        self._wf = np.array(np.power(spec._t['cont'][c]/spec.dy[c], 2))
         try:
             self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
                                       for x in self._xr])
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None):
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None, defs=None):
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
@@ -405,7 +419,7 @@ class SystModel(LMComposite):
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
-        self._make_defs()
+        self._make_defs(defs)
 
         #self._make_lines()
         self._make_lines_psf()

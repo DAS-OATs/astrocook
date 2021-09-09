@@ -2,10 +2,12 @@ from .functions import get_selected_cells, trans_parse
 from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
+import cProfile
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pprint
+import pstats
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -587,6 +589,19 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
 
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
+        labels = self._labels_extract()
+        self._ids = np.array([int(float(self._tab.GetCellValue(
+                              i, np.where(labels == 'id')[0][0]))) \
+                              for i in range(self._tab.GetNumberRows())])
+
+    def _data_init(self, from_scratch=True, autosort=False, attr=None):
+        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
+        labels = self._labels_extract()
+        self._ids = np.array([int(float(self._tab.GetCellValue(
+                              i, np.where(labels == 'id')[0][0]))) \
+                              for i in range(self._tab.GetNumberRows())])
 
     def _data_link_par(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
@@ -816,10 +831,17 @@ class GUITableSystList(GUITable):
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
         if col == -1:
-            self.PopupMenu(GUITablePopup(
-                self._gui, self, event,
-                ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF', 'Maximize CCF', 'sep', 'Improve all'],
-                ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max', None, 'improve']),
+            if self._gui._sess_sel.systs._compressed:
+                title = ['Fit', 'Fit (open dialog)', 'Remove', 'Merge', 'sep',
+                         'CCF', 'Maximize CCF', 'sep', 'Improve all']
+                attr = ['fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
+                        'ccf_max', None, 'improve']
+            else:
+                title = ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF',
+                         'Maximize CCF', 'sep', 'Improve all']
+                attr = ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
+                        None, 'improve']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 
     def _on_link_par(self, event):
@@ -839,7 +861,16 @@ class GUITableSystList(GUITable):
         self._data_link_par(row, col)
 
 
+    def _on_merge(self, event):
+        row = self._data.t[self._gui._tab_popup._event.GetRow()]
+        dlg = GUIDialogMethod(self._gui, 'Merge systems', 'systs_merge',
+                              params_last=[{'num1': row._index+1}])
+
+        self._gui._refresh(init_cursor=True)
+
     def _on_view(self, event, **kwargs):
+        profile = cProfile.Profile()
+        profile.enable()
 
         super(GUITableSystList, self)._on_view(event, **kwargs)
         #self._open['systs'] = True
@@ -854,14 +885,20 @@ class GUITableSystList(GUITable):
                 self._freezes_d[k]=(v[0], 'vary', False)
             else:
                 self._links_d[k]=(v[0], 'expr', v[2])
+        profile.disable()
+        ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
 
 
     def _row_extract(self, id):
+        """
         labels = self._labels_extract()
         ids = np.array([int(float(self._tab.GetCellValue(
                   i, np.where(labels == 'id')[0][0]))) \
                   for i in range(self._tab.GetNumberRows())])
         return np.where(id==ids)[0][0]
+        """
+        return np.where(id==self._ids)[0][0]
 
 
     def _text_colours(self):
@@ -877,6 +914,8 @@ class GUITableSystList(GUITable):
                 if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
                     c = np.where(labels==p.split('_')[-1])[0][0]
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
+                    #    print(id, p,v)
                     if v.vary == False:
                         self._tab.SetCellTextColour(r, c, 'grey')
                     if v.expr != None:

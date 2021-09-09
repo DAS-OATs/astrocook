@@ -96,6 +96,17 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
+    def _on_dialog_mini_defs(self, event, title, targ, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_menu', '_on_dialog_mini_defs',
+                                 {'event': None, 'title': title, 'targ': targ})
+        if hasattr(self._gui, '_dlg_mini_graph'):
+            self._gui._dlg_mini_defs._refresh()
+        else:
+            dlg = GUIDialogMiniDefaults(self._gui, title)
+
+
     def _on_dialog_mini_graph(self, event, title, targ, log=True):
         if log:
             sess = self._gui._sess_sel
@@ -426,13 +437,18 @@ class GUIMenuEdit(GUIMenu):
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+311, None,
-                          "Modify structures", 'struct_modify',
+                          "Modify structures", 'struct_modify2',
+                          enable=len(self._gui._sess_list)>0,
+                          obj=self._gui._panel_sess)
+        self._item_method(self._menu, start_id+312, None,
+                          "Synthetic spectrum from structure",
+                          'spec_from_struct',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+312, 'spec',
-                          "Blackbody", 'bb')
         self._item_method(submenu, start_id+313, 'spec',
+                          "Blackbody", 'bb')
+        self._item_method(submenu, start_id+314, 'spec',
                           "Power-law", 'pl')
         self._menu.AppendSubMenu(submenu, "Apply template")
         self._menu.AppendSeparator()
@@ -447,6 +463,8 @@ class GUIMenuEdit(GUIMenu):
         self._item_method(self._menu, start_id+340, 'spec',
                           "Scale y axis by median", 'y_scale_med')
         self._item_method(self._menu, start_id+341, 'spec',
+                          "Scale y axis by its value at a given x", 'y_scale_x')
+        self._item_method(self._menu, start_id+342, 'spec',
                           "Scale y axis", 'y_scale')
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+350, 'spec',
@@ -455,6 +473,9 @@ class GUIMenuEdit(GUIMenu):
                           "Shift to rest frame", 'shift_to_rf')
         self._item_method(self._menu, start_id+352, 'spec',
                           "Shift from rest frame", 'shift_from_rf')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+360, 'spec',
+                          "Deredden", 'deredden')
 
 
 class GUIMenuFile(GUIMenu):
@@ -527,29 +548,46 @@ class GUIMenuRecipes(GUIMenu):
 
         # Add items to Recipes menu here
         self._item_method(self._menu, start_id+100, 'spec',
-                          "Rebin spectrum", 'rebin')
+                          "Create spectral mask", 'mask')
         self._item_method(self._menu, start_id+101, 'spec',
-                          "Convolve with gaussian", 'gauss_convolve')
+                          "Mask telluric absorption", 'telluric_mask')
         self._item_method(self._menu, start_id+102, 'spec',
-                          "Estimate resolution", 'resol_est')
+                          "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+103, 'spec',
+                          "Convolve with gaussian", 'gauss_convolve')
+        self._item_method(self._menu, start_id+104, 'spec',
+                          "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+105, 'spec',
+                          "Estimate error from RMS", 'rms_est')
+        self._item_method(self._menu, start_id+106, 'spec',
                           "Estimate SNR", 'snr_est')
+        submenu = wx.Menu()
+        self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
+        self._menu.AppendSubMenu(submenu, "Other general recipes")
+
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+150, 'spec', "Clip flux",
+                          'flux_clip')
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'spec',
                           "Continuum from nodes", 'nodes_cont')
+        self._item_method(self._menu, start_id+202, 'spec',
+                          "Continuum from absorbers", 'abs_cont')
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+210, 'spec', "Find peaks",
+        self._item_method(submenu, start_id+210, 'spec', "Correct flux for Ly-a opacity",
+                          'lya_corr')
+        self._item_method(submenu, start_id+211, 'spec', "Find peaks",
                           'peaks_find')
-        self._item_method(submenu, start_id+211, 'lines', "Extract nodes",
+        self._item_method(submenu, start_id+212, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(submenu, start_id+212, 'lines', "Clean nodes",
+        self._item_method(submenu, start_id+213, 'lines', "Clean nodes",
                           'nodes_clean')
-        self._item_method(submenu, start_id+213, 'nodes',
+        self._item_method(submenu, start_id+214, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for continuum")
         self._menu.AppendSeparator()
 
         #self._item_method(self._menu, start_id+301, 'lines',
@@ -559,6 +597,9 @@ class GUIMenuRecipes(GUIMenu):
         #self._item_method(self._menu, start_id+302, 'cont',
         #                  "Add and fit systems from line list",
         #                  'add_syst_from_lines')
+        self._item_method(self._menu, start_id+3005, 'cont',
+                          "New systems from likelihood",
+                          'systs_new_from_like')
         self._item_method(self._menu, start_id+301, 'lines',
                           "New systems from lines",
                           'systs_new_from_lines')
@@ -591,7 +632,7 @@ class GUIMenuRecipes(GUIMenu):
         submenu.AppendSeparator()
         self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for absorbers")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
@@ -663,8 +704,14 @@ class GUIMenuView(GUIMenu):
                    lambda e: self._on_tab(e, 'systs'), key='systs')
         self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
                          dlg_mini='meta', alt_title="Metadata")
-        self._item_graph(self._menu, tab_id[4], 'spec', "Session log",
+        self._item(self._menu, tab_id[4], 'systs', "Compress system table",
+                   self._on_compress)
+        self._menu.AppendSeparator()
+        info_id = [start_id+101, start_id+102, start_id+103]
+        self._item_graph(self._menu, info_id[0], 'spec', "Session log",
                          dlg_mini='log', alt_title="Session log")
+        self._item_graph(self._menu, info_id[1], 'spec', "Session defaults",
+                         dlg_mini='defs', alt_title="Session defaults")
         self._menu.AppendSeparator()
         """
         self._item(self._menu, start_id+101, 'systs',
@@ -674,8 +721,6 @@ class GUIMenuView(GUIMenu):
                    "System detection completeness",
                    lambda e: self._on_ima(e, 'compl'))
         """
-        self._item(self._menu, start_id+101, 'systs', "Compress system table",
-                   self._on_compress)
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)
@@ -683,6 +728,11 @@ class GUIMenuView(GUIMenu):
                    "Toggle log y axis", self._on_logy)
         self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
+        self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+301, 'spec', "Set redshift axis",
+                              'z_ax')
+        self._item(self._menu, start_id+302, 'spec', "Hide redshift axis",
+                   self._on_z_ax_remove)
         self._menu.AppendSeparator()
         self._submenu = wx.Menu()
         self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
@@ -700,13 +750,17 @@ class GUIMenuView(GUIMenu):
         #                  "Edit graph details", '_sel_graph_cols', obj=self)
 
 
-    def _on_compress(self, event):
+    def _on_compress(self, event, log=True):
         if self._menu.GetLabel(self._start_id+101) == "Compress system table":
             self._menu.SetLabel(self._start_id+101, "Uncompress system table")
         else:
             self._menu.SetLabel(self._start_id+101, "Compress system table")
 
         self._gui._sess_sel.systs._compress()
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_menu_view', '_on_compress',
+                                 {'event': None, 'log': False})
         self._gui._refresh()
 
     def _on_ima(self, event, obj):
@@ -768,3 +822,7 @@ class GUIMenuView(GUIMenu):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+
+    def _on_z_ax_remove(self, event, log=False):
+        delattr(self._gui._sess_sel, '_ztrans')
+        self._gui._refresh()

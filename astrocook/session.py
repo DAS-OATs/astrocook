@@ -67,14 +67,18 @@ class Session(object):
 
         format = Format()
 
+        dat = False
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
-                hdul = fits.open(self.path[:-4]+'_spec.fits')
-                hdr = hdul[1].header
-        elif self.path[-4:] == 'fits':
+                try:
+                    hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    hdr = hdul[1].header
+                except:
+                    dat = True
+        elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
             hdul = fits.open(self.path)
             hdr = hdul[0].header
         else:
@@ -133,19 +137,27 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
+        #print(instr, catg, orig)
+
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
-        if orig[:9] == 'Astrocook':
+        if orig[:9] == 'Astrocook' or dat:
             for s in self.seq:
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
                     os.remove(self.path[:-4]+'_'+s+'.fits')
                 except:
-                    pass
+                    try:
+                        data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                        setattr(self, s, format.astrocook(data, s))
+                        #os.remove(self.path[:-4]+'_'+s+'.dat')
+                    except:
+                        pass
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
+                self.cb._spec_update()
 
         else:
 
@@ -153,16 +165,25 @@ class Session(object):
             if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
                 self.spec = format.eso_adp(hdul)
 
-            # ESO-MIDAS spectrum
+            # ESO-MIDAS spectrum+
             if orig == 'ESO-MIDAS':
                 if len(hdul) == 1:
-                    self.spec = format.eso_midas_image(hdul)
+                    #self.spec = format.eso_midas_image(hdul)
+                    self.spec = format.generic_spectrum(hdul)
                 else:
-                    self.spec = format.eso_midas_table(hdul)
+                    #self.spec = format.eso_midas_table(hdul)
+                    self.spec = format.generic_spectrum(hdul)
 
-            # ESPRESSO DRS spectrum
+            # ESPRESSO S1D spectrum
             if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
-                self.spec = format.espresso_drs_spectrum(hdul)
+                self.spec = format.espresso_s1d_spectrum(hdul)
+                p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
+                self.spec_form = format.espresso_spectrum_format(
+                    ascii.read(p+'espr_spec_form.dat'))
+
+            # ESPRESSO S2D spectrum
+            if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
+                self.spec = format.espresso_s2d_spectrum(hdul)
                 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
                 self.spec_form = format.espresso_spectrum_format(
                     ascii.read(p+'espr_spec_form.dat'))
@@ -187,6 +208,11 @@ class Session(object):
             # QUBRICS spectrum
             if orig == 'QUBRICS':
                 self.spec = format.qubrics_spectrum(hdul)
+
+
+            # TNG LRS spectrum
+            if instr == 'LRS' and orig == 'ESO-MIDAS':
+                self.spec = format.lrs_spectrum(hdul)
 
 
             # UVES Spectrum
@@ -241,6 +267,8 @@ class Session(object):
         root = path[:-4]
         stem = pathlib.PurePath(path[:-4]).parts[-1]
 
+        import warnings
+        warnings.filterwarnings("ignore")
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
@@ -278,11 +306,12 @@ class Session(object):
                                 format = '%3.3'
                             else:
                                 format = '%3.7'
-                            if np.abs(t[c][0])<1e-7 and t[c][0]!=0:
+                            if np.abs(np.nanmedian(t[c]))<1e-7:# and t[c][0]!=0:
                                 format += 'e'
                             else:
                                 format += 'f'
                             t[c].info.format = format
+                        #print(c, type(t[c][0]), np.abs(np.median(t[c])), format)
 
                     if s!='systs':
                         t['x'] = t['x'].to(au.nm)
@@ -301,9 +330,10 @@ class Session(object):
                     #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
                     if s == 'systs':
                         for i,(k,v) in enumerate(obj._constr.items()):
-                            t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
-                            t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
-                            t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+                            if v[0] in t['id']:
+                                t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                                t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                                t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
                     for c in t.colnames:
                         t[c].unit = au.dimensionless_unscaled
                     #print(t)
@@ -323,7 +353,7 @@ class Session(object):
                     thdu = fits.BinTableHDU(data=t, header=hdr)
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
-
+                    #print([t[c].format for c in t.colnames] )
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
                     arch.add(name, arcname=stem+'_'+s+'.fits')

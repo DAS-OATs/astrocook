@@ -1,5 +1,6 @@
 from .vars import *
 from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
+from .message import msg_output_fail
 from astropy import table as at
 from astropy import units as au
 #from matplotlib import pyplot as plt
@@ -138,11 +139,19 @@ class SystList(object):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
 
+        #print(np.array(self._mods_t['z0']))
+        #print(np.array(frame._mods_t['id']))
+        #print(np.array(vstack_mods_t['id']))
+
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
 #            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
+        else:
+            self._t = vstack_t
+            self._mods_t = vstack_mods_t
         #print(self._mods_t['z0', 'id'])
+        #print(len(self._mods_t))
         return 0
 
 
@@ -172,7 +181,7 @@ class SystList(object):
             #t = t_by_group.groups.aggregate(np.mean)
             t['series'] = at.Column(np.array([g['series'][len(g)//2] \
                                               for g in t_by_group.groups]))
-            t['z'] = at.Column(np.array([np.mean(g['z']) \
+            t['z'] = at.Column(np.array([np.average(g['z'], weights=10**g['logN']) \
                                          for g in t_by_group.groups]))
             t['logN'] = at.Column(np.array([np.log10(np.sum(10**g['logN'])) \
                                             for g in t_by_group.groups]))
@@ -185,6 +194,7 @@ class SystList(object):
             t['id'] = at.Column(np.array([g['id'][len(g)//2] \
                                           for g in t_by_group.groups]))
             """
+            t.sort(['z','id'])
             self._t = t
             self._compressed = True
         else:

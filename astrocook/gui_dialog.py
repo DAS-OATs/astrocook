@@ -1,6 +1,7 @@
+import astropy.units as au
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def
+from .vars import graph_elem, hwin_def, xem_d
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -161,6 +162,19 @@ class GUIDialog(wx.Dialog):
                                                        self._gui._sess_sel)
 
             self._gui._refresh()
+            if hasattr(self._gui, '_dlg_mini_systems'):
+                # Unfreeze cursors in case they were frozen
+                self._gui._graph_main._graph._cursor_frozen = False
+                self._gui._graph_det._graph._cursor_frozen = False
+
+                # Refresh cursor
+                shown = True if self._gui._dlg_mini_systems._shown else False
+                self._gui._dlg_mini_systems._shown = False
+                self._gui._dlg_mini_systems._on_cancel(e=None)
+                self._gui._dlg_mini_systems._shown = True
+                self._gui._dlg_mini_systems._on_apply(e=None)
+                self._gui._dlg_mini_systems._shown = shown
+
 
     def _update_params(self):
         for p_l, c_l in zip(self._params, self._ctrl):
@@ -289,6 +303,126 @@ class GUIDialogMini(wx.Dialog):
         self.Centre()
         self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
+
+
+class GUIDialogMiniDefaults(GUIDialogMini):
+    def __init__(self,
+                 gui,
+                 title):
+        self._gui = gui
+        self._gui._dlg_mini_defs = self
+        self._sel = dc(self._gui._panel_sess._sel)
+        self._defs_str = self._gui._sess_sel.defs.str
+        self._defs_dict = self._gui._sess_sel.defs.dict
+        super(GUIDialogMiniDefaults, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
+        self._shown = True
+
+    def _box_ctrl(self):
+        fgs = wx.FlexGridSizer(2, 1, 4, 15)
+        descr = wx.StaticText(
+                    self._panel, -1,
+                    label="When clicking on “Apply”, the GUI is refreshed and the\n"
+                          "system models are recreated, but not re-fitted (so the\n"
+                          "fitting parameters in the system table may not reflect\n"
+                          "the changes). Try “fit systems” to re-fit them.")
+        self._ctrl_defs = wx.TextCtrl(self._panel, -1, value=self._defs_str,
+                                      size=(400, 300), style = wx.TE_MULTILINE)
+        #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
+        fgs.AddMany([(self._ctrl_defs, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
+        self._panel.SetSizer(self._core)
+
+
+    def _box_buttons(self):
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        apply_button = wx.Button(self, label='Apply')
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply)
+        #apply_button.SetDefault()
+        buttons.Add(apply_button, 0, wx.RIGHT, border=5)
+        default_button = wx.Button(self, label='Load from file')
+        default_button.Bind(wx.EVT_BUTTON, self._on_load)
+        buttons.Add(default_button)
+        self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
+        self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
+                     border=10)
+        self._bottom.SetSizeHints(self)
+
+    def _on_apply(self, e=None, refresh=True, log=True):
+        """
+        defs = self._ctrl_defs.GetValue()
+        defs = defs.replace('“', '"')
+        defs = defs.replace('”', '"')
+        defs = defs.replace('—', '--')
+        self._ctrl_defs.SetValue(defs)
+        """
+        sess = self._gui._sess_sel
+        sd = self._gui._sess_sel.defs
+        defs_dict = dict(sess.defs.dict)
+        self._set(self._ctrl_defs.GetValue())
+        for i in sess.defs.dict:
+            for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
+                for e in sess.defs._extend:
+                    if k not in sess.defs._extend[e]:
+                        logging.info("I changed parameter %s %s from %s to %s."
+                                     % (i, k, str(defs_dict[i][k]),
+                                        str(sess.defs.dict[i][k])))
+            #diff = {k: sd.dict[i][k] for k, _ \
+            #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_defs', '_on_apply',
+                                 {'e': None, 'refresh': refresh})
+        if refresh:
+            if hasattr(sess, 'systs'):
+                sess.cb._mods_recreate2()
+            self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_load(self, e=None, path=None, log=True):
+        sess = self._gui._sess_sel
+
+        if path is None:
+            wildcard = "JSON files (*.json)|*.json"
+            with wx.FileDialog(self, "Open file", '.',
+                               wildcard=wildcard,
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
+                               as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                path = fileDialog.GetPath()
+        sess.defs.open(path)
+
+        if log:
+            sess.log.append_full('_dlg_mini_defs', '_on_load',
+                                 {'e': None, 'path': path})
+
+        self._refresh()
+        if hasattr(sess, 'systs'):
+            sess.cb._mods_recreate2()
+        self._gui._refresh(init_cursor=True, init_tab=False)
+
+
+    def _on_cancel(self, e=None, refresh=True, log=True):
+        self._shown = False
+        self.Destroy()
+
+    def _refresh(self):
+        self._ctrl_defs.SetValue(self._defs_str)
+
+    def _set(self, value, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_defs', '_set',
+                                 {'value': value, 'log': False})
+
+        defs = value
+        defs = defs.replace('“', '"')
+        defs = defs.replace('”', '"')
+        defs = defs.replace('—', '--')
+        self._ctrl_defs.SetValue(defs)
+        self._gui._sess_sel.defs.update(defs)
+
 
 
 class GUIDialogMiniGraph(GUIDialogMini):
@@ -462,8 +596,6 @@ class GUIDialogMiniLog(GUIDialogMini):
         self._gui._log_rerun(log)
         self._ctrl_log.SetValue(self._log)
 
-
-
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
@@ -605,12 +737,18 @@ class GUIDialogMiniSystems(GUIDialogMini):
                  title,
                  targ=None,
                  series='CIV',
-                 z=2.0,
+                 z=None,
                  hwin=hwin_def):
         self._gui = gui
         self._gui._dlg_mini_systems = self
         self._targ = targ
         self._series = series
+        if z is None:
+            try:
+                z = np.mean(self._gui._sess_sel.spec.t['x'].to(au.nm))\
+                        /xem_d['CIV_1548']-1
+            except:
+                z = 2.0
         self._z = z
         self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
@@ -686,7 +824,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _on_cancel(self, e):
         if hasattr(self._gui, '_cursor'):
             self._gui._cursor.Check(False)
-            if hasattr(self._gui, '_graph_det'):
+            if hasattr(self._gui, '_graph_det') \
+                and hasattr(self._gui._graph_det._graph, '_cursor'):
                 del self._gui._graph_det._graph._cursor
         if hasattr(self._gui._sess_sel, '_series_sel'):
             del self._gui._sess_sel._series_sel
