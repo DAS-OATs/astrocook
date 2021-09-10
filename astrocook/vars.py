@@ -82,6 +82,8 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
            "systs,z,None,None,axvline,--,0.8,C2,1.0"
 
+graph_lim_def = 'xlim=auto\nylim=auto'
+
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,

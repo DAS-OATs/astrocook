@@ -359,9 +359,35 @@ class Graph(object):
             except:
                 pass
 
-        if xlim is not None:
+        autoxlim = False
+        autoylim = False
+        if self == self._gui._graph_main._graph:
+            for l in self._gui._graph_main._lim.split('\n'):
+                ls = l.split('=')
+                if ls[-1][0]=='(' and ls[-1][-1]==')':
+                    if ls[0]=='xlim':
+                        try:
+                            xlim = tuple(map(float, ls[-1][1:-1].split(',')))
+                        except:
+                            pass
+                    if ls[0]=='ylim':
+                        try:
+                            ylim = tuple(map(float, ls[-1][1:-1].split(',')))
+                        except:
+                            pass
+                elif ls[-1]!='auto':
+                    logging.error(msg_lim(ls[0]))
+                """
+                else:
+                    if ls[0]=='xlim':
+                        autoxlim = True
+                    if ls[0]=='ylim':
+                        autoylim = True
+                """
+
+        if xlim is not None and not autoxlim:
             self._ax.set_xlim(xlim)
-        if ylim is not None:
+        if ylim is not None and not autoylim:
             self._ax.set_ylim(ylim)
 
         for s in sess:
