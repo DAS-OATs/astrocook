@@ -598,7 +598,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def wfccd_spectrum(self, hdul):
         """ WFCCD format """
