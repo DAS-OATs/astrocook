@@ -617,7 +617,8 @@ class CookbookGeneral(object):
 
     def y_scale_med(self):
         """ @brief Scale y axis by median
-        @details Scale the y axis by its median.
+        @details Scale the y axis by its median. The spectrum and the
+        line list are rescaled in place, without starting a new session.
         @return 0
         """
 

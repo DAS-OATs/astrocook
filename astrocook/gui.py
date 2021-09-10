@@ -200,6 +200,7 @@ class GUI(object):
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._graph_main._elem = self._sess_sel._graph_elem
+            self._graph_main._lim = self._sess_sel._graph_lim
             self._dlg_mini_graph._refresh()
         else:
             if hasattr(self._sess_sel, '_graph_elem'):
@@ -207,6 +208,10 @@ class GUI(object):
             else:
                 self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+            if hasattr(self._sess_sel, '_graph_lim'):
+                self._graph_main._lim = self._sess_sel._graph_lim
+            else:
+                self._graph_main._lim = graph_lim_def
             """
             try:
                 if hasattr(self._sess_sel, '_graph_elem'):
@@ -489,6 +494,7 @@ class GUIPanelSession(wx.Frame):
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+        self._gui._sess_sel._graph_lim = graph_lim_def
         #print(self._gui._sess_sel._graph_elem)
         #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         #self._gui._refresh(autolim=False)

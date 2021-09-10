@@ -37,7 +37,7 @@ class GUIGraphMain(wx.Frame):
         sel = len(self._gui._sess_list)
         if sel>0: sel -= 1
         self._elem = elem_expand(graph_elem, sel)
-
+        self._lim = graph_lim_def
         self._logx = False
         self._logy = False
         self._norm = False
