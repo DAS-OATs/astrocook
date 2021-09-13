@@ -308,7 +308,8 @@ class CookbookAbsorbers(object):
         #if len(systs._t)==0: return 0
         systs._mods_t.remove_rows(range(len(systs._mods_t)))
         #for i,s in enumerate(systs._t):
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
@@ -381,7 +382,8 @@ class CookbookAbsorbers(object):
         systs._mods_t.remove_rows(mod_w)
         #print(systs._mods_t)
         #for i,s in enumerate(systs._t):
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
@@ -1078,7 +1080,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1141,7 +1144,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1380,7 +1384,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1474,7 +1479,8 @@ class CookbookAbsorbers(object):
         systs = dc(self.sess.systs)
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1543,7 +1549,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1581,7 +1588,8 @@ class CookbookAbsorbers(object):
         dx_thres = np.max(spec.xmax.value-spec.xmin.value)
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1806,7 +1814,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -1967,7 +1976,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
@@ -2114,7 +2124,8 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
 
         recompress = False
-        if systs._compressed:
+        compressed = False
+        if systs is not None and systs._compressed:
             recompress = True
             systs._compress()
 
