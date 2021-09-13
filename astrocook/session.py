@@ -101,14 +101,15 @@ class Session(object):
         except:
             catg = 'undefined'
 
+        print(instr, catg, orig)
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
             hist = [i for j in hist for i in j]
-            if 'UVES_popler:' in hist:
+            if 'UVES_popler:' in hist and orig != 'Astrocook':
                 instr = 'UVES'
                 orig = 'POPLER'
-            if 'XSHOOTER_REDUCE' in hist:
+            if 'XSHOOTER_REDUCE' in hist and orig != 'Astrocook':
                 instr = 'XSHOOTER'
                 orig = 'REDUCE'
         except:
@@ -137,7 +138,7 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
-        #print(instr, catg, orig)
+        print(instr, catg, orig)
 
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
