@@ -40,7 +40,6 @@ class GUIMenu(object):
         #self._cook = GUIMenuCook(self._gui)
         self._cb_general = GUIMenuCookbookGeneral(self._gui)
         self._cb_continuum = GUIMenuCookbookContinuum(self._gui)
-        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._recipes._menu, "Recipes")
         bar.Append(self._cb_general._menu, "General")
         bar.Append(self._cb_continuum._menu, "Continuum")
@@ -48,6 +47,7 @@ class GUIMenu(object):
         #bar.Append(self._courses._menu, "Set menus")
         #bar.Append(self._cook._menu, "Cook")
         """
+        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
 
         return bar
 
@@ -270,6 +270,7 @@ class GUIMenu(object):
         sel = self._gui._graph_main._sel
 
         for a in seq_menu:  # from .vars
+
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view']+menus['attr']:#, '_recipes', '_courses', '_cb_general', 'cook']:
                     try:
@@ -284,6 +285,7 @@ class GUIMenu(object):
                                 cond = a in self._gui._sess_sel.systs.t.colnames
                             except:
                                 cond = a in self._gui._sess_sel.spec.t.colnames
+                        #print(a, cond)
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -309,7 +311,7 @@ class GUIMenuCook(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=6000,
+                 start_id=11000,
                  **kwargs):
         super(GUIMenuCook, self).__init__(gui)
         self._gui = gui
@@ -503,7 +505,7 @@ class GUIMenuContinuum(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=6000,
+                 start_id=5000,
                  **kwargs):
         super(GUIMenuContinuum, self).__init__(gui)
         self._gui = gui
@@ -535,7 +537,7 @@ class GUIMenuGeneral(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=6000,
+                 start_id=4000,
                  **kwargs):
         super(GUIMenuGeneral, self).__init__(gui)
         self._gui = gui
@@ -694,7 +696,7 @@ class GUIMenuRecipes(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=4000,
+                 start_id=10000,
                  **kwargs):
         super(GUIMenuRecipes, self).__init__(gui)
         self._gui = gui
