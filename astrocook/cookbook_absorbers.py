@@ -850,7 +850,7 @@ class CookbookAbsorbers(object):
 
 
     def comp_extract(self, num=1):
-        """ @brief Extract systems
+        """ @brief Extract systems based on components
         @details Extract systems with less than a given number of components
         @param num Number of components
         @return 0
@@ -906,7 +906,7 @@ class CookbookAbsorbers(object):
 
         self._mods_ccf_max(vstart, vend, dv, weight)
 
-        return 0
+        return
 
     def mods_recreate(self):
         """ @brief Recreate the models

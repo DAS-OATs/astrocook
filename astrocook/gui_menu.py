@@ -9,6 +9,7 @@ from astropy.io import ascii
 import datetime
 import logging
 import os
+import sys
 import wx
 
 class GUIMenu(object):
@@ -21,20 +22,33 @@ class GUIMenu(object):
 
     def bar(self):
         bar = wx.MenuBar()
+
         self._file = GUIMenuFile(self._gui)
-        self._edit = GUIMenuEdit(self._gui)
-        self._view = GUIMenuView(self._gui)
-        self._recipes = GUIMenuRecipes(self._gui)
-        self._courses = GUIMenuCourses(self._gui)
-        self._cook = GUIMenuCook(self._gui)
-        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._file._menu, "File")
+        self._edit = GUIMenuEdit(self._gui)
         bar.Append(self._edit._menu, "Edit")
+        self._view = GUIMenuView(self._gui)
         bar.Append(self._view._menu, "View")
+
+        for a, t in zip(menus['attr'], menus['title']):
+            setattr(self, a,
+                getattr(sys.modules[__name__], 'GUIMenu%s' % t)(self._gui))
+            bar.Append(getattr(self, a)._menu, t)
+        """
+        self._recipes = GUIMenuRecipes(self._gui)
+        #self._courses = GUIMenuCourses(self._gui)
+        #self._cook = GUIMenuCook(self._gui)
+        self._cb_general = GUIMenuCookbookGeneral(self._gui)
+        self._cb_continuum = GUIMenuCookbookContinuum(self._gui)
+        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._recipes._menu, "Recipes")
+        bar.Append(self._cb_general._menu, "General")
+        bar.Append(self._cb_continuum._menu, "Continuum")
         #bar.Append(self._courses._menu, "Courses")
-        bar.Append(self._courses._menu, "Set menus")
+        #bar.Append(self._courses._menu, "Set menus")
         #bar.Append(self._cook._menu, "Cook")
+        """
+
         return bar
 
     def _item(self, menu, id, append, title, event, key=None, enable=True):
@@ -53,6 +67,39 @@ class GUIMenu(object):
         else:
             item.Enable(enable)
         return item
+
+
+    def _create(self, menu, rec, cb, start_id):
+        subtitle = ''
+        for i, r in enumerate(rec):
+            id = start_id+i
+            if isinstance(r, str):
+                if r == '--':
+                    menu.AppendSeparator()
+                elif r[0] == '>':
+                    submenu = wx.Menu()
+                    subtitle = r[2:]
+                elif r[0] == '<':
+                    menu.AppendSubMenu(submenu, subtitle)
+                    subtitle = ''
+            if isinstance(r, dict):
+                m = menu if subtitle == '' else submenu
+                if 'type' not in r: r['type'] = '_item_method'
+                if 'append' not in r: r['append'] = None
+                if 'title' not in r: r['title'] = self._get_doc(getattr(cb, r['targ']))
+                if 'enable' not in r: r['enable'] = False
+                if 'obj' not in r: r['obj'] = None
+                getattr(self, r['type'])(m, id, r['append'], r['title'],
+                                         r['targ'], r['enable'], r['obj'])
+
+        return 0
+
+
+    def _get_doc(self, method):
+        full = inspect.getdoc(method)
+        split = full.split('@')
+        return [s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' ')
+
 
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
                     dlg_mini=None, targ=None, alt_title=None):
@@ -224,7 +271,7 @@ class GUIMenu(object):
 
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
-                for m in ['_edit', '_view', '_recipes', '_courses', 'cook']:
+                for m in ['_edit', '_view']+menus['attr']:#, '_recipes', '_courses', '_cb_general', 'cook']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable() \
@@ -409,6 +456,115 @@ class GUIMenuCook(GUIMenu):
             print("%s; computation time: %s" \
                   % (datetime.datetime.now(), time_end-time_start))
     """
+
+class GUIMenuAbsorbers(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=6000,
+                 **kwargs):
+        super(GUIMenuAbsorbers, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
+                     {'targ': 'systs_complete_from_like', 'append': 'z0'},
+                     '--',
+                     {'targ': 'systs_new_from_lines', 'append': 'lines'},
+                     {'targ': 'systs_complete', 'append': 'z0'},
+                     '> Other',
+                     {'targ': 'cands_find', 'append': 'z0'},
+                     {'targ': 'systs_improve', 'append': 'z0'},
+                     '<',
+                     '--',
+                     {'targ': 'systs_fit', 'append': 'z0'},
+                     {'targ': 'systs_clean', 'append': 'z0'},
+                     {'targ': 'mods_recreate', 'append': 'z0'},
+                     '> Other',
+                     {'targ': 'systs_snr', 'append': 'z0'},
+                     {'targ': 'systs_select', 'append': 'z0'},
+                     {'targ': 'comp_extract', 'append': 'z0'},
+                     {'targ': 'systs_merge', 'append': 'z0'},
+                     '<',
+                     '--',
+                     {'targ': 'mods_ccf_max', 'append': 'z0'},
+                     {'targ': 'systs_sigmav', 'append': 'z0'},
+                    ]
+
+#'systs_snr', 'cands_find', 'syst_new', 'systs_improve',
+#'systs_new_from_like', 'systs_merge',
+#'syst_new_from_resids_new'
+        from .cookbook_absorbers import CookbookAbsorbers as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+class GUIMenuContinuum(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=6000,
+                 **kwargs):
+        super(GUIMenuContinuum, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
+                     '--',
+                     {'targ': 'lines_find', 'append': 'spec'},
+                     {'targ': 'nodes_cont', 'append': 'spec'},
+                     {'targ': 'lines_update', 'append': 'z0'},
+                     '> Other',
+                     {'targ': 'peaks_find', 'append': 'spec'},
+                     {'targ': 'nodes_extract', 'append': 'lines'},
+                     {'targ': 'nodes_clean', 'append': 'lines'},
+                     {'targ': 'nodes_interp', 'append': 'nodes'},
+                     '<',
+                     '--',
+                     {'targ': 'lya_corr', 'append': 'spec'},
+                     {'targ': 'abs_cont', 'append': 'spec'},
+                     ]
+
+        from .cookbook_continuum import CookbookContinuum as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuGeneral(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=6000,
+                 **kwargs):
+        super(GUIMenuGeneral, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'y_scale', 'append': 'spec'},
+                     {'targ': 'y_scale_med', 'append': 'spec'},
+                     {'targ': 'y_scale_x', 'append': 'spec'},
+                     '--',
+                     {'targ': 'deredden', 'append': 'spec'},
+                     '--',
+                     {'targ': 'mask', 'append': 'spec'},
+                     {'targ': 'telluric_mask', 'append': 'spec'},
+                     '--',
+                     {'targ': 'snr_est', 'append': 'spec'},
+                     {'targ': 'resol_est', 'append': 'spec'},
+                     {'targ': 'rms_est', 'append': 'spec'},
+                     '--',
+                     {'targ': 'rebin', 'append': 'spec'},
+                     {'targ': 'gauss_convolve', 'append': 'spec'},
+                     {'targ': 'flux_ccf', 'append': 'spec'},
+                     {'targ': 'flux_ccf_stats', 'append': 'spec'},
+                     ]
+
+        from .cookbook_general import CookbookGeneral as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
 
 class GUIMenuEdit(GUIMenu):
 
