@@ -101,7 +101,7 @@ class Session(object):
         except:
             catg = 'undefined'
 
-        print(instr, catg, orig)
+        #print(instr, catg, orig)
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -138,7 +138,7 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
-        print(instr, catg, orig)
+        #print(instr, catg, orig)
 
         # Astrocook structures
         logging.debug("Instrument: %s; origin: %s; category: %s."
