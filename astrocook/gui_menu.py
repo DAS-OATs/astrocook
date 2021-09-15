@@ -62,7 +62,11 @@ class GUIMenu(object):
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
@@ -116,7 +120,11 @@ class GUIMenu(object):
             item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
@@ -129,7 +137,12 @@ class GUIMenu(object):
             lambda e: self._on_dialog(e, title, targ, obj), item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
+#            getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
@@ -267,6 +280,7 @@ class GUIMenu(object):
 
     def _refresh(self):
         # Nested loops! WOOOO!
+        sess = self._gui._sess_sel
         sel = self._gui._graph_main._sel
 
         for a in seq_menu:  # from .vars
@@ -278,14 +292,16 @@ class GUIMenu(object):
                         if m == '_view' and item.IsCheckable() \
                             and item.key not in self._key_list:
                             item.Check(False)
-                        if hasattr(self._gui._sess_sel, a):
-                            cond = getattr(self._gui._sess_sel, a) != None
+
+                        if hasattr(sess, a):
+                            cond = getattr(sess, a) != None
                         else:
-                            try:
-                                cond = a in self._gui._sess_sel.systs.t.colnames
-                            except:
-                                cond = a in self._gui._sess_sel.spec.t.colnames
-                        #print(a, cond)
+                            if hasattr(sess, 'systs'):
+                                cond = a in sess.systs.t.colnames \
+                                           or a in sess.spec.t.colnames
+                            else:
+                                cond = a in sess.spec.t.colnames
+
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -295,6 +311,7 @@ class GUIMenu(object):
                             item.Enable(False)
                     except:
                         pass
+
 
     def _sel_graph_cols(self, cols=graph_cols_sel):
         """ @brief Select graph columns
@@ -473,7 +490,7 @@ class GUIMenuAbsorbers(GUIMenu):
                      {'targ': 'systs_complete_from_like', 'append': 'z0'},
                      '--',
                      {'targ': 'systs_new_from_lines', 'append': 'lines'},
-                     {'targ': 'systs_complete', 'append': 'z0'},
+                     {'targ': 'systs_complete', 'append': ['z0', 'lines']},
                      '> Other',
                      {'targ': 'cands_find', 'append': 'z0'},
                      {'targ': 'systs_improve', 'append': 'z0'},
