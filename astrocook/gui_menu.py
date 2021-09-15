@@ -51,6 +51,64 @@ class GUIMenu(object):
 
         return bar
 
+    def _create(self, menu, rec, cb, start_id):
+        subtitle = ''
+        for i, r in enumerate(rec):
+            id = start_id+i
+            if isinstance(r, str):
+                if r == '--':
+                    menu.AppendSeparator()
+                elif r[0] == '>':
+                    submenu = wx.Menu()
+                    subtitle = r[2:]
+                elif r[0] == '<':
+                    menu.AppendSubMenu(submenu, subtitle)
+                    subtitle = ''
+            if isinstance(r, dict):
+                m = menu if subtitle == '' else submenu
+                if 'func' in r:
+                    setattr(m, r['targ'], {'start_id': id, 'func': r['func'],
+                                           'value': r['value']})
+                    r['enable'] = self._enable(r['func'], r['value'])
+                if 'type' not in r: r['type'] = '_item_method'
+                if 'append' not in r: r['append'] = None
+                if 'title' not in r: r['title'] = self._get_doc(getattr(cb, r['targ']))
+
+                if r['type'] == '_item':
+                    if 'event' not in r: r['event'] = None
+                    if 'key' not in r: r['key'] = None
+                    if 'enable' not in r: r['enable'] = True
+                    self._item(m, id, r['append'], r['title'], r['event'],
+                               r['key'], r['enable'])
+
+                if r['type'] == '_item_graph':
+                    if 'key' not in r: r['key'] = None
+                    if 'enable' not in r: r['enable'] = False
+                    if 'dlg_mini' not in r: r['dlg_mini'] = None
+                    if 'targ' not in r: r['targ'] = None
+                    if 'alt_title' not in r: r['alt_title'] = r['title']
+                    self._item_graph(m, id, r['append'], r['title'], r['key'],
+                                     r['enable'], r['dlg_mini'], r['targ'],
+                                     r['alt_title'])
+
+                if r['type'] == '_item_method':
+                    if 'enable' not in r: r['enable'] = False
+                    if 'obj' not in r: r['obj'] = None
+                    self._item_method(m, id, r['append'], r['title'], r['targ'],
+                                      r['enable'], r['obj'])
+
+        return 0
+
+    def _enable(self, func, value):
+        return getattr(len(self._gui._sess_item_sel), func)(value)
+
+
+    def _get_doc(self, method):
+        full = inspect.getdoc(method)
+        split = full.split('@')
+        return [s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' ')
+
+
     def _item(self, menu, id, append, title, event, key=None, enable=True):
         if key is not None:
             item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
@@ -71,38 +129,6 @@ class GUIMenu(object):
         else:
             item.Enable(enable)
         return item
-
-
-    def _create(self, menu, rec, cb, start_id):
-        subtitle = ''
-        for i, r in enumerate(rec):
-            id = start_id+i
-            if isinstance(r, str):
-                if r == '--':
-                    menu.AppendSeparator()
-                elif r[0] == '>':
-                    submenu = wx.Menu()
-                    subtitle = r[2:]
-                elif r[0] == '<':
-                    menu.AppendSubMenu(submenu, subtitle)
-                    subtitle = ''
-            if isinstance(r, dict):
-                m = menu if subtitle == '' else submenu
-                if 'type' not in r: r['type'] = '_item_method'
-                if 'append' not in r: r['append'] = None
-                if 'title' not in r: r['title'] = self._get_doc(getattr(cb, r['targ']))
-                if 'enable' not in r: r['enable'] = False
-                if 'obj' not in r: r['obj'] = None
-                getattr(self, r['type'])(m, id, r['append'], r['title'],
-                                         r['targ'], r['enable'], r['obj'])
-
-        return 0
-
-
-    def _get_doc(self, method):
-        full = inspect.getdoc(method)
-        split = full.split('@')
-        return [s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' ')
 
 
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
@@ -550,6 +576,90 @@ class GUIMenuContinuum(GUIMenu):
         self._create(self._menu, self._rec, self._cb, start_id)
 
 
+class GUIMenuEdit(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=2000,
+                 **kwargs):
+        super(GUIMenuEdit, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'x_convert', 'append': 'spec'},
+                     {'targ': 'y_convert', 'append': 'spec'},
+                     '--',
+                     {'targ': 'shift_bary', 'append': 'spec'},
+                     {'targ': 'shift_to_rf', 'append': 'spec'},
+                     {'targ': 'shift_from_rf', 'append': 'spec'},
+                     '--',
+                     {'targ': 'struct_import', 'func': '__gt__', 'value': 0},
+                     {'targ': 'struct_modify', 'func': '__gt__', 'value': 0},
+                     ]
+
+
+        from .cookbook_edit import CookbookEdit as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuFile(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=1000,
+                 **kwargs):
+        super(GUIMenuFile, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+        self._gui._menu_file = self
+        self._start_id = start_id
+
+        # Add items to File menu here
+        self._item(self._menu, start_id, None, "Open...\tCtrl+O",
+                   lambda e: self._on_open(e, **kwargs))
+        self._menu.AppendSeparator()
+        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
+                   lambda e: self._on_save(e, **kwargs))
+        self._menu.AppendSeparator()
+        self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
+                   self._gui._panel_sess._on_close)
+
+    def _on_combine(self, event):
+        self._gui._panel_sess._combine()
+
+
+    def _on_save(self, event, path=None):
+        """ Behaviour for Session > Save """
+
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save session", path, name,
+                           wildcard="Astrocook session (*.acs)|*.acs",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            logging.info("I'm saving session %s..." % path)
+            self._gui._sess_sel.save(path)
+            """
+            try:
+                acs = self
+                self.IO.acs_write(self.acs, name, dir)
+
+            except IOError:
+                wx.LogError("Cannot save session '%s'." % name)
+            """
+
+
 class GUIMenuGeneral(GUIMenu):
 
     def __init__(self,
@@ -560,7 +670,10 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'y_scale', 'append': 'spec'},
+        self._rec = [{'targ': 'equalize', 'func': '__eq__', 'value': 2},
+                     {'targ': 'combine', 'func': '__gt__', 'value': 1},
+                     '--',
+                     {'targ': 'y_scale', 'append': 'spec'},
                      {'targ': 'y_scale_med', 'append': 'spec'},
                      {'targ': 'y_scale_x', 'append': 'spec'},
                      '--',
@@ -584,7 +697,7 @@ class GUIMenuGeneral(GUIMenu):
 
         self._create(self._menu, self._rec, self._cb, start_id)
 
-
+"""
 class GUIMenuEdit(GUIMenu):
 
     def __init__(self,
@@ -651,64 +764,9 @@ class GUIMenuEdit(GUIMenu):
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+360, 'spec',
                           "Deredden", 'deredden')
+"""
 
-
-class GUIMenuFile(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=1000,
-                 **kwargs):
-        super(GUIMenuFile, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-        self._gui._menu_file = self
-        self._start_id = start_id
-
-        # Add items to File menu here
-        self._item(self._menu, start_id, None, "Open...\tCtrl+O",
-                   lambda e: self._on_open(e, **kwargs))
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
-                   lambda e: self._on_save(e, **kwargs))
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
-                   self._gui._panel_sess._on_close)
-
-    def _on_combine(self, event):
-        self._gui._panel_sess._combine()
-
-
-    def _on_save(self, event, path=None):
-        """ Behaviour for Session > Save """
-
-        if path is None:
-            if hasattr(self._gui, '_path'):
-                path=os.path.basename(self._gui._path)
-            else:
-                path='.'
-        name = self._gui._sess_sel.name
-        with wx.FileDialog(self._gui._panel_sess, "Save session", path, name,
-                           wildcard="Astrocook session (*.acs)|*.acs",
-                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
-                           as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return
-
-            path = fileDialog.GetPath()
-            dir = fileDialog.GetDirectory()
-            logging.info("I'm saving session %s..." % path)
-            self._gui._sess_sel.save(path)
-            """
-            try:
-                acs = self
-                self.IO.acs_write(self.acs, name, dir)
-
-            except IOError:
-                wx.LogError("Cannot save session '%s'." % name)
-            """
-
-
+"""
 class GUIMenuRecipes(GUIMenu):
 
     def __init__(self,
@@ -819,15 +877,16 @@ class GUIMenuRecipes(GUIMenu):
         #                  'systs_new_from_slide')
         submenu = wx.Menu()
 
-        """
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+401, 'lines',
-                          "Simulate a system", 'syst_simul')
-        self._item_method(self._menu, start_id+402, 'systs',
-                          "Estimate completeness with simulated systems",
-                          'systs_compl')
-        """
+        #self._menu.AppendSeparator()
+        #self._item_method(self._menu, start_id+401, 'lines',
+        #                  "Simulate a system", 'syst_simul')
+        #self._item_method(self._menu, start_id+402, 'systs',
+        #                  "Estimate completeness with simulated systems",
+        #                  'systs_compl')
 
+"""
+
+"""
 class GUIMenuCourses(GUIMenu):
     def __init__(self,
                  gui,
@@ -854,6 +913,8 @@ class GUIMenuCourses(GUIMenu):
                    lambda e: \
                    self._on_open(e, wildcard="JSON file (*.json)|*.json",
                                  action='json_load'))
+"""
+
 
 class GUIMenuView(GUIMenu):
 
@@ -866,11 +927,63 @@ class GUIMenuView(GUIMenu):
         self._menu = wx.Menu()
         self._menu_view = self
         self._gui._menu_view = self
-        self._start_id = start_id
-
-        # Add items to View menu here
         tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
+        tab_id = [start_id+0, start_id+1, start_id+2]
         self._gui._menu_tab_id = tab_id
+
+        self._rec = [{'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'spec'),
+                      'title': "Spectrum table", 'append': 'spec', 'key': 'spec'},
+                     {'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'lines'),
+                      'title': "Line table", 'append': 'lines', 'key': 'lines'},
+                     {'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'systs'),
+                      'title': "System table", 'append': 'systs', 'key': 'systs'},
+                     {'type': '_item', 'event': self._on_compress,
+                      'title': "Compress system table", 'append': 'systs'},
+                     '--',
+                     {'type': '_item_graph', 'title': "Session metadata",
+                      'append': 'spec', 'dlg_mini': 'meta'},
+                     {'type': '_item_graph', 'title': "Session defaults",
+                      'append': 'spec', 'dlg_mini': 'defs'},
+                     {'type': '_item_graph', 'title': "Session log",
+                      'append': 'spec', 'dlg_mini': 'log'},
+                     {'type': '_item_graph', 'title': "Graph elements",
+                      'append': 'spec', 'dlg_mini': 'graph'},
+                     {'type': '_item_graph', 'title': "Redshift cursor",
+                      'key': 'cursor_z_series', 'append': 'spec',
+                      'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
+                      'alt_title': "System controls"},
+                     '--',
+                     {'type': '_item', 'event': self._on_logx,
+                      'title': "Toggle log x axis", 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_logy,
+                      'title': "Toggle log y axis", 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_norm,
+                      'title': "Toggle normalization", 'append': 'cont'},
+                     '> Toggle graph add-ons',
+                     {'type': '_item_graph', 'title': "Saturated H2O regions",
+                      'key': 'spec_h2o_reg', 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_legend,
+                      'title': "Legend", 'append': 'spec'},
+                     '<',
+                     '--',
+                     {'targ': 'z_ax', 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_z_ax_remove,
+                      'title': "Hide redshift axis", 'append': 'spec'},
+                     '--',
+                     ]
+
+        from .cookbook_view import CookbookView as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+        return
+
+        """
+        # Add items to View menu here
         self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
                    lambda e: self._on_tab(e, 'spec'), key='spec')
         self._item(self._menu, tab_id[1], 'lines', "Line table",
@@ -887,15 +1000,6 @@ class GUIMenuView(GUIMenu):
                          dlg_mini='log', alt_title="Session log")
         self._item_graph(self._menu, info_id[1], 'spec', "Session defaults",
                          dlg_mini='defs', alt_title="Session defaults")
-        self._menu.AppendSeparator()
-        """
-        self._item(self._menu, start_id+101, 'systs',
-                   "System detection correctness",
-                   lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+102, 'systs',
-                   "System detection completeness",
-                   lambda e: self._on_ima(e, 'compl'))
-        """
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+201, 'spec',
                    "Toggle log x axis", self._on_logx)
@@ -923,7 +1027,7 @@ class GUIMenuView(GUIMenu):
 
         #self._item_method(self._menu, start_id+401, 'spec',
         #                  "Edit graph details", '_sel_graph_cols', obj=self)
-
+        """
 
     def _on_compress(self, event, log=True):
         if self._menu.GetLabel(self._start_id+101) == "Compress system table":
@@ -999,5 +1103,8 @@ class GUIMenuView(GUIMenu):
             self._gui._dlg_mini_log._refresh()
 
     def _on_z_ax_remove(self, event, log=False):
-        delattr(self._gui._sess_sel, '_ztrans')
-        self._gui._refresh()
+        try:
+            delattr(self._gui._sess_sel, '_ztrans')
+            self._gui._refresh()
+        except:
+            pass

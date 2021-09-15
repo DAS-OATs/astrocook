@@ -63,8 +63,8 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
-menus = {'attr': ['_recipes', '_cb_general', '_cb_continuum', '_cb_absorbers'],
-         'title': ['Recipes', 'General', 'Continuum', 'Absorbers']}
+menus = {'attr': ['_cb_general', '_cb_continuum', '_cb_absorbers'],
+         'title': ['General', 'Continuum', 'Absorbers']}
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
