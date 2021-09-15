@@ -310,6 +310,8 @@ class SystList(object):
                         self._t[iw]['chi2r'] = np.nan
                 except:
                     pass
+
+
         self._id += 1
 
         #print(self._mods_t['id', 'chi2r'])

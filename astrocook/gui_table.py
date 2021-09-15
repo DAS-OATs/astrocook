@@ -596,13 +596,6 @@ class GUITableSystList(GUITable):
                               i, np.where(labels == 'id')[0][0]))) \
                               for i in range(self._tab.GetNumberRows())])
 
-    def _data_init(self, from_scratch=True, autosort=False, attr=None):
-        super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
-        labels = self._labels_extract()
-        self._ids = np.array([int(float(self._tab.GetCellValue(
-                              i, np.where(labels == 'id')[0][0]))) \
-                              for i in range(self._tab.GetNumberRows())])
-
     def _data_link_par(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
