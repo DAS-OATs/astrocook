@@ -50,6 +50,7 @@ class GUI(object):
         self._menu_z0_id = []
         self._menu_mods_id = []
         self._menu_tab_id = []
+        self._defs = Defaults(self)
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
         self._data_lim = None
@@ -191,6 +192,7 @@ class GUI(object):
                  autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
 
+        self._defs = self._sess_sel.defs
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
@@ -465,6 +467,7 @@ class GUIPanelSession(wx.Frame):
 
         sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
+        self._gui._defs = sess.defs
 
         missing = []
         for i in range(self._tab.GetItemCount()+1):

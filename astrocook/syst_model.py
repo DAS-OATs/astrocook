@@ -92,7 +92,14 @@ class SystModel(LMComposite):
         if defs is None:
             self._defs = dc(pars_std_d)
         else:
-            self._defs = defs
+            #self._defs = defs
+            defs_complete = {}
+            for d in pars_std_d:
+                if d in defs:
+                    defs_complete[d] = defs[d]
+                else:
+                    defs_complete[d] = pars_std_d[d]
+            self._defs = defs_complete
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]

@@ -361,12 +361,13 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs_dict = dict(sess.defs.dict)
         self._set(self._ctrl_defs.GetValue())
         for i in sess.defs.dict:
-            for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
-                for e in sess.defs._extend:
-                    if k not in sess.defs._extend[e]:
-                        logging.info("I changed parameter %s %s from %s to %s."
-                                     % (i, k, str(defs_dict[i][k]),
-                                        str(sess.defs.dict[i][k])))
+            if isinstance(sess.defs.dict[i], dict):
+                for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
+                    for e in sess.defs._extend:
+                        if k not in sess.defs._extend[e]:
+                            logging.info("I changed parameter %s %s from %s to %s."
+                                         % (i, k, str(defs_dict[i][k]),
+                                         str(sess.defs.dict[i][k])))
             #diff = {k: sd.dict[i][k] for k, _ \
             #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
         if log:
@@ -374,7 +375,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             sess.log.append_full('_dlg_mini_defs', '_on_apply',
                                  {'e': None, 'refresh': refresh})
         if refresh:
-            if hasattr(sess, 'systs'):
+            if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
 
