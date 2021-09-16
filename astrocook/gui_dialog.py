@@ -374,7 +374,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             sess.log.append_full('_dlg_mini_defs', '_on_apply',
                                  {'e': None, 'refresh': refresh})
         if refresh:
-            if hasattr(sess, 'systs'):
+            if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
 
