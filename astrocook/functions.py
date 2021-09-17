@@ -108,10 +108,12 @@ def convolve_simple(dat, kernel):
     """simple convolution of two arrays"""
     npts = len(dat) #max(len(dat), len(kernel))
     pad = np.ones(npts)
-    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    tmp = np.pad(dat, (npts, npts), 'edge')
     out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
-    noff = int((len(out) - npts) / 2)
-    ret = (out[noff:])[:npts]
+    noff = int((len(out) - npts) * 0.5)
+    #ret = (out[noff:])[:npts]
+    ret = out[noff:noff+npts]
     #print(len(dat), len(kernel), len(ret))
     return ret
 

@@ -9,10 +9,11 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+import time
 import warnings
 warnings.filterwarnings("ignore")
 
-thres = 1e-2
+thres = 1e-3
 
 class SystModel(LMComposite):
 
@@ -204,7 +205,6 @@ class SystModel(LMComposite):
     def _make_group2(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
-
         spec = self._spec
 
         mods_t = self._mods_t
@@ -217,11 +217,14 @@ class SystModel(LMComposite):
         self._group_list = []
 
         #print(mods_t['id'])
+        modified = False
         for i, s in enumerate(mods_t):
+            ttt = time.time()
             #print(s['id'])
             mod = s['mod']
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
+            ymin = np.minimum(ys, ys_s)
             y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
             pars_cond = False
             for p,v in self._constr.items():
@@ -255,6 +258,11 @@ class SystModel(LMComposite):
                                 self._pars[p].expr = ''
                 self._group_list.append(i)
                 mod._ys = self._group.eval(x=self._xs, params=self._pars)
+                #mod._ys = np.ones(len(self._xs))
+                #mod._ys[ymin<1-thres] = self._group.eval(x=self._xs[ymin<1-thres], params=self._pars)
+                modified = True
+                #print('')
+                #print(i, id(self._group), id(self._pars))
 
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
@@ -265,7 +273,13 @@ class SystModel(LMComposite):
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
-        self._ys = self._group.eval(x=self._xs, params=self._pars)
+        if modified:
+            self._ys = mod._ys
+        else:
+            self._ys = self._group.eval(x=self._xs, params=self._pars)
+        #if modified:
+        #    print('')
+        #    print('end', id(self._group), id(self._pars))
 
 
     def _make_lines(self):
