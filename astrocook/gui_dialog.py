@@ -377,7 +377,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
-
+            
 
     def _on_load(self, e=None, path=None, log=True):
         sess = self._gui._sess_sel
@@ -410,6 +410,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _refresh(self):
         self._ctrl_defs.SetValue(self._defs_str)
 
+
     def _set(self, value, log=True):
         if log:
             sess = self._gui._sess_sel
@@ -422,6 +423,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs = defs.replace('—', '--')
         self._ctrl_defs.SetValue(defs)
         self._gui._sess_sel.defs.update(defs)
+        self._defs_str = self._gui._sess_sel.defs.str
+        self._defs_dict = self._gui._sess_sel.defs.dict
 
 
 
