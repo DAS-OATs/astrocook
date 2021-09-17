@@ -19,9 +19,12 @@ class GUIMenu(object):
         self._gui = gui
         self._gui._menu = self
         self._params_last = None
+        self._togg_set()
+        """
         self._menus_togg = {'attr': [menus_assoc[m] \
                                      for m in self._gui._defs.dict['menus']],
                             'title': self._gui._defs.dict['menus']}
+        """
 
     def bar(self):
         bar = wx.MenuBar()
@@ -273,6 +276,8 @@ class GUIMenu(object):
         # Nested loops! WOOOO!
         sess = self._gui._sess_sel
         sel = self._gui._graph_main._sel
+        self._togg_set()
+        self._gui._panel_sess.SetMenuBar(self.bar())
 
         for a in seq_menu:  # from .vars
 
@@ -313,6 +318,11 @@ class GUIMenu(object):
         self._gui._graph_main._cols_sel = cols
 
         return 0
+
+    def _togg_set(self):
+        self._menus_togg = {'attr': [menus_assoc[m] \
+                             for m in self._gui._defs.dict['menus']],
+                            'title': self._gui._defs.dict['menus']}
 
 
 class GUIMenuCook(GUIMenu):

@@ -423,6 +423,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs = defs.replace('—', '--')
         self._ctrl_defs.SetValue(defs)
         self._gui._sess_sel.defs.update(defs)
+        self._defs_str = self._gui._sess_sel.defs.str
+        self._defs_dict = self._gui._sess_sel.defs.dict
 
 
 
