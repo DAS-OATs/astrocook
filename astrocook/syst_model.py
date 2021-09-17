@@ -9,6 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+import time
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -217,11 +218,14 @@ class SystModel(LMComposite):
         self._group_list = []
 
         #print(mods_t['id'])
+        modified = False
         for i, s in enumerate(mods_t):
+            ttt = time.time()
             #print(s['id'])
             mod = s['mod']
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
+            ymin = np.minimum(ys, ys_s)
             y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
             pars_cond = False
             for p,v in self._constr.items():
