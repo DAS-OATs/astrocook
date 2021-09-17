@@ -290,7 +290,8 @@ class Spectrum(Frame):
         if isinstance(nodes, str):
             spl = nodes.split('.')
             nodes = getattr(getattr(self._gui, spl[0]), spl[1])
-        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
+        abs = np.abs(self.x.to(self._xunit).value-x)
+        sel = abs[~np.isnan(abs)].argmin()
         row = []
         for c in nodes.t.colnames:
             row.append(y) if c == 'y' else row.append(self.t[sel][c])
