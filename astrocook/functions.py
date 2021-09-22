@@ -124,6 +124,7 @@ def create_xmin_xmax(x):
     xmax = np.append(mean, x[-1])
     return xmin, xmax
 
+
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
     # https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array/3689710#3689710

@@ -15,6 +15,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import argrelmin, argrelmax, find_peaks
 from scipy.special import erf, erfc
 import sys
+import time
 
 prefix = "[INFO] cookbook_absorbers:"
 
@@ -391,6 +392,7 @@ class CookbookAbsorbers(object):
         wrong_id = []
         corr_id = []
         #print(systs_t)
+        tt = time.time()
         for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
                              "cookbook_absorbers: Recreating"):
             systs._id = s['id']
@@ -412,10 +414,15 @@ class CookbookAbsorbers(object):
                     corr_id.append(np.max(systs_t['id'])+1)
                     mod._id = np.max(systs_t['id'])+1
                 #print(self.sess.defs.dict['voigt'])
+                #print(len(systs._mods_t), end=' ')
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                b=s['b'], resol=s['resol'],
                                defs=self.sess.defs.dict['voigt'])
+                #print(len(systs._mods_t), time.time()-tt)
+                #tt = time.time()
                 self._mods_update(mod)
+                #print(len(systs._mods_t), time.time()-tt)
+                #tt = time.time()
                 #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
 
