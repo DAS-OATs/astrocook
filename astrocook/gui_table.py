@@ -564,12 +564,15 @@ class GUITableSystList(GUITable):
 
 
     def _data_freeze_par(self, row, col):
+        #print('freeze', row, col)
         for (r, c) in self._cells_sel:
-            id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(row, col) != 'black':
+            #print(row, col, r, c)
+            id, parn = self._key_extract(r, col)
+            if self._tab.GetCellTextColour(r, col) == 'grey':
                 self._freezes_d[parn] = (id, 'vary', True)
             else:
                 self._freezes_d[parn] = (id, 'vary', False)
+        #print(self._freezes_d)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
 
@@ -579,6 +582,7 @@ class GUITableSystList(GUITable):
                                       self._freezes_d[v][1], False)
         systs._constrain(self._freezes_d)
         self._text_colours()
+        #print(self._freezes_d)
 
 
     def _data_freeze_par_all(self, col):
@@ -589,6 +593,12 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
 
+    def _data_freeze_syst(self, row):
+        for col in [3, 5, 7]:
+            if self._tab.GetCellTextColour(row, col) != 'grey':
+                self._data_freeze_par(row, col)
+
+
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
         super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
         labels = self._labels_extract()
@@ -596,27 +606,39 @@ class GUITableSystList(GUITable):
                               i, np.where(labels == 'id')[0][0]))) \
                               for i in range(self._tab.GetNumberRows())])
 
-    def _data_link_par(self, row, col):
+    def _data_link_par(self, row, col, recreate=True):
+        #print('link', row, col)
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
-        ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
+        ref = np.argmin([int(self._key_extract(r,col)[0]) for r,c in self._cells_sel])
+        #print(ref)
         others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
-        id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
+        id_r, val = self._key_extract(self._cells_sel[ref][0], col) #self._cells_sel[ref][1])
         labels = self._labels_extract()
         for (r, c) in others:
-            id, parn = self._key_extract(r, c)
-            if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
+            id, parn = self._key_extract(r, col)
+            if self._tab.GetCellTextColour(r, col) in self._colours:#== 'forest green':
                 self._links_d[parn] = (id, 'expr', '')
                 self._links_d[val] = (id_r, 'expr', '')
             else:
                 if parn != val:
                     v = self._tab.GetCellValue(self._cells_sel[ref][0],
-                                               self._cells_sel[ref][1])
-                    self._tab.SetCellValue(r, c, v)
+                                               #self._cells_sel[ref][1])
+                                               col)
+                    self._tab.SetCellValue(r, col, v)
                     self._links_d[parn] = (id, 'expr', val)
-                    self._data_edit(r, labels[c], v, update_mod=False)
+                    self._data_edit(r, labels[col], v, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
+        if recreate:
+            self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
+            self._text_colours()
+        #print(self._links_d)
+
+    def _data_link_syst(self, row):
+        for col in [3, 5, 7]:
+            if self._tab.GetCellTextColour(row, col) not in self._colours:
+                self._data_link_par(row, col, recreate=False)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
@@ -671,16 +693,20 @@ class GUITableSystList(GUITable):
             title = []
             attr = []
             if len(self._cells_sel) > 1:
+                attr = ['link_par']
                 if self._tab.GetCellTextColour(row, col) in self._colours:
                     title = ['Unlink']
                 else:
                     title = ['Link']
-                attr = ['link_par']
+                    title += ['Link system']
+                    attr += ['link_syst']
+            attr += ['freeze_par']
             if self._tab.GetCellTextColour(row, col) == 'grey':
                 title += ['Unfreeze']
             else:
                 title += ['Freeze']
-            attr += ['freeze_par']
+                title += ['Freeze system']
+                attr += ['freeze_syst']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
@@ -792,6 +818,17 @@ class GUITableSystList(GUITable):
                 self._gui._dlg_mini_log._refresh()
             self._data_freeze_par_all(col)
 
+    def _on_freeze_syst(self, event):
+        popup = self._gui._tab_popup
+        row = popup._event.GetRow()
+        sess = self._gui._sess_sel
+        sess.log.append_full('_tab_systs', '_data_freeze_syst',
+                             {'row': row})
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
+            self._gui._dlg_mini_log._refresh()
+        self._data_freeze_syst(row)
+
 
     def _on_improve(self, event):
         #row = self._gui._tab_popup._event.GetRow()
@@ -852,6 +889,17 @@ class GUITableSystList(GUITable):
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
         self._data_link_par(row, col)
+
+
+    def _on_link_syst(self, event):
+        popup = self._gui._tab_popup
+        row = popup._event.GetRow()
+        sess = self._gui._sess_sel
+        sess.log.append_full('_tab_systs', '_data_link_syst', {'row': row})
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
+            self._gui._dlg_mini_log._refresh()
+        self._data_link_syst(row)
 
 
     def _on_merge(self, event):
