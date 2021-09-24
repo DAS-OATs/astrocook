@@ -891,7 +891,12 @@ class GUITableSystList(GUITable):
                   for i in range(self._tab.GetNumberRows())])
         return np.where(id==ids)[0][0]
         """
-        return np.where(id==self._ids)[0][0]
+
+        try:
+            return np.where(id==self._ids)[0][0]
+        except:
+            return None
+
 
 
     def _text_colours(self):
@@ -905,13 +910,16 @@ class GUITableSystList(GUITable):
                     mod = m['mod']
             for p,v in mod._pars.items():
                 if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
-                    c = np.where(labels==p.split('_')[-1])[0][0]
+                    try:
+                        c = np.where(labels==p.split('_')[-1])[0][0]
+                    except:
+                        c = None
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
                     #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
                     #    print(id, p,v)
-                    if v.vary == False:
+                    if v.vary == False and r != None and c != None:
                         self._tab.SetCellTextColour(r, c, 'grey')
-                    if v.expr != None:
+                    if v.expr != None and r != None and c != None:
                         r2 = self._row_extract(int(v.expr.split('_')[-2]))
                         c2 = np.where(labels==p.split('_')[-1])[0][0]
                         if v.expr not in self._links_c:

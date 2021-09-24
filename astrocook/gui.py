@@ -465,7 +465,7 @@ class GUIPanelSession(wx.Frame):
 
         sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
-        
+
         missing = []
         for i in range(self._tab.GetItemCount()+1):
             if i not in self._gui._sess_item_list:
