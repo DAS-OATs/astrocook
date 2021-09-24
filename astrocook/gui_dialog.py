@@ -97,6 +97,21 @@ class GUIDialog(wx.Dialog):
         self._params.append(OrderedDict(zip(keys, values)))
 
     def _on_cancel(self, e):
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            self._gui._dlg_mini_systems._cursor_refresh()
+            """
+            # Unfreeze cursors in case they were frozen
+            self._gui._graph_main._graph._cursor_frozen = False
+            self._gui._graph_det._graph._cursor_frozen = False
+
+            # Refresh cursor
+            shown = True if self._gui._dlg_mini_systems._shown else False
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
+            self._gui._dlg_mini_systems._shown = shown
+            """
         self.Close()
 
     def _on_ok(self, e):
@@ -163,6 +178,8 @@ class GUIDialog(wx.Dialog):
 
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
+                self._gui._dlg_mini_systems._cursor_refresh()
+                """
                 # Unfreeze cursors in case they were frozen
                 self._gui._graph_main._graph._cursor_frozen = False
                 self._gui._graph_det._graph._cursor_frozen = False
@@ -174,6 +191,7 @@ class GUIDialog(wx.Dialog):
                 self._gui._dlg_mini_systems._shown = True
                 self._gui._dlg_mini_systems._on_apply(e=None)
                 self._gui._dlg_mini_systems._shown = shown
+                """
 
 
     def _update_params(self):
@@ -377,7 +395,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
-            
+
 
     def _on_load(self, e=None, path=None, log=True):
         sess = self._gui._sess_sel
@@ -829,6 +847,20 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
         self._bottom.SetSizeHints(self)
+
+
+    def _cursor_refresh(self):
+        # Unfreeze cursors in case they were frozen
+        self._gui._graph_main._graph._cursor_frozen = False
+        self._gui._graph_det._graph._cursor_frozen = False
+
+        # Refresh cursor
+        shown = True if self._shown else False
+        self._shown = False
+        self._on_cancel(e=None)
+        self._shown = True
+        self._on_apply(e=None)
+        self._shown = shown
 
 
     def _on_apply(self, e, refresh=True):

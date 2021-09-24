@@ -898,7 +898,6 @@ class GUITableSystList(GUITable):
             return None
 
 
-
     def _text_colours(self):
         labels = self._labels_extract()
         for (r,c) in self._cells_sel:
