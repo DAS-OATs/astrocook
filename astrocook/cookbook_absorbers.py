@@ -671,7 +671,6 @@ class CookbookAbsorbers(object):
                     fit = True
                 """
                 if fit_list[i]:
-                    print(m['id'])
                     z_list.append(m['z0'])
                     frozen = self._syst_fit(m['mod'], verbose=False)
                     if not frozen: chi2r_list.append(m['mod']._chi2r)
