@@ -737,7 +737,6 @@ class CookbookAbsorbers(object):
     def _systs_prepare(self, append=True):
         systs = self.sess.systs
         if systs != None and len(systs.t) != 0 and append:
-            print(systs._id)
             systs._append(SystList(id_start=np.max(systs._t['id'])+1))
         else:
             setattr(self.sess, 'systs', SystList())
