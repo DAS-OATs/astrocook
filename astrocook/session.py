@@ -260,6 +260,8 @@ class Session(object):
 
             # generic
             if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
+                if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
+                    self.spec = format.xqr30_bosman(hdul)
                 self.spec = format.generic_spectrum(hdul)
 
 
