@@ -659,6 +659,31 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
+    def xqr30_bosman(self, hdul):
+        """ XQR-30 spectrum as formatted by Sarah Bosman """
+
+        logging.info(msg_format('xqr30_bosman'))
+        hdr = hdul[0].header
+
+        data = Table(hdul[1].data)
+        x = data['col1']
+        y = data['col2']
+        dy = data['col3']
+        xunit = au.Angstrom
+        yunit = au.dimensionless_unscaled
+        xmin, xmax = self._create_xmin_xmax(x)
+        meta = hdr #{}
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+        spec._t['redside_PCA'] = data['col4']
+        spec._t['blueside'] = data['col5']
+        spec._t['blueside_1sigmal'] = data['col6']
+        spec._t['blueside_1sigmau'] = data['col7']
+        spec._t['blueside_2sigmal'] = data['col8']
+        spec._t['blueside_2sigmau'] = data['col9']
+        return spec
+
+
     def xshooter_das_spectrum(self, hdul):
         """ X-shooter DAS FSPEC/RSPEC format """
         logging.info(msg_format('X-shooter DAS'))
