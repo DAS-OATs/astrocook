@@ -374,12 +374,6 @@ class CookbookAbsorbers(object):
             #mod_sel = np.ravel(np.array([m for m in systs._mods_t['id'][mod_w]]))
             #print(mod_sel)
 
-        else:
-            mod_w = range(len(systs._mods_t))
-            mod_sel = np.array(systs._t['id'])
-        #print(mod_w)
-        #print(mod_sel)
-
         # When a model has been added
         elif mod_new is not None:
             mod_sel = np.array([], dtype=int)
@@ -407,7 +401,12 @@ class CookbookAbsorbers(object):
                         mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
 
-        #print(systs._mods_t)
+        else:
+            mod_w = range(len(systs._mods_t))
+            mod_sel = np.array(systs._t['id'])
+
+        #print(mod_sel)
+
         systs._mods_t.remove_rows(mod_w)
         #print(systs._mods_t)
         #for i,s in enumerate(systs._t):
@@ -445,7 +444,9 @@ class CookbookAbsorbers(object):
                                b=s['b'], resol=s['resol'],
                                defs=self.sess.defs.dict['voigt'])
                 self._mods_update(mod)
-                #print(systs._mods_t['id'])
+            else:
+                systs._id = np.max(systs._t['id'])+1
+
 
         for w, c in zip(wrong_id, corr_id):
             logging.warning("System %i had a duplicated id! I changed it to %i."
@@ -455,6 +456,7 @@ class CookbookAbsorbers(object):
         #systs._mods_t['id'].pprint(max_lines=-1)
         #print(len(systs._mods_t))
         systs_n = len(systs._t)
+        #systs._id = np.max(systs._t['id'])
         mods_n = len(systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s (including %i system%s)." \
@@ -531,7 +533,6 @@ class CookbookAbsorbers(object):
                 logging.warning("Redshift %2.4f already exists. Choose another "
                                 "one." % z)
             return None
-
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
                           None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
@@ -665,8 +666,13 @@ class CookbookAbsorbers(object):
             fit_list = []
             for i,m in enumerate(mods_t):
                 if self._sel_fit:
+                    #print(m['id'])
+                    #print(systs._t['id'])
+                    #print([np.where(systs._t['id']==id) for id in m['id']])
+                    #print([np.where(systs._t['id']==id)[0][0] for id in m['id']])
                     dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
                           for id in m['id']]
+                    #print(np.isnan(dz).any())
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
@@ -731,6 +737,7 @@ class CookbookAbsorbers(object):
     def _systs_prepare(self, append=True):
         systs = self.sess.systs
         if systs != None and len(systs.t) != 0 and append:
+            print(systs._id)
             systs._append(SystList(id_start=np.max(systs._t['id'])+1))
         else:
             setattr(self.sess, 'systs', SystList())
@@ -1448,7 +1455,6 @@ class CookbookAbsorbers(object):
             else:
                 #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
-
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)
             self._systs_cycle(mod=mod, verbose=True)
