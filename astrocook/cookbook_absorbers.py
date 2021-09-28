@@ -447,6 +447,15 @@ class CookbookAbsorbers(object):
             else:
                 systs._id = np.max(systs._t['id'])+1
 
+        for m in systs._mods_t:
+            mod = m['mod']
+            c = []
+            t = 1e-2
+            while len(c)==0:
+                c = np.where(mod._ys<1-t)[0]
+                t = t*0.5
+            spec.t['fit_mask'][c] = True
+
 
         for w, c in zip(wrong_id, corr_id):
             logging.warning("System %i had a duplicated id! I changed it to %i."
