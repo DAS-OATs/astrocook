@@ -21,6 +21,68 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin=x, xmax=None)
 
 
+    def combine(self, name='*_combined', _sel=''):
+        """ @brief Combine two or more sessions
+        @details Combine two or more sessions. A new session is created, with a
+        new spectrum containing all entries from the spectra of the combined
+        sessions. Other objects from the sessions (line lists, etc.) are
+        discarded.
+        @param name Name of the output session
+        @return Combined session
+        """
+        name_in = name
+        #sel = self._tab._get_selected_items()
+        sel = self.sess._gui._sess_item_sel
+        sess_list = self.sess._gui._sess_list
+
+        """
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
+        if sel == []:
+            sel = range(len(sess_list))
+        self._gui._sess_item_sel = sel
+        """
+        sel = _sel
+
+        struct_out = {}
+        for struct in sess_list[sel[0]].seq:
+            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+
+
+        if name_in[0] == '*':
+            name = sess_list[sel[0]].name
+
+        logging.info("Combining sessions %s..." % ', '.join(str(s) for s in sel))
+        for s in sel[1:]:
+            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+
+            for struct in sess_list[s].seq:
+                if getattr(sess_list[s], struct) != None:
+                    if struct_out[struct] != None:
+                        struct_out[struct]._append(
+                            getattr(sess_list[s], struct))
+                    else:
+                        struct_out[struct] = dc(getattr(sess_list[s], struct))
+
+            if name_in[0] == '*':
+                name += '_' + sess_list[s].name
+
+        struct_out['spec']._t.sort('x')
+        if name_in[0] == '*':
+            name += name_in[1:]
+        from .session import Session
+        sess = Session(gui=self.sess._gui, name=name, spec=struct_out['spec'],
+                       nodes=struct_out['nodes'], lines=struct_out['lines'],
+                       systs=struct_out['systs'])
+        return sess
+
+
     def deredden(self, ebv=0.03, rv=3.1):
         """@brief Deredden spectrum
         @details Deredden the spectrum using the parametrization by Cardelli,
@@ -38,6 +100,58 @@ class CookbookGeneral(object):
             return 0
 
         self.sess.spec._deredden(ebv, rv)
+        return 0
+
+
+    def equalize(self, xmin, xmax, _sel=''):
+        """ @brief Equalize two sessions
+        @details Equalize the flux level of one session to another one. The
+        last-selected session is equalized to the first-selected one. The
+        equalization factor is the ratio of the median flux within the
+        specified wavelength interval.
+        @param xmin Minimum wavelength (nm)
+        @param xmax Maximum wavelength (nm)
+        @return 0
+        """
+
+        try:
+            xmin = float(xmin) * au.nm
+            xmax = float(xmax) * au.nm
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        """
+        sel = self._gui._sess_item_sel
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+        self._gui._sess_item_sel = sel
+        """
+        sel = _sel
+        logging.info("Equalizing session %i to session %i... "
+                     % (sel[1], sel[0]))
+
+        for i,s in enumerate(sel):
+            sess = self.sess._gui._sess_list[s]
+            w = np.where(np.logical_and(sess.spec.x>xmin, sess.spec.x<xmax))[0]
+            if len(w)==0:
+                logging.error("I can't use this wavelength range for "
+                              "equalization. Please choose a range covered by "
+                              "both sessions.")
+                return(0)
+            if i == 0:
+                f = np.nanmedian(sess.spec.y[w]).value
+                #print(np.median(sess.spec.y[w]))
+            else:
+                f = f/np.nanmedian(sess.spec.y[w]).value
+                #print(np.median(sess.spec.y[w]), f)
+                logging.info("Equalization factor: %3.4f." % f)
+                sess.spec.y = f*sess.spec.y
+                sess.spec.dy = f*sess.spec.dy
+
         return 0
 
 
@@ -429,73 +543,6 @@ class CookbookGeneral(object):
         return 0
 
 
-    def shift_from_rf(self, z=0):
-        """ @brief Shift from rest frame
-        @details Shift x axis from rest frame to the original frame.
-        @param z Redshift to use for shifting
-        @return 0
-        """
-
-        try:
-            z = float(z)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-
-        for s in self.sess.seq:
-            try:
-                z_to = z-getattr(self.sess, s)._rfz
-                getattr(self.sess, s)._shift_rf(z_to)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def shift_to_rf(self, z=0):
-        """ @brief Shift to rest frame
-        @details Shift x axis to the rest frame.
-        @param z Redshift to use for shifting
-        @return 0
-        """
-
-        try:
-            z = float(z)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._shift_rf(z)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def shift_bary(self, v=None):
-        """ @brief Shift to barycentric frame
-        @details Shift x axis to the barycentric frame of the solar system.
-        @param v Velocity in the barycentric frame (km/s)
-        @return 0
-        """
-
-        try:
-            v = float(v)
-        except:
-            try:
-                v = self.sess.spec.meta['v_bary']
-            except ValueError:
-                logging.error(msg_param_fail)
-                return 0
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._shift_bary(v)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
     def snr_est(self):
         """ @brief Estimate the SNR
         @details Estimate the signal-to-noise ratio per pixel.
@@ -546,119 +593,3 @@ class CookbookGeneral(object):
             spec._t['y'][np.where(np.array(tell==1, dtype=bool))] = np.nan
 
         return 0
-
-
-    def x_convert(self, zem=0, xunit=au.km/au.s):
-        """ @brief Convert x axis
-        @details Convert the x axis to wavelength or velocity units. The x axis
-        can be converted to any unit of wavelength or velocity (default: nm and
-        km/s). The conversion applies to both the spectrum and the line list.
-        When converting to and from velocity units, the zero point is set at
-        (1+zem)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength
-        of the Lyman-alpha transition).
-        @param zem Emission redshift
-        @param xunit Unit of wavelength or velocity
-        @return 0
-        """
-
-        try:
-            zem = float(zem)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-
-        xunit = au.Unit(xunit)
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._x_convert(zem, xunit)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def y_convert(self, yunit=au.electron/au.nm):
-        """ @brief Convert y axis
-        @details Convert the y axis to different units. The y axis can be
-        expressed in different units depending on how it was calibrated
-        (default: erg/(cm^2 s nm)). It can be converted to any unit of the same
-        physical quantity. The conversion applies to both the spectrum and the
-        line list.
-        @param yunit Unit of flux density
-        @return 0
-        """
-
-        yunit = au.Unit(yunit)
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._y_convert(yunit=yunit)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def y_scale(self, fact=1.0):
-        """ @brief Scale y axis
-        @details Scale the y axis by a constant factor. The spectrum and the
-        line list are rescaled in place, without starting a new session.
-        @param fact Multiplicative factor
-        @return 0
-        """
-
-        fact = float(fact)
-
-        for s in self.sess.seq:
-            try:
-                getattr(self.sess, s)._y_scale(fact)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-
-    def y_scale_med(self):
-        """ @brief Scale y axis by median
-        @details Scale the y axis by its median.
-        @return 0
-        """
-
-        fact = 1/np.median(self.sess.spec.y)
-
-        for s in self.sess.seq:
-            try:
-                struct = getattr(self.sess, s)
-                struct._y_scale(fact)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-    def y_scale_x(self, x):
-        """ @brief Scale y axis by its value at a given x
-        @details Scale the y axis by its value at a given x.
-        @param x x (nm)
-        @return 0
-        """
-
-        try:
-            x = float(x)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-
-        fact = 1/np.interp(x, self.sess.spec.x.to(au.nm).value, self.sess.spec.y)
-
-        for s in self.sess.seq:
-            try:
-                struct = getattr(self.sess, s)
-                struct._y_scale(fact)
-            except:
-                logging.debug(msg_attr_miss(s))
-        return 0
-
-    def z_ax(self, trans='Ly_a'):
-        """ @brief Show redshift axis
-        @details Show an additional axis on the plot with wavelength converted
-        into redshift for a given transition
-        @param trans Transition
-        @return 0
-        """
-        self.sess._ztrans = trans

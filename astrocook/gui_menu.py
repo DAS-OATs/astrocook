@@ -9,6 +9,7 @@ from astropy.io import ascii
 import datetime
 import logging
 import os
+import sys
 import wx
 
 class GUIMenu(object):
@@ -18,24 +19,88 @@ class GUIMenu(object):
         self._gui = gui
         self._gui._menu = self
         self._params_last = None
+        self._togg_set()
+        """
+        self._menus_togg = {'attr': [menus_assoc[m] \
+                                     for m in self._gui._defs.dict['menus']],
+                            'title': self._gui._defs.dict['menus']}
+        """
 
     def bar(self):
         bar = wx.MenuBar()
+
         self._file = GUIMenuFile(self._gui)
-        self._edit = GUIMenuEdit(self._gui)
-        self._view = GUIMenuView(self._gui)
-        self._recipes = GUIMenuRecipes(self._gui)
-        self._courses = GUIMenuCourses(self._gui)
-        self._cook = GUIMenuCook(self._gui)
-        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
         bar.Append(self._file._menu, "File")
+        self._edit = GUIMenuEdit(self._gui)
         bar.Append(self._edit._menu, "Edit")
+        self._view = GUIMenuView(self._gui)
         bar.Append(self._view._menu, "View")
-        bar.Append(self._recipes._menu, "Recipes")
-        #bar.Append(self._courses._menu, "Courses")
-        bar.Append(self._courses._menu, "Set menus")
-        #bar.Append(self._cook._menu, "Cook")
+
+        for a, t in zip(self._menus_togg['attr'], self._menus_togg['title']):
+            setattr(self, a,
+                getattr(sys.modules[__name__], 'GUIMenu%s' % t)(self._gui))
+            bar.Append(getattr(self, a)._menu, t)
+        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
+
         return bar
+
+    def _create(self, menu, rec, cb, start_id):
+        subtitle = ''
+        for i, r in enumerate(rec):
+            id = start_id+i
+            if isinstance(r, str):
+                if r == '--':
+                    menu.AppendSeparator()
+                elif r[0] == '>':
+                    submenu = wx.Menu()
+                    subtitle = r[2:]
+                elif r[0] == '<':
+                    menu.AppendSubMenu(submenu, subtitle)
+                    subtitle = ''
+            if isinstance(r, dict):
+                m = menu if subtitle == '' else submenu
+                if 'func' in r:
+                    setattr(m, r['targ'], {'start_id': id, 'func': r['func'],
+                                           'value': r['value']})
+                    r['enable'] = self._enable(r['func'], r['value'])
+                if 'type' not in r: r['type'] = '_item_method'
+                if 'append' not in r: r['append'] = None
+                if 'title' not in r: r['title'] = self._get_doc(getattr(cb, r['targ']))
+
+                if r['type'] == '_item':
+                    if 'event' not in r: r['event'] = None
+                    if 'key' not in r: r['key'] = None
+                    if 'enable' not in r: r['enable'] = True
+                    self._item(m, id, r['append'], r['title'], r['event'],
+                               r['key'], r['enable'])
+
+                if r['type'] == '_item_graph':
+                    if 'key' not in r: r['key'] = None
+                    if 'enable' not in r: r['enable'] = False
+                    if 'dlg_mini' not in r: r['dlg_mini'] = None
+                    if 'targ' not in r: r['targ'] = None
+                    if 'alt_title' not in r: r['alt_title'] = r['title']
+                    self._item_graph(m, id, r['append'], r['title'], r['key'],
+                                     r['enable'], r['dlg_mini'], r['targ'],
+                                     r['alt_title'])
+
+                if r['type'] == '_item_method':
+                    if 'enable' not in r: r['enable'] = False
+                    if 'obj' not in r: r['obj'] = None
+                    self._item_method(m, id, r['append'], r['title'], r['targ'],
+                                      r['enable'], r['obj'])
+
+        return 0
+
+    def _enable(self, func, value):
+        return getattr(len(self._gui._sess_item_sel), func)(value)
+
+
+    def _get_doc(self, method):
+        full = inspect.getdoc(method)
+        split = full.split('@')
+        return [s[6:-1] for s in split if s[0:5]=='brief'][0].replace('\n', ' ')
+
 
     def _item(self, menu, id, append, title, event, key=None, enable=True):
         if key is not None:
@@ -48,11 +113,16 @@ class GUIMenu(object):
         self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
         return item
+
 
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
                     dlg_mini=None, targ=None, alt_title=None):
@@ -69,7 +139,11 @@ class GUIMenu(object):
             item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
@@ -82,7 +156,11 @@ class GUIMenu(object):
             lambda e: self._on_dialog(e, title, targ, obj), item)
         menu.Append(item)
         if append is not None:
-            getattr(self._gui, '_menu_'+append+'_id').append(id)
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
             item.Enable(False)
         else:
             item.Enable(enable)
@@ -185,18 +263,6 @@ class GUIMenu(object):
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             self._gui._path = fileDialog.GetPath()
-            """
-            try:
-                getattr(self, action)(self._gui._path)
-            except:
-                getattr(self._gui._panel_sess, action)(self._gui._path)
-            """
-        """
-        try:
-            getattr(self, action)(self._gui._path)
-        except:
-            getattr(self._gui._panel_sess, action)(self._gui._path)
-        """
         self._gui._panel_sess._open_path = self._gui._path
         if self._gui._path[-4:] == 'json':
             self._gui._panel_sess._open_rec = 'json_load'
@@ -205,38 +271,33 @@ class GUIMenu(object):
             self._gui._panel_sess._open_rec = '_on_open'
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-    """
-    def _on_open_session(self, path):
-        name = path.split('/')[-1].split('.')[0]
-        #logging.info("I'm loading session %s..." % path)
-        sess = Session(gui=self._gui, path=path, name=name)
-        self._gui._panel_sess._on_add(sess, open=True)
-        if sess._open_twin:
-            #logging.info("I'm loading twin session %s..." % path)
-            sess = Session(gui=self._gui, path=path, name=name, twin=True)
-            self._gui._panel_sess._on_add(sess, open=True)
-        #self._gui._path = path
-    """
 
     def _refresh(self):
         # Nested loops! WOOOO!
+        sess = self._gui._sess_sel
         sel = self._gui._graph_main._sel
+        self._togg_set()
+        self._gui._panel_sess.SetMenuBar(self.bar())
 
         for a in seq_menu:  # from .vars
+
             for i in getattr(self._gui, '_menu_'+a+'_id'):
-                for m in ['_edit', '_view', '_recipes', '_courses', 'cook']:
+                for m in ['_edit', '_view']+self._menus_togg['attr']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable() \
                             and item.key not in self._key_list:
                             item.Check(False)
-                        if hasattr(self._gui._sess_sel, a):
-                            cond = getattr(self._gui._sess_sel, a) != None
+
+                        if hasattr(sess, a):
+                            cond = getattr(sess, a) != None
                         else:
-                            try:
-                                cond = a in self._gui._sess_sel.systs.t.colnames
-                            except:
-                                cond = a in self._gui._sess_sel.spec.t.colnames
+                            if hasattr(sess, 'systs'):
+                                cond = a in sess.systs.t.colnames \
+                                           or a in sess.spec.t.colnames
+                            else:
+                                cond = a in sess.spec.t.colnames
+
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -246,6 +307,7 @@ class GUIMenu(object):
                             item.Enable(False)
                     except:
                         pass
+
 
     def _sel_graph_cols(self, cols=graph_cols_sel):
         """ @brief Select graph columns
@@ -257,12 +319,17 @@ class GUIMenu(object):
 
         return 0
 
+    def _togg_set(self):
+        self._menus_togg = {'attr': [menus_assoc[m] \
+                             for m in self._gui._defs.dict['menus']],
+                            'title': self._gui._defs.dict['menus']}
+
 
 class GUIMenuCook(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=6000,
+                 start_id=11000,
                  **kwargs):
         super(GUIMenuCook, self).__init__(gui)
         self._gui = gui
@@ -280,135 +347,78 @@ class GUIMenuCook(GUIMenu):
         wf = Workflow(self._gui, Cookbook())
         wf.civ_full()
 
-    """
-    def _on_civ_full_old(self, event):
 
-        targ_list = ascii.read('/data/cupani/CIV/targets_3.csv')
+class GUIMenuAbsorbers(GUIMenu):
 
-        for l in targ_list:
-            time_start = datetime.datetime.now()
-            t = l['name']
-            zem = l['z']
-            xmin = l['lambdamin']
-            xmax = l['lambdamax']
-            self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
-                                           +'.fits')
+    def __init__(self,
+                 gui,
+                 start_id=7000,
+                 **kwargs):
+        super(GUIMenuAbsorbers, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
+                     {'targ': 'systs_complete_from_like', 'append': 'z0'},
+                     '--',
+                     {'targ': 'systs_new_from_lines', 'append': 'lines'},
+                     {'targ': 'systs_complete', 'append': ['z0', 'lines']},
+                     '> Other',
+                     {'targ': 'cands_find', 'append': 'z0'},
+                     {'targ': 'systs_improve', 'append': 'z0'},
+                     '<',
+                     '--',
+                     {'targ': 'systs_fit', 'append': 'z0'},
+                     {'targ': 'systs_clean', 'append': 'z0'},
+                     {'targ': 'mods_recreate', 'append': 'z0'},
+                     '> Other',
+                     {'targ': 'systs_snr', 'append': 'z0'},
+                     {'targ': 'systs_select', 'append': 'z0'},
+                     {'targ': 'comp_extract', 'append': 'z0'},
+                     {'targ': 'systs_merge', 'append': 'z0'},
+                     '<',
+                     '--',
+                     {'targ': 'mods_ccf_max', 'append': 'z0'},
+                     {'targ': 'systs_sigmav', 'append': 'z0'},
+                    ]
+
+        from .cookbook_absorbers import CookbookAbsorbers as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
 
 
-            sess_start = self._gui._sess_sel
-            if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
-            else:
-                sess = sess_start
+class GUIMenuContinuum(GUIMenu):
 
-            sess.gauss_convolve(std=10)
-            sess.peaks_find(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)
-            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
-                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
-            if 'cont' not in sess.spec._t.colnames:
-                sess.nodes_extract(delta_x=1000)
-                sess.nodes_interp()
+    def __init__(self,
+                 gui,
+                 start_id=6000,
+                 **kwargs):
+        super(GUIMenuContinuum, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
 
-            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
-            self._gui._panel_sess._on_add(sess_reg, open=False)
-            sess_center = dc(sess_reg)
-            sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
+        self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
+                     '--',
+                     {'targ': 'lines_find', 'append': 'spec'},
+                     {'targ': 'nodes_cont', 'append': 'spec'},
+                     {'targ': 'lines_update', 'append': 'z0'},
+                     '> Other',
+                     {'targ': 'peaks_find', 'append': 'spec'},
+                     {'targ': 'nodes_extract', 'append': 'lines'},
+                     {'targ': 'nodes_clean', 'append': 'lines'},
+                     {'targ': 'nodes_interp', 'append': 'nodes'},
+                     '<',
+                     '--',
+                     {'targ': 'lya_corr', 'append': 'spec'},
+                     {'targ': 'abs_cont', 'append': 'spec'},
+                     ]
 
-            sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
-                                    *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
-            sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
+        from .cookbook_continuum import CookbookContinuum as cbc
+        self._cb = cbc()
 
-            #sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0,
-                                         dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
+        self._create(self._menu, self._rec, self._cb, start_id)
 
-            sess_reg.add_syst_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
-                                          maxfev=10)
-
-            sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
-            sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            sess_reg.syst_merge()
-            self._gui._refresh()
-            sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
-                          +datetime.date.today().isoformat()+'.xxx')
-            sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
-            time_end = datetime.datetime.now()
-            print("%s; computation time: %s" \
-                  % (datetime.datetime.now(), time_end-time_start))
-
-    def _on_test(self, event):
-        targ_list = ascii.read('/data/cupani/CIV/targets_prova.csv')
-
-        for l in targ_list:
-            time_start = datetime.datetime.now()
-            t = l['name']
-            zem = l['z']
-            xmin = l['lambdamin']
-            xmax = l['lambdamax']
-            #xmin = 381
-            #xmax = 382.5
-            #xmin = 592
-            #xmax = 598
-            #xmin = 625
-            #xmax = 630
-            #xmin = 480
-            #xmax = 490
-            self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
-                                           +'.fits')
-            sess_start = self._gui._sess_sel
-            if sess_start.spec.meta['object'] == 'J2123-0050':
-                sess = sess_start.region_extract(xmin=xmin, xmax=xmax)
-            else:
-                sess = sess_start
-
-            sess.gauss_convolve(std=10)
-            sess.peaks_find(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)
-            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
-                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
-            if 'cont' not in sess.spec._t.colnames:
-                sess.nodes_extract(delta_x=1000)
-                sess.nodes_interp()
-
-            sess_reg = sess.region_extract(xmin=xmin, xmax=xmax)
-            self._gui._panel_sess._on_add(sess_reg, open=False)
-            #sess_center = dc(sess_reg)
-            #sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
-            #sess_reg.lines.t['x'] = (1+sess_center.systs.t['z'])\
-            #                        *xem_d['Ly_a'].to(sess_reg.spec.x.unit)
-            #sess_reg.lines.t['logN'] = sess_center.systs.t['logN']
-            #sess_reg.add_syst_from_lines(series='SiII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='SiIV', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            sess_reg.add_syst_from_lines(series='CIV', logN=None, b=20.0,
-                                         dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='FeII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-            #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
-            #                             dz=5e-5, z_end=zem, maxfev=10)
-
-            sess_reg.add_syst_from_resids(chi2r_thres=1.0, logN=13.0, b=2.0,
-                                          maxfev=10)
-            #sess_reg.compl_syst(n=10)#, z_start=2.128, z_end=2.1372)
-            #sess_reg.add_syst_slide(col='deabs')#, z_start=1.6, z_end=1.61)
-            #sess_reg.syst_merge()
-            self._gui._refresh()
-            #sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_'
-            #              +datetime.date.today().isoformat()+'.xxx')
-            #sess_reg.save('/data/cupani/CIV/analyzed/'+t+'_latest.xxx')
-            time_end = datetime.datetime.now()
-            print("%s; computation time: %s" \
-                  % (datetime.datetime.now(), time_end-time_start))
-    """
 
 class GUIMenuEdit(GUIMenu):
 
@@ -419,63 +429,23 @@ class GUIMenuEdit(GUIMenu):
         super(GUIMenuEdit, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
-        self._start_id = start_id
 
-        # Add items to Edit menu here
-        #print(len(self._gui._sess_list), len(self._gui._sess_item_sel))
-        self._item_method(self._menu, start_id+300, None,
-                          "Equalize sessions", 'equalize',
-                          enable=len(self._gui._sess_item_sel)==2,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+301, None,
-                          "Combine sessions", 'combine',
-                          enable=len(self._gui._sess_item_sel)>1,
-                          obj=self._gui._panel_sess)
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+310, None,
-                          "Import structure", 'struct_import',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+311, None,
-                          "Modify structures", 'struct_modify2',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        self._item_method(self._menu, start_id+312, None,
-                          "Synthetic spectrum from structure",
-                          'spec_from_struct',
-                          enable=len(self._gui._sess_list)>0,
-                          obj=self._gui._panel_sess)
-        submenu = wx.Menu()
-        self._item_method(submenu, start_id+313, 'spec',
-                          "Blackbody", 'bb')
-        self._item_method(submenu, start_id+314, 'spec',
-                          "Power-law", 'pl')
-        self._menu.AppendSubMenu(submenu, "Apply template")
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+320, 'spec',
-                          "Extract region", 'region_extract')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+330, 'spec',
-                          "Convert x axis", 'x_convert')
-        self._item_method(self._menu, start_id+331, 'spec',
-                          "Convert y axis", 'y_convert')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+340, 'spec',
-                          "Scale y axis by median", 'y_scale_med')
-        self._item_method(self._menu, start_id+341, 'spec',
-                          "Scale y axis by its value at a given x", 'y_scale_x')
-        self._item_method(self._menu, start_id+342, 'spec',
-                          "Scale y axis", 'y_scale')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+350, 'spec',
-                          "Shift to barycentric frame", 'shift_bary')
-        self._item_method(self._menu, start_id+351, 'spec',
-                          "Shift to rest frame", 'shift_to_rf')
-        self._item_method(self._menu, start_id+352, 'spec',
-                          "Shift from rest frame", 'shift_from_rf')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+360, 'spec',
-                          "Deredden", 'deredden')
+        self._rec = [{'targ': 'x_convert', 'append': 'spec'},
+                     {'targ': 'y_convert', 'append': 'spec'},
+                     '--',
+                     {'targ': 'shift_bary', 'append': 'spec'},
+                     {'targ': 'shift_to_rf', 'append': 'spec'},
+                     {'targ': 'shift_from_rf', 'append': 'spec'},
+                     '--',
+                     {'targ': 'struct_import', 'func': '__gt__', 'value': 0},
+                     {'targ': 'struct_modify', 'func': '__gt__', 'value': 0},
+                     ]
+
+
+        from .cookbook_edit import CookbookEdit as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
 
 
 class GUIMenuFile(GUIMenu):
@@ -524,161 +494,105 @@ class GUIMenuFile(GUIMenu):
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving session %s..." % path)
             self._gui._sess_sel.save(path)
-            """
-            try:
-                acs = self
-                self.IO.acs_write(self.acs, name, dir)
-
-            except IOError:
-                wx.LogError("Cannot save session '%s'." % name)
-            """
 
 
-class GUIMenuRecipes(GUIMenu):
+class GUIMenuFlux(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=5000,
+                 **kwargs):
+        super(GUIMenuFlux, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'y_scale', 'append': 'spec'},
+                     {'targ': 'y_scale_med', 'append': 'spec'},
+                     {'targ': 'y_scale_x', 'append': 'spec'},
+                     '--',
+                     {'targ': 'deredden', 'append': 'spec'},
+                     '--',
+                     {'targ': 'mags_adjust', 'append': 'spec'},
+                     ]
+
+        from .cookbook_flux import CookbookFlux as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuGeneral(GUIMenu):
 
     def __init__(self,
                  gui,
                  start_id=4000,
                  **kwargs):
-        super(GUIMenuRecipes, self).__init__(gui)
+        super(GUIMenuGeneral, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
-        #sess = self._gui._sess_sel
+
+        self._rec = [{'targ': 'equalize', 'func': '__eq__', 'value': 2},
+                     {'targ': 'combine', 'func': '__gt__', 'value': 1},
+                     '--',
+                     {'targ': 'mask', 'append': 'spec'},
+                     {'targ': 'telluric_mask', 'append': 'spec'},
+                     '--',
+                     {'targ': 'snr_est', 'append': 'spec'},
+                     {'targ': 'resol_est', 'append': 'spec'},
+                     {'targ': 'rms_est', 'append': 'spec'},
+                     '--',
+                     {'targ': 'rebin', 'append': 'spec'},
+                     {'targ': 'gauss_convolve', 'append': 'spec'},
+                     {'targ': 'flux_ccf', 'append': 'spec'},
+                     {'targ': 'flux_ccf_stats', 'append': 'spec'},
+                     ]
+
+        from .cookbook_general import CookbookGeneral as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
 
 
-        # Add items to Recipes menu here
-        self._item_method(self._menu, start_id+100, 'spec',
-                          "Create spectral mask", 'mask')
-        self._item_method(self._menu, start_id+101, 'spec',
-                          "Mask telluric absorption", 'telluric_mask')
-        self._item_method(self._menu, start_id+102, 'spec',
-                          "Rebin spectrum", 'rebin')
-        self._item_method(self._menu, start_id+103, 'spec',
-                          "Convolve with gaussian", 'gauss_convolve')
-        self._item_method(self._menu, start_id+104, 'spec',
-                          "Estimate resolution", 'resol_est')
-        self._item_method(self._menu, start_id+105, 'spec',
-                          "Estimate error from RMS", 'rms_est')
-        self._item_method(self._menu, start_id+106, 'spec',
-                          "Estimate SNR", 'snr_est')
-        submenu = wx.Menu()
-        self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
-        self._menu.AppendSubMenu(submenu, "Other general recipes")
+class GUIMenuSynthetic(GUIMenu):
 
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+150, 'spec', "Clip flux",
-                          'flux_clip')
-
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+200, 'spec', "Find lines",
-                          'lines_find')
-        self._item_method(self._menu, start_id+201, 'spec',
-                          "Continuum from nodes", 'nodes_cont')
-        self._item_method(self._menu, start_id+202, 'spec',
-                          "Continuum from absorbers", 'abs_cont')
-        submenu = wx.Menu()
-        self._item_method(submenu, start_id+210, 'spec', "Correct flux for Ly-a opacity",
-                          'lya_corr')
-        self._item_method(submenu, start_id+211, 'spec', "Find peaks",
-                          'peaks_find')
-        self._item_method(submenu, start_id+212, 'lines', "Extract nodes",
-                          'nodes_extract')
-        self._item_method(submenu, start_id+213, 'lines', "Clean nodes",
-                          'nodes_clean')
-        self._item_method(submenu, start_id+214, 'nodes',
-                          "Interpolate nodes", 'nodes_interp')
-        self._menu.AppendSubMenu(submenu, "Other recipes for continuum")
-        self._menu.AppendSeparator()
-
-        #self._item_method(self._menu, start_id+301, 'lines',
-        #                  "Add and fit a system", 'add_syst')
-        self._item_method(self._menu, start_id+300, 'z0',
-                          "New system", 'syst_new')
-        #self._item_method(self._menu, start_id+302, 'cont',
-        #                  "Add and fit systems from line list",
-        #                  'add_syst_from_lines')
-        self._item_method(self._menu, start_id+3005, 'cont',
-                          "New systems from likelihood",
-                          'systs_new_from_like')
-        self._item_method(self._menu, start_id+301, 'lines',
-                          "New systems from lines",
-                          'systs_new_from_lines')
-        self._item_method(self._menu, start_id+302, 'lines',
-                          "Find candidate systems", 'cands_find')
-        self._item_method(self._menu, start_id+303, 'z0',
-                          "Improve systems", 'systs_improve')
-        self._item_method(self._menu, start_id+304, 'z0',
-                          "Complete systems", 'systs_complete')
-        self._item_method(self._menu, start_id+305, 'z0',
-                          "Fit systems", 'systs_fit')
-        submenu = wx.Menu()
-        #self._item_method(submenu, start_id+310, 'systs',
-        #                  "Fit system", 'syst_fit')
-        self._item_method(submenu, start_id+311, 'z0',
-                          "Recreate models", 'mods_recreate')
-        self._item_method(submenu, start_id+312, 'z0',
-                          "Estimate SNR of systems", 'systs_snr')
-        self._item_method(submenu, start_id+313, 'z0', "Update lines",
-                          'lines_update')
-        self._item_method(submenu, start_id+314, 'z0',
-                          "Estimate position uncertainty", 'systs_sigmav')
-        submenu.AppendSeparator()
-        self._item_method(submenu, start_id+322, 'z0',
-                          "Clean systems", 'systs_clean')
-        self._item_method(submenu, start_id+323, 'z0',
-                          "Extract systems", 'comp_extract')
-        self._item_method(submenu, start_id+324, 'systs',
-                          "Select systems", 'systs_select')
-        submenu.AppendSeparator()
-        self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
-                          'mods_ccf_max')
-        self._menu.AppendSubMenu(submenu, "Other recipes for absorbers")
-        #self._item_method(self._menu, start_id+303, 'systs',
-        #                  "Add and fit systems from residuals",
-        #                  'add_syst_from_resids')
-        #self._item_method(self._menu, start_id+303, 'systs',
-        #                  "New systems from residuals",
-        #                  'systs_new_from_resids')
-        #self._item_method(self._menu, start_id+304, 'systs',
-        #                  "New systems from sliding technique",
-        #                  'systs_new_from_slide')
-        submenu = wx.Menu()
-
-        """
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+401, 'lines',
-                          "Simulate a system", 'syst_simul')
-        self._item_method(self._menu, start_id+402, 'systs',
-                          "Estimate completeness with simulated systems",
-                          'systs_compl')
-        """
-
-class GUIMenuCourses(GUIMenu):
     def __init__(self,
                  gui,
-                 start_id=5000,
+                 start_id=8000,
                  **kwargs):
-        super(GUIMenuCourses, self).__init__(gui)
+        super(GUIMenuSynthetic, self).__init__(gui)
         self._gui = gui
         self._menu = wx.Menu()
 
-        # Add items to Courses menu here
-        #self._item_method(self._menu, start_id, 'spec', "Find lines",
-        #                  ['gauss_convolve', 'peaks_find'])
-        self._item_method(self._menu, start_id, 'spec', "Guess continuum",
-                          ['lines_find', 'nodes_cont'])
-        self._item_method(self._menu, start_id+1, 'spec', "Fit Ly-a forest",
-                          ['lines_find', 'nodes_cont', 'systs_new_from_lines'])
-        #self._item_method(self._menu, start_id+2, 'lines', "Fit systems",
-        #                  ['add_syst_from_lines', 'add_syst_from_resids',
-        #                   'add_syst_slide', 'compl_syst'])
-        self._menu.AppendSeparator()
-        #self._item_method(self._menu, start_id+101, 'spec', "From file",
-        #                  'from_file', obj=self._gui._panel_sess)
-        self._item(self._menu, start_id+101, None, "From JSON...\tCtrl+J",
-                   lambda e: \
-                   self._on_open(e, wildcard="JSON file (*.json)|*.json",
-                                 action='json_load'))
+        self._rec = [{'targ': 'spec_from_struct', 'append': 'spec'},
+                     {'targ': 'spec_from_systs', 'append': 'systs'},
+                     {'targ': 'spec_from_systs_random', 'append': 'systs'},
+                     ]
+
+        from .cookbook_synthetic import CookbookSynthetic as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuTemplates(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=9000,
+                 **kwargs):
+        super(GUIMenuTemplates, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
+        self._rec = [{'targ': 'bb', 'append': 'spec'},
+                     {'targ': 'pl', 'append': 'spec'},
+                     ]
+
+        from .cookbook_templates import CookbookTemplates as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
 
 class GUIMenuView(GUIMenu):
 
@@ -691,70 +605,67 @@ class GUIMenuView(GUIMenu):
         self._menu = wx.Menu()
         self._menu_view = self
         self._gui._menu_view = self
-        self._start_id = start_id
-
-        # Add items to View menu here
         tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
+        tab_id = [start_id+0, start_id+1, start_id+2]
         self._gui._menu_tab_id = tab_id
-        self._item(self._menu, tab_id[0], 'spec', "Spectrum table",
-                   lambda e: self._on_tab(e, 'spec'), key='spec')
-        self._item(self._menu, tab_id[1], 'lines', "Line table",
-                   lambda e: self._on_tab(e, 'lines'), key='lines')
-        self._item(self._menu, tab_id[2], 'systs', "System table",
-                   lambda e: self._on_tab(e, 'systs'), key='systs')
-        self._item_graph(self._menu, tab_id[3], 'spec', "Metadata",
-                         dlg_mini='meta', alt_title="Metadata")
-        self._item(self._menu, tab_id[4], 'systs', "Compress system table",
-                   self._on_compress)
-        self._menu.AppendSeparator()
-        info_id = [start_id+101, start_id+102, start_id+103]
-        self._item_graph(self._menu, info_id[0], 'spec', "Session log",
-                         dlg_mini='log', alt_title="Session log")
-        self._item_graph(self._menu, info_id[1], 'spec', "Session defaults",
-                         dlg_mini='defs', alt_title="Session defaults")
-        self._menu.AppendSeparator()
-        """
-        self._item(self._menu, start_id+101, 'systs',
-                   "System detection correctness",
-                   lambda e: self._on_ima(e, 'corr'))
-        self._item(self._menu, start_id+102, 'systs',
-                   "System detection completeness",
-                   lambda e: self._on_ima(e, 'compl'))
-        """
-        self._menu.AppendSeparator()
-        self._item(self._menu, start_id+201, 'spec',
-                   "Toggle log x axis", self._on_logx)
-        self._item(self._menu, start_id+202, 'spec',
-                   "Toggle log y axis", self._on_logy)
-        self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
-                                self._on_norm, key='norm')
-        self._menu.AppendSeparator()
-        self._item_method(self._menu, start_id+301, 'spec', "Set redshift axis",
-                              'z_ax')
-        self._item(self._menu, start_id+302, 'spec', "Hide redshift axis",
-                   self._on_z_ax_remove)
-        self._menu.AppendSeparator()
-        self._submenu = wx.Menu()
-        self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
-                         dlg_mini='graph', alt_title="Graph elements")
-        self._item_graph(self._submenu, start_id+314, 'spec', "Saturated H2O regions",
-                         'spec_h2o_reg')
-        self._item_graph(self._submenu, start_id+313, 'spec', "Redshift cursor",
-                         'cursor_z_series', dlg_mini='systems',
-                         targ=GraphCursorZSeries, alt_title="System controls")
-        self._legend = self._item(self._submenu, start_id+315, 'spec', "Legend",
-                                  self._on_legend, key='legend')
-        self._menu.AppendSubMenu(self._submenu, "Toggle graph add-ons")
 
-        #self._item_method(self._menu, start_id+401, 'spec',
-        #                  "Edit graph details", '_sel_graph_cols', obj=self)
+        self._rec = [{'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'spec'),
+                      'title': "Spectrum table", 'append': 'spec', 'key': 'spec'},
+                     {'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'lines'),
+                      'title': "Line table", 'append': 'lines', 'key': 'lines'},
+                     {'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'systs'),
+                      'title': "System table", 'append': 'systs', 'key': 'systs'},
+                     {'type': '_item', 'event': self._on_compress,
+                      'title': "Compress system table", 'append': 'systs'},
+                     '--',
+                     {'type': '_item_graph', 'title': "Session metadata",
+                      'append': 'spec', 'dlg_mini': 'meta'},
+                     {'type': '_item_graph', 'title': "Session defaults",
+                      'append': 'spec', 'dlg_mini': 'defs'},
+                     {'type': '_item_graph', 'title': "Session log",
+                      'append': 'spec', 'dlg_mini': 'log'},
+                     {'type': '_item_graph', 'title': "Graph elements",
+                      'append': 'spec', 'dlg_mini': 'graph'},
+                     {'type': '_item_graph', 'title': "Redshift cursor",
+                      'key': 'cursor_z_series', 'append': 'spec',
+                      'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
+                      'alt_title': "System controls"},
+                     '--',
+                     {'type': '_item', 'event': self._on_logx,
+                      'title': "Toggle log x axis", 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_logy,
+                      'title': "Toggle log y axis", 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_norm,
+                      'title': "Toggle normalization", 'append': 'cont'},
+                     '> Toggle graph add-ons',
+                     {'type': '_item_graph', 'title': "Saturated H2O regions",
+                      'key': 'spec_h2o_reg', 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_legend,
+                      'title': "Legend", 'append': 'spec'},
+                     '<',
+                     '--',
+                     {'targ': 'z_ax', 'append': 'spec'},
+                     {'type': '_item', 'event': self._on_z_ax_remove,
+                      'title': "Hide redshift axis", 'append': 'spec'},
+                     '--',
+                     ]
+
+        from .cookbook_view import CookbookView as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+        return
 
 
     def _on_compress(self, event, log=True):
-        if self._menu.GetLabel(self._start_id+101) == "Compress system table":
-            self._menu.SetLabel(self._start_id+101, "Uncompress system table")
+        if self._menu.GetLabel(self._start_id+5) == "Compress system table":
+            self._menu.SetLabel(self._start_id+5, "Uncompress system table")
         else:
-            self._menu.SetLabel(self._start_id+101, "Compress system table")
+            self._menu.SetLabel(self._start_id+5, "Compress system table")
 
         self._gui._sess_sel.systs._compress()
         if log:
@@ -824,5 +735,8 @@ class GUIMenuView(GUIMenu):
             self._gui._dlg_mini_log._refresh()
 
     def _on_z_ax_remove(self, event, log=False):
-        delattr(self._gui._sess_sel, '_ztrans')
-        self._gui._refresh()
+        try:
+            delattr(self._gui._sess_sel, '_ztrans')
+            self._gui._refresh()
+        except:
+            pass

@@ -50,6 +50,7 @@ class GUI(object):
         self._menu_z0_id = []
         self._menu_mods_id = []
         self._menu_tab_id = []
+        self._defs = Defaults(self)
         self._panel_sess = GUIPanelSession(self)
         self._id_zoom = 9
         self._data_lim = None
@@ -191,6 +192,7 @@ class GUI(object):
                  autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
 
+        self._defs = self._sess_sel.defs
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh()
@@ -200,6 +202,7 @@ class GUI(object):
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._graph_main._elem = self._sess_sel._graph_elem
+            self._graph_main._lim = self._sess_sel._graph_lim
             self._dlg_mini_graph._refresh()
         else:
             if hasattr(self._sess_sel, '_graph_elem'):
@@ -207,6 +210,10 @@ class GUI(object):
             else:
                 self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+            if hasattr(self._sess_sel, '_graph_lim'):
+                self._graph_main._lim = self._sess_sel._graph_lim
+            else:
+                self._graph_main._lim = graph_lim_def
             """
             try:
                 if hasattr(self._sess_sel, '_graph_elem'):
@@ -460,6 +467,7 @@ class GUIPanelSession(wx.Frame):
 
         sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
+        self._gui._defs = sess.defs
 
         missing = []
         for i in range(self._tab.GetItemCount()+1):
@@ -489,6 +497,7 @@ class GUIPanelSession(wx.Frame):
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+        self._gui._sess_sel._graph_lim = graph_lim_def
         #print(self._gui._sess_sel._graph_elem)
         #self._gui._meta_list.append(self._gui._dlg_mini_meta._meta)
         #self._gui._refresh(autolim=False)
@@ -496,11 +505,17 @@ class GUIPanelSession(wx.Frame):
         self._gui._refresh(init_tab=False, autolim=False)
 
         # Enable import from depending on how many sessions are present
-        edit = self._menu._edit
+        for menu in [self._menu._edit, self._menu._cb_general]:
+            menu_dict = menu._menu.__dict__
+            for m in menu_dict:
+                menu._menu.Enable(menu_dict[m]['start_id'],
+                menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
+
         #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_list)==2)
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_list)>1)
-        edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
-        edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>0)
+
+        #edit._menu.Enable(edit._start_id+310, len(self._gui._sess_list)>0)
+        #edit._menu.Enable(edit._start_id+311, len(self._gui._sess_list)>0)
 
 
 
@@ -531,9 +546,13 @@ class GUIPanelSession(wx.Frame):
             pass
 
         # Enable session equalize/combine depending on how many sessions are selected
-        edit = self._menu._edit
-        edit._menu.Enable(edit._start_id+300, len(self._gui._sess_item_sel)==2)
-        edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
+        for menu in [self._menu._edit, self._menu._cb_general]:
+            menu_dict = menu._menu.__dict__
+            for m in menu_dict:
+                menu._menu.Enable(menu_dict[m]['start_id'],
+                menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
+        #edit._menu.Enable(edit._start_id+300, len(self._gui._sess_item_sel)==2)
+        #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -655,7 +674,7 @@ class GUIPanelSession(wx.Frame):
         evt.SetIndex(_sel)
         self._on_select(evt)
 
-
+    """
     def _struct_parse(self, struct, length=2):
         sess_list = self._gui._sess_list
 
@@ -701,120 +720,7 @@ class GUIPanelSession(wx.Frame):
             return coln, col, parse
         else:
             return attrn, attr, parse
-
-
-    def combine(self, name='*_combined', _sel=''):
-        """ @brief Combine two or more sessions
-        @details Combine two or more sessions. A new session is created, with a
-        new spectrum containing all entries from the spectra of the combined
-        sessions. Other objects from the sessions (line lists, etc.) are
-        discarded.
-        @param name Name of the output session
-        @return Combined session
-        """
-        name_in = name
-        #sel = self._tab._get_selected_items()
-        sel = self._gui._sess_item_sel
-        sess_list = self._gui._sess_list
-
-        """
-        if isinstance(_sel, list) and _sel != []:
-            sel = _sel
-        if isinstance(_sel, str) and _sel != '':
-            try:
-                sel = [int(s) \
-                       for s in _sel.replace('[','').replace(']','').split(',')]
-            except:
-                pass
-        if sel == []:
-            sel = range(len(sess_list))
-        self._gui._sess_item_sel = sel
-        """
-        sel = _sel
-
-        struct_out = {}
-        for struct in sess_list[sel[0]].seq:
-            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
-
-
-        if name_in[0] == '*':
-            name = sess_list[sel[0]].name
-
-        logging.info("Combining sessions %s..." % ', '.join(str(s) for s in sel))
-        for s in sel[1:]:
-            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
-
-            for struct in sess_list[s].seq:
-                if getattr(sess_list[s], struct) != None:
-                    if struct_out[struct] != None:
-                        struct_out[struct]._append(
-                            getattr(sess_list[s], struct))
-                    else:
-                        struct_out[struct] = dc(getattr(sess_list[s], struct))
-
-            if name_in[0] == '*':
-                name += '_' + sess_list[s].name
-
-        struct_out['spec']._t.sort('x')
-        if name_in[0] == '*':
-            name += name_in[1:]
-        sess = Session(gui=self._gui, name=name, spec=struct_out['spec'],
-                       nodes=struct_out['nodes'], lines=struct_out['lines'],
-                       systs=struct_out['systs'])
-        return sess
-
-
-    def equalize(self, xmin, xmax, _sel=''):
-        """ @brief Equalize two sessions
-        @details Equalize the flux level of one session to another one. The
-        last-selected session is equalized to the first-selected one. The
-        equalization factor is the ratio of the median flux within the
-        specified wavelength interval.
-        @param xmin Minimum wavelength (nm)
-        @param xmax Maximum wavelength (nm)
-        @return 0
-        """
-
-        try:
-            xmin = float(xmin) * au.nm
-            xmax = float(xmax) * au.nm
-        except ValueError:
-            logging.error(msg_param_fail)
-            return None
-
-        """
-        sel = self._gui._sess_item_sel
-        if isinstance(_sel, list) and _sel != []:
-            sel = _sel
-        if isinstance(_sel, str) and _sel != '':
-            sel = [int(s) \
-                for s in _sel.replace('[','').replace(']','').split(',')]
-        self._gui._sess_item_sel = sel
-        """
-        sel = _sel
-        logging.info("Equalizing session %i to session %i... "
-                     % (sel[1], sel[0]))
-
-        for i,s in enumerate(sel):
-            sess = self._gui._sess_list[s]
-            w = np.where(np.logical_and(sess.spec.x>xmin, sess.spec.x<xmax))[0]
-            if len(w)==0:
-                logging.error("I can't use this wavelength range for "
-                              "equalization. Please choose a range covered by "
-                              "both sessions.")
-                return(0)
-            if i == 0:
-                f = np.nanmedian(sess.spec.y[w]).value
-                #print(np.median(sess.spec.y[w]))
-            else:
-                f = f/np.nanmedian(sess.spec.y[w]).value
-                #print(np.median(sess.spec.y[w]), f)
-                logging.info("Equalization factor: %3.4f." % f)
-                sess.spec.y = f*sess.spec.y
-                sess.spec.dy = f*sess.spec.dy
-
-        return 0
-
+    """
 
     def json_load(self, path='.'):
         """@brief Load from JSON
@@ -833,167 +739,3 @@ class GUIPanelSession(wx.Frame):
             load = json.loads(log)
 
             self._gui._log_run(load)
-
-
-    def struct_modify(self, col_A='0,spec,x', col_B='0,spec,y',
-                      col_out='0,spec,diff', op='subtract'):
-        """ @brief Modify a data structure using a binary operator
-        @details Modify a data structure using a binary operator. An output
-        column is computed applying a binary operator to two input columns, or
-        an input column and a scalar. Columns are described by a string with the
-        session number, the structure tag (spec, lines, systs), and the column
-        name separated by a comma (e.g. 0,spec,x, meaning "column x of spectrum
-        from session 0"). They can be from different data structures only if
-        they have the same length. If the output column already exists, it is
-        overwritten.
-        @param col_A Structure A
-        @param col_B Structure B or scalar
-        @param col_out Output structure
-        @param op Binary operator
-        @return 0
-        """
-
-        parse_A = self._struct_parse(col_A, length=3)
-        parse_out = self._struct_parse(col_out, length=2)
-        #print(parse_A, parse_out)
-        if parse_A is None or parse_out is None: return 0
-        coln_A, colp_A, _ = parse_A
-        attrn_out, attr_out, all_out = parse_out
-        try:
-            colp_B = np.full(np.shape(colp_A), float(col_B))
-        except:
-            parse_B = self._struct_parse(col_B, length=3)
-            parse_out = self._struct_parse(col_out, length=2)
-            if parse_B is None: return 0
-            coln_B, colp_B, _ = parse_B
-            if len(colp_A) != len(colp_B):
-                logging.error("The two columns have different lengths! %s" \
-                            % msg_try_again)
-                return 0
-
-        if len(colp_A) != len(attr_out._t):
-            logging.error("The output table have different length than the "
-                          "input columns! %s" \
-                          % msg_try_again)
-            return 0
-
-        if not hasattr(np, op):
-            logging.error("Numpy doesn't have a %s operator." % op)
-            return 0
-        getattr(self._gui._sess_list[all_out[0]], all_out[1])._t[all_out[2]] = \
-            getattr(np, op)(colp_A, colp_B)
-
-        return 0
-
-
-    def struct_modify2(self, col='', expr=''):
-        """ @brief Modify a data structure using a binary operator
-        @details Modify a data structure using a binary operator. An output
-        column is computed from an expression with input columns as arguments.
-        The expression must be parsable by AST, with columns described by a
-        string with the session number, the structure tag (spec, lines, systs),
-        and the column name separated by a comma (e.g. 0,spec,x, meaning "column
-        x of spectrum from session 0"). Columns can be from different data
-        structures only if they have the same length. If the output column
-        already exists, it is overwritten.
-        @param col Output column
-        @param expr Expression
-        @return 0
-        """
-
-        # Reversed to parse sessions with higher number first, and avoid overwriting
-        sess_list = self._gui._sess_list[::-1]
-        for i, s in enumerate(sess_list):
-            if s.spec is not None:
-                for c in sorted(s.spec._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
-                                        str(list(np.array(s.spec._t[c]))))
-            if s.lines is not None:
-                for c in sorted(s.lines._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
-                                        str(list(np.array(s.lines._t[c]))))
-            if s.systs is not None:
-                for c in sorted(s.systs._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
-                                        str(list(np.array(s.systs._t[c]))))
-
-        #print(expr)
-        #print(len(expr))
-        out = expr_eval(ast.parse(expr, mode='eval').body)
-
-        _, _, all_out = self._struct_parse(col, length=2)
-        struct = getattr(self._gui._sess_list[all_out[0]], all_out[1])
-        if all_out[2] in struct._t.colnames: # and False:
-            col_out = struct._t[all_out[2]]
-            try:
-                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body) * col_out.unit
-            except:
-                struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
-        else:
-            struct._t[all_out[2]] = expr_eval(ast.parse(expr, mode='eval').body)
-
-        return 0
-
-
-    def struct_import(self, struct='0,systs', mode='replace'):
-        """ @brief Import a data structure from a session into the current one
-        @details The structure to be imported is described by a string with the
-        session number and the structure tag (spec, lines, systs), separated by
-        a comma (e.g. 0,spec, meaning "spectrum from session 0"). The imported
-        structure is either replaced or appended to the corresponding one in the
-        current session.
-        @param struct Structure
-        @param mode Mode (replace or append)
-        @return 0
-        """
-
-        parse = self._struct_parse(struct)
-        if parse is None: return 0
-        attrn, attr, _ = parse
-        attr = dc(attr)
-
-        if attrn == 'systs' \
-            and 'cont' not in self._gui._sess_sel.spec.t.colnames:
-            logging.error("Attribute %s requires a continuum. Please try "
-                          "Recipes > Guess continuum before." % attrn)
-            return 0
-
-        if mode=='replace':
-            if attr is None:
-                logging.warning("I'm replacing structure with None.")
-                setattr(self._gui._sess_sel, attrn, attr)
-                return 0
-            if attrn in ['lines', 'systs']:
-                #spec = self._gui._sess_sel.spec
-                x = self._gui._sess_sel.spec.x.to(au.nm)
-                attr = attr._region_extract(np.min(x), np.max(x))
-
-                # Redefine regions from spectrum
-            if attrn == 'systs':
-                for m in attr._mods_t:
-                    mod = m['mod']
-                    mod._spec = self._gui._sess_sel.spec
-                    mod._xf, mod._yf, mod._wf, mod._ys = \
-                        mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
-                                               .to(au.nm).value)
-            setattr(self._gui._sess_sel, attrn, attr)
-
-        if mode=='append':
-            if attr is None:
-                logging.warning("I'm not appending None.")
-                return 0
-            attr_dc = dc(attr)
-            if attrn == 'systs':
-                id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
-                attr_dc._t['id'] = attr_dc._t['id']+id_max
-            #print(len(attr_dc._t))
-            #print(len(np.unique(attr_dc._t['id'])))
-            #print(len(attr_dc._t))
-            #print(len(getattr(self._gui._sess_sel, attrn)._t))
-            getattr(self._gui._sess_sel, attrn)._append(attr_dc)
-
-        if attrn=='systs':
-            self._gui._sess_sel.cb._mods_recreate()
-            self._gui._sess_sel.cb._spec_update()
-
-        return 0

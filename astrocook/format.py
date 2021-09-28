@@ -325,16 +325,16 @@ class Format(object):
 
         hdr = hdul[0].header
         data = hdul[1].data
+        cols = hdul[1].columns
         x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
         try:
-            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.electron #erg/au.cm**2/au.s/au.nm
+            y = data['flux']#/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error']#/(xmax-xmin)#*10#au.nm/au.Angstrom
         except:
-            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
+            y = data['flux_cal']#/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error_cal']#/(xmax-xmin)#*10#au.nm/au.Angstrom
+        yunit = cols.units[1]
         resol = []*len(x)
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
@@ -438,6 +438,8 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
+            zero
+        except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -451,17 +453,23 @@ class Format(object):
                 except:
                     logging.error("I can't recognize columns.")
                     return 0
+                cols = hdul[1].columns
+                xunit_col = np.where(cols.names==x_col_names[x_col])[0][0]
+                yunit_col = np.where(cols.names==y_col_names[y_col])[0][0]
+                xunit = cols.units[xunit_col]
+                yunit = cols.units[yunit_col]
             else:
                 data = hdul[0].data
                 x = data[0][:]
                 y = data[1][:]
                 dy = data[2][:]
-            if np.max(x)>3000:
-                x = x*0.1
+                xunit = au.nm
+                yunit = au.erg/au.cm**2/au.s/au.Angstrom
+                if np.max(x)>3000:
+                    x = x*0.1
             xmin, xmax = self._create_xmin_xmax(x)
-            xunit = au.nm
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr #{}
+
             """
             try:
                 meta['object'] = hdr['OBJECT']
@@ -477,8 +485,8 @@ class Format(object):
                         spec._t[c] = data[c]
                         #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
-        except:
-            return None
+        #except:
+        #    return None
 
 
     def mage_spectrum(self, hdul):
@@ -598,7 +606,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def wfccd_spectrum(self, hdul):
         """ WFCCD format """
@@ -649,6 +657,31 @@ class Format(object):
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def xqr30_bosman(self, hdul):
+        """ XQR-30 spectrum as formatted by Sarah Bosman """
+
+        logging.info(msg_format('xqr30_bosman'))
+        hdr = hdul[0].header
+
+        data = Table(hdul[1].data)
+        x = data['col1']
+        y = data['col2']
+        dy = data['col3']
+        xunit = au.Angstrom
+        yunit = au.dimensionless_unscaled
+        xmin, xmax = self._create_xmin_xmax(x)
+        meta = hdr #{}
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+        spec._t['redside_PCA'] = data['col4']
+        spec._t['blueside'] = data['col5']
+        spec._t['blueside_1sigmal'] = data['col6']
+        spec._t['blueside_1sigmau'] = data['col7']
+        spec._t['blueside_2sigmal'] = data['col8']
+        spec._t['blueside_2sigmau'] = data['col9']
+        return spec
 
 
     def xshooter_das_spectrum(self, hdul):

@@ -97,7 +97,8 @@ class CookbookSynthetic(object):
         dy = expr_eval(ast.parse(dy, mode='eval').body)
         xmin, xmax = create_xmin_xmax(x)
 
-        parse = self.sess._gui._panel_sess._struct_parse(sess+',systs')
+        #parse = self.sess._gui._panel_sess._struct_parse(sess+',systs')
+        parse = self._struct_parse(sess+',systs')
         if parse is None: return 0
         _, systs, _ = parse
 

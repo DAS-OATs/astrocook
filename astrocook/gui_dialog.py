@@ -1,7 +1,7 @@
 import astropy.units as au
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, hwin_def, xem_d
+from .vars import graph_elem, graph_lim_def, hwin_def, xem_d
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -97,6 +97,21 @@ class GUIDialog(wx.Dialog):
         self._params.append(OrderedDict(zip(keys, values)))
 
     def _on_cancel(self, e):
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            self._gui._dlg_mini_systems._cursor_refresh()
+            """
+            # Unfreeze cursors in case they were frozen
+            self._gui._graph_main._graph._cursor_frozen = False
+            self._gui._graph_det._graph._cursor_frozen = False
+
+            # Refresh cursor
+            shown = True if self._gui._dlg_mini_systems._shown else False
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
+            self._gui._dlg_mini_systems._shown = shown
+            """
         self.Close()
 
     def _on_ok(self, e):
@@ -163,6 +178,8 @@ class GUIDialog(wx.Dialog):
 
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
+                self._gui._dlg_mini_systems._cursor_refresh()
+                """
                 # Unfreeze cursors in case they were frozen
                 self._gui._graph_main._graph._cursor_frozen = False
                 self._gui._graph_det._graph._cursor_frozen = False
@@ -174,6 +191,7 @@ class GUIDialog(wx.Dialog):
                 self._gui._dlg_mini_systems._shown = True
                 self._gui._dlg_mini_systems._on_apply(e=None)
                 self._gui._dlg_mini_systems._shown = shown
+                """
 
 
     def _update_params(self):
@@ -361,12 +379,13 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs_dict = dict(sess.defs.dict)
         self._set(self._ctrl_defs.GetValue())
         for i in sess.defs.dict:
-            for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
-                for e in sess.defs._extend:
-                    if k not in sess.defs._extend[e]:
-                        logging.info("I changed parameter %s %s from %s to %s."
-                                     % (i, k, str(defs_dict[i][k]),
-                                        str(sess.defs.dict[i][k])))
+            if isinstance(sess.defs.dict[i], dict):
+                for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
+                    for e in sess.defs._extend:
+                        if k not in sess.defs._extend[e]:
+                            logging.info("I changed parameter %s %s from %s to %s."
+                                         % (i, k, str(defs_dict[i][k]),
+                                         str(sess.defs.dict[i][k])))
             #diff = {k: sd.dict[i][k] for k, _ \
             #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
         if log:
@@ -374,7 +393,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
             sess.log.append_full('_dlg_mini_defs', '_on_apply',
                                  {'e': None, 'refresh': refresh})
         if refresh:
-            if hasattr(sess, 'systs'):
+            if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
             self._gui._refresh(init_cursor=True, init_tab=False)
 
@@ -410,6 +429,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _refresh(self):
         self._ctrl_defs.SetValue(self._defs_str)
 
+
     def _set(self, value, log=True):
         if log:
             sess = self._gui._sess_sel
@@ -422,6 +442,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs = defs.replace('—', '--')
         self._ctrl_defs.SetValue(defs)
         self._gui._sess_sel.defs.update(defs)
+        self._defs_str = self._gui._sess_sel.defs.str
+        self._defs_dict = self._gui._sess_sel.defs.dict
 
 
 
@@ -438,23 +460,35 @@ class GUIDialogMiniGraph(GUIDialogMini):
             self._elem = self._gui._sess_sel._graph_elem
         else:
             self._elem = elem_expand(elem, self._sel)
+        self._lim = self._gui._sess_sel._graph_lim
         super(GUIDialogMiniGraph, self).__init__(gui, title)
         self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = True
 
 
     def _box_ctrl(self):
-        fgs = wx.FlexGridSizer(2, 1, 4, 15)
-        descr = wx.StaticText(
+        fgs = wx.FlexGridSizer(4, 1, 4, 15)
+        descr_elem = wx.StaticText(
                     self._panel, -1,
                     label="Each line define a graph element as a set of comma-separated\n"
                           "values. Values are: session, table, x column, y column, mask\n"
                           "column (if any), type of graph (plot, step, scatter), line style\n"
                           "or marker symbol, line width or marker size, color, opacity.")
+        descr_lim = wx.StaticText(
+                    self._panel, -1,
+                    label="Adjust limits for the x and y axis of the main graph. Limits\n"
+                          "must be two comma-separated values between parentheses.\n"
+                          "Values have the same units as in the graph.")
         self._ctrl_elem = wx.TextCtrl(self._panel, -1, value=self._elem,
                                       size=(360, 200), style = wx.TE_MULTILINE)
+        self._ctrl_lim = wx.TextCtrl(self._panel, -1, value=self._lim,
+                                      size=(360, 38), style = wx.TE_MULTILINE)
         #self._ctrl_z = wx.TextCtrl(self._panel, -1, value="%3.7f" % 10, size=(150, -1))
-        fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND), (descr, 1, wx.EXPAND)])
+        fgs.AddMany([(self._ctrl_elem, 1, wx.EXPAND),
+                     (descr_elem, 1, wx.EXPAND),
+                     (self._ctrl_lim, 1, wx.EXPAND),
+                     (descr_lim, 1, wx.EXPAND),
+                                  ])
         self._core.Add(fgs, flag=wx.ALL|wx.EXPAND)
         self._panel.SetSizer(self._core)
 
@@ -475,13 +509,21 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
 
     def _on_apply(self, e=None, refresh=True, log=True):
+        # Elements
         self._elem = self._ctrl_elem.GetValue()
-        self._set(self._elem)
+        self._set_elem(self._elem)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
         if hasattr(self._gui, '_graph_det'):
             self._gui._graph_det._elem = elem_expand(graph_elem, self._sel)
+
+        # Limits
+        self._lim = self._ctrl_lim.GetValue()
+        self._set_lim(self._lim)
+        self._gui._graph_main._lim = self._lim
+        self._gui._sess_sel._graph_lim = self._lim
+
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_graph', '_on_apply',
@@ -491,10 +533,18 @@ class GUIDialogMiniGraph(GUIDialogMini):
 
 
     def _on_default(self, e=None, refresh=True, log=True):
+        # Elements
         self._elem = elem_expand(graph_elem, self._sel)
         self._gui._graph_main._elem = self._elem
         #self._gui._graph_elem_list[self._sel] = self._elem
         self._gui._sess_sel._graph_elem = self._elem
+
+        # Limits
+        self._lim = graph_lim_def
+        self._gui._graph_main._lim= self._lim
+        #self._gui._graph_elem_list[self._sel] = self._elem
+        self._gui._sess_sel._graph_lim = self._lim
+
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_dlg_mini_graph', '_on_default',
@@ -513,21 +563,33 @@ class GUIDialogMiniGraph(GUIDialogMini):
             #self._elem = elem_expand(graph_elem, self._sel)
             #self._elem = self._gui._graph_elem_list[self._sel]
         self._elem = self._gui._sess_sel._graph_elem
+        self._lim = self._gui._sess_sel._graph_lim
 
         self._ctrl_elem.SetValue(self._elem)
+        self._ctrl_lim.SetValue(self._lim)
         #self._on_apply(refresh=False)
 
 
-    def _set(self, value, log=True):
+    def _set_elem(self, value, log=True):
         if log:
             sess = self._gui._sess_sel
             i = self._gui._sess_list.index(self._gui._sess_sel)
             value_log = '\nSESS_SEL,'.join(('\n'+value).split('\n%i,' % i))[1:]
-            sess.log.append_full('_dlg_mini_graph', '_set',
+            sess.log.append_full('_dlg_mini_graph', '_set_elem',
                                  {'value': value_log, 'log': False})
 
         self._elem = value
         self._ctrl_elem.SetValue(value)
+
+
+    def _set_lim(self, value, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_dlg_mini_graph', '_set_lim',
+                                 {'value': value, 'log': False})
+
+        self._lim = value
+        self._ctrl_lim.SetValue(value)
 
 
 class GUIDialogMiniLog(GUIDialogMini):
@@ -786,6 +848,20 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._bottom.Add(buttons, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.BOTTOM,
                      border=10)
         self._bottom.SetSizeHints(self)
+
+
+    def _cursor_refresh(self):
+        # Unfreeze cursors in case they were frozen
+        self._gui._graph_main._graph._cursor_frozen = False
+        self._gui._graph_det._graph._cursor_frozen = False
+
+        # Refresh cursor
+        shown = True if self._shown else False
+        self._shown = False
+        self._on_cancel(e=None)
+        self._shown = True
+        self._on_apply(e=None)
+        self._shown = shown
 
 
     def _on_apply(self, e, refresh=True):

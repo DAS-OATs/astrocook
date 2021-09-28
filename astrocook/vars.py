@@ -63,6 +63,13 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
+# Menus
+#menus_def = ['General', 'Continuum', 'Absorbers']
+menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
+               'Flux': '_cb_flux', 'General': '_cb_general',
+               'Synthetic': '_cb_synthetic', 'Templates': '_cb_templates'}
+#menus = {'attr': [menus_assoc[m] for m in menus_def], 'title': menus_def}
+
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
@@ -81,6 +88,8 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
            "systs,z,None,None,axvline,--,0.8,C2,1.0"
+
+graph_lim_def = 'xlim=auto\nylim=auto'
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
@@ -121,9 +130,9 @@ psf_gauss_d = {
 forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
                       'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
-x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda'])
-y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3'])
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
