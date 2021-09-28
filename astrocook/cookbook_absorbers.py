@@ -398,6 +398,7 @@ class CookbookAbsorbers(object):
                 vars = {}
                 constr = {}
                 for k, v in systs._constr.items():
+                    #print(v)
                     if v[0]==systs._id:
                         if v[2]!=None:
                             constr[k] = v[2]
@@ -410,6 +411,7 @@ class CookbookAbsorbers(object):
                     wrong_id.append(mod._id)
                     corr_id.append(np.max(systs_t['id'])+1)
                     mod._id = np.max(systs_t['id'])+1
+                #print(self.sess.defs.dict['voigt'])
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                b=s['b'], resol=s['resol'],
                                defs=self.sess.defs.dict['voigt'])

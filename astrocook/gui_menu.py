@@ -662,10 +662,10 @@ class GUIMenuView(GUIMenu):
 
 
     def _on_compress(self, event, log=True):
-        if self._menu.GetLabel(self._start_id+101) == "Compress system table":
-            self._menu.SetLabel(self._start_id+101, "Uncompress system table")
+        if self._menu.GetLabel(self._start_id+5) == "Compress system table":
+            self._menu.SetLabel(self._start_id+5, "Uncompress system table")
         else:
-            self._menu.SetLabel(self._start_id+101, "Compress system table")
+            self._menu.SetLabel(self._start_id+5, "Compress system table")
 
         self._gui._sess_sel.systs._compress()
         if log:
