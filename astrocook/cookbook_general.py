@@ -12,6 +12,9 @@ from tqdm import tqdm
 
 class CookbookGeneral(object):
     """ Cookbook of general utilities
+    @details This cookbook contains utilities to manipulate sessions, mask the
+    spectrum, estimate spectral quality parameters, and perform basic operations
+    like rebinning and convolution.
     """
 
     def __init__(self):
@@ -23,10 +26,11 @@ class CookbookGeneral(object):
 
     def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
-        @details Combine two or more sessions. A new session is created, with a
-        new spectrum containing all entries from the spectra of the combined
-        sessions. Other objects from the sessions (line lists, etc.) are
-        discarded.
+        @details Combine the spectra from two or more sessions. The sessions are
+        either selected on the Sessions window or provided as a list through the
+        @_sel parameter. A new session is created, with a new spectrum
+        containing all entries from the spectra of the combined sessions. Other
+        objects from the sessions (line lists, etc.) are discarded.
         @param name Name of the output session
         @return Combined session
         """

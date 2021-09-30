@@ -245,23 +245,6 @@ The structure to be imported is described by a string with the session number an
 
 Modify a data structure using a binary operator. An output column is computed from an expression with input columns as arguments. The expression must be parsable by AST, with columns described by a string with the session number, the structure tag (spec, lines, systs), and the column name separated by a comma (e.g. 0,spec,x, meaning "column x of spectrum from session 0"). Columns can be from different data structures only if they have the same length. If the output column already exists, it is overwritten.
 
----
-layout: default
-title: Other cookbook
-parent: Cookbooks
-nav_order: 6
----
-
-# Other cookbook
-{: .no_toc}
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
----
-
 
 
 

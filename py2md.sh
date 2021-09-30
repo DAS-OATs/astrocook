@@ -1,4 +1,4 @@
-#python py2md.py General equalize,combine,mask,telluric_mask,snr_est,resol_est,rms_est,rebin,gauss_convolve > docs/general_cb.md
+python py2md.py General equalize,combine,mask,telluric_mask,snr_est,resol_est,rms_est,rebin,gauss_convolve > docs/general_cb.md
 
 #python py2md.py Flux y_scale,y_scale_med,y_scale_x,deredden > docs/flux_cb.md
 
@@ -10,4 +10,4 @@
 
 #python py2md.py Templates bb,pl > docs/templates_cb.md
 
-python py2md.py Other x_convert,y_convert,shift_bary,shift_to_rf,shift_from_rf,struct_import,struct_modify > docs/other_cb.md
+#python py2md.py Other x_convert,y_convert,shift_bary,shift_to_rf,shift_from_rf,struct_import,struct_modify > docs/other_cb.md

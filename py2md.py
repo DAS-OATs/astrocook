@@ -30,6 +30,9 @@ nav_order: %i\n\
 # %s cookbook\n\
 {: .no_toc}\n\
 \n\
+%s\n\
+\n\
+\n\
 ## Table of contents\n\
 {: .no_toc .text-delta }\n\
 \n\
@@ -62,7 +65,12 @@ table = \
 
 for c in cs:
     i = c()
-    print(preamble % (sys.argv[1],ind,sys.argv[1]))
+    if c == cs[0]:
+        doc = str(i.__doc__)
+        details = doc.split("@details")[-1]
+        details = ''.join(details.split('\n'))
+        details = ' '.join(details.split())
+        print(preamble % (sys.argv[1],ind,sys.argv[1],details))
     for m in ms:
         if '#' in m:
             print(' '.join(m.split('_')))
@@ -122,6 +130,8 @@ for c in cs:
                          .split("@return")[0]
             details = ''.join(details.split('\n'))
             details = ' '.join(details.split())
-
+            details1 = details.split("@")
+            details2 = details1[-1].split(' ')
+            details = '`'.join([details1[0], details2[0], ' '+' '.join(details2[1:])])
             print("%s" % details)
         print()
