@@ -563,14 +563,18 @@ class GUIMenuRecipes(GUIMenu):
                           'lines_find')
         self._item_method(self._menu, start_id+201, 'spec',
                           "Continuum from nodes", 'nodes_cont')
+        self._item_method(self._menu, start_id+202, 'spec',
+                          "Continuum from absorbers", 'abs_cont')
         submenu = wx.Menu()
-        self._item_method(submenu, start_id+210, 'spec', "Find peaks",
+        self._item_method(submenu, start_id+210, 'spec', "Correct flux for Ly-a opacity",
+                          'lya_corr')
+        self._item_method(submenu, start_id+211, 'spec', "Find peaks",
                           'peaks_find')
-        self._item_method(submenu, start_id+211, 'lines', "Extract nodes",
+        self._item_method(submenu, start_id+212, 'lines', "Extract nodes",
                           'nodes_extract')
-        self._item_method(submenu, start_id+212, 'lines', "Clean nodes",
+        self._item_method(submenu, start_id+213, 'lines', "Clean nodes",
                           'nodes_clean')
-        self._item_method(submenu, start_id+213, 'nodes',
+        self._item_method(submenu, start_id+214, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
         self._menu.AppendSubMenu(submenu, "Other recipes for continuum")
         self._menu.AppendSeparator()
@@ -710,6 +714,11 @@ class GUIMenuView(GUIMenu):
         self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
         self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+301, 'spec', "Set redshift axis",
+                              'z_ax')
+        self._item(self._menu, start_id+302, 'spec', "Hide redshift axis",
+                   self._on_z_ax_remove)
+        self._menu.AppendSeparator()
         self._submenu = wx.Menu()
         self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
                          dlg_mini='graph', alt_title="Graph elements")
@@ -794,3 +803,7 @@ class GUIMenuView(GUIMenu):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+
+    def _on_z_ax_remove(self, event, log=False):
+        delattr(self._gui._sess_sel, '_ztrans')
+        self._gui._refresh()

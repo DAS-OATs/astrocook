@@ -5,8 +5,11 @@ from .vars import *
 from astropy import table as at
 from astropy import units as au
 #from scipy.interpolate import UnivariateSpline as uspline
+from copy import deepcopy as dc
+import cProfile
 from scipy.optimize import root_scalar
 from matplotlib import pyplot as plt
+import pstats
 
 class CookbookContinuum(object):
     """ Cookbook of utilities for continuum fitting
@@ -39,6 +42,72 @@ class CookbookContinuum(object):
 
 ### Basic
 
+    def lya_corr(self, zem, input_col='y', mode='basic', logN_thres=100,
+                 percentile=100):
+        """ @brief Correct flux for Lyman-alpha opacity
+        @details Correct flux for Lyman-alpha opacity, using the prescriptions
+        by Inoue et al. 2014
+        @param zem Emisson redshift
+        @param input_col Column to correct
+        @param mode Correction mode ('basic' or 'inoue')
+        @param logN_col Threshold for logarithmic column density
+        @param percentile Percentile to compute the threshold from the column
+        density distribution (only if logN_col is None)
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+            logN_thres = None if logN_thres in [None, 'None'] else float(logN_thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        if logN_thres is None:
+            try:
+                #logN_thres = np.median(self.sess.systs._t['logN'])
+                logN_thres = np.percentile(self.sess.systs._t['logN'], percentile)
+                logging.info("I estimated the threshold column density from "
+                             "the system table: logN_thres = %2.2f." \
+                             % logN_thres)
+            except:
+                logN_thres = 100
+                logging.warning("No systems: I couldn't estimate the threshold "
+                                "column density. I am using logN_thres = "\
+                                "%2.2f." % logN_thres)
+        if mode == 'inoue':
+            inoue_all = getattr(spec, '_lya_corr_inoue')(zem, input_col,
+                                                         apply=False)
+            basic_all = getattr(spec, '_lya_corr_basic')(zem, 100, input_col,
+                                                         apply=False)
+        else:
+            inoue_all = np.zeros(len(spec.x))
+            basic_all = np.zeros(len(spec.x))
+        basic = getattr(spec, '_lya_corr_basic')(zem, logN_thres, input_col,
+                                                 apply=False)
+
+
+        self._lya_corr = 1+(inoue_all-1)*(basic-1)/(basic_all-1)
+        """
+        plt.plot(spec.x, inoue_all)
+        plt.plot(spec.x, basic_all)
+        plt.plot(spec.x, basic)
+        plt.plot(spec.x, self._lya_corr, linewidth=3)
+        """
+        #plt.show()
+        taucorr = dc(spec._t[input_col])
+        taucorr *= self._lya_corr
+        spec._t[input_col+'_taucorr'] = taucorr
+
+        w = spec.x.value > (1+zem)*xem_d['Ly_lim'].value
+        logging.info("Mean correction bluewards from Lyman limit: %3.2f." \
+                     % np.mean(self._lya_corr[w]))
+        return 0
+
+
     def nodes_clean(self, kappa=5.0):
         """ @brief Clean nodes
         @details Clean the list of nodes from outliers.
@@ -54,12 +123,14 @@ class CookbookContinuum(object):
         self.sess.nodes = self.sess.spec._nodes_clean(self.sess.nodes, kappa)
         return 0
 
-    def nodes_extract(self, delta_x=500, xunit=au.km/au.s):
+    def nodes_extract(self, delta_x=500, xunit=au.km/au.s, mode='std'):
         """ @brief Extract nodes
         @details Extract nodes from a spectrum. Nodes are averages of x and y in
         slices, computed after masking lines.
         @param delta_x Size of slices
         @param xunit Unit of wavelength or velocity
+        @param mode Mode ('std' for extracting nodes from spectrum, 'cont' for
+        converting continuum into nodes)
         @return 0
         """
         try:
@@ -69,7 +140,7 @@ class CookbookContinuum(object):
             logging.error(msg_param_fail)
             return 0
 
-        self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit)
+        self.sess.nodes = self.sess.spec._nodes_extract(delta_x, xunit, mode)
         #print(len(self.sess.nodes.t))
 
         return 0
@@ -120,6 +191,7 @@ class CookbookContinuum(object):
             return 0
 
         peaks = spec._peaks_find(col, kind, kappa)
+        #print(len(peaks.t))
         if len(peaks.t) > 0:
             self._peaks_found = True
             source = [col]*len(peaks.t)
@@ -219,7 +291,6 @@ class CookbookContinuum(object):
         return 0
 
 
-
     def lines_find(self, std_start=100.0, std_end=0.0, col='y', kind='min',
                    kappa_peaks=5.0, resol=resol_def, append=True):
         """ @brief Find lines
@@ -253,7 +324,6 @@ class CookbookContinuum(object):
         if resol is not None:
             logging.info("I'm adding column 'resol'.")
             self.sess.spec._t['resol'] = resol
-
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
         self._peaks_found = False
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
@@ -329,8 +399,7 @@ class CookbookContinuum(object):
 
         return 0
 
-    def nodes_cont(self, delta_x=500, kappa_nodes=5.0,
-                   smooth=0):
+    def nodes_cont(self, delta_x=500, kappa_nodes=5.0, smooth=0):
         """ @brief Continuum from nodes
         @details Estimate a continuum by extracting, cleaning, and interpolating
         nodes from regions not affected by lines
@@ -352,4 +421,63 @@ class CookbookContinuum(object):
         self.nodes_clean(kappa_nodes)
         self.nodes_interp(smooth)
 
+        return 0
+
+    def abs_cont(self, zem, std=1000.0, resol=resol_def, mode='basic',
+                 reest_n=4, _refit_n=0, _percentile=100, _print_stats=True):
+        """ @brief Continuum from absorbers
+        @details Estimate a continuum by iteratively fitting and removing
+        absorbers
+        @param zem Emisson redshift
+        @param std Standard deviation of the gaussian (km/s)
+        @param resol Resolution
+        @param mode Correction mode ('basic' or 'inoue')
+        @param reest_n Number of re-estimation cycles
+        @return 0
+        """
+        profile = cProfile.Profile()
+        profile.enable()
+        try:
+            zem = float(zem)
+            std = float(std)
+            resol = None if resol in [None, 'None'] else float(resol)
+            reest_n = int(reest_n)
+            refit_n = int(_refit_n)
+            percentile = float(_percentile)
+            print_stats = str(_print_stats) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        lines = self.sess.lines
+        systs = self.sess.systs
+
+        self.lya_corr(zem, input_col='y', mode=mode, logN_thres=100)
+        self.gauss_convolve(std, input_col='y_taucorr', output_col='cont')
+        self.lines_find(resol=resol)
+        #print('lines', len(self.sess.lines._t))
+        self.systs_new_from_lines(refit_n=refit_n, resol=resol)
+        #print('systs', len(self.sess.systs._t))
+        for i in range(reest_n):
+            spec._t['decorr'] = spec._t['deabs']/self._lya_corr
+            spec._t['cont%i' % i] = spec._t['cont']
+            spec._t['deabs%i' % i] = spec._t['deabs']
+            self.lya_corr(zem, input_col='decorr', mode=mode, logN_thres=None,
+                          percentile=percentile)
+            self.gauss_convolve(std, input_col='decorr_taucorr',
+                                output_col='cont')
+            self.lines_find(resol=resol, col='deabs')
+            #print('lines', len(self.sess.lines._t))
+            if i == reest_n-1 or True:
+                self.systs_new_from_lines(refit_n=refit_n, resol=resol, append=False)
+            else:
+                self.systs_new_from_lines(refit_n=0, resol=resol, append=False)
+            #print('systs', len(self.sess.systs._t))
+            #self.systs_fit(refit_n=1)
+        self.nodes_extract(delta_x=1000.0, mode='cont')
+        profile.disable()
+        ps = pstats.Stats(profile)
+        if print_stats:
+            ps.sort_stats('cumtime').print_stats()
         return 0

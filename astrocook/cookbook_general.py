@@ -653,3 +653,12 @@ class CookbookGeneral(object):
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
+
+    def z_ax(self, trans='Ly_a'):
+        """ @brief Show redshift axis
+        @details Show an additional axis on the plot with wavelength converted
+        into redshift for a given transition
+        @param trans Transition
+        @return 0
+        """
+        self.sess._ztrans = trans

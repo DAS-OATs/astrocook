@@ -53,6 +53,11 @@ equiv_w_v = [(au.nm, au.km/au.s,
 logN_def = 14
 b_def = 10
 
+logN_lims = [12, 14, 18, 19]
+logN_index = -1.65
+tau_norm = 0.0028
+tau_index = 3.45
+
 resol_def = None
 max_nfev_def = 1000
 
@@ -129,7 +134,7 @@ zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
 
 p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
 atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
-
+inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
