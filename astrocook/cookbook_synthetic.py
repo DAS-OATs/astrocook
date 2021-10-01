@@ -131,7 +131,7 @@ class CookbookSynthetic(object):
                                logN_max=pars_std_d['logN_max'], logN_seed=None,
                                b_min=pars_std_d['b_min'],
                                b_max=pars_std_d['b_max'], b_seed=None,
-                               resol=resol_def, snr=None, append=True):
+                               resol=resol_def, snr=None, append=True, new_sess=True):
         """ @brief Synthetic spectrum from random systems
         @details Create a synthetic spectrum from a list of systems with random
         redshifts, column density, and Doppler broadening.
@@ -212,25 +212,28 @@ class CookbookSynthetic(object):
             self._systs_cycle()
             self._spec_update()
 
-        spec = self.sess.spec
-        x, xmin, xmax = spec._t['x'], spec._t['xmin'], spec._t['xmax']
-        if snr is None:
-            rng = np.random.default_rng()
-            norm = rng.standard_normal(size=x.size)
-            dy = spec._t['dy']
-            y = spec._t['model']+dy*norm
+        if new_sess:
+            spec = self.sess.spec
+            x, xmin, xmax = spec._t['x'], spec._t['xmin'], spec._t['xmax']
+            if snr is None:
+                rng = np.random.default_rng()
+                norm = rng.standard_normal(size=x.size)
+                dy = spec._t['dy']
+                y = spec._t['model']+dy*norm
+            else:
+                y = spec._t['model']
+                dy = y/snr
+            if 'cont' in spec._t.colnames:
+                y, dy = y/spec._t['cont'], dy/spec._t['cont']
+            xunit = spec._t['x'].unit
+            yunit = spec._t['y'].unit
+            spec_new = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
+            from .session import Session
+            new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
+                          spec=spec_new)
+
+            new._systs = self.sess.systs
+
+            return new
         else:
-            y = spec._t['model']
-            dy = y/snr
-        if 'cont' in spec._t.colnames:
-            y, dy = y/spec._t['cont'], dy/spec._t['cont']
-        xunit = spec._t['x'].unit
-        yunit = spec._t['y'].unit
-        spec_new = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
-        from .session import Session
-        new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
-                      spec=spec_new)
-
-        new._systs = self.sess.systs
-
-        return new
+            return 0
