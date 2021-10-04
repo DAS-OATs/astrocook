@@ -665,6 +665,7 @@ class Format(object):
         meta = hdr #{}
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+        spec._t['cont'] = data['col5']
         spec._t['redside_PCA'] = data['col4']
         spec._t['blueside'] = data['col5']
         spec._t['blueside_1sigmal'] = data['col6']
