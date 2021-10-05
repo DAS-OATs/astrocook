@@ -581,6 +581,10 @@ class CookbookAbsorbers(object):
                              len(mods_t), msg_z_range(z_list)))
         return 0
 
+    def _systs_compress(self):
+        self.sess.systs._compress()
+        return 0
+
 
     def _systs_cycle(self, verbose=True):
         chi2rav = np.inf
@@ -658,7 +662,7 @@ class CookbookAbsorbers(object):
         return logN_list
 
 
-    def _systs_merge(self, dz=1e-5):
+    def _systs_unify(self, dz=1e-5):
         systs = dc(self.sess.systs)
         merged = np.array([], dtype=int)
         for syst in systs._t:
@@ -1486,7 +1490,7 @@ class CookbookAbsorbers(object):
             if added:
                 count += 1
 
-        self._systs_merge()
+        self._systs_unify()
         #self._mods_recreate()
         self._spec_update()
         logging.info("I completed %i systems (transitions considered: %s)." \
@@ -1957,6 +1961,34 @@ class CookbookAbsorbers(object):
         #plt.show()
 
         return 0
+
+
+    def systs_merge(self, to_row=0, from_rows=[1]):
+        """ @brief Merge a system into the current system
+        @details Merged systems appear as a single entry in the compressed
+        system table.
+        @param num1 Row of the current system
+        @param num2 Row of the system to be merged
+        @return 0
+        """
+
+        try:
+            to_row = int(to_row)-1
+            from_rows = np.array(from_rows)-1
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        t = self.sess.systs.t
+        #print(t['z'][from_rows])
+        z_app = np.append(t['z'][from_rows], t['z'][to_row])
+        logN_app = np.append(t['logN'][from_rows], t['logN'][to_row])
+
+        t['z'][to_row] = np.average(z_app, weights=10**logN_app)
+        t['logN'][to_row] = np.log10(np.sum(10**logN_app))
+        t.remove_rows(from_rows)
+        t.sort(['z','id'])
+
 
     def systs_new_from_lines(self, series='Ly-a', z_start=0, z_end=6,
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
