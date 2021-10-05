@@ -26,8 +26,8 @@ class CookbookGeneral(object):
 
     def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
-        @details Combine the spectra from two or more sessions. The sessions are
-        either selected on the Sessions window or provided as a list through the
+        @details Combine the spectra from two or more sessions. You can select
+        sessions clicking on the Sessions window or providing a list through the
         @_sel parameter. A new session is created, with a new spectrum
         containing all entries from the spectra of the combined sessions. Other
         objects from the sessions (line lists, etc.) are discarded.
@@ -89,10 +89,13 @@ class CookbookGeneral(object):
 
     def deredden(self, ebv=0.03, rv=3.1):
         """@brief Deredden spectrum
-        @details Deredden the spectrum using the parametrization by Cardelli,
-        Clayton, and Mathis (1989) and O'Donnell (1994).
-        @param ebv Color excess E(B-V)
-        @param rv Ratio of total selective extinction R(V)=A(V)/E(B-V)
+        @details Correct the spectrum flux for reddening. Extinction is modeled
+        with the parametrization by Cardelli, Clayton, and Mathis (1989) and
+        O'Donnell (1994), based on color excess (E(B-V)) and ratio of total
+        selective extinction (R(V)=A(V)/E(B-V)). Dereddening is applied to
+        column @y of the spectrum, which is updated.
+        @param ebv Color excess
+        @param rv Ratio of total selective extinction
         @return 0
         """
 
@@ -109,10 +112,13 @@ class CookbookGeneral(object):
 
     def equalize(self, xmin, xmax, _sel=''):
         """ @brief Equalize two sessions
-        @details Equalize the flux level of one session to another one. The
-        last-selected session is equalized to the first-selected one. The
-        equalization factor is the ratio of the median flux within the
-        specified wavelength interval.
+        @details Equalize the flux level of one session to another one. You can
+        select the two sessions clicking on the Sessions window or providing a
+        list through the @_sel parameter. The recipe computes the median of the
+        @y column for the two sessions and uses the @y_1/y_2 ratio to equalize
+        them. Only the wavelength region between @xmin and @xmax is used to
+        compute the median. Note that the first-selected session is left
+        unchanged, while the other one is rescaled. 
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return 0

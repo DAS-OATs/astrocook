@@ -51,7 +51,7 @@ This cookbook contains utilities to manipulate sessions, mask the spectrum, esti
   </tbody>
 </table>
 
-Equalize the flux level of one session to another one. The last-selected session is equalized to the first-selected one. The equalization factor is the ratio of the median flux within the specified wavelength interval.`Equalize` the flux level of one session to another one. The last-selected session is equalized to the first-selected one. The equalization factor is the ratio of the median flux within the specified wavelength interval.
+_Equalize the flux level of one session to another one_. You can select the two sessions clicking on the Sessions window or providing a list through the `xmax` is used to compute the median. Note that the first-selected session is left unchanged, while the other one is rescaled.
 
 ###  Combine two or more sessions
         
@@ -84,7 +84,7 @@ Equalize the flux level of one session to another one. The last-selected session
   </tbody>
 </table>
 
-Combine the spectra from two or more sessions. The sessions are either selected on the Sessions window or provided as a list through the `_sel` parameter. A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded.
+_Combine the spectra from two or more sessions_. You can select sessions clicking on the Sessions window or providing a list through the `_sel` parameter. A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded.
 
 ###  Create a spectral mask
         
@@ -121,7 +121,7 @@ Combine the spectra from two or more sessions. The sessions are either selected 
   </tbody>
 </table>
 
-Create a spectral mask by applying a given condition. The condition must be parsable by AST, with spectrum columns denoted by their names (e.g. 'x>400'). Optionally, a new session is created with the masked spectrum. Other objects from the old session (line lists, etc.) are discarded.`Create` a spectral mask by applying a given condition. The condition must be parsable by AST, with spectrum columns denoted by their names (e.g. 'x>400'). Optionally, a new session is created with the masked spectrum. Other objects from the old session (line lists, etc.) are discarded.
+_Create a spectral mask by applying a given condition_. The condition must be parsable by AST, with spectrum columns denoted by their names (e.g. 'x>400'). Optionally, a new session is created with the masked spectrum. Other objects from the old session (line lists, etc.) are discarded.
 
 ###  Mask telluric absorption
         
@@ -155,7 +155,7 @@ Create a spectral mask by applying a given condition. The condition must be pars
   </tbody>
 </table>
 
-Mask telluric absorption`Mask` telluric absorption
+_Mask telluric absorption_
 
 ###  Estimate the SNR
         
@@ -184,7 +184,7 @@ Mask telluric absorption`Mask` telluric absorption
   </tbody>
 </table>
 
-Estimate the signal-to-noise ratio per pixel.`Estimate` the signal-to-noise ratio per pixel.
+_Estimate the signal-to-noise ratio per pixel_.
 
 ###  Estimate resolution
         
@@ -218,7 +218,7 @@ Estimate the signal-to-noise ratio per pixel.`Estimate` the signal-to-noise rati
   </tbody>
 </table>
 
-Estimate spectral resolution assuming the spectrum has a fixed number of pixels per resolution element.`Estimate` spectral resolution assuming the spectrum has a fixed number of pixels per resolution element.
+_Estimate spectral resolution assuming the spectrum has a fixed number of pixels per resolution element_.
 
 ###  Estimate error from RMS
         
@@ -250,7 +250,7 @@ Estimate spectral resolution assuming the spectrum has a fixed number of pixels 
   </tbody>
 </table>
 
-Estimate flux error by computing the running RMS of the flux.`Estimate` flux error by computing the running RMS of the flux.
+_Estimate flux error by computing the running RMS of the flux_.
 
 ###  Rebin spectrum
         
@@ -292,7 +292,7 @@ Estimate flux error by computing the running RMS of the flux.`Estimate` flux err
   </tbody>
 </table>
 
-Rebin a spectrum with a given step. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.`Rebin` a spectrum with a given step. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.
+_Rebin a spectrum with a given step_. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.
 
 ###  Convolve with gaussian
         
@@ -328,5 +328,5 @@ Rebin a spectrum with a given step. The step can be expressed in any unit of wav
   </tbody>
 </table>
 
-Convolve a spectrum column with a gaussian profile using FFT transform.`Convolve` a spectrum column with a gaussian profile using FFT transform.
+_Convolve a spectrum column with a gaussian profile using FFT transform_.
 

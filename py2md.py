@@ -130,8 +130,16 @@ for c in cs:
                          .split("@return")[0]
             details = ''.join(details.split('\n'))
             details = ' '.join(details.split())
+
+            details1 = details.split(".")
+            details1[0] = '_'+details1[0]+'_'
+            details = '.'.join(details1)
+
             details1 = details.split("@")
             details2 = details1[-1].split(' ')
-            details = '`'.join([details1[0], details2[0], ' '+' '.join(details2[1:])])
+            if len(details1)==1:
+                details = details1[0]
+            else:
+                details = '`'.join([details1[0], details2[0], ' '+' '.join(details2[1:])])
             print("%s" % details)
         print()
