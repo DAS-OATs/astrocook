@@ -9,6 +9,9 @@ import os
 
 class CookbookFlux(object):
     """ Cookbook of utilities for flux calibration
+    @details This cookbook contains utilities to rescale the flux, correct
+    it for reddening and Lyman-alpha opacity, and computing the flux
+    cross-correlation function.
     """
 
     def __init__(self):
@@ -25,7 +28,14 @@ class CookbookFlux(object):
 
     def _mags_compute(self, bands):
         """ @brief Compute magnitudes
-        @details Compute the magnitudes of the spectrum in the SkyMapper bands.
+        @details Compute the AB magnitudes of the spectrum using the SkyMapper
+        bands.
+
+        The magnitudes filters are saved in astrocook/filtskymap. For all
+        chosen `bands`, the spectrum is rebinned into the wavelength grid of the
+        filter and the `y` column is convolved with the filter itself. The
+        integrated flux from the convolution is converted into AB magnitudes.
+
         N.B. Zero-point flux in u band is ~6.87e-06 erg/s/cm2/A.
         @param bands List of bands ('u', 'v', 'g', 'r', 'i', or 'z')
         @return Magnitudes
@@ -82,11 +92,16 @@ class CookbookFlux(object):
 
 
     def deredden(self, ebv=0.03, rv=3.1):
-        """@brief Deredden spectrum
-        @details Deredden the spectrum using the parametrization by Cardelli,
-        Clayton, and Mathis (1989) and O'Donnell (1994).
-        @param ebv Color excess E(B-V)
-        @param rv Ratio of total selective extinction R(V)=A(V)/E(B-V)
+        """@brief De-redden spectrum
+        @details Correct the spectrum flux for reddening due to extinction.
+
+        The extinction is modeled with the parametrization of O'Donnell (1994),
+        depending on the spectrum color excess $$E(B-V)$$ and ratio of total
+        selective extinction $$R(V)=A(V)/E(B-V)$$. Column `y` of the spectrum is
+        updated with de-reddened values.
+
+        @param ebv Color excess
+        @param rv Ratio of total selective extinction
         @return 0
         """
 
@@ -103,13 +118,20 @@ class CookbookFlux(object):
 
     def mags_adjust(self, bands, refs, deg=1):
         """ @brief Adjust magnitudes
-        @details Adjust a spectrum to some reference magnitudes in the SkyMapper
-        bands. The differences with the reference magnitudes are modeled with a
-        polynomial regression to adjust the flux.
+        @details Adjust the flux of the spectrum to its AB magnitudes.
+
+        The spectrum `y` column is convolved with the SkyMapper filters
+        (in astrocook/filtskymap) for the chosen `bands`. The recipe computes the
+        factors to rescale the integrated flux to the provided magnitudes
+        `refs`, and interpolate them with a polynomial of degree `deg` using
+        [`numpy.polyfit`](https://numpy.org/doc/stable/reference/generated/numpy.polyfit.html?highlight=polyfit#numpy.polyfit).
+        `y` and `dy` are then multiplied by the best-fitting polynomial.
+
+        N.B. `deg` must be less than the number of magnitudes in `refs`.
         @param bands List of bands ('u', 'v', 'g', 'r', 'i', or 'z')
         @param refs List of reference magnitudes
         @param deg Degree of polynomial regression
-        @return Magnitudes
+        @return 0
         """
 
         mags_in = self._mags_compute(bands)
@@ -126,11 +148,17 @@ class CookbookFlux(object):
         spec._t['dy'] = spec._t['dy']*corr
         mags_in = self._mags_compute(bands)
 
+        return 0
+
 
     def y_scale(self, fact=1.0):
         """ @brief Scale y axis
-        @details Scale the y axis by a constant factor. The spectrum and the
-        line list are rescaled in place, without starting a new session.
+        @details Scale the y axis by a constant factor.
+
+        The `y` and `dy` columns of the spectrum and the line list (if present)
+        are multiplied by `fact`.
+
+        The scaling is done in place, without creating a new session.
         @param fact Multiplicative factor
         @return 0
         """
@@ -147,8 +175,12 @@ class CookbookFlux(object):
 
     def y_scale_med(self):
         """ @brief Scale y axis by median
-        @details Scale the y axis by its median. The spectrum and the
-        line list are rescaled in place, without starting a new session.
+        @details Scale the y axis by its median.
+
+        The `y` and `dy` columns of the spectrum and the line list (if present)
+        are multiplied by the median of the spectrum `y`.
+
+        The scaling is done in place, without creating a new session.
         @return 0
         """
 
@@ -164,8 +196,14 @@ class CookbookFlux(object):
 
 
     def y_scale_x(self, x):
-        """ @brief Scale y axis by its value at a given x
-        @details Scale the y axis by its value at a given x.
+        """ @brief Scale y axis by its value at a given point
+        @details Scale the y axis by its value at a given point.
+
+        The `y` and `dy` columns of the spectrum and the line list (if present)
+        are multiplied by the value of the spectrum `y` at a given `x`, computed
+        with [`numpy.interp`](https://numpy.org/doc/stable/reference/generated/numpy.interp.html?highlight=interp#numpy.interp).
+
+        The scaling is done in place, without creating a new session.
         @param x x (nm)
         @return 0
         """

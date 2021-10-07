@@ -3,10 +3,14 @@ layout: default
 title: Flux cookbook
 parent: Cookbooks
 nav_order: 1
+math: mathjax2
 ---
 
 # Flux cookbook
 {: .no_toc}
+
+Cookbook of utilities for flux calibration
+
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -16,7 +20,6 @@ nav_order: 1
 ---
 
 ###  Scale y axis
-        
 <table>
   <tbody>
     <tr>
@@ -45,10 +48,13 @@ nav_order: 1
   </tbody>
 </table>
 
-Scale the y axis by a constant factor. The spectrum and the line list are rescaled in place, without starting a new session.
+*Scale the y axis by a constant factor.*
+
+The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by `fact`.
+
+The scaling is done in place, without creating a new session.
 
 ###  Scale y axis by median
-        
 <table>
   <tbody>
     <tr>
@@ -74,10 +80,13 @@ Scale the y axis by a constant factor. The spectrum and the line list are rescal
   </tbody>
 </table>
 
-Scale the y axis by its median. The spectrum and the line list are rescaled in place, without starting a new session.
+*Scale the y axis by its median.*
 
-###  Scale y axis by its value at a given x
-        
+The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by the median of the spectrum `y`.
+
+The scaling is done in place, without creating a new session.
+
+###  Scale y axis by its value at a given point
 <table>
   <tbody>
     <tr>
@@ -106,10 +115,13 @@ Scale the y axis by its median. The spectrum and the line list are rescaled in p
   </tbody>
 </table>
 
-Scale the y axis by its value at a given x.
+*Scale the y axis by its value at a given point.*
 
-###  Deredden spectrum
-        
+The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by the value of the spectrum `y` at a given `x`, computed with [`numpy.interp`](https://numpy.org/doc/stable/reference/generated/numpy.interp.html?highlight=interp#numpy.interp).
+
+The scaling is done in place, without creating a new session.
+
+###  De-redden spectrum
 <table>
   <tbody>
     <tr>
@@ -120,8 +132,8 @@ Scale the y axis by its value at a given x.
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>ebv</code>: Color excess E(B-V)</li>
-          <li><code>rv</code>: Ratio of total selective extinction R(V)=A(V)/E(B-V)</li>
+          <li><code>ebv</code>: Color excess</li>
+          <li><code>rv</code>: Ratio of total selective extinction</li>
         </ul>
       </td>
     </tr>
@@ -140,5 +152,9 @@ Scale the y axis by its value at a given x.
   </tbody>
 </table>
 
-Deredden the spectrum using the parametrization by Cardelli, Clayton, and Mathis (1989) and O'Donnell (1994).
+*Correct the spectrum flux for reddening due to extinction.*
+
+The extinction is modeled with the parametrization of O'Donnell (1994), depending on the spectrum color excess $$E(B-V)$$ and ratio of total selective extinction $$R(V)=A(V)/E(B-V)$$. Column `y` of the spectrum is updated with de-reddened values.
+
+
 

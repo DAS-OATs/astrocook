@@ -3,6 +3,7 @@ layout: default
 title: General cookbook
 parent: Cookbooks
 nav_order: 0
+math: mathjax2
 ---
 
 # General cookbook
@@ -19,7 +20,6 @@ This cookbook contains utilities to manipulate sessions, mask the spectrum, esti
 ---
 
 ###  Equalize two sessions
-        
 <table>
   <tbody>
     <tr>
@@ -51,10 +51,15 @@ This cookbook contains utilities to manipulate sessions, mask the spectrum, esti
   </tbody>
 </table>
 
-_Equalize the flux level of one session to another one_. You can select the two sessions clicking on the Sessions window or providing a list through the `xmax` is used to compute the median. Note that the first-selected session is left unchanged, while the other one is rescaled.
+*Equalize the spectrum of two sessions, based on their flux ratio within a wavelength window.*
+
+By default, the last-selected spectrum is equalized to the first-selected one (which is left unchanged). Equalization is done in place, without creating a new session.
+
+To compute the rescaling factor, the recipe takes the medians of the `y` columns of the two spectra between `xmin` and `xmax`. The `y` and `dy` columns of the second spectrum are then multiplied by $$ \textrm{med}($$`y`$$_1)/\textrm{med}($$`y`$$_2)$$.
+
+N.B. To select sessions, either click on the session window or provide a list through the hidden parameter `_sel`.
 
 ###  Combine two or more sessions
-        
 <table>
   <tbody>
     <tr>
@@ -84,10 +89,15 @@ _Equalize the flux level of one session to another one_. You can select the two 
   </tbody>
 </table>
 
-_Combine the spectra from two or more sessions_. You can select sessions clicking on the Sessions window or providing a list through the `_sel` parameter. A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded.
+*Create a new session combining the spectra from two or more other sessions.*
 
-###  Create a spectral mask
-        
+The recipe collects all the bins from the original spectra and puts them all together in the new spectrum. The bins retain their original size (defined by `xmin` and `xmax`), so they may overlap in the final spectrum. By default, they are ordered by ascending `x`.
+
+All other structures from the original sessions (line lists, etc.) are not propagated to the new one.
+
+N.B. To select sessions, either click on the session window or provide a list through the hidden parameter `_sel`.
+
+###  Mask the spectrum
 <table>
   <tbody>
     <tr>
@@ -121,10 +131,13 @@ _Combine the spectra from two or more sessions_. You can select sessions clickin
   </tbody>
 </table>
 
-_Create a spectral mask by applying a given condition_. The condition must be parsable by AST, with spectrum columns denoted by their names (e.g. 'x>400'). Optionally, a new session is created with the masked spectrum. Other objects from the old session (line lists, etc.) are discarded.
+*Create a mask applying a specified condition to the spectrum bins.*
+
+The expression in `cond` is translated into a boolean condition by the [`ast`](https://docs.python.org/3/library/ast.html) module. Expressions like `c>10` or `1500<c<2000` are supported, where `c` is a column of the spectrum.
+
+The condition is checked on all spectrum bins and a new column `col` is populated with the results. No information is deleted from the input spectrum. If `new_sess` is `True`, a new session is created, containing a masked version of the input spectrum. In this masked spectrum, the column `y`, `dy`, and optionally `cont` are set to `numpy.nan` in all bins where the condition is false. All other structures from the original session (line lists, etc.) are not propagated to the new one.
 
 ###  Mask telluric absorption
-        
 <table>
   <tbody>
     <tr>
@@ -155,10 +168,13 @@ _Create a spectral mask by applying a given condition_. The condition must be pa
   </tbody>
 </table>
 
-_Mask telluric absorption_
+*Mask spectral regions affected by telluric absorptions.*
+
+The regions were determined by Tobias M. Schmidt from ESPRESSO data and are saved in `telluric.dat`. They are resampled into the current `x` grid and used to populate a `telluric` column, which is set to `1` inside the regions and to `0` elsewhere.
+
+If `apply` is `True`, `y` is set to `numpy.nan` in all bins where `telluric` is 1.
 
 ###  Estimate the SNR
-        
 <table>
   <tbody>
     <tr>
@@ -184,10 +200,11 @@ _Mask telluric absorption_
   </tbody>
 </table>
 
-_Estimate the signal-to-noise ratio per pixel_.
+*Estimate the signal-to-noise ratio per pixel.*
+
+A `snr` column is populated with `y`/`dy` ratios computed for all spectrum bins.
 
 ###  Estimate resolution
-        
 <table>
   <tbody>
     <tr>
@@ -198,7 +215,7 @@ _Estimate the signal-to-noise ratio per pixel_.
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>px</code>: Number of pixels</li>
+          <li><code>px</code>: Number of bins per resolution element</li>
           <li><code>update</code>: Update column 'resol'</li>
         </ul>
       </td>
@@ -218,10 +235,11 @@ _Estimate the signal-to-noise ratio per pixel_.
   </tbody>
 </table>
 
-_Estimate spectral resolution assuming the spectrum has a fixed number of pixels per resolution element_.
+*Assign a resolution to spectral bins, assuming that the spectrum is designed to have a fixed number of bins per resolution element.*
+
+This recipe is useful to populate the `resol` column in a spectrum (needed to fit the absorption systems) when it is empty, and information about the original sampling of the data is available. It does *not* try to infer the resolution from, e.g., the width of unresolved spectral feature.
 
 ###  Estimate error from RMS
-        
 <table>
   <tbody>
     <tr>
@@ -232,7 +250,7 @@ _Estimate spectral resolution assuming the spectrum has a fixed number of pixels
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>hwindow</code>: Half-window size in pixels for running mean</li>
+          <li><code>hwindow</code>: Half-size in pixels of the running window</li>
         </ul>
       </td>
     </tr>
@@ -250,10 +268,11 @@ _Estimate spectral resolution assuming the spectrum has a fixed number of pixels
   </tbody>
 </table>
 
-_Estimate flux error by computing the running RMS of the flux_.
+*Estimate flux error by computing the root-mean-square (RMS) of the flux within a running window.*
 
-###  Rebin spectrum
-        
+The RMS is computed over `y` values and is saved in `y_rms`. It may be useful to compare the latter with `dy` to check that the formal error is consistent with the actual dispersion of `y` values.
+
+###  Re-bin spectrum
 <table>
   <tbody>
     <tr>
@@ -292,10 +311,17 @@ _Estimate flux error by computing the running RMS of the flux_.
   </tbody>
 </table>
 
-_Rebin a spectrum with a given step_. The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are None, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.
+*Apply a new binning to a spectrum, with a constant bin size.*
+
+The algorithm for re-binning is described in [Cupani et al. (2016)](https://ui.adsabs.harvard.edu/abs/2016SPIE.9913E..1TC/abstract). It properly weights the flux contributions from the old bins to the new ones, also when the former overlap with each other (as it happens when several exposures of the same object are combined into a single spectrum).
+
+The new grid is designed to fully cover the original range of the spectrum (when `xstart` and `xend` are `None`) or a specified range (useful when different spectra must be re-binned to the same grid). It is defined in either wavelength or velocity space, as specified by the chosen `xunit`. Any gap in the original binning are filled with a specified `filling` value, to ensure that the final grid is equally spaced.
+
+Columns `y` and `dy` of the input spectrum are both re-binned to the new grid. If a column `cont` is present and `norm` is `True`, `y` and `dy` are normalized to `cont` in the re-binned spectrum.
+
+A new session is created with the re-binned spectrum. All other structures from the original session (line lists, etc.) are not propagated to the new one.
 
 ###  Convolve with gaussian
-        
 <table>
   <tbody>
     <tr>
@@ -328,5 +354,107 @@ _Rebin a spectrum with a given step_. The step can be expressed in any unit of w
   </tbody>
 </table>
 
-_Convolve a spectrum column with a gaussian profile using FFT transform_.
+*Convolve a spectrum column with a gaussian profile.*
+
+The convolution is computed in velocity space, using the Fast Fourier Transform.
+
+###  Compute the CCF
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.flux_ccf</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>col1</code>: First column</li>
+          <li><code>col2</code>: Second column</li>
+          <li><code>dcol1</code>: Error for first column</li>
+          <li><code>dcol2</code>: Error for second column</li>
+          <li><code>vstart</code>: Start velocity</li>
+          <li><code>vend</code>: End velocity</li>
+          <li><code>dv</code>: Velocity step</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "flux_ccf",
+  "params": {
+    "col1": "'y'",
+    "col2": "'y'",
+    "dcol1": "'dy'",
+    "dcol2": "'dy'",
+    "vstart": "-20",
+    "vend": "20",
+    "dv": "0.1"
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Convolve the cross-correlation function (CCF) between two spectrum columns.*
+
+The recipe is designed to work on flux densities. Typically, the first column is `y` and the second column contains the flux density from a different spectrum with the same wavelength binning. The second columns can also be `y`: in this case, the recipe computes the auto-correlation instead of the cross-correlation.
+
+The CCF is computed in velocity space, shifting `col2` with respect to `col1` within the range `vstart`-`vend` and with step @dv. The columns are resampled while shifting, to accomodate for values of @dv much smaller than the spectrum bin size.
+
+The CCF is saved in a NumPy binary file `SESS_ccf.npy`, with `SESS` the name of the session.
+
+###  Compute statistics of the CCF
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.flux_ccf_stats</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>n</code>: Number of realizations</li>
+          <li><code>col1</code>: First column</li>
+          <li><code>col2</code>: Second column</li>
+          <li><code>dcol1</code>: Error for first column</li>
+          <li><code>dcol2</code>: Error for second column</li>
+          <li><code>vstart</code>: Start velocity (km/s)</li>
+          <li><code>vend</code>: End velocity (km/s)</li>
+          <li><code>dv</code>: Velocity step (km/s)</li>
+          <li><code>fit_hw</code>: Half-window used for fitting the CCF (km/s)</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "flux_ccf_stats",
+  "params": {
+    "n": "10.0",
+    "col1": "'y'",
+    "col2": "'y'",
+    "dcol1": "'dy'",
+    "dcol2": "'dy'",
+    "vstart": "-20",
+    "vend": "20",
+    "dv": "0.1",
+    "fit_hw": "1.0"
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Compute statistics for the peak of the cross-correlation function (CCF) by bootstrapping a number of realizations for the spectrum.*
+
+Realizations are created by selecting entries at random, preserving wavelength order and rejecting duplicates (compare with Peterson et al. 1998).
+
+The recipe computes the CCF between the original flux and the flux of each realization. A gaussian is fit to the CCF within a window around 0 (in velocity space) to determine the position of the peak. The distribution of peak positions is saved in a NumPy binary file `SESS_ccf_stats.npy`, with `SESS` the name of the session.
 

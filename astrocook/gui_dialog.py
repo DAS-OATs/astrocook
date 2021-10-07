@@ -73,7 +73,9 @@ class GUIDialog(wx.Dialog):
         split = full.split('@')
         self._brief.append([s[6:-1] for s in split \
                            if s[0:5]=='brief'][0].replace('\n', ' '))
-        self._details.append([s[8:-1] for s in split \
+        #self._details.append([s[8:-1] for s in split \
+        #                      if s[0:7]=='details'][0].replace('\n', ' '))
+        self._details.append([s.split('\n\n')[0][8:] for s in split \
                               if s[0:7]=='details'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])

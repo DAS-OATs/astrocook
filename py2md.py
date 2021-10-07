@@ -25,6 +25,7 @@ layout: default\n\
 title: %s cookbook\n\
 parent: Cookbooks\n\
 nav_order: %i\n\
+math: mathjax2\n\
 ---\n\
 \n\
 # %s cookbook\n\
@@ -80,7 +81,8 @@ for c in cs:
 
             brief = doc\
                         .split("@brief")[-1]\
-                        .split("@details")[0]
+                        .split("@details")[0]\
+                        .split("\n")[0]
             print("### %s" % brief)
 
             pars = doc\
@@ -125,21 +127,23 @@ for c in cs:
             print()
 
             details = doc\
-                         .split("@details")[-1]\
-                         .split("@param")[0]\
-                         .split("@return")[0]
-            details = ''.join(details.split('\n'))
-            details = ' '.join(details.split())
-
-            details1 = details.split(".")
-            details1[0] = '_'+details1[0]+'_'
-            details = '.'.join(details1)
-
-            details1 = details.split("@")
-            details2 = details1[-1].split(' ')
-            if len(details1)==1:
-                details = details1[0]
-            else:
-                details = '`'.join([details1[0], details2[0], ' '+' '.join(details2[1:])])
-            print("%s" % details)
+                          .split("@details")[-1]\
+                          .split("@param")[0]\
+                          .split("@return")[0]
+            #details = ''.join(details.split('\n'))
+            details_r = [' '.join(d.split()) for d in details.split('\n\n')]
+            details_r[0] = '*'+details_r[0]+'*'
+            details = '\n\n'.join(details_r)
+            """
+            details_s = details.split(".")
+            details_s[0] = '_'+details_s[0]+'_'
+            details = '.'.join(details_s)
+            """
+            """
+            details_s = details.split(" ")
+            details_s = ["`".join(d.split("@")) for d in details_s]
+            details_s = [d+"`" if "`" in d else d for d in details_s]
+            details = " ".join(details_s)
+            """
+            print("%s" % (details))
         print()
