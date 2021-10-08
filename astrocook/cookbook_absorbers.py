@@ -505,7 +505,7 @@ class CookbookAbsorbers(object):
             return None
 
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                          None, None, None, None, systs._id])
+                          None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -1396,7 +1396,6 @@ class CookbookAbsorbers(object):
         if self._z_off(trans_parse(series), z): return 0
 
         for i, s in enumerate(series.split(';')):
-            #print(i, 'start')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
             #    m._pars.pretty_print()
@@ -1893,6 +1892,7 @@ class CookbookAbsorbers(object):
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
                             append=True):
+
         """ @brief New systems from likelihood
         @details TBD
         @param series Series of transitions
