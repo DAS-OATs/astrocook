@@ -554,13 +554,14 @@ class CookbookAbsorbers(object):
 
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
-                   resol_list=None, verbose=True):
+                   resol_list=None, k_list=None, verbose=True):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
+        if k_list is None: k_list = [None]*len(series_list)
         systs_n = 0
-        for i, (series, z, logN, b, resol) \
-            in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list),
+        for i, (series, z, logN, b, resol, k) \
+            in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list, k_list),
                          len(series_list), "cookbook_absorbers: Adding"):
             #in enumerate(zip(series_list, z_list, logN_list, b_list, resol_list)):
             if logN is None: logN = logN_def
@@ -573,6 +574,9 @@ class CookbookAbsorbers(object):
                 systs_n += 1
                 self._systs_update(mod)
 
+            if k is not None:
+                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
+                    = (mod._id, 'z', k)
         # Improve
         mods_t = self.sess.systs._mods_t
 
@@ -1396,48 +1400,21 @@ class CookbookAbsorbers(object):
         if self._z_off(trans_parse(series), z): return 0
 
         for i, s in enumerate(series.split(';')):
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             self._systs_prepare()
-            #print(self.sess.systs._t)
-        #self._logN_guess(series, z, b, resol)
-        #logN = self._syst_guess(series, z)
-            #print(s, z, logN, b, resol, self._refit_n)
             mod = self._syst_add(s, z, logN, b, resol)
-            #print(i, 'before')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             if mod is None: return 0
             #"""
+
+            # Link z
             if i==0:
                 k = 'lines_voigt_%i_z' % mod._id
             else:
                 #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
 
-            #"""
-            #print(mod._pars[k])
-            #self._systs_cycle()
-            #self._syst_fit(mod)
-            #print(self.sess.systs._t)
-            #print(self.sess.systs._mods_t['id'])
             if self._refit_n == 0:
                 self._mods_recreate()
-            #print(self.sess.systs._mods_t['id'])
-            #print(i, 'midway')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             self._systs_cycle()
-            #print(i, 'after')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
-            #print(self.sess.systs._mods_t['id'])
-        #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
-        #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         if recompress:
@@ -1987,7 +1964,9 @@ class CookbookAbsorbers(object):
         likes = self._likes
         z_likes = self._z_likes
         series_split = series.split(';')
-        for s in series_split:
+        k_list = []
+        for i, s in enumerate(series_split):
+            print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
             trans = trans_parse(s)
             #z_int = np.arange(z_start, z_end, dz)
@@ -2030,15 +2009,26 @@ class CookbookAbsorbers(object):
                 #print(p0[np.where(sel)])
                 p = p0
 
-                s_list = [s]*len(p)
-                z_list = z_int[w][p]
-                logN_list = [logN]*len(p)
-                resol_list = [resol]*len(z_list)
-                if len(s_list)>0:
+                if k_list == []:
+                    s_list = [s]*len(p)
+                    z_list = z_int[w][p]
+                    logN_list = [logN]*len(p)
+                    resol_list = [resol]*len(z_list)
+                    if len(s_list)>0:
+                        self._systs_prepare(append)
+                        self._systs_add(s_list, z_list, logN_list,
+                                        resol_list=resol_list)
+                        self._spec_update()
+                else:
+                    s_list = [s]*len(z_list)
                     self._systs_prepare(append)
-                    self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
+                    self._systs_add(s_list, z_list, logN_list,
+                                    resol_list=resol_list, k_list=k_list)
+                    self._mods_recreate()
                     self._spec_update()
         #plt.show()
+            if i == 0:
+                k_list = ['lines_voigt_%i_z' % id for id in self.sess.systs._t['id']]
 
         if compressed:
             systs._compress()
