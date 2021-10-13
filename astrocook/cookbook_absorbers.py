@@ -560,6 +560,7 @@ class CookbookAbsorbers(object):
         if resol_list is None: resol_list = [None]*len(series_list)
         if k_list is None: k_list = [None]*len(series_list)
         systs_n = 0
+        id_list = []
         for i, (series, z, logN, b, resol, k) \
             in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list, k_list),
                          len(series_list), "cookbook_absorbers: Adding"):
@@ -574,9 +575,12 @@ class CookbookAbsorbers(object):
                 systs_n += 1
                 self._systs_update(mod)
 
+            id_list.append(mod._id)
             if k is not None:
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
                     = (mod._id, 'z', k)
+
+
         # Improve
         mods_t = self.sess.systs._mods_t
 
@@ -590,7 +594,7 @@ class CookbookAbsorbers(object):
                 logging.info("I've added %i system%s in %i model%s." \
                              % (systs_n, '' if systs_n==1 else 's',
                              len(mods_t), msg_z_range(z_list)))
-        return 0
+        return id_list
 
 
     def _systs_compress(self):
@@ -1966,7 +1970,7 @@ class CookbookAbsorbers(object):
         series_split = series.split(';')
         k_list = []
         for i, s in enumerate(series_split):
-            print(s, 'systs_like')
+            #print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
             trans = trans_parse(s)
             #z_int = np.arange(z_start, z_end, dz)
@@ -2016,8 +2020,8 @@ class CookbookAbsorbers(object):
                     resol_list = [resol]*len(z_list)
                     if len(s_list)>0:
                         self._systs_prepare(append)
-                        self._systs_add(s_list, z_list, logN_list,
-                                        resol_list=resol_list)
+                        id_list = self._systs_add(s_list, z_list, logN_list,
+                                                  resol_list=resol_list)
                         self._spec_update()
                 else:
                     s_list = [s]*len(z_list)
@@ -2028,7 +2032,8 @@ class CookbookAbsorbers(object):
                     self._spec_update()
         #plt.show()
             if i == 0:
-                k_list = ['lines_voigt_%i_z' % id for id in self.sess.systs._t['id']]
+                k_list = ['lines_voigt_%i_z' % id for id in id_list]
+                print(k_list)
 
         if compressed:
             systs._compress()
