@@ -1966,7 +1966,7 @@ class CookbookAbsorbers(object):
         series_split = series.split(';')
         k_list = []
         for i, s in enumerate(series_split):
-            print(s, 'systs_like')
+            #print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
             trans = trans_parse(s)
             #z_int = np.arange(z_start, z_end, dz)
