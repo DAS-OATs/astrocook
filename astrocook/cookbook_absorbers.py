@@ -1513,6 +1513,97 @@ class CookbookAbsorbers(object):
 
         return 0
 
+
+    def systs_complete_from_z(self, series='all', series_ref=None, z_start=0,
+                              z_end=6, logN=logN_def, b=b_def, resol=resol_def,
+                              chi2r_thres=np.inf, dlogN_thres=np.inf,
+                              refit_n=0, chi2rav_thres=1e-2,
+                              max_nfev=max_nfev_def, append=True):
+        """ @brief Complete systems from redshift list
+        @details TBD
+        @param series Series of transitions
+        @param series_ref Reference series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param logN Guess (logarithmic) column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            resol = None if resol in [None, 'None'] else float(resol)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        recompress = False
+        compressed = False
+        if systs is not None and systs._compressed:
+            recompress = True
+            systs._compress()
+
+        if series == 'all':
+            trans_ex = np.unique(np.ravel([trans_parse(s)
+                                           for s in systs._t['series']]))
+            trans_n = list(set(trans_d)-set(trans_ex))
+            #print(trans_n)
+            series = ';'.join(trans_n)
+
+        if series_ref != None:
+            ws = systs._t['series']==series_ref
+            wz = np.logical_and(systs._t['z']>z_start, systs._t['z']<z_end)
+            w = np.logical_and(ws, wz)
+
+            #hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+            z_list = list(systs._t['z'][w])
+            id_list = list(systs._t['id'][w])
+        else:
+            z_list = list(systs._t['z'])
+            id_list = list(systs._t['id'])
+
+
+        k_list = ['lines_voigt_%i_z' % id for id in id_list]
+        #print(z_list, id_list, k_list)
+        for s in series.split(';'):
+            s_list = [s]*len(z_list)
+            logN_list = [logN]*len(z_list)
+            resol_list = [resol]*len(z_list)
+            self._systs_prepare(append)
+            self._systs_add(s_list, z_list, logN_list, resol_list=resol_list,
+                            k_list=k_list)
+            self._mods_recreate()
+            self._spec_update()
+
+        if compressed:
+            systs._compress()
+
+        return 0
+
+
     def systs_improve(self, impr_n=3, refit_n=0):
         """ @brief Improve systems
         @details Improve systems adding components to reduce residuals
@@ -2017,23 +2108,27 @@ class CookbookAbsorbers(object):
                     s_list = [s]*len(p)
                     z_list = z_int[w][p]
                     logN_list = [logN]*len(p)
-                    resol_list = [resol]*len(z_list)
+                    resol_list = [resol]*len(p)
                     if len(s_list)>0:
                         self._systs_prepare(append)
                         id_list = self._systs_add(s_list, z_list, logN_list,
                                                   resol_list=resol_list)
                         self._spec_update()
+                    else:
+                        id_list = []
                 else:
                     s_list = [s]*len(z_list)
+                    logN_list = [logN]*len(z_list)
+                    resol_list = [resol]*len(z_list)
                     self._systs_prepare(append)
-                    self._systs_add(s_list, z_list, logN_list,
-                                    resol_list=resol_list, k_list=k_list)
+                    id_list = self._systs_add(s_list, z_list, logN_list,
+                                              resol_list=resol_list, k_list=k_list)
                     self._mods_recreate()
                     self._spec_update()
         #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
-                print(k_list)
+                #print(k_list)
 
         if compressed:
             systs._compress()
