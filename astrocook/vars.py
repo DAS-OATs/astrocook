@@ -140,6 +140,7 @@ inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
 
 telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 
