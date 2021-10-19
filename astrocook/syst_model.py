@@ -466,6 +466,7 @@ class SystModel(LMComposite):
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
+
         self._make_defs(defs)
         #print('a', time.time()-tt)
         #tt = time.time()
