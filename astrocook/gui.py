@@ -979,7 +979,8 @@ class GUIPanelSession(wx.Frame):
                 for m in attr._mods_t:
                     mod = m['mod']
                     mod._spec = self._gui._sess_sel.spec
-                    mod._xf, mod._yf, mod._wf, mod._ys = \
+                    #mod._xf, mod._yf, mod._wf, mod._ys = \
+                    mod._xf, mod._yf, mod._wf = \
                         mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
                                                .to(au.nm).value)
             setattr(self._gui._sess_sel, attrn, attr)
