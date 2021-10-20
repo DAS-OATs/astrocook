@@ -29,7 +29,7 @@ The fundamental columns of a spectrum are:
 - `xmin`, `xmax`: the interval in `x` values in which the flux-like quantity is integrated;
 - `y`, `dy`: the flux-like dependent variable and its error.
 
-The interval [`xmin`, `xmax`] is also called a *pixel*, because in some cases it maps to a physical pixel in the spectrograph detector.
+The interval [`xmin`, `xmax`] is also called a *bin* (because it is the unit into which the flux information is binned) or a *pixel* (because in some cases it maps to a physical pixel in the spectrograph detector).
 
 Other columns that frequently appear in a spectrum are:
 - `y_conv`: a convolution of `y` with some smoothing kernel;
@@ -67,10 +67,12 @@ When you detect absorption systems, they are also formatted into a table added t
 - `series`: the list of ionic transitions that are modeled;
 - `z0`: the starting redshift, typically computed from the `x` value of one or more [absorption lines](structures.md#list-of-lines);
 - `z`, `dz`: the redshift of the model and its error;
-- `logN`, `dlogN`: the logarithm of the column density used in the Voigt function (in cm^-2) and its error;
+- `logN`, `dlogN`: the base-10 logarithm of the column density used in the Voigt function (in cm^-2) and its error;
 - `b`, `db`: the doppler parameter used in the Voigt function and its error;
 - `resol`: the resolution adopted by the model;
 - `chi2r`: the reduced chi-squared between the model and the data;
 - `id`: the identification number of the model.
 
-The parameters of the Voigt function (`z`, `logN`, and `b`) may be either guess or fitted parameters. As a rule, when a system is added to the list it is also fitted to the spectrum: `z`, `logN`, and `b` are the best-fit values and `chi2r` gives an estimation of the goodness of fit.
+The parameters of the [Voigt profile](absorbers.md#voigt-profile-modeling) (`z`, `logN`, and `b`) may be either guess or fitted parameters. As a rule, when a system is added to the list it is also fitted to the spectrum: `z`, `logN`, and `b` are the best-fit values and `chi2r` gives an estimation of the goodness of fit.
+
+[Here](series.md) you can find a complete list of the ionic transitions used to model absorption features.
