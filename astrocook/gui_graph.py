@@ -196,7 +196,8 @@ class GUIGraphMain(wx.Frame):
 
         # Freeze cursors
         self._gui._graph_main._graph._cursor_frozen = True
-        self._gui._graph_det._graph._cursor_frozen = True
+        if hasattr(self._gui, '_graph_det'):
+            self._gui._graph_det._graph._cursor_frozen = True
 
         params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',

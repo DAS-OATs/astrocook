@@ -12,6 +12,9 @@ from tqdm import tqdm
 
 class CookbookGeneral(object):
     """ Cookbook of general utilities
+    @details This cookbook contains utilities to manipulate sessions, mask the
+    spectrum, estimate spectral quality parameters, and perform basic operations
+    like rebinning and convolution.
     """
 
     def __init__(self):
@@ -23,10 +26,19 @@ class CookbookGeneral(object):
 
     def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
-        @details Combine two or more sessions. A new session is created, with a
-        new spectrum containing all entries from the spectra of the combined
-        sessions. Other objects from the sessions (line lists, etc.) are
-        discarded.
+        @details Create a new session combining the spectra from two or more
+        other sessions.
+
+        The recipe collects all the bins from the original spectra and puts them
+        all together in the new spectrum. The bins retain their original size
+        (defined by `xmin` and `xmax`), so they may overlap in the final
+        spectrum. By default, they are ordered by ascending `x`.
+
+        All other structures from the original sessions (line lists, etc.) are
+        not propagated to the new one.
+
+        N.B. To select sessions, either click on the session window or provide
+        a list through the hidden parameter `_sel`.
         @param name Name of the output session
         @return Combined session
         """
@@ -83,32 +95,22 @@ class CookbookGeneral(object):
         return sess
 
 
-    def deredden(self, ebv=0.03, rv=3.1):
-        """@brief Deredden spectrum
-        @details Deredden the spectrum using the parametrization by Cardelli,
-        Clayton, and Mathis (1989) and O'Donnell (1994).
-        @param ebv Color excess E(B-V)
-        @param rv Ratio of total selective extinction R(V)=A(V)/E(B-V)
-        @return 0
-        """
-
-        try:
-            ebv = float(ebv)
-            rv = float(rv)
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-
-        self.sess.spec._deredden(ebv, rv)
-        return 0
-
-
     def equalize(self, xmin, xmax, _sel=''):
         """ @brief Equalize two sessions
-        @details Equalize the flux level of one session to another one. The
-        last-selected session is equalized to the first-selected one. The
-        equalization factor is the ratio of the median flux within the
-        specified wavelength interval.
+        @details Equalize the spectrum of two sessions, based on their flux
+        ratio within a wavelength window.
+
+        By default, the last-selected spectrum is equalized to the
+        first-selected one (which is left unchanged). Equalization is done in
+        place, without creating a new session.
+
+        To compute the rescaling factor, the recipe takes the medians of the `y`
+        columns of the two spectra between `xmin` and `xmax`. The `y` and `dy`
+        columns of the second spectrum are then multiplied by $$
+        \\textrm{med}($$`y`$$_1)/\\textrm{med}($$`y`$$_2)$$.
+
+        N.B. To select sessions, either click on the session window or provide
+        a list through the hidden parameter `_sel`.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return 0
@@ -161,13 +163,23 @@ class CookbookGeneral(object):
 
     def flux_ccf(self, col1='y', col2='y', dcol1='dy', dcol2='dy', vstart=-20,
                  vend=20, dv=1e-1):
-        """@brief Compute the flux CCF
-        @details Convolve the cross-correlation function between two columns
-        with flux information. Typically, the second column contain the flux
-        density from a different spectrum, but it can be equal to the first
-        column (in which case auto-correlation is computed). Cross-correlation
-        is computed in velocity space, within a given range and with a given
-        step.
+        """@brief Compute the CCF
+        @details Convolve the cross-correlation function (CCF) between two
+        spectrum columns.
+
+        The recipe is designed to work on flux densities. Typically, the first
+        column is `y` and the second column contains the flux density from a
+        different spectrum with the same wavelength binning. The second columns
+        can also be `y`: in this case, the recipe computes the auto-correlation
+        instead of the cross-correlation.
+
+        The CCF is computed in velocity space, shifting `col2` with respect to
+        `col1` within the range `vstart`-`vend` and with step @dv. The columns
+        are resampled while shifting, to accomodate for values of @dv much
+        smaller than the spectrum bin size.
+
+        The CCF is saved in a NumPy binary file `SESS_ccf.npy`, with `SESS` the
+        name of the session.
         @param col1 First column
         @param col2 Second column
         @param dcol1 Error for first column
@@ -200,11 +212,20 @@ class CookbookGeneral(object):
 
     def flux_ccf_stats(self, n=1e1, col1='y', col2='y', dcol1='dy', dcol2='dy',
                        vstart=-20, vend=20, dv=1e-1, fit_hw=1.):
-        """@brief Compute statistics of the flux CCF
-        @details Compute statistics of the flux CCF by bootstrapping a number
-        of realizations for the spectrum. Realizations are created by selecting
-        entries at random, preserving wavelength order and rejecting duplicates.
-        Compare with Peterson et al. 1998.
+        """@brief Compute statistics of the CCF
+        @details Compute statistics for the peak of the cross-correlation
+        function (CCF) by bootstrapping a number of realizations for the
+        spectrum.
+
+        Realizations are created by selecting entries at random, preserving
+        wavelength order and rejecting duplicates (compare with Peterson et al.
+        1998).
+
+        The recipe computes the CCF between the original flux and the flux of
+        each realization. A gaussian is fit to the CCF within a window around
+        0 (in velocity space) to determine the position of the peak. The
+        distribution of peak positions is saved in a NumPy binary file
+        `SESS_ccf_stats.npy`, with `SESS` the name of the session.
         @param n Number of realizations
         @param col1 First column
         @param col2 Second column
@@ -272,8 +293,10 @@ class CookbookGeneral(object):
 
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
-        @details Convolve a spectrum column with a gaussian profile using FFT
-        transform.
+        @details Convolve a spectrum column with a gaussian profile.
+
+        The convolution is computed in velocity space, using the Fast Fourier
+        Transform.
         @param std Standard deviation of the gaussian (km/s)
         @param input_col Input column
         @param output_col Output column
@@ -290,12 +313,22 @@ class CookbookGeneral(object):
         return 0
 
     def mask(self, col='mask', cond='', new_sess=True, masked_col='x'):
-        """ @brief Create a spectral mask
-        @details Create a spectral mask by applying a given condition. The
-        condition must be parsable by AST, with spectrum columns denoted by
-        their names (e.g. 'x>400'). Optionally, a new session is created with
-        the masked spectrum. Other objects from the old session (line lists,
-        etc.) are discarded.
+        """ @brief Mask the spectrum
+        @details Create a mask applying a specified condition to the spectrum
+        bins.
+
+        The expression in `cond` is translated into a boolean condition by the
+        [`ast`](https://docs.python.org/3/library/ast.html) module. Expressions
+        like `c>10` or `1500<c<2000` are supported, where `c` is a column of the
+        spectrum.
+
+        The condition is checked on all spectrum bins and a new column `col` is
+        populated with the results. No information is deleted from the input
+        spectrum. If `new_sess` is `True`, a new session is created, containing
+        a masked version of the input spectrum. In this masked spectrum, the
+        column `y`, `dy`, and optionally `cont` are set to `numpy.nan` in all
+        bins where the condition is false. All other structures from the
+        original session (line lists, etc.) are not propagated to the new one.
         @param col Column with the mask
         @param cond Condition
         @param new_sess Create a new session from masked spectrum
@@ -331,14 +364,31 @@ class CookbookGeneral(object):
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
               norm=True, filling=np.nan):
-        """ @brief Rebin spectrum
-        @details Rebin a spectrum with a given step. The step can be expressed
-        in any unit of wavelength or velocity. Start and end wavelength may be
-        specified, e.g. to align the rebinned spectrum to other spectra. If
-        start or end wavelength are None, rebinning is performed from the first
-        to the last wavelength of the input spectrum. A new session is created
-        with the rebinned spectrum. Other objects from the old session (line
-        lists, etc.) are discarded.
+        """ @brief Re-bin spectrum
+        @details Apply a new binning to a spectrum, with a constant bin size.
+
+        The algorithm for re-binning is described in
+        [Cupani et al. (2016)](https://ui.adsabs.harvard.edu/abs/2016SPIE.9913E..1TC/abstract).
+        It properly weights the flux contributions from the old bins to the
+        new ones, also when the former overlap with each other (as it happens
+        when several exposures of the same object are combined into a single
+        spectrum).
+
+        The new grid is designed to fully cover the original range of
+        the spectrum (when `xstart` and `xend` are `None`) or a specified range
+        (useful when different spectra must be re-binned to the same grid). It
+        is defined in either wavelength or velocity space, as specified by the
+        chosen `xunit`. Any gap in the original binning are filled with a
+        specified `filling` value, to ensure that the final grid is equally
+        spaced.
+
+        Columns `y` and `dy` of the input spectrum are both re-binned to the new
+        grid. If a column `cont` is present and `norm` is `True`, `y` and `dy`
+        are normalized to `cont` in the re-binned spectrum.
+
+        A new session is created with the re-binned spectrum. All other
+        structures from the original session (line lists, etc.) are not
+        propagated to the new one.
         @param xstart Start wavelength (nm)
         @param xend End wavelength (nm)
         @param dx Step in x
@@ -399,11 +449,11 @@ class CookbookGeneral(object):
 
     def region_extract(self, xmin, xmax):
         """ @brief Extract region
-        @details The region between a minimum and a maximum wavelength is
-        extracted from the data structures in the current session (these include
-        the selected spectral range with all the lines and the absorption
-        systems that fall within). A new session with the extracted data
-        structures is created.
+        @details Extract a spectral region and create a new session from it.
+
+        The region includes not only the chunk of spectrum between `xmin` and
+        `xmax`, but also all the lines and the absorption systems in the same
+        range, which are propagated to the new session.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return Spectral region
@@ -459,9 +509,16 @@ class CookbookGeneral(object):
 
     def resol_est(self, px=3, update=True):
         """ @brief Estimate resolution
-        @details Estimate spectral resolution assuming the spectrum has
-        a fixed number of pixels per resolution element.
-        @param px Number of pixels
+        @details Assign a resolution to spectral bins, assuming that the
+        spectrum is designed to have a fixed number of bins per resolution
+        element.
+
+        This recipe is useful to populate the `resol` column in a spectrum
+        (needed to fit the absorption systems) when it is empty, and information
+        about the original sampling of the data is available. It does *not* try
+        to infer the resolution from, e.g., the width of unresolved spectral
+        feature.
+        @param px Number of bins per resolution element
         @param update Update column 'resol'
         @return 0
         """
@@ -519,8 +576,13 @@ class CookbookGeneral(object):
 
     def rms_est(self, hwindow=100):
         """ @brief Estimate error from RMS
-        @details Estimate flux error by computing the running RMS of the flux.
-        @param hwindow Half-window size in pixels for running mean
+        @details Estimate flux error by computing the root-mean-square (RMS) of
+        the flux within a running window.
+
+        The RMS is computed over `y` values and is saved in `y_rms`. It may be
+        useful to compare the latter with `dy` to check that the formal error is
+        consistent with the actual dispersion of `y` values.
+        @param hwindow Half-size in pixels of the running window
         @return 0
         """
 
@@ -546,6 +608,9 @@ class CookbookGeneral(object):
     def snr_est(self):
         """ @brief Estimate the SNR
         @details Estimate the signal-to-noise ratio per pixel.
+
+        A `snr` column is populated with `y`/`dy` ratios computed for all
+        spectrum bins.
         @return 0
         """
 
@@ -562,7 +627,15 @@ class CookbookGeneral(object):
 
     def telluric_mask(self, shift=0, apply=True):
         """ @brief Mask telluric absorption
-        @details Mask telluric absorption
+        @details Mask spectral regions affected by telluric absorptions.
+
+        The regions were determined by Tobias M. Schmidt from ESPRESSO data and
+        are saved in `telluric.dat`. They are resampled into the current `x`
+        grid and used to populate a `telluric` column, which is set to `1`
+        inside the regions and to `0` elsewhere.
+
+        If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
+        `telluric` is 1.
         @param shift Shift to the heliocentric frame (km/s)
         @param apply Apply mask to flux
         @return 0

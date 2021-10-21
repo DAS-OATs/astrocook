@@ -130,9 +130,9 @@ psf_gauss_d = {
 forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
                       'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
-x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda'])
-y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3'])
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
@@ -147,6 +147,7 @@ inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
 
 telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 

@@ -2,11 +2,15 @@
 layout: default
 title: General cookbook
 parent: Cookbooks
-nav_order: 1
+nav_order: 0
+math: mathjax2
 ---
 
 # General cookbook
 {: .no_toc}
+
+This cookbook contains utilities to manipulate sessions, mask the spectrum, estimate spectral quality parameters, and perform basic operations like rebinning and convolution.
+
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -15,46 +19,12 @@ nav_order: 1
 {:toc}
 ---
 
-## Open session
-
+###  Equalize two sessions
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUIPanelSession._on_open</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        <ul>
-          <li><code>path</code>: Path to an <code>.acs</code>, <code>.fits</code>, or <code>.json</code> file</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "_panel_sess",
-        "recipe": "_on_open",
-        "params": {
-          "path": "XXX"
-        }
-      }
-    </code></td>
-    </tr>
-  </tbody>
-</table>
-
-**Open a new session.** Session can be opened from previously saved Astrocook archive (`.acs`), a FITS file (`.fits`), or a JSON file (`.json`). In the last case, the session is built by running the workflow in the JSON file, and the workflow is inherited in the session log.
-
-## Equalize sessions
-
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUIPanelSession.equalize</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.equalize</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
@@ -62,286 +32,247 @@ nav_order: 1
         <ul>
           <li><code>xmin</code>: Minimum wavelength (nm)</li>
           <li><code>xmax</code>: Maximum wavelength (nm)</li>
-          <li><code>_sel</code>: Selected sessions</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "_panel_sess",
-        "recipe": "equalize",
-        "params": {
-          "xmin": "XXX",
-          "xmax": "XXX",
-          "_sel": [
-            XXX,
-            XXX
-          ]
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "equalize",
+  "params": {
+    "xmin": "xmin",
+    "xmax": "xmax",
+    "_sel": "''"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Equalize the flux level of one session to another one.** The last-selected session is equalized to the first-selected one. The equalization factor is the ratio of the median flux within the specified wavelength interval. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the two input sessions.
+*Equalize the spectrum of two sessions, based on their flux ratio within a wavelength window.*
 
-## Combine sessions
+By default, the last-selected spectrum is equalized to the first-selected one (which is left unchanged). Equalization is done in place, without creating a new session.
 
+To compute the rescaling factor, the recipe takes the medians of the `y` columns of the two spectra between `xmin` and `xmax`. The `y` and `dy` columns of the second spectrum are then multiplied by $$ \textrm{med}($$`y`$$_1)/\textrm{med}($$`y`$$_2)$$.
+
+N.B. To select sessions, either click on the session window or provide a list through the hidden parameter `_sel`.
+
+###  Combine two or more sessions
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUIPanelSession.combine</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.combine</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
           <li><code>name</code>: Name of the output session</li>
-          <li><code>_sel</code>: Selected sessions</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "_panel_sess",
-        "recipe": "combine",
-        "params": {
-          "name": "*_combined",
-          "_sel": [
-            XXX,
-            ...add as many items as you want
-          ]
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "combine",
+  "params": {
+    "name": "'*_combined'",
+    "_sel": "''"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Combine two or more sessions.** A new session is created, with a new spectrum containing all entries from the spectra of the combined sessions. Other objects from the sessions (line lists, etc.) are discarded. When the recipe is called from the GUI, the `_sel` parameter is defined automatically by clicking on the input sessions.
+*Create a new session combining the spectra from two or more other sessions.*
 
-## Import structure
+The recipe collects all the bins from the original spectra and puts them all together in the new spectrum. The bins retain their original size (defined by `xmin` and `xmax`), so they may overlap in the final spectrum. By default, they are ordered by ascending `x`.
 
+All other structures from the original sessions (line lists, etc.) are not propagated to the new one.
+
+N.B. To select sessions, either click on the session window or provide a list through the hidden parameter `_sel`.
+
+###  Mask the spectrum
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUIPanelSession.struct_import</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.mask</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>struct</code>: Structure</li>
-          <li><code>mode</code>: Mode (<code>replace</code> or <code>append</code>)</li>
+          <li><code>col</code>: Column with the mask</li>
+          <li><code>cond</code>: Condition</li>
+          <li><code>new_sess</code>: Create a new session from masked spectrum</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "_panel_sess",
-        "recipe": "struct_import",
-        "params": {
-          "struct": "0,systs",
-          "mode": "replace"
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "mask",
+  "params": {
+    "col": "'mask'",
+    "cond": "''",
+    "new_sess": "true",
+    "masked_col": "'x'"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Import a data structure from a session into the current one.** The structure to be imported is described by a string with the session number and the structure tag (`spec`, `lines`, `systs`), separated by a comma (e.g. `0,spec`, meaning "spectrum from session 0"). The imported structure is either replaced or appended to the corresponding one in the current session.
+*Create a mask applying a specified condition to the spectrum bins.*
 
-## Modify structures
+The expression in `cond` is translated into a boolean condition by the [`ast`](https://docs.python.org/3/library/ast.html) module. Expressions like `c>10` or `1500<c<2000` are supported, where `c` is a column of the spectrum.
 
+The condition is checked on all spectrum bins and a new column `col` is populated with the results. No information is deleted from the input spectrum. If `new_sess` is `True`, a new session is created, containing a masked version of the input spectrum. In this masked spectrum, the column `y`, `dy`, and optionally `cont` are set to `numpy.nan` in all bins where the condition is false. All other structures from the original session (line lists, etc.) are not propagated to the new one.
+
+###  Mask telluric absorption
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUIPanelSession.struct_modify</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.telluric_mask</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>col_A</code>: Column A</li>
-          <li><code>col_B</code>: Column B or scalar</li>
-          <li><code>struct_out</code>: Output column</li>
-          <li><code>op</code>: Binary operator</li>
+          <li><code>shift</code>: Shift to the heliocentric frame (km/s)</li>
+          <li><code>apply</code>: Apply mask to flux</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "_panel_sess",
-        "recipe": "struct_modify",
-        "params": {
-          "col_A": "0,spec,x",
-          "col_B": "0,spec,y",
-          "col_out": "0,spec,diff",
-          "op": "subtract"
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "telluric_mask",
+  "params": {
+    "shift": "0",
+    "apply": "true"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Modify a data structure using a binary operator.** An output column is computed applying a binary operator to two input columns, or an input column and a scalar. Columns are described by a string with the session number, the structure tag (`spec`, `lines`, `systs`), and the column name separated by a comma (e.g. `0,spec,x`, meaning "column x of spectrum from session 0").  They can be from different data structures only if they have the same length. If the output column already exists, it is overwritten.
+*Mask spectral regions affected by telluric absorptions.*
 
-## Extract region
+The regions were determined by Tobias M. Schmidt from ESPRESSO data and are saved in `telluric.dat`. They are resampled into the current `x` grid and used to populate a `telluric` column, which is set to `1` inside the regions and to `0` elsewhere.
 
+If `apply` is `True`, `y` is set to `numpy.nan` in all bins where `telluric` is 1.
+
+###  Estimate the SNR
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookGeneral.region_extract</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.snr_est</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        –
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "snr_est",
+  "params": {
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Estimate the signal-to-noise ratio per pixel.*
+
+A `snr` column is populated with `y`/`dy` ratios computed for all spectrum bins.
+
+###  Estimate resolution
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.resol_est</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>xmin</code>: Minimum wavelength (nm)</li>
-          <li><code>xmax</code>: Maximum wavelength (nm)</li>
+          <li><code>px</code>: Number of bins per resolution element</li>
+          <li><code>update</code>: Update column 'resol'</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "cb",
-        "recipe": "region_extract",
-        "params": {
-          "xmin": "XXX",
-          "xmax": "XXX"
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "resol_est",
+  "params": {
+    "px": "3",
+    "update": "true"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Extract a spectral region.** The region between a minimum and a maximum wavelength is extracted from the data structures in the current session (these include the selected spectral range with all the lines, and the absorption systems that fall within). A new session with the extracted data structures is created.
+*Assign a resolution to spectral bins, assuming that the spectrum is designed to have a fixed number of bins per resolution element.*
 
-## Convert x axis
+This recipe is useful to populate the `resol` column in a spectrum (needed to fit the absorption systems) when it is empty, and information about the original sampling of the data is available. It does *not* try to infer the resolution from, e.g., the width of unresolved spectral feature.
 
+###  Estimate error from RMS
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookGeneral.x_convert</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.rms_est</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>zem</code>: Emission redshift</li>
-          <li><code>xunit</code>: Unit of wavelength or velocity</li>
+          <li><code>hwindow</code>: Half-size in pixels of the running window</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "cb",
-        "recipe": "x_convert",
-        "params": {
-          "zem": "0",
-          "xunit": "km / s"
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "rms_est",
+  "params": {
+    "hwindow": "100"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Convert the x axis to wavelength or velocity units.** The x axis can be converted to any unit of wavelength or velocity (default: nm and km/s). The conversion applies to both the spectrum and the line list. When converting to and from velocity units, the zero point is set at (1+`zem`)λ_Lya (where λ_Lya = 121.567 nm is the rest-frame wavelength of the Lyman-alpha transition).
+*Estimate flux error by computing the root-mean-square (RMS) of the flux within a running window.*
 
-## Convert y axis
+The RMS is computed over `y` values and is saved in `y_rms`. It may be useful to compare the latter with `dy` to check that the formal error is consistent with the actual dispersion of `y` values.
 
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookGeneral.y_convert</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        <ul>
-          <li><code>yunit</code>: Unit (of flux density)</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "cb",
-        "recipe": "y_convert",
-        "params": {
-          "yunit": "electron / nm"
-        }
-      }
-    </code></td>
-    </tr>
-  </tbody>
-</table>
-
-**Convert the y axis to different units.** The y axis can be expressed in different units depending on how it was calibrated (default: erg/(cm^2 s nm)). It can be converted to any unit of the same physical quantity. The conversion applies to both the spectrum and the line list.
-
-## Scale y axis
-
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookGeneral.y_scale</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        <ul>
-          <li><code>fact</code>: Multiplicative factor</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "cb",
-        "recipe": "y_scale",
-        "params": {
-          "fact": "1.0"
-        }
-      }
-    </code></td>
-    </tr>
-  </tbody>
-</table>
-
-**Scale the y axis by a constant factor.** The spectrum and the line list are rescaled in place, without starting a new session.
-
-## Scale y axis to median 🚧
-
-## Shift to and from frame 🚧
-
-## Rebin spectrum
-
+###  Re-bin spectrum
 <table>
   <tbody>
     <tr>
@@ -357,71 +288,173 @@ nav_order: 1
           <li><code>dx</code>: Step in x</li>
           <li><code>xunit</code>: Unit of wavelength or velocity</li>
           <li><code>norm</code>: Return normalized spectrum, if continuum exists</li>
+          <li><code>filling</code>: Value to fill region without data</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "cb",
-        "recipe": "rebin",
-        "params": {
-          "xstart": "None",
-          "xend": "None",
-          "dx": "10000.0",
-          "xunit": "km / s",
-          "norm": "True"
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "rebin",
+  "params": {
+    "xstart": "null",
+    "xend": "null",
+    "dx": "10.0",
+    "xunit": "km / s",
+    "norm": "true",
+    "filling": "nan"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Rebin a spectrum with a given step.** The step can be expressed in any unit of wavelength or velocity. Start and end wavelength may be specified, e.g. to align the rebinned spectrum to other spectra. If start or end wavelength are `None`, rebinning is performed from the first to the last wavelength of the input spectrum. A new session is created with the rebinned spectrum. Other objects from the old session (line lists, etc.) are discarded.
+*Apply a new binning to a spectrum, with a constant bin size.*
 
-## Convolve with gaussian  🚧
+The algorithm for re-binning is described in [Cupani et al. (2016)](https://ui.adsabs.harvard.edu/abs/2016SPIE.9913E..1TC/abstract). It properly weights the flux contributions from the old bins to the new ones, also when the former overlap with each other (as it happens when several exposures of the same object are combined into a single spectrum).
 
-## Estimate resolution  🚧
+The new grid is designed to fully cover the original range of the spectrum (when `xstart` and `xend` are `None`) or a specified range (useful when different spectra must be re-binned to the same grid). It is defined in either wavelength or velocity space, as specified by the chosen `xunit`. Any gap in the original binning are filled with a specified `filling` value, to ensure that the final grid is equally spaced.
 
-## Estimate SNR 🚧
+Columns `y` and `dy` of the input spectrum are both re-binned to the new grid. If a column `cont` is present and `norm` is `True`, `y` and `dy` are normalized to `cont` in the re-binned spectrum.
 
-## Refresh the GUI
+A new session is created with the re-binned spectrum. All other structures from the original session (line lists, etc.) are not propagated to the new one.
 
-_refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True, _xlim=None):
+###  Convolve with gaussian
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>GUI._refresh</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.gauss_convolve</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>init_cursor</code>: Initialize system cursor</li>
-          <li><code>init_tab</code>: Initialize tables</li>
-          <li><code>autolim</code>: Automatically set limits to the plot axes</li>
-          <li><code>autosort</code>: Automatically sort tables</li>
-          <li><code>_xlim</code>: Limits for the plot x axis</li>
+          <li><code>std</code>: Standard deviation of the gaussian (km/s)</li>
+          <li><code>input_col</code>: Input column</li>
+          <li><code>output_col</code>: Output column</li>
         </ul>
       </td>
     </tr>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><code>
-      {
-        "cookbook": "",
-        "recipe": "_refresh",
-        "params": {
-          "autosort": false
-        }
-      }
-    </code></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "gauss_convolve",
+  "params": {
+    "std": "20.0",
+    "input_col": "'y'",
+    "output_col": "'conv'"
+  }
+}    </pre></td>
     </tr>
   </tbody>
 </table>
 
-**Refresh the GUI.** This recipe is designed for internal use. The user should call it only at the end of a workflow, to update the visualization of the data in the GUI. `autosort` should be set to `false` not to interfere with other possible sorting of the tables in the workflow. Other parameters should be disregarded.
+*Convolve a spectrum column with a gaussian profile.*
+
+The convolution is computed in velocity space, using the Fast Fourier Transform.
+
+###  Compute the CCF
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.flux_ccf</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>col1</code>: First column</li>
+          <li><code>col2</code>: Second column</li>
+          <li><code>dcol1</code>: Error for first column</li>
+          <li><code>dcol2</code>: Error for second column</li>
+          <li><code>vstart</code>: Start velocity</li>
+          <li><code>vend</code>: End velocity</li>
+          <li><code>dv</code>: Velocity step</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "flux_ccf",
+  "params": {
+    "col1": "'y'",
+    "col2": "'y'",
+    "dcol1": "'dy'",
+    "dcol2": "'dy'",
+    "vstart": "-20",
+    "vend": "20",
+    "dv": "0.1"
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Convolve the cross-correlation function (CCF) between two spectrum columns.*
+
+The recipe is designed to work on flux densities. Typically, the first column is `y` and the second column contains the flux density from a different spectrum with the same wavelength binning. The second columns can also be `y`: in this case, the recipe computes the auto-correlation instead of the cross-correlation.
+
+The CCF is computed in velocity space, shifting `col2` with respect to `col1` within the range `vstart`-`vend` and with step @dv. The columns are resampled while shifting, to accomodate for values of @dv much smaller than the spectrum bin size.
+
+The CCF is saved in a NumPy binary file `SESS_ccf.npy`, with `SESS` the name of the session.
+
+###  Compute statistics of the CCF
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.flux_ccf_stats</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>n</code>: Number of realizations</li>
+          <li><code>col1</code>: First column</li>
+          <li><code>col2</code>: Second column</li>
+          <li><code>dcol1</code>: Error for first column</li>
+          <li><code>dcol2</code>: Error for second column</li>
+          <li><code>vstart</code>: Start velocity (km/s)</li>
+          <li><code>vend</code>: End velocity (km/s)</li>
+          <li><code>dv</code>: Velocity step (km/s)</li>
+          <li><code>fit_hw</code>: Half-window used for fitting the CCF (km/s)</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "flux_ccf_stats",
+  "params": {
+    "n": "10.0",
+    "col1": "'y'",
+    "col2": "'y'",
+    "dcol1": "'dy'",
+    "dcol2": "'dy'",
+    "vstart": "-20",
+    "vend": "20",
+    "dv": "0.1",
+    "fit_hw": "1.0"
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Compute statistics for the peak of the cross-correlation function (CCF) by bootstrapping a number of realizations for the spectrum.*
+
+Realizations are created by selecting entries at random, preserving wavelength order and rejecting duplicates (compare with Peterson et al. 1998).
+
+The recipe computes the CCF between the original flux and the flux of each realization. A gaussian is fit to the CCF within a window around 0 (in velocity space) to determine the position of the peak. The distribution of peak positions is saved in a NumPy binary file `SESS_ccf_stats.npy`, with `SESS` the name of the session.
+

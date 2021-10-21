@@ -365,7 +365,7 @@ class Format(object):
         dy = np.ravel(hdul['ERRDATA'].data)
         q = np.ravel(hdul['QUALDATA'].data)
 
-        w = np.where(q<4**7)
+        w = np.where(q<1) #4**7)
         x,y,dy,q = x[w],y[w],dy[w],q[w]
 
         xmin, xmax = self._create_xmin_xmax(x)
@@ -434,7 +434,6 @@ class Format(object):
 
     def generic_spectrum(self, hdul):
         """ Generic spectrum """
-
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
@@ -470,12 +469,12 @@ class Format(object):
             """
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
-            if len(hdul)>1:
+            if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
                     if c not in [x_col_names[x_col], y_col_names[y_col],
                                  dy_col_names[dy_col]]:
                         spec._t[c] = data[c]
-                        #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
         except:
             return None
@@ -598,7 +597,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def wfccd_spectrum(self, hdul):
         """ WFCCD format """
@@ -649,6 +648,32 @@ class Format(object):
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def xqr30_bosman(self, hdul):
+        """ XQR-30 spectrum as formatted by Sarah Bosman """
+
+        logging.info(msg_format('xqr30_bosman'))
+        hdr = hdul[0].header
+
+        data = Table(hdul[1].data)
+        x = data['col1']
+        y = data['col2']
+        dy = data['col3']
+        xunit = au.Angstrom
+        yunit = au.dimensionless_unscaled
+        xmin, xmax = self._create_xmin_xmax(x)
+        meta = hdr #{}
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+        #spec._t['cont'] = data['col5']
+        spec._t['redside_PCA'] = data['col4']
+        spec._t['blueside'] = data['col5']
+        spec._t['blueside_1sigmal'] = data['col6']
+        spec._t['blueside_1sigmau'] = data['col7']
+        spec._t['blueside_2sigmal'] = data['col8']
+        spec._t['blueside_2sigmau'] = data['col9']
+        return spec
 
 
     def xshooter_das_spectrum(self, hdul):

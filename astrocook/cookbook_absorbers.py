@@ -398,6 +398,7 @@ class CookbookAbsorbers(object):
                 vars = {}
                 constr = {}
                 for k, v in systs._constr.items():
+                    #print(v)
                     if v[0]==systs._id:
                         if v[2]!=None:
                             constr[k] = v[2]
@@ -410,11 +411,11 @@ class CookbookAbsorbers(object):
                     wrong_id.append(mod._id)
                     corr_id.append(np.max(systs_t['id'])+1)
                     mod._id = np.max(systs_t['id'])+1
+                #print(self.sess.defs.dict['voigt'])
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                b=s['b'], resol=s['resol'],
                                defs=self.sess.defs.dict['voigt'])
                 self._mods_update(mod)
-                #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
 
         for w, c in zip(wrong_id, corr_id):
@@ -503,7 +504,7 @@ class CookbookAbsorbers(object):
             return None
 
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                          None, None, None, None, systs._id])
+                          None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -552,13 +553,15 @@ class CookbookAbsorbers(object):
 
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
-                   resol_list=None, verbose=True):
+                   resol_list=None, k_list=None, verbose=True):
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
+        if k_list is None: k_list = [None]*len(series_list)
         systs_n = 0
-        for i, (series, z, logN, b, resol) \
-            in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list),
+        id_list = []
+        for i, (series, z, logN, b, resol, k) \
+            in enum_tqdm(zip(series_list, z_list, logN_list, b_list, resol_list, k_list),
                          len(series_list), "cookbook_absorbers: Adding"):
             #in enumerate(zip(series_list, z_list, logN_list, b_list, resol_list)):
             if logN is None: logN = logN_def
@@ -570,6 +573,12 @@ class CookbookAbsorbers(object):
             if mod is not None:
                 systs_n += 1
                 self._systs_update(mod)
+
+            id_list.append(mod._id)
+            if k is not None:
+                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
+                    = (mod._id, 'z', k)
+
 
         # Improve
         mods_t = self.sess.systs._mods_t
@@ -584,7 +593,7 @@ class CookbookAbsorbers(object):
                 logging.info("I've added %i system%s in %i model%s." \
                              % (systs_n, '' if systs_n==1 else 's',
                              len(mods_t), msg_z_range(z_list)))
-        return 0
+        return id_list
 
 
     def _systs_compress(self):
@@ -1394,49 +1403,21 @@ class CookbookAbsorbers(object):
         if self._z_off(trans_parse(series), z): return 0
 
         for i, s in enumerate(series.split(';')):
-            #print(i, 'start')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             self._systs_prepare()
-            #print(self.sess.systs._t)
-        #self._logN_guess(series, z, b, resol)
-        #logN = self._syst_guess(series, z)
-            #print(s, z, logN, b, resol, self._refit_n)
             mod = self._syst_add(s, z, logN, b, resol)
-            #print(i, 'before')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             if mod is None: return 0
             #"""
+
+            # Link z
             if i==0:
                 k = 'lines_voigt_%i_z' % mod._id
             else:
                 #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
 
-            #"""
-            #print(mod._pars[k])
-            #self._systs_cycle()
-            #self._syst_fit(mod)
-            #print(self.sess.systs._t)
-            #print(self.sess.systs._mods_t['id'])
             if self._refit_n == 0:
                 self._mods_recreate()
-            #print(self.sess.systs._mods_t['id'])
-            #print(i, 'midway')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
             self._systs_cycle()
-            #print(i, 'after')
-            #print(mod._pars.pretty_print())
-            #for m in self.sess.systs._mods_t['mod']:
-            #    m._pars.pretty_print()
-            #print(self.sess.systs._mods_t['id'])
-        #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
-        #self._systs_refit(refit_id, max_nfev)
         self._spec_update()
 
         if recompress:
@@ -1530,6 +1511,97 @@ class CookbookAbsorbers(object):
 
 
         return 0
+
+
+    def systs_complete_from_z(self, series='all', series_ref=None, z_start=0,
+                              z_end=6, logN=logN_def, b=b_def, resol=resol_def,
+                              chi2r_thres=np.inf, dlogN_thres=np.inf,
+                              refit_n=0, chi2rav_thres=1e-2,
+                              max_nfev=max_nfev_def, append=True):
+        """ @brief Complete systems from redshift list
+        @details TBD
+        @param series Series of transitions
+        @param series_ref Reference series of transitions
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param logN Guess (logarithmic) column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            if series == 'unknown':
+                z_start = 0
+                z_end = np.inf
+            if logN is not None:
+                logN = float(logN)
+            b = float(b)
+            resol = None if resol in [None, 'None'] else float(resol)
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = float(max_nfev)
+            append = str(append) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        recompress = False
+        compressed = False
+        if systs is not None and systs._compressed:
+            recompress = True
+            systs._compress()
+
+        if series == 'all':
+            trans_ex = np.unique(np.ravel([trans_parse(s)
+                                           for s in systs._t['series']]))
+            trans_n = list(set(trans_d)-set(trans_ex))
+            #print(trans_n)
+            series = ';'.join(trans_n)
+
+        if series_ref != None:
+            ws = systs._t['series']==series_ref
+            wz = np.logical_and(systs._t['z']>z_start, systs._t['z']<z_end)
+            w = np.logical_and(ws, wz)
+
+            #hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+            z_list = list(systs._t['z'][w])
+            id_list = list(systs._t['id'][w])
+        else:
+            z_list = list(systs._t['z'])
+            id_list = list(systs._t['id'])
+
+
+        k_list = ['lines_voigt_%i_z' % id for id in id_list]
+        #print(z_list, id_list, k_list)
+        for s in series.split(';'):
+            s_list = [s]*len(z_list)
+            logN_list = [logN]*len(z_list)
+            resol_list = [resol]*len(z_list)
+            self._systs_prepare(append)
+            self._systs_add(s_list, z_list, logN_list, resol_list=resol_list,
+                            k_list=k_list)
+            self._mods_recreate()
+            self._spec_update()
+
+        if compressed:
+            systs._compress()
+
+        return 0
+
 
     def systs_improve(self, impr_n=3, refit_n=0):
         """ @brief Improve systems
@@ -1891,6 +1963,7 @@ class CookbookAbsorbers(object):
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
                             append=True):
+
         """ @brief New systems from likelihood
         @details TBD
         @param series Series of transitions
@@ -1985,7 +2058,9 @@ class CookbookAbsorbers(object):
         likes = self._likes
         z_likes = self._z_likes
         series_split = series.split(';')
-        for s in series_split:
+        k_list = []
+        for i, s in enumerate(series_split):
+            #print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
             trans = trans_parse(s)
             #z_int = np.arange(z_start, z_end, dz)
@@ -2028,15 +2103,31 @@ class CookbookAbsorbers(object):
                 #print(p0[np.where(sel)])
                 p = p0
 
-                s_list = [s]*len(p)
-                z_list = z_int[w][p]
-                logN_list = [logN]*len(p)
-                resol_list = [resol]*len(z_list)
-                if len(s_list)>0:
+                if k_list == []:
+                    s_list = [s]*len(p)
+                    z_list = z_int[w][p]
+                    logN_list = [logN]*len(p)
+                    resol_list = [resol]*len(p)
+                    if len(s_list)>0:
+                        self._systs_prepare(append)
+                        id_list = self._systs_add(s_list, z_list, logN_list,
+                                                  resol_list=resol_list)
+                        self._spec_update()
+                    else:
+                        id_list = []
+                else:
+                    s_list = [s]*len(z_list)
+                    logN_list = [logN]*len(z_list)
+                    resol_list = [resol]*len(z_list)
                     self._systs_prepare(append)
-                    self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
+                    id_list = self._systs_add(s_list, z_list, logN_list,
+                                              resol_list=resol_list, k_list=k_list)
+                    self._mods_recreate()
                     self._spec_update()
         #plt.show()
+            if i == 0:
+                k_list = ['lines_voigt_%i_z' % id for id in id_list]
+                #print(k_list)
 
         if compressed:
             systs._compress()

@@ -290,7 +290,8 @@ class Spectrum(Frame):
         if isinstance(nodes, str):
             spl = nodes.split('.')
             nodes = getattr(getattr(self._gui, spl[0]), spl[1])
-        sel = np.abs(self.x.to(self._xunit).value-x).argmin()
+        abs = np.abs(self.x.to(self._xunit).value-x)
+        sel = abs[~np.isnan(abs)].argmin()
         row = []
         for c in nodes.t.colnames:
             row.append(y) if c == 'y' else row.append(self.t[sel][c])
@@ -554,7 +555,7 @@ class Spectrum(Frame):
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
                 #nw = np.where(~np.isnan(ysel[w]))
-                if np.any(np.isnan(dysel)):# and False:
+                if np.any(np.isnan(dysel)) or np.any(dysel==0.0):# and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
                     y_out = np.append(y_out, np.average(ysel[w], weights=weights))
