@@ -601,7 +601,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_cycle(self, verbose=True):
+    def _systs_cycle(self, mod=None, verbose=True):
         chi2rav = np.inf
         chi2rav_old = 0
         chi2r_list, z_list = [], []
@@ -614,11 +614,11 @@ class CookbookAbsorbers(object):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                              -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
-                self._systs_reject(verbose=False)
+                self._systs_reject(mod=mod, verbose=verbose)
                 self._mods_recreate(verbose=False)
             #print(chi2rav, chi2rav_old)
         chi2r_list, z_list = self._systs_fit(verbose=False)
-        self._systs_reject(verbose=False)
+        self._systs_reject(mod=mod, verbose=verbose)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
@@ -749,7 +749,7 @@ class CookbookAbsorbers(object):
         return 0
     """
 
-    def _systs_reject(self, verbose=True):
+    def _systs_reject(self, mod=None, verbose=True):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > self._chi2r_thres
         """
@@ -759,8 +759,13 @@ class CookbookAbsorbers(object):
             systs._t['db'] > dlogN_thres*systs._t['b'])
         """
         relerr_cond = systs._t['dlogN'] > self._dlogN_thres
-
-        rem = np.where(np.logical_or(chi2r_cond, relerr_cond))[0]
+        cond = np.logical_or(chi2r_cond, relerr_cond)
+        if mod is not None:
+            id_cond = np.array([mod._id==ids for ids in systs._t['id']])
+            chi2r_cond = np.logical_and(chi2r_cond, id_cond)
+            relerr_cond = np.logical_and(relerr_cond, id_cond)
+            cond = np.logical_and(cond, id_cond)
+        rem = np.where(cond)[0]
         z_rem = systs._t['z'][rem]
         #refit_id = []
         if len(rem) > 0:
@@ -786,7 +791,7 @@ class CookbookAbsorbers(object):
             systs._t.remove_rows(rem)
             """
             if verbose:
-                logging.info("I've rejected %i mis-identified system%s (%i with a "\
+                logging.info("I've rejected %i badly fitting system%s (%i with a "\
                              "reduced chi2 above %2.2f, %i with relative errors "\
                              "above %2.2f)."
                              % (len(rem), '' if len(rem)==1 else 's',
@@ -1417,7 +1422,7 @@ class CookbookAbsorbers(object):
 
             if self._refit_n == 0:
                 self._mods_recreate()
-            self._systs_cycle()
+            self._systs_cycle(mod=mod, verbose=True)
         self._spec_update()
 
         if recompress:
