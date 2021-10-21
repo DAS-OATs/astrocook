@@ -22,7 +22,7 @@ To model absorbers, the spectrum must be first normalized to [continuum](continu
 
 ## Voigt-profile modeling
 
-The [Voigt profile](https://en.wikipedia.org/wiki/Voigt_profile) is the convolution of a Gaussian and a Cauchy-Lorentz distribution. In the context of line fitting, it is typically parametrized as a function of three quantities that describe the absorbing medium: its redshift $$z$$, its column density $$N$$, and its Doppler broadening $$b$$ (due to the thermal and/or turbulent motions of the particles). The profile of an absorption line as a function of the wavelength $\lambda$ is thus $$e^{-\tau_\lambda}$$, where the opacity $$\tau_\lambda$$ is computed as
+The [Voigt profile](https://en.wikipedia.org/wiki/Voigt_profile) is the convolution of a Gaussian and a Cauchy-Lorentz distribution. In the context of line fitting, it is typically parametrized as a function of three quantities that describe the absorbing medium: its redshift $$z$$, its column density $$N$$, and its Doppler broadening $$b$$ (due to the thermal and/or turbulent motions of the particles). The profile of an absorption line as a function of the wavelength $$\lambda$$ is thus $$e^{-\tau_\lambda}$$, where the opacity $$\tau_\lambda$$ is computed as
 
 $$\tau_\lambda=N\frac{\sqrt{\pi}e^2}{m_ec}\frac{f}{\Delta\nu_b}V(a,u_\lambda),$$
 
