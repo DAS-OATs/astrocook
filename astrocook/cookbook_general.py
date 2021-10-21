@@ -95,7 +95,7 @@ class CookbookGeneral(object):
         return sess
 
 
-    def equalize(self, xmin, xmax, _sel=''):
+    def equalize(self, xmin, xmax, _sel='', cont=True):
         """ @brief Equalize two sessions
         @details Equalize the spectrum of two sessions, based on their flux
         ratio within a wavelength window.
@@ -153,6 +153,8 @@ class CookbookGeneral(object):
                 logging.info("Equalization factor: %3.4f." % f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
+                if cont and 'cont' in sess.spec._t.colnames:
+                    sess.spec._t['cont'] = f*sess.spec._t['cont']
 
         return 0
 
@@ -363,7 +365,7 @@ class CookbookGeneral(object):
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=True, filling=np.nan):
+              norm=False, filling=np.nan):
         """ @brief Re-bin spectrum
         @details Apply a new binning to a spectrum, with a constant bin size.
 
@@ -403,6 +405,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            norm = str(norm) == 'True'
             filling = float(filling)
         except ValueError:
             logging.error(msg_param_fail)
@@ -438,7 +441,12 @@ class CookbookGeneral(object):
 
         spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
         if cont:
-            spec_out.t['cont'] = 1
+            if not norm:
+                spec_out.t['cont'] = np.interp(
+                    spec_out.x.to(au.nm).value,spec_in.x.to(au.nm).value,
+                    spec_in.t['cont']) * spec_out.y.unit
+            else:
+                spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
         # Create a new session
         from .session import Session
