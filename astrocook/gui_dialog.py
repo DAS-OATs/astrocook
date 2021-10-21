@@ -855,7 +855,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _cursor_refresh(self):
         # Unfreeze cursors in case they were frozen
         self._gui._graph_main._graph._cursor_frozen = False
-        self._gui._graph_det._graph._cursor_frozen = False
+        if hasattr(self._gui, '_graph_det'):
+            self._gui._graph_det._graph._cursor_frozen = False
 
         # Refresh cursor
         shown = True if self._shown else False

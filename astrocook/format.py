@@ -325,16 +325,16 @@ class Format(object):
 
         hdr = hdul[0].header
         data = hdul[1].data
-        cols = hdul[1].columns
         x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
         try:
-            y = data['flux']#/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error']#/(xmax-xmin)#*10#au.nm/au.Angstrom
+            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.electron #erg/au.cm**2/au.s/au.nm
         except:
-            y = data['flux_cal']#/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error_cal']#/(xmax-xmin)#*10#au.nm/au.Angstrom
-        yunit = cols.units[1]
+            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
+            yunit = au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
@@ -365,7 +365,7 @@ class Format(object):
         dy = np.ravel(hdul['ERRDATA'].data)
         q = np.ravel(hdul['QUALDATA'].data)
 
-        w = np.where(q<4**7)
+        w = np.where(q<1) #4**7)
         x,y,dy,q = x[w],y[w],dy[w],q[w]
 
         xmin, xmax = self._create_xmin_xmax(x)
@@ -434,12 +434,9 @@ class Format(object):
 
     def generic_spectrum(self, hdul):
         """ Generic spectrum """
-
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            zero
-        except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -453,23 +450,17 @@ class Format(object):
                 except:
                     logging.error("I can't recognize columns.")
                     return 0
-                cols = hdul[1].columns
-                xunit_col = np.where(cols.names==x_col_names[x_col])[0][0]
-                yunit_col = np.where(cols.names==y_col_names[y_col])[0][0]
-                xunit = cols.units[xunit_col]
-                yunit = cols.units[yunit_col]
             else:
                 data = hdul[0].data
                 x = data[0][:]
                 y = data[1][:]
                 dy = data[2][:]
-                xunit = au.nm
-                yunit = au.erg/au.cm**2/au.s/au.Angstrom
-                if np.max(x)>3000:
-                    x = x*0.1
+            if np.max(x)>3000:
+                x = x*0.1
             xmin, xmax = self._create_xmin_xmax(x)
+            xunit = au.nm
+            yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr #{}
-
             """
             try:
                 meta['object'] = hdr['OBJECT']
@@ -478,15 +469,15 @@ class Format(object):
             """
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
-            if len(hdul)>1:
+            if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
                     if c not in [x_col_names[x_col], y_col_names[y_col],
                                  dy_col_names[dy_col]]:
                         spec._t[c] = data[c]
-                        #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
-        #except:
-        #    return None
+        except:
+            return None
 
 
     def mage_spectrum(self, hdul):
@@ -606,7 +597,7 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def wfccd_spectrum(self, hdul):
         """ WFCCD format """
@@ -675,6 +666,7 @@ class Format(object):
         meta = hdr #{}
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+        #spec._t['cont'] = data['col5']
         spec._t['redside_PCA'] = data['col4']
         spec._t['blueside'] = data['col5']
         spec._t['blueside_1sigmal'] = data['col6']
