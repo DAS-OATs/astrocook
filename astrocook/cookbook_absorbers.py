@@ -416,7 +416,6 @@ class CookbookAbsorbers(object):
                                b=s['b'], resol=s['resol'],
                                defs=self.sess.defs.dict['voigt'])
                 self._mods_update(mod)
-                #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
 
         for w, c in zip(wrong_id, corr_id):

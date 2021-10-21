@@ -596,6 +596,42 @@ class GUITableSystList(GUITable):
                               i, np.where(labels == 'id')[0][0]))) \
                               for i in range(self._tab.GetNumberRows())])
 
+    def _data_link_bt(self, row, col):
+        self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
+        ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
+        others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
+        id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])
+        labels = self._labels_extract()
+
+        trans_r = self._trans_extract(self._cells_sel[ref][0])
+        if not self._trans_check(trans_r): return 0
+        mass_r = mass_d[trans_r[0]]
+
+        for (r, c) in others:
+            id, parn = self._key_extract(r, c)
+            if self._tab.GetCellTextColour(r, c) in self._colours:#== 'forest green':
+                self._links_d[parn] = (id, 'expr', '')
+                self._links_d[val] = (id_r, 'expr', '')
+            else:
+                if parn != val:
+                    trans = self._trans_extract(r)
+                    if not self._trans_check(trans): return 0
+                    mass = mass_d[trans[0]]
+
+                    v = "%.3f" % (float(self._tab.GetCellValue(self._cells_sel[ref][0],
+                                                         self._cells_sel[ref][1])) \
+                                        * np.sqrt(mass_r/mass))
+                    self._tab.SetCellValue(r, c, v)
+                    self._links_d[parn] = (id, 'expr',
+                        val+'*%.14f' % (np.sqrt(mass_r/mass)))
+                    self._data_edit(r, labels[c], v, update_mod=False)
+        self._tab.ForceRefresh()
+        systs = self._gui._sess_sel.systs
+        systs._constrain(self._links_d)
+        self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
+        self._text_colours()
+
+
     def _data_link_par(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
@@ -648,6 +684,16 @@ class GUITableSystList(GUITable):
             if id in m['id']:
                 return m['mod']
 
+    def _trans_check(self, trans):
+        check = len(np.unique([t.split('_')[0] for t in trans]))==1
+        if not check:
+            logging.error("I cannot link temperatures if the series contains "
+                          "different ions")
+        return check
+
+    def _trans_extract(self, row):
+        return trans_parse(self._tab.GetCellValue(row, 1))
+
 
     def _on_ccf(self, event):
         row = self._gui._tab_popup._event.GetRow()
@@ -676,6 +722,12 @@ class GUITableSystList(GUITable):
                 else:
                     title = ['Link']
                 attr = ['link_par']
+                if col == 7:
+                    if self._tab.GetCellTextColour(row, col) in self._colours:
+                        title = ['Unlink']
+                    else:
+                        title += ['Link temperatures']
+                    attr += ['link_bt']
             if self._tab.GetCellTextColour(row, col) == 'grey':
                 title += ['Unfreeze']
             else:
@@ -837,6 +889,24 @@ class GUITableSystList(GUITable):
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 
+
+    def _on_link_bt(self, event):
+        popup = self._gui._tab_popup
+        row = popup._event.GetRow()
+        col = popup._event.GetCol()
+        sess = self._gui._sess_sel
+        """
+        sess.json += self._gui._json_update("_tab_systs", "_data_link_bt",
+                                            {"row": row, "col": col})
+        """
+        sess.log.append_full('_tab_systs', '_data_link_bt',
+                             {'row': row, 'col': col})
+        if hasattr(self._gui, '_dlg_mini_log') \
+            and self._gui._dlg_mini_log._shown:
+            self._gui._dlg_mini_log._refresh()
+        self._data_link_bt(row, col)
+
+
     def _on_link_par(self, event):
         popup = self._gui._tab_popup
         row = popup._event.GetRow()
@@ -903,10 +973,13 @@ class GUITableSystList(GUITable):
         for (r,c) in self._cells_sel:
             self._tab.SetCellTextColour(r, c, 'black')
         for i in range(self._tab.GetNumberRows()):
-            id = self._id_extract(i)
+            idi = self._id_extract(i)
+            #print(self._gui._sess_sel.systs)
             for m in self._gui._sess_sel.systs._mods_t:
-                if id in m['id']:
+                if idi in m['id']:
                     mod = m['mod']
+                    #mod._pars.pretty_print()
+                    #print(id(m))
             for p,v in mod._pars.items():
                 if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
                     try:
@@ -915,7 +988,7 @@ class GUITableSystList(GUITable):
                         c = None
                     r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
                     #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
-                    #    print(id, p,v)
+                    #    print(idi, p,v)
                     if v.vary == False and r != None and c != None:
                         self._tab.SetCellTextColour(r, c, 'grey')
                     if v.expr != None and r != None and c != None:
