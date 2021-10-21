@@ -73,7 +73,9 @@ class GUIDialog(wx.Dialog):
         split = full.split('@')
         self._brief.append([s[6:-1] for s in split \
                            if s[0:5]=='brief'][0].replace('\n', ' '))
-        self._details.append([s[8:-1] for s in split \
+        #self._details.append([s[8:-1] for s in split \
+        #                      if s[0:7]=='details'][0].replace('\n', ' '))
+        self._details.append([s.split('\n\n')[0][8:] for s in split \
                               if s[0:7]=='details'][0].replace('\n', ' '))
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
@@ -379,12 +381,13 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         defs_dict = dict(sess.defs.dict)
         self._set(self._ctrl_defs.GetValue())
         for i in sess.defs.dict:
-            for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
-                for e in sess.defs._extend:
-                    if k not in sess.defs._extend[e]:
-                        logging.info("I changed parameter %s %s from %s to %s."
-                                     % (i, k, str(defs_dict[i][k]),
-                                        str(sess.defs.dict[i][k])))
+            if isinstance(sess.defs.dict[i], dict):
+                for k, v in set(sess.defs.dict[i].items()) - set(defs_dict[i].items()):
+                    for e in sess.defs._extend:
+                        if k not in sess.defs._extend[e]:
+                            logging.info("I changed parameter %s %s from %s to %s."
+                                         % (i, k, str(defs_dict[i][k]),
+                                         str(sess.defs.dict[i][k])))
             #diff = {k: sd.dict[i][k] for k, _ \
             #        in set(sd.dict[i].items()) - set(defs_dict[i].items()) }
         if log:
