@@ -1,3 +1,4 @@
+from .message import *
 from .vars import filt_x_skymap, zero_point_skymap
 from astropy import units as au
 from astropy.io import fits

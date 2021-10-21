@@ -56,7 +56,7 @@
       }
     },
     {
-      "cookbook": "_panel_sess",
+      "cookbook": "cb",
       "recipe": "equalize",
       "params": {
         "xmin": "550",
