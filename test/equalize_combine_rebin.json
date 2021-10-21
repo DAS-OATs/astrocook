@@ -45,7 +45,7 @@
         "xend": "None",
         "dx": "10.0",
         "xunit": "km / s",
-        "norm": "True"
+        "norm": "False"
       }
     },
     {

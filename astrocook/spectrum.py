@@ -578,6 +578,7 @@ class Spectrum(Frame):
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
         out._x_convert(xunit=self._xunit_old)
+        self._x_convert(xunit=self._xunit_old)
         return out
 
 
