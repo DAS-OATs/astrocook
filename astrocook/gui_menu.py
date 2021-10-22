@@ -282,7 +282,6 @@ class GUIMenu(object):
         self._gui._panel_sess.SetMenuBar(self.bar())
 
         for a in seq_menu:  # from .vars
-
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view']+self._menus_togg['attr']:
                     try:
@@ -294,12 +293,11 @@ class GUIMenu(object):
                         if hasattr(sess, a):
                             cond = getattr(sess, a) != None
                         else:
-                            if hasattr(sess, 'systs'):
+                            if hasattr(sess, 'systs') and sess.systs != None:
                                 cond = a in sess.systs.t.colnames \
                                            or a in sess.spec.t.colnames
                             else:
                                 cond = a in sess.spec.t.colnames
-
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -307,6 +305,7 @@ class GUIMenu(object):
                                     item.Check(item.key in sel)
                         else:
                             item.Enable(False)
+
                     except:
                         pass
 
