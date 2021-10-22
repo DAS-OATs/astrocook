@@ -4,18 +4,18 @@
       "cookbook": "_panel_sess",
       "recipe": "_on_open",
       "params": {
-        "path": "qso_uvb.fits"
+        "path": "/Users/guido/Dropbox/GitHub/astrocook/test/qso_uvb.fits"
       }
     },
     {
       "cookbook": "_panel_sess",
       "recipe": "_on_open",
       "params": {
-        "path": "qso_vis.fits"
+        "path": "/Users/guido/Dropbox/GitHub/astrocook/test/qso_vis.fits"
       }
     },
     {
-      "cookbook": "cb",
+      "cookbook": "_panel_sess",
       "recipe": "equalize",
       "params": {
         "xmin": "550",
@@ -27,7 +27,7 @@
       }
     },
     {
-      "cookbook": "cb",
+      "cookbook": "_panel_sess",
       "recipe": "combine",
       "params": {
         "name": "*_combined",
