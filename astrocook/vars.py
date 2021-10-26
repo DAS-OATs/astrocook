@@ -63,6 +63,13 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
+# Menus
+#menus_def = ['General', 'Continuum', 'Absorbers']
+menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
+               'Flux': '_cb_flux', 'General': '_cb_general',
+               'Synthetic': '_cb_synthetic', 'Templates': '_cb_templates'}
+#menus = {'attr': [menus_assoc[m] for m in menus_def], 'title': menus_def}
+
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
@@ -140,6 +147,7 @@ inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
 
 telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 

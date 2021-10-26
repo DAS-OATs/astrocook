@@ -204,6 +204,7 @@ class SystList(object):
 
     def _constrain(self, dict):
         #self._constr = {}
+        #print(self)
         for k, v in dict.items():
             #print(k, dict[k])
             for m in self._mods_t:
@@ -230,6 +231,7 @@ class SystList(object):
                         #print(m['mod']._pars[k].__dict__)
         #print(self._constr)
                 #m['mod']._pars.pretty_print()
+                #print('[',id(m),']')
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t

@@ -435,9 +435,6 @@ class CookbookAbsorbers(object):
                 #print(len(systs._mods_t), time.time()-tt)
                 #tt = time.time()
                 self._mods_update(mod)
-                #print(len(systs._mods_t), time.time()-tt)
-                #tt = time.time()
-                #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
             else:
                 systs._id = np.max(systs._t['id'])+1
@@ -903,7 +900,7 @@ class CookbookAbsorbers(object):
 
 
     def comp_extract(self, num=1):
-        """ @brief Extract systems
+        """ @brief Extract systems based on components
         @details Extract systems with less than a given number of components
         @param num Number of components
         @return 0
@@ -959,7 +956,7 @@ class CookbookAbsorbers(object):
 
         self._mods_ccf_max(vstart, vend, dv, weight)
 
-        return 0
+        return
 
     def mods_recreate(self):
         """ @brief Recreate the models
