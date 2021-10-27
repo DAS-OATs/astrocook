@@ -292,7 +292,7 @@ class GUIMenu(object):
                         if hasattr(sess, a):
                             cond = getattr(sess, a) != None
                         else:
-                            if hasattr(sess, 'systs'):
+                            if hasattr(sess, 'systs') and sess.systs != None:
                                 cond = a in sess.systs.t.colnames \
                                            or a in sess.spec.t.colnames
                             else:
