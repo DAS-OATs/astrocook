@@ -460,6 +460,7 @@ class Graph(object):
         #print(detail, sess.spec.x.unit)
         self._systs_id = False
 
+
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:

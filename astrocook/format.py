@@ -468,6 +468,7 @@ class Format(object):
                 except:
                     logging.error("I can't recognize columns.")
                     return 0
+                    
             else:
                 data = hdul[0].data
                 x = data[0][:]

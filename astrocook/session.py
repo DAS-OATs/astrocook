@@ -281,12 +281,11 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
                 self.cb._spec_update()
-        elif self._orig[:9] == 'Astrocook' and self.path[-9:] == 'spec.fits':
             try:
-                hdul = fits.open(self.path)
-                setattr(self, 'spec', format.astrocook(hdul, 'spec'))
+                os.remove(self.path[:-4]+'.json')
             except:
                 pass
+
         else:
             self._other_open(hdul, hdr)
 
