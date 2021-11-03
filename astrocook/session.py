@@ -87,7 +87,6 @@ class Session(object):
                                  fits.BinTableHDU.from_columns(np.array(t))])
             hdr = hdul[0].header
 
-
         try:
             instr = hdr['INSTRUME']
         except:
@@ -100,8 +99,6 @@ class Session(object):
             catg = hdr['HIERARCH ESO PRO CATG']
         except:
             catg = 'undefined'
-
-        #print(instr, catg, orig)
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -171,8 +168,8 @@ class Session(object):
             if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
                 self.spec = format.eso_adp(hdul)
 
-            # ESO-MIDAS spectrum+
-            if orig == 'ESO-MIDAS':
+            # ESO-MIDAS spectrum
+            if orig == 'ESO-MIDAS' and instr=='undefined':
                 if len(hdul) == 1:
                     #self.spec = format.eso_midas_image(hdul)
                     self.spec = format.generic_spectrum(hdul)
@@ -207,7 +204,7 @@ class Session(object):
 
 
             # FIRE spectrum
-            if instr == 'MagE':
+            if instr in ['MagE', 'LDSS3-C']:
                 self.spec = format.mage_spectrum(hdul)
 
 
