@@ -596,13 +596,20 @@ class GUIPanelSession(wx.Frame):
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
-        self._items = []
-        while item != -1:
-            self._items.append(item)
-            item = self._tab.GetNextSelected(item)
-        self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        if self._gui._sess_item_sel != []:
+
+        # Selection via JSON
+        if item == -1:
             self._gui._refresh()
+
+        # Manual selection
+        else:
+            self._items = []
+            while item != -1:
+                self._items.append(item)
+                item = self._tab.GetNextSelected(item)
+                self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
+            if self._gui._sess_item_sel != []:
+                self._gui._refresh()
 
 
     def _on_close(self, event):
@@ -697,7 +704,6 @@ class GUIPanelSession(wx.Frame):
                 pass
 
     def _select(self, _sel=0):
-
         _sel = int(_sel)
         """
         sel = self._gui._sess_item_sel
@@ -711,6 +717,7 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = range(len(sess_list))
         """
+
         evt = wx.ListEvent()
         evt.SetIndex(_sel)
         self._on_select(evt)
