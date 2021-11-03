@@ -551,6 +551,7 @@ class Spectrum(Frame):
             if print_time:
                 t2 = time()
                 print(t2, t2-t16)
+                
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
