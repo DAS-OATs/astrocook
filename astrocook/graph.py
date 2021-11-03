@@ -469,10 +469,13 @@ class Graph(object):
                     if mode != 'axhline':
                         x = dc(t[xcol])
                     if mode != 'axvline':
-                        y = dc(t[ycol])
+                        try:
+                            y = int(ycol)
+                        except:
+                            y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit:
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 if struct in ['systs', 'cursor']:
@@ -553,7 +556,10 @@ class Graph(object):
                             kwargs['alpha'] = 0.3
                             getattr(self._ax, mode)(xi_sel, **kwargs)
                     else:
+                        if type(y) in [int, float]:
+                            y = [y]*len(x)
                         getattr(self._ax, mode)(x, y, **kwargs)
+
                     if struct == 'cursor':
                         trans = transforms.blended_transform_factory(
                                 self._ax.transData, self._ax.transAxes)

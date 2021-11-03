@@ -153,6 +153,7 @@ class Session(object):
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
                     os.remove(self.path[:-4]+'_'+s+'.fits')
+                    os.remove(self.path[:-4]+'_'+s+'.dat')
                 except:
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'.dat')
@@ -163,6 +164,10 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate()
                 self.cb._spec_update()
+            try:
+                os.remove(self.path[:-4]+'.json')
+            except:
+                pass
 
         else:
 
