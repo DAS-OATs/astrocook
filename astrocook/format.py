@@ -461,8 +461,8 @@ class Format(object):
                 y_col = np.where([c in data.colnames for c in y_col_names])[0]
                 dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
                 try:
-                    x = data[x_col_names[x_col][0]]
-                    y = data[y_col_names[y_col][0]]
+                    x = np.ravel(data[x_col_names[x_col][0]])
+                    y = np.ravel(data[y_col_names[y_col][0]])
                     dy = data[dy_col_names[dy_col][0]] if len(dy_col)==1 \
                         else np.full(len(y), np.nan)
                 except:
