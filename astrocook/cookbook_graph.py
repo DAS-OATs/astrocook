@@ -1,4 +1,5 @@
 from .graph import GraphCursorZSeries
+from .gui_dialog import GUIDialogMiniSystems
 from matplotlib import pyplot as plt
 
 class CookbookGraph(object):
@@ -30,6 +31,9 @@ class CookbookGraph(object):
 
         menu._on_graph(None, "Redshift cursor", key, gui._cursor,
                        'systems', GraphCursorZSeries)
+        if not hasattr(gui, '_dlg_mini_systems'):
+            GUIDialogMiniSystems(gui, "System controls", series=series,
+                                 z=float(z))
         gui._dlg_mini_systems._ctrl_z.SetValue(str(z))
         gui._dlg_mini_systems._ctrl_series.SetValue(str(series))
         gui._dlg_mini_systems._on_apply(None)
@@ -38,6 +42,9 @@ class CookbookGraph(object):
     def menu_view_cursor_z_series_stick(self, z=2.0, series="Ly_a"):
         gui = self.sess._gui
         self.menu_view_cursor_z_series(z, series)
+        if not hasattr(gui, '_dlg_mini_systems'):
+            GUIDialogMiniSystems(gui, "System controls", series=series,
+                                 z=float(z))
         gui._dlg_mini_systems._on_stick(None)
         gui._dlg_mini_systems._on_show(None)
 
@@ -54,6 +61,7 @@ class CookbookGraph(object):
         gui._sess_sel._graph_elem = '\n'.join([','.join(k) for k in key_list])
         gui._dlg_mini_graph._refresh()
         gui._refresh()
+
 
     def save(self, name='fig.pdf'):
         self.sess._gui._graph_main._graph._fig.savefig(name, bbox_inches='tight')

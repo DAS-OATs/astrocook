@@ -236,11 +236,12 @@ class GUIMenu(object):
                 else:
                     gui_dlg_mini._on_apply(event, refresh=False)
             else:
-                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
-                gui_dlg_mini._shown = False
-                gui_dlg_mini._on_cancel(event)
-                if dlg_mini == 'systems':
-                    gui_dlg_mini._cursor_button.SetLabel("Show cursor")
+                if hasattr(self._gui, '_dlg_mini_'+dlg_mini):
+                    gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
+                    gui_dlg_mini._shown = False
+                    gui_dlg_mini._on_cancel(event)
+                    if dlg_mini == 'systems':
+                        gui_dlg_mini._cursor_button.SetLabel("Show cursor")
 
 
     def _on_open(self, event, path=None, wildcard=None,
