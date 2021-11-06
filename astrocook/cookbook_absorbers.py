@@ -713,8 +713,10 @@ class CookbookAbsorbers(object):
                 logging.info("I've fitted %i model%s." \
                              % (np.sum(fit_list), msg_z_range(z_list)))
         else:
+            fit_list = []
             for i,m in enumerate(mods_t):
                 z_list.append(m['z0'])
+                fit_list.append(False)
             if verbose:
                 logging.info("I've not fitted any model because you choose "
                              "max_nfev=0.")
