@@ -260,7 +260,6 @@ class SystList(object):
         s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
         where[s] = False
         reg._t.remove_rows(where)
-
         if len(reg.t) == 0:
             #logging.error(msg_output_fail)
             return None

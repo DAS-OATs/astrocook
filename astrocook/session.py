@@ -28,6 +28,7 @@ from scipy.signal import argrelmin
 import tarfile
 import time
 
+
 class Session(object):
     """ Class for sessions.
 

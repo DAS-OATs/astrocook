@@ -27,6 +27,7 @@ def msg_lim(lim):
 def msg_empty(struct):
     return "Structure %s is empty." % struct
 
+
 def msg_resol(check, prefix):
     if not np.logical_or(*check):
         return "[ERROR] %s: I couldn't take the resolution either from " \
