@@ -262,7 +262,7 @@ class SystList(object):
         reg._t.remove_rows(where)
 
         if len(reg.t) == 0:
-            logging.error(msg_output_fail)
+            #logging.error(msg_output_fail)
             return None
         else:
             return reg

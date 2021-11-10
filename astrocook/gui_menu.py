@@ -531,7 +531,9 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'equalize', 'func': '__eq__', 'value': 2},
+        self._rec = [{'targ': 'region_extract', 'append': 'spec'},
+                     '--',
+                     {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
                      '--',
                      {'targ': 'mask', 'append': 'spec'},
