@@ -474,8 +474,11 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax,
-                                                                  verbose)
+                struct = getattr(self.sess, s)._region_extract(xmin, xmax, verbose)
+                if struct is None:
+                    logging.warning(msg_empty(s))
+                else:
+                    kwargs[s] = struct
             except:
                 logging.debug("Attribute %s does not support region "
                               "extraction." % s)
@@ -490,15 +493,25 @@ class CookbookGeneral(object):
             new._gui = self.sess._gui
         else:
             new = None
-        if 'systs' in self.sess.seq and self.sess.systs != None:
+        if 'systs' in self.sess.seq and self.sess.systs != None \
+            and new.systs != None:
 
             # This is needed instead of a simple deepcopy because
             # GUIPanelSession does not support pickling
             #old = dc(self.sess)
             old = Session(self.sess._gui)
             for d in self.sess.__dict__:
-                if d != '_gui' and d != 'cb' and d != 'log':
+                if d != '_gui' and d != 'cb' and d != 'log' and d != 'defs':
                     old.__dict__[d] = dc(self.sess.__dict__[d])
+                if d == 'defs':
+                    setattr(old, d, getattr(self.sess, d))
+                    for dd in getattr(self.sess, d).__dict__:
+                        if dd == '_gui':
+                            getattr(old, d).__dict__[dd] = self.sess._gui
+                        else:
+                            getattr(old, d).__dict__[dd] \
+                                = dc(getattr(self.sess, d).__dict__[dd])
+                    #print(getattr(self.sess, d).__dict__)
             old.__dict__['cb'] = self.sess.__dict__['cb']
 
             self.sess = new

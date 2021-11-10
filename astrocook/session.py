@@ -1,7 +1,9 @@
 from . import version
 from .cookbook import Cookbook
+from .defaults import Defaults
 from .format import Format
 from .functions import detect_local_minima
+from .gui_log import GUILog
 from .line_list import LineList
 from .message import *
 #from .model import Model
@@ -55,6 +57,8 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
+        self.log = GUILog(self._gui)
+        self.defs = Defaults(self._gui)
         self._open_twin = twin
         self._row = row
         self._slice = slice
