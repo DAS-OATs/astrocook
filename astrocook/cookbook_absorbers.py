@@ -2166,6 +2166,8 @@ class CookbookAbsorbers(object):
                                               resol_list=resol_list, k_list=k_list)
                     self._mods_recreate()
                     self._spec_update()
+            else:
+                id_list = []
         #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
