@@ -534,11 +534,25 @@ class GUIPanelSession(wx.Frame):
         logging.info("I'm loading session %s..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
+        sess.log.append_full('_panel_sess', '_on_open',
+                             {'path': path, '_flags': _flags})
 
         if sess._open_twin:
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
+
+
+
+        if _flags is not None and '-s' in _flags:
+                logging.info("I'm loading session for slice 0...")
+                sess = Session(gui=self._gui, path=path, name='%s_0' \
+                               % name, slice=0)
+                self._gui._panel_sess._on_add(sess, open=True)
+                logging.info("I'm loading session for slice 1...")
+                sess = Session(gui=self._gui, path=path, name='%s_1' \
+                               % name, slice=1)
+                self._gui._panel_sess._on_add(sess, open=True)
 
         if _flags is not None and '-o' in _flags:
             while sess._row is not None:
@@ -552,9 +566,6 @@ class GUIPanelSession(wx.Frame):
                 sess = Session(gui=self._gui, path=path, name='%s_%i-1' \
                                % (name, sess._order[sess._row]), row=sess._row)
                 self._gui._panel_sess._on_add(sess, open=True)
-
-        sess.log.append_full('_panel_sess', '_on_open',
-                             {'path': path, '_flags': _flags})
 
 
     def _entry_select(self):
