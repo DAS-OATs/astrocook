@@ -545,17 +545,30 @@ class GUIPanelSession(wx.Frame):
 
 
         if _flags is not None and '-s' in _flags:
-                logging.info("I'm loading session for slice 0...")
-                sess = Session(gui=self._gui, path=path, name='%s_0' \
-                               % name, slice=0)
-                self._gui._panel_sess._on_add(sess, open=True)
-                logging.info("I'm loading session for slice 1...")
-                sess = Session(gui=self._gui, path=path, name='%s_1' \
-                               % name, slice=1)
-                self._gui._panel_sess._on_add(sess, open=True)
+            logging.info("I'm loading session for slice 0...")
+            sess = Session(gui=self._gui, path=path, name='%s_0' \
+                           % name, slice=0)
+            self._gui._panel_sess._on_add(sess, open=True)
+            logging.info("I'm loading session for slice 1...")
+            sess = Session(gui=self._gui, path=path, name='%s_1' \
+                           % name, slice=1)
+            self._gui._panel_sess._on_add(sess, open=True)
 
-        if _flags is not None and '-o' in _flags:
-            while sess._row is not None:
+        if _flags is not None and '-o' in [f[:2] for f in _flags]:
+
+            # Select orders based on flag
+            flag = np.array(_flags)[np.where(['-o' in f[:2] for f in _flags])][0][3:]
+            if flag != '':
+                olim = [int(f) for f in flag.split(',')]
+                rlim = [np.where(sess._order==olim[0])[0][0],
+                    np.where(sess._order==olim[1])[0][-1]]
+                sess._row = rlim[0]
+                lim = rlim[1]
+            else:
+                lim = np.inf
+
+            # Create new sessions for the selected orders
+            while sess._row is not None and sess._row <= lim:
                 logging.info("I'm loading session for order %i, slice 0..." \
                     % sess._order[sess._row])
                 sess = Session(gui=self._gui, path=path, name='%s_%i-0' \

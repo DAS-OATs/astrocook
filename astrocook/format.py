@@ -368,7 +368,6 @@ class Format(object):
             q = np.ravel(hdul['QUALDATA'].data)
         elif row is None:
             r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            print(r)
             x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
             y = np.ravel(hdul['SCIDATA'].data[r,:])
             dy = np.ravel(hdul['ERRDATA'].data[r,:])
