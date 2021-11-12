@@ -21,9 +21,10 @@ import wx.lib.mixins.listctrl as listmix
 class GUI(object):
     """ Class for the GUI. """
 
-    def __init__(self, paths=None):
+    def __init__(self, paths=None, flags=None):
         """ Constructor """
 
+        self._flags = flags
         try:
             l = ['─']*(16+len(version))
             print("┌%s┐" % ''.join(l))
@@ -523,8 +524,11 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
 
 
-    def _on_open(self, path):
+    def _on_open(self, path, _flags=None):
         """ Behaviour for Session > Open """
+
+        if _flags is None and self._gui._flags is not None:
+            _flags = self._gui._flags
 
         name = '.'.join(path.split('/')[-1].split('.')[:-1])
         logging.info("I'm loading session %s..." % path)
@@ -536,19 +540,21 @@ class GUIPanelSession(wx.Frame):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
-        while sess._row is not None:
-            logging.info("I'm loading session for order %i, slice 0..." \
-                % sess._order[sess._row])
-            sess = Session(gui=self._gui, path=path, name='%s_%i-0' \
-                           % (name, sess._order[sess._row]), row=sess._row)
-            self._gui._panel_sess._on_add(sess, open=True)
-            logging.info("I'm loading session for order %i, slice 1..." \
-                % sess._order[sess._row])
-            sess = Session(gui=self._gui, path=path, name='%s_%i-1' \
-                           % (name, sess._order[sess._row]), row=sess._row)
-            self._gui._panel_sess._on_add(sess, open=True)
+        if _flags is not None and '-o' in _flags:
+            while sess._row is not None:
+                logging.info("I'm loading session for order %i, slice 0..." \
+                    % sess._order[sess._row])
+                sess = Session(gui=self._gui, path=path, name='%s_%i-0' \
+                               % (name, sess._order[sess._row]), row=sess._row)
+                self._gui._panel_sess._on_add(sess, open=True)
+                logging.info("I'm loading session for order %i, slice 1..." \
+                             % sess._order[sess._row])
+                sess = Session(gui=self._gui, path=path, name='%s_%i-1' \
+                               % (name, sess._order[sess._row]), row=sess._row)
+                self._gui._panel_sess._on_add(sess, open=True)
 
-        sess.log.append_full('_panel_sess', '_on_open', {'path': path})
+        sess.log.append_full('_panel_sess', '_on_open',
+                             {'path': path, '_flags': _flags})
 
 
     def _entry_select(self):

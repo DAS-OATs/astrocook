@@ -200,7 +200,6 @@ class Session(object):
 
                 self._order = np.append(np.repeat(range(161,116,-1), 2),
                                         np.repeat(range(117,77,-1), 2))
-                print(self._row)
 
                 """
                 if self._order is None:
