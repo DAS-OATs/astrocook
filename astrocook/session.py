@@ -204,7 +204,7 @@ class Session(object):
 
 
             # FIRE spectrum
-            if instr in ['MagE', 'LDSS3-C']:
+            if instr in ['MagE', 'LDSS3-C', 'EFOSC']:
                 self.spec = format.mage_spectrum(hdul)
 
 

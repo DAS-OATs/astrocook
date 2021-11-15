@@ -485,11 +485,13 @@ class Format(object):
         logging.info(msg_format('QUBRICS'))
         hdr = hdul[0].header
         data = hdul[0].data
+        crpix1 = hdr['CRPIX1']
         crval1 = hdr['CRVAL1']
         cdelt1 = hdr['CDELT1']
         naxis1 = hdr['NAXIS1']
+        #print(crval1, cdelt1, naxis1, crpix1)
         y = data
-        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        x = np.arange(crval1+(1-crpix1)*cdelt1, crval1+(1-crpix1+naxis1)*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
         dy = np.full(len(y), np.nan)
         xunit = au.Angstrom
