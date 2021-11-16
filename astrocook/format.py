@@ -348,7 +348,8 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
-    def espresso_s2d_spectrum(self, hdul):
+    def espresso_s2d_spectrum(self, hdul, row=None, slice=None):
+
 
         """ ESPRESSO DRS S2D format """
         logging.info(msg_format('ESPRESSO DRS S2D'))
@@ -360,10 +361,23 @@ class Format(object):
         y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
         dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
         """
-        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
-        y = np.ravel(hdul['SCIDATA'].data)
-        dy = np.ravel(hdul['ERRDATA'].data)
-        q = np.ravel(hdul['QUALDATA'].data)
+        if row is None and slice is None:
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
+            y = np.ravel(hdul['SCIDATA'].data)
+            dy = np.ravel(hdul['ERRDATA'].data)
+            q = np.ravel(hdul['QUALDATA'].data)
+        elif row is None:
+            r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
+            y = np.ravel(hdul['SCIDATA'].data[r,:])
+            dy = np.ravel(hdul['ERRDATA'].data[r,:])
+            q = np.ravel(hdul['QUALDATA'].data[r,:])
+        else:
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,:]
+            y = hdul['SCIDATA'].data[row,:]
+            dy = hdul['ERRDATA'].data[row,:]
+            q = hdul['QUALDATA'].data[row,:]
+
 
         w = np.where(q<1) #4**7)
         x,y,dy,q = x[w],y[w],dy[w],q[w]

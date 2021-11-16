@@ -39,7 +39,9 @@ class Session(object):
                  lines=None,
                  systs=None,
                  mods=None,
-                 twin=False):
+                 twin=False,
+                 row=None,
+                 slice=None):
         self._gui = gui
         self.path = path
         self.name = name
@@ -52,6 +54,8 @@ class Session(object):
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
         self._open_twin = twin
+        self._row = row
+        self._slice = slice
         self._clicks = []
         self._stats = False
         self._shade = False
@@ -184,10 +188,21 @@ class Session(object):
 
             # ESPRESSO S2D spectrum
             if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
-                self.spec = format.espresso_s2d_spectrum(hdul)
+                self.spec = format.espresso_s2d_spectrum(hdul, row=self._row,
+                                                         slice=self._slice)
                 p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
                 self.spec_form = format.espresso_spectrum_format(
                     ascii.read(p+'espr_spec_form.dat'))
+
+                if self._row is None:
+                    self._row = 0
+                elif self._row < 169:
+                    self._row += 1
+                else:
+                    self._row = None
+
+                self._order = np.append(np.repeat(range(161,116,-1), 2),
+                                        np.repeat(range(117,77,-1), 2))
 
             # ESPRESSO DAS spectrum
             if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
