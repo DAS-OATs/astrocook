@@ -214,11 +214,11 @@ class CookbookEdit(object):
                                         str(list(np.array(s.spec._t[c]))))
             if s.lines is not None:
                 for c in sorted(s.lines._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,lines,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.lines._t[c]))))
             if s.systs is not None:
                 for c in sorted(s.systs._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,systs,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
         #print(expr)
