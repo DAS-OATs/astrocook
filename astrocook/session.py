@@ -153,6 +153,7 @@ class Session(object):
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
                     os.remove(self.path[:-4]+'_'+s+'.fits')
+                    os.remove(self.path[:-4]+'_'+s+'.dat')
                 except:
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'.dat')

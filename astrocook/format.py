@@ -37,7 +37,6 @@ class Format(object):
             xmax = data['xmax']
             y = data['y']
             dy = data['dy']
-
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr
