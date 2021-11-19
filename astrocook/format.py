@@ -20,10 +20,15 @@ class Format(object):
         xmax = np.append(mean, x[-1])
         return xmin, xmax
 
-    def astrocook(self, hdul, struct):
+    def astrocook(self, frame, struct):
         logging.info(msg_format('Astrocook %s' % struct))
-        hdr = hdul[1].header
-        data = hdul[1].data
+        try:
+            hdr = frame[1].header
+            data = frame[1].data
+        except:
+            hdr = {}
+            data = frame
+
 
         if struct in ['spec', 'nodes', 'lines']:
 
@@ -35,11 +40,13 @@ class Format(object):
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr
+            """
             try:
                 meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
             except:
                 meta['object'] = ''
                 logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+            """
             if struct in ['spec', 'nodes']:
                 out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=yunit,
                                meta=meta)
@@ -110,14 +117,15 @@ class Format(object):
             for c in Table(data).colnames:
                 if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
                     out._t[c] = data[c]
-
             for k in hdr:
                 ks = k.split(' ')
                 if 'CONSTR' in ks:
-                    if 'ID' in ks: id = int(hdr[k])
-                    if 'PAR' in ks: par = hdr[k]
-                    if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
-                        = (id, par, hdr[k])
+                    id_check = 'AC CONSTR ID '+ks[-1]
+                    if 'id' in out._t.colnames and hdr[id_check] in out._t['id']:
+                        if 'ID' in ks: id = int(hdr[k])
+                        if 'PAR' in ks: par = hdr[k]
+                        if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
+                            = (id, par, hdr[k])
             #print(out._constr)
         return out
 
@@ -126,22 +134,42 @@ class Format(object):
         """ ESO Advanced Data Product """
 
         hdr = hdul[0].header
-        data = hdul[1].data
+        hdr1 = hdul[1].header
+        data = Table(hdul[1].data)
         x = data['WAVE'][0]
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
-        dy = data['ERR'][0]
-        xunit = au.Angstrom
-        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        try:
+            dy = data['ERR_FLUX'][0]
+        except:
+            dy = data['ERR'][0]
+
+        #"""
+        try:
+            cont = data['CONTINUUM'][0]
+        except:
+            cont = []
+        #"""
+        xunit = au.Unit(hdr1['TUNIT1']) #au.Angstrom
+        yunit = au.Unit(hdr1['TUNIT2']) #au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
-        meta = {'instr': hdr['INSTRUME']}
+        meta = hdr #{'instr': hdr['INSTRUME']}
+        """
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        """
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+        #spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+        for i,c in enumerate(data.colnames):
+            if c not in ['WAVE', 'FLUX', 'ERR_FLUX', 'ERR', 'CONTINUUM']:
+                spec._t[c] = data[c][0]
+                spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+
+        return spec
 
     def eso_midas_image(self, hdul):
         logging.info(msg_format('ESO MIDAS image'))
@@ -156,16 +184,18 @@ class Format(object):
         x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
 
         xmin, xmax = self._create_xmin_xmax(x)
-        dy = np.full(len(x), np.nan)
+        dy = 0.05*y #np.full(len(x), np.nan)
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
-        meta = {'instr': ''}
+        meta = hdr #{'instr': ''}
+        """
         try:
             meta['object'] = hdr['FILENAME'][:-4]
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -174,20 +204,66 @@ class Format(object):
         """ ESO-MIDAS table """
 
         hdr = hdul[1].header
-        data = hdul[1].data
+        data = Table(hdul[1].data)
+
+        x_col_names = np.array(['wave', 'WAVE'])
+        y_col_names = np.array(['fluxc', 'flux', 'FLUX'])
+        dy_col_names = np.array(['errc', 'err', 'sigma', 'STDEV'])
+        wpix_col_names = np.array(['wpix', 'WPIX'])
+        cont_col_names = np.array(['cont', 'CONT'])
+        norm_col_names = np.array(['normflux', 'NORMFLUX'])
+
+        x_col = np.where([c in data.colnames for c in x_col_names])[0]
+        y_col = np.where([c in data.colnames for c in y_col_names])[0]
+        dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
+        wpix_col = np.where([c in data.colnames for c in wpix_col_names])[0]
+        cont_col = np.where([c in data.colnames for c in cont_col_names])[0]
+        norm_col = np.where([c in data.colnames for c in norm_col_names])[0]
+
+        try:
+            x = data[x_col_names[x_col][0]]
+            y = data[y_col_names[y_col][0]]
+            dy = data[dy_col_names[dy_col][0]] if dy_col!=[] \
+                else np.full(len(y), np.nan)
+        except:
+            logging.error("I can't recognize columns.")
+            return 0
+
+        try:
+            xmin = x-data[wpix_col_names[wpix_col][0]]*0.5
+            xmax = x+data[wpix_col_names[wpix_col][0]]*0.5
+        except:
+            xmin, xmax = self._create_xmin_xmax(x)
+
+        try:
+            cont = data[cont_col_names[cont_col][0]]
+        except:
+            try:
+                if np.all(data[norm_col_names[norm_col][0]]==y):
+                    cont = np.ones(len(x))
+            except:
+                cont = []
+        """
         try:
             x = data['wave']
-            xmin = x-data['wpix']*0.5
-            xmax = x+data['wpix']*0.5
+            try:
+                xmin = x-data['wpix']*0.5
+                xmax = x+data['wpix']*0.5
+            except:
+                xmin = x-data['Wpix']*0.5
+                xmax = x+data['Wpix']*0.5
             y = data['flux']
-            dy = data['sigma']
+            try:
+                dy = data['sigma']
+            except:
+                dy = data['err']
         except:
             x = data['WAVE']
             xmin, xmax = self._create_xmin_xmax(x)
             y = data['NORMFLUX']
             dy = data['STDEV']
         resol = []*len(x)
-        #"""
+
         try:
             cont = data['cont']
         except:
@@ -198,17 +274,19 @@ class Format(object):
                     cont = np.ones(len(x))
                 else:
                     cont = []
-        #"""
-        #cont = []
+
+        """
 
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
-        meta = {'instr': ''}
+        meta = hdr #{'instr': ''}
+        """
         try:
             meta['object'] = hdr['FILENAME'][:-4]
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
 
     def espresso_das_spectrum(self, hdul):
@@ -225,20 +303,22 @@ class Format(object):
         resol = np.array([70000]*len(x))
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'ESPRESSO'}
+        meta = hdr #{'instr': 'ESPRESSO'}
         try:
             cont = data['CONT']
         except:
             cont = []
+        """
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, resol=resol,
                         cont=cont)
 
-    def espresso_drs_spectrum(self, hdul):
+    def espresso_s1d_spectrum(self, hdul):
         """ ESPRESSO DRS S1D format """
         logging.info(msg_format('ESPRESSO DRS S1D'))
 
@@ -256,13 +336,74 @@ class Format(object):
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
         resol = []*len(x)
         xunit = au.Angstrom
-        meta = {'instr': 'ESPRESSO'}
+        meta = hdr #{'instr': 'ESPRESSO'}
+        """
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def espresso_s2d_spectrum(self, hdul, row=None, slice=None):
+
+
+        """ ESPRESSO DRS S2D format """
+        logging.info(msg_format('ESPRESSO DRS S2D'))
+        hdr = hdul[0].header
+        #print(hdul['WAVEDATA_VAC_BARY'].data)
+        #print(hdul['WAVEDATA_VAC_BARY'].data[:,:-10])
+        """
+        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,200:-200])
+        y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
+        dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
+        """
+        if row is None and slice is None:
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
+            y = np.ravel(hdul['SCIDATA'].data)
+            dy = np.ravel(hdul['ERRDATA'].data)
+            q = np.ravel(hdul['QUALDATA'].data)
+        elif row is None:
+            r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
+            y = np.ravel(hdul['SCIDATA'].data[r,:])
+            dy = np.ravel(hdul['ERRDATA'].data[r,:])
+            q = np.ravel(hdul['QUALDATA'].data[r,:])
+        else:
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,:]
+            y = hdul['SCIDATA'].data[row,:]
+            dy = hdul['ERRDATA'].data[row,:]
+            q = hdul['QUALDATA'].data[row,:]
+
+
+        w = np.where(q<1) #4**7)
+        x,y,dy,q = x[w],y[w],dy[w],q[w]
+
+        xmin, xmax = self._create_xmin_xmax(x)
+        w = np.where(xmax-xmin > 0)
+        x,xmin,xmax = x[w],xmin[w],xmax[w]
+        y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+        dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+        q = q[w]
+        argsort = np.argsort(x)
+        x,xmin,xmax,y,dy,q = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort],q[argsort]
+
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.erg / au.Angstrom / au.cm**2 / au.s
+        meta = hdr #{'instr': 'ESPRESSO'}
+        """
+        try:
+            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        spec._t['quality'] = q
+        return spec
 
 
     def espresso_spectrum_format(self, data):
@@ -287,17 +428,20 @@ class Format(object):
 
         hdr = hdul[0].header
         data = hdul[5].data
+        #print(data)
         x = data['WAVE'][0]*0.1
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
         dy = data['SIG'][0]
         xunit = au.nm
         yunit = None
-        meta = {'instr': 'FIRE'}
+        meta = hdr #{'instr': 'FIRE'}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -306,8 +450,6 @@ class Format(object):
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
         try:
-            zero
-        except:
             if len(hdul)>1:
                 data = Table(hdul[1].data)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -316,8 +458,7 @@ class Format(object):
                 try:
                     x = data[x_col_names[x_col][0]]
                     y = data[y_col_names[y_col][0]]
-                    #dy = data[dy_col_names[dy_col][0]] if len(dy_col)>0 \
-                    dy = data[dy_col_names[dy_col][0]] if dy_col!=[] \
+                    dy = data[dy_col_names[dy_col][0]] if len(dy_col)==1 \
                         else np.full(len(y), np.nan)
                 except:
                     logging.error("I can't recognize columns.")
@@ -332,14 +473,24 @@ class Format(object):
             xmin, xmax = self._create_xmin_xmax(x)
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
-            meta = {}
+            meta = hdr #{}
+            """
             try:
                 meta['object'] = hdr['OBJECT']
             except:
                 meta['object'] = ''
-            return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-        #except:
-        #    return None
+            """
+            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+            if hasattr(data, 'colnames'):
+                for i,c in enumerate(data.colnames):
+                    if c not in [x_col_names[x_col], y_col_names[y_col],
+                                 dy_col_names[dy_col]]:
+                        spec._t[c] = data[c]
+                    #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
+            return spec
+        except:
+            return None
 
 
     def mage_spectrum(self, hdul):
@@ -356,11 +507,13 @@ class Format(object):
         dy = np.full(len(y), np.nan)
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
-        meta = {}
+        meta = hdr #{}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -375,12 +528,33 @@ class Format(object):
         dy = np.full(len(y), np.nan)
         xunit = au.nm
         yunit = au.erg/au.cm**2/au.s/au.nm
-        meta = {}
+        meta = hdr #{}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def lrs_spectrum(self, hdul):
+        """ TNG LRS spectrum """
+        logging.info(msg_format('LRS'))
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = hdr
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
 
     def uves_spectrum(self, hdul, hdul_err):
         """ UVES format (two files: FLUXCAL_SCI, FLUXCAL_ERRORBAR_SCI) """
@@ -397,13 +571,15 @@ class Format(object):
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
-        meta = {'instr': 'UVES'}
+        meta = hdr #{'instr': 'UVES'}
         meta['v_bary'] = hdr['HIERARCH ESO QC VRAD BARYCOR']
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -426,12 +602,14 @@ class Format(object):
         sel = np.where(y != 1)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
-        meta = {'instr': 'UVES'}
+        meta = hdr #{'instr': 'UVES'}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def wfccd_spectrum(self, hdul):
@@ -448,12 +626,14 @@ class Format(object):
         xmin, xmax = self._create_xmin_xmax(x)
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'WFCCD'}
+        meta = hdr #{'instr': 'WFCCD'}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -472,13 +652,41 @@ class Format(object):
             dy = data['ERROR_NOCORR'][0]
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom #erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'X-shooter'}
+        meta = hdr #{'instr': 'X-shooter'}
+        """
         try:
             meta['object'] = hdul._file.name.split('/')[-1][:-5]
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def xqr30_bosman(self, hdul):
+        """ XQR-30 spectrum as formatted by Sarah Bosman """
+
+        logging.info(msg_format('xqr30_bosman'))
+        hdr = hdul[0].header
+
+        data = Table(hdul[1].data)
+        x = data['col1']
+        y = data['col2']
+        dy = data['col3']
+        xunit = au.Angstrom
+        yunit = au.dimensionless_unscaled
+        xmin, xmax = self._create_xmin_xmax(x)
+        meta = hdr #{}
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+        #spec._t['cont'] = data['col5']
+        spec._t['redside_PCA'] = data['col4']
+        spec._t['blueside'] = data['col5']
+        spec._t['blueside_1sigmal'] = data['col6']
+        spec._t['blueside_1sigmau'] = data['col7']
+        spec._t['blueside_2sigmal'] = data['col8']
+        spec._t['blueside_2sigmau'] = data['col9']
+        return spec
 
 
     def xshooter_das_spectrum(self, hdul):
@@ -496,12 +704,14 @@ class Format(object):
         resol = []*len(x)
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'X-shooter'}
+        meta = hdr #{'instr': 'X-shooter'}
+        """
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -519,12 +729,14 @@ class Format(object):
         resol = []*len(x)
         xunit = au.nm
         yunit = au.electron/au.nm #erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'X-shooter'}
+        meta = hdr #{'instr': 'X-shooter'}
+        """
         try:
             meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -542,12 +754,14 @@ class Format(object):
         resol = []*len(x)
         xunit = au.nm
         yunit = au.erg/au.cm**2/au.s/au.nm
-        meta = {'instr': 'X-shooter'}
+        meta = hdr #{'instr': 'X-shooter'}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
@@ -567,10 +781,12 @@ class Format(object):
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
-        meta = {'instr': 'X-shooter'}
+        meta = hdr #{'instr': 'X-shooter'}
+        """
         try:
             meta['object'] = hdr['OBJECT']
         except:
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
+        """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

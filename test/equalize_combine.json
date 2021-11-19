@@ -1,0 +1,48 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GDrive/GitHub/astrocook/test/qso_uvb.fits"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GDrive/GitHub/astrocook/test/qso_vis.fits"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "equalize",
+      "params": {
+        "xmin": "550",
+        "xmax": "560",
+        "_sel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

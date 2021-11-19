@@ -8,20 +8,17 @@ nav_order: 1
 # Data structures
 {: .no_toc}
 
+Astrocook manages three main data structures: *spectra*, *line lists*, and *system lists*. All three structures include a data table (actually an [Astropy Table](https://docs.astropy.org/en/stable/table/) object) and a metadata dictionary. They are formatted as FITS files and bundled into a `.acs` archive when you save a snapshot of a session. To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
+
+❗️ **Long tables can take a long time to display.**
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 ---
-
-Astrocook manages three main data structures: *spectra*, *line lists*, and *system lists*. All three structures include a data table (actually an [Astropy Table](https://docs.astropy.org/en/stable/table/) object) and a metadata dictionary. They are formatted as FITS files and bundled into a `.acs` archive when you save a snapshot of a session. The `.acs` archive may also contain other ancillary data, as described below.
-
-To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
-
-⚠️ **Long tables can take a long time to display.**
-
-⚠️ **Closing table windows may cause Astrocook to behave erratically.**
 
 ## Spectra
 
@@ -32,7 +29,7 @@ The fundamental columns of a spectrum are:
 - `xmin`, `xmax`: the interval in `x` values in which the flux-like quantity is integrated;
 - `y`, `dy`: the flux-like dependent variable and its error.
 
-The interval [`xmin`, `xmax`] is also called a *pixel*, because in some cases it maps to a physical pixel in the spectrograph detector.
+The interval [`xmin`, `xmax`] is also called a *bin* (because it is the unit into which the flux information is binned) or a *pixel* (because in some cases it maps to a physical pixel in the spectrograph detector).
 
 Other columns that frequently appear in a spectrum are:
 - `y_conv`: a convolution of `y` with some smoothing kernel;
@@ -49,7 +46,7 @@ You are free to add other columns to the spectrum or edit the existing ones (as 
 
 When you detect spectral lines (either in emission or absorption), they are formatted into a table that is added to the session.
 
-The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra)) where the lines have been detected:
+The information to populate the table columns is directly extracted from the [spectrum](structures.md#spectra) where the lines have been detected:
 - `x`: the line center, corresponding to the `x` value of a pixel in the spectrum;
 - `xmin`, `xmax`: the boundaries of the interval covered by the line, also corresponding to the `x` values of two pixels in the spectrum;
 - `y`, `dy`: values of `y` and `dy` at `x` from the spectrum;
@@ -70,10 +67,12 @@ When you detect absorption systems, they are also formatted into a table added t
 - `series`: the list of ionic transitions that are modeled;
 - `z0`: the starting redshift, typically computed from the `x` value of one or more [absorption lines](structures.md#list-of-lines);
 - `z`, `dz`: the redshift of the model and its error;
-- `logN`, `dlogN`: the logarithm of the column density used in the Voigt function (in cm^-2) and its error;
+- `logN`, `dlogN`: the base-10 logarithm of the column density used in the Voigt function (in cm^-2) and its error;
 - `b`, `db`: the doppler parameter used in the Voigt function and its error;
 - `resol`: the resolution adopted by the model;
 - `chi2r`: the reduced chi-squared between the model and the data;
 - `id`: the identification number of the model.
 
-The parameters of the Voigt function (`z`, `logN`, and `b`) may be either guess or fitted parameters. As a rule, when a system is added to the list it is also fitted to the spectrum: `z`, `logN`, and `b` are the best-fit values and `chi2r` gives an estimation of the goodness of fit.
+The parameters of the [Voigt profile](absorbers.md#voigt-profile-modeling) (`z`, `logN`, and `b`) may be either guess or fitted parameters. As a rule, when a system is added to the list it is also fitted to the spectrum: `z`, `logN`, and `b` are the best-fit values and `chi2r` gives an estimation of the goodness of fit.
+
+[Here](series.md) you can find a complete list of the ionic transitions used to model absorption features.

@@ -18,6 +18,6 @@ With Astrocook, you can estimate the emission continuum of a source by iterative
 {:toc}
 ---
 
-## Start a session
+## Regions with sparse absorption 🚧
 
-## Detect the absorption lines
+## Regions with widespread absorption 🚧

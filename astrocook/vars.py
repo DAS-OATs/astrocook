@@ -1,9 +1,43 @@
+import ast
 from astropy import units as au
 from astropy import constants as aconst
-from astropy.io import ascii
+from astropy.io import ascii, fits
 import numpy as np
 import os
+import operator as op
+import pathlib
  #c, e, m_e
+
+"""
+ac_ops = {'>': operator.gt,
+          '<': operator.lt,
+          '==': operator.eq,
+          '+': operator.add,
+          '-': operator.sub,
+          '*': operator.mul,
+          '/': operator.truediv,  # use operator.div for Python 2
+          '%': operator.mod,
+          '^': operator.xor}
+"""
+py_ops = {ast.Add: op.add,
+          ast.Sub: op.sub,
+          ast.Mult: op.mul,
+          ast.Div: op.truediv,
+          ast.Pow: op.pow,
+          ast.Lt: op.lt,
+          ast.Gt: op.gt,
+          ast.BitXor: op.xor,
+          ast.USub: op.neg}
+
+np_ops = {ast.Add: op.add,
+          ast.Sub: op.sub,
+          ast.Mult: op.mul,
+          ast.Div: op.truediv,
+          ast.Pow: op.pow,
+          ast.Lt: np.less,
+          ast.Gt: op.gt,
+          ast.BitXor: op.xor,
+          ast.USub: op.neg}
 
 xunit_def = au.nm
 yunit_def = au.erg / (au.Angstrom * au.cm**2 * au.s)
@@ -19,22 +53,51 @@ equiv_w_v = [(au.nm, au.km/au.s,
 logN_def = 14
 b_def = 10
 
+logN_lims = [12, 14, 18, 19]
+logN_index = -1.65
+tau_norm = 0.0028
+tau_index = 3.45
+
 resol_def = None
-max_nfev_def = 100
+max_nfev_def = 1000
+
+hwin_def = 250.0
+
+# Menus
+#menus_def = ['General', 'Continuum', 'Absorbers']
+menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
+               'Flux': '_cb_flux', 'General': '_cb_general',
+               'Synthetic': '_cb_synthetic', 'Templates': '_cb_templates'}
+#menus = {'attr': [menus_assoc[m] for m in menus_def], 'title': menus_def}
 
 seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
-graph_sel = ['spec_x_y',
+graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
-             'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
-             'systs_z_series', 'spec_h2o_reg']
+             #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
+             #'systs_z_series',
+             'spec_h2o_reg'
+             ]
 graph_cols_sel = ''
+
+graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
+           "spec,x,dy,None,step,-,1,C1,0.5\n"\
+           "lines,x,y,None,scatter,+,1.5,C2,1\n"\
+           "nodes,x,y,None,scatter,o,1,C3,1\n"\
+           "spec,x,cont,None,plot,-,1,C8,1\n"\
+           "spec,x,model,None,plot,-,1,C9,1\n"\
+           "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
+           "systs,z,None,None,axvline,--,0.8,C2,1.0"
+
+graph_lim_def = 'xlim=auto\nylim=auto'
 
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
     'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
     'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
+#    'z_max': 1e-3, 'logN_max': 22, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
 
 
@@ -53,7 +116,7 @@ lines_voigt_d = {
     'z': 0.0, 'N': 1.e13, 'b': 5.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
     'z_min': 0.0, 'N_min': 1.e11, 'b_min': 1.0, 'btur_min': 0.0,
-    'z_max': 10.0, 'N_max': 1.e17, 'b_max': 100.0, 'btur_max': 100.0,
+    'z_max': 10.0, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': 100.0,
     'z_expr': None, 'N_expr': None, 'b_expr': None, 'btur_expr': None}
 
 # Default values for PSF gaussian Parameters
@@ -64,23 +127,34 @@ psf_gauss_d = {
     'z_max': 10.0, 'resol_max': 1e6,
     'z_expr': None, 'resol_expr': None}
 
+forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
+                      'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
-x_col_names = np.array(['x', 'wave', 'WAVE', 'col1'])
-y_col_names = np.array(['y', 'flux', 'FLUX', 'col2'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'col3'])
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
-p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
-atom_par = ascii.read(p+'/atom_par.dat')
+filt_x_skymap = {'u': 348.0, 'v': 382.5, 'g': 493.0, 'r': 629.4, 'i': 770.2,
+                 'z': 923.6}
+zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
+                     'r': 29.0143769, 'i': 28.4342476, 'z': 27.9522006}
+
+p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
+inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
+mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
+
+telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
 
-trans_d = atom_par['col1']
+trans_d = np.array([t for t in atom_par['col1'] if '-' not in t])
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}
 for s in series_d:
     series_d[s] = [a for a in atom_par['col1'] if a.split('_')[0]==s]
@@ -238,3 +312,6 @@ gamma_d_old = {'Ly_a': 6.265e+08,
               'CaII_3969': 1.409e+08,
               'neb': 5e8,
               'unknown': 6.265e+08}
+
+
+log_seed = {'set_menu': []}
