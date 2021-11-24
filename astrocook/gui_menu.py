@@ -468,18 +468,13 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
         self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
-                   lambda e: self._on_spec_save(e, **kwargs))
+                   lambda e: self._on_save_pdf(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
 
     def _on_combine(self, event):
         self._gui._panel_sess._combine()
-
-
-    def _on_spec_save(self, event):
-        self._gui._sess_sel._spec_save()
-
 
 
     def _on_save(self, event, path=None):
@@ -502,6 +497,27 @@ class GUIMenuFile(GUIMenu):
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving session %s..." % path)
             self._gui._sess_sel.save(path)
+
+    def _on_save_pdf(self, event, path=None):
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save spectrum as PDF", path, name,
+                           wildcard="PDF (*.pdf)|*.pdf",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            self._gui._sess_sel.save_pdf(path)
+
+
+
 
 
 class GUIMenuFlux(GUIMenu):

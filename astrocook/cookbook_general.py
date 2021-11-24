@@ -474,7 +474,8 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                struct = getattr(self.sess, s)._region_extract(xmin, xmax, verbose)
+                struct = getattr(self.sess, s)._region_extract(xmin, xmax,
+                                                               verbose)
                 if struct is None:
                     logging.warning(msg_empty(s))
                 else:
