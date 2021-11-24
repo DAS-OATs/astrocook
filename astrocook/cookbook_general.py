@@ -447,7 +447,7 @@ class CookbookGeneral(object):
         return new
 
 
-    def region_extract(self, xmin, xmax):
+    def region_extract(self, xmin, xmax, verbose=True):
         """ @brief Extract region
         @details Extract a spectral region and create a new session from it.
 
@@ -474,7 +474,8 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
+                kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax,
+                                                                  verbose)
             except:
                 logging.debug("Attribute %s does not support region "
                               "extraction." % s)

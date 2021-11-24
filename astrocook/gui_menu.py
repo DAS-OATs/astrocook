@@ -465,14 +465,21 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
+        self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
+                   lambda e: self._on_spec_save(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
 
     def _on_combine(self, event):
         self._gui._panel_sess._combine()
+
+
+    def _on_spec_save(self, event):
+        self._gui._sess_sel._spec_save()
+
 
 
     def _on_save(self, event, path=None):

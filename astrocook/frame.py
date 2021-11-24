@@ -293,7 +293,7 @@ class Frame():
 
         return corr
 
-    def _region_extract(self, xmin, xmax):
+    def _region_extract(self, xmin, xmax, verbose=True):
         """ @brief Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
@@ -308,7 +308,7 @@ class Frame():
         where[s] = False
         reg._t.remove_rows(where)
 
-        if len(reg.t) == 0:
+        if len(reg.t) == 0 and verbose:
             logging.error(msg_output_fail)
             return None
         else:
