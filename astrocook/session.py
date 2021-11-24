@@ -1,7 +1,9 @@
 from . import version
 from .cookbook import Cookbook
+from .defaults import Defaults
 from .format import Format
 from .functions import detect_local_minima
+from .gui_log import GUILog
 from .line_list import LineList
 from .message import *
 #from .model import Model
@@ -18,6 +20,8 @@ from collections import OrderedDict
 from copy import deepcopy as dc
 import logging
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.transforms as transforms
 import numpy as np
 import os
 from scipy.signal import argrelmin
@@ -53,6 +57,8 @@ class Session(object):
         self.mods = mods
         self.seq = seq  # From .vars
         self.cb = Cookbook(self)
+        self.log = GUILog(self._gui)
+        self.defs = Defaults(self._gui)
         self._open_twin = twin
         self._row = row
         self._slice = slice
@@ -390,3 +396,60 @@ class Session(object):
             file.close()
             arch.add(root+'.json', arcname=stem+'.json')
             os.remove(root+'.json')
+
+    def save_pdf(self, path):
+
+        """
+             plt.figure(figsize=(3, 3))
+             plt.plot(range(7), [3, 1, 4, 1, 5, 9, 2], 'r-o')
+             plt.title('Page One')
+             plt.show()
+             pdf.savefig()  # saves the current figure into a pdf page
+             plt.close()
+        """
+        main = self._gui._graph_main
+        graph = main._graph
+        panel_n = 4
+        length = 1
+        x = self.spec.x.to(au.nm).value
+        y = self.spec.y.value
+        xmin = int(np.floor(np.nanmin(x/length))*length)
+        xmax = int(np.ceil(np.nanmax(x/length))*length)
+        xran = np.arange(xmin, xmax+length, length)
+        page_n = int(np.ceil((xmax-xmin)/(length*panel_n)))
+        i = 0
+        with PdfPages(path) as pdf:
+            #for p in range(page_n):
+            for j, p in enum_tqdm(range(page_n), page_n-1,
+                                  "session: Saving spectrum into PDF"):
+                fig, axs = plt.subplots(panel_n,1, figsize=(11.69,8.27))
+                for ax in axs:
+                    try:
+                        sel = np.where(np.logical_and(x>xran[i], x<xran[i+1]))
+                        #ymin = np.floor(np.nanmin(y[sel]))
+                        if main._norm:
+                            yceil = 1
+                            edge = 0.25
+                        else:
+                            yceil = np.ceil(np.nanmax(y[sel]))
+                            edge = 0.1
+                        ymin = -edge*yceil if yceil>0 else (1+edge)*yceil
+                        ymax = (1+edge)*yceil if yceil>0 else -edge*yceil
+                        #print(i,j,xran[i], xran[i+1],ymin, ymax)
+                        ax.set_xlim(xran[i], xran[i+1])
+                        ax.set_ylim(ymin, ymax)
+                        graph._seq_core(self, main._norm, True, False, main, ax,
+                                        cursor_list=['systs', 'cursor'])
+                        if (i+1)%panel_n == 0:
+                            ax.set_xlabel(self.spec.x.unit)
+                        if main._norm:
+                            ax.set_ylabel("Normalized flux")
+                        else:
+                            ax.set_ylabel(self.spec.y.unit)
+                        i += 1
+                    except:
+                        pass
+
+            #plt.show()
+                pdf.savefig()  # saves the current figure into a pdf page
+                plt.close()

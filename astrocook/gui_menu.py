@@ -465,8 +465,10 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
+        self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
+                   lambda e: self._on_save_pdf(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
@@ -495,6 +497,27 @@ class GUIMenuFile(GUIMenu):
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving session %s..." % path)
             self._gui._sess_sel.save(path)
+
+    def _on_save_pdf(self, event, path=None):
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save spectrum as PDF", path, name,
+                           wildcard="PDF (*.pdf)|*.pdf",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            self._gui._sess_sel.save_pdf(path)
+
+
+
 
 
 class GUIMenuFlux(GUIMenu):
@@ -532,7 +555,9 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'equalize', 'func': '__eq__', 'value': 2},
+        self._rec = [{'targ': 'region_extract', 'append': 'spec'},
+                     '--',
+                     {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
                      '--',
                      {'targ': 'mask', 'append': 'spec'},

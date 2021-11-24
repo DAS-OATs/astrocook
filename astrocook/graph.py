@@ -447,6 +447,11 @@ class Graph(object):
             focus = self._gui._graph_det
         else:
             focus = self._gui._graph_main
+        self._seq_core(sess, norm, init_cursor, detail, focus, self._ax)
+
+    def _seq_core(self, sess, norm, init_cursor, detail, focus, ax,
+                  cursor_list=['cursor']):
+#        ax = self._ax
 
         xunit_orig = dc(sess.spec.x.unit)
         #print(detail, sess.spec.x.unit)
@@ -454,6 +459,7 @@ class Graph(object):
         #if detail: sess.cb.x_convert(zem=self._zem)
         #print(detail, sess.spec.x.unit)
         self._systs_id = False
+
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
@@ -510,7 +516,7 @@ class Graph(object):
                         #print(self._zem)
                         #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
                         for k in self._axes:
-                            if self._axes[k] == self._ax:
+                            if self._axes[k] == ax:
                                 zem = self._zems[k]
                         if x_iswave:
                             x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
@@ -545,21 +551,21 @@ class Graph(object):
                     if mode == 'axvline':
                         #print(self._ax, x.value)
                         for xi in x.value:
-                            getattr(self._ax, mode)(xi, **kwargs)
+                            getattr(ax, mode)(xi, **kwargs)
                         for xi_sel in x_sel:
                             kwargs['linestyle'] = '-'
                             kwargs['linewidth'] = 10.0
                             kwargs['color'] = 'yellow'
                             kwargs['alpha'] = 0.3
-                            getattr(self._ax, mode)(xi_sel, **kwargs)
+                            getattr(ax, mode)(xi_sel, **kwargs)
                     else:
-                        getattr(self._ax, mode)(x, y, **kwargs)
-                    if struct == 'cursor':
+                        getattr(ax, mode)(x, y, **kwargs)
+                    if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
-                                self._ax.transData, self._ax.transAxes)
+                                ax.transData, ax.transAxes)
                         for xi, s, z in zip(x.value, series_flat, z_flat):
-                            if xi > self._ax.get_xlim()[0] \
-                                and xi < self._ax.get_xlim()[1]:
+                            if xi > ax.get_xlim()[0] \
+                                and xi < ax.get_xlim()[1]:
                                 kwargs_text = {}
                                 kwargs_text['color'] = color
                                 kwargs_text['alpha'] = float(alpha)
@@ -575,12 +581,12 @@ class Graph(object):
                                     z += self._gui._sess_sel.spec._rfz
 
                                 if z > 1e-10:
-                                    self._ax.text(xi, 0.05, s, **kwargs_text)
+                                    ax.text(xi, 0.05, s, **kwargs_text)
                                     kwargs_text['va'] = 'top'
-                                    self._ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
+                                    ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
                                 else:
                                     kwargs_text['va'] = 'top'
-                                    self._ax.text(xi, 0.95, s, **kwargs_text)
+                                    ax.text(xi, 0.95, s, **kwargs_text)
                     if struct == 'systs':
                         self._systs_color = color
                 except:
@@ -589,8 +595,8 @@ class Graph(object):
                 pass
 
         if hasattr(sess.spec, '_stats_text_red'):
-            self._ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
-                          transform=self._ax.transAxes)
+            ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
+                          transform=ax.transAxes)
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, (s, c, a) \
@@ -601,14 +607,14 @@ class Graph(object):
                     for x in gs._x:
                         #print(x)
                         #print(**gs._kwargs)
-                        self._ax.axvline(x.to(self._xunit).value,
+                        ax.axvline(x.to(self._xunit).value,
                                          color=c, alpha=a, linewidth=1.5,
                                          **gs._kwargs)
                         gs._kwargs.pop('label', None)
                     try:
                         for x in gs._xalt:
                             #print(x)
-                            self._ax.axvline(x.to(self._xunit).value,
+                            ax.axvline(x.to(self._xunit).value,
                                              color=c, alpha=a,
                                              linewidth=0.5, **gs._kwargs)
                             gs._kwargs.pop('label', None)
@@ -616,9 +622,9 @@ class Graph(object):
                     except:
                         pass
                 elif gs._type == 'fill_between':
-                    ylim = self._ax.get_ylim()
+                    ylim = ax.get_ylim()
                     trans = transforms.blended_transform_factory(
-                                self._ax.transData, self._ax.transAxes)
+                                ax.transData, ax.transAxes)
                     if hasattr(sess.spec, '_rfz_man'):
                         reg = h2o_reg/(1+sess.spec._rfz_man)
                     else:
@@ -627,15 +633,15 @@ class Graph(object):
                     where = np.logical_and(x>reg[0][0], x<reg[0][1])\
                                 +np.logical_and(x>reg[1][0], x<reg[1][1])\
                                 +np.logical_and(x>reg[2][0], x<reg[2][1])
-                    self._ax.fill_between(gs._x.to(self._xunit).value, 0, 1,
+                    ax.fill_between(gs._x.to(self._xunit).value, 0, 1,
                                           where=where,
                                           transform=trans, color='gray', alpha=a)
-                    self._ax.set_ylim(ylim)
+                    ax.set_ylim(ylim)
 
                 elif gs._type == 'text':
                     for (x, t) in zip(gs._x, gs._y):
                         #print(x,t)
-                        self._ax.text(x.to(self._xunit).value, 0.8, t,
+                        ax.text(x.to(self._xunit).value, 0.8, t,
                                       horizontalalignment='center',
                                       transform=trans)
                         #print("here", x,t)
@@ -671,20 +677,20 @@ class Graph(object):
                         if i==1:
                             del gs._kwargs['label']
                         self._cursor_line.append(
-                            self._ax.axvline(
+                            ax.axvline(
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=2,
                                 **gs._kwargs))
                         """
                         if focus==self._gui._graph_main:
-                            self._ax.axvline(
+                            ax.axvline(
                                 x.to(self._xunit).value,
                                 color='C3', alpha=0.3, linewidth=10)
                         """
 
                     self._cursor_lines.append(self._cursor_line)
                 else:
-                    graph = getattr(self._ax, gs._type)
+                    graph = getattr(ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
                           **gs._kwargs)
                 #self._c += 1
@@ -692,10 +698,10 @@ class Graph(object):
                 pass
             if self._axt != None:
                 if self._axt_mode == 'rf':
-                    self._axt.set_xlim(np.array(self._ax.get_xlim()) \
+                    self._axt.set_xlim(np.array(ax.get_xlim()) \
                                        * (1+sess.spec._rfz))
                 if self._axt_mode == 'z':
-                    self._axt.set_xlim((np.array(self._ax.get_xlim())*self._xunit \
+                    self._axt.set_xlim((np.array(ax.get_xlim())*self._xunit \
                         / xem_d[sess._ztrans]).to(au.dimensionless_unscaled)-1)
 
         #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
@@ -706,7 +712,7 @@ class Graph(object):
                 y = sess.spec.t[c]
                 if norm and 'cont' in sess.spec._t.colnames:
                     y = y/sess.spec.t['cont']
-                self._ax.plot(sess.spec.x, y)
+                ax.plot(sess.spec.x, y)
         """
 
 
