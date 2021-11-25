@@ -378,8 +378,6 @@ class Format(object):
             q = hdul['QUALDATA'].data[row,:]
 
 
-        w = np.where(q<1) #4**7)
-        x,y,dy,q = x[w],y[w],dy[w],q[w]
 
         xmin, xmax = self._create_xmin_xmax(x)
         w = np.where(xmax-xmin > 0)
@@ -389,6 +387,13 @@ class Format(object):
         q = q[w]
         argsort = np.argsort(x)
         x,xmin,xmax,y,dy,q = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort],q[argsort]
+
+        w = np.where(q<1) #4**7)
+        x,xmin,xmax,y,dy,q = x[w],xmin[w],xmax[w],y[w],dy[w],q[w]
+
+        #ww = np.where(np.logical_and(x>6769.5,x<6769.8))
+        #print(y[ww])
+
 
         resol = []*len(x)
         xunit = au.Angstrom
