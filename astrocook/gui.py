@@ -542,8 +542,6 @@ class GUIPanelSession(wx.Frame):
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
-
-
         if _flags is not None and '-s' in _flags:
             logging.info("I'm loading session for slice 0...")
             sess = Session(gui=self._gui, path=path, name='%s_0' \
