@@ -147,7 +147,6 @@ class GUIDialog(wx.Dialog):
 
             logging.info("I completed %s in %3.3f seconds!" \
                          % (a, (end-start).total_seconds()))
-
             sel_old = self._gui._sess_list.index(self._gui._sess_sel)
 
             if out is not None:
@@ -225,6 +224,7 @@ class GUIDialogMethod(GUIDialog):
         self.Centre()
         self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
         self.Show()
+
 
     def _box_descr(self):
 
@@ -887,7 +887,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         sel = self._gui._graph_main._sel
         if not self._shown:
             sel.append(self._gui._cursor.key)
-            self._on_apply(e)
+            self._on_apply(e, refresh=False)
             self._cursor_button.SetLabel("Hide cursor")
         else:
             sel.remove(self._gui._cursor.key)

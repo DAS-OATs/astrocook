@@ -225,7 +225,6 @@ class GUI(object):
             except:
                 pass
             """
-
         if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
             self._dlg_mini_log._refresh()
         if hasattr(self, '_dlg_mini_meta') and self._dlg_mini_meta._shown:

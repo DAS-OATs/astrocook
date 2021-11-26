@@ -203,6 +203,7 @@ class GUIGraphMain(wx.Frame):
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
                               params_last = params)
         self._gui._refresh(init_cursor=True)
+
         """
         if hasattr(self._gui, '_dlg_mini_systems'):
             self._gui._dlg_mini_systems._shown = False

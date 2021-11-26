@@ -737,6 +737,7 @@ class GUIMenuView(GUIMenu):
         index = ['spec', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
 
+        #print(check)
         if check is not None:
             view = check
             item.Check(view)
