@@ -274,7 +274,6 @@ class GUIMenu(object):
             self._gui._panel_sess._open_rec = '_on_open'
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
     def _refresh(self, init_bar=False):
         # Nested loops! WOOOO!
         sess = self._gui._sess_sel
@@ -562,7 +561,7 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        
+
         self._rec = [{'targ': 'region_extract', 'append': 'spec'},
                      '--',
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
