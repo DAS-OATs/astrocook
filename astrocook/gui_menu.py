@@ -274,12 +274,18 @@ class GUIMenu(object):
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
 
-    def _refresh(self, bar=False):
+    def _refresh(self, init_bar=False):
         # Nested loops! WOOOO!
         sess = self._gui._sess_sel
         sel = self._gui._graph_main._sel
         self._togg_set()
-        if bar: self._gui._panel_sess.SetMenuBar(self.bar())
+        if init_bar:
+            self._gui._panel_sess.SetMenuBar(self.bar())
+            for k in self._key_list:
+                try:
+                    getattr(self._gui, '_tab_'+k)._on_close(None)
+                except:
+                    pass
 
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
