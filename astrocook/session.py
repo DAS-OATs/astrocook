@@ -261,7 +261,7 @@ class Session(object):
             hdr = hdul[0].header
 
         self._data_iden(hdul, hdr)
-        print(self._orig, self._catg, self._instr)
+        #print(self._orig, self._catg, self._instr)
 
         # Astrocook structures
         format = Format()

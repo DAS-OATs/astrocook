@@ -527,8 +527,10 @@ class GUIPanelSession(wx.Frame):
     def _on_open(self, path, _flags=None):
         """ Behaviour for Session > Open """
 
-        if _flags is None and self._gui._flags is not None:
+        if _flags is None or _flags==[] and self._gui._flags is not None:
             _flags = self._gui._flags
+        elif self._gui._flags is None or self._gui._flags==[] and _flags is not None:
+            self._gui._flags = _flags
 
         name = '.'.join(path.split('/')[-1].split('.')[:-1])
         logging.info("I'm loading session %s..." % path)
