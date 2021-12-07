@@ -132,7 +132,7 @@ forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
 
 x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
 y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal', 'sigma'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 
