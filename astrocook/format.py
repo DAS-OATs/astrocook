@@ -456,29 +456,47 @@ class Format(object):
         hdr = hdul[0].header
         try:
             if len(hdul)>1:
-                data = Table(hdul[1].data)
+                data_s = hdul[1].data
+                data = Table(data_s)
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
                 y_col = np.where([c in data.colnames for c in y_col_names])[0]
                 dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
                 try:
-                    x = np.ravel(data[x_col_names[x_col][0]])
-                    y = np.ravel(data[y_col_names[y_col][0]])
-                    dy = data[dy_col_names[dy_col][0]] if len(dy_col)==1 \
+                    dy_col = [dy_col[0]]
+                except:
+                    pass
+                x_name = x_col_names[x_col][0]
+                y_name = y_col_names[y_col][0]
+                dy_name = dy_col_names[dy_col][0]
+                try:
+                    x = np.ravel(data[x_name])
+                    y = np.ravel(data[y_name])
+                    dy = data[dy_name] if len(dy_col)==1 \
                         else np.full(len(y), np.nan)
                 except:
                     logging.error("I can't recognize columns.")
                     return 0
                     
             else:
+                data_s = hdul[0].data
                 data = hdul[0].data
                 x = data[0][:]
                 y = data[1][:]
                 dy = data[2][:]
-            if np.max(x)>3000:
-                x = x*0.1
+
+            # Import unit (if present)
+            try:
+                xunit = data_s.__dict__['_coldefs'][x_name]._unit
+            except:
+                xunit = au.nm
+                if np.nanmax(x)>3000:
+                    x = x*0.1
+            try:
+                yunit = data_s.__dict__['_coldefs'][y_name]._unit
+            except:
+                yunit = au.erg/au.cm**2/au.s/au.Angstrom
+
             xmin, xmax = self._create_xmin_xmax(x)
-            xunit = au.nm
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
             meta = hdr #{}
             """
             try:
@@ -487,11 +505,9 @@ class Format(object):
                 meta['object'] = ''
             """
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-
             if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
-                    if c not in [x_col_names[x_col], y_col_names[y_col],
-                                 dy_col_names[dy_col]]:
+                    if c not in [x_name, y_name, dy_name]:
                         spec._t[c] = data[c]
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec

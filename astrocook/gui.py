@@ -464,7 +464,6 @@ class GUIPanelSession(wx.Frame):
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         #print(self._gui._sess_item_list)
-
         sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
         self._gui._defs = sess.defs
@@ -493,7 +492,6 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
             self._gui._sess_sel.open()
-
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
