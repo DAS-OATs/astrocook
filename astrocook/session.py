@@ -92,6 +92,10 @@ class Session(object):
             catg = hdr['HIERARCH ESO PRO CATG']
         except:
             catg = 'undefined'
+        try:
+            telesc = hdr['TELESCOP']
+        except:
+            telesc = 'undefined'
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -131,25 +135,29 @@ class Session(object):
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
 
-        self._instr, self._catg, self._orig = instr, catg, orig
+        self._instr, self._catg, self._orig, self._telesc = instr, catg, orig, telesc
 
     def _other_open(self, hdul, hdr):
         format = Format()
 
-        instr, catg, orig = self._instr, self._catg, self._orig
+        instr, catg, orig, telesc = self._instr, self._catg, self._orig, self._telesc
 
         # ESO ADP spectrum
         if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
             self.spec = format.eso_adp(hdul)
 
         # ESO-MIDAS spectrum
-        if orig == 'ESO-MIDAS':
+        if orig == 'ESO-MIDAS' and telesc != 'ESO-NTT':
             if len(hdul) == 1:
                 #self.spec = format.eso_midas_image(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
             else:
                 #self.spec = format.eso_midas_table(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
+
+        # NTT spectra are parsed incorrectly, temp fix while Guido fixes the issue
+        if orig == 'ESO-MIDAS' and telesc == 'ESO-NTT':
+            self.spec = format.efosc2_spectrum(hdul)
 
         # ESPRESSO S1D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
