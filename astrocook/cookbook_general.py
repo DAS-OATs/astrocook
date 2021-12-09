@@ -350,9 +350,11 @@ class CookbookGeneral(object):
 
         if new_sess:
             spec_out = dc(spec)
-            #spec_out._t['x'][~mask] = np.nan #
+            #spec_out._t['x'][~mask] = np.nan
             for c in ['y', 'dy', 'cont']:
-                if c in spec_out._t.colnames: spec_out._t[c][~mask] = np.nan #
+                if c in spec_out._t.colnames:
+                    spec_out._t[c] = spec_out._t[c].astype(float)
+                    spec_out._t[c][~mask] = np.nan #
             #spec_out._t = .spec._t[mask]
             from .session import Session
             new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,
