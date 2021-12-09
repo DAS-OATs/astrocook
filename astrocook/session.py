@@ -306,7 +306,7 @@ class Session(object):
             b = data['col6']
             db = data['col7']
             self.cb.resol_est()
-            resol = [np.mean(self.spec._t['resol'])]*len(data)
+            resol = [np.argmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
             id = range(len(data))
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
