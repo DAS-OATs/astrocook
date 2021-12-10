@@ -613,9 +613,9 @@ class Format(object):
         cdelt1 = hdr['CDELT1']
         naxis1 = hdr['NAXIS1']
         data = hdul[0].data
-        y = data[:][0]*data[:][3]
+        y = data[:][0]#*data[:][3]
         #dy = data[:][1]#*data[:][3]
-        dy = data[:][2]*data[:][3]
+        dy = data[:][2]#*data[:][3]
         x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
         xmin, xmax = self._create_xmin_xmax(x)
         resol = []*len(x)
