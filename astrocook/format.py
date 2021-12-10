@@ -449,15 +449,40 @@ class Format(object):
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def _col_name(self, data, col):
+        flag = '--'+col+'col'
+        if self._gui._flags_cond(flag):
+            col_name = self._gui._flags_extr(flag)
+            if col_name in data.colnames:
+                logging.info("I am using '%s' as '%s' column." % (col_name, col))
+                return col_name
+            else:
+                logging.info("I can't find column '%s', I will use standard "
+                             "column names instead." % col_name)
+        if col == 'x': col_names = x_col_names
+        if col == 'y': col_names = y_col_names
+        if col == 'dy': col_names = dy_col_names
+        col_sel = np.where([c in data.colnames for c in col_names])[0]
+        try:
+            col_sel = [col_sel[0]]
+        except:
+            pass
+        if len(col_sel) == 1:
+            return col_names[col_sel][0]
+        else:
+            return None
 
-    def generic_spectrum(self, hdul):
+
+    def generic_spectrum(self, sess, hdul):
         """ Generic spectrum """
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
+        self._gui = sess._gui
         try:
             if len(hdul)>1:
                 data_s = hdul[1].data
                 data = Table(data_s)
+                """
                 x_col = np.where([c in data.colnames for c in x_col_names])[0]
                 y_col = np.where([c in data.colnames for c in y_col_names])[0]
                 dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
@@ -468,10 +493,14 @@ class Format(object):
                 x_name = x_col_names[x_col][0]
                 y_name = y_col_names[y_col][0]
                 dy_name = dy_col_names[dy_col][0]
+                """
+                x_name = self._col_name(data, 'x')
+                y_name = self._col_name(data, 'y')
+                dy_name = self._col_name(data, 'dy')
                 try:
                     x = np.ravel(data[x_name])
                     y = np.ravel(data[y_name])
-                    dy = data[dy_name] if len(dy_col)==1 \
+                    dy = data[dy_name] if dy_name is not None \
                         else np.full(len(y), np.nan)
                 except:
                     logging.error("I can't recognize columns.")
