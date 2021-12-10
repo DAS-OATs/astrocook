@@ -133,6 +133,10 @@ class Session(object):
 
         self._instr, self._catg, self._orig = instr, catg, orig
 
+    def _flags_cond(self, flag):
+        return self._gui._flags is not None \
+            and flag in [f[:len(flag)] for f in self._gui._flags]
+
     def _other_open(self, hdul, hdr):
         format = Format()
 
@@ -353,8 +357,9 @@ class Session(object):
         else:
             self._other_open(hdul, hdr)
 
-        if self._gui._flags is not None \
-            and '--systs' in [f[:7] for f in self._gui._flags]:
+        #if self._gui._flags is not None \
+        #    and '--systs' in [f[:7] for f in self._gui._flags]:
+        if self._flags_cond('--systs'):
             paths = [f.split('=')[-1] for f in self._gui._flags if f[:7]=='--systs']
             if len(paths)>1:
                 logging.warning("You gave me too many system lists! I will "\
@@ -370,7 +375,7 @@ class Session(object):
             b = data['col6']
             db = data['col7']
             self.cb.resol_est()
-            resol = [np.argmean(self.spec._t['resol'])]*len(data)
+            resol = [np.nanmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
             id = range(len(data))
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
