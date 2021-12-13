@@ -414,14 +414,22 @@ class Session(object):
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
                     #print([t[c].format for c in t.colnames] )
-                    ascii.write(t, name_dat, names=t.colnames,
-                                format='commented_header', overwrite=True)
-                    arch.add(name, arcname=stem+'_'+s+'.fits')
-                    arch.add(name_dat, arcname=stem+'_'+s+'.dat')
-                    os.remove(name)
-                    os.remove(name_dat)
-                    logging.info("I've saved frame %s as %s."
-                                 % (s, stem+'_'+s+'.fits'))
+                    try:
+                        ascii.write(t, name_dat, names=t.colnames,
+                                    format='commented_header', overwrite=True)
+                        arch.add(name, arcname=stem+'_'+s+'.fits')
+                        arch.add(name_dat, arcname=stem+'_'+s+'.dat')
+                        os.remove(name)
+                        os.remove(name_dat)
+                        logging.info("I've saved frame %s as %s."
+                                     % (s, stem+'_'+s+'.fits/.dat'))
+                    except:
+                        logging.warning("I cannot save structure %s in ASCII "
+                                        "format." % s)
+                        arch.add(name, arcname=stem+'_'+s+'.fits')
+                        os.remove(name)
+                        logging.info("I've saved frame %s as %s."
+                                     % (s, stem+'_'+s+'.fits'))
                 #else:
                 #    logging.warning("I haven't found any frame %s to save." % s)
 
