@@ -563,6 +563,7 @@ class GUIMenuGeneral(GUIMenu):
 
 
         self._rec = [{'targ': 'region_extract', 'append': 'spec'},
+                     {'targ': 'part_extract', 'append': 'spec'},
                      '--',
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
