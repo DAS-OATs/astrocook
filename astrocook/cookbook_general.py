@@ -363,6 +363,34 @@ class CookbookGeneral(object):
 
         return 0
 
+    def part_extract(self, zem, part='blue'):
+        """ @brief Extract blue or red part
+        @details Extract blue or red part, based on the emission redshift.
+
+        The recipe computes the observed wavelength of the Lyman alpha emission
+        line as $$(1+$$`zwm`$$)\times 121.567\textrm{ nm}$$ and extracts the
+        region bluewards or redwards of this wavelength into a new session,
+        based on the value of `part`.
+
+        @param zem Emission redshift
+        @param part Either `blue` or `red`
+        """
+
+        try:
+            zem = float(zem)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        if part not in ['blue', 'red']:
+            logging.error(msg_param_fail)
+            return None
+
+        if part == 'blue':
+            return self.region_extract(0, (1+zem)*121.567)
+        else:
+            return self.region_extract((1+zem)*121.567, np.infty)
+
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
               norm=True, filling=np.nan):

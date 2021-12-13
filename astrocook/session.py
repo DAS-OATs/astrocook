@@ -128,10 +128,6 @@ class Session(object):
 
         self._instr, self._catg, self._orig = instr, catg, orig
 
-    def _flags_cond(self, flag):
-        return self._gui._flags is not None \
-            and flag in [f[:len(flag)] for f in self._gui._flags]
-
     def _other_open(self, hdul, hdr):
         format = Format()
 
@@ -145,10 +141,10 @@ class Session(object):
         if orig == 'ESO-MIDAS':
             if len(hdul) == 1:
                 #self.spec = format.eso_midas_image(hdul)
-                self.spec = format.generic_spectrum(hdul)
+                self.spec = format.generic_spectrum(self, hdul)
             else:
                 #self.spec = format.eso_midas_table(hdul)
-                self.spec = format.generic_spectrum(hdul)
+                self.spec = format.generic_spectrum(self, hdul)
 
         # ESPRESSO S1D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
@@ -237,7 +233,7 @@ class Session(object):
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
             else:
-                self.spec = format.generic_spectrum(hdul)
+                self.spec = format.generic_spectrum(self, hdul)
 
 
     def open(self):
@@ -295,12 +291,13 @@ class Session(object):
 
         #if self._gui._flags is not None \
         #    and '--systs' in [f[:7] for f in self._gui._flags]:
-        if self._flags_cond('--systs'):
-            paths = [f.split('=')[-1] for f in self._gui._flags if f[:7]=='--systs']
-            if len(paths)>1:
-                logging.warning("You gave me too many system lists! I will "\
-                                "load the first one.")
-            data = ascii.read(paths[0])
+        if self._gui._flags_cond('--systs'):
+            #paths = [f.split('=')[-1] for f in self._gui._flags if f[:7]=='--systs']
+            #if len(paths)>1:
+            #    logging.warning("You gave me too many system lists! I will "\
+            #                    "load the first one.")
+            path = self._gui._flags_extr('--systs')
+            data = ascii.read(path)
             # Only Ly_a for now
             series = ['Ly_a']*len(data)
             func = ['voigt']*len(data)
@@ -417,14 +414,22 @@ class Session(object):
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
                     #print([t[c].format for c in t.colnames] )
-                    ascii.write(t, name_dat, names=t.colnames,
-                                format='commented_header', overwrite=True)
-                    arch.add(name, arcname=stem+'_'+s+'.fits')
-                    arch.add(name_dat, arcname=stem+'_'+s+'.dat')
-                    os.remove(name)
-                    os.remove(name_dat)
-                    logging.info("I've saved frame %s as %s."
-                                 % (s, stem+'_'+s+'.fits'))
+                    try:
+                        ascii.write(t, name_dat, names=t.colnames,
+                                    format='commented_header', overwrite=True)
+                        arch.add(name, arcname=stem+'_'+s+'.fits')
+                        arch.add(name_dat, arcname=stem+'_'+s+'.dat')
+                        os.remove(name)
+                        os.remove(name_dat)
+                        logging.info("I've saved frame %s as %s."
+                                     % (s, stem+'_'+s+'.fits/.dat'))
+                    except:
+                        logging.warning("I cannot save structure %s in ASCII "
+                                        "format." % s)
+                        arch.add(name, arcname=stem+'_'+s+'.fits')
+                        os.remove(name)
+                        logging.info("I've saved frame %s as %s."
+                                     % (s, stem+'_'+s+'.fits'))
                 #else:
                 #    logging.warning("I haven't found any frame %s to save." % s)
 

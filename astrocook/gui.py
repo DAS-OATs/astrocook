@@ -76,6 +76,18 @@ class GUI(object):
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
 
+    def _flags_cond(self, flag):
+        return self._flags is not None \
+            and flag in [f[:len(flag)] for f in self._flags]
+
+    def _flags_extr(self, flag):
+        extr = [f.split('=')[-1] for f in self._flags if f[:len(flag)]==flag]
+        if len(extr)>1:
+            logging.warning("You gave me too many %s flags! I will consider "\
+                            "only the first one." % flag)
+        return extr[0]
+
+
     def _log_rerun(self, log):
         i = self._sess_list.index(self._sess_sel)
         self._panel_sess._tab.DeleteItem(i)
