@@ -413,7 +413,7 @@ class GUIMenuContinuum(GUIMenu):
                      {'targ': 'lines_update', 'append': 'z0'},
                      '> Other',
                      {'targ': 'peaks_find', 'append': 'spec'},
-                     {'targ': 'nodes_extract', 'append': 'lines'},
+                     {'targ': 'nodes_extract', 'append': 'cont'},
                      {'targ': 'nodes_clean', 'append': 'lines'},
                      {'targ': 'nodes_interp', 'append': 'nodes'},
                      '<',
