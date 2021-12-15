@@ -2133,6 +2133,7 @@ class CookbookAbsorbers(object):
         z_likes = self._z_likes
         series_split = series.split(';')
         k_list = []
+        id_list = []
         for i, s in enumerate(series_split):
             #print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
