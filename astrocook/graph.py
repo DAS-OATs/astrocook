@@ -466,10 +466,10 @@ class Graph(object):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
-                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                print(ax, sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                print(ax._axes)
                 sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
-                xunit = sess.spec.x.unit
                 if struct == 'systs': self._systs_id = True
                 if struct in ['spec','lines','nodes','systs']:
                     t = getattr(sess, struct).t
@@ -598,6 +598,7 @@ class Graph(object):
                         self._systs_color = color
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
+
             except:
                 pass
 

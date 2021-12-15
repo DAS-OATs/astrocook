@@ -470,6 +470,8 @@ class Session(object):
                         #print(i,j,xran[i], xran[i+1],ymin, ymax)
                         ax.set_xlim(xran[i], xran[i+1])
                         ax.set_ylim(ymin, ymax)
+                        print(ax)
+                        print(ax._axes)
                         graph._seq_core(self, main._norm, True, False, main, ax,
                                         cursor_list=['systs', 'cursor'])
                         if (i+1)%panel_n == 0:
