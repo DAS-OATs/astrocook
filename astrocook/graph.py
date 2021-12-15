@@ -564,9 +564,9 @@ class Graph(object):
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
-                        getattr(self._ax, mode)(x, y, **kwargs)
+                        getattr(ax, mode)(x, y, **kwargs)
 
-                    if struct == 'cursor':
+                    if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
                                 ax.transData, ax.transAxes)
                         for xi, s, z in zip(x.value, series_flat, z_flat):
