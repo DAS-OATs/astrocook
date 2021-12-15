@@ -466,10 +466,10 @@ class Graph(object):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
-                print(ax, sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
-                print(ax._axes)
+                #print(ax, sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 sess = self._gui._sess_list[int(sel)]
                 #sess = self._gui._sess_sel
+                xunit = sess.spec.x.unit
                 if struct == 'systs': self._systs_id = True
                 if struct in ['spec','lines','nodes','systs']:
                     t = getattr(sess, struct).t
@@ -565,9 +565,9 @@ class Graph(object):
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
-                        getattr(self._ax, mode)(x, y, **kwargs)
+                        getattr(ax, mode)(x, y, **kwargs)
 
-                    if struct == 'cursor':
+                    if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
                                 ax.transData, ax.transAxes)
                         for xi, s, z in zip(x.value, series_flat, z_flat):
@@ -590,7 +590,7 @@ class Graph(object):
                                 if z > 1e-10:
                                     ax.text(xi, 0.05, s, **kwargs_text)
                                     kwargs_text['va'] = 'top'
-                                    ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
+                                    ax.text(xi, 0.95, "%3.5f" % z, **kwargs_text)
                                 else:
                                     kwargs_text['va'] = 'top'
                                     ax.text(xi, 0.95, s, **kwargs_text)

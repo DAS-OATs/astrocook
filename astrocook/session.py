@@ -455,8 +455,12 @@ class Session(object):
             for j, p in enum_tqdm(range(page_n), page_n-1,
                                   "session: Saving spectrum into PDF"):
                 fig, axs = plt.subplots(panel_n,1, figsize=(11.69,8.27))
+                fig.suptitle(self.name, size=18)
                 for ax in axs:
                     try:
+                        if (i+1)%panel_n == 0:
+                            ax.text(0.48,-0.5, j+1, size=13, transform=ax.transAxes)
+
                         sel = np.where(np.logical_and(x>xran[i], x<xran[i+1]))
                         #ymin = np.floor(np.nanmin(y[sel]))
                         if main._norm:
@@ -470,8 +474,6 @@ class Session(object):
                         #print(i,j,xran[i], xran[i+1],ymin, ymax)
                         ax.set_xlim(xran[i], xran[i+1])
                         ax.set_ylim(ymin, ymax)
-                        print(ax)
-                        print(ax._axes)
                         graph._seq_core(self, main._norm, True, False, main, ax,
                                         cursor_list=['systs', 'cursor'])
                         if (i+1)%panel_n == 0:
@@ -480,9 +482,11 @@ class Session(object):
                             ax.set_ylabel("Normalized flux")
                         else:
                             ax.set_ylabel(self.spec.y.unit)
-                        i += 1
                     except:
-                        pass
+                        ax.set_frame_on(False)
+                        ax.axes.get_xaxis().set_visible(False)
+                        ax.axes.get_yaxis().set_visible(False)
+                    i += 1
 
             #plt.show()
                 pdf.savefig()  # saves the current figure into a pdf page
