@@ -204,7 +204,6 @@ class SystModel(LMComposite):
     def _make_group2(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
-
         spec = self._spec
 
         mods_t = self._mods_t
@@ -226,7 +225,7 @@ class SystModel(LMComposite):
             pars_cond = False
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
-                    pars_cond = pars_cond or v==mod_p
+                    pars_cond = pars_cond or v.split('*')[0]==mod_p
             if y_cond or pars_cond:
                 #print('mod')
                 #mod._pars.pretty_print()

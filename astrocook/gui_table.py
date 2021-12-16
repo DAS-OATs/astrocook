@@ -621,6 +621,7 @@ class GUITableSystList(GUITable):
                     v = "%.3f" % (float(self._tab.GetCellValue(self._cells_sel[ref][0],
                                                          self._cells_sel[ref][1])) \
                                         * np.sqrt(mass_r/mass))
+
                     self._tab.SetCellValue(r, c, v)
                     self._links_d[parn] = (id, 'expr',
                         val+'*%.14f' % (np.sqrt(mass_r/mass)))
