@@ -556,12 +556,13 @@ class Graph(object):
                         #print(self._ax, x.value)
                         for xi in x.value:
                             getattr(ax, mode)(xi, **kwargs)
-                        for xi_sel in x_sel:
-                            kwargs['linestyle'] = '-'
-                            kwargs['linewidth'] = 10.0
-                            kwargs['color'] = 'yellow'
-                            kwargs['alpha'] = 0.3
-                            getattr(ax, mode)(xi_sel, **kwargs)
+                        if focus == self._gui._graph_main:
+                            for xi_sel in x_sel:
+                                kwargs['linestyle'] = '-'
+                                kwargs['linewidth'] = 10.0
+                                kwargs['color'] = 'yellow'
+                                kwargs['alpha'] = 0.3
+                                getattr(ax, mode)(xi_sel, **kwargs)
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
