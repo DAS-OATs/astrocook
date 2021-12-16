@@ -338,7 +338,6 @@ class SystModel(LMComposite):
         #print(mods_t['id'])
 
 
-
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
