@@ -517,7 +517,8 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
-            self._gui._sess_sel.open()
+            success = self._gui._sess_sel.open()
+
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
         self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
@@ -556,7 +557,12 @@ class GUIPanelSession(wx.Frame):
             self._gui._flags = _flags
 
         name = '.'.join(path.split('/')[-1].split('.')[:-1])
-        logging.info("I'm loading session %s..." % path)
+
+        if not os.path.exists(path):
+            logging.warning("File %s doesn't exist. I'm ignoring it." % path)
+            return 0
+
+        logging.info("I'm loading file %s into a new session..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         sess.log.append_full('_panel_sess', '_on_open',
