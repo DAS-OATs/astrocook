@@ -468,11 +468,12 @@ class GUIPanelSession(wx.Frame):
         self._tab.InsertColumn(5, "# lines", width=100)
         self._tab.InsertColumn(6, "# systems", width=100)
         """
-        self._tab.InsertColumn(0, "name", width=350)
-        self._tab.InsertColumn(1, "active range", width=200)
-        self._tab.InsertColumn(2, "# rows", width=100)
-        self._tab.InsertColumn(3, "# lines", width=100)
-        self._tab.InsertColumn(4, "# systems", width=100)
+        self._tab.InsertColumn(0, "name", width=330)
+        self._tab.InsertColumn(1, "id", width=30)
+        self._tab.InsertColumn(2, "active range", width=200)
+        self._tab.InsertColumn(3, "# rows", width=100)
+        self._tab.InsertColumn(4, "# lines", width=100)
+        self._tab.InsertColumn(5, "# systems", width=100)
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
@@ -502,8 +503,8 @@ class GUIPanelSession(wx.Frame):
         self._sel = missing[0]
         #print(self._sel)
         self._items = [self._sel]
-        self._tab._insert_string_item(self._sel, "%s (%s)"
-                                     % (sess.name, str(self._sel)))
+        self._tab._insert_string_item(self._sel, "%s" % sess.name)
+        self._tab.SetItem(self._tab.GetItemCount()-1, 1, "%s" % str(self._sel))
         self._gui._sess_list.append(sess)
         self._gui._sess_item_list.append(self._sel)
 
@@ -719,17 +720,17 @@ class GUIPanelSession(wx.Frame):
                 pass
             """
             x = s.spec._safe(s.spec.x)
-            self._tab.SetItem(i, 1, "[%3.2f, %3.2f] %s"
+            self._tab.SetItem(i, 2, "[%3.2f, %3.2f] %s"
                               % (x[0].value, x[-1].value, x.unit))
-            self._tab.SetItem(i, 2, str(len(x)))
+            self._tab.SetItem(i, 3, str(len(x)))
             try:
                 x = s.lines._safe(s.lines.x)
-                self._tab.SetItem(i, 3, str(len(x)))
+                self._tab.SetItem(i, 4, str(len(x)))
             except:
                 pass
             try:
                 x = s.systs.z
-                self._tab.SetItem(i, 4, str(len(x)))
+                self._tab.SetItem(i, 5, str(len(x)))
             except:
                 pass
 
