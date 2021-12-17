@@ -484,6 +484,7 @@ class Graph(object):
                         x[t[mcol]==0] = np.nan
                     if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
+                #if detail: print(struct, xcol, x[0])
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
@@ -606,6 +607,7 @@ class Graph(object):
         if hasattr(sess.spec, '_stats_text_red'):
             ax.text(0.98, 0.95, sess.spec._stats_text_red, va='top', ha='right',
                           transform=ax.transAxes)
+
         self._check_units(sess, 'x')
         self._check_units(sess, 'y')
         for z, (s, c, a) \

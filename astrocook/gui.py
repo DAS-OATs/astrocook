@@ -215,14 +215,24 @@ class GUI(object):
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._graph_main._elem = self._sess_sel._graph_elem
+            if hasattr(self, '_graph_det') \
+                and hasattr(self._graph_det, '_elem'):
+                self._graph_det._elem = self._sess_sel._graph_elem
             self._graph_main._lim = self._sess_sel._graph_lim
             self._dlg_mini_graph._refresh()
         else:
             if hasattr(self._sess_sel, '_graph_elem'):
                 self._graph_main._elem = self._sess_sel._graph_elem
+                if hasattr(self, '_graph_det') \
+                    and hasattr(self._graph_det, '_elem'):
+                    self._graph_det._elem = self._sess_sel._graph_elem
             else:
                 self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+                if hasattr(self, '_graph_det') \
+                    and hasattr(self._graph_det, '_elem'):
+                    self._graph_det._elem = elem_expand(graph_elem,
+                        self._panel_sess._sel)
             if hasattr(self._sess_sel, '_graph_lim'):
                 self._graph_main._lim = self._sess_sel._graph_lim
             else:
@@ -303,7 +313,10 @@ class GUI(object):
                     for key in graph._zems:
                         xunit = self._sess_sel.spec.x.unit
                         #print('before', xunit)
+                        #print(self._sess_sel)
+                        #print('before', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         self._sess_sel.cb.x_convert(zem=graph._zems[key])
+                        #print('mid   ', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         graph._ax = graph._axes[key]
                         xlim_det = graph._ax.get_xlim()
                         ylim_det = graph._ax.get_ylim()
@@ -316,6 +329,7 @@ class GUI(object):
                                                      init_cursor=init_cursor)
                         init_cursor = False
                         self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+                        #print('after ', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         #print('after', xunit)
                 else:
                     xlim_det = graph._ax.get_xlim()
