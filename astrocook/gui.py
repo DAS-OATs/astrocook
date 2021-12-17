@@ -672,8 +672,19 @@ class GUIPanelSession(wx.Frame):
     def _on_right_click(self, event):
         from .gui_table import GUITablePopup
         self.PopupMenu(GUITablePopup(self._gui, self, event,
-                                     ['Re-run', 'Save'],
-                                     ['rerun', 'save']))
+                                     ['Re-run', 'Save', 'Close'],
+                                     ['rerun', 'save', 'close_sess']))
+
+    def _on_close_sess(self, event):
+        self._gui._menu_file._on_save(event)
+        i = self._gui._sess_list.index(self._gui._sess_sel)
+        self._gui._panel_sess._tab.DeleteItem(i)
+        del self._gui._sess_list[i]
+        del self._gui._sess_item_list[i]
+        self._gui._sess_sel = self._gui._sess_list[0]
+        self._items = [0]
+        self._gui._sess_items = [self._gui._sess_list[0]]
+        self._gui._refresh()
 
 
     def _on_save(self, event):
