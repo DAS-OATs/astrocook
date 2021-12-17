@@ -531,7 +531,7 @@ class GUIMenuFlux(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=5000,
+                 start_id=5100,
                  **kwargs):
         super(GUIMenuFlux, self).__init__(gui)
         self._gui = gui
