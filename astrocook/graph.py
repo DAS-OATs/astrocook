@@ -466,8 +466,9 @@ class Graph(object):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
-                #print(ax, sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
-                sess = self._gui._sess_list[int(sel)]
+                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
+                sessw = self._gui._sess_item_list.index(int(sel))
+                sess = self._gui._sess_list[sessw]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 if struct == 'systs': self._systs_id = True
