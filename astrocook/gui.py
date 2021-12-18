@@ -629,6 +629,7 @@ class GUIPanelSession(wx.Frame):
         item = self._tab.GetFirstSelected()
 
         # Selection via JSON
+
         if item == -1:
             self._gui._refresh()
 
@@ -641,7 +642,7 @@ class GUIPanelSession(wx.Frame):
                 self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
             if self._gui._sess_item_sel != []:
                 self._gui._refresh()
-
+        
 
     def _on_close(self, event):
         logging.info("Bye!")
@@ -661,7 +662,7 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = []
-        self._entry_select()
+        #self._entry_select()
 
 
     def _on_rerun(self, event):
