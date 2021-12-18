@@ -469,6 +469,11 @@ class Graph(object):
                 sess = self._gui._sess_list[sessw]
                 #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
+                if mcol != 'None':
+                    label = '%s, %s (%s)' % (struct, ycol, mcol)
+                else:
+                    label = '%s, %s' % (struct, ycol)
+
                 if struct == 'systs': self._systs_id = True
                 if struct in ['spec','lines','nodes','systs']:
                     t = getattr(sess, struct).t
@@ -555,18 +560,25 @@ class Graph(object):
                     if mode == 'axvline':
                         #print(self._ax, x.value)
                         for xi in x.value:
-                            getattr(ax, mode)(xi, **kwargs)
+                            if xi==x[0].value:
+                                getattr(ax, mode)(xi, label='systs', **kwargs)
+                            else:
+                                getattr(ax, mode)(xi, **kwargs)
                         if focus == self._gui._graph_main:
                             for xi_sel in x_sel:
                                 kwargs['linestyle'] = '-'
                                 kwargs['linewidth'] = 10.0
                                 kwargs['color'] = 'yellow'
                                 kwargs['alpha'] = 0.3
-                                getattr(ax, mode)(xi_sel, **kwargs)
+                                if xi_sel==x_sel[0]:
+                                    getattr(ax, mode)(xi_sel,
+                                        label='systs (selected)', **kwargs)
+                                else:
+                                    getattr(ax, mode)(xi_sel, **kwargs)
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
-                        getattr(ax, mode)(x, y, **kwargs)
+                        getattr(ax, mode)(x, y, label=label, **kwargs)
 
                     if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
