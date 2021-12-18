@@ -10,6 +10,7 @@ from .message import *
 from astropy import table as at
 from collections import OrderedDict
 from copy import deepcopy as dc
+import datetime as dt
 import json
 import logging
 from matplotlib import pyplot as plt
@@ -151,7 +152,15 @@ class GUI(object):
                 if r['recipe']=='_data_init' and getattr(self, tab)._shown:
                     skip = True
             """
-            if not skip: out = getattr(cb, r['recipe'])(**r['params'])
+            if not skip:
+                if r['recipe'][0] != '_':
+                    logging.info("I'm launching %s..." % r['recipe'])
+                start = dt.datetime.now()
+                out = getattr(cb, r['recipe'])(**r['params'])
+                end = dt.datetime.now()
+                if r['recipe'][0] != '_':
+                    logging.info("I completed %s in %3.3f seconds!" \
+                                 % (r['recipe'], (end-start).total_seconds()))
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
