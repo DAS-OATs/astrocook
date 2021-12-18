@@ -247,6 +247,7 @@ class GUI(object):
             except:
                 pass
             """
+
         if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
             self._dlg_mini_log._refresh()
         if hasattr(self, '_dlg_mini_meta') and self._dlg_mini_meta._shown:
@@ -629,6 +630,7 @@ class GUIPanelSession(wx.Frame):
         item = self._tab.GetFirstSelected()
 
         # Selection via JSON
+
         if item == -1:
             self._gui._refresh()
 
@@ -661,7 +663,7 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = []
-        self._entry_select()
+        #self._entry_select()
 
 
     def _on_rerun(self, event):
