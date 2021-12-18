@@ -247,6 +247,7 @@ class GUI(object):
             except:
                 pass
             """
+
         if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
             self._dlg_mini_log._refresh()
         if hasattr(self, '_dlg_mini_meta') and self._dlg_mini_meta._shown:
@@ -642,7 +643,7 @@ class GUIPanelSession(wx.Frame):
                 self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
             if self._gui._sess_item_sel != []:
                 self._gui._refresh()
-        
+
 
     def _on_close(self, event):
         logging.info("Bye!")
