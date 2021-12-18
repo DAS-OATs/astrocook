@@ -34,8 +34,12 @@ class GUIGraphMain(wx.Frame):
         self._size_y = size_y
         self._sel = graph_sel
         self._cols_sel = graph_cols_sel
-        sel = len(self._gui._sess_list)
-        if sel>0: sel -= 1
+        #sel = len(self._gui._sess_list)
+        #if sel>0: sel -= 1
+        try:
+            sel = self._gui._sess_list.index(self._gui._sess_sel)
+        except:
+            sel = 0
         self._elem = elem_expand(graph_elem, sel)
         self._lim = graph_lim_def
         self._logx = False
@@ -234,8 +238,10 @@ class GUIGraphDetail(GUIGraphMain):
         #self._gui._sess_sel._graph_det = self
         self._graph._legend = False
         self._graph._cursor_lines = []
-        sel = len(self._gui._sess_list)
-        if sel>0: sel -= 1
+        try:
+            sel = self._gui._sess_list.index(self._gui._sess_sel)
+        except:
+            sel = 0
         self._elem = elem_expand(graph_elem, sel)
         #self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
