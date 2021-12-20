@@ -822,6 +822,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._z = z
         self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
 
     def _box_ctrl(self):
@@ -901,7 +902,6 @@ class GUIDialogMiniSystems(GUIDialogMini):
             self._cursor_button.SetLabel("Show cursor")
         self._shown = not self._shown
 
-
     def _on_stick(self, e):
         self._gui._graph_main._on_cursor_stick(e)
 
@@ -916,6 +916,10 @@ class GUIDialogMiniSystems(GUIDialogMini):
             del self._gui._sess_sel._series_sel
         if hasattr(self._gui._sess_sel, '_hwin_sel'):
             del self._gui._sess_sel._hwin_sel
+        print(self._menu.FindItemById(self._dlg_id[4]).IsChecked())
+        self._menu.FindItemById(self._dlg_id[4]).Check(False)
+        print(self._menu.FindItemById(self._dlg_id[4]).IsChecked())
+        self.Destroy()
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 

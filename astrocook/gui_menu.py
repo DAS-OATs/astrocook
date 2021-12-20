@@ -41,7 +41,7 @@ class GUIMenu(object):
                 getattr(sys.modules[__name__], 'GUIMenu%s' % t)(self._gui))
             bar.Append(getattr(self, a)._menu, t)
         self._key_list = ['spec', 'lines', 'systs', 'meta', 'defs', 'log',
-                          'graph','legend', 'norm']
+                          'graph', 'legend', 'norm']
 
         return bar
 
@@ -213,7 +213,10 @@ class GUIMenu(object):
             sess.log.append_full('_menu', '_on_dialog_mini_graph',
                                  {'event': None, 'title': title, 'targ': targ})
         if hasattr(self._gui, '_dlg_mini_graph'):
-            self._gui._dlg_mini_graph._refresh()
+            try:
+                self._gui._dlg_mini_graph._refresh()
+            except:
+                dlg = GUIDialogMiniGraph(self._gui, title)
         else:
             dlg = GUIDialogMiniGraph(self._gui, title)
 
@@ -690,7 +693,7 @@ class GUIMenuView(GUIMenu):
                       'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
                      {'type': '_item', 'title': "Graph elements",
                       'event': lambda e: self._on_dlg_mini(e, 'graph'),
-                      'append': 'spec', 'dlg_mini': 'graph'},
+                      'key': 'graph', 'append': 'spec', 'dlg_mini': 'graph'},
                      {'type': '_item_graph', 'title': "Redshift cursor",
                       'key': 'cursor_z_series', 'append': 'spec',
                       'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
@@ -781,10 +784,11 @@ class GUIMenuView(GUIMenu):
             view = item.IsChecked()
 
         sess = self._gui._sess_sel
-        print(view)
         if view:
             getattr(self, '_on_dialog_mini_'+obj)(event, title, None)
+            setattr(getattr(self._gui, '_dlg_mini_'+obj), '_shown', True)
         else:
+            setattr(getattr(self._gui, '_dlg_mini_'+obj), '_shown', False)
             getattr(self._gui, '_dlg_mini_'+obj)._on_cancel(event)
 
 
