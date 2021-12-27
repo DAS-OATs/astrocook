@@ -4,14 +4,15 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
-import scipy.ndimage.filters as filters
-import scipy.ndimage.morphology as morphology
-from scipy.special import wofz
-#from lmfit.lineshapes import gaussian as gauss
+import json
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+import scipy.ndimage.filters as filters
+import scipy.ndimage.morphology as morphology
+from scipy.special import wofz
+#from lmfit.lineshapes import gaussian as gauss
 
 prefix = 'functions'
 
@@ -457,3 +458,46 @@ def get_selected_cells(grid):
         return [GridCellCoords(row, col)]
 
     return [GridCellCoords(row, col)]+selection
+
+
+def str_to_dict(str):
+    return json.loads(str)
+
+def class_find(obj, cl, up=[]):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                print(up, i, 'caught!')
+            else:
+                class_find(obj.__dict__[i], cl, up+[i])
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                print(up, i, 'caught!')
+
+def class_mute(obj, cl):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                obj.__dict__[i] = ''
+            else:
+                class_mute(obj.__dict__[i], cl)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                obj[i] = ''
+
+def class_unmute(obj, cl, targ):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                obj.__dict__[i] = targ
+            else:
+                class_mute(obj.__dict__[i], cl)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                obj[i] = targ

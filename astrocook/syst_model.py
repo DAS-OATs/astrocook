@@ -51,7 +51,7 @@ class SystModel(LMComposite):
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
-            fit_kws['ftol'] = 1e-3
+            print(fit_kws)
             #print('out', len(self._xf), self._xf)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
@@ -491,9 +491,9 @@ class SystModel(LMComposite):
         #self._make_psf()
         #self._make_comp()
         self._make_comp2()
-
         #print('d', time.time()-tt)
         #tt = time.time()
+
         ys = dc(self._ys)
         #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
         self._xr, self._yr, self._wr = self._make_regions(self, self._xs)

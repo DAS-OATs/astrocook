@@ -2,7 +2,7 @@ from . import version
 from .cookbook import Cookbook
 from .defaults import Defaults
 from .format import Format
-from .functions import detect_local_minima
+from .functions import class_mute, class_unmute, detect_local_minima
 from .gui_log import GUILog
 from .line_list import LineList
 from .message import *
@@ -18,12 +18,15 @@ from astropy.io import ascii, fits
 from astropy.table import Column, Table
 from collections import OrderedDict
 from copy import deepcopy as dc
+import json
 import logging
+from lmfit.model import load_model, save_model
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 import numpy as np
 import os
+import pickle
 from scipy.signal import argrelmin
 import tarfile
 import time
@@ -264,6 +267,7 @@ class Session(object):
 
         # Astrocook structures
         format = Format()
+        only_constr = False
         if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
             for s in self.seq:
                 try:
@@ -278,8 +282,30 @@ class Session(object):
                         #os.remove(self.path[:-4]+'_'+s+'.dat')
                     except:
                         pass
+                if s == 'systs':
+                    try:
+                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
+                    except:
+                        data = None
+
+                    if data is not None:
+                        systs = getattr(self, 'systs')
+                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
+                        setattr(systs, '_mods_t', data)
+                        systs._mods_t['mod'] = None
+                        print(systs._mods_t)
+                        for m in systs._mods_t:
+                            print(self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0'])
+                            mod = load_model(self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0'])
+                            class_unmute(mod, Spectrum, self.spec)
+                            print(mod.__dict__)
+                            m['mod'] = mod
+                        print(systs._mods_t)
+                        only_constr = True
+
+                    print(getattr(self, s)._mods_t)
             if self.spec is not None and self.systs is not None:
-                self.cb._mods_recreate()
+                self.cb._mods_recreate(only_constr=only_constr)
                 self.cb._spec_update()
             try:
                 os.remove(self.path[:-4]+'.json')
@@ -348,6 +374,15 @@ class Session(object):
                     name_dat = root+'_'+s+'.dat'
                     obj = dc(getattr(self, s))
                     t = dc(obj._t)
+                    if s == 'systs':
+                        name_mods_dat = root+'_'+s+'_mods.dat'
+                        mods_t = dc(obj._mods_t['z0', 'chi2r', 'id'])
+                        ids = []
+                        for id in obj._mods_t['id']:
+                            id_list = [int(i) for i in id]
+                            ids.append(json.dumps(id_list))
+                        mods_t['id'] = ids
+
 
                     for c in t.colnames:
                         if type(t[c][0]) == np.int64:
@@ -414,8 +449,36 @@ class Session(object):
                     #print([t[c].format for c in t.colnames] )
                     ascii.write(t, name_dat, names=t.colnames,
                                 format='commented_header', overwrite=True)
+                    if s == 'systs':
+                        ascii.write(mods_t, name_mods_dat,
+                                    names=['z0', 'chi2r', 'id'],
+                                    format='commented_header', overwrite=True)
+                        arch.add(name_mods_dat, arcname=stem+'_'+s+'_mods.dat')
+                        os.remove(name_mods_dat)
+                        for z, m in obj._mods_t['z0', 'mod']:
+                            #find_class(m, Spectrum)
+                            class_mute(m, Spectrum)
+                            print(m.__dict__)
+                            """
+                            m._spec = ''
+                            m.opts['spec'] = ''
+                            m._group.opts['spec'] = ''
+                            m._group.left.opts['spec'] = ''
+                            m._group.left.right.opts['spec'] = ''
+                            m._lines.opts['spec'] = ''
+                            m._lines.right.opts['spec'] = ''
+                            """
+                            name_mod_dat = '%s_%.8f.dat' % (name_mods_dat[:-4], z)
+                            with open(name_mod_dat, 'wb') as f:
+                                pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
+                            #save_model(m, name_mod_dat)
+                            arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%.8f.dat' % z)
+                            os.remove(name_mod_dat)
+
+
                     arch.add(name, arcname=stem+'_'+s+'.fits')
                     arch.add(name_dat, arcname=stem+'_'+s+'.dat')
+
                     os.remove(name)
                     os.remove(name_dat)
                     logging.info("I've saved frame %s as %s."
