@@ -269,6 +269,7 @@ class Session(object):
         # Astrocook structures
         format = Format()
         only_constr = False
+        fast = False
         if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
             for s in self.seq:
                 try:
@@ -292,6 +293,7 @@ class Session(object):
                     if data is not None:
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
+                        os.remove(self.path[:-4]+'_'+s+'_mods.dat')
                         #print(data.info)
                         #data['id'] = object
                         #for i,id in enumerate(data['id']):
@@ -313,17 +315,21 @@ class Session(object):
                                     'lines_voigt': lines_voigt,
                                     'psf_gauss': psf_gauss,
                                     'zero': zero}
-                        for m in systs._mods_t:
-                            name_mod_dat = self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0']
+                        for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
+                                             "session: Opening models"):
+                        #for m in systs._mods_t:
+                            name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
                             with open(name_mod_dat, 'rb') as f:
                                 mod = pickle.load(f)
                             for attr in ['_lines', '_group', 'left', 'right']:
                                 name_attr_dat = self.path[:-4]+'_'+s\
-                                    +'_mods_%.8f%s.dat' % (m['z0'], attr)
+                                    +'_mods_%i_%s.dat' % (m['id'][0], attr)
                                 setattr(mod, attr, load_model(name_attr_dat,
                                         funcdefs=funcdefs))
+                                os.remove(name_attr_dat)
                             class_unmute(mod, Spectrum, self.spec)
                             m['mod'] = mod
+                            os.remove(name_mod_dat)
 
 
                         for m in systs._mods_t['mod']:
@@ -334,9 +340,10 @@ class Session(object):
                             #print(m.func)
 
                         only_constr = True
+                        fast = True
 
             if self.spec is not None and self.systs is not None:
-                self.cb._mods_recreate(only_constr=only_constr)
+                self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
             try:
                 os.remove(self.path[:-4]+'.json')
@@ -490,7 +497,11 @@ class Session(object):
                         #name_mods_db = '%s.db' % (name_mods_dat[:-4])
                         #db = shelve.open(name_mods_db)
 
-                        for z, m in obj._mods_t['z0', 'mod']:
+                        for i, r in enum_tqdm(obj._mods_t, len(obj._mods_t),
+                                                "session: Saving models"):
+                            id = r['id']
+                            m = r['mod']
+                        #for id, m in obj._mods_t['id', 'mod']:
                             #find_class(m, Spectrum)
                             class_mute(m, Spectrum)
                             #print(m.func, m.left)
@@ -511,9 +522,9 @@ class Session(object):
                                 setattr(mn, attr, getattr(m, attr))
                             """
                             for attr in ['_lines', '_group', 'left', 'right']:
-                                name_attr_dat = '%s_%.8f%s.dat' % (name_mods_dat[:-4], z, attr)
+                                name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
                                 save_model(getattr(m, attr), name_attr_dat)
-                                arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%.8f%s.dat' % (z, attr))
+                                arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%i_%s.dat' % (id[0], attr))
                                 os.remove(name_attr_dat)
 
                             for attr in ['_mods_t']:
@@ -533,15 +544,15 @@ class Session(object):
                             m._lines.opts['spec'] = ''
                             m._lines.right.opts['spec'] = ''
                             """
-                            name_mod_dat = '%s_%.8f.dat' % (name_mods_dat[:-4], z)
+                            name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
                             #save_model(m, name_mod_dat)
                             with open(name_mod_dat, 'wb') as f:
                                 #for a in m.__dict__:
                                 pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
 
                             #db['mod'] = mn
-                            #arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%.8f.dat' % z)
-                            #os.remove(name_mod_dat)
+                            arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
+                            os.remove(name_mod_dat)
                         #arch.add(name_mods_db, arcname=stem+'_'+s+'_mods.db')
                         #os.remove(name_mods_db)
                         #db.close()

@@ -51,7 +51,7 @@ class SystModel(LMComposite):
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
-            print(fit_kws)
+            #print(fit_kws)
             #print('out', len(self._xf), self._xf)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,

@@ -337,7 +337,7 @@ class CookbookAbsorbers(object):
                          % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
-    def _mods_recreate2(self, only_constr=False, mod_new=None, verbose=True):
+    def _mods_recreate2(self, only_constr=False, mod_new=None, fast=False, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         spec.t['fit_mask'] = False
@@ -407,52 +407,59 @@ class CookbookAbsorbers(object):
             mod_sel = np.array(systs._t['id'])
 
         #print(mod_sel)
-
-        systs._mods_t.remove_rows(mod_w)
-        #print(systs._mods_t)
-        #for i,s in enumerate(systs._t):
         compressed = False
         if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
-        systs_t.sort('id')
-        wrong_id = []
-        corr_id = []
-        #print(systs_t)
-        tt = time.time()
-        for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
-                             "cookbook_absorbers: Recreating"):
-            systs._id = s['id']
-            if systs._id in mod_sel:
-                vars = {}
-                constr = {}
-                for k, v in systs._constr.items():
-                    #print(v)
-                    if v[0]==systs._id:
-                        if v[2]!=None:
-                            constr[k] = v[2]
-                        else:
-                            vars[k.split('_')[-1]+'_vary'] = False
-                #print(systs._id)
-                #if systs._id == 46: print(systs._constr.items())
-                mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
-                if any([mod._id in i for i in systs._mods_t['id']]):
-                    wrong_id.append(mod._id)
-                    corr_id.append(np.max(systs_t['id'])+1)
-                    mod._id = np.max(systs_t['id'])+1
-                #print(self.sess.defs.dict['voigt'])
-                #print(len(systs._mods_t), end=' ')
-                mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                               b=s['b'], resol=s['resol'],
-                               defs=self.sess.defs.dict['voigt'])
-                #print(len(systs._mods_t), time.time()-tt)
-                #tt = time.time()
-                self._mods_update(mod)
-                #print(len(systs._mods_t), time.time()-tt)
-                #tt = time.time()
-            else:
-                systs._id = np.max(systs._t['id'])+1
+            
+        if not fast:
+
+            systs._mods_t.remove_rows(mod_w)
+            #print(systs._mods_t)
+            #for i,s in enumerate(systs._t):
+
+            systs_t.sort('id')
+            wrong_id = []
+            corr_id = []
+            #print(systs_t)
+            tt = time.time()
+            for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
+                                 "cookbook_absorbers: Recreating"):
+                systs._id = s['id']
+                if systs._id in mod_sel:
+                    vars = {}
+                    constr = {}
+                    for k, v in systs._constr.items():
+                        #print(v)
+                        if v[0]==systs._id:
+                            if v[2]!=None:
+                                constr[k] = v[2]
+                            else:
+                                vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id)
+                    #if systs._id == 46: print(systs._constr.items())
+                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                    if any([mod._id in i for i in systs._mods_t['id']]):
+                        wrong_id.append(mod._id)
+                        corr_id.append(np.max(systs_t['id'])+1)
+                        mod._id = np.max(systs_t['id'])+1
+                    #print(self.sess.defs.dict['voigt'])
+                    #print(len(systs._mods_t), end=' ')
+                    mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                                   b=s['b'], resol=s['resol'],
+                                   defs=self.sess.defs.dict['voigt'])
+                    #print(len(systs._mods_t), time.time()-tt)
+                    #tt = time.time()
+                    self._mods_update(mod)
+                    #print(len(systs._mods_t), time.time()-tt)
+                    #tt = time.time()
+                else:
+                    systs._id = np.max(systs._t['id'])+1
+
+            for w, c in zip(wrong_id, corr_id):
+                logging.warning("System %i had a duplicated id! I changed it "
+                                "to %i." % (w, c))
 
         for m in systs._mods_t:
             mod = m['mod']
@@ -464,9 +471,6 @@ class CookbookAbsorbers(object):
             spec.t['fit_mask'][c] = True
 
 
-        for w, c in zip(wrong_id, corr_id):
-            logging.warning("System %i had a duplicated id! I changed it to %i."
-                            % (w, c))
 
         systs_t.sort(['z','id'])
         #systs._mods_t['id'].pprint(max_lines=-1)
