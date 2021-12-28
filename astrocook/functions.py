@@ -69,6 +69,10 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans):
     u = u * 1e-3
     return tau0, a, u
 
+def zero(x):
+    return 0*x
+
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -479,25 +483,23 @@ def class_find(obj, cl, up=[]):
 def class_mute(obj, cl):
     if hasattr(obj, '__dict__'):
         for i in obj.__dict__:
-            #print(obj, i)
             if isinstance(obj.__dict__[i], cl):
-                obj.__dict__[i] = ''
+                obj.__dict__[i] = str(cl)
             else:
                 class_mute(obj.__dict__[i], cl)
     elif isinstance(obj, dict):
         for i in obj:
             if isinstance(obj[i], cl):
-                obj[i] = ''
+                obj[i] = str(cl)
 
 def class_unmute(obj, cl, targ):
     if hasattr(obj, '__dict__'):
         for i in obj.__dict__:
-            #print(obj, i)
-            if isinstance(obj.__dict__[i], cl):
+            if obj.__dict__[i]==str(cl):
                 obj.__dict__[i] = targ
             else:
-                class_mute(obj.__dict__[i], cl)
+                class_unmute(obj.__dict__[i], cl, targ)
     elif isinstance(obj, dict):
         for i in obj:
-            if isinstance(obj[i], cl):
+            if obj[i]==str(cl):
                 obj[i] = targ

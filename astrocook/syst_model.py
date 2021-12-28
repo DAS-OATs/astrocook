@@ -82,11 +82,14 @@ class SystModel(LMComposite):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
+    """
     def _zero(self, x):
         return 0*x
+    """
 
     def _make_comp2(self):
-        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
+#        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
+        super(SystModel, self).__init__(self._group, LMModel(zero), operator.add)
         #self._pars.pretty_print()
 
 

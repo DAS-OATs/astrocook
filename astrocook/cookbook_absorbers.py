@@ -565,11 +565,14 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
-            if 'max_nfev' in self._fit_kws:
-                fit_kws = self._fit_kws
-            else:
-                fit_kws = self._fit_kws
-                fit_kws['max_nfev'] = self._max_nfev
+            try:
+                if 'max_nfev' in self._fit_kws:
+                    fit_kws = self._fit_kws
+                else:
+                    fit_kws = self._fit_kws
+                    fit_kws['max_nfev'] = self._max_nfev
+            except:
+                fit_kws = {'max_nfev': self._max_nfev}
 
             frozen = mod._fit(fit_kws=fit_kws)
             #mod._pars.pretty_print()
@@ -1066,7 +1069,7 @@ class CookbookAbsorbers(object):
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @param sel_fit Selective fit (only new systems will be fitted)
-        @param _it_kws Fitter keywords
+        @param _fit_kws Fitter keywords
         @return 0
         """
 

@@ -2,7 +2,7 @@ from . import version
 from .cookbook import Cookbook
 from .defaults import Defaults
 from .format import Format
-from .functions import class_mute, class_unmute, detect_local_minima
+from .functions import *
 from .gui_log import GUILog
 from .line_list import LineList
 from .message import *
@@ -28,6 +28,7 @@ import numpy as np
 import os
 import pickle
 from scipy.signal import argrelmin
+import shelve
 import tarfile
 import time
 
@@ -291,19 +292,49 @@ class Session(object):
                     if data is not None:
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
-                        setattr(systs, '_mods_t', data)
-                        systs._mods_t['mod'] = None
-                        print(systs._mods_t)
+                        #print(data.info)
+                        #data['id'] = object
+                        #for i,id in enumerate(data['id']):
+                        #    data['id'][i] = np.array(list(map(int, id[1:-1].split(','))))
+                        #print(data.info)
+                        setattr(systs, '_mods_t', data['z0', 'chi2r'])
+                        systs._mods_t.remove_column('chi2r')
+
+                        #systs._mods_t['mod'] = None
+                        systs._mods_t['mod'] = np.empty(len(data), dtype=object)
+                        systs._mods_t['chi2r'] = data['chi2r']
+                        systs._mods_t['id'] = np.empty(len(data), dtype=object)
+                        for i in range(len(data)):
+                            #print(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
+                            #print(type(np.array(list(map(int, data['id'][i][1:-1].split(','))))))
+                            systs._mods_t['id'][i] = np.array(list(map(int, data['id'][i][1:-1].split(','))))
+                        #print(systs._mods_t)
+                        funcdefs = {'convolve_simple': convolve_simple,
+                                    'lines_voigt': lines_voigt,
+                                    'psf_gauss': psf_gauss,
+                                    'zero': zero}
                         for m in systs._mods_t:
-                            print(self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0'])
-                            mod = load_model(self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0'])
+                            name_mod_dat = self.path[:-4]+'_'+s+'_mods_%.8f.dat' % m['z0']
+                            with open(name_mod_dat, 'rb') as f:
+                                mod = pickle.load(f)
+                            for attr in ['_lines', '_group', 'left', 'right']:
+                                name_attr_dat = self.path[:-4]+'_'+s\
+                                    +'_mods_%.8f%s.dat' % (m['z0'], attr)
+                                setattr(mod, attr, load_model(name_attr_dat,
+                                        funcdefs=funcdefs))
                             class_unmute(mod, Spectrum, self.spec)
-                            print(mod.__dict__)
                             m['mod'] = mod
-                        print(systs._mods_t)
+
+
+                        for m in systs._mods_t['mod']:
+                            for attr in ['_mods_t']:
+                                setattr(m, attr, getattr(systs, attr))
+
+
+                            #print(m.func)
+
                         only_constr = True
 
-                    print(getattr(self, s)._mods_t)
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr)
                 self.cb._spec_update()
@@ -455,10 +486,44 @@ class Session(object):
                                     format='commented_header', overwrite=True)
                         arch.add(name_mods_dat, arcname=stem+'_'+s+'_mods.dat')
                         os.remove(name_mods_dat)
+
+                        #name_mods_db = '%s.db' % (name_mods_dat[:-4])
+                        #db = shelve.open(name_mods_db)
+
                         for z, m in obj._mods_t['z0', 'mod']:
                             #find_class(m, Spectrum)
                             class_mute(m, Spectrum)
-                            print(m.__dict__)
+                            #print(m.func, m.left)
+
+                            #mn = SystModel(m._spec, getattr(self, s))
+                            #print(m.__dict__)
+                            """
+                            for attr in ['_series', '_vars', '_constr', '_z0',
+                                         '_resol', '_defs', '_lines_pref',
+                                         '_psf_pref', '_pars', '_xs',
+                                         '_group_list', '_group_sel', '_ys',
+                                         'op', '_prefix', '_param_root_names',
+                                         'independent_vars', '_func_allargs',
+                                         '_func_haskeywords', 'nan_policy',
+                                         'opts', 'param_hints', '_param_names',
+                                         'def_vals', '_name', '_xr', '_yr',
+                                         '_wr', '_xf', '_yf', '_wf']:
+                                setattr(mn, attr, getattr(m, attr))
+                            """
+                            for attr in ['_lines', '_group', 'left', 'right']:
+                                name_attr_dat = '%s_%.8f%s.dat' % (name_mods_dat[:-4], z, attr)
+                                save_model(getattr(m, attr), name_attr_dat)
+                                arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%.8f%s.dat' % (z, attr))
+                                os.remove(name_attr_dat)
+
+                            for attr in ['_mods_t']:
+                                setattr(m, attr, attr)
+
+                            for attr in ['_lines', '_group', 'left',
+                                         'right', 'func']:
+                                #setattr(mn, attr, None)
+                                setattr(m, attr, None)
+                            #print(mn.__dict__)
                             """
                             m._spec = ''
                             m.opts['spec'] = ''
@@ -469,11 +534,17 @@ class Session(object):
                             m._lines.right.opts['spec'] = ''
                             """
                             name_mod_dat = '%s_%.8f.dat' % (name_mods_dat[:-4], z)
-                            with open(name_mod_dat, 'wb') as f:
-                                pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
                             #save_model(m, name_mod_dat)
-                            arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%.8f.dat' % z)
-                            os.remove(name_mod_dat)
+                            with open(name_mod_dat, 'wb') as f:
+                                #for a in m.__dict__:
+                                pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
+
+                            #db['mod'] = mn
+                            #arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%.8f.dat' % z)
+                            #os.remove(name_mod_dat)
+                        #arch.add(name_mods_db, arcname=stem+'_'+s+'_mods.db')
+                        #os.remove(name_mods_db)
+                        #db.close()
 
 
                     arch.add(name, arcname=stem+'_'+s+'.fits')
