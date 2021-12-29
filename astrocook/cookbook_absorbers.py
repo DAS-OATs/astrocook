@@ -412,7 +412,7 @@ class CookbookAbsorbers(object):
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
-            
+
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -468,6 +468,7 @@ class CookbookAbsorbers(object):
             while len(c)==0:
                 c = np.where(mod._ys<1-t)[0]
                 t = t*0.5
+            #print(m['z0'], len(c))
             spec.t['fit_mask'][c] = True
 
 
