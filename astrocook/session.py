@@ -5,6 +5,7 @@ from .format import Format
 from .functions import *
 from .gui_log import GUILog
 from .line_list import LineList
+from .lmfit_model import load_model, save_model
 from .message import *
 #from .model import Model
 from .spectrum import Spectrum
@@ -20,7 +21,6 @@ from collections import OrderedDict
 from copy import deepcopy as dc
 import json
 import logging
-from lmfit.model import load_model, save_model
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
@@ -495,10 +495,10 @@ class Session(object):
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
                     #print([t[c].format for c in t.colnames] )
-					try:
-                    	ascii.write(t, name_dat, names=t.colnames,
+                    try:
+                        ascii.write(t, name_dat, names=t.colnames,
                         	        format='commented_header', overwrite=True)
-						    arch.add(name, arcname=stem+'_'+s+'.fits')
+                        arch.add(name, arcname=stem+'_'+s+'.fits')
                         arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                         os.remove(name)
                         os.remove(name_dat)
