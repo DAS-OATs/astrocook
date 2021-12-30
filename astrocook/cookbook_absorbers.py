@@ -465,6 +465,7 @@ class CookbookAbsorbers(object):
                 logging.warning("System %i had a duplicated id! I changed it "
                                 "to %i." % (w, c))
 
+        spec.t['fit_mask'] = False
         for m in systs._mods_t:
             mod = m['mod']
             #print(mod.func)
