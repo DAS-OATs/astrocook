@@ -565,6 +565,7 @@ class CookbookAbsorbers(object):
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
+        print(self.sess.defs.dict['voigt'])
         mod._new_voigt(series, z, logN, b, resol,
                        defs=self.sess.defs.dict['voigt'])
 
