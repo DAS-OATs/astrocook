@@ -15,6 +15,8 @@ from lmfit import Minimizer, Parameter, Parameters, lineshapes
 from lmfit.confidence import conf_interval
 from lmfit.jsonutils import HAS_DILL, decode4js, encode4js
 from lmfit.minimizer import MinimizerResult
+from lmfit.model import Model as ModelOriginal
+from lmfit.model import CompositeModel as CompositeModelOriginal
 from lmfit.printfuncs import ci_report, fit_report, fitreport_html_table
 
 # Use pandas.isnull for aligning missing data if pandas is available.
@@ -1218,7 +1220,7 @@ def _buildmodel(state, funcdefs=None):
         if fcndef is None:
             raise ValueError("Cannot restore Model: model function not found")
 
-        model = Model(fcndef, name=name, prefix=prefix,
+        model = ModelOriginal(fcndef, name=name, prefix=prefix,
                       independent_vars=ivars, param_names=pnames,
                       nan_policy=nan_policy, **opts)
 
@@ -1229,9 +1231,9 @@ def _buildmodel(state, funcdefs=None):
         lmodel = _buildmodel(left, funcdefs=funcdefs)
         rmodel = _buildmodel(right, funcdefs=funcdefs)
         try:
-            return CompositeModel(lmodel, rmodel, getattr(operator, op))
+            return CompositeModelOriginal(lmodel, rmodel, getattr(operator, op))
         except:
-            return CompositeModel(lmodel, rmodel, known_funcs[op])
+            return CompositeModelOriginal(lmodel, rmodel, known_funcs[op])
 
 
 def save_modelresult(modelresult, fname):
