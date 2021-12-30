@@ -482,7 +482,10 @@ class CookbookAbsorbers(object):
                 c = []
                 t = 1e-2
                 while len(c)==0:
-                    c = np.where(mod._ys<1-t)[0]
+                    try:
+                        c = np.where(mod._yl<1-t)[0]
+                    except:
+                        c = np.where(mod._ys<1-t)[0]
                     t = t*0.5
                 #print(c)
                 spec.t['fit_mask'][c] = True
