@@ -35,6 +35,7 @@ class SystModel(LMComposite):
         self._z0 = z0
         self._lines_func = lines_func
         self._psf_func = psf_func
+        self._active = True
 
 
     def _fit(self, fit_kws={}):
@@ -89,7 +90,8 @@ class SystModel(LMComposite):
 
     def _make_comp2(self):
 #        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
-        super(SystModel, self).__init__(self._group, LMModel(zero), operator.add)
+        if hasattr(self, '_group'):
+            super(SystModel, self).__init__(self._group, LMModel(zero), operator.add)
         #self._pars.pretty_print()
 
 
@@ -107,6 +109,13 @@ class SystModel(LMComposite):
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
+        if 'x_lim' in defs:
+            if defs['x_lim'] is None:
+                self._defs['x_lim'] = None
+            else:
+                xl = defs['x_lim']
+                self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
+
 
     def _make_group(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
@@ -213,10 +222,24 @@ class SystModel(LMComposite):
         spec = self._spec
 
         mods_t = self._mods_t
+        d = self._defs
+
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
+        if d['x_lim'] is None:
+            self._xl = np.array(spec._safe(spec.x).to(au.nm))
+        else:
+            x = spec._safe(spec.x).to(au.nm).value
+            w = np.array([], dtype=int)
+            for xl in d['x_lim']:
+                w = np.append(w, np.where(np.logical_and(x>xl[0], x<xl[1]))[0])
+            w = np.unique(w)
+            self._xl = x[w]
 
         #print(self.__dict__)
         ys = self._lines.eval(x=self._xs, params=self._pars)
+        yl = self._lines.eval(x=self._xl, params=self._pars)
+        if np.min(yl) > 1-thres:
+            self._active = False
 
         ysmin = np.amin(ys)
         self._group = self._lines
@@ -255,7 +278,8 @@ class SystModel(LMComposite):
 
             if time.time()-ttt > 1e-1: print('4 %.4f' % (time.time()-ttt))
             ttt = time.time()
-            if cond: #y_cond or pars_cond:
+            #print(s['id'], cond)
+            if cond and self._active==mod._active: #y_cond or pars_cond:
                 #print('mod')
                 #mod._pars.pretty_print()
                 #print('self')
@@ -336,7 +360,7 @@ class SystModel(LMComposite):
         #    print('end', id(self._group), id(self._pars))
         #print('group_sel:', self._group_sel)
         #print(mods_t['id'])
-
+        #return True
 
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
@@ -517,20 +541,8 @@ class SystModel(LMComposite):
         #print('c', time.time()-tt)
         #tt = time.time()
 
-        #self._make_psf()
-        #self._make_comp()
         self._make_comp2()
-        #print('d', time.time()-tt)
-        #tt = time.time()
 
         ys = dc(self._ys)
-        #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
         self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
-        if np.sum(self._ys-ys)>0: print('attenzione:', np.sum(self._ys-ys))
-        #print('e', time.time()-tt)
-        #tt = time.time()
-
-        #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
-        #self._pars.pretty_print()
-        #self._ys = self.eval(x=self._xs, params=self._pars)

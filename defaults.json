@@ -17,6 +17,7 @@
     "logN_max": 18,
     "b_max": 100.0,
     "btur_max": 100.0,
-    "resol_max": 1e6
+    "resol_max": 1e6,
+    "x_lim": null
   }
 }
