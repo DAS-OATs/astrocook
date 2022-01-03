@@ -95,7 +95,7 @@ class CookbookGeneral(object):
         return sess
 
 
-    def equalize(self, xmin, xmax, _sel=''):
+    def equalize(self, xmin, xmax, _sel='', cont=True):
         """ @brief Equalize two sessions
         @details Equalize the spectrum of two sessions, based on their flux
         ratio within a wavelength window.
@@ -153,6 +153,8 @@ class CookbookGeneral(object):
                 logging.info("Equalization factor: %3.4f." % f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
+                if cont and 'cont' in sess.spec._t.colnames:
+                    sess.spec._t['cont'] = f*sess.spec._t['cont']
 
         return 0
 
@@ -350,9 +352,11 @@ class CookbookGeneral(object):
 
         if new_sess:
             spec_out = dc(spec)
-            #spec_out._t['x'][~mask] = np.nan #
+            #spec_out._t['x'][~mask] = np.nan
             for c in ['y', 'dy', 'cont']:
-                if c in spec_out._t.colnames: spec_out._t[c][~mask] = np.nan #
+                if c in spec_out._t.colnames:
+                    spec_out._t[c] = spec_out._t[c].astype(float)
+                    spec_out._t[c][~mask] = np.nan #
             #spec_out._t = .spec._t[mask]
             from .session import Session
             new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,
@@ -361,9 +365,37 @@ class CookbookGeneral(object):
 
         return 0
 
+    def part_extract(self, zem, part='blue'):
+        """ @brief Extract blue or red part
+        @details Extract blue or red part, based on the emission redshift.
+
+        The recipe computes the observed wavelength of the Lyman alpha emission
+        line as $$(1+$$`zwm`$$)\times 121.567\textrm{ nm}$$ and extracts the
+        region bluewards or redwards of this wavelength into a new session,
+        based on the value of `part`.
+
+        @param zem Emission redshift
+        @param part Either `blue` or `red`
+        """
+
+        try:
+            zem = float(zem)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        if part not in ['blue', 'red']:
+            logging.error(msg_param_fail)
+            return None
+
+        if part == 'blue':
+            return self.region_extract(0, (1+zem)*121.567)
+        else:
+            return self.region_extract((1+zem)*121.567, np.infty)
+
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=True, filling=np.nan):
+              norm=False, filling=np.nan):
         """ @brief Re-bin spectrum
         @details Apply a new binning to a spectrum, with a constant bin size.
 
@@ -403,6 +435,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            norm = str(norm) == 'True'
             filling = float(filling)
         except ValueError:
             logging.error(msg_param_fail)
@@ -438,7 +471,12 @@ class CookbookGeneral(object):
 
         spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
         if cont:
-            spec_out.t['cont'] = 1
+            if not norm:
+                spec_out.t['cont'] = np.interp(
+                    spec_out.x.to(au.nm).value,spec_in.x.to(au.nm).value,
+                    spec_in.t['cont']) * spec_out.y.unit
+            else:
+                spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
         # Create a new session
         from .session import Session
@@ -447,7 +485,7 @@ class CookbookGeneral(object):
         return new
 
 
-    def region_extract(self, xmin, xmax):
+    def region_extract(self, xmin, xmax, verbose=True):
         """ @brief Extract region
         @details Extract a spectral region and create a new session from it.
 
@@ -474,7 +512,11 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                kwargs[s] = getattr(self.sess, s)._region_extract(xmin, xmax)
+                struct = getattr(self.sess, s)._region_extract(xmin, xmax)
+                if struct is None:
+                    logging.warning(msg_empty(s))
+                else:
+                    kwargs[s] = struct
             except:
                 logging.debug("Attribute %s does not support region "
                               "extraction." % s)
@@ -489,15 +531,25 @@ class CookbookGeneral(object):
             new._gui = self.sess._gui
         else:
             new = None
-        if 'systs' in self.sess.seq and self.sess.systs != None:
+        if 'systs' in self.sess.seq and self.sess.systs != None \
+            and new.systs != None:
 
             # This is needed instead of a simple deepcopy because
             # GUIPanelSession does not support pickling
             #old = dc(self.sess)
             old = Session(self.sess._gui)
             for d in self.sess.__dict__:
-                if d != '_gui' and d != 'cb' and d != 'log':
+                if d != '_gui' and d != 'cb' and d != 'log' and d != 'defs':
                     old.__dict__[d] = dc(self.sess.__dict__[d])
+                if d == 'defs':
+                    setattr(old, d, getattr(self.sess, d))
+                    for dd in getattr(self.sess, d).__dict__:
+                        if dd == '_gui':
+                            getattr(old, d).__dict__[dd] = self.sess._gui
+                        else:
+                            getattr(old, d).__dict__[dd] \
+                                = dc(getattr(self.sess, d).__dict__[dd])
+                    #print(getattr(self.sess, d).__dict__)
             old.__dict__['cb'] = self.sess.__dict__['cb']
 
             self.sess = new
@@ -657,8 +709,8 @@ class CookbookGeneral(object):
         #p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
-        x = np.array(telluric['WAVEL'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t!=0 for t in telluric['MASK']], dtype=float)
+        x = np.array(telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        mask = np.array([t<0.99 for t in telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell!=1, dtype=bool)
 

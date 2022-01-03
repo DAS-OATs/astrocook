@@ -142,9 +142,8 @@ class CookbookEdit(object):
         if parse is None: return 0
         attrn, attr, _ = parse
         attr = dc(attr)
-
         if attrn == 'systs' \
-            and 'cont' not in self._gui._sess_sel.spec.t.colnames:
+            and 'cont' not in self.sess._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
                           "Recipes > Guess continuum before." % attrn)
             return 0
@@ -152,22 +151,27 @@ class CookbookEdit(object):
         if mode=='replace':
             if attr is None:
                 logging.warning("I'm replacing structure with None.")
-                setattr(self._gui._sess_sel, attrn, attr)
+                setattr(self.sess._gui._sess_sel, attrn, attr)
                 return 0
+
             if attrn in ['lines', 'systs']:
-                #spec = self._gui._sess_sel.spec
-                x = self._gui._sess_sel.spec.x.to(au.nm)
+                #spec = self.sess._gui._sess_sel.spec
+                x = self.sess._gui._sess_sel.spec.x.to(au.nm)
                 attr = attr._region_extract(np.min(x), np.max(x))
+            if attr is None:
+                logging.warning("I'm replacing structure with None")
+                setattr(self.sess._gui._sess_sel, attrn, attr)
+                return 0
 
                 # Redefine regions from spectrum
             if attrn == 'systs':
                 for m in attr._mods_t:
                     mod = m['mod']
-                    mod._spec = self._gui._sess_sel.spec
-                    mod._xf, mod._yf, mod._wf, mod._ys = \
+                    mod._spec = self.sess._gui._sess_sel.spec
+                    mod._xf, mod._yf, mod._wf = \
                         mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
                                                .to(au.nm).value)
-            setattr(self._gui._sess_sel, attrn, attr)
+            setattr(self.sess._gui._sess_sel, attrn, attr)
 
         if mode=='append':
             if attr is None:
@@ -175,17 +179,17 @@ class CookbookEdit(object):
                 return 0
             attr_dc = dc(attr)
             if attrn == 'systs':
-                id_max = np.max(getattr(self._gui._sess_sel, attrn)._t['id'])
+                id_max = np.max(getattr(self.sess._gui._sess_sel, attrn)._t['id'])
                 attr_dc._t['id'] = attr_dc._t['id']+id_max
             #print(len(attr_dc._t))
             #print(len(np.unique(attr_dc._t['id'])))
             #print(len(attr_dc._t))
-            #print(len(getattr(self._gui._sess_sel, attrn)._t))
-            getattr(self._gui._sess_sel, attrn)._append(attr_dc)
+            #print(len(getattr(self.sess._gui._sess_sel, attrn)._t))
+            getattr(self.sess._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
-            self._gui._sess_sel.cb._mods_recreate()
-            self._gui._sess_sel.cb._spec_update()
+            self.sess._gui._sess_sel.cb._mods_recreate()
+            self.sess._gui._sess_sel.cb._spec_update()
 
         return 0
 
@@ -214,11 +218,11 @@ class CookbookEdit(object):
                                         str(list(np.array(s.spec._t[c]))))
             if s.lines is not None:
                 for c in sorted(s.lines._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,lines,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.lines._t[c]))))
             if s.systs is not None:
                 for c in sorted(s.systs._t.colnames, key=len, reverse=True):
-                    expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
+                    expr = expr.replace('%i,systs,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.systs._t[c]))))
 
         #print(expr)

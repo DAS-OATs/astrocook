@@ -9,6 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 import operator
+import time
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -50,7 +51,7 @@ class SystModel(LMComposite):
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
-            fit_kws['ftol'] = 1e-3
+            #print(fit_kws)
             #print('out', len(self._xf), self._xf)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
@@ -81,11 +82,14 @@ class SystModel(LMComposite):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
+    """
     def _zero(self, x):
         return 0*x
+    """
 
     def _make_comp2(self):
-        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
+#        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
+        super(SystModel, self).__init__(self._group, LMModel(zero), operator.add)
         #self._pars.pretty_print()
 
 
@@ -204,7 +208,8 @@ class SystModel(LMComposite):
     def _make_group2(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
-
+        #T = time.time()
+        #tt = time.time()
         spec = self._spec
 
         mods_t = self._mods_t
@@ -213,27 +218,54 @@ class SystModel(LMComposite):
         #print(self.__dict__)
         ys = self._lines.eval(x=self._xs, params=self._pars)
 
+        ysmin = np.amin(ys)
         self._group = self._lines
         self._group_list = []
-
+        modified = False
         #print(mods_t['id'])
+        #if time.time()-tt > 1e-2: print('A %.4f' % (time.time()-tt), end=' ')
+        #tt = time.time()
         for i, s in enumerate(mods_t):
+            modified = False
+
+            ttt = time.time()
             #print(s['id'])
             mod = s['mod']
             ys_s = mod._ys
-            ymax = np.maximum(ys, ys_s)
-            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-            pars_cond = False
+
+            if time.time()-ttt > 1e-1: print('0 %.4f' % (time.time()-ttt))
+            ttt = time.time()
+            cond, pars_cond = False, False
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
-                    pars_cond = pars_cond or v==mod_p
-            if y_cond or pars_cond:
+                    cond = cond or v==mod_p
+            if cond: pars_cond = True
+            if time.time()-ttt > 1e-1: print('1 %.4f' % (time.time()-ttt))
+            ttt = time.time()
+            if not cond:
+            #print(s['id'])
+                #ymax = np.maximum(ys, ys_s)
+                yminmax = np.amin(np.maximum(ys,ys_s))
+                if time.time()-ttt > 1e-1: print('2 %.4f' % (time.time()-ttt))
+                ttt = time.time()
+                #cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+                cond = yminmax<1-thres or yminmax==ysmin
+                if time.time()-ttt > 1e-1: print('3 %.4f' % (time.time()-ttt))
+                ttt = time.time()
+
+            if time.time()-ttt > 1e-1: print('4 %.4f' % (time.time()-ttt))
+            ttt = time.time()
+            if cond: #y_cond or pars_cond:
                 #print('mod')
                 #mod._pars.pretty_print()
                 #print('self')
                 #self._pars.pretty_print()
                 #try:
+                if time.time()-ttt > 1e-1: print('b %.4f' % (time.time()-ttt))
+                ttt = time.time()
                 self._group *= mod._group
+                #if time.time()-ttt > 1e-1: print('a %.4f' % (time.time()-ttt))
+                ttt = time.time()
                 #except:
                 #    self._group_sel = -1
                 #    return
@@ -243,6 +275,8 @@ class SystModel(LMComposite):
                         self._constr[p] = v.expr
                         v.expr = ''
                 self._pars.update(mod._pars)
+                if time.time()-ttt > 1e-1: print('5 %.4f' % (time.time()-ttt))
+                ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
                         self._pars[p].expr = v
@@ -256,18 +290,52 @@ class SystModel(LMComposite):
                             except:
                                 self._pars[p].expr = ''
                 self._group_list.append(i)
-                mod._ys = self._group.eval(x=self._xs, params=self._pars)
+                if time.time()-ttt > 1e-1: print('6 %.4f' % (time.time()-ttt))
+                ttt = time.time()
+                #mod_ys = self._group.eval(x=self._xs, params=self._pars)
+                mod._ys = ys_s*ys
+                ys = mod._ys
+                #print('mid', np.mean(np.abs(mod_ys-mod._ys)))
+                modified = True
+                #if time.time()-ttt > 1e-1: print('7 %.4f' % (time.time()-ttt))
+                ttt = time.time()
+                #print('')
+                #print(i, id(self._group), id(self._pars))
+            if time.time()-ttt > 1e-1: print('8 %.4f' % (time.time()-ttt))
 
+        #if time.time()-tt > 1e-2: print('B %.4f' % (time.time()-tt), end=' ')
+        #tt = time.time()
         if len(self._group_list) > 1:
             ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
             mods_t.remove_rows(self._group_list[1:])
             for i in ids:
                 mods_t['id'][self._group_list[0]].append(i)
+        #if time.time()-tt > 1e-2: print('b %.4f' % (time.time()-tt), end=' ')
+        #tt = time.time()
         if self._group_list == []:
             self._group_sel = -1
         else:
             self._group_sel = self._group_list[0]
-        self._ys = self._group.eval(x=self._xs, params=self._pars)
+        #self._ys = self._group.eval(x=self._xs, params=self._pars)
+        if modified: # and False:
+            self._ys = mod._ys
+            #print('hey')
+        else:
+            #self._ys = self._group.eval(x=self._xs, params=self._pars)
+            self._ys = ys
+            """
+            try:
+                print('end', modified, np.mean(np.abs(self._ys-ys)))
+            except:
+                pass
+            """
+        #if time.time()-tt > 1e-2: print('C %.4f' % (time.time()-tt), end=' ')
+        #print('E %.4f' % (time.time()-T))
+        #if modified:
+        #    print('')
+        #    print('end', id(self._group), id(self._pars))
+        #print('group_sel:', self._group_sel)
+        #print(mods_t['id'])
 
 
     def _make_lines(self):
@@ -373,7 +441,11 @@ class SystModel(LMComposite):
 
         #self._pars.pretty_print()
         #print(xs)
-        ys = mod.eval(x=xs, params=self._pars)
+        #print(mod)
+        #print(self)
+        #print(self._group)
+        #ys = mod.eval(x=xs, params=self._pars)
+        ys = self._ys
         c = []
         t = thres
         while len(c)==0:
@@ -391,7 +463,8 @@ class SystModel(LMComposite):
         wr = np.array(spec._t['cont'][c]/spec.dy[c])
         spec.t['fit_mask'][c] = True
         #plt.plot(xr, mod.eval(x=xr, params=self._pars))
-        return xr, yr, wr, ys
+        #return xr, yr, wr, ys
+        return xr, yr, wr
 
 
 
@@ -425,24 +498,37 @@ class SystModel(LMComposite):
         self._resol = resol
         self._series = series
 
+        tt = time.time()
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
 
         self._make_defs(defs)
+        #print('a', time.time()-tt)
+        #tt = time.time()
 
         #self._make_lines()
         self._make_lines_psf()
+        #print('b', time.time()-tt)
+        #tt = time.time()
 
         #self._make_group()
         self._make_group2()
+        #print('c', time.time()-tt)
+        #tt = time.time()
 
         #self._make_psf()
         #self._make_comp()
         self._make_comp2()
+        #print('d', time.time()-tt)
+        #tt = time.time()
 
-
-        self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
+        ys = dc(self._ys)
+        #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
+        self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
+        if np.sum(self._ys-ys)>0: print('attenzione:', np.sum(self._ys-ys))
+        #print('e', time.time()-tt)
+        #tt = time.time()
 
         #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr

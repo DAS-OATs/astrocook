@@ -4,14 +4,15 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
-import scipy.ndimage.filters as filters
-import scipy.ndimage.morphology as morphology
-from scipy.special import wofz
-#from lmfit.lineshapes import gaussian as gauss
+import json
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+import scipy.ndimage.filters as filters
+import scipy.ndimage.morphology as morphology
+from scipy.special import wofz
+#from lmfit.lineshapes import gaussian as gauss
 
 prefix = 'functions'
 
@@ -68,6 +69,10 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans):
     u = u * 1e-3
     return tau0, a, u
 
+def zero(x):
+    return 0*x
+
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -108,10 +113,12 @@ def convolve_simple(dat, kernel):
     """simple convolution of two arrays"""
     npts = len(dat) #max(len(dat), len(kernel))
     pad = np.ones(npts)
-    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    tmp = np.pad(dat, (npts, npts), 'edge')
     out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
-    noff = int((len(out) - npts) / 2)
-    ret = (out[noff:])[:npts]
+    noff = int((len(out) - npts) * 0.5)
+    #ret = (out[noff:])[:npts]
+    ret = out[noff:noff+npts]
     #print(len(dat), len(kernel), len(ret))
     return ret
 
@@ -121,6 +128,7 @@ def create_xmin_xmax(x):
     xmin = np.append(x[0], mean)
     xmax = np.append(mean, x[-1])
     return xmin, xmax
+
 
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
@@ -454,3 +462,44 @@ def get_selected_cells(grid):
         return [GridCellCoords(row, col)]
 
     return [GridCellCoords(row, col)]+selection
+
+
+def str_to_dict(str):
+    return json.loads(str)
+
+def class_find(obj, cl, up=[]):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                print(up, i, 'caught!')
+            else:
+                class_find(obj.__dict__[i], cl, up+[i])
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                print(up, i, 'caught!')
+
+def class_mute(obj, cl):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if isinstance(obj.__dict__[i], cl):
+                obj.__dict__[i] = str(cl)
+            else:
+                class_mute(obj.__dict__[i], cl)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                obj[i] = str(cl)
+
+def class_unmute(obj, cl, targ):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if obj.__dict__[i]==str(cl):
+                obj.__dict__[i] = targ
+            else:
+                class_unmute(obj.__dict__[i], cl, targ)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if obj[i]==str(cl):
+                obj[i] = targ

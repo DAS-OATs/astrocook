@@ -216,7 +216,7 @@ class SystList(object):
                         m['mod']._pars.pretty_print()
                     """
                     if v[1]=='expr':
-                        #print(k, v[2])
+                        #print(k, v[2], type(v[2]))
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)
@@ -230,6 +230,7 @@ class SystList(object):
                         #print(v[0], v[1], v[2])
                         #print(m['mod']._pars[k].__dict__)
         #print(self._constr)
+                #print(m['mod']._pars)
                 #m['mod']._pars.pretty_print()
                 #print('[',id(m),']')
 
@@ -260,9 +261,8 @@ class SystList(object):
         s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
         where[s] = False
         reg._t.remove_rows(where)
-
         if len(reg.t) == 0:
-            logging.error(msg_output_fail)
+            #logging.error(msg_output_fail)
             return None
         else:
             return reg

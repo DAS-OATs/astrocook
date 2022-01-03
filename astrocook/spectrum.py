@@ -551,11 +551,14 @@ class Spectrum(Frame):
             if print_time:
                 t2 = time()
                 print(t2, t2-t16)
+
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
                 #nw = np.where(~np.isnan(ysel[w]))
-                if np.any(np.isnan(dysel)) or np.any(dysel==0.0):# and False:
+                #print(weights)
+                #print(frac[w])
+                if np.any(np.isnan(dysel)) or np.any(dysel==0.0) or np.sum(weights)==0.0:# and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
                     y_out = np.append(y_out, np.average(ysel[w], weights=weights))
@@ -575,6 +578,7 @@ class Spectrum(Frame):
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
         out._x_convert(xunit=self._xunit_old)
+        self._x_convert(xunit=self._xunit_old)
         return out
 
 
@@ -589,7 +593,7 @@ class Spectrum(Frame):
                 logging.info("I'm updating column 'resol'.")
             self._t['resol'] = self.x/dx
         logging.info('The mean estimated resolution is %4.2f.'
-                     % np.mean(self._t['resol']))
+                     % np.nanmean(self._t['resol']))
         return 0
 
 

@@ -10,6 +10,7 @@ from .message import *
 from astropy import table as at
 from collections import OrderedDict
 from copy import deepcopy as dc
+import datetime as dt
 import json
 import logging
 from matplotlib import pyplot as plt
@@ -21,9 +22,10 @@ import wx.lib.mixins.listctrl as listmix
 class GUI(object):
     """ Class for the GUI. """
 
-    def __init__(self, paths=None):
+    def __init__(self, paths=None, flags=None):
         """ Constructor """
 
+        self._flags = flags
         try:
             l = ['─']*(16+len(version))
             print("┌%s┐" % ''.join(l))
@@ -74,6 +76,18 @@ class GUI(object):
                 else:
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
+
+    def _flags_cond(self, flag):
+        return self._flags is not None \
+            and flag in [f[:len(flag)] for f in self._flags]
+
+    def _flags_extr(self, flag):
+        extr = [f.split('=')[-1] for f in self._flags if f[:len(flag)]==flag]
+        if len(extr)>1:
+            logging.warning("You gave me too many %s flags! I will consider "\
+                            "only the first one." % flag)
+        return extr[0]
+
 
     def _log_rerun(self, log):
         i = self._sess_list.index(self._sess_sel)
@@ -138,7 +152,15 @@ class GUI(object):
                 if r['recipe']=='_data_init' and getattr(self, tab)._shown:
                     skip = True
             """
-            if not skip: out = getattr(cb, r['recipe'])(**r['params'])
+            if not skip:
+                if r['recipe'][0] != '_':
+                    logging.info("I'm launching %s..." % r['recipe'])
+                start = dt.datetime.now()
+                out = getattr(cb, r['recipe'])(**r['params'])
+                end = dt.datetime.now()
+                if r['recipe'][0] != '_':
+                    logging.info("I completed %s in %3.3f seconds!" \
+                                 % (r['recipe'], (end-start).total_seconds()))
             if out is not None and out != 0:
                 self._panel_sess._on_add(out, open=False)
 
@@ -188,28 +210,38 @@ class GUI(object):
             sel_old = self._sess_list.index(self._sess_sel)
 
 
-    def _refresh(self, init_cursor=False, init_tab=True, autolim=True,
-                 autosort=True, _xlim=None, _ylim=None):
+    def _refresh(self, init_cursor=False, init_tab=True, init_bar=False,
+                 autolim=True, autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
 
         self._defs = self._sess_sel.defs
 
         self._panel_sess._refresh()
-        self._panel_sess._menu._refresh()
+        self._panel_sess._menu._refresh(init_bar=init_bar)
         if hasattr(self, '_dlg_mini_defs') \
             and self._dlg_mini_defs._shown:
             self._dlg_mini_defs._refresh()
         if hasattr(self, '_dlg_mini_graph') \
             and self._dlg_mini_graph._shown:
             self._graph_main._elem = self._sess_sel._graph_elem
+            if hasattr(self, '_graph_det') \
+                and hasattr(self._graph_det, '_elem'):
+                self._graph_det._elem = self._sess_sel._graph_elem
             self._graph_main._lim = self._sess_sel._graph_lim
             self._dlg_mini_graph._refresh()
         else:
             if hasattr(self._sess_sel, '_graph_elem'):
                 self._graph_main._elem = self._sess_sel._graph_elem
+                if hasattr(self, '_graph_det') \
+                    and hasattr(self._graph_det, '_elem'):
+                    self._graph_det._elem = self._sess_sel._graph_elem
             else:
                 self._graph_main._elem = elem_expand(graph_elem,
                     self._panel_sess._sel)
+                if hasattr(self, '_graph_det') \
+                    and hasattr(self._graph_det, '_elem'):
+                    self._graph_det._elem = elem_expand(graph_elem,
+                        self._panel_sess._sel)
             if hasattr(self._sess_sel, '_graph_lim'):
                 self._graph_main._lim = self._sess_sel._graph_lim
             else:
@@ -291,7 +323,10 @@ class GUI(object):
                     for key in graph._zems:
                         xunit = self._sess_sel.spec.x.unit
                         #print('before', xunit)
+                        #print(self._sess_sel)
+                        #print('before', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         self._sess_sel.cb.x_convert(zem=graph._zems[key])
+                        #print('mid   ', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         graph._ax = graph._axes[key]
                         xlim_det = graph._ax.get_xlim()
                         ylim_det = graph._ax.get_ylim()
@@ -304,6 +339,7 @@ class GUI(object):
                                                      init_cursor=init_cursor)
                         init_cursor = False
                         self._sess_sel.cb.x_convert(zem=graph._zems[key], xunit=xunit)
+                        #print('after ', self._sess_sel.spec._t['x'][0], self._sess_sel.spec._t['x'].unit, self._sess_sel.spec._xunit)
                         #print('after', xunit)
                 else:
                     xlim_det = graph._ax.get_xlim()
@@ -442,11 +478,12 @@ class GUIPanelSession(wx.Frame):
         self._tab.InsertColumn(5, "# lines", width=100)
         self._tab.InsertColumn(6, "# systems", width=100)
         """
-        self._tab.InsertColumn(0, "name", width=350)
-        self._tab.InsertColumn(1, "active range", width=200)
-        self._tab.InsertColumn(2, "# rows", width=100)
-        self._tab.InsertColumn(3, "# lines", width=100)
-        self._tab.InsertColumn(4, "# systems", width=100)
+        self._tab.InsertColumn(0, "name", width=330)
+        self._tab.InsertColumn(1, "id", width=30)
+        self._tab.InsertColumn(2, "active range", width=200)
+        self._tab.InsertColumn(3, "# rows", width=100)
+        self._tab.InsertColumn(4, "# lines", width=100)
+        self._tab.InsertColumn(5, "# systems", width=100)
         self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
         self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
         self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
@@ -464,7 +501,6 @@ class GUIPanelSession(wx.Frame):
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
         #print(self._gui._sess_item_list)
-
         sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
         self._gui._defs = sess.defs
@@ -477,8 +513,8 @@ class GUIPanelSession(wx.Frame):
         self._sel = missing[0]
         #print(self._sel)
         self._items = [self._sel]
-        self._tab._insert_string_item(self._sel, "%s (%s)"
-                                     % (sess.name, str(self._sel)))
+        self._tab._insert_string_item(self._sel, "%s" % sess.name)
+        self._tab.SetItem(self._tab.GetItemCount()-1, 1, "%s" % str(self._sel))
         self._gui._sess_list.append(sess)
         self._gui._sess_item_list.append(self._sel)
 
@@ -492,7 +528,7 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
-            self._gui._sess_sel.open()
+            success = self._gui._sess_sel.open()
 
         x = sess.spec._safe(sess.spec.x)#.value
         #self._gui._graph_elem_list.append(self._gui._graph_main._elem)
@@ -523,20 +559,66 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_list[self._sel].spec.meta['object'] = event.GetLabel()
 
 
-    def _on_open(self, path):
+    def _on_open(self, path, _flags=None):
         """ Behaviour for Session > Open """
 
+        if _flags is None or _flags==[] and self._gui._flags is not None:
+            _flags = self._gui._flags
+        elif self._gui._flags is None or self._gui._flags==[] and _flags is not None:
+            self._gui._flags = _flags
+
         name = '.'.join(path.split('/')[-1].split('.')[:-1])
-        logging.info("I'm loading session %s..." % path)
+
+        if not os.path.exists(path):
+            logging.warning("File %s doesn't exist. I'm ignoring it." % path)
+            return 0
+
+        logging.info("I'm loading file %s into a new session..." % path)
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
+        sess.log.append_full('_panel_sess', '_on_open',
+                             {'path': path, '_flags': _flags})
 
         if sess._open_twin:
             logging.info("I'm loading twin session %s..." % path)
             sess = Session(gui=self._gui, path=path, name=name, twin=True)
             self._gui._panel_sess._on_add(sess, open=True)
 
-        sess.log.append_full('_panel_sess', '_on_open', {'path': path})
+        if _flags is not None and '-s' in _flags:
+            logging.info("I'm loading session for slice 0...")
+            sess = Session(gui=self._gui, path=path, name='%s_0' \
+                           % name, slice=0)
+            self._gui._panel_sess._on_add(sess, open=True)
+            logging.info("I'm loading session for slice 1...")
+            sess = Session(gui=self._gui, path=path, name='%s_1' \
+                           % name, slice=1)
+            self._gui._panel_sess._on_add(sess, open=True)
+
+        if _flags is not None and '-o' in [f[:2] for f in _flags]:
+
+            # Select orders based on flag
+            flag = np.array(_flags)[np.where(['-o' in f[:2] for f in _flags])][0][3:]
+            if flag != '':
+                olim = [int(f) for f in flag.split(',')]
+                rlim = [np.where(sess._order==olim[0])[0][0],
+                    np.where(sess._order==olim[1])[0][-1]]
+                sess._row = rlim[0]
+                lim = rlim[1]
+            else:
+                lim = np.inf
+
+            # Create new sessions for the selected orders
+            while sess._row is not None and sess._row <= lim:
+                logging.info("I'm loading session for order %i, slice 0..." \
+                    % sess._order[sess._row])
+                sess = Session(gui=self._gui, path=path, name='%s_%i-0' \
+                               % (name, sess._order[sess._row]), row=sess._row)
+                self._gui._panel_sess._on_add(sess, open=True)
+                logging.info("I'm loading session for order %i, slice 1..." \
+                             % sess._order[sess._row])
+                sess = Session(gui=self._gui, path=path, name='%s_%i-1' \
+                               % (name, sess._order[sess._row]), row=sess._row)
+                self._gui._panel_sess._on_add(sess, open=True)
 
 
     def _entry_select(self):
@@ -555,13 +637,21 @@ class GUIPanelSession(wx.Frame):
         #edit._menu.Enable(edit._start_id+301, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
-        self._items = []
-        while item != -1:
-            self._items.append(item)
-            item = self._tab.GetNextSelected(item)
-        self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
-        if self._gui._sess_item_sel != []:
+
+        # Selection via JSON
+
+        if item == -1:
             self._gui._refresh()
+
+        # Manual selection
+        else:
+            self._items = []
+            while item != -1:
+                self._items.append(item)
+                item = self._tab.GetNextSelected(item)
+                self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
+            if self._gui._sess_item_sel != []:
+                self._gui._refresh()
 
 
     def _on_close(self, event):
@@ -582,7 +672,7 @@ class GUIPanelSession(wx.Frame):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_item_sel = []
-        self._entry_select()
+        #self._entry_select()
 
 
     def _on_rerun(self, event):
@@ -593,8 +683,19 @@ class GUIPanelSession(wx.Frame):
     def _on_right_click(self, event):
         from .gui_table import GUITablePopup
         self.PopupMenu(GUITablePopup(self._gui, self, event,
-                                     ['Re-run', 'Save'],
-                                     ['rerun', 'save']))
+                                     ['Re-run', 'Save', 'Close'],
+                                     ['rerun', 'save', 'close_sess']))
+
+    def _on_close_sess(self, event):
+        self._gui._menu_file._on_save(event)
+        i = self._gui._sess_list.index(self._gui._sess_sel)
+        self._gui._panel_sess._tab.DeleteItem(i)
+        del self._gui._sess_list[i]
+        del self._gui._sess_item_list[i]
+        self._gui._sess_sel = self._gui._sess_list[0]
+        self._items = [0]
+        self._gui._sess_items = [self._gui._sess_list[0]]
+        self._gui._refresh()
 
 
     def _on_save(self, event):
@@ -641,22 +742,21 @@ class GUIPanelSession(wx.Frame):
                 pass
             """
             x = s.spec._safe(s.spec.x)
-            self._tab.SetItem(i, 1, "[%3.2f, %3.2f] %s"
+            self._tab.SetItem(i, 2, "[%3.2f, %3.2f] %s"
                               % (x[0].value, x[-1].value, x.unit))
-            self._tab.SetItem(i, 2, str(len(x)))
+            self._tab.SetItem(i, 3, str(len(x)))
             try:
                 x = s.lines._safe(s.lines.x)
-                self._tab.SetItem(i, 3, str(len(x)))
+                self._tab.SetItem(i, 4, str(len(x)))
             except:
                 pass
             try:
                 x = s.systs.z
-                self._tab.SetItem(i, 4, str(len(x)))
+                self._tab.SetItem(i, 5, str(len(x)))
             except:
                 pass
 
     def _select(self, _sel=0):
-
         _sel = int(_sel)
         """
         sel = self._gui._sess_item_sel
@@ -670,6 +770,7 @@ class GUIPanelSession(wx.Frame):
         if sel == []:
             sel = range(len(sess_list))
         """
+
         evt = wx.ListEvent()
         evt.SetIndex(_sel)
         self._on_select(evt)

@@ -230,15 +230,18 @@ class GUIMenu(object):
                         (event, title, targ)
                 gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
                 gui_dlg_mini._shown = True
-                gui_dlg_mini._on_apply(event, refresh=False)
                 if dlg_mini == 'systems':
+                    gui_dlg_mini._on_apply(event, refresh=True)
                     gui_dlg_mini._cursor_button.SetLabel("Hide cursor")
+                else:
+                    gui_dlg_mini._on_apply(event, refresh=False)
             else:
-                gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
-                gui_dlg_mini._shown = False
-                gui_dlg_mini._on_cancel(event)
-                if dlg_mini == 'systems':
-                    gui_dlg_mini._cursor_button.SetLabel("Show cursor")
+                if hasattr(self._gui, '_dlg_mini_'+dlg_mini):
+                    gui_dlg_mini = getattr(self._gui, '_dlg_mini_'+dlg_mini)
+                    gui_dlg_mini._shown = False
+                    gui_dlg_mini._on_cancel(event)
+                    if dlg_mini == 'systems':
+                        gui_dlg_mini._cursor_button.SetLabel("Show cursor")
 
 
     def _on_open(self, event, path=None, wildcard=None,
@@ -271,16 +274,20 @@ class GUIMenu(object):
             self._gui._panel_sess._open_rec = '_on_open'
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
-    def _refresh(self):
+    def _refresh(self, init_bar=False):
         # Nested loops! WOOOO!
         sess = self._gui._sess_sel
         sel = self._gui._graph_main._sel
         self._togg_set()
-        self._gui._panel_sess.SetMenuBar(self.bar())
+        if init_bar:
+            self._gui._panel_sess.SetMenuBar(self.bar())
+            for k in self._key_list:
+                try:
+                    getattr(self._gui, '_tab_'+k)._on_close(None)
+                except:
+                    pass
 
         for a in seq_menu:  # from .vars
-
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view']+self._menus_togg['attr']:
                     try:
@@ -292,12 +299,11 @@ class GUIMenu(object):
                         if hasattr(sess, a):
                             cond = getattr(sess, a) != None
                         else:
-                            if hasattr(sess, 'systs'):
+                            if hasattr(sess, 'systs') and sess.systs != None:
                                 cond = a in sess.systs.t.colnames \
                                            or a in sess.spec.t.colnames
                             else:
                                 cond = a in sess.spec.t.colnames
-
                         if cond:
                             item.Enable(True)
                             if m == '_view' and item.IsCheckable():
@@ -305,6 +311,7 @@ class GUIMenu(object):
                                     item.Check(item.key in sel)
                         else:
                             item.Enable(False)
+
                     except:
                         pass
 
@@ -405,7 +412,7 @@ class GUIMenuContinuum(GUIMenu):
                      {'targ': 'lines_update', 'append': 'z0'},
                      '> Other',
                      {'targ': 'peaks_find', 'append': 'spec'},
-                     {'targ': 'nodes_extract', 'append': 'lines'},
+                     {'targ': 'nodes_extract', 'append': 'cont'},
                      {'targ': 'nodes_clean', 'append': 'lines'},
                      {'targ': 'nodes_interp', 'append': 'nodes'},
                      '<',
@@ -464,8 +471,10 @@ class GUIMenuFile(GUIMenu):
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
+        self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
+        self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
+                   lambda e: self._on_save_pdf(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
@@ -495,12 +504,33 @@ class GUIMenuFile(GUIMenu):
             logging.info("I'm saving session %s..." % path)
             self._gui._sess_sel.save(path)
 
+    def _on_save_pdf(self, event, path=None):
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save spectrum as PDF", path, name,
+                           wildcard="PDF (*.pdf)|*.pdf",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            self._gui._sess_sel.save_pdf(path)
+
+
+
+
 
 class GUIMenuFlux(GUIMenu):
 
     def __init__(self,
                  gui,
-                 start_id=5000,
+                 start_id=5100,
                  **kwargs):
         super(GUIMenuFlux, self).__init__(gui)
         self._gui = gui
@@ -531,7 +561,11 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'equalize', 'func': '__eq__', 'value': 2},
+
+        self._rec = [{'targ': 'region_extract', 'append': 'spec'},
+                     {'targ': 'part_extract', 'append': 'spec'},
+                     '--',
+                     {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
                      '--',
                      {'targ': 'mask', 'append': 'spec'},
@@ -711,6 +745,7 @@ class GUIMenuView(GUIMenu):
         index = ['spec', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
 
+        #print(check)
         if check is not None:
             view = check
             item.Check(view)

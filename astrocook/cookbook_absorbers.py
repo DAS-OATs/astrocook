@@ -15,6 +15,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import argrelmin, argrelmax, find_peaks
 from scipy.special import erf, erfc
 import sys
+import time
 
 prefix = "[INFO] cookbook_absorbers:"
 
@@ -336,12 +337,14 @@ class CookbookAbsorbers(object):
                          % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
-    def _mods_recreate2(self, only_constr=False, verbose=True):
+    def _mods_recreate2(self, only_constr=False, mod_new=None, fast=False, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
         #print(systs._constr)
+
+        # When constraints have been added
         if only_constr:
             mod_sel = np.array([], dtype=int)
             mod_w = np.array([], dtype=int)
@@ -372,60 +375,115 @@ class CookbookAbsorbers(object):
             #mod_sel = np.ravel(np.array([m for m in systs._mods_t['id'][mod_w]]))
             #print(mod_sel)
 
+        # When a model has been added
+        elif mod_new is not None:
+            mod_sel = np.array([], dtype=int)
+            mod_w = np.array([], dtype=int)
+            ys = mod_new._ys
+            for s in systs._mods_t:
+                mod = s['mod']
+                ys_s = mod._ys
+                ymax = np.maximum(ys, ys_s)
+                thres = 1e-2
+                y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
+                pars_cond = False
+                #for p,v in self._pars.items():
+                for p,v in mod_new._constr.items():
+                    for mod_p,mod_v in mod._pars.items():
+                        pars_cond = pars_cond or v==mod_p
+                if y_cond or pars_cond:
+                    for id in s['id']:
+                        mod_w = np.append(mod_w,
+                            np.where([id in mod_id for mod_id
+                                      in systs._mods_t['id']])[0])
+                    mod_w = np.unique(mod_w)
+                    mod_sel = np.array([], dtype=int)
+                    for w in mod_w:
+                        mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
+
+
         else:
             mod_w = range(len(systs._mods_t))
             mod_sel = np.array(systs._t['id'])
-        #print(mod_w)
-        #print(mod_sel)
 
-        #print(systs._mods_t)
-        systs._mods_t.remove_rows(mod_w)
-        #print(systs._mods_t)
-        #for i,s in enumerate(systs._t):
+        #print(mod_sel)
         compressed = False
         if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
-        systs_t.sort('id')
-        wrong_id = []
-        corr_id = []
-        #print(systs_t)
-        for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
-                             "cookbook_absorbers: Recreating"):
-            systs._id = s['id']
-            if systs._id in mod_sel:
-                vars = {}
-                constr = {}
-                for k, v in systs._constr.items():
-                    #print(v)
-                    if v[0]==systs._id:
-                        if v[2]!=None:
-                            constr[k] = v[2]
-                        else:
-                            vars[k.split('_')[-1]+'_vary'] = False
-                #print(systs._id)
-                #if systs._id == 46: print(systs._constr.items())
-                mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
-                if any([mod._id in i for i in systs._mods_t['id']]):
-                    wrong_id.append(mod._id)
-                    corr_id.append(np.max(systs_t['id'])+1)
-                    mod._id = np.max(systs_t['id'])+1
-                #print(self.sess.defs.dict['voigt'])
-                mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                               b=s['b'], resol=s['resol'],
-                               defs=self.sess.defs.dict['voigt'])
-                self._mods_update(mod)
-                #print(systs._mods_t['id'])
 
-        for w, c in zip(wrong_id, corr_id):
-            logging.warning("System %i had a duplicated id! I changed it to %i."
-                            % (w, c))
+        #for m in systs._mods_t:
+        #    mod = m['mod']
+            #print(mod.func)
+
+        if not fast:
+
+            systs._mods_t.remove_rows(mod_w)
+            #print(systs._mods_t)
+            #for i,s in enumerate(systs._t):
+
+            systs_t.sort('id')
+            wrong_id = []
+            corr_id = []
+            #print(systs_t)
+            tt = time.time()
+            for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
+                                 "cookbook_absorbers: Recreating"):
+                systs._id = s['id']
+                if systs._id in mod_sel:
+                    vars = {}
+                    constr = {}
+                    for k, v in systs._constr.items():
+                        #print(v)
+                        if v[0]==systs._id:
+                            if v[2]!=None:
+                                constr[k] = v[2]
+                            else:
+                                vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id)
+                    #if systs._id == 46: print(systs._constr.items())
+                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                    if any([mod._id in i for i in systs._mods_t['id']]):
+                        wrong_id.append(mod._id)
+                        corr_id.append(np.max(systs_t['id'])+1)
+                        mod._id = np.max(systs_t['id'])+1
+                    #print(self.sess.defs.dict['voigt'])
+                    #print(len(systs._mods_t), end=' ')
+                    mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                                   b=s['b'], resol=s['resol'],
+                                   defs=self.sess.defs.dict['voigt'])
+                    #print(len(systs._mods_t), time.time()-tt)
+                    #tt = time.time()
+                    self._mods_update(mod)
+                    #print(len(systs._mods_t), time.time()-tt)
+                    #tt = time.time()
+                else:
+                    systs._id = np.max(systs._t['id'])+1
+
+            for w, c in zip(wrong_id, corr_id):
+                logging.warning("System %i had a duplicated id! I changed it "
+                                "to %i." % (w, c))
+
+        spec.t['fit_mask'] = False
+        for m in systs._mods_t:
+            mod = m['mod']
+            #print(mod.func)
+            c = []
+            t = 1e-2
+            while len(c)==0:
+                c = np.where(mod._ys<1-t)[0]
+                t = t*0.5
+            #print(m['z0'], len(c))
+            spec.t['fit_mask'][c] = True
+
+
 
         systs_t.sort(['z','id'])
         #systs._mods_t['id'].pprint(max_lines=-1)
         #print(len(systs._mods_t))
         systs_n = len(systs._t)
+        #systs._id = np.max(systs._t['id'])
         mods_n = len(systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s (including %i system%s)." \
@@ -434,6 +492,7 @@ class CookbookAbsorbers(object):
         #profile.disable()
         #ps = pstats.Stats(profile)
         #ps.sort_stats('cumtime').print_stats(20)
+
         return 0
 
 
@@ -502,7 +561,6 @@ class CookbookAbsorbers(object):
                 logging.warning("Redshift %2.4f already exists. Choose another "
                                 "one." % z)
             return None
-
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
                           None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
@@ -518,7 +576,15 @@ class CookbookAbsorbers(object):
 
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
-            frozen = mod._fit(fit_kws={'max_nfev': self._max_nfev})
+            try:
+                if 'max_nfev' in self._fit_kws:
+                    fit_kws = self._fit_kws
+                else:
+                    fit_kws = self._fit_kws
+                    fit_kws['max_nfev'] = self._max_nfev
+            except:
+                fit_kws = {'max_nfev': self._max_nfev}
+            frozen = mod._fit(fit_kws=fit_kws)
             #mod._pars.pretty_print()
             if verbose and frozen:
                 logging.info("I've not fitted 1 model at redshift %2.4f "
@@ -574,10 +640,10 @@ class CookbookAbsorbers(object):
                 systs_n += 1
                 self._systs_update(mod)
 
-            id_list.append(mod._id)
-            if k is not None:
-                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
-                    = (mod._id, 'z', k)
+                id_list.append(mod._id)
+                if k is not None:
+                    self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
+                        = (mod._id, 'z', k)
 
 
         # Improve
@@ -601,7 +667,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_cycle(self, verbose=True):
+    def _systs_cycle(self, mod=None, verbose=True):
         chi2rav = np.inf
         chi2rav_old = 0
         chi2r_list, z_list = [], []
@@ -609,19 +675,19 @@ class CookbookAbsorbers(object):
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
-                chi2r_list, z_list = self._systs_fit(verbose=False)
+                fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                              -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
-                self._systs_reject(verbose=False)
+                self._systs_reject(mod=mod, verbose=verbose)
                 self._mods_recreate(verbose=False)
             #print(chi2rav, chi2rav_old)
-        chi2r_list, z_list = self._systs_fit(verbose=False)
-        self._systs_reject(verbose=False)
+        fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+        self._systs_reject(mod=mod, verbose=verbose)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
-                         % (len(self.sess.systs._mods_t), msg_z_range(z_list)))
+                         % (np.sum(fit_list), msg_z_range(z_list)))
             if chi2rav < np.inf:
                 logging.info("Average chi2r variation after last cycle: %2.4e."\
                              % chi2rav)
@@ -636,8 +702,13 @@ class CookbookAbsorbers(object):
             fit_list = []
             for i,m in enumerate(mods_t):
                 if self._sel_fit:
+                    #print(m['id'])
+                    #print(systs._t['id'])
+                    #print([np.where(systs._t['id']==id) for id in m['id']])
+                    #print([np.where(systs._t['id']==id)[0][0] for id in m['id']])
                     dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
                           for id in m['id']]
+                    #print(np.isnan(dz).any())
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
@@ -653,21 +724,23 @@ class CookbookAbsorbers(object):
                 else:
                     fit = True
                 """
-                z_list.append(m['z0'])
                 if fit_list[i]:
+                    z_list.append(m['z0'])
                     frozen = self._syst_fit(m['mod'], verbose=False)
                     if not frozen: chi2r_list.append(m['mod']._chi2r)
 
             if verbose:
                 logging.info("I've fitted %i model%s." \
-                             % (len(mods_t), msg_z_range(z_list)))
+                             % (np.sum(fit_list), msg_z_range(z_list)))
         else:
+            fit_list = []
             for i,m in enumerate(mods_t):
                 z_list.append(m['z0'])
+                fit_list.append(False)
             if verbose:
                 logging.info("I've not fitted any model because you choose "
                              "max_nfev=0.")
-        return chi2r_list, z_list
+        return fit_list, chi2r_list, z_list
 
 
     def _systs_guess(self, series_list, z_list):
@@ -749,7 +822,7 @@ class CookbookAbsorbers(object):
         return 0
     """
 
-    def _systs_reject(self, verbose=True):
+    def _systs_reject(self, mod=None, verbose=True):
         systs = self.sess.systs
         chi2r_cond = systs._t['chi2r'] > self._chi2r_thres
         """
@@ -759,8 +832,13 @@ class CookbookAbsorbers(object):
             systs._t['db'] > dlogN_thres*systs._t['b'])
         """
         relerr_cond = systs._t['dlogN'] > self._dlogN_thres
-
-        rem = np.where(np.logical_or(chi2r_cond, relerr_cond))[0]
+        cond = np.logical_or(chi2r_cond, relerr_cond)
+        if mod is not None:
+            id_cond = np.array([mod._id==ids for ids in systs._t['id']])
+            chi2r_cond = np.logical_and(chi2r_cond, id_cond)
+            relerr_cond = np.logical_and(relerr_cond, id_cond)
+            cond = np.logical_and(cond, id_cond)
+        rem = np.where(cond)[0]
         z_rem = systs._t['z'][rem]
         #refit_id = []
         if len(rem) > 0:
@@ -786,7 +864,7 @@ class CookbookAbsorbers(object):
             systs._t.remove_rows(rem)
             """
             if verbose:
-                logging.info("I've rejected %i mis-identified system%s (%i with a "\
+                logging.info("I've rejected %i badly fitting system%s (%i with a "\
                              "reduced chi2 above %2.2f, %i with relative errors "\
                              "above %2.2f)."
                              % (len(rem), '' if len(rem)==1 else 's',
@@ -994,13 +1072,14 @@ class CookbookAbsorbers(object):
 
 
     def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
-                  sel_fit=False):
+                  sel_fit=False, _fit_kws='{"ftol": 1e-3}'):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @param sel_fit Selective fit (only new systems will be fitted)
+        @param _fit_kws Fitter keywords
         @return 0
         """
 
@@ -1009,6 +1088,7 @@ class CookbookAbsorbers(object):
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
             self._sel_fit = str(sel_fit) == 'True'
+            self._fit_kws = str_to_dict(_fit_kws)
         except:
             logging.error(msg_param_fail)
             return 0
@@ -1414,10 +1494,9 @@ class CookbookAbsorbers(object):
             else:
                 #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
-
             if self._refit_n == 0:
-                self._mods_recreate()
-            self._systs_cycle()
+                self._mods_recreate(mod_new=mod)
+            self._systs_cycle(mod=mod, verbose=True)
         self._spec_update()
 
         if recompress:
@@ -2059,6 +2138,7 @@ class CookbookAbsorbers(object):
         z_likes = self._z_likes
         series_split = series.split(';')
         k_list = []
+        id_list = []
         for i, s in enumerate(series_split):
             #print(s, 'systs_like')
             #series_o = list(set(series_split) - set([s]))
@@ -2124,6 +2204,8 @@ class CookbookAbsorbers(object):
                                               resol_list=resol_list, k_list=k_list)
                     self._mods_recreate()
                     self._spec_update()
+            else:
+                id_list = []
         #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
