@@ -226,6 +226,7 @@ class GUITable(wx.Frame):
             self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
+            self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
             title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
             attr = ['sort', 'sort_reverse', None, 'histogram']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title,

@@ -10,8 +10,6 @@ nav_order: 1
 
 Astrocook manages three main data structures: *spectra*, *line lists*, and *system lists*. All three structures include a data table (actually an [Astropy Table](https://docs.astropy.org/en/stable/table/) object) and a metadata dictionary. These structures and other ancillary structures are bundled into a `.acs` archive when you [save a snapshot of a session](http://localhost:4000/astrocook/gui.html#save-sessions).
 
-❗️ **Long tables can take a long time to display.**
-
 ---
 ## Table of contents
 {: .no_toc .text-delta }
@@ -42,4 +40,6 @@ Absorption lines detected in quasar spectra are frequently grouped into absorpti
 
 In our convention, a system has *one and only one* redshift. This means that e.g. different doublets at a similar redshift are treated as separated (one redshift per doublet). It also means that each component of an absorbers with a complex velocity structure (also sometimes called a "system") is considered a system in itself. [Here](series.md) you can find a complete list of the ionic transitions used to model absorption features.
 
-[System tables](http://localhost:4000/astrocook/tables.html#system-table) are saved both in FITS and ASCII format, with file names `snapshot_systs.fits/.dat` respectively. System tables only contain the parameters needed to compute the system models. The models themselves (i.e. the fitting functions, which often group together several systems into a single expression, when they need to be fitted together) are saved in a set of ASCII files `snapshot_systs_mods_NN__lines.dat/__group.dat/_left.dat/_right.dat`, with `NN` the ID of the model. An additional ASCII file `snapshot_systs_mods.dat` provides a list of the models. These files are handled internally via serialization by [`pickle`](https://docs.python.org/3/library/pickle.html) and [`lmfit.save_model()/.load_model()`](https://lmfit.github.io/lmfit-py/model.html#saving-and-loading-models) and are not meant to be accessed by the users.
+[System tables](http://localhost:4000/astrocook/tables.html#system-table) are saved both in FITS and ASCII format, with file names `snapshot_systs.fits`/`.dat` respectively.
+
+System tables only contain the parameters needed to compute the system models. The models themselves (i.e. the fitting functions, which often group together several systems into a single expression, when they need to be fitted together) are saved in a set of ASCII files `snapshot_systs_mods_NN__lines.dat`/`__group.dat`/`_left.dat`/`_right.dat`, with `NN` the ID of the model. An additional ASCII file `snapshot_systs_mods.dat` provides a list of the models. These files are handled internally via serialization by [`pickle`](https://docs.python.org/3/library/pickle.html) and [`lmfit.save_model()`/`.load_model()`](https://lmfit.github.io/lmfit-py/model.html#saving-and-loading-models) and are not meant to be accessed by the users.

@@ -8,7 +8,9 @@ nav_order: 2
 # Tables
 {: .no_toc}
 
-To display the data tables, choose `View > Spectrum table` (or `Line table` or `System table`) from the menu bar.
+Spectra, line lists, and system lists can be displayed as tables. To do so, choose `View > Spectrum table`/`Line table`/`System table` from the menu bar.
+
+❗️ **Long tables can take a long time to display.**
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -19,7 +21,11 @@ To display the data tables, choose `View > Spectrum table` (or `Line table` or `
 
 ## Spectrum table
 
-The fundamental columns of a spectrum are:
+This is an example of spectrum table:
+
+![Spectrum table](img/table_spectrum.png)
+
+The fundamental columns are:
 - `x`: the wavelength-like independent variable;
 - `xmin`, `xmax`: the interval in `x` values in which the flux-like quantity is integrated;
 - `y`, `dy`: the flux-like dependent variable and its error.
@@ -34,8 +40,6 @@ Other columns that frequently appear in a spectrum are:
 - `deabs`: a *deabsorbed* spectrum, i.e. an equivalent of `y` after the absorption lines have been removed using the model;
 - `resol`: the spectral resolution at `x`;
 - `fit_mask`: a boolean mask of the regions used to fit the model of the absorption systems.  
-
-You are free to add other columns to the spectrum or edit the existing ones (as explained [here](tables.md)).
 
 
 ## Line table
@@ -69,4 +73,12 @@ The parameters of the [Voigt profile](absorbers.md#voigt-profile-modeling) (`z`,
 
 ## Browse tables 🚧
 
-## Interact with the data 🚧
+## Interact with the data
+
+Table cells are editable. If you click on a cell and edit its value, the new value is propagated to the underlying data structure.
+
+By right-clicking on the column labels, you can:
+- Sort the table by ascending or descending values of the chosen column;
+- Produce a histogram of the values of the chosen column (which appears on a separate window).
+
+By right-clicking on the row labels, you can remove rows from the table.
