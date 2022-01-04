@@ -66,6 +66,7 @@ class GUITable(wx.Frame):
         if self._attr == 'systs':
             sess.cb._systs_remove([row])
             sess.cb._mods_recreate()
+            sess.cb._spec_update()
         else:
             tab = getattr(self._gui, '_tab_'+attr)
             tab._data.t.remove_row(row)
@@ -268,7 +269,7 @@ class GUITable(wx.Frame):
         sess.log.append_full('cb', '_spec_update', {})
 
         self._data_remove(row, self._attr)
-        sess.cb._spec_update()
+        #sess.cb._spec_update()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         #self._fill()
         self._gui._refresh(init_cursor=True)
