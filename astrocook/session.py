@@ -520,67 +520,39 @@ class Session(object):
 
                         #name_mods_db = '%s.db' % (name_mods_dat[:-4])
                         #db = shelve.open(name_mods_db)
-
+                        fail = []
                         for i, r in enum_tqdm(obj._mods_t, len(obj._mods_t),
                                                 "session: Saving models"):
                             id = r['id']
                             m = r['mod']
-                        #for id, m in obj._mods_t['id', 'mod']:
-                            #find_class(m, Spectrum)
-                            class_mute(m, Spectrum)
-                            #print(m.func, m.left)
+                            try:
+                                class_mute(m, Spectrum)
+                                for attr in ['_lines', '_group', 'left', 'right']:
+                                    name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
+                                    save_model(getattr(m, attr), name_attr_dat)
+                                    arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%i_%s.dat' % (id[0], attr))
+                                    os.remove(name_attr_dat)
 
-                            #mn = SystModel(m._spec, getattr(self, s))
-                            #print(m.__dict__)
-                            """
-                            for attr in ['_series', '_vars', '_constr', '_z0',
-                                         '_resol', '_defs', '_lines_pref',
-                                         '_psf_pref', '_pars', '_xs',
-                                         '_group_list', '_group_sel', '_ys',
-                                         'op', '_prefix', '_param_root_names',
-                                         'independent_vars', '_func_allargs',
-                                         '_func_haskeywords', 'nan_policy',
-                                         'opts', 'param_hints', '_param_names',
-                                         'def_vals', '_name', '_xr', '_yr',
-                                         '_wr', '_xf', '_yf', '_wf']:
-                                setattr(mn, attr, getattr(m, attr))
-                            """
-                            for attr in ['_lines', '_group', 'left', 'right']:
-                                name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
-                                save_model(getattr(m, attr), name_attr_dat)
-                                arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%i_%s.dat' % (id[0], attr))
-                                os.remove(name_attr_dat)
+                                for attr in ['_mods_t']:
+                                    setattr(m, attr, attr)
 
-                            for attr in ['_mods_t']:
-                                setattr(m, attr, attr)
+                                for attr in ['_lines', '_group', 'left',
+                                             'right', 'func']:
+                                    setattr(m, attr, None)
+                                name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
+                                with open(name_mod_dat, 'wb') as f:
+                                    #for a in m.__dict__:
+                                    pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
 
-                            for attr in ['_lines', '_group', 'left',
-                                         'right', 'func']:
-                                #setattr(mn, attr, None)
-                                setattr(m, attr, None)
-                            #print(mn.__dict__)
-                            """
-                            m._spec = ''
-                            m.opts['spec'] = ''
-                            m._group.opts['spec'] = ''
-                            m._group.left.opts['spec'] = ''
-                            m._group.left.right.opts['spec'] = ''
-                            m._lines.opts['spec'] = ''
-                            m._lines.right.opts['spec'] = ''
-                            """
-                            name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
-                            #save_model(m, name_mod_dat)
-                            with open(name_mod_dat, 'wb') as f:
-                                #for a in m.__dict__:
-                                pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
+                                arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
+                                os.remove(name_mod_dat)
+                            except:
+                                fail.append(id)
 
-                            #db['mod'] = mn
-                            arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
-                            os.remove(name_mod_dat)
-                        #arch.add(name_mods_db, arcname=stem+'_'+s+'_mods.db')
-                        #os.remove(name_mods_db)
-                        #db.close()
-
+                        if fail != []:
+                            logging.warning("I could not serialize %i out of %i "
+                                            "models. They were not saved." \
+                                            % (len(fail), len(obj._mods_t)))
 
                     """
 					arch.add(name, arcname=stem+'_'+s+'.fits')
