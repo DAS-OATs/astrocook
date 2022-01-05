@@ -208,6 +208,7 @@ class SystModel(LMComposite):
     def _make_group2(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
+        time_check = False
         #T = time.time()
         #tt = time.time()
         spec = self._spec
@@ -228,44 +229,52 @@ class SystModel(LMComposite):
         for i, s in enumerate(mods_t):
             modified = False
 
-            ttt = time.time()
+            if time_check:
+                ttt = time.time()
             #print(s['id'])
             mod = s['mod']
             ys_s = mod._ys
 
-            if time.time()-ttt > 1e-1: print('0 %.4f' % (time.time()-ttt))
-            ttt = time.time()
+            if time_check:
+                print('0 %.4f' % (time.time()-ttt))
+                ttt = time.time()
             cond, pars_cond = False, False
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
                     cond = cond or v==mod_p
             if cond: pars_cond = True
-            if time.time()-ttt > 1e-1: print('1 %.4f' % (time.time()-ttt))
-            ttt = time.time()
+            if time_check:
+                print('1 %.4f' % (time.time()-ttt))
+                ttt = time.time()
             if not cond:
             #print(s['id'])
                 #ymax = np.maximum(ys, ys_s)
                 yminmax = np.amin(np.maximum(ys,ys_s))
-                if time.time()-ttt > 1e-1: print('2 %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('2 %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 #cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
                 cond = yminmax<1-thres or yminmax==ysmin
-                if time.time()-ttt > 1e-1: print('3 %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('3 %.4f' % (time.time()-ttt))
+                    ttt = time.time()
 
-            if time.time()-ttt > 1e-1: print('4 %.4f' % (time.time()-ttt))
-            ttt = time.time()
+            if time_check:
+                print('4 %.4f' % (time.time()-ttt))
+                ttt = time.time()
             if cond: #y_cond or pars_cond:
                 #print('mod')
                 #mod._pars.pretty_print()
                 #print('self')
                 #self._pars.pretty_print()
                 #try:
-                if time.time()-ttt > 1e-1: print('b %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('b %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 self._group *= mod._group
-                #if time.time()-ttt > 1e-1: print('a %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('a %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 #except:
                 #    self._group_sel = -1
                 #    return
@@ -275,8 +284,9 @@ class SystModel(LMComposite):
                         self._constr[p] = v.expr
                         v.expr = ''
                 self._pars.update(mod._pars)
-                if time.time()-ttt > 1e-1: print('5 %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('5 %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
                         self._pars[p].expr = v
@@ -290,18 +300,21 @@ class SystModel(LMComposite):
                             except:
                                 self._pars[p].expr = ''
                 self._group_list.append(i)
-                if time.time()-ttt > 1e-1: print('6 %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('6 %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 #mod_ys = self._group.eval(x=self._xs, params=self._pars)
                 mod._ys = ys_s*ys
                 ys = mod._ys
                 #print('mid', np.mean(np.abs(mod_ys-mod._ys)))
                 modified = True
-                #if time.time()-ttt > 1e-1: print('7 %.4f' % (time.time()-ttt))
-                ttt = time.time()
+                if time_check:
+                    print('7 %.4f' % (time.time()-ttt))
+                    ttt = time.time()
                 #print('')
                 #print(i, id(self._group), id(self._pars))
-            if time.time()-ttt > 1e-1: print('8 %.4f' % (time.time()-ttt))
+            if time_check:
+                print('8 %.4f' % (time.time()-ttt))
 
         #if time.time()-tt > 1e-2: print('B %.4f' % (time.time()-tt), end=' ')
         #tt = time.time()
@@ -359,12 +372,27 @@ class SystModel(LMComposite):
 
 
     def _make_lines_psf(self):
+        time_check = False
+        if time_check:
+            tt = time.time()
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
+        if time_check:
+            print('a %.4f' % (time.time()-tt))
+            tt = time.time()
         line = LMModel(self._lines_func, prefix=self._lines_pref,
                        series=self._series)
+        if time_check:
+            print('b %.4f' % (time.time()-tt))
+            tt = time.time()
         psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
-        line_psf = LMComposite(line, psf, convolve_simple)
+        if time_check:
+            print('c %.4f' % (time.time()-tt))
+            tt = time.time()
+        line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
+        if time_check:
+            print('d %.4f' % (time.time()-tt))
+            tt = time.time()
 
         d = self._defs
 
@@ -393,6 +421,9 @@ class SystModel(LMComposite):
              d['resol_min'], d['resol_max'], d['resol_expr']))
 
         self._lines = line_psf
+        if time_check:
+            print('e %.4f' % (time.time()-tt))
+            tt = time.time()
 
 
     def _make_psf(self):
@@ -498,37 +529,44 @@ class SystModel(LMComposite):
         self._resol = resol
         self._series = series
 
-        tt = time.time()
+        time_check = False
+        if time_check:
+            tt = time.time()
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
 
         self._make_defs(defs)
-        #print('a', time.time()-tt)
-        #tt = time.time()
+        if time_check:
+            print('a %.4f' % (time.time()-tt))
+            tt = time.time()
 
         #self._make_lines()
         self._make_lines_psf()
-        #print('b', time.time()-tt)
-        #tt = time.time()
+        if time_check:
+            print('b %.4f' % (time.time()-tt))
+            tt = time.time()
 
         #self._make_group()
         self._make_group2()
-        #print('c', time.time()-tt)
-        #tt = time.time()
+        if time_check:
+            print('c %.4f' % (time.time()-tt))
+            tt = time.time()
 
         #self._make_psf()
         #self._make_comp()
         self._make_comp2()
-        #print('d', time.time()-tt)
-        #tt = time.time()
+        if time_check:
+            print('d %.4f' % (time.time()-tt))
+            tt = time.time()
 
         ys = dc(self._ys)
         #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
         self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
         if np.sum(self._ys-ys)>0: print('attenzione:', np.sum(self._ys-ys))
-        #print('e', time.time()-tt)
-        #tt = time.time()
+        if time_check:
+            print('e %.4f' % (time.time()-tt))
+            tt = time.time()
 
         #print('r', self._yr)
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr

@@ -39,7 +39,13 @@ class Format(object):
             dy = data['dy']
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
-            meta = hdr
+            meta = hdr[:50]
+            delete = []
+            for m in meta:
+                if 'AC' not in m and len(m)>8:
+                    delete.append(m)
+            for d in delete:
+                del meta[d]
             """
             try:
                 meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
