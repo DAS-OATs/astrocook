@@ -20,13 +20,16 @@ from astropy.table import Column, Table
 from collections import OrderedDict
 from copy import deepcopy as dc
 import json
+from lmfit.model import Model
 import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 import numpy as np
+import operator
 import os
 import pickle
+#import dill as pickle
 from scipy.signal import argrelmin
 import shelve
 import tarfile
@@ -317,8 +320,8 @@ class Session(object):
                         for i in range(len(data)):
                             #print(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
                             #print(type(np.array(list(map(int, data['id'][i][1:-1].split(','))))))
-                            systs._mods_t['id'][i] = np.array(list(map(int, data['id'][i][1:-1].split(','))))
-                        #print(systs._mods_t)
+                            #systs._mods_t['id'][i] = list(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
+                            systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
                         funcdefs = {'convolve_simple': convolve_simple,
                                     'lines_voigt': lines_voigt,
                                     'psf_gauss': psf_gauss,
@@ -329,12 +332,16 @@ class Session(object):
                             name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
                             with open(name_mod_dat, 'rb') as f:
                                 mod = pickle.load(f)
+                            #setattr(mod.__init__, '_tmp', mod.func)
+
                             for attr in ['_lines', '_group', 'left', 'right']:
                                 name_attr_dat = self.path[:-4]+'_'+s\
                                     +'_mods_%i_%s.dat' % (m['id'][0], attr)
                                 setattr(mod, attr, load_model(name_attr_dat,
                                         funcdefs=funcdefs))
                                 os.remove(name_attr_dat)
+                            super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
+                            #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
                             class_unmute(mod, Spectrum, self.spec)
                             m['mod'] = mod
                             os.remove(name_mod_dat)
@@ -554,17 +561,6 @@ class Session(object):
                                             "models. They were not saved." \
                                             % (len(fail), len(obj._mods_t)))
 
-                    """
-					arch.add(name, arcname=stem+'_'+s+'.fits')
-                    arch.add(name_dat, arcname=stem+'_'+s+'.dat')
-
-                    os.remove(name)
-                    os.remove(name_dat)
-                    logging.info("I've saved frame %s as %s."
-                                 % (s, stem+'_'+s+'.fits'))
-					"""
-                #else:
-                #    logging.warning("I haven't found any frame %s to save." % s)
 
             file = open(root+'.json', "w")
             n = file.write(self.log.str)

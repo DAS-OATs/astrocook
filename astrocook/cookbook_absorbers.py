@@ -413,6 +413,10 @@ class CookbookAbsorbers(object):
         else:
             systs_t = systs._t
 
+        #for m in systs._mods_t:
+        #    mod = m['mod']
+            #print(mod.func)
+
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -461,8 +465,10 @@ class CookbookAbsorbers(object):
                 logging.warning("System %i had a duplicated id! I changed it "
                                 "to %i." % (w, c))
 
+        spec.t['fit_mask'] = False
         for m in systs._mods_t:
             mod = m['mod']
+            #print(mod.func)
             c = []
             t = 1e-2
             while len(c)==0:
@@ -578,7 +584,6 @@ class CookbookAbsorbers(object):
                     fit_kws['max_nfev'] = self._max_nfev
             except:
                 fit_kws = {'max_nfev': self._max_nfev}
-
             frozen = mod._fit(fit_kws=fit_kws)
             #mod._pars.pretty_print()
             if verbose and frozen:

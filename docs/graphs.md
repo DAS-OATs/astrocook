@@ -2,7 +2,7 @@
 layout: default
 title: Graphs
 parent: Managing data
-nav_order: 2
+nav_order: 3
 ---
 
 # Graphs
