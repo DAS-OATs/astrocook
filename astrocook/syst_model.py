@@ -70,6 +70,11 @@ class SystModel(LMComposite):
             #        print(self._pars[p])
             #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
+            if not hasattr(self, '_dxs'):
+                self._dxs = np.array(self._spec._safe(
+                                self._spec._t['xmax']\
+                                -self._spec._t['xmin']).to(au.nm))
+            self._ew = np.sum(self._dxs*(1-self._ys))
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic
@@ -107,6 +112,10 @@ class SystModel(LMComposite):
         for v in self._vars:
             if v in self._defs:
                 self._defs[v] = self._vars[v]
+        if 'ew_min' in defs:
+            self._defs['ew_min'] = defs['ew_min']
+        else:
+            self._defs['ew_min'] = ew_min
 
     def _make_group(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
@@ -215,9 +224,17 @@ class SystModel(LMComposite):
 
         mods_t = self._mods_t
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
+        self._dxs = np.array(spec._safe(spec._t['xmax']-spec._t['xmin']).to(au.nm))
+
 
         #print(self.__dict__)
         ys = self._lines.eval(x=self._xs, params=self._pars)
+
+        ew = np.sum(self._dxs*(1-ys))
+        if ew < self._defs['ew_min']:
+            #print("%.7f" % ew)
+            #self._pars.pretty_print()
+            return 1
 
         ysmin = np.amin(ys)
         self._group = self._lines
@@ -350,6 +367,7 @@ class SystModel(LMComposite):
         #print('group_sel:', self._group_sel)
         #print(mods_t['id'])
 
+        return 0
 
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
@@ -548,27 +566,30 @@ class SystModel(LMComposite):
             tt = time.time()
 
         #self._make_group()
-        self._make_group2()
+        group_fail = self._make_group2()
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
 
+        if not group_fail:
+
         #self._make_psf()
         #self._make_comp()
-        self._make_comp2()
-        if time_check:
-            print('d %.4f' % (time.time()-tt))
-            tt = time.time()
+            self._make_comp2()
+            if time_check:
+                print('d %.4f' % (time.time()-tt))
+                tt = time.time()
 
-        ys = dc(self._ys)
+            ys = dc(self._ys)
         #self._xr, self._yr, self._wr, self._ys = self._make_regions(self, self._xs)
-        self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
-        if np.sum(self._ys-ys)>0: print('attenzione:', np.sum(self._ys-ys))
-        if time_check:
-            print('e %.4f' % (time.time()-tt))
-            tt = time.time()
+            self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
+            if np.sum(self._ys-ys)>0: print('attenzione:', np.sum(self._ys-ys))
+            if time_check:
+                print('e %.4f' % (time.time()-tt))
+                tt = time.time()
 
         #print('r', self._yr)
-        self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
+            self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
         #self._pars.pretty_print()
         #self._ys = self.eval(x=self._xs, params=self._pars)
+        return group_fail

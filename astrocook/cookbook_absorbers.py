@@ -417,6 +417,8 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        fail = []
+        #print(self.sess.defs.dict)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -450,12 +452,15 @@ class CookbookAbsorbers(object):
                         mod._id = np.max(systs_t['id'])+1
                     #print(self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), end=' ')
-                    mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                                   b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs.dict['voigt'])
+                    group_fail = mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                                          b=s['b'], resol=s['resol'],
+                                          defs=self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
-                    self._mods_update(mod)
+                    if group_fail:
+                        fail.append(i)
+                    else:
+                        self._mods_update(mod)
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
                 else:
@@ -464,6 +469,8 @@ class CookbookAbsorbers(object):
             for w, c in zip(wrong_id, corr_id):
                 logging.warning("System %i had a duplicated id! I changed it "
                                 "to %i." % (w, c))
+            systs._t.remove_rows(fail)
+
         else:
             systs._id = np.max(systs._t['id'])+1
 
@@ -488,9 +495,17 @@ class CookbookAbsorbers(object):
         #systs._id = np.max(systs._t['id'])
         mods_n = len(systs._mods_t)
         if verbose:
+            if len(fail) > 0:
+                logging.warning("I've rejected %i system%s because %s EW was " \
+                    "below %.2e."
+                    % (len(fail),
+                       '' if len(fail)==1 else 's',
+                       'its' if len(fail)==1 else 'their',
+                       float(self.sess.defs.dict['voigt']['ew_min'])))
             logging.info("I've recreated %i model%s (including %i system%s)." \
                          % (mods_n, '' if mods_n==1 else 's',
                             systs_n, '' if systs_n==1 else 's'))
+
         #profile.disable()
         #ps = pstats.Stats(profile)
         #ps.sort_stats('cumtime').print_stats(20)

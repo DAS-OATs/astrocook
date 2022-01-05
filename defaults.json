@@ -17,7 +17,8 @@
     "logN_max": 18,
     "b_max": 100.0,
     "btur_max": 100.0,
-    "resol_max": 1e6
+    "resol_max": 1e6,
+    "ew_min": 1e-4
   },
   "fit": {
     "ftol": 1e-3,
