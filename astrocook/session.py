@@ -326,36 +326,42 @@ class Session(object):
                                     'lines_voigt': lines_voigt,
                                     'psf_gauss': psf_gauss,
                                     'zero': zero}
+
+                        mods_t_ok = False
                         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                                              "session: Opening models"):
                         #for m in systs._mods_t:
-                            name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
-                            with open(name_mod_dat, 'rb') as f:
-                                mod = pickle.load(f)
+                            try:
+                                name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
+                                with open(name_mod_dat, 'rb') as f:
+                                    mod = pickle.load(f)
                             #setattr(mod.__init__, '_tmp', mod.func)
 
-                            for attr in ['_lines', '_group', 'left', 'right']:
-                                name_attr_dat = self.path[:-4]+'_'+s\
-                                    +'_mods_%i_%s.dat' % (m['id'][0], attr)
-                                setattr(mod, attr, load_model(name_attr_dat,
-                                        funcdefs=funcdefs))
-                                os.remove(name_attr_dat)
-                            super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
-                            #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
-                            class_unmute(mod, Spectrum, self.spec)
-                            m['mod'] = mod
-                            os.remove(name_mod_dat)
+                                for attr in ['_lines', '_group', 'left', 'right']:
+                                    name_attr_dat = self.path[:-4]+'_'+s\
+                                        +'_mods_%i_%s.dat' % (m['id'][0], attr)
+                                    setattr(mod, attr, load_model(name_attr_dat,
+                                            funcdefs=funcdefs))
+                                    os.remove(name_attr_dat)
+                                super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
+                                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
+                                class_unmute(mod, Spectrum, self.spec)
+                                m['mod'] = mod
+                                os.remove(name_mod_dat)
+                                mods_t_ok = True
+                            except:
+                                pass
 
-
-                        for m in systs._mods_t['mod']:
-                            for attr in ['_mods_t']:
-                                setattr(m, attr, getattr(systs, attr))
+                        if mods_t_ok:
+                            for m in systs._mods_t['mod']:
+                                for attr in ['_mods_t']:
+                                    setattr(m, attr, getattr(systs, attr))
 
 
                             #print(m.func)
 
-                        only_constr = True
-                        fast = True
+                            only_constr = True
+                            fast = True
 
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
