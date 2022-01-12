@@ -464,6 +464,8 @@ class CookbookAbsorbers(object):
             for w, c in zip(wrong_id, corr_id):
                 logging.warning("System %i had a duplicated id! I changed it "
                                 "to %i." % (w, c))
+        else:
+            systs._id = np.max(systs._t['id'])+1
 
         spec.t['fit_mask'] = False
         for m in systs._mods_t:
@@ -554,7 +556,6 @@ class CookbookAbsorbers(object):
         systs = self.sess.systs
         spec = self.sess.spec
         #print(systs._t['series'][systs._t['z0']==z])
-        #print(systs._id)
         if z in systs._t['z0'] \
             and series in systs._t['series'][systs._t['z0']==z]:
             if verbose:
@@ -1496,6 +1497,7 @@ class CookbookAbsorbers(object):
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)
+            self._sel_fit = True
             self._systs_cycle(mod=mod, verbose=True)
         self._spec_update()
 
