@@ -527,10 +527,11 @@ class Format(object):
                 if np.nanmax(x)>3000:
                     x = x*0.1
             try:
-                yunit = data_s.__dict__['_coldefs'][y_name]._unit
+                yunit = au.Unit(data_s.__dict__['_coldefs'][y_name]._unit)
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
 
+            
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
             """
