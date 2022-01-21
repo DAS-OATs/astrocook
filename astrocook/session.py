@@ -382,16 +382,34 @@ class Session(object):
             #    logging.warning("You gave me too many system lists! I will "\
             #                    "load the first one.")
             path = self._gui._flags_extr('--systs')
+
+            try:
+                mode = self._gui._flags_extr('--mode')
+            except:
+                mode = 'std'
+
+
+            # Only ascii for now
             data = ascii.read(path)
+            if mode == 'std':
+                z = data['col1']
+                dz = data['col3']
+                logN = data['col4']
+                dlogN = data['col5']
+                b = data['col6']
+                db = data['col7']
+            if mode == 'viper':
+                z = data['col1']/1215.67-1
+                dz = [np.nan]*len(data)
+                logN = data['col2']
+                dlogN = data['col5']
+                b = data['col3']
+                db = data['col6']
+
+
             # Only Ly_a for now
             series = ['Ly_a']*len(data)
             func = ['voigt']*len(data)
-            z = data['col1']
-            dz = data['col3']
-            logN = data['col4']
-            dlogN = data['col5']
-            b = data['col6']
-            db = data['col7']
             self.cb.resol_est()
             resol = [np.nanmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
