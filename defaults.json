@@ -18,5 +18,10 @@
     "b_max": 100.0,
     "btur_max": 100.0,
     "resol_max": 1e6
+  },
+  "fit": {
+    "ftol": 1e-3,
+    "xtol": 1e-3,
+    "gtol": 1e-3
   }
 }

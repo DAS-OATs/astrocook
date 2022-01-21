@@ -578,13 +578,15 @@ class CookbookAbsorbers(object):
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
             try:
-                if 'max_nfev' in self._fit_kws:
-                    fit_kws = self._fit_kws
+                if 'max_nfev' in self.sess.defs.dict['fit']:
+                    fit_kws = self.sess.defs.dict['fit']
                 else:
-                    fit_kws = self._fit_kws
+                    fit_kws = self.sess.defs.dict['fit']
                     fit_kws['max_nfev'] = self._max_nfev
             except:
                 fit_kws = {'max_nfev': self._max_nfev}
+            #print(fit_kws)
+            #print(self.sess.defs.dict['fit'])
             frozen = mod._fit(fit_kws=fit_kws)
             #mod._pars.pretty_print()
             if verbose and frozen:
@@ -1073,14 +1075,13 @@ class CookbookAbsorbers(object):
 
 
     def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
-                  sel_fit=False, _fit_kws='{"ftol": 1e-3}'):
+                  sel_fit=False):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @param sel_fit Selective fit (only new systems will be fitted)
-        @param _fit_kws Fitter keywords
         @return 0
         """
 
@@ -1089,7 +1090,6 @@ class CookbookAbsorbers(object):
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
             self._sel_fit = str(sel_fit) == 'True'
-            self._fit_kws = str_to_dict(_fit_kws)
         except:
             logging.error(msg_param_fail)
             return 0
@@ -1698,7 +1698,6 @@ class CookbookAbsorbers(object):
         except:
             logging.error(msg_param_fail)
             return 0
-
         systs = self.sess.systs
 
         recompress = False

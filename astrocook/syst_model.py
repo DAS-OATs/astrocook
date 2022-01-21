@@ -528,7 +528,7 @@ class SystModel(LMComposite):
         #else:
         self._resol = resol
         self._series = series
-        
+
         time_check = False
         if time_check:
             tt = time.time()
