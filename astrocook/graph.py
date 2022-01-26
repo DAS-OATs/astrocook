@@ -477,7 +477,7 @@ class Graph(object):
                     label = '%s, %s' % (struct, ycol)
 
                 if struct == 'systs': self._systs_id = True
-                if struct in ['spec','lines','nodes','systs']:
+                if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
                         x = dc(t[xcol])
