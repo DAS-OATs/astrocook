@@ -73,6 +73,7 @@ class Session(object):
         self._clicks = []
         self._stats = False
         self._shade = False
+        self.feats = None
 
 
     def _append(self, frame, append=True):
