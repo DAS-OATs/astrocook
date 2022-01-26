@@ -467,8 +467,6 @@ class CookbookAbsorbers(object):
         else:
             systs._id = np.max(systs._t['id'])+1
 
-        #print(systs._mods_t['z0', 'id'])
-
         spec.t['fit_mask'] = False
         active_c = 0
             try:
