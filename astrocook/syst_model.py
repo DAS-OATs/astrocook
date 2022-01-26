@@ -238,7 +238,7 @@ class SystModel(LMComposite):
         #print(self.__dict__)
         ys = self._lines.eval(x=self._xs, params=self._pars)
         yl = self._lines.eval(x=self._xl, params=self._pars)
-        if np.min(yl) > 1-thres:
+        if np.abs(np.min(ys)-np.min(yl))>thres and np.min(yl) > 1-thres:
             self._active = False
 
         ysmin = np.amin(ys)
