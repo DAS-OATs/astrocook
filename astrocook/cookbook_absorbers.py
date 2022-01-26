@@ -465,7 +465,8 @@ class CookbookAbsorbers(object):
                 logging.warning("System %i had a duplicated id! I changed it "
                                 "to %i." % (w, c))
 
-        #print(systs._mods_t['z0', 'id'])
+        else:
+            systs._id = np.max(systs._t['id'])+1
 
         spec.t['fit_mask'] = False
         active_c = 0
@@ -1522,6 +1523,7 @@ class CookbookAbsorbers(object):
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)
+            self._sel_fit = True
             self._systs_cycle(mod=mod, verbose=True)
         self._spec_update()
 
