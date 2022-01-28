@@ -1,5 +1,6 @@
 from .functions import *
 from .message import *
+from .feat_list import FeatList
 from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
@@ -238,9 +239,7 @@ class CookbookAbsorbers(object):
         spec = self.sess.spec
         systs = self.sess.systs
         feats = np.hstack(([0], systs._bounds, [-1]))
-        #plt.plot(spec._t['x'], spec._t['model'])
-        #plt.scatter(spec._t['x'][systs._bounds], spec._t['model'][systs._bounds])
-        #plt.show()
+
         deltav_arr = np.array([])
         xmean_arr = np.array([])
         if update_modelcol:
@@ -248,9 +247,11 @@ class CookbookAbsorbers(object):
         xcf = []
         ycf = []
         contcf = []
-        for i, f in enum_tqdm(feats[:-1], len(feats)-1,
+       feats = FeatList() #xunit=spec._xunit, yunit=spec._yunit)
+       feats._argrelmax_from_spec(spec)
+       for i, f in enum_tqdm(feats._argrelmax[:-1], len(feats._argrelmax)-1,
                               "cookbook_absorbers: Computing CCF for features"):
-            fe = feats[i+1]
+            fe = feats._argrelmax[i+1]
             sel = np.s_[f:fe]
             cut = np.where(spec._t[modelcol][sel]/spec._t[contcol][sel]<1-thr)
             contc = spec._t[contcol][sel][cut]
@@ -258,16 +259,8 @@ class CookbookAbsorbers(object):
             yc = spec._t[ycol][sel][cut]/contc
             dyc = spec._t[dycol][sel][cut]/contc
             modelc = spec._t[modelcol][sel][cut]/contc
-            #print(sel)
-            #print(spec._t[modelcol][sel]/spec._t[contcol][sel])
-            #print(cut)
-            if len(xc)>0:
-                xcf.append(xc[0])
-                xcf.append(xc[-1])
-                ycf.append(modelc[0]*contc[0])
-                ycf.append(modelc[-1]*contc[0])
-                contcf.append(contc[0])
-                contcf.append(contc[0])
+            if len(cut[0])>0:
+                feats._add(spec._t[sel][cut], systs)
                 ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
@@ -283,16 +276,10 @@ class CookbookAbsorbers(object):
                 systs._t['ccf_deltav'][w] = deltav
             """
             if update_modelcol:
-                #print(modelshift)
-                #print(modelc)
-                #print(spec._t[modelcol][sel][cut])
                 spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
-                #print(spec._t[modelcol][sel][cut])
-        #print(deltav_arr)
-        #plt.show()
         empty = [np.nan]*len(xcf)
-        self.sess.feats = Spectrum(xcf, empty, empty, ycf, empty, cont=contcf)
-
+        feats._table_update()
+        self.sess.feats = feats
 
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
             np.save(f, xmean_arr)
