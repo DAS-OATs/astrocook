@@ -1,0 +1,99 @@
+from .functions import to_x, trans_parse
+from astropy import table as at
+from astropy import units as au
+import numpy as np
+from scipy.signal import argrelmax
+
+
+class Feat():
+    """Class for features"""
+
+
+    def __init__(self, chunk):
+        self._chunk = chunk
+        self._left = chunk['x', 'model', 'cont'][0]
+        self._right = chunk['x', 'model', 'cont'][-1]
+        self._xunit = chunk['x'].unit
+        self._yunit = chunk['y'].unit
+
+
+    def _systs_join(self, systs, feats):
+        self._systs = []
+        for _, s in systs._d.items():
+            for _, x in s._x.items():
+                v = x.to(self._xunit).value
+                if v>self._left[0] and v<self._right[0]:
+                    self._systs.append(s)
+
+
+class FeatList(object):
+    """Class for feature lists
+
+    A FeatureList is a Frame with methods for handling absorption features."""
+
+    def __init__(self,
+                 l=[]):
+        self._l = l
+        self._table_update()
+
+
+    @property
+    def t(self):
+        return self._t
+
+
+    def _add(self, chunk, systs):
+        self._xunit = chunk['x'].unit
+        self._yunit = chunk['y'].unit
+        feat = Feat(chunk)
+        feat._systs_join(systs, self)
+        self._l.append(feat)
+        return 0
+
+
+    def _argrelmax_from_spec(self, spec):
+        s = spec._where_safe
+        armax = argrelmax(spec._t['model'][s]/spec._t['cont'][s])[0]
+        self._argrelmax = np.hstack(([0], armax, [-1]))
+
+
+    def _check_attr(self, attr):
+        if hasattr(self, attr):
+            return getattr(self, attr)
+        else:
+            return None
+
+    def _select(self):
+        pass
+
+
+    def _table_update(self):
+        xl, x, m, c = [], [], [], []
+        for f in self._l:
+            xl.append(f._left[0])
+            x.append(f._left[0])
+            x.append(f._right[0])
+            m.append(f._left[1])
+            m.append(f._right[1])
+            c.append(f._left[2])
+            c.append(f._right[2])
+        self._xleft = xl
+        self._t = FeatTable(x, m, c, self._check_attr('_xunit'),
+                            self._check_attr('_yunit'))
+
+
+
+class FeatTable(at.Table):
+
+    def __init__(self,
+                 x=[],
+                 model=[],
+                 cont=[],
+                 xunit=None,
+                 yunit=None,
+                 dtype=float):
+
+        super(FeatTable, self).__init__()
+        self['x'] = at.Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)
+        self['model'] = at.Column(np.array(model, ndmin=1), dtype=dtype, unit=yunit)
+        self['cont'] = at.Column(np.array(cont, ndmin=1), dtype=dtype, unit=yunit)
