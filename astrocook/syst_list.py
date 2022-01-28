@@ -8,6 +8,20 @@ from copy import deepcopy as dc
 import logging
 import numpy as np
 
+class Syst(object):
+
+    def __init__(self,
+                 func,
+                 series,
+                 pars):
+        self._func = func
+        self._series = series
+        self._pars = pars
+        self._x = {}
+        for t in trans_parse(self._series):
+            self._x[t] = to_x(self._pars['z'], t)
+
+
 class SystList(object):
     """ Class for system lists
 
@@ -31,6 +45,8 @@ class SystList(object):
                  id=[],
                  meta={},
                  dtype=float):
+
+        self._d = {}
 
         self._id = id_start
         self._constr = {}
@@ -92,6 +108,18 @@ class SystList(object):
         self._dtype = dtype
 
         self._compressed = False
+
+        self._dict_update()
+
+
+    def _dict_update(self):
+        for s in self._t:
+            pars = {'z': s['z'], 'dz': s['dz'], 'logN': s['logN'],
+                    'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
+                    'resol': s['resol']}
+            self._d[s['id']] = Syst(s['func'], s['series'], pars)
+
+
 
     @property
     def t(self):
@@ -316,5 +344,6 @@ class SystList(object):
 
         self._id += 1
 
+        self._dict_update()c
         #print(self._mods_t['id', 'chi2r'])
         #print(self._t)
