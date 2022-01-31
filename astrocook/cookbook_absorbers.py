@@ -969,6 +969,17 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def feats(self, thres=1e-2):
+        """ @brief Organize systems into absorption features
+        @details Absorption features are portion of the model
+        """
+
+        self.sess.feats = FeatList()
+        self.sess.feats.create(self.sess.spec, self.sess.systs, thres)
+
+        return 0
+
+
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
