@@ -18,12 +18,26 @@ class Feat():
 
 
     def _systs_join(self, systs, feats):
-        self._systs = []
-        for _, s in systs._d.items():
-            for _, x in s._x.items():
+        self._systs = {}
+        self._trans = {}
+        for i, s in systs._d.items():
+            for t, x in s._x.items():
                 v = x.to(self._xunit).value
                 if v>self._left[0] and v<self._right[0]:
-                    self._systs.append(s)
+                    self._systs[i] = s
+                    self._trans[i] = t
+
+
+    def _systs_ave(self):
+        N = [10**s._pars['logN'] for s in self._systs.values()]
+        self._logN = np.mean(np.log10(np.sum(N)))
+        w = [s._pars['logN']/s._pars['dz']**2 for s in self._systs.values()]
+        z = [s._pars['z'] for s in self._systs.values()]
+        x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
+        self._z = np.average(z, weights=w)*au.nm
+        self._x = np.average(x, weights=w)*au.nm
+        print(self._z, z)
+        print(self._x, x)
 
 
 class FeatList(object):
@@ -47,6 +61,7 @@ class FeatList(object):
         self._yunit = chunk['y'].unit
         feat = Feat(chunk)
         feat._systs_join(systs, self)
+        feat._systs_ave()
         self._l.append(feat)
         return 0
 
@@ -81,6 +96,17 @@ class FeatList(object):
         self._t = FeatTable(x, m, c, self._check_attr('_xunit'),
                             self._check_attr('_yunit'))
 
+    def create(self, spec, systs, thres):
+        self._argrelmax_from_spec(spec)
+
+        for i, f in enumerate(self._argrelmax[:-1]):
+            fe = self._argrelmax[i+1]
+            sel = np.s_[f:fe]
+            cut = np.where(spec._t['model'][sel]/spec._t['cont'][sel]<1-thres)
+            if len(cut[0])>0:
+                self._add(spec._t[sel][cut], systs)
+
+        self._table_update()
 
 
 class FeatTable(at.Table):
