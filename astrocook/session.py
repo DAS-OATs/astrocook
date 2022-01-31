@@ -486,9 +486,14 @@ class Session(object):
                         #print(c, type(t[c][0]), np.abs(np.median(t[c])), format)
 
                     if s!='systs':
-                        t['x'] = t['x'].to(au.nm)
-                        t['xmin'] = t['xmin'].to(au.nm)
-                        t['xmax'] = t['xmax'].to(au.nm)
+                        try:
+                            t['x'] = t['x'].to(au.nm)
+                            t['xmin'] = t['xmin'].to(au.nm)
+                            t['xmax'] = t['xmax'].to(au.nm)
+                        except:
+                            t['x'] = t['x'].to(au.km/au.s)
+                            t['xmin'] = t['xmin'].to(au.km/au.s)
+                            t['xmax'] = t['xmax'].to(au.km/au.s)                            
                     del_list = []
                     for i, k in enumerate(obj._meta):
                         if k in forbidden_keywords or k[:5] in forbidden_keywords:
