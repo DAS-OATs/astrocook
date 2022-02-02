@@ -11,6 +11,7 @@ from .message import *
 from .spectrum import Spectrum
 from .syst_list import SystList
 from .syst_model import SystModel
+from .feat_list import FeatList
 #from .model_list import ModelList
 from .vars import *
 #from astropy import constants as ac
@@ -452,6 +453,7 @@ class Session(object):
                             pass
                     name = root+'_'+s+'.fits'
                     name_dat = root+'_'+s+'.dat'
+                    #print(getattr(self, s).__dict__)
                     obj = dc(getattr(self, s))
                     t = dc(obj._t)
                     if s == 'systs':
@@ -488,35 +490,43 @@ class Session(object):
 
                     if s!='systs':
                         t['x'] = t['x'].to(au.nm)
-                        t['xmin'] = t['xmin'].to(au.nm)
-                        t['xmax'] = t['xmax'].to(au.nm)
-                    del_list = []
-                    for i, k in enumerate(obj._meta):
-                        if k in forbidden_keywords or k[:5] in forbidden_keywords:
-                            del_list.append(i)
-                    for i in del_list[::-1]:
-                        del obj._meta[i]
-                    t.meta = dc(obj._meta)
-                    #print(t.meta.comments)
-                    t.meta['ORIGIN'] = 'Astrocook'
-                    #t.meta['HIERARCH ASTROCOOK VERSION'] = version
-                    #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
-                    if s == 'systs':
-                        for i,(k,v) in enumerate(obj._constr.items()):
-                            if v[0] in t['id']:
-                                t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
-                                t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
-                                t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
-                    for c in t.colnames:
-                        t[c].unit = au.dimensionless_unscaled
-                    #print(t)
-                    #t.write(name, format='fits', overwrite=True)
-                    hdr = fits.Header(t.meta)
-                    for c in t.meta:
                         try:
-                            hdr.comments[c] = t.meta.comments[c]
+                            t['xmin'] = t['xmin'].to(au.nm)
+                            t['xmax'] = t['xmax'].to(au.nm)
                         except:
                             pass
+                    del_list = []
+
+                    if hasattr(obj, '_meta'):
+                        for i, k in enumerate(obj._meta):
+                            if k in forbidden_keywords or k[:5] in forbidden_keywords:
+                                del_list.append(i)
+                        for i in del_list[::-1]:
+                            del obj._meta[i]
+                        t.meta = dc(obj._meta)
+                        #print(t.meta.comments)
+                        t.meta['ORIGIN'] = 'Astrocook'
+                        #t.meta['HIERARCH ASTROCOOK VERSION'] = version
+                        #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                        if s == 'systs':
+                            for i,(k,v) in enumerate(obj._constr.items()):
+                                if v[0] in t['id']:
+                                    t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                                    t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                                    t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+                        for c in t.colnames:
+                            t[c].unit = au.dimensionless_unscaled
+                        #print(t)
+                        #t.write(name, format='fits', overwrite=True)
+                        hdr = fits.Header(t.meta)
+                        for c in t.meta:
+                            try:
+                                hdr.comments[c] = t.meta.comments[c]
+                            except:
+                                pass
+                    else:
+                        hdr = fits.Header()
+
                     phdu = fits.PrimaryHDU(header=hdr)
                     #print([Column(t[c]) for c in t.colnames])
                     #cols = fits.ColDefs([Column(c) for c in t.columns])

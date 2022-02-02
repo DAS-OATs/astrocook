@@ -36,8 +36,8 @@ class Feat():
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
         self._z = np.average(z, weights=w)*au.nm
         self._x = np.average(x, weights=w)*au.nm
-        print(self._z, z)
-        print(self._x, x)
+        #print(self._z, z)
+        #print(self._x, x)
 
 
 class FeatList(object):
@@ -93,8 +93,13 @@ class FeatList(object):
             c.append(f._left[2])
             c.append(f._right[2])
         self._xleft = xl
-        self._t = FeatTable(x, m, c, self._check_attr('_xunit'),
-                            self._check_attr('_yunit'))
+        #self._t = FeatTable(x, m, c, self._check_attr('_xunit'),
+        #                    self._check_attr('_yunit'))
+        self._t = at.Table()
+        self._t['x'] = at.Column(np.array(x, ndmin=1), dtype=float, unit=self._check_attr('_xunit'))
+        self._t['model'] = at.Column(np.array(m, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
+        self._t['cont'] = at.Column(np.array(c, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
+
 
     def create(self, spec, systs, thres):
         self._argrelmax_from_spec(spec)
@@ -119,7 +124,7 @@ class FeatTable(at.Table):
                  yunit=None,
                  dtype=float):
 
-        super(FeatTable, self).__init__()
+        #super(FeatTable, self).__init__()
         self['x'] = at.Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)
         self['model'] = at.Column(np.array(model, ndmin=1), dtype=dtype, unit=yunit)
         self['cont'] = at.Column(np.array(cont, ndmin=1), dtype=dtype, unit=yunit)

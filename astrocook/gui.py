@@ -51,6 +51,7 @@ class GUI(object):
         self._menu_systs_id = []
         self._menu_z0_id = []
         self._menu_mods_id = []
+        self._menu_feats_id = []
         self._menu_tab_id = []
         self._defs = Defaults(self)
         self._panel_sess = GUIPanelSession(self)
