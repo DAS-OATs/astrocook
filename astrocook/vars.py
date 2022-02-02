@@ -63,6 +63,8 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
+#classes = {'feats': FeatList}
+
 # Menus
 #menus_def = ['General', 'Continuum', 'Absorbers']
 menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',

@@ -32,7 +32,7 @@ import os
 import pickle
 #import dill as pickle
 from scipy.signal import argrelmin
-import shelve
+import shutil
 import tarfile
 import time
 
@@ -75,6 +75,9 @@ class Session(object):
         self._stats = False
         self._shade = False
         self.feats = None
+
+        self._classes = {'spec': Spectrum, 'lines': LineList, 'systs':
+                         SystList, 'mods': SystModel, 'feats': FeatList}
 
 
     def _append(self, frame, append=True):
@@ -257,6 +260,13 @@ class Session(object):
     def open(self):
 
         dat = False
+
+        path = self.path
+        parts = pathlib.PurePath(path[:-4]).parts
+        stem = parts[-1]
+        dir = parts[0].join(parts[0:-1])[1:]
+
+
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
@@ -285,6 +295,11 @@ class Session(object):
         fast = False
         if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
             for s in self.seq:
+                if s == 'feats':
+                    try:
+                        self._open(s, dir, stem)
+                    except:
+                        pass
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
@@ -461,21 +476,42 @@ class Session(object):
         return mods_t_ok
 
 
-    def _feats_save(self, dir, stem):
-        if not hasattr(self, 'feats') or self.feats is None: return None
+    def _open(self, struct, dir, stem):
+        new_dir = dir+'/'+stem+'_'+struct+'/'
 
-        new_dir = dir+'/'+stem+'_feats/'
+        s = self._classes[struct]()
+        """
+        for file in os.listdir(new_dir):
+            with open(new_dir+file, 'rb') as f:
+                feats._l.append(pickle.load(f))
+        """
+        s._open(new_dir)
+        setattr(self, struct, s)
+
+
+    def _save(self, struct, dir, stem, arch):
+        if not hasattr(self, struct) or getattr(self, struct) is None:
+            return None
+
+        new_dir = dir+'/'+stem+'_'+struct+'/'
         try:
-            os.rmdir(new_dir)
+            shutil.rmtree(new_dir, ignore_errors=True)
             os.mkdir(new_dir)
         except:
             os.mkdir(new_dir)
+
+        """
         l = self.feats._l
 
         for i, o in enumerate(l):
             with open(new_dir+'%04i.dat' % i, 'wb') as f:
                 #for a in m.__dict__:
                 pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+        """
+        getattr(self, struct)._save(new_dir)
+
+        arch.add(new_dir, arcname=stem+'_'+struct+'/')
+        shutil.rmtree(new_dir, ignore_errors=True)
 
 
     def save(self, path):
@@ -491,7 +527,7 @@ class Session(object):
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
                 if s is 'feats':
-                    self._save_feats(dir, stem)
+                    self._save(s, dir, stem, arch)
                 elif hasattr(self, s) and getattr(self, s) is not None:
                     if s=='systs':
                         try:
