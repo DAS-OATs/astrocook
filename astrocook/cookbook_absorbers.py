@@ -264,23 +264,24 @@ class CookbookAbsorbers(object):
                 ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
-            else:
+            #else:
                 #print('xc len 0')
-                deltav = 0.0
-                modelshift = modelc
-            xmean_arr = np.append(xmean_arr, np.mean(xc))
-            deltav_arr = np.append(deltav_arr, deltav)
-            """
+            #    deltav = 0.0
+            #    modelshift = modelc
+                xmean_arr = np.append(xmean_arr, np.mean(xc))
+                deltav_arr = np.append(deltav_arr, deltav)
+                """
             for i in m['id']:
                 w = np.where(systs._t['id']==i)
                 systs._t['ccf_deltav'][w] = deltav
-            """
-            if update_modelcol:
-                spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
+                """
+                if update_modelcol:
+                    spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
+
         empty = [np.nan]*len(xcf)
         feats._table_update()
         self.sess.feats = feats
-
+        print(len(deltav_arr), len(feats._l))
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
             np.save(f, xmean_arr)
             np.save(f, deltav_arr)
@@ -1154,6 +1155,13 @@ class CookbookAbsorbers(object):
 
         self._systs_remove(rem)
         self._mods_recreate()
+
+        return 0
+
+    def _feats_select_isolated(self, thres=1e-1):
+        if not hasattr(self.sess, 'feats'):
+            self.feats()
+        self.sess.feats._select_isolate(thres)
 
         return 0
 
