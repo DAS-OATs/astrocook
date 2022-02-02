@@ -2,6 +2,7 @@ from .functions import to_x, trans_parse
 from astropy import table as at
 from astropy import units as au
 import numpy as np
+import pickle
 from scipy.signal import argrelmax
 
 
@@ -77,6 +78,20 @@ class FeatList(object):
             return getattr(self, attr)
         else:
             return None
+
+
+    def _open(self, new_dir):
+        for file in os.listdir(new_dir):
+            with open(new_dir+file, 'rb') as f:
+                self._l.append(pickle.load(f))
+        self._table_update()
+
+
+    def _save(self, new_dir):
+        for i, o in enumerate(self._l):
+            with open(new_dir+'%04i.dat' % i, 'wb') as f:
+                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+
 
     def _select_isolated(self, thres=1e-1):
         norm = self._t['y']/self._t['cont']
