@@ -427,17 +427,39 @@ class Session(object):
             self.cb._spec_update()
 
 
+
+    def _feats_save(self, dir, stem):
+        if not hasattr(self, 'feats') or self.feats is None: return None
+
+        new_dir = dir+'/'+stem+'_feats/'
+        try:
+            os.rmdir(new_dir)
+            os.mkdir(new_dir)
+        except:
+            os.mkdir(new_dir)
+        l = self.feats._l
+
+        for i, o in enumerate(l):
+            with open(new_dir+'%04i.dat' % i, 'wb') as f:
+                #for a in m.__dict__:
+                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+
+
     def save(self, path):
 
         root = path[:-4]
-        stem = pathlib.PurePath(path[:-4]).parts[-1]
+        parts = pathlib.PurePath(path[:-4]).parts
+        stem = parts[-1]
+        dir = parts[0].join(parts[0:-1])[1:]
 
         import warnings
         warnings.filterwarnings("ignore")
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
-                if hasattr(self, s) and getattr(self, s) is not None:
+                if s is 'feats':
+                    self._save_feats(dir, stem)
+                elif hasattr(self, s) and getattr(self, s) is not None:
                     if s=='systs':
                         try:
                             np.savetxt(root+'_compl.dat', self.compl, fmt='%s')

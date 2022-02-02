@@ -78,12 +78,13 @@ class FeatList(object):
         else:
             return None
 
-    def _select(self):
-        pass
+    def _select_isolated(self, thres=1e-1):
+        norm = self._t['y']/self._t['cont']
+        sel = np.where(norm>1-thres)
 
 
     def _table_update(self):
-        xl, x, m, c = [], [], [], []
+        xl, x, m, c, r = [], [], [], [], []
         for f in self._l:
             xl.append(f._left[0])
             x.append(f._left[0])
