@@ -677,7 +677,7 @@ class CookbookGeneral(object):
         return 0
 
 
-    def telluric_mask(self, shift=0, apply=True):
+    def telluric_mask(self, shift=0, thres=0.99, apply=True):
         """ @brief Mask telluric absorption
         @details Mask spectral regions affected by telluric absorptions.
 
@@ -689,12 +689,15 @@ class CookbookGeneral(object):
         If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
         `telluric` is 1.
         @param shift Shift to the heliocentric frame (km/s)
+        @param thres Threshold to cut telluric lines in the model (normalized to
+        continuum)
         @param apply Apply mask to flux
         @return 0
         """
 
         try:
             shift = float(shift)
+            thres = float(thres)
             apply = str(apply) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -710,7 +713,7 @@ class CookbookGeneral(object):
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
         x = np.array(telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t<0.99 for t in telluric['trans_ma']], dtype=float)
+        mask = np.array([t<thres for t in telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell!=1, dtype=bool)
 
