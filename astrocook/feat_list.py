@@ -58,11 +58,18 @@ class Feat():
 
     def _xz_compute(self):
         if not self._systs_check(): return 0
-        w = [s._pars['logN']/s._pars['dz']**2 for s in self._systs.values()]
+        w = [s._pars['logN']/s._pars['dz']**2 if s._pars['dz']!=0 \
+             else s._pars['logN'] for s in self._systs.values()]
         z = [s._pars['z'] for s in self._systs.values()]
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
-        self._z = np.average(z, weights=w)*au.nm
-        self._x = np.average(x, weights=w)*au.nm
+        if np.sum(w)==0:
+            logging.warning("I cannot weight the positions of the systems by "
+                            "their errors and column densities.")
+            self._z = np.mean(z)*au.nm
+            self._x = np.mean(x)*au.nm
+        else:
+            self._z = np.average(z, weights=w)*au.nm
+            self._x = np.average(x, weights=w)*au.nm
 
 
 

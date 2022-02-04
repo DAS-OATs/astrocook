@@ -1014,6 +1014,8 @@ class CookbookAbsorbers(object):
 
         self.sess.feats = FeatList()
         self.sess.feats.create(self.sess.spec, self.sess.systs, thres)
+        logging.info("I've extracted %i features from the system models."\
+                     % len(self.sess.feats._l))
 
         return 0
 
