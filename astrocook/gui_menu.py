@@ -385,6 +385,8 @@ class GUIMenuAbsorbers(GUIMenu):
                      {'targ': 'systs_merge', 'append': 'z0'},
                      '<',
                      '--',
+                     {'targ': 'feats', 'append': 'z0'},
+                     '--',
                      {'targ': 'mods_ccf_max', 'append': 'z0'},
                      {'targ': 'systs_sigmav', 'append': 'z0'},
                     ]
