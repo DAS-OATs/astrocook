@@ -58,12 +58,12 @@ class Feat():
 
     def _xz_compute(self):
         if not self._systs_check(): return 0
-        w = [s._pars['logN']/s._pars['dz']**2 if s._pars['dz']!=0 \
+        w = [s._pars['logN']/s._pars['dz']**2 \
+             if s._pars['dz']!=0 and not np.isnan(s._pars['dz']) \
              else s._pars['logN'] for s in self._systs.values()]
         z = [s._pars['z'] for s in self._systs.values()]
-        #print(z)
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
-        if np.sum(w)==0:
+        if np.nansum(w)==0:
             logging.warning("I cannot weight the positions of the systems by "
                             "their errors and column densities.")
             self._z = np.mean(z)
@@ -71,7 +71,6 @@ class Feat():
         else:
             self._z = np.average(z, weights=w)
             self._x = np.average(x, weights=w)*au.nm
-
 
 
 class FeatList(object):
