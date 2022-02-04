@@ -999,8 +999,18 @@ class CookbookAbsorbers(object):
 
     def feats(self, thres=1e-2):
         """ @brief Organize systems into absorption features
-        @details Absorption features are portion of the model
+        @details Absorption features are portions of the model including one or
+        more systems, and limited by local maxima in the model.
+        @param thres Threshold for cutting the model when it gets close to
+        continuum
+        @return 0
         """
+
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
 
         self.sess.feats = FeatList()
         self.sess.feats.create(self.sess.spec, self.sess.systs, thres)
