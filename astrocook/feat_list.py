@@ -1,6 +1,8 @@
 from .functions import to_x, trans_parse
 from astropy import table as at
 from astropy import units as au
+import inspect
+import logging
 import numpy as np
 import pickle
 from scipy.signal import argrelmax
@@ -18,7 +20,27 @@ class Feat():
         self._yunit = chunk['y'].unit
 
 
-    def _systs_join(self, systs, feats):
+    def _ew_compute(self):
+        t = self._chunk
+        self._ew = np.sum((t['xmax']-t['xmin']).to(au.nm)*(1-t['model']))*au.nm
+
+
+    def _logN_compute(self):
+        if not self._systs_check(): return 0
+        N = [10**s._pars['logN'] for s in self._systs.values()]
+        self._logN = np.mean(np.log10(np.sum(N)))
+
+
+    def _systs_check(self):
+        if not hasattr(self, '_systs'):
+            logging.error("I cannot run %s before _systs_join."\
+                          % inspect.stack()[1][3])
+            return 0
+        else:
+            return 1
+
+
+    def _systs_join(self, systs):
         self._systs = {}
         self._trans = {}
         for i, s in systs._d.items():
@@ -29,16 +51,19 @@ class Feat():
                     self._trans[i] = t
 
 
-    def _systs_ave(self):
-        N = [10**s._pars['logN'] for s in self._systs.values()]
-        self._logN = np.mean(np.log10(np.sum(N)))
+    def _systs_stats(self):
+        self._logN_compute()
+        self._xz_compute()
+        self._ew_compute()
+
+    def _xz_compute(self):
+        if not self._systs_check(): return 0
         w = [s._pars['logN']/s._pars['dz']**2 for s in self._systs.values()]
         z = [s._pars['z'] for s in self._systs.values()]
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
         self._z = np.average(z, weights=w)*au.nm
         self._x = np.average(x, weights=w)*au.nm
-        #print(self._z, z)
-        #print(self._x, x)
+
 
 
 class FeatList(object):
@@ -61,8 +86,8 @@ class FeatList(object):
         self._xunit = chunk['x'].unit
         self._yunit = chunk['y'].unit
         feat = Feat(chunk)
-        feat._systs_join(systs, self)
-        feat._systs_ave()
+        feat._systs_join(systs)
+        feat._systs_stats()
         self._l.append(feat)
         return 0
 
