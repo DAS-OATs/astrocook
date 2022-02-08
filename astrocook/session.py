@@ -297,7 +297,7 @@ class Session(object):
             for s in self.seq:
                 if s == 'feats':
                     try:
-                        self._open(s, dir, stem)
+                        self._load(s, dir, stem)
                     except:
                         pass
                 try:
@@ -476,7 +476,9 @@ class Session(object):
         return mods_t_ok
 
 
-    def _open(self, struct, dir, stem):
+    def _load(self, struct, dir, stem):
+        logging.info("I'm loading %s from %s.acs..." % (struct, stem))
+
         new_dir = dir+'/'+stem+'_'+struct+'/'
 
         s = self._classes[struct]()
@@ -485,7 +487,7 @@ class Session(object):
             with open(new_dir+file, 'rb') as f:
                 feats._l.append(pickle.load(f))
         """
-        s._open(new_dir)
+        s._load(new_dir)
         setattr(self, struct, s)
 
 
@@ -512,7 +514,8 @@ class Session(object):
 
         arch.add(new_dir, arcname=stem+'_'+struct+'/')
         shutil.rmtree(new_dir, ignore_errors=True)
-
+        logging.info("I've saved %s in %s.acs." % (struct, stem))
+        
 
     def save(self, path):
 
