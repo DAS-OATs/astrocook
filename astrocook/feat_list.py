@@ -22,7 +22,7 @@ class Feat():
 
     def _ew_compute(self):
         t = self._chunk
-        self._ew = np.sum((t['xmax']-t['xmin']).to(au.nm)*(1-t['model']))*au.nm
+        self._ew = np.sum((t['xmax']-t['xmin']).to(au.nm)*(1-np.array(t['model']/t['cont'])))
 
 
     def _logN_compute(self):
@@ -113,7 +113,7 @@ class FeatList(object):
             return None
 
 
-    def _open(self, new_dir):
+    def _load(self, new_dir):
         for file in os.listdir(new_dir):
             with open(new_dir+file, 'rb') as f:
                 self._l.append(pickle.load(f))
