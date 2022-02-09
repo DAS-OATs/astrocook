@@ -19,6 +19,12 @@ class Feat():
         self._right = chunk['x', 'model', 'cont'][-1]
         self._xunit = chunk['x'].unit
         self._yunit = chunk['y'].unit
+        self._argmin = np.argmin(chunk['model']/chunk['cont'])
+
+
+    def _ccf_compute(self, xmean, deltav):
+        self._ccf_xmean = xmean
+        self._ccf_deltav = deltav
 
 
     def _ew_compute(self):
@@ -26,10 +32,22 @@ class Feat():
         self._ew = np.sum((t['xmax']-t['xmin']).to(au.nm)*(1-np.array(t['model']/t['cont'])))
 
 
+    def _fwhm_compute(self):
+        t = self._chunk
+        hm = 1-0.5*(1-t['model'][self._argmin]/t['cont'][self._argmin])
+        sel = np.where(t['model']/t['cont']<hm)
+        self._fwhm = (t['x'].to(au.nm)[sel][-1]-t['x'].to(au.nm)[sel][0])
+
+
     def _logN_compute(self):
         if not self._systs_check(): return 0
         N = [10**s._pars['logN'] for s in self._systs.values()]
         self._logN = np.mean(np.log10(np.sum(N)))
+
+
+    def _snr_compute(self):
+        t = self._chunk
+        self._snr = np.nanmean(t['y']/t['dy'])
 
 
     def _systs_check(self):
@@ -56,6 +74,8 @@ class Feat():
         self._logN_compute()
         self._xz_compute()
         self._ew_compute()
+        self._fwhm_compute()
+        self._snr_compute()
 
     def _xz_compute(self):
         if not self._systs_check(): return 0
@@ -79,9 +99,9 @@ class FeatList(object):
 
     A FeatureList is a Frame with methods for handling absorption features."""
 
-    def __init__(self,
-                 l=[]):
-        self._l = l
+    def __init__(self):
+        self._l = []
+        #print('l', len(self._l))
         self._table_update()
 
 
@@ -114,7 +134,7 @@ class FeatList(object):
 
 
     def _load(self, new_dir):
-        for file in os.listdir(new_dir):
+        for file in sorted(os.listdir(new_dir)):
             with open(new_dir+file, 'rb') as f:
                 self._l.append(pickle.load(f))
         self._table_update()
@@ -148,7 +168,8 @@ class FeatList(object):
         self._t['x'] = at.Column(np.array(x, ndmin=1), dtype=float, unit=self._check_attr('_xunit'))
         self._t['model'] = at.Column(np.array(m, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         self._t['cont'] = at.Column(np.array(c, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
-
+        #print(self)
+        #print(len(self._t))
 
     def create(self, spec, systs, thres):
         self._argrelmax_from_spec(spec)
