@@ -5,7 +5,7 @@ import inspect
 import logging
 import numpy as np
 import pickle
-from scipy.signal import argrelmax
+from scipy.signal import find_peaks
 
 
 class Feat():
@@ -120,10 +120,11 @@ class FeatList(object):
         return 0
 
 
-    def _argrelmax_from_spec(self, spec):
+    def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
         s = spec._where_safe
-        armax = argrelmax(spec._t['model'][s]/spec._t['cont'][s])[0]
-        self._argrelmax = np.hstack(([0], armax, [-1]))
+        maxs = find_peaks(spec._t['model'][s]/spec._t['cont'][s],
+                          height=height, prominence=prominence)[0]
+        self._maxs = np.hstack(([0], maxs, [-1]))
 
 
     def _check_attr(self, attr):
@@ -172,10 +173,10 @@ class FeatList(object):
         #print(len(self._t))
 
     def create(self, spec, systs, thres):
-        self._argrelmax_from_spec(spec)
+        self._maxs_from_spec(spec)
 
-        for i, f in enumerate(self._argrelmax[:-1]):
-            fe = self._argrelmax[i+1]
+        for i, f in enumerate(self._maxs[:-1]):
+            fe = self._maxs[i+1]
             sel = np.s_[f:fe]
             cut = np.where(spec._t['model'][sel]/spec._t['cont'][sel]<1-thres)
             if len(cut[0])>0:
