@@ -264,6 +264,7 @@ class CookbookAbsorbers(object):
                 ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
+                feats._l[-1]._ccf_compute(np.mean(xc), deltav)
             #else:
                 #print('xc len 0')
             #    deltav = 0.0
@@ -281,7 +282,7 @@ class CookbookAbsorbers(object):
         empty = [np.nan]*len(xcf)
         feats._table_update()
         self.sess.feats = feats
-        print(len(deltav_arr), len(feats._l))
+        #print(len(deltav_arr), len(feats._l))
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
             np.save(f, xmean_arr)
             np.save(f, deltav_arr)
