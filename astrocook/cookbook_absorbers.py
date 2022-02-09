@@ -112,7 +112,8 @@ class CookbookAbsorbers(object):
         rc = range(len(xc))
         rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
-        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        #xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-1:]), to_begin=np.ediff1d(xc[:2]))/2
         #print(len(xc), len(x_osampl), len(yc), len(y), len(eval_osampl))
         for i, xs in enumerate(x_shift):
             plot = False
@@ -149,7 +150,9 @@ class CookbookAbsorbers(object):
             deltax = x_shift[amax]
             deltav = v_shift[amax]
             #plt.scatter(xmean+x_shift[amax], 1)
-
+        #print(len(xc), len(xdiff))
+        #print(np.any(np.ediff1d(xc-xdiff)<=0))
+        #print(np.ediff1d(xc-xdiff))
         xshift = x_osampl+deltax
         digitized = np.digitize(xshift, xc-xdiff)-1
         yshift = 1-np.array([eval_osampl[digitized == j].mean() for j in range(len(xc))])
@@ -234,7 +237,7 @@ class CookbookAbsorbers(object):
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
                        dycol='dy', contcol='cont', modelcol='model', thr=1e-1,
-                       update_modelcol=False):
+                       update_modelcol=False, height=1e-1, prominence=1e-1):
         weight = str(weight) == 'True'
         spec = self.sess.spec
         systs = self.sess.systs
@@ -248,11 +251,11 @@ class CookbookAbsorbers(object):
         ycf = []
         contcf = []
         feats = FeatList() #xunit=spec._xunit, yunit=spec._yunit)
-        feats._argrelmax_from_spec(spec)
-        for i, f in enum_tqdm(feats._argrelmax[:-1], len(feats._argrelmax)-1,
+        feats._maxs_from_spec(spec, height, prominence)
+        #print(feats._maxs)
+        for i, f in enum_tqdm(feats._maxs[:-1], len(feats._maxs)-1,
                               "cookbook_absorbers: Computing CCF for features"):
-            fe = feats[i+1]
-            fe = feats._argrelmax[i+1]
+            fe = feats._maxs[i+1]
             sel = np.s_[f:fe]
             cut = np.where(spec._t[modelcol][sel]/spec._t[contcol][sel]<1-thr)
             contc = spec._t[contcol][sel][cut]
