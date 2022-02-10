@@ -1,0 +1,34 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "FILE",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_sess_sel",
+      "recipe": "save",
+      "params": {
+        "path": "FMOD"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "FMOD",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

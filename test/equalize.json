@@ -1,0 +1,78 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GDrive/GitHub/astrocook/test/qso_uvb.fits"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GDrive/GitHub/astrocook/test/qso_vis.fits"
+      }
+    },
+    {
+      "cookbook": "_menu",
+      "recipe": "_on_dialog_mini_graph",
+      "params": {
+        "event": null,
+        "title": "Graph elements",
+        "targ": null
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_elem",
+      "params": {
+        "value": "SESS_SEL,spec,x,y,None,step,-,1,C0,1\nSESS_SEL,spec,x,dy,None,step,-,1,C1,0.5\nSESS_SEL,lines,x,y,None,scatter,+,1.5,C2,1\nSESS_SEL,nodes,x,y,None,scatter,o,1,C3,1\nSESS_SEL,spec,x,cont,None,plot,-,1,C8,1\nSESS_SEL,spec,x,model,None,plot,-,1,C9,1\nSESS_SEL,spec,x,model,fit_mask,plot,-,3,C9,0.5\nSESS_SEL,systs,z,None,None,axvline,—,0.8,C2,1.0",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_on_apply",
+      "params": {
+        "e": null,
+        "refresh": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_elem",
+      "params": {
+        "value": "SESS_SEL,spec,x,y,None,step,-,1,C0,1\nSESS_SEL,spec,x,dy,None,step,-,1,C1,0.5\nSESS_SEL,lines,x,y,None,scatter,+,1.5,C2,1\nSESS_SEL,nodes,x,y,None,scatter,o,1,C3,1\nSESS_SEL,spec,x,cont,None,plot,-,1,C8,1\nSESS_SEL,spec,x,model,None,plot,-,1,C9,1\nSESS_SEL,spec,x,model,fit_mask,plot,-,3,C9,0.5\nSESS_SEL,systs,z,None,None,axvline,—,0.8,C2,1.0\n0,spec,x,y,None,step,-,1,C2,1\n0,spec,x,dy,None,step,-,1,C3,0.5\n",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_on_apply",
+      "params": {
+        "e": null,
+        "refresh": true
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "equalize",
+      "params": {
+        "xmin": "550",
+        "xmax": "560",
+        "_sel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

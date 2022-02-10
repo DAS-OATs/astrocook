@@ -22,6 +22,11 @@ def msg_descr_miss(descr):
     return "I can't find descriptor %s. %s" % (descr, msg_try_again)
 def msg_format(format):
     return "I'm importing data with %s format." % format
+def msg_lim(lim):
+    return "%s is badly formatted. I ignored it." % lim
+def msg_empty(struct):
+    return "Structure %s is empty." % struct
+
 
 def msg_resol(check, prefix):
     if not np.logical_or(*check):

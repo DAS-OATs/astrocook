@@ -7,9 +7,9 @@ from collections import OrderedDict
 import logging
 from matplotlib import pyplot as plt
 from matplotlib.backend_bases import Event
-#from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-#    NavigationToolbar2WxAgg
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
+    NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
@@ -22,8 +22,8 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.96,
-                 size_y=wx.DisplaySize()[1]*0.5,
+                 size_x=wx.DisplaySize()[0]*0.96, #0.87
+                 size_y=wx.DisplaySize()[1]*0.5,  #0.4
                  main=True,
                  **kwargs):
         """ Constructor """
@@ -34,10 +34,14 @@ class GUIGraphMain(wx.Frame):
         self._size_y = size_y
         self._sel = graph_sel
         self._cols_sel = graph_cols_sel
-        sel = len(self._gui._sess_list)
-        if sel>0: sel -= 1
+        #sel = len(self._gui._sess_list)
+        #if sel>0: sel -= 1
+        try:
+            sel = self._gui._sess_list.index(self._gui._sess_sel)
+        except:
+            sel = 0
         self._elem = elem_expand(graph_elem, sel)
-
+        self._lim = graph_lim_def
         self._logx = False
         self._logy = False
         self._norm = False
@@ -77,7 +81,6 @@ class GUIGraphMain(wx.Frame):
     def _refresh(self, sess, **kwargs):
         if self._closed:
             self._init()
-
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self.Show()
@@ -86,10 +89,19 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
-    def _on_cursor_stick(self, event=None, cursor_z=None):
-        z = "%2.6f" % self._graph._cursor._z
-
+    def _on_bin_zap(self, event):
         sess = self._gui._sess_sel
+        x = sess._clicks[-1][0]
+        sess.log.append_full('cb', 'bin_zap', {'x': x})
+        sess.spec._zap(x, None)
+        self._gui._refresh()
+
+
+    def _on_cursor_stick(self, event=None, cursor_z=None):
+        sess = self._gui._sess_sel
+        #print(self._graph._cursor._z * sess.spec._rfz)
+        z = "%2.6f" % (self._graph._cursor._z*(1+sess.spec._rfz))
+
         if not hasattr(sess, '_cursors'):
             sess._cursors = {z: self._graph._cursor}
         else:
@@ -99,10 +111,23 @@ class GUIGraphMain(wx.Frame):
             % (self._gui._panel_sess._sel, z, (len(sess._cursors)-1)%10)
         self._elem = sess._graph_elem
 
+        self._gui._refresh()
+        """
         if hasattr(self._gui, '_dlg_mini_graph'):
             self._gui._dlg_mini_graph._refresh()
         self._refresh(sess)
+        """
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            # Unfreeze cursors in case they were frozen
+            self._gui._graph_main._graph._cursor_frozen = False
+            if hasattr(self._gui, '_graph_det'):
+                self._gui._graph_det._graph._cursor_frozen = False
 
+            # Refresh cursor
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
 
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
@@ -153,8 +178,9 @@ class GUIGraphMain(wx.Frame):
         except:
             x = (0, np.inf)
             sess._shade = False
-        xmin = np.min(x)
-        xmax = np.max(x)
+        xunit = sess.spec._xunit
+        xmin = (np.min(x)*xunit).to(au.nm).value
+        xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
         sess._clicks = []
         sess._stats = True
@@ -172,11 +198,23 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
 
+        # Freeze cursors
+        self._gui._graph_main._graph._cursor_frozen = True
+        if hasattr(self._gui, '_graph_det'):
+            self._gui._graph_det._graph._cursor_frozen = True
+
         params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
         dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
                               params_last = params)
         self._gui._refresh(init_cursor=True)
 
+        """
+        if hasattr(self._gui, '_dlg_mini_systems'):
+            self._gui._dlg_mini_systems._shown = False
+            self._gui._dlg_mini_systems._on_cancel(e=None)
+            self._gui._dlg_mini_systems._shown = True
+            self._gui._dlg_mini_systems._on_apply(e=None)
+        """
 
     def _on_close(self, event=None):
         self._closed = True
@@ -197,10 +235,13 @@ class GUIGraphDetail(GUIGraphMain):
                                              main=False, **kwargs)
         self._norm = True
         self._gui._graph_det = self
+        #self._gui._sess_sel._graph_det = self
         self._graph._legend = False
         self._graph._cursor_lines = []
-        sel = len(self._gui._sess_list)
-        if sel>0: sel -= 1
+        try:
+            sel = self._gui._sess_list.index(self._gui._sess_sel)
+        except:
+            sel = 0
         self._elem = elem_expand(graph_elem, sel)
         #self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
@@ -294,7 +335,6 @@ class GUIGraphDetail(GUIGraphMain):
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
-
 class GUIGraphHistogram(GUIGraphMain):
 
     def __init__(self,
@@ -375,10 +415,12 @@ class GUIGraphHistogram(GUIGraphMain):
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
-        step=2/3
+        step= 1/3
         min = -5 #np.floor(np.min(values))
         max = 5 #np.ceil(np.max(values))
-        bins = np.arange(min-0.0*step, max+1.0*step, step)
+        #bins = np.arange(min-0.0*step, max+1.0*step, step)
+        bins = np.arange(min+0.5*step, max+0.5*step, step)
+        print(bins)
         n, bins, patches = self._ax.hist(values, align='mid', bins=bins)
         #print(n, bins)
         #mu = np.average(bins[:-1]+0.25, weights=n)

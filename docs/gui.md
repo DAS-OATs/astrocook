@@ -8,6 +8,9 @@ nav_order: 2
 # Using the GUI
 {: .no_toc}
 
+The Graphical User Interface (GUI) is the foremost way to perform your analysis with Astrocook, letting you visually interact with the data and launch the analysis operations in the most straightforward way. The Astrocook GUI is based on [wxPython](https://www.wxpython.org/), which provides a native look-and-feel of the graphical elements across many platforms (Linux, macOS, Windows), and uses [Matplotlib](https://matplotlib.org/) for plotting.
+
+---
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -17,7 +20,7 @@ nav_order: 2
 
 ## Launch the GUI
 
-You can launch the Astrocook GUI:
+To launch the Astrocook GUI:
 ```
 $ cd /your/path/astrocook/
 $ python ac_gui.py
@@ -33,6 +36,11 @@ Framework build of python, and only when you are logged in
 on the main display of your Mac.
 ```
 **If this happens, use `pythonw ac_gui.py` instead.**
+
+❗️ **You are encouraged to add an `astrocook` command to your shell configuration. On macOS, you can type:**
+```
+echo "alias astrocook='pythonw /your/path/to/astrocook-1.0.0-rc.1/ac_gui.py'" >> ~/.bash_profile
+```
 
 To load data, you can choose `File > Open...` on the menu bar (`ctrl+O` or `⌘+O`, depending on the system) and browse through your file system. Alternatively, you can specify one or more paths directly at launch:
 ```
@@ -90,10 +98,3 @@ $ tar -zxvf /path/to/archive.acs
 You can quit Astrocook with `File > Quit...` on the menu bar (`ctrl+Q` or `⌘+Q`, depending on the system) or by closing the main window.
 
 ❗️ **When you quit Astrocook, all unsaved sessions will be lost.**
-
-
-## Troubleshooting
-
-Occasionally, Astrocook may behave erratically. If this happens, you are strongly encouraged to [report the bug](mailto:guido.cupani@inaf.it).
-
-❗️ **If Astrocook stops responding, you can kill the GUI with `ctrl+C`. Since this will destroy all sessions, you are suggested to frequently save your analysis.**

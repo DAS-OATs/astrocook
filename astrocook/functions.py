@@ -1,15 +1,25 @@
 from .message import *
 from .vars import *
+import ast
 from astropy import constants as ac
+from copy import deepcopy as dc
+import cProfile
+import json
+import logging
+from matplotlib import pyplot as plt
+import numpy as np
+import pstats
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
 #from lmfit.lineshapes import gaussian as gauss
-import logging
-from matplotlib import pyplot as plt
-import numpy as np
 
 prefix = 'functions'
+
+def _gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
 
 def _fadd(a, u):
     """ @brief Real part of the Faddeeva function Re(F)
@@ -17,7 +27,6 @@ def _fadd(a, u):
     @param u Second abstrac variable
     @return Re(F(a, u))
     """
-
     return np.real(wofz(u + 1j * a))
 
 def _voigt_par_convert(x, z, N, b, btur, trans):
@@ -36,6 +45,34 @@ def _voigt_par_convert(x, z, N, b, btur, trans):
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
     return tau0, a, u
 
+def _voigt_par_convert_new(x, z, N, b, btur, trans):
+    if trans == 'unknown':
+        xem = z #*au.nm
+        xobs = z #*au.nm
+    else:
+        xem = xem_d[trans].value
+        xobs = xem*(1+z)
+    fosc = fosc_d[trans]
+    gamma = gamma_d[trans] #/au.s
+    b_qs = np.sqrt(b**2 + btur**2)
+    atom = fosc *  844.7972564303736 #* au.Fr**2 * au.s / (au.kg * au.m)
+    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    #print(z, N, b, btur, fosc, gamma, atom, xem)
+    a = 0.25 * gamma * xem / (np.pi * b_qs)
+    #print(b_qs, x, xobs)
+    u = 299792458/b_qs * (x/xobs - 1)
+    #tau0 = tau0 * au.Fr**2 * au.nm * au.s**2 / (au.cm**2 * au.kg * au.km * au.m)
+    #a = a * au.nm / au.km
+    #u = u * au.m / au.km
+    tau0 = tau0 * 1e-17
+    a = a * 1e-12
+    u = u * 1e-3
+    return tau0, a, u
+
+def zero(x):
+    return 0*x
+
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -48,7 +85,7 @@ def convolve(data, psf):
     s = 0
     l = 0
     for i, k in enumerate(psf):
-        print(i, k)
+        #print(i, k)
         s += l
         l = len(k)
         k_arr = k[np.where(k>0)]
@@ -76,12 +113,21 @@ def convolve_simple(dat, kernel):
     """simple convolution of two arrays"""
     npts = len(dat) #max(len(dat), len(kernel))
     pad = np.ones(npts)
-    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    tmp = np.pad(dat, (npts, npts), 'edge')
     out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
-    noff = int((len(out) - npts) / 2)
-    ret = (out[noff:])[:npts]
+    noff = int((len(out) - npts) * 0.5)
+    #ret = (out[noff:])[:npts]
+    ret = out[noff:noff+npts]
     #print(len(dat), len(kernel), len(ret))
     return ret
+
+
+def create_xmin_xmax(x):
+    mean = 0.5*(x[1:]+x[:-1])
+    xmin = np.append(x[0], mean)
+    xmax = np.append(mean, x[-1])
+    return xmin, xmax
 
 
 def detect_local_minima(arr):
@@ -118,6 +164,68 @@ def detect_local_minima(arr):
     detected_minima = local_min #- eroded_background
     #return np.where(detected_minima)
     return detected_minima
+
+def expr_check(node):
+    if isinstance(node, list):
+        iter = node
+    elif isinstance(node, ast.List):
+        iter = node.elts
+    else:
+        return expr_eval(node)
+
+    ret = []
+    for i in iter:
+        if isinstance(node, ast.Num):
+            ret.append(float(i.n))
+        elif isinstance(node, ast.Constant):
+            ret.append(float(i.n))
+        else:
+            ret.append(expr_eval(i))
+    try:
+        ret = np.ravel(np.asarray(ret, dtype='float64'))
+    except:
+        ret = tuple([np.asarray(r, dtype='float64') for r in ret])
+    return ret
+
+def expr_eval(node):
+    if isinstance(node, ast.Num): # <number>
+        return node.n
+
+    elif isinstance(node, ast.NameConstant): # <number>
+        return node.value
+
+    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        return py_ops[type(node.op)](expr_check(node.left),
+                                     expr_check(node.right))
+
+    elif isinstance(node, ast.Call):
+        #print(node.args)
+        #print(type(node.args))
+        try:
+            ret = getattr(np, expr_eval(node.func))(expr_check(node.args))
+        except:
+            ret = getattr(np, expr_eval(node.func))(*expr_check(node.args))
+        return ret
+
+    elif isinstance(node, ast.Compare):
+        left = expr_check(node.left)
+        for i, (o,c) in enumerate(zip(node.ops, node.comparators)):
+            if i == 0:
+                cond = py_ops[type(o)](left, expr_eval(c))
+            else:
+                cond = np.logical_and(cond, py_ops[type(o)](left, expr_eval(c)))
+            left = expr_eval(c)
+        return cond
+
+    elif isinstance(node, ast.Name):
+        return node.id
+
+    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        return py_ops[type(node.op)](expr_eval(node.operand))
+    else:
+        #raise TypeError(node)
+        return expr_check(node)
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
@@ -158,9 +266,14 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
         """
-        tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
-        model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
-                          * _fadd(a, u)))
+        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
+        #print(tau0)#, tau0.to(au.dimensionless_unscaled))
+        #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
+        #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
+        #print(a, u, a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled))
+        model *= np.array(np.exp(-tau0 * _fadd(a, u)))
+        #model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
+        #                  * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
 
     return model
@@ -239,6 +352,9 @@ def psf_gauss(x, resol, spec=None):
     else:
         ret = psf
         return ret
+    #profile.disable()
+    #ps = pstats.Stats(profile)
+    #ps.print_stats()
 
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
@@ -246,13 +362,26 @@ def resol_check(spec, resol, prefix=prefix):
     print(msg_resol(check, prefix))
     return np.logical_or(*check), resol
 
+
+
 def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
 
     n = 2*h+1
-    cs = np.cumsum(np.insert(x, 0, 0))
-    rm = (cs[n:] - cs[:-n]) / float(n)
+    cs = np.nancumsum(np.insert(x, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+
+
+def running_rms(x, xm, h=1):
+    n = 2*h+1
+    rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
+    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
+    #rm = (cs[n:] - cs[:-n]) / float(n)
+    rms = np.sqrt((rs[n:] - rs[:-n]) / (norm[n:]-norm[:-n]))
+    return np.concatenate((h*[rms[0]], rms, h*[rms[-1]]))
 
 
 def to_x(z, trans):
@@ -333,3 +462,44 @@ def get_selected_cells(grid):
         return [GridCellCoords(row, col)]
 
     return [GridCellCoords(row, col)]+selection
+
+
+def str_to_dict(str):
+    return json.loads(str)
+
+def class_find(obj, cl, up=[]):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                print(up, i, 'caught!')
+            else:
+                class_find(obj.__dict__[i], cl, up+[i])
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                print(up, i, 'caught!')
+
+def class_mute(obj, cl):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if isinstance(obj.__dict__[i], cl):
+                obj.__dict__[i] = str(cl)
+            else:
+                class_mute(obj.__dict__[i], cl)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                obj[i] = str(cl)
+
+def class_unmute(obj, cl, targ):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if obj.__dict__[i]==str(cl):
+                obj.__dict__[i] = targ
+            else:
+                class_unmute(obj.__dict__[i], cl, targ)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if obj[i]==str(cl):
+                obj[i] = targ
