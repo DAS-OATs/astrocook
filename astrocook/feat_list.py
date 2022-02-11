@@ -4,6 +4,7 @@ from astropy import units as au
 import inspect
 import logging
 import numpy as np
+import os
 import pickle
 from scipy.signal import find_peaks
 
@@ -139,6 +140,7 @@ class FeatList(object):
             with open(new_dir+file, 'rb') as f:
                 self._l.append(pickle.load(f))
         self._table_update()
+        print(self._t)
 
 
     def _save(self, new_dir):
