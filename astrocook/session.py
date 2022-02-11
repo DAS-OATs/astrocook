@@ -482,7 +482,7 @@ class Session(object):
         arch.add(new_dir, arcname=stem+'_'+struct+'/')
         shutil.rmtree(new_dir, ignore_errors=True)
         logging.info("I've saved %s in %s.acs." % (struct, stem))
-        
+
 
     def save(self, path):
 
@@ -558,36 +558,36 @@ class Session(object):
                             t['x'] = t['x'].to(au.km/au.s)
                             t['xmin'] = t['xmin'].to(au.km/au.s)
                             t['xmax'] = t['xmax'].to(au.km/au.s)
-                   del_list = []
-                   if hasattr(obj, '_meta'):
-                       for i, k in enumerate(obj._meta):
-                           if k in forbidden_keywords or k[:5] in forbidden_keywords:
-                               del_list.append(i)
-                       for i in del_list[::-1]:
-                           del obj._meta[i]
-                       t.meta = dc(obj._meta)
-                       #print(t.meta.comments)
-                       t.meta['ORIGIN'] = 'Astrocook'
-                       #t.meta['HIERARCH ASTROCOOK VERSION'] = version
-                       #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
-                       if s == 'systs':
-                           for i,(k,v) in enumerate(obj._constr.items()):
-                               if v[0] in t['id']:
-                                   t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
-                                   t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
-                                   t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
-                       for c in t.colnames:
-                           t[c].unit = au.dimensionless_unscaled
-                       #print(t)
-                       #t.write(name, format='fits', overwrite=True)
-                       hdr = fits.Header(t.meta)
-                       for c in t.meta:
-                           try:
-                               hdr.comments[c] = t.meta.comments[c]
-                           except:
-                               pass
-                   else:
-                       hdr = fits.Header()
+                    del_list = []
+                    if hasattr(obj, '_meta'):
+                        for i, k in enumerate(obj._meta):
+                            if k in forbidden_keywords or k[:5] in forbidden_keywords:
+                                del_list.append(i)
+                        for i in del_list[::-1]:
+                            del obj._meta[i]
+                        t.meta = dc(obj._meta)
+                        #print(t.meta.comments)
+                        t.meta['ORIGIN'] = 'Astrocook'
+                        #t.meta['HIERARCH ASTROCOOK VERSION'] = version
+                        #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                        if s == 'systs':
+                            for i,(k,v) in enumerate(obj._constr.items()):
+                                if v[0] in t['id']:
+                                    t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                                    t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                                    t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+                        for c in t.colnames:
+                            t[c].unit = au.dimensionless_unscaled
+                        #print(t)
+                        #t.write(name, format='fits', overwrite=True)
+                        hdr = fits.Header(t.meta)
+                        for c in t.meta:
+                            try:
+                                hdr.comments[c] = t.meta.comments[c]
+                            except:
+                                pass
+                    else:
+                        hdr = fits.Header()
 
                     phdu = fits.PrimaryHDU(header=hdr)
                     #print([Column(t[c]) for c in t.colnames])
