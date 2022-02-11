@@ -456,7 +456,8 @@ class Session(object):
         """
         s._load(new_dir)
         setattr(self, struct, s)
-
+        shutil.rmtree(new_dir, ignore_errors=True)
+        
 
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:
