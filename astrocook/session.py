@@ -159,7 +159,7 @@ class Session(object):
                 self.spec = format.generic_spectrum(self, hdul)
 
         # NTT spectra are parsed incorrectly, temp fix while Guido fixes the issue
-        if orig == 'ESO-MIDAS' and telesc == 'ESO-NTT':
+        if instr in ['EFOSC', 'LDSS3-'] or orig == 'ESO-MIDAS' and telesc == 'ESO-NTT':
             self.spec = format.efosc2_spectrum(hdul)
 
         # ESPRESSO S1D spectrum
