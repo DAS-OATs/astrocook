@@ -531,7 +531,7 @@ class Format(object):
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
 
-            
+
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
             """
