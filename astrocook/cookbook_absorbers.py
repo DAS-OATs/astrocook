@@ -469,6 +469,8 @@ class CookbookAbsorbers(object):
 
         spec.t['fit_mask'] = False
         active_c = 0
+        for m in systs._mods_t:
+            mod = m['mod']
             try:
                 active = mod._active
             except:
