@@ -974,12 +974,13 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def feats(self, thres=1e-2):
+    def feats(self, thres=1e-2, height=1e-1, prominence=1e-1):
         """ @brief Organize systems into absorption features
         @details Absorption features are portions of the model including one or
         more systems, and limited by local maxima in the model.
-        @param thres Threshold for cutting the model when it gets close to
-        continuum
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
         @return 0
         """
 
@@ -990,7 +991,8 @@ class CookbookAbsorbers(object):
             return 0
 
         self.sess.feats = FeatList()
-        self.sess.feats.create(self.sess.spec, self.sess.systs, thres)
+        self.sess.feats.create(self.sess.spec, self.sess.systs, thres, height,
+                               prominence)
         logging.info("I've extracted %i features from the system models."\
                      % len(self.sess.feats._l))
 
