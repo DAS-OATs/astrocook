@@ -175,8 +175,8 @@ class FeatList(object):
         #print(self)
         #print(len(self._t))
 
-    def create(self, spec, systs, thres):
-        self._maxs_from_spec(spec)
+    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
+        self._maxs_from_spec(spec, height, prominence)
 
         for i, f in enumerate(self._maxs[:-1]):
             fe = self._maxs[i+1]
