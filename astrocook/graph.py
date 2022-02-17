@@ -390,12 +390,12 @@ class Graph(object):
         if ylim is not None and not autoylim:
             self._ax.set_ylim(ylim)
 
-        for s in sess:
+        for s in [sess[0]]:
             self._seq(s, norm, init_cursor=init_cursor)
         if legend:
             self._ax.legend()
 
-        for s in sess:
+        for s in [sess[0]]:
             if s._shade:
                 x = self._gui._sess_sel.spec.x.value
                 trans = transforms.blended_transform_factory(
