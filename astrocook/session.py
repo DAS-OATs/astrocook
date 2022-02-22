@@ -388,6 +388,7 @@ class Session(object):
 
 
             # Only ascii for now
+            logging.info("I'm using line list %s." % path)
             data = ascii.read(path)
             if mode == 'std':
                 z = data['col1']
