@@ -400,10 +400,15 @@ class Session(object):
                 z = data['col1']/1215.67-1
                 dz = [np.nan]*len(data)
                 logN = data['col2']
-                dlogN = data['col5']
+                try:
+                    dlogN = data['col5']
+                except:
+                    dlogN = [np.nan]*len(data)
                 b = data['col3']
-                db = data['col6']
-
+                try:
+                    db = data['col6']
+                except:
+                    db = [np.nan]*len(data)
 
             # Only Ly_a for now
             series = ['Ly_a']*len(data)

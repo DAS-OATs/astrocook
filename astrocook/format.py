@@ -523,6 +523,8 @@ class Format(object):
             try:
                 xunit = data_s.__dict__['_coldefs'][x_name]._unit
             except:
+                xunit = None
+            if xunit == None:
                 xunit = au.nm
                 if np.nanmax(x)>3000:
                     x = x*0.1
@@ -532,7 +534,6 @@ class Format(object):
                 yunit = au.Unit(data_s.__dict__['_coldefs'][y_name]._unit)
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
-
 
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
