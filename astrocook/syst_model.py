@@ -43,7 +43,7 @@ class SystModel(LMComposite):
         if vary:
             time_start = datetime.datetime.now()
             #for p in self._pars:
-            #    if '_z' in p:
+            #    if '_192' in p:
             #        print(self._pars[p])
             #self._pars.pretty_print()
             if 'max_nfev' in fit_kws:
@@ -53,6 +53,8 @@ class SystModel(LMComposite):
                 max_nfev = None
             #print(fit_kws)
             #print('out', len(self._xf), self._xf)
+            #fit_kws['x_scale'] = 'jac'
+            #print(fit_kws)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -60,13 +62,13 @@ class SystModel(LMComposite):
                                              nan_policy='omit',
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
-                                             #method='emcee')
             #print(fit.result.success)
             #print(fit.result.message)
+            #print(fit.redchi)
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:
-            #    if '_z' in p:
+            #    if '_192' in p:
             #        print(self._pars[p])
             #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
