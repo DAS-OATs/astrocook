@@ -17,11 +17,13 @@
     "logN_max": 18,
     "b_max": 100.0,
     "btur_max": 100.0,
-    "resol_max": 1e6
+    "resol_max": 1e6,
+    "x_lim": null
   },
   "fit": {
     "ftol": 1e-3,
     "xtol": 1e-3,
-    "gtol": 1e-3
+    "gtol": 1e-3,
+    "x_scale": "jac"
   }
 }
