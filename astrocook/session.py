@@ -300,7 +300,6 @@ class Session(object):
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
                     except:
                         data = None
-
                     if data is not None:
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -434,7 +433,7 @@ class Session(object):
                     'psf_gauss': psf_gauss,
                     'zero': zero}
 
-        mods_t_ok = False
+        mods_t_ok = True
         #systs = systs
         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                              "session: Opening models"):
@@ -455,9 +454,8 @@ class Session(object):
                 class_unmute(mod, Spectrum, self.spec)
                 m['mod'] = mod
                 os.remove(name_mod_dat)
-                mods_t_ok = True
             except:
-                pass
+                mods_t_ok = False
         return mods_t_ok
 
     def save(self, path):
