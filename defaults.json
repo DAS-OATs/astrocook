@@ -15,8 +15,8 @@
     "resol_min": 0,
     "z_max": 1e-3,
     "logN_max": 18,
-    "b_max": 100.0,
-    "btur_max": 100.0,
+    "b_max": 200.0,
+    "btur_max": 200.0,
     "resol_max": 1e6,
     "x_lim": null
   },
