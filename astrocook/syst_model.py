@@ -489,8 +489,8 @@ class SystModel(LMComposite):
              d['resol_min'], d['resol_max'], d['resol_expr']))
         #"""
 
-    def _make_regions(self, mod, xs, thres=thres):
-        spec = self._spec
+    def _make_regions(self, mod, xs, thres=thres, eval=False):
+        spec = mod._spec
         if 'fit_mask' not in spec.t.colnames:
             #logging.info("I'm adding column 'fit_mask' to spectrum.")
             spec.t['fit_mask'] = np.zeros(len(spec.x), dtype=bool)
@@ -501,8 +501,12 @@ class SystModel(LMComposite):
         #print(mod)
         #print(self)
         #print(self._group)
-        #ys = mod.eval(x=xs, params=self._pars)
-        ys = self._ys
+        if eval:
+            ys = mod.eval(x=xs, params=self._pars)
+        else:
+            ys = mod._ys
+        #print('ys', len(ys))
+        #print('xs', len(xs))
         c = []
         t = thres
         while len(c)==0:
