@@ -170,7 +170,7 @@ class CookbookEdit(object):
                     mod._spec = self.sess._gui._sess_sel.spec
                     mod._xf, mod._yf, mod._wf = \
                         mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
-                                               .to(au.nm).value)
+                                               .to(au.nm).value, eval=True)
             setattr(self.sess._gui._sess_sel, attrn, attr)
 
         if mode=='append':
