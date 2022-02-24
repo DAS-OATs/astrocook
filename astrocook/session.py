@@ -414,7 +414,7 @@ class Session(object):
             series = ['Ly_a']*len(data)
             func = ['voigt']*len(data)
             self.cb.resol_est()
-            resol = [np.inf]*len(data) #[np.nanmean(self.spec._t['resol'])]*len(data)
+            resol = [np.nanmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
             id = range(len(data))
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
