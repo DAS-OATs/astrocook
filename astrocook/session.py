@@ -380,6 +380,7 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
+                self.systs._dict_update(mods=True)
             try:
                 os.remove(self.path[:-4]+'.json')
             except:
@@ -490,7 +491,7 @@ class Session(object):
         s._load(new_dir)
         setattr(self, struct, s)
         shutil.rmtree(new_dir, ignore_errors=True)
-        
+
 
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:
@@ -533,7 +534,7 @@ class Session(object):
         s._load(new_dir)
         setattr(self, struct, s)
         shutil.rmtree(new_dir, ignore_errors=True)
-        
+
 
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:

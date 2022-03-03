@@ -122,18 +122,28 @@ class FeatList(object):
         return 0
 
 
-    def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
-        s = spec._where_safe
-        maxs = find_peaks(spec._t['model'][s]/spec._t['cont'][s],
-                          height=height, prominence=prominence)[0]
-        self._maxs = np.hstack(([0], maxs, [-1]))
-
-
     def _check_attr(self, attr):
         if hasattr(self, attr):
             return getattr(self, attr)
         else:
             return None
+
+
+   def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
+       self._maxs_from_spec(spec, height, prominence)
+
+       for i, f in enumerate(self._maxs[:-1]):
+           fe = self._maxs[i+1]
+           sel = np.s_[f:fe]
+           modeln = spec._t['model'][sel]/spec._t['cont'][sel]
+           min = np.amin(modeln)
+           cut = np.where(modeln<1-thres*(1-min))
+           if len(cut[0])>0:
+               plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
+               self._add(spec._t[sel][cut], systs)
+
+       self._table_update()
+       #plt.show()
 
 
     def _load(self, new_dir):
@@ -142,6 +152,13 @@ class FeatList(object):
                 self._l.append(pickle.load(f))
         self._table_update()
         print(self._t)
+
+
+    def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
+        s = spec._where_safe
+        maxs = find_peaks(spec._t['model'][s]/spec._t['cont'][s],
+                          height=height, prominence=prominence)[0]
+        self._maxs = np.hstack(([0], maxs, [-1]))
 
 
     def _save(self, new_dir):
@@ -173,19 +190,29 @@ class FeatList(object):
         self._t['model'] = at.Column(np.array(m, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         self._t['cont'] = at.Column(np.array(c, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         #print(self)
+        #print(self._t)
+        #for f in self._l:
+        #    print(f._left[0], f._right[0])
         #print(len(self._t))
 
-    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
-        self._maxs_from_spec(spec, height, prominence)
-
-        for i, f in enumerate(self._maxs[:-1]):
-            fe = self._maxs[i+1]
-            sel = np.s_[f:fe]
-            cut = np.where(spec._t['model'][sel]/spec._t['cont'][sel]<1-thres)
-            if len(cut[0])>0:
-                self._add(spec._t[sel][cut], systs)
-
-        self._table_update()
+   def _z_lock(self):
+       for i, f in enumerate(self._l):
+           first = True
+           #print(f._systs)
+           for s in f._systs:
+               #print(s)
+               syst = f._systs[s]
+               #print(f._systs[s]._pars)
+               pars = syst._mod._pars
+               z = 'lines_'+syst._func+'_'+str(s)+'_z'
+               #print(z)
+               if first:
+                   zref = z
+                   first = False
+               else:
+               #    pars.pretty_print()
+                   pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
+               #    pars.pretty_print()
 
 
 class FeatTable(at.Table):

@@ -275,11 +275,12 @@ class SystModel(LMComposite):
             #print(s['id'])
                 #ymax = np.maximum(ys, ys_s)
                 yminmax = np.amin(np.maximum(ys,ys_s))
+                ymin = np.amin(ys)
                 if time_check:
                     print('2 %.4f' % (time.time()-ttt))
                     ttt = time.time()
                 #cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-                cond = yminmax<1-thres or yminmax==ysmin
+                cond = yminmax<1-thres*(1-ymin) or yminmax==ysmin
                 if time_check:
                     print('3 %.4f' % (time.time()-ttt))
                     ttt = time.time()
