@@ -387,10 +387,16 @@ class GUIGraphHistogram(GUIGraphMain):
         self._ax = self._fig.add_subplot(111)
         self._ax.tick_params(top=True, right=True, direction='in')#self._init_ax(111)
         label = self._gui._col_tab.GetColLabelValue(self._gui._col_sel).split('\n')[0]
-        self._ax.set_xlabel(label.replace('\n',' ')+' km/s')
-        self._ax.set_ylabel('Frequency')
         values = self._gui._col_values
-
+        unit = str(self._gui._col_unit)
+        self._ax.set_xlabel(label.replace('\n',' ')+unit)
+        self._ax.set_ylabel('Frequency')
+        scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
+        bins = int(scale)*10
+        if bins < 1:
+            scale = np.ceil(np.abs((np.max(values)-np.min(values))/np.median(values)))
+            bins = int(scale)*10
+        n, bins, patches = self._ax.hist(values, align='mid', bins=bins)
         """
         # Temporary: only for deltav
         values = []
@@ -412,6 +418,7 @@ class GUIGraphHistogram(GUIGraphMain):
             max = np.ceil(np.max(values))
         step = 0.5*10**scale
         bins = np.arange(min-0.5*step, max+1.5*step, step)
+        """
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
@@ -455,6 +462,7 @@ class GUIGraphHistogram(GUIGraphMain):
         #self._ax.plot(x, g, c='C3', label=r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$'%dv)
         self._ax.plot(x, g, c='C3', label="Cumulative position uncertainty")
         """
+        """
         self._ax.text(0.95, 0.9, r'$\mu$ = %3.2f' % mu, c='C1',
                       transform=self._ax.transAxes, horizontalalignment='right')
         self._ax.text(0.95, 0.8, r'$\sigma$ = %3.4f' % sigma, c='C1',
@@ -466,6 +474,11 @@ class GUIGraphHistogram(GUIGraphMain):
         self._ax.text(0.95, 0.5, r'$\sqrt{\langle\Delta v\rangle_{\mathrm{SNR}=10}^2+\langle\Delta v\rangle_{\mathrm{SNR}=15}^2} = %3.2f$' % dv, c='C3',
                       transform=self._ax.transAxes, horizontalalignment='right')
         """
-        self._ax.legend()
+        #self._ax.legend()
         self._canvas.draw()
         self.Show()
+
+    def _on_close(self, event=None):
+        self._closed = True
+        self.Destroy()
+        del self._gui._graph_hist
