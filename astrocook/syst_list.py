@@ -119,12 +119,12 @@ class SystList(object):
             pars = {'z': s['z'], 'dz': s['dz'], 'logN': s['logN'],
                     'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
                     'resol': s['resol']}
-           if mods:
-               for id, mod in self._mods_t['id','mod']:
-                   if s['id'] in id: break #mod = self._mods_t['mod']
-           else:
-               mod = None
-           self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
+            if mods:
+                for id, mod in self._mods_t['id','mod']:
+                    if s['id'] in id: break #mod = self._mods_t['mod']
+            else:
+                mod = None
+            self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
 
 
 

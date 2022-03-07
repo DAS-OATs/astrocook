@@ -129,21 +129,21 @@ class FeatList(object):
             return None
 
 
-   def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
-       self._maxs_from_spec(spec, height, prominence)
+    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
+        self._maxs_from_spec(spec, height, prominence)
 
-       for i, f in enumerate(self._maxs[:-1]):
-           fe = self._maxs[i+1]
-           sel = np.s_[f:fe]
-           modeln = spec._t['model'][sel]/spec._t['cont'][sel]
-           min = np.amin(modeln)
-           cut = np.where(modeln<1-thres*(1-min))
-           if len(cut[0])>0:
-               plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
-               self._add(spec._t[sel][cut], systs)
+        for i, f in enumerate(self._maxs[:-1]):
+            fe = self._maxs[i+1]
+            sel = np.s_[f:fe]
+            modeln = spec._t['model'][sel]/spec._t['cont'][sel]
+            min = np.amin(modeln)
+            cut = np.where(modeln<1-thres*(1-min))
+            if len(cut[0])>0:
+                #plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
+                self._add(spec._t[sel][cut], systs)
 
-       self._table_update()
-       #plt.show()
+        self._table_update()
+        #plt.show()
 
 
     def _load(self, new_dir):
@@ -195,24 +195,24 @@ class FeatList(object):
         #    print(f._left[0], f._right[0])
         #print(len(self._t))
 
-   def _z_lock(self):
-       for i, f in enumerate(self._l):
-           first = True
-           #print(f._systs)
-           for s in f._systs:
-               #print(s)
-               syst = f._systs[s]
-               #print(f._systs[s]._pars)
-               pars = syst._mod._pars
-               z = 'lines_'+syst._func+'_'+str(s)+'_z'
-               #print(z)
-               if first:
-                   zref = z
-                   first = False
-               else:
-               #    pars.pretty_print()
-                   pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
-               #    pars.pretty_print()
+    def _z_lock(self):
+        for i, f in enumerate(self._l):
+            first = True
+            #print(f._systs)
+            for s in f._systs:
+                #print(s)
+                syst = f._systs[s]
+                #print(f._systs[s]._pars)
+                pars = syst._mod._pars
+                z = 'lines_'+syst._func+'_'+str(s)+'_z'
+                #print(z)
+                if first:
+                    zref = z
+                    first = False
+                else:
+                #    pars.pretty_print()
+                    pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
+                #    pars.pretty_print()
 
 
 class FeatTable(at.Table):
