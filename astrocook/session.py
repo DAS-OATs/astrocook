@@ -300,7 +300,6 @@ class Session(object):
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
                     except:
                         data = None
-
                     if data is not None:
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -322,11 +321,9 @@ class Session(object):
                             #print(type(np.array(list(map(int, data['id'][i][1:-1].split(','))))))
                             #systs._mods_t['id'][i] = list(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
                             systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
-                        funcdefs = {'convolve_simple': convolve_simple,
-                                    'lines_voigt': lines_voigt,
-                                    'psf_gauss': psf_gauss,
-                                    'zero': zero}
 
+                        mods_t_ok = self._model_open(systs)
+                        """
                         mods_t_ok = False
                         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                                              "session: Opening models"):
@@ -351,6 +348,7 @@ class Session(object):
                                 mods_t_ok = True
                             except:
                                 pass
+                        #"""
 
                         if mods_t_ok:
                             for m in systs._mods_t['mod']:
@@ -362,7 +360,6 @@ class Session(object):
 
                             only_constr = True
                             fast = True
-
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
@@ -390,6 +387,7 @@ class Session(object):
 
 
             # Only ascii for now
+            logging.info("I'm using line list %s." % path)
             data = ascii.read(path)
             if mode == 'std':
                 z = data['col1']
@@ -402,10 +400,15 @@ class Session(object):
                 z = data['col1']/1215.67-1
                 dz = [np.nan]*len(data)
                 logN = data['col2']
-                dlogN = data['col5']
+                try:
+                    dlogN = data['col5']
+                except:
+                    dlogN = [np.nan]*len(data)
                 b = data['col3']
-                db = data['col6']
-
+                try:
+                    db = data['col6']
+                except:
+                    db = [np.nan]*len(data)
 
             # Only Ly_a for now
             series = ['Ly_a']*len(data)
@@ -424,6 +427,36 @@ class Session(object):
             self.cb._mods_recreate()
             self.cb._spec_update()
 
+    def _model_open(self, systs):
+        funcdefs = {'convolve_simple': convolve_simple,
+                    'lines_voigt': lines_voigt,
+                    'psf_gauss': psf_gauss,
+                    'zero': zero}
+
+        mods_t_ok = True
+        #systs = systs
+        for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
+                             "session: Opening models"):
+        #for m in systs._mods_t:
+            try:
+                name_mod_dat = self.path[:-4]+'_systs_mods_%i.dat' % m['id'][0]
+                with open(name_mod_dat, 'rb') as f:
+                    mod = pickle.load(f)
+            #setattr(mod.__init__, '_tmp', mod.func)
+
+                for attr in ['_lines', '_group', 'left', 'right']:
+                    name_attr_dat = self.path[:-4]+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
+                    setattr(mod, attr, load_model(name_attr_dat,
+                            funcdefs=funcdefs))
+                    os.remove(name_attr_dat)
+                super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
+                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
+                class_unmute(mod, Spectrum, self.spec)
+                m['mod'] = mod
+                os.remove(name_mod_dat)
+            except:
+                mods_t_ok = False
+        return mods_t_ok
 
     def save(self, path):
 
@@ -572,16 +605,24 @@ class Session(object):
                                 for attr in ['_mods_t']:
                                     setattr(m, attr, attr)
 
+                                attr_save = {}
                                 for attr in ['_lines', '_group', 'left',
                                              'right', 'func']:
+                                    attr_save[attr] = dc(getattr(m, attr))
                                     setattr(m, attr, None)
                                 name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
                                 with open(name_mod_dat, 'wb') as f:
                                     #for a in m.__dict__:
                                     pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
 
+                                for attr in ['_lines', '_group', 'left',
+                                             'right', 'func']:
+                                    setattr(m, attr, attr_save[attr])
+                                class_unmute(m, Spectrum, self.spec)
+
                                 arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
                                 os.remove(name_mod_dat)
+
                             except:
                                 fail.append(id)
 

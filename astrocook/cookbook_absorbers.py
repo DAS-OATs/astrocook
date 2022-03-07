@@ -468,16 +468,27 @@ class CookbookAbsorbers(object):
             systs._id = np.max(systs._t['id'])+1
 
         spec.t['fit_mask'] = False
+        active_c = 0
         for m in systs._mods_t:
             mod = m['mod']
-            #print(mod.func)
-            c = []
-            t = 1e-2
-            while len(c)==0:
-                c = np.where(mod._ys<1-t)[0]
-                t = t*0.5
-            #print(m['z0'], len(c))
-            spec.t['fit_mask'][c] = True
+            try:
+                active = mod._active
+            except:
+                active = True
+            #print(active)
+            #print(np.where(spec.t['fit_mask']==True))
+            if active:
+                active_c += 1
+                c = []
+                t = 1e-2
+                while len(c)==0:
+                    try:
+                        c = np.where(mod._yl<1-t)[0]
+                    except:
+                        c = np.where(mod._ys<1-t)[0]
+                    t = t*0.5
+                #print(c)
+                spec.t['fit_mask'][c] = True
 
 
 
@@ -491,6 +502,10 @@ class CookbookAbsorbers(object):
             logging.info("I've recreated %i model%s (including %i system%s)." \
                          % (mods_n, '' if mods_n==1 else 's',
                             systs_n, '' if systs_n==1 else 's'))
+            if active_c < mods_n:
+                logging.info("Only %i model%s %s active and eligible for "
+                             "fitting." % (active_c, '' if active_c==1 else 's',
+                             'is' if active_c==1 else 'are'))
         #profile.disable()
         #ps = pstats.Stats(profile)
         #ps.sort_stats('cumtime').print_stats(20)
@@ -567,6 +582,7 @@ class CookbookAbsorbers(object):
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
+        #print(self.sess.defs.dict['voigt'])
         mod._new_voigt(series, z, logN, b, resol,
                        defs=self.sess.defs.dict['voigt'])
 
@@ -587,11 +603,19 @@ class CookbookAbsorbers(object):
                 fit_kws = {'max_nfev': self._max_nfev}
             #print(fit_kws)
             #print(self.sess.defs.dict['fit'])
-            frozen = mod._fit(fit_kws=fit_kws)
+            if mod._active:
+                frozen = mod._fit(fit_kws=fit_kws)
+            else:
+                frozen = 1
             #mod._pars.pretty_print()
             if verbose and frozen:
-                logging.info("I've not fitted 1 model at redshift %2.4f "
-                             "because all the parameters are frozen." % mod._z0)
+                if not mod._active:
+                    logging.info("I've not fitted 1 model at redshift %2.4f "
+                                 "because it is not active." % mod._z0)
+                else:
+                    logging.info("I've not fitted 1 model at redshift %2.4f "
+                                 "because all the parameters are frozen."
+                                 % mod._z0)
             elif verbose:
                 logging.info("I've fitted 1 model at redshift %2.4f." \
                              % mod._z0)
@@ -601,7 +625,7 @@ class CookbookAbsorbers(object):
                          "max_nfev=0.")
 
         # When a single system is fitted, it is stored also the system table
-        self._systs_update(mod)
+        if not frozen: self._systs_update(mod)
         return frozen
 
 
@@ -730,8 +754,10 @@ class CookbookAbsorbers(object):
                 if fit_list[i]:
                     z_list.append(m['z0'])
                     frozen = self._syst_fit(m['mod'], verbose=False)
-                    if not frozen: chi2r_list.append(m['mod']._chi2r)
-
+                    if frozen:
+                        fit_list[i] = False
+                    else:
+                        chi2r_list.append(m['mod']._chi2r)
             if verbose:
                 logging.info("I've fitted %i model%s." \
                              % (np.sum(fit_list), msg_z_range(z_list)))
