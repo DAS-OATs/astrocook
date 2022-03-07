@@ -344,6 +344,6 @@ class SystList(object):
 
         self._id += 1
 
-        self._dict_update()c
+        self._dict_update()
         #print(self._mods_t['id', 'chi2r'])
         #print(self._t)

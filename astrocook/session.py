@@ -518,6 +518,49 @@ class Session(object):
         logging.info("I've saved %s in %s.acs." % (struct, stem))
 
 
+
+    def _load(self, struct, dir, stem):
+        logging.info("I'm loading %s from %s.acs..." % (struct, stem))
+
+        new_dir = dir+'/'+stem+'_'+struct+'/'
+
+        s = self._classes[struct]()
+        """
+        for file in os.listdir(new_dir):
+            with open(new_dir+file, 'rb') as f:
+                feats._l.append(pickle.load(f))
+        """
+        s._load(new_dir)
+        setattr(self, struct, s)
+        shutil.rmtree(new_dir, ignore_errors=True)
+        
+
+    def _save(self, struct, dir, stem, arch):
+        if not hasattr(self, struct) or getattr(self, struct) is None:
+            return None
+
+        new_dir = dir+'/'+stem+'_'+struct+'/'
+        try:
+            shutil.rmtree(new_dir, ignore_errors=True)
+            os.mkdir(new_dir)
+        except:
+            os.mkdir(new_dir)
+
+        """
+        l = self.feats._l
+
+        for i, o in enumerate(l):
+            with open(new_dir+'%04i.dat' % i, 'wb') as f:
+                #for a in m.__dict__:
+                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+        """
+        getattr(self, struct)._save(new_dir)
+
+        arch.add(new_dir, arcname=stem+'_'+struct+'/')
+        shutil.rmtree(new_dir, ignore_errors=True)
+        logging.info("I've saved %s in %s.acs." % (struct, stem))
+
+
     def save(self, path):
 
         root = path[:-4]
