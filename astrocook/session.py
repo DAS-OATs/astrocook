@@ -54,7 +54,8 @@ class Session(object):
                  mods=None,
                  twin=False,
                  row=None,
-                 slice=None):
+                 slice=None,
+                 feats=None):
         self._gui = gui
         self.path = path
         self.name = name
@@ -74,7 +75,7 @@ class Session(object):
         self._clicks = []
         self._stats = False
         self._shade = False
-        self.feats = None
+        self.feats = feats
 
         self._classes = {'spec': Spectrum, 'lines': LineList, 'systs':
                          SystList, 'mods': SystModel, 'feats': FeatList}
