@@ -27,16 +27,17 @@ class GUI(object):
 
         self._flags = flags
         try:
-            l = ['─']*(16+len(version))
+            banner = 'ASTROCOOK 🍪 v'
+            l = ['─']*(3+len(banner)+len(version))
             print("┌%s┐" % ''.join(l))
-            print("│ ASTROCOOK 🍪 v%3s │" % version)
+            print("│ %s%3s │" % (banner, version))
             print("└%s┘" % ''.join(l))
         except:
             l = ['-']*(17+len(version))
             print(''.join(l))
             print(" ASTROCOOK  v%3s " % version)
             print(''.join(l))
-        print("Cupani et al. 2017-2020 * INAF-OATs")
+        print("Cupani et al. 2017-%s * INAF-OATs" % current_year)
         self._sess_list = []
         self._sess_item_list = []
         #self._graph_elem_list = []
