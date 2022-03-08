@@ -933,6 +933,8 @@ class CookbookAbsorbers(object):
                 systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                systs._t[iw]['btur'] = mod._pars[pref+'_btur'].value
+                systs._t[iw]['dbtur'] = mod._pars[pref+'_btur'].stderr
                 try:
                     systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:

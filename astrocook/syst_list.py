@@ -24,6 +24,8 @@ class SystList(object):
                  dlogN=[],
                  b=[],
                  db=[],
+                 btur=[],
+                 dbtur=[],
                  mod=[],
                  resol=[],
                  chi2r=[],
@@ -50,6 +52,8 @@ class SystList(object):
                                unit=logNunit)
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
         t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
+        t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
+        t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
         #if resol != []:
         if len(resol)==len(self.z) and len(resol)>0:
@@ -229,6 +233,7 @@ class SystList(object):
                             self._constr[k] = (v[0], k.split('_')[-1], None)
                         #print(v[0], v[1], v[2])
                         #print(m['mod']._pars[k].__dict__)
+                    #m['mod']._pars.pretty_print()
         #print(self._constr)
                 #print(m['mod']._pars)
                 #m['mod']._pars.pretty_print()
@@ -306,6 +311,8 @@ class SystList(object):
                     self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                     self._t[iw]['b'] = mod._pars[pref+'_b'].value
                     self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                    self._t[iw]['btur'] = mod._pars[pref+'_btur'].value
+                    self._t[iw]['dbtur'] = mod._pars[pref+'_btur'].stderr
                     try:
                         self._t[iw]['chi2r'] = mod._chi2r
                     except:

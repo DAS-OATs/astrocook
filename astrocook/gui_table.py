@@ -90,9 +90,9 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
-
         for j, r in enumerate(tab._data.t):
             for i, n in enumerate(tab._data.t.colnames):
+
                 if j == 0:
                     tab._tab.SetColSize(i, 150)
                     tab._tab.SetColLabelValue(i, "%s\n%s" \
@@ -106,7 +106,7 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                    if n in ['logN', 'dlogN', 'b', 'db', 'btur', 'dbtur', 'resol', 'chi2r', \
                              'snr']:
                         format = '%3.3'
                     else:
@@ -463,7 +463,7 @@ class GUITableSystList(GUITable):
         #self._cells_sel = []
         self._data_cells_desel()
         for s in sel:
-            if s[1] in [3, 5, 7]: #self._cells_sel.append(s)
+            if s[1] in [3, 5, 7, 9]: #self._cells_sel.append(s)
                 row = s[0]
                 col = s[1]
                 self._data_cells_sel(row, col)
@@ -716,7 +716,7 @@ class GUITableSystList(GUITable):
         row = event.GetRow()
         col = event.GetCol()
         self._data_cell_right_click(row, col)
-        if col in [3, 5, 7]:
+        if col in [3, 5, 7, 9]:
             title = []
             attr = []
             if len(self._cells_sel) > 1:
@@ -984,12 +984,12 @@ class GUITableSystList(GUITable):
                     #mod._pars.pretty_print()
                     #print(id(m))
             for p,v in mod._pars.items():
-                if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                if p.split('_')[-1] in ['z', 'logN', 'b', 'btur', 'resol']:
                     try:
                         c = np.where(labels==p.split('_')[-1])[0][0]
                     except:
                         c = None
-                    r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    r = i if c == 11 else self._row_extract(int(p.split('_')[-2]))
                     #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
                     #    print(idi, p,v)
                     if v.vary == False and r != None and c != None:

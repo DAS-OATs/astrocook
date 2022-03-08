@@ -1,0 +1,679 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/test/qso_vis.fits",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "lines_find",
+      "params": {
+        "std_start": "100.0",
+        "std_end": "0.0",
+        "col": "y",
+        "kind": "min",
+        "kappa_peaks": "5.0",
+        "resol": "None",
+        "append": "True"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "systs_new_from_lines",
+      "params": {
+        "series": "CIV",
+        "z_start": "3.01",
+        "z_end": "4.1",
+        "dz": "0.0001",
+        "logN": "14",
+        "b": "10",
+        "resol": "None",
+        "chi2r_thres": "inf",
+        "dlogN_thres": "inf",
+        "refit_n": "0",
+        "chi2rav_thres": "0.01",
+        "max_nfev": "1000",
+        "append": "True"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "systs_new_from_lines",
+      "params": {
+        "series": "CIV",
+        "z_start": "3.01",
+        "z_end": "4.1",
+        "dz": "0.0001",
+        "logN": "14",
+        "b": "10",
+        "resol": "70000",
+        "chi2r_thres": "inf",
+        "dlogN_thres": "inf",
+        "refit_n": "0",
+        "chi2rav_thres": "0.01",
+        "max_nfev": "1000",
+        "append": "True"
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.6736784106865263,
+        "row_series": "CIV",
+        "row_id": 11,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.747697523803307,
+        "row_series": "CIV",
+        "row_id": 12,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.819117747786342,
+        "row_series": "CIV",
+        "row_id": 13,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.9071623224176824,
+        "row_series": "CIV",
+        "row_id": 14,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.819117747786342,
+        "row_series": "CIV",
+        "row_id": 13,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.9103755199547465,
+        "row_series": "CIV",
+        "row_id": 15,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.927615045603277,
+        "row_series": "CIV",
+        "row_id": 18,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.928352948280562,
+        "row_series": "CIV",
+        "row_id": 19,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.930964257262457,
+        "row_series": "CIV",
+        "row_id": 20,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.9520691672565773,
+        "row_series": "CIV",
+        "row_id": 21,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.9557504006502002,
+        "row_series": "CIV",
+        "row_id": 22,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_spec_update",
+      "params": {}
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 3.9596529753942926,
+        "row_series": "CIV",
+        "row_id": 23,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 4.008729853904684,
+        "row_series": "CIV",
+        "row_id": 24,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 4.088969694889633,
+        "row_series": "CIV",
+        "row_id": 25,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

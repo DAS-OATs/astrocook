@@ -432,7 +432,6 @@ class SystModel(LMComposite):
             d['resol'] = self._resol
 
         self._pars = line_psf.make_params()
-        #print(d['z'])
         self._pars.add_many(
             #(self._lines_pref+'z', d['z'], d['z_vary'], 0, 10,
             (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-d['z_min'],
