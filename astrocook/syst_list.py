@@ -233,7 +233,6 @@ class SystList(object):
                             self._constr[k] = (v[0], k.split('_')[-1], None)
                         #print(v[0], v[1], v[2])
                         #print(m['mod']._pars[k].__dict__)
-                    #m['mod']._pars.pretty_print()
         #print(self._constr)
                 #print(m['mod']._pars)
                 #m['mod']._pars.pretty_print()

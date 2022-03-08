@@ -655,6 +655,8 @@ class GUITableSystList(GUITable):
                     self._data_edit(r, labels[c], v, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
+        print(self._freezes_d)
+        print(self._links_d)
         systs._constrain(self._links_d)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
