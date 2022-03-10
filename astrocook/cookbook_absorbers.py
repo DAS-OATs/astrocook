@@ -448,6 +448,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id, constr)
                     #print(systs._id)
                     #if systs._id == 46: print(systs._constr.items())
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)

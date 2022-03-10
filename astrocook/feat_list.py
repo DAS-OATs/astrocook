@@ -199,7 +199,6 @@ class FeatList(object):
     def _z_lock(self):
         for i, f in enumerate(self._l):
             first = True
-            #print(f._systs)
             for s in f._systs:
                 #print(s)
                 syst = f._systs[s]

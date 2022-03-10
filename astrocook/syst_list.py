@@ -115,6 +115,7 @@ class SystList(object):
 
 
     def _dict_update(self, mods=False):
+        self._t.sort('id')
         for s in self._t:
             pars = {'z': s['z'], 'dz': s['dz'], 'logN': s['logN'],
                     'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
