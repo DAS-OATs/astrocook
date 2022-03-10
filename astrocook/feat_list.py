@@ -147,12 +147,13 @@ class FeatList(object):
         #plt.show()
 
 
-    def _load(self, new_dir):
+    def _load(self, new_dir, **kwargs):
         for file in sorted(os.listdir(new_dir)):
             with open(new_dir+file, 'rb') as f:
-                self._l.append(pickle.load(f))
+                o = pickle.load(f)
+                o._systs_orig = kwargs['systs']
+                self._l.append(o)
         self._table_update()
-        print(self._t)
 
 
     def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
@@ -164,6 +165,7 @@ class FeatList(object):
 
     def _save(self, new_dir):
         for i, o in enumerate(self._l):
+            o._systs_orig = None
             with open(new_dir+'%04i.dat' % i, 'wb') as f:
                 pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
 
