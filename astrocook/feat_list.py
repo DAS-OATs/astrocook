@@ -60,6 +60,7 @@ class Feat():
 
 
     def _systs_join(self, systs):
+        self._systs_orig = systs
         self._systs = {}
         self._trans = {}
         for i, s in systs._d.items():
@@ -210,10 +211,14 @@ class FeatList(object):
                     zref = z
                     first = False
                 else:
-                #    pars.pretty_print()
-                    pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
-                #    pars.pretty_print()
-
+                    #pars.pretty_print()
+                    #pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
+                    dict = {z: (s, 'expr', zref+'+%.14f' % (pars[z]-pars[zref]))}
+                    f._systs_orig._constrain(dict)
+                    #print(f._systs_orig._constr)
+                    #pars.pretty_print()
+                #print(z, zref)
+        #print(f._systs_orig._constr)
 
 class FeatTable(at.Table):
 

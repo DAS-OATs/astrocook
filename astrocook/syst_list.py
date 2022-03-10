@@ -240,6 +240,7 @@ class SystList(object):
     def _constrain(self, dict):
         #self._constr = {}
         #print(self)
+        #print(dict)
         for k, v in dict.items():
             #print(k, dict[k])
             for m in self._mods_t:

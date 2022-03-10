@@ -316,7 +316,9 @@ class SystModel(LMComposite):
                     ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
-                        self._pars[p].expr = v
+                        self._pars[p].set(expr = v)
+                        #"""
+                        #self._pars[p].expr = v
                         if v != '':
                             vs = v.split('*')
                             f = float(vs[1]) if len(vs)==2 else 1
@@ -325,7 +327,17 @@ class SystModel(LMComposite):
                                 self._pars[p].max = self._pars[vs[0]].max
                                 self._pars[p].value = self._pars[vs[0]].value * f
                             except:
-                                self._pars[p].expr = ''
+                                pass
+                        """
+                                vs = v.split('+')
+                                f = float(vs[1]) if len(vs)==2 else 1
+                                try:
+                                    self._pars[p].min = self._pars[vs[0]].min
+                                    self._pars[p].max = self._pars[vs[0]].max
+                                    self._pars[p].value = self._pars[vs[0]].value + f
+                                except:
+                                    self._pars[p].expr = ''
+                        """
                 self._group_list.append(i)
                 if time_check:
                     print('6 %.4f' % (time.time()-ttt))

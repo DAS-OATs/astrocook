@@ -423,6 +423,7 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        #print(systs._constr)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
