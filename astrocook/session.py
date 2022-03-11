@@ -381,7 +381,7 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
-                #self.systs._dict_update(mods=True)
+                self.systs._dict_update(mods=True)
             try:
                 os.remove(self.path[:-4]+'.json')
             except:

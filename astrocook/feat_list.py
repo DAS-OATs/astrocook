@@ -151,7 +151,8 @@ class FeatList(object):
         for file in sorted(os.listdir(new_dir)):
             with open(new_dir+file, 'rb') as f:
                 o = pickle.load(f)
-                o._systs_orig = kwargs['systs']
+                if 'systs' in kwargs:
+                    o._systs_join(kwargs['systs'])
                 self._l.append(o)
         self._table_update()
 
@@ -166,6 +167,7 @@ class FeatList(object):
     def _save(self, new_dir):
         for i, o in enumerate(self._l):
             o._systs_orig = None
+            o._systs = None
             with open(new_dir+'%04i.dat' % i, 'wb') as f:
                 pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
 
@@ -207,15 +209,18 @@ class FeatList(object):
                 #print(f._systs[s]._pars)
                 pars = syst._mod._pars
                 z = 'lines_'+syst._func+'_'+str(s)+'_z'
+                b = 'lines_'+syst._func+'_'+str(s)+'_b'
                 #print(z)
                 if first:
                     zref = z
                     first = False
-                else:
+                    dict = {b: (s, 'vary', False)}
+                elif zref in pars:
                     #pars.pretty_print()
                     #pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
-                    dict = {z: (s, 'expr', zref+'+%.14f' % (pars[z]-pars[zref]))}
-                    f._systs_orig._constrain(dict)
+                    dict = {z: (s, 'expr', zref+'+%.14f' % (pars[z]-pars[zref])),
+                            b: (s, 'vary', False)}
+                f._systs_orig._constrain(dict)
                     #print(f._systs_orig._constr)
                     #pars.pretty_print()
                 #print(z, zref)
