@@ -41,8 +41,12 @@ class Feat():
 
     def _logN_compute(self):
         if not self._systs_check(): return 0
-        N = [10**s._pars['logN'] for s in self._systs.values()]
-        self._logN = np.mean(np.log10(np.sum(N)))
+        logN = np.array([s._pars['logN'] for s in self._systs.values()])
+        dlogN = np.array([s._pars['dlogN'] for s in self._systs.values()])
+        N = 10**logN
+        dN = N*dlogN
+        self._logN = np.log10(np.sum(N))
+        self._dlogN = np.sqrt(np.sum(dN**2))/np.sum(N)
 
 
     def _snr_compute(self):
