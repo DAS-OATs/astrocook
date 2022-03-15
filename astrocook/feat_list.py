@@ -41,8 +41,12 @@ class Feat():
 
     def _logN_compute(self):
         if not self._systs_check(): return 0
-        N = [10**s._pars['logN'] for s in self._systs.values()]
-        self._logN = np.mean(np.log10(np.sum(N)))
+        logN = np.array([s._pars['logN'] for s in self._systs.values()])
+        dlogN = np.array([s._pars['dlogN'] for s in self._systs.values()])
+        N = 10**logN
+        dN = N*dlogN
+        self._logN = np.log10(np.sum(N))
+        self._dlogN = np.sqrt(np.sum(dN**2))/np.sum(N)
 
 
     def _snr_compute(self):
@@ -60,6 +64,7 @@ class Feat():
 
 
     def _systs_join(self, systs):
+        self._systs_orig = systs
         self._systs = {}
         self._trans = {}
         for i, s in systs._d.items():
@@ -122,13 +127,6 @@ class FeatList(object):
         return 0
 
 
-    def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
-        s = spec._where_safe
-        maxs = find_peaks(spec._t['model'][s]/spec._t['cont'][s],
-                          height=height, prominence=prominence)[0]
-        self._maxs = np.hstack(([0], maxs, [-1]))
-
-
     def _check_attr(self, attr):
         if hasattr(self, attr):
             return getattr(self, attr)
@@ -136,16 +134,44 @@ class FeatList(object):
             return None
 
 
-    def _load(self, new_dir):
+    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
+        self._maxs_from_spec(spec, height, prominence)
+
+        for i, f in enumerate(self._maxs[:-1]):
+            fe = self._maxs[i+1]
+            sel = np.s_[f:fe]
+            modeln = spec._t['model'][sel]/spec._t['cont'][sel]
+            min = np.amin(modeln)
+            cut = np.where(modeln<1-thres*(1-min))
+            if len(cut[0])>0:
+                #plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
+                self._add(spec._t[sel][cut], systs)
+
+        self._table_update()
+        #plt.show()
+
+
+    def _load(self, new_dir, **kwargs):
         for file in sorted(os.listdir(new_dir)):
             with open(new_dir+file, 'rb') as f:
-                self._l.append(pickle.load(f))
+                o = pickle.load(f)
+                if 'systs' in kwargs:
+                    o._systs_join(kwargs['systs'])
+                self._l.append(o)
         self._table_update()
-        print(self._t)
+
+
+    def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
+        s = spec._where_safe
+        maxs = find_peaks(spec._t['model'][s]/spec._t['cont'][s],
+                          height=height, prominence=prominence)[0]
+        self._maxs = np.hstack(([0], maxs, [-1]))
 
 
     def _save(self, new_dir):
         for i, o in enumerate(self._l):
+            o._systs_orig = None
+            o._systs = None
             with open(new_dir+'%04i.dat' % i, 'wb') as f:
                 pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
 
@@ -173,20 +199,36 @@ class FeatList(object):
         self._t['model'] = at.Column(np.array(m, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         self._t['cont'] = at.Column(np.array(c, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         #print(self)
+        #print(self._t)
+        #for f in self._l:
+        #    print(f._left[0], f._right[0])
         #print(len(self._t))
 
-    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
-        self._maxs_from_spec(spec, height, prominence)
-
-        for i, f in enumerate(self._maxs[:-1]):
-            fe = self._maxs[i+1]
-            sel = np.s_[f:fe]
-            cut = np.where(spec._t['model'][sel]/spec._t['cont'][sel]<1-thres)
-            if len(cut[0])>0:
-                self._add(spec._t[sel][cut], systs)
-
-        self._table_update()
-
+    def _z_lock(self):
+        for i, f in enumerate(self._l):
+            first = True
+            for s in f._systs:
+                #print(s)
+                syst = f._systs[s]
+                #print(f._systs[s]._pars)
+                pars = syst._mod._pars
+                z = 'lines_'+syst._func+'_'+str(s)+'_z'
+                b = 'lines_'+syst._func+'_'+str(s)+'_b'
+                #print(z)
+                if first:
+                    zref = z
+                    first = False
+                    dict = {b: (s, 'vary', False)}
+                elif zref in pars:
+                    #pars.pretty_print()
+                    #pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
+                    dict = {z: (s, 'expr', zref+'+%.14f' % (pars[z]-pars[zref])),
+                            b: (s, 'vary', False)}
+                f._systs_orig._constrain(dict)
+                    #print(f._systs_orig._constr)
+                    #pars.pretty_print()
+                #print(z, zref)
+        #print(f._systs_orig._constr)
 
 class FeatTable(at.Table):
 

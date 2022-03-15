@@ -54,7 +54,8 @@ class Session(object):
                  mods=None,
                  twin=False,
                  row=None,
-                 slice=None):
+                 slice=None,
+                 feats=None):
         self._gui = gui
         self.path = path
         self.name = name
@@ -74,7 +75,7 @@ class Session(object):
         self._clicks = []
         self._stats = False
         self._shade = False
-        self.feats = None
+        self.feats = feats
 
         self._classes = {'spec': Spectrum, 'lines': LineList, 'systs':
                          SystList, 'mods': SystModel, 'feats': FeatList}
@@ -297,7 +298,7 @@ class Session(object):
             for s in self.seq:
                 if s == 'feats':
                     try:
-                        self._load(s, dir, stem)
+                        self._load(s, dir, stem, systs=self.systs)
                     except:
                         pass
                 try:
@@ -380,6 +381,7 @@ class Session(object):
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
+                self.systs._dict_update(mods=True)
             try:
                 os.remove(self.path[:-4]+'.json')
             except:
@@ -476,7 +478,7 @@ class Session(object):
         return mods_t_ok
 
 
-    def _load(self, struct, dir, stem):
+    def _load(self, struct, dir, stem, **kwargs):
         logging.info("I'm loading %s from %s.acs..." % (struct, stem))
 
         new_dir = dir+'/'+stem+'_'+struct+'/'
@@ -487,10 +489,11 @@ class Session(object):
             with open(new_dir+file, 'rb') as f:
                 feats._l.append(pickle.load(f))
         """
-        s._load(new_dir)
+        s._load(new_dir, **kwargs)
         setattr(self, struct, s)
         shutil.rmtree(new_dir, ignore_errors=True)
-        
+        logging.info("done!")
+
 
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:
@@ -517,23 +520,6 @@ class Session(object):
         shutil.rmtree(new_dir, ignore_errors=True)
         logging.info("I've saved %s in %s.acs." % (struct, stem))
 
-
-
-    def _load(self, struct, dir, stem):
-        logging.info("I'm loading %s from %s.acs..." % (struct, stem))
-
-        new_dir = dir+'/'+stem+'_'+struct+'/'
-
-        s = self._classes[struct]()
-        """
-        for file in os.listdir(new_dir):
-            with open(new_dir+file, 'rb') as f:
-                feats._l.append(pickle.load(f))
-        """
-        s._load(new_dir)
-        setattr(self, struct, s)
-        shutil.rmtree(new_dir, ignore_errors=True)
-        
 
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:
@@ -737,7 +723,6 @@ class Session(object):
 
                             except:
                                 fail.append(id)
-
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
                                             "models. They were not saved." \

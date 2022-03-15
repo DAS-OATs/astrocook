@@ -423,6 +423,7 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        #print(systs._constr)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -447,6 +448,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id, constr)
                     #print(systs._id)
                     #if systs._id == 46: print(systs._constr.items())
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
@@ -1000,7 +1002,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def feats(self, thres=1e-2, height=1e-1, prominence=1e-1):
+    def feats(self, thres=1e-2, height=1e-1, prominence=1e-2):
         """ @brief Organize systems into absorption features
         @details Absorption features are portions of the model including one or
         more systems, and limited by local maxima in the model.
@@ -1023,6 +1025,29 @@ class CookbookAbsorbers(object):
                      % len(self.sess.feats._l))
 
         return 0
+
+
+    def feats_z_lock(self):
+        """ @brief Lock redshifts by absorption features
+        @details Lock the difference of systems redshift by absorption features.
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
+        @return 0
+        """
+
+        """
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+        """
+        self.sess.feats._z_lock()
+        logging.info("I've locked redshifts by absorption features.")
+
+        return 0
+
 
 
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):

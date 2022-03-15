@@ -13,10 +13,12 @@ class Syst(object):
     def __init__(self,
                  func,
                  series,
-                 pars):
+                 pars,
+                 mod):
         self._func = func
         self._series = series
         self._pars = pars
+        self._mod = mod
         self._x = {}
         for t in trans_parse(self._series):
             self._x[t] = to_x(self._pars['z'], t)
@@ -112,12 +114,23 @@ class SystList(object):
         self._dict_update()
 
 
-    def _dict_update(self):
+    def _dict_update(self, mods=False):
+        self._t.sort('id')
         for s in self._t:
             pars = {'z': s['z'], 'dz': s['dz'], 'logN': s['logN'],
                     'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
                     'resol': s['resol']}
-            self._d[s['id']] = Syst(s['func'], s['series'], pars)
+            if mods:
+                #Don't try to be smart and use
+                #“for id, mod in self._mods_t['id','mod']” instead.
+                #It changes the structure of the system table and produces an
+                #infinite recursion when saving it
+                for id, mod in zip(self._mods_t['id'],self._mods_t['mod']):
+                    if s['id'] in id: break #mod = self._mods_t['mod']
+            else:
+                mod = None
+            self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
+
 
 
 
@@ -233,6 +246,7 @@ class SystList(object):
     def _constrain(self, dict):
         #self._constr = {}
         #print(self)
+        #print(dict)
         for k, v in dict.items():
             #print(k, dict[k])
             for m in self._mods_t:

@@ -275,11 +275,12 @@ class SystModel(LMComposite):
             #print(s['id'])
                 #ymax = np.maximum(ys, ys_s)
                 yminmax = np.amin(np.maximum(ys,ys_s))
+                ymin = np.amin(ys)
                 if time_check:
                     print('2 %.4f' % (time.time()-ttt))
                     ttt = time.time()
                 #cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-                cond = yminmax<1-thres or yminmax==ysmin
+                cond = yminmax<1-thres*(1-ymin) or yminmax==ysmin
                 if time_check:
                     print('3 %.4f' % (time.time()-ttt))
                     ttt = time.time()
@@ -315,7 +316,10 @@ class SystModel(LMComposite):
                     ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
-                        self._pars[p].expr = v
+                        if v.split('+')[0] in self._pars:
+                            self._pars[p].set(expr = v)
+                        #"""
+                        #self._pars[p].expr = v
                         if v != '':
                             vs = v.split('*')
                             f = float(vs[1]) if len(vs)==2 else 1
@@ -324,7 +328,17 @@ class SystModel(LMComposite):
                                 self._pars[p].max = self._pars[vs[0]].max
                                 self._pars[p].value = self._pars[vs[0]].value * f
                             except:
-                                self._pars[p].expr = ''
+                                pass
+                        """
+                                vs = v.split('+')
+                                f = float(vs[1]) if len(vs)==2 else 1
+                                try:
+                                    self._pars[p].min = self._pars[vs[0]].min
+                                    self._pars[p].max = self._pars[vs[0]].max
+                                    self._pars[p].value = self._pars[vs[0]].value + f
+                                except:
+                                    self._pars[p].expr = ''
+                        """
                 self._group_list.append(i)
                 if time_check:
                     print('6 %.4f' % (time.time()-ttt))
