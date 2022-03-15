@@ -655,6 +655,7 @@ class CookbookAbsorbers(object):
 
     def _systs_add(self, series_list, z_list, logN_list=None, b_list=None,
                    resol_list=None, k_list=None, verbose=True):
+
         if logN_list is None: logN_list = [None]*len(series_list)
         if b_list is None: b_list = [None]*len(series_list)
         if resol_list is None: resol_list = [None]*len(series_list)
@@ -809,6 +810,7 @@ class CookbookAbsorbers(object):
             self.sess.systs._t.remove_rows(merged)
             self._mods_recreate()
 
+
     def _systs_prepare(self, append=True):
         systs = self.sess.systs
         if systs != None and len(systs.t) != 0 and append:
@@ -816,48 +818,6 @@ class CookbookAbsorbers(object):
         else:
             setattr(self.sess, 'systs', SystList())
 
-    """
-    def _systs_refit(self, refit_id=[], max_nfev=0):
-        systs = self.sess.systs
-        mods_t = systs._mods_t
-        if max_nfev > 0:
-            z_list = []
-            mod_list = []
-            #chi2r_list = []
-            #for i,m in enum_tqdm(mods_t, len(mods_t),
-            #                     "cookbook_absorbers: Refitting"):
-            for i,m in enumerate(mods_t):
-                systs_s = [np.where(systs._t['id']==id)[0][0] for id in m['id']]
-
-                # Model has systems in the refit list
-                mods_cond = np.any([id in m['id'] for id in refit_id])
-
-                # Systems in the model have different chi2r (resulting from
-                # previous fit in separate models)
-                chi2r_cond_1 = np.unique(systs._t['chi2r'][systs_s]).size > 1
-
-                # Systems in the model have the same chi2r of another model
-                # (resulting from previous fit in the same model)
-                chi2r_cond_2 = np.sum([s in systs._t['chi2r'][systs_s] \
-                                       for s in systs._t['chi2r']]) > len(systs_s)
-                if mods_cond or chi2r_cond_1 or chi2r_cond_2:
-                    z_list.append(m['z0'])
-                    mod_list.append(m['mod'])
-            for i,m in enum_tqdm(mod_list, len(mod_list),
-                                 "cookbook_absorbers: Refitting"):
-                self._syst_fit(m, max_nfev, verbose=False)
-                #chi2r_list.append(m._chi2r)
-            #print(chi2r_list)
-            logging.info("I've refitted %i model%s." \
-                         % (len(z_list), msg_z_range(z_list)))
-            logging.info("I've updated %i system%s in %i model%s." \
-                         % (len(systs._t), '' if len(systs._t)==1 else 's',
-                            len(mods_t), msg_z_range(z_list)))
-        else:
-            logging.info("I'm not refitting any system because you choose "
-                         "max_nfev=0.")
-        return 0
-    """
 
     def _systs_reject(self, mod=None, verbose=True):
         systs = self.sess.systs
@@ -927,6 +887,7 @@ class CookbookAbsorbers(object):
         for k in k_del:
             del systs._constr[k]
 
+
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
         modw = np.where(mod == systs._mods_t['mod'])[0][0]
@@ -958,6 +919,27 @@ class CookbookAbsorbers(object):
 
         if incr and False:
             systs._id += 1
+
+
+    def _syst_flo(self, merge_t, v_thres):
+
+        dv_t = np.array([[ac.c.to(au.km/au.s).value*(z1-z2)/(1+z1)
+                          for z1 in merge_t['z']]
+                         for z2 in merge_t['z']]) * au.km/au.s
+        dv_t[dv_t<=0] = np.inf
+        if np.min(dv_t) < v_thres:
+            m1, m2 = np.unravel_index(np.argmin(dv_t), np.shape(dv_t))
+            z = np.array([merge_t['z'][m1], merge_t['z'][m2]])
+            logN = np.array([merge_t['logN'][m1], merge_t['logN'][m2]])
+            dlogN = np.array([merge_t['dlogN'][m1], merge_t['dlogN'][m2]])
+            z_ave = np.average(z, weights=logN)
+            logN_ave = np.log10(np.sum(10**logN))
+            dlogN_ave = np.log10(np.sqrt(np.sum(10**(2*dlogN))))
+            merge_t.remove_rows([m1, m2])
+            merge_t.add_row([z_ave, logN_ave, dlogN_ave])
+            self._syst_merge(merge_t, v_thres)
+
+        return 0
 
 
     def _z_off(self, trans, z):
