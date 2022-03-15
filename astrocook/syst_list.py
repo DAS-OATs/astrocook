@@ -121,11 +121,16 @@ class SystList(object):
                     'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
                     'resol': s['resol']}
             if mods:
-                for id, mod in self._mods_t['id','mod']:
+                #Don't try to be smart and use
+                #“for id, mod in self._mods_t['id','mod']” instead.
+                #It changes the structure of the system table and produces an
+                #infinite recursion when saving it
+                for id, mod in zip(self._mods_t['id'],self._mods_t['mod']):
                     if s['id'] in id: break #mod = self._mods_t['mod']
             else:
                 mod = None
             self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
+
 
 
 

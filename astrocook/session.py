@@ -723,7 +723,6 @@ class Session(object):
 
                             except:
                                 fail.append(id)
-
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
                                             "models. They were not saved." \
