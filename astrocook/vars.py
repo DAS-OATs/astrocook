@@ -63,6 +63,8 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
+#classes = {'feats': FeatList}
+
 # Menus
 #menus_def = ['General', 'Continuum', 'Absorbers']
 menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
@@ -70,7 +72,7 @@ menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
                'Synthetic': '_cb_synthetic', 'Templates': '_cb_templates'}
 #menus = {'attr': [menus_assoc[m] for m in menus_def], 'title': menus_def}
 
-seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+seq = ['spec', 'nodes', 'lines', 'systs', 'mods', 'feats']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
@@ -87,6 +89,7 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,cont,None,plot,-,1,C8,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
+           "feats,x,model,None,scatter,|,5,C9,0.5\n"\
            "systs,z,None,None,axvline,--,0.8,C2,1.0"
 
 graph_lim_def = 'xlim=auto\nylim=auto'

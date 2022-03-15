@@ -1,5 +1,6 @@
 from .functions import *
 from .message import *
+from .feat_list import FeatList
 from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
@@ -111,7 +112,8 @@ class CookbookAbsorbers(object):
         rc = range(len(xc))
         rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
-        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        #xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-1:]), to_begin=np.ediff1d(xc[:2]))/2
         #print(len(xc), len(x_osampl), len(yc), len(y), len(eval_osampl))
         for i, xs in enumerate(x_shift):
             plot = False
@@ -148,7 +150,9 @@ class CookbookAbsorbers(object):
             deltax = x_shift[amax]
             deltav = v_shift[amax]
             #plt.scatter(xmean+x_shift[amax], 1)
-
+        #print(len(xc), len(xdiff))
+        #print(np.any(np.ediff1d(xc-xdiff)<=0))
+        #print(np.ediff1d(xc-xdiff))
         xshift = x_osampl+deltax
         digitized = np.digitize(xshift, xc-xdiff)-1
         yshift = 1-np.array([eval_osampl[digitized == j].mean() for j in range(len(xc))])
@@ -233,54 +237,56 @@ class CookbookAbsorbers(object):
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
                        dycol='dy', contcol='cont', modelcol='model', thr=1e-1,
-                       update_modelcol=False):
+                       update_modelcol=False, height=1e-1, prominence=1e-1):
         weight = str(weight) == 'True'
         spec = self.sess.spec
         systs = self.sess.systs
         feats = np.hstack(([0], systs._bounds, [-1]))
-        #plt.plot(spec._t['x'], spec._t['model'])
-        #plt.scatter(spec._t['x'][systs._bounds], spec._t['model'][systs._bounds])
-        #plt.show()
+
         deltav_arr = np.array([])
         xmean_arr = np.array([])
         if update_modelcol:
             spec._t[modelcol+'_shift'] = spec._t[modelcol]
-        for i, f in enum_tqdm(feats[:-1], len(feats)-1,
+        xcf = []
+        ycf = []
+        contcf = []
+        feats = FeatList() #xunit=spec._xunit, yunit=spec._yunit)
+        feats._maxs_from_spec(spec, height, prominence)
+        #print(feats._maxs)
+        for i, f in enum_tqdm(feats._maxs[:-1], len(feats._maxs)-1,
                               "cookbook_absorbers: Computing CCF for features"):
-            fe = feats[i+1]
+            fe = feats._maxs[i+1]
             sel = np.s_[f:fe]
             cut = np.where(spec._t[modelcol][sel]/spec._t[contcol][sel]<1-thr)
+            contc = spec._t[contcol][sel][cut]
             xc = spec._t[xcol][sel][cut]
-            yc = spec._t[ycol][sel][cut]/spec._t[contcol][sel][cut]
-            dyc = spec._t[dycol][sel][cut]/spec._t[contcol][sel][cut]
-            modelc = spec._t[modelcol][sel][cut]/spec._t[contcol][sel][cut]
-            #print(sel)
-            #print(spec._t[modelcol][sel]/spec._t[contcol][sel])
-            #print(cut)
-            if len(xc)>0:
+            yc = spec._t[ycol][sel][cut]/contc
+            dyc = spec._t[dycol][sel][cut]/contc
+            modelc = spec._t[modelcol][sel][cut]/contc
+            if len(cut[0])>0:
+                feats._add(spec._t[sel][cut], systs)
                 ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
-            else:
+                feats._l[-1]._ccf_compute(np.mean(xc), deltav)
+            #else:
                 #print('xc len 0')
-                deltav = 0.0
-                modelshift = modelc
-            xmean_arr = np.append(xmean_arr, np.mean(xc))
-            deltav_arr = np.append(deltav_arr, deltav)
-            """
+            #    deltav = 0.0
+            #    modelshift = modelc
+                xmean_arr = np.append(xmean_arr, np.mean(xc))
+                deltav_arr = np.append(deltav_arr, deltav)
+                """
             for i in m['id']:
                 w = np.where(systs._t['id']==i)
                 systs._t['ccf_deltav'][w] = deltav
-            """
-            if update_modelcol:
-                #print(modelshift)
-                #print(modelc)
-                #print(spec._t[modelcol][sel][cut])
-                spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
-                #print(spec._t[modelcol][sel][cut])
-        #print(deltav_arr)
-        #plt.show()
+                """
+                if update_modelcol:
+                    spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
 
+        empty = [np.nan]*len(xcf)
+        feats._table_update()
+        self.sess.feats = feats
+        #print(len(deltav_arr), len(feats._l))
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
             np.save(f, xmean_arr)
             np.save(f, deltav_arr)
@@ -417,6 +423,7 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        #print(systs._constr)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -441,6 +448,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id, constr)
                     #print(systs._id)
                     #if systs._id == 46: print(systs._constr.items())
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
@@ -994,6 +1002,54 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def feats(self, thres=1e-2, height=1e-1, prominence=1e-2):
+        """ @brief Organize systems into absorption features
+        @details Absorption features are portions of the model including one or
+        more systems, and limited by local maxima in the model.
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
+        @return 0
+        """
+
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.feats = FeatList()
+        self.sess.feats.create(self.sess.spec, self.sess.systs, thres, height,
+                               prominence)
+        logging.info("I've extracted %i features from the system models."\
+                     % len(self.sess.feats._l))
+
+        return 0
+
+
+    def feats_z_lock(self):
+        """ @brief Lock redshifts by absorption features
+        @details Lock the difference of systems redshift by absorption features.
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
+        @return 0
+        """
+
+        """
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+        """
+        self.sess.feats._z_lock()
+        logging.info("I've locked redshifts by absorption features.")
+
+        return 0
+
+
+
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
@@ -1169,6 +1225,13 @@ class CookbookAbsorbers(object):
 
         self._systs_remove(rem)
         self._mods_recreate()
+
+        return 0
+
+    def _feats_select_isolated(self, thres=1e-1):
+        if not hasattr(self.sess, 'feats'):
+            self.feats()
+        self.sess.feats._select_isolate(thres)
 
         return 0
 
