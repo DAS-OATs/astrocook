@@ -921,8 +921,9 @@ class CookbookAbsorbers(object):
             systs._id += 1
 
 
-    def _syst_flo(self, merge_t, v_thres):
+    def _systs_fof(self, v_thres):
 
+        merge_t = dc(self._t)
         dv_t = np.array([[ac.c.to(au.km/au.s).value*(z1-z2)/(1+z1)
                           for z1 in merge_t['z']]
                          for z2 in merge_t['z']]) * au.km/au.s
@@ -937,9 +938,9 @@ class CookbookAbsorbers(object):
             dlogN_ave = np.log10(np.sqrt(np.sum(10**(2*dlogN))))
             merge_t.remove_rows([m1, m2])
             merge_t.add_row([z_ave, logN_ave, dlogN_ave])
-            self._syst_merge(merge_t, v_thres)
+            self._systs_fof(merge_t, v_thres)
 
-        return 0
+        return merge_t
 
 
     def _z_off(self, trans, z):
@@ -2449,3 +2450,15 @@ class CookbookAbsorbers(object):
         #z_cand =
 
         return sess
+
+    def systs_flo(self):
+        """ @brief Apply FLO to systems
+        @details Convert system column densities into overdensity using the FLO
+        approach (Saitta et al. 2007)
+        @return 0
+        """
+
+        merge_t = self._systs_fof(v_thres)
+        self._systs_flo(merge_t)
+
+        return 0
