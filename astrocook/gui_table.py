@@ -631,6 +631,7 @@ class GUITableSystList(GUITable):
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
+        #print(self._links_d)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
@@ -655,8 +656,8 @@ class GUITableSystList(GUITable):
                     self._data_edit(r, labels[c], v, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-        print(self._freezes_d)
-        print(self._links_d)
+        #print(self._freezes_d)
+        #print(self._links_d)
         systs._constrain(self._links_d)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
@@ -999,12 +1000,13 @@ class GUITableSystList(GUITable):
                     if v.expr != None and r != None and c != None:
                         r2 = self._row_extract(int(v.expr.split('_')[-2]))
                         c2 = np.where(labels==p.split('_')[-1])[0][0]
-                        if v.expr not in self._links_c:
-                            self._links_c[v.expr] = self._colours[self._colourc\
+                        vs = v.expr.split('*')[0]
+                        if vs not in self._links_c:
+                            self._links_c[vs] = self._colours[self._colourc\
                                                     %len(self._colours)]
                             self._colourc += 1
-                        self._tab.SetCellTextColour(r, c, self._links_c[v.expr])
-                        self._tab.SetCellTextColour(r2, c2, self._links_c[v.expr])
+                        self._tab.SetCellTextColour(r, c, self._links_c[vs])
+                        self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
             if not mod._active:
                 cols = self._tab.GetNumberCols()
                 for c in range(cols):

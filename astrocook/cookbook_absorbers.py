@@ -455,9 +455,11 @@ class CookbookAbsorbers(object):
                                    defs=self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+                    #mod._pars.pretty_print()
                     self._mods_update(mod)
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+
                 else:
                     systs._id = np.max(systs._t['id'])+1
 

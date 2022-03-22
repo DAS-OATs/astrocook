@@ -266,7 +266,7 @@ class SystModel(LMComposite):
             cond, pars_cond = False, False
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
-                    cond = cond or v==mod_p
+                    cond = cond or v.split('*')[0]==mod_p
             if cond: pars_cond = True
             if time_check:
                 print('1 %.4f' % (time.time()-ttt))
@@ -275,11 +275,12 @@ class SystModel(LMComposite):
             #print(s['id'])
                 #ymax = np.maximum(ys, ys_s)
                 yminmax = np.amin(np.maximum(ys,ys_s))
+                ymin = np.amin(ys)
                 if time_check:
                     print('2 %.4f' % (time.time()-ttt))
                     ttt = time.time()
                 #cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-                cond = yminmax<1-thres or yminmax==ysmin
+                cond = yminmax<1-thres*(1-ymin) or yminmax==ysmin
                 if time_check:
                     print('3 %.4f' % (time.time()-ttt))
                     ttt = time.time()
