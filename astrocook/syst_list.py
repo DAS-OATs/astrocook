@@ -337,15 +337,19 @@ class SystList(object):
         if t:
             modw = np.where(mod == self._mods_t['mod'])[0][0]
             ids = self._mods_t['id'][modw]
-            #print(ids)
             for i in ids:
                 try:
                     iw = np.where(self._t['id']==i)[0][0]
                     pref = 'lines_voigt_'+str(i)
                     self._t[iw]['z'] = mod._pars[pref+'_z'].value
                     self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                    self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                    self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                    if pref+'_N_tot' in mod._pars:
+                        self._t[iw]['logN'] = np.log10(mod._pars[pref+'_N_tot'].value\
+                                                       -mod._pars[pref+'_N_other'].value)
+                        self._t[iw]['dlogN'] = np.nan
+                    else:
+                        self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                        self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                     self._t[iw]['b'] = mod._pars[pref+'_b'].value
                     self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
                     try:

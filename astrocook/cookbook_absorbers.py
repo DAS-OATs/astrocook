@@ -937,8 +937,13 @@ class CookbookAbsorbers(object):
                 pref = 'lines_voigt_'+str(i)
                 systs._t[iw]['z'] = mod._pars[pref+'_z'].value
                 systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                if pref+'_N_tot' in mod._pars:
+                    systs._t[iw]['logN'] = np.log10(mod._pars[pref+'_N_tot'].value\
+                                                   -mod._pars[pref+'_N_other'].value)
+                    systs._t[iw]['dlogN'] = np.nan
+                else:
+                    systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                    systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
                 try:

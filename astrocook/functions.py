@@ -227,6 +227,7 @@ def expr_eval(node):
         return expr_check(node)
 
 def lines_voigt_N_tot(x, z, N_tot, N_other, b, btur, series='Ly_a'):
+#def lines_voigt_N_tot(x, z, logN_tot, logN_other, b, btur, series='Ly_a'):
     logN = np.log10(N_tot-N_other)
     if logN == -np.inf:
         logN = pars_std_d['logN']
