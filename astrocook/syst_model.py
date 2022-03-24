@@ -70,7 +70,7 @@ class SystModel(LMComposite):
             #for p in self._pars:
             #    if '_192' in p:
             #        print(self._pars[p])
-            #self._pars.pretty_print()
+            self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
             self._chi2r = fit.redchi
             self._aic = fit.aic
@@ -582,33 +582,33 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _make_N_tot(self):
-        logN = self._pars[self._lines_pref+'logN']
-        N_tot = np.sum([10**self._pars[p]
-                        for p in self._pars if 'logN' in p])
+    def _make_N_tot(self, lines_pref=None, pars=None):
+        if lines_pref is None: lines_pref = self._lines_pref
+        if pars is None: pars = self._pars
+        logN = pars[lines_pref+'logN']
+        N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
         N_other = N_tot-10**logN
         N_other_expr = ''
-        for p in self._pars:
-            if 'logN' in p and 'logN_' not in p and p != self._lines_pref+'logN':
+        for p in pars:
+            if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
                 N_other_expr += '+10**%s' % p
                 #N_other_expr += '%s' % p
 
-        #self._pars.add_many(
-        #    (self._lines_pref+'N_tot', N_tot, logN.vary, 10**logN.min,
-        #     10**logN.max, ''),
-        #    (self._lines_pref+'N_other', N_other, True, 10**logN.min,
-        #     10**logN.max, N_other_expr))
-        #"""
-        self._pars[self._lines_pref+'logN'].vary = False
-        self._pars[self._lines_pref+'N_tot'].value = N_tot
-        self._pars[self._lines_pref+'N_other'].value = N_other
-        self._pars[self._lines_pref+'N_other'].expr = N_other_expr
-        """
-        self._pars[self._lines_pref+'logN'].vary = False
-        self._pars[self._lines_pref+'logN_tot'].value = np.log10(N_tot)
-        self._pars[self._lines_pref+'logN_other'].value = np.log10(N_other)
-        self._pars[self._lines_pref+'logN_other'].expr = N_other_expr
-        """
+        self._pars[lines_pref+'logN'].vary = False
+        if lines_pref+'N_tot' not in self._pars:
+            self._pars.add_many(
+                (lines_pref+'N_tot', N_tot, logN.vary, 10**logN.min,
+                 10**logN.max, ''))
+        else:
+            self._pars[lines_pref+'N_tot'].value = N_tot
+        if lines_pref+'N_other' not in self._pars:
+            self._pars.add_many(
+                (lines_pref+'N_other', N_other, True, 10**logN.min,
+                10**logN.max, N_other_expr))
+        else:
+            self._pars[lines_pref+'N_other'].value = N_other
+            self._pars[lines_pref+'N_other'].expr = N_other_expr
+
 
     def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
                    defs=None, N_tot=False):
@@ -631,6 +631,8 @@ class SystModel(LMComposite):
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
+
+        N_tot = '36' == str(self._id)
 
         #self._make_lines()
         self._make_lines_psf(N_tot)

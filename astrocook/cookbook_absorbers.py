@@ -1035,24 +1035,29 @@ class CookbookAbsorbers(object):
     def feats_z_lock(self):
         """ @brief Lock redshifts by absorption features
         @details Lock the difference of systems redshift by absorption features.
-        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
-        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
-        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
         @return 0
         """
 
-        """
-        try:
-            thres = float(thres)
-        except:
-            logging.error(msg_param_fail)
-            return 0
-        """
         self.sess.feats._z_lock()
         logging.info("I've locked redshifts by absorption features.")
 
         return 0
 
+
+    def feats_logN_tot(self, set_pars=True, sel=None):
+        """ @brief Prepare features to fit total column density
+        @details The last system in each feature is prepared to be modeled as
+        a function of the total column density of the feature itself, to obtain
+        realistic errors on the total column density.
+        @param set_pars Set the parameters to model the systems (if False, total column densities will be only extracted from the models)
+        @param sel Feature selected to be modeled in this way (None to select all)
+        @return 0
+        """
+
+        self.sess.feats._logN_tot(set_pars, sel)
+        logging.info("I've locked redshifts by absorption features.")
+
+        return 0
 
 
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
