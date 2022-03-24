@@ -582,22 +582,25 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _make_N_tot(self, lines_pref=None, pars=None):
+    def _make_N_tot(self, N_tot_specs=(None, None, None)):
+        lines_pref, N_tot, N_other_expr = N_tot_specs
         if lines_pref is None: lines_pref = self._lines_pref
-        if pars is None: pars = self._pars
+        pars = self._pars
         logN = pars[lines_pref+'logN']
-        N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
+        if N_tot is None:
+            N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
         N_other = N_tot-10**logN
-        N_other_expr = ''
-        for p in pars:
-            if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
-                N_other_expr += '+10**%s' % p
-                #N_other_expr += '%s' % p
+        if N_other_expr is None:
+            N_other_expr = ''
+            for p in pars:
+                if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
+                    N_other_expr += '+10**%s' % p
+                    #N_other_expr += '%s' % p
 
         self._pars[lines_pref+'logN'].vary = False
         if lines_pref+'N_tot' not in self._pars:
             self._pars.add_many(
-                (lines_pref+'N_tot', N_tot, logN.vary, 10**logN.min,
+                (lines_pref+'N_tot', N_tot, True, 10**logN.min,
                  10**logN.max, ''))
         else:
             self._pars[lines_pref+'N_tot'].value = N_tot
@@ -611,7 +614,7 @@ class SystModel(LMComposite):
 
 
     def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
-                   defs=None, N_tot=False):
+                   defs=None, N_tot=False, N_tot_specs=(None, None, None)):
 
 
         #if resol == None:
@@ -632,7 +635,7 @@ class SystModel(LMComposite):
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
 
-        N_tot = '36' == str(self._id)
+        #N_tot = '47' == str(self._id)
 
         #self._make_lines()
         self._make_lines_psf(N_tot)
@@ -659,4 +662,4 @@ class SystModel(LMComposite):
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
 
         if N_tot:
-            self._make_N_tot()
+            self._make_N_tot(N_tot_specs)

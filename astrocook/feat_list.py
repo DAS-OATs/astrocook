@@ -1,4 +1,5 @@
 from .functions import to_x, trans_parse
+from .syst_model import SystModel
 from astropy import table as at
 from astropy import units as au
 from copy import deepcopy as dc
@@ -78,16 +79,18 @@ class Feat():
 
     def _systs_logN_tot(self):
         self._dlogN_tot = None
+        print(hasattr(self, '_N_tot_par'))
         if hasattr(self, '_N_tot_par'):
+            print(self._N_tot_par.value, self._N_tot_par.stderr)
             self._logN_tot = np.log10(self._N_tot_par.value)
             if self._N_tot_par.stderr is not None:
                 self._dlogN_tot = np.log10(0.4342944819*self._N_tot_par.stderr\
                                            /self._logN_tot)
+            print(self._logN_tot, self._dlogN_tot)
         else:
             self._logN_tot = self._logN_tot_par.value
             self._logN_tot = self._logN_tot_par.stderr
 
-        print(self._logN_tot, self._dlogN_tot)
 
     def _systs_stats(self):
         self._logN_compute()
@@ -177,17 +180,16 @@ class FeatList(object):
         self._table_update()
 
 
-    def _logN_tot(self, set_pars=True, sel=None):
+    def _logN_tot(self, set_specs=True, sel=None):
         done = []
         if sel==None:
             l = self._l
         else:
             l = [self._l[s] for s in sel]
-        print(l, self._l)
         for i, f in enumerate(l):
-            if set_pars:
-                s = max(f._systs.keys())
-                syst = f._systs[s]
+            s = max(f._systs.keys())
+            syst = f._systs[s]
+            if set_specs:
                 if len(f._systs.keys())>1:
                     if s not in done:
                         lines_pref = 'lines_voigt_%s_' % str(s)
@@ -197,13 +199,19 @@ class FeatList(object):
                             if int(p.split('_')[2]) not in f._systs.keys(): pdel.append(p)
                         for p in pdel:
                             del pars[p]
-                        syst._mod._make_N_tot(lines_pref, pars)
-                        #syst._mod._pars.pretty_print()
+                        N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
+                        N_other_expr = ''
+                        for p in pars:
+                            if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
+                                N_other_expr += '+10**%s' % p
+                        syst._mod._N_tot_spec = (s, lines_pref, N_tot, N_other_expr)
                         done.append(s)
+            else:
+                try:
                     f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
-                else:
+                except:
                     f._logN_tot_par = syst._mod._pars['lines_voigt_%s_logN' % str(s)]
-            f._systs_logN_tot()
+                f._systs_logN_tot()
 
 
     def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):
@@ -224,6 +232,12 @@ class FeatList(object):
     def _select_isolated(self, thres=1e-1):
         norm = self._t['y']/self._t['cont']
         sel = np.where(norm>1-thres)
+
+
+    def _systs_update(self, systs):
+        for i, f in enumerate(self._l):
+            f._systs_join(systs)
+            f._systs_stats()
 
 
     def _table_update(self):

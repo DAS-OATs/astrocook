@@ -423,6 +423,12 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        # Collect existing specifications for logN_tot
+        N_tot_specs_dict = {}
+        for m in systs._mods_t['mod']:
+            if hasattr(m, '_N_tot_spec'):
+                N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
+
         #print(systs._constr)
         if not fast:
 
@@ -458,9 +464,18 @@ class CookbookAbsorbers(object):
                         mod._id = np.max(systs_t['id'])+1
                     #print(self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), end=' ')
+
+                    # Implement existing specifications for logN_tot
+                    if mod._id in N_tot_specs_dict:
+                        N_tot = True
+                        N_tot_specs = N_tot_specs_dict[mod._id]
+                    else:
+                        N_tot = False
+                        N_tot_specs = (None, None, None)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs.dict['voigt'])
+                                   defs=self.sess.defs.dict['voigt'],
+                                   N_tot=N_tot, N_tot_specs=N_tot_specs)
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
                     self._mods_update(mod)
@@ -1044,7 +1059,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def feats_logN_tot(self, set_pars=True, sel=None):
+    def feats_logN_tot(self, set_specs=True, sel=None):
         """ @brief Prepare features to fit total column density
         @details The last system in each feature is prepared to be modeled as
         a function of the total column density of the feature itself, to obtain
@@ -1054,8 +1069,17 @@ class CookbookAbsorbers(object):
         @return 0
         """
 
-        self.sess.feats._logN_tot(set_pars, sel)
-        logging.info("I've locked redshifts by absorption features.")
+        self.sess.feats._logN_tot(set_specs, sel)
+        if set_specs:
+            self._mods_recreate()
+            for m in self.sess.systs._mods_t['mod']:
+                m._pars.pretty_print()
+                self._systs_update(m)
+            self.sess.feats._systs_update(self.sess.systs)
+        for f in self.sess.feats._l:
+            s = max(f._systs.keys())
+            f._systs[s]._mod._pars.pretty_print()
+        logging.info("I've prepared features to fit total column density.")
 
         return 0
 
