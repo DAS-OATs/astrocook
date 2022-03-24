@@ -424,10 +424,17 @@ class CookbookAbsorbers(object):
             #print(mod.func)
 
         # Collect existing specifications for logN_tot
+        """
         N_tot_specs_dict = {}
         for m in systs._mods_t['mod']:
             if hasattr(m, '_N_tot_spec'):
                 N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
+        print(N_tot_specs_dict)
+        """
+        N_tot_specs_d = {}
+        if hasattr(systs, '_N_tot_specs'):
+            N_tot_specs_d = systs._N_tot_specs
+        #print(N_tot_specs_d)
 
         #print(systs._constr)
         if not fast:
@@ -466,12 +473,13 @@ class CookbookAbsorbers(object):
                     #print(len(systs._mods_t), end=' ')
 
                     # Implement existing specifications for logN_tot
-                    if mod._id in N_tot_specs_dict:
+                    if mod._id in N_tot_specs_d:
                         N_tot = True
-                        N_tot_specs = N_tot_specs_dict[mod._id]
+                        N_tot_specs = N_tot_specs_d[mod._id]
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
+                    print(mod._id, N_tot, N_tot_specs)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
@@ -1069,16 +1077,20 @@ class CookbookAbsorbers(object):
         @return 0
         """
 
-        self.sess.feats._logN_tot(set_specs, sel)
+        self.sess.feats._logN_tot(self.sess.systs, set_specs, sel)
         if set_specs:
             self._mods_recreate()
-            for m in self.sess.systs._mods_t['mod']:
-                m._pars.pretty_print()
-                self._systs_update(m)
+            for m in self.sess.systs._mods_t:
+                #m._pars.pretty_print()
+                self._systs_update(m['mod'])
+                for i in m['id']:
+                    self.sess.systs._d[i]._mod = m['mod']
+
+            #for s in self.sess.systs._d:
+            #    self.sess.systs._d[s]._mod._pars.pretty_print()
             self.sess.feats._systs_update(self.sess.systs)
         for f in self.sess.feats._l:
             s = max(f._systs.keys())
-            f._systs[s]._mod._pars.pretty_print()
         logging.info("I've prepared features to fit total column density.")
 
         return 0

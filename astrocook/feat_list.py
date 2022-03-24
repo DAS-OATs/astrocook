@@ -79,17 +79,17 @@ class Feat():
 
     def _systs_logN_tot(self):
         self._dlogN_tot = None
-        print(hasattr(self, '_N_tot_par'))
         if hasattr(self, '_N_tot_par'):
-            print(self._N_tot_par.value, self._N_tot_par.stderr)
-            self._logN_tot = np.log10(self._N_tot_par.value)
+            value = self._N_tot_par.value
+            stderr = self._N_tot_par.stderr
+            self._logN_tot = np.log10(value)
             if self._N_tot_par.stderr is not None:
-                self._dlogN_tot = np.log10(0.4342944819*self._N_tot_par.stderr\
-                                           /self._logN_tot)
-            print(self._logN_tot, self._dlogN_tot)
+                self._dlogN_tot = 0.5*np.log10((value+stderr)/(value-stderr))
+            print(self._logN_tot, self._dlogN_tot, 'est')
         else:
             self._logN_tot = self._logN_tot_par.value
-            self._logN_tot = self._logN_tot_par.stderr
+            self._dlogN_tot = self._logN_tot_par.stderr
+            print(self._logN_tot, self._dlogN_tot)
 
 
     def _systs_stats(self):
@@ -180,7 +180,8 @@ class FeatList(object):
         self._table_update()
 
 
-    def _logN_tot(self, set_specs=True, sel=None):
+    def _logN_tot(self, systs, set_specs=True, sel=None):
+        systs._N_tot_specs = {}
         done = []
         if sel==None:
             l = self._l
@@ -204,7 +205,7 @@ class FeatList(object):
                         for p in pars:
                             if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
                                 N_other_expr += '+10**%s' % p
-                        syst._mod._N_tot_spec = (s, lines_pref, N_tot, N_other_expr)
+                        systs._N_tot_specs[s] = (lines_pref, N_tot, N_other_expr)
                         done.append(s)
             else:
                 try:
