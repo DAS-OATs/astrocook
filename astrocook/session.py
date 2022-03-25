@@ -341,6 +341,7 @@ class Session(object):
                             systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
                         mods_t_ok = self._model_open(systs)
+
                         """
                         mods_t_ok = False
                         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
@@ -525,7 +526,10 @@ class Session(object):
         if not hasattr(self, struct) or getattr(self, struct) is None:
             return None
 
-        new_dir = dir+'/'+stem+'_'+struct+'/'
+        if dir!='':
+            new_dir = dir+'/'+stem+'_'+struct+'/'
+        else:
+            new_dir = stem+'_'+struct+'/'
         try:
             shutil.rmtree(new_dir, ignore_errors=True)
             os.mkdir(new_dir)
@@ -553,7 +557,7 @@ class Session(object):
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
-
+        
         import warnings
         warnings.filterwarnings("ignore")
 

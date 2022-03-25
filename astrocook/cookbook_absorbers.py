@@ -431,6 +431,7 @@ class CookbookAbsorbers(object):
                 N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
         print(N_tot_specs_dict)
         """
+
         N_tot_specs_d = {}
         if hasattr(systs, '_N_tot_specs'):
             N_tot_specs_d = systs._N_tot_specs
@@ -500,7 +501,7 @@ class CookbookAbsorbers(object):
 
         spec.t['fit_mask'] = False
         active_c = 0
-        for m in systs._mods_t:
+        for i, m in enumerate(systs._mods_t):
             mod = m['mod']
             try:
                 active = mod._active
@@ -512,12 +513,16 @@ class CookbookAbsorbers(object):
                 active_c += 1
                 c = []
                 t = 1e-2
-                while len(c)==0:
+                j = 0
+                while len(c)==0 and j>1000:
                     try:
                         c = np.where(mod._yl<1-t)[0]
                     except:
                         c = np.where(mod._ys<1-t)[0]
                     t = t*0.5
+                    #print(i, j, len(c))
+                    j += 1
+
                 #print(c)
                 spec.t['fit_mask'][c] = True
 

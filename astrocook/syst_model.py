@@ -542,9 +542,11 @@ class SystModel(LMComposite):
         #print('xs', len(xs))
         c = []
         t = thres
-        while len(c)==0:
+        j = 0
+        while len(c)==0 and j<1000:
             c = np.where(ys<1-t)[0]
             t = t*0.5
+            j += 1
 
         #c = np.where(ys<1-thres)[0]
         #plt.plot(xs, ys)
