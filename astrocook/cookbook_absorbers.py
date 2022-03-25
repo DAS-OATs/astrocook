@@ -479,11 +479,11 @@ class CookbookAbsorbers(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
-                    print(mod._id, N_tot, N_tot_specs)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
+                    #mod._pars.pretty_print()
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
                     self._mods_update(mod)

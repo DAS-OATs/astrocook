@@ -70,7 +70,7 @@ class SystModel(LMComposite):
             #for p in self._pars:
             #    if '_192' in p:
             #        print(self._pars[p])
-            self._pars.pretty_print()
+            #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
             self._chi2r = fit.redchi
             self._aic = fit.aic
@@ -297,6 +297,7 @@ class SystModel(LMComposite):
                 if time_check:
                     print('b %.4f' % (time.time()-ttt))
                     ttt = time.time()
+
                 self._group *= mod._group
                 if time_check:
                     print('a %.4f' % (time.time()-ttt))
@@ -315,11 +316,13 @@ class SystModel(LMComposite):
                     ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
+                        if all([p in self._pars for p in v.split('+10**')[1:]]):
+                            self._pars[p].set(expr = v)
                         if v.split('+')[0] in self._pars:
                             self._pars[p].set(expr = v)
                         #"""
                         #self._pars[p].expr = v
-                        if v != '':
+                        if v != '' and '**' not in v:
                             vs = v.split('*')
                             f = float(vs[1]) if len(vs)==2 else 1
                             try:

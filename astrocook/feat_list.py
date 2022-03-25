@@ -85,11 +85,11 @@ class Feat():
             self._logN_tot = np.log10(value)
             if self._N_tot_par.stderr is not None:
                 self._dlogN_tot = 0.5*np.log10((value+stderr)/(value-stderr))
-            print(self._logN_tot, self._dlogN_tot, 'est')
+            #print(self._logN_tot, self._dlogN_tot, 'est')
         else:
             self._logN_tot = self._logN_tot_par.value
             self._dlogN_tot = self._logN_tot_par.stderr
-            print(self._logN_tot, self._dlogN_tot)
+            #print(self._logN_tot, self._dlogN_tot)
 
 
     def _systs_stats(self):
