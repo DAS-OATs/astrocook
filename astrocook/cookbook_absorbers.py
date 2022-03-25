@@ -514,7 +514,7 @@ class CookbookAbsorbers(object):
                 c = []
                 t = 1e-2
                 j = 0
-                while len(c)==0 and j>1000:
+                while len(c)==0 and j<1000:
                     try:
                         c = np.where(mod._yl<1-t)[0]
                     except:
@@ -523,7 +523,6 @@ class CookbookAbsorbers(object):
                     #print(i, j, len(c))
                     j += 1
 
-                #print(c)
                 spec.t['fit_mask'][c] = True
 
 

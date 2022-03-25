@@ -186,6 +186,14 @@ class FeatList(object):
         if sel==None:
             l = self._l
         else:
+            if type(sel)==str:
+                sel_t = []
+                for subs in sel.split(','):
+                    subs_s = subs.split(':')
+                    start = min(len(self._l), int(subs_s[0]))
+                    end = min(len(self._l), int(subs_s[1]))
+                    sel_t += range(start, end)
+                sel = sel_t
             l = [self._l[s] for s in sel]
         for i, f in enumerate(l):
             s = max(f._systs.keys())
@@ -207,6 +215,7 @@ class FeatList(object):
                                 N_other_expr += '+10**%s' % p
                         systs._N_tot_specs[s] = (lines_pref, N_tot, N_other_expr)
                         done.append(s)
+                        #pars.pretty_print()
             else:
                 try:
                     f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
