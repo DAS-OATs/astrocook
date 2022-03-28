@@ -1,6 +1,8 @@
 from .functions import to_x, trans_parse
+from .syst_model import SystModel
 from astropy import table as at
 from astropy import units as au
+from copy import deepcopy as dc
 import inspect
 import logging
 import numpy as np
@@ -29,7 +31,10 @@ class Feat():
 
     def _ew_compute(self):
         t = self._chunk
-        self._ew = np.sum((t['xmax']-t['xmin']).to(au.nm)*(1-np.array(t['model']/t['cont'])))
+        dx = (t['xmax']-t['xmin']).to(au.nm)
+        self._ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
+        self._dew = np.sqrt(np.nansum((dx*np.array(t['dy']/t['cont']))**2))
+        #print(self._ew, self._dew)
 
 
     def _fwhm_compute(self):
@@ -42,11 +47,11 @@ class Feat():
     def _logN_compute(self):
         if not self._systs_check(): return 0
         logN = np.array([s._pars['logN'] for s in self._systs.values()])
-        dlogN = np.array([s._pars['dlogN'] for s in self._systs.values()])
+        #dlogN = np.array([s._pars['dlogN'] for s in self._systs.values()])
         N = 10**logN
-        dN = N*dlogN
+        #dN = N*dlogN
         self._logN = np.log10(np.sum(N))
-        self._dlogN = np.sqrt(np.sum(dN**2))/np.sum(N)
+        #self._dlogN = np.sqrt(np.sum(dN**2))/np.sum(N)
 
 
     def _snr_compute(self):
@@ -151,6 +156,8 @@ class FeatList(object):
         #plt.show()
 
 
+
+
     def _load(self, new_dir, **kwargs):
         for file in sorted(os.listdir(new_dir)):
             with open(new_dir+file, 'rb') as f:
@@ -179,6 +186,12 @@ class FeatList(object):
     def _select_isolated(self, thres=1e-1):
         norm = self._t['y']/self._t['cont']
         sel = np.where(norm>1-thres)
+
+
+    def _systs_update(self, systs):
+        for i, f in enumerate(self._l):
+            f._systs_join(systs)
+            f._systs_stats()
 
 
     def _table_update(self):

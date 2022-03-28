@@ -525,7 +525,10 @@ class Session(object):
         if not hasattr(self, struct) or getattr(self, struct) is None:
             return None
 
-        new_dir = dir+'/'+stem+'_'+struct+'/'
+        if dir!='':
+            new_dir = dir+'/'+stem+'_'+struct+'/'
+        else:
+            new_dir = stem+'_'+struct+'/'
         try:
             shutil.rmtree(new_dir, ignore_errors=True)
             os.mkdir(new_dir)
