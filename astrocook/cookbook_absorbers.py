@@ -1906,11 +1906,12 @@ class CookbookAbsorbers(object):
         return count
 
 
-    def _abs_like(self, series='Ly-a', z_start=0, z_end=6, dz=1e-4, modul=1):
+    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=1):
         """ @brief Assign likelihood to absorbers
         @details For each spectral bin, compute the likelihood that it has been
         absorbed by a given species.
         @param series Series of transitions
+        @param col Column to apply the likelihood
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
@@ -1954,7 +1955,7 @@ class CookbookAbsorbers(object):
                 if len(sel[0])>0:
                     #print(z, sel, len(sel))
                     z_sel.append(z[sel])
-                    er = (spec._t['cont'][sel]-spec._t['y'][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
+                    er = (spec._t['cont'][sel]-spec._t[col][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
                     er = erf(er)
 
                     interp = np.interp(z_int, z[sel], er)
@@ -2100,7 +2101,7 @@ class CookbookAbsorbers(object):
                 z_e = np.nan
             #print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
-                likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
+                likes, z_likes = self._abs_like(series, col, z_s, z_e, dz, modul)
                 """
             for s in likes.keys():
                 if s not in self._likes.keys():
@@ -2126,7 +2127,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_new_from_like(self, series='Ly-a', z_start=0, z_end=6,
+    def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
                             dz=1e-4, modul=1, thres=0.997, distance=10,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
@@ -2136,6 +2137,7 @@ class CookbookAbsorbers(object):
         """ @brief New systems from likelihood
         @details TBD
         @param series Series of transitions
+        @param col Column to apply the likelihood
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
@@ -2181,7 +2183,7 @@ class CookbookAbsorbers(object):
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
 
-        self._likes, self._z_likes = self._abs_like(series, z_start, z_end, dz,
+        self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
                                                     modul)
         self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
