@@ -2486,6 +2486,7 @@ class CookbookAbsorbers(object):
         try:
             z_start = float(z_start)
             z_end = float(z_end)
+            sigma = float(sigma)
             iter_n = int(iter_n)
         except:
             logging.error(msg_param_fail)
