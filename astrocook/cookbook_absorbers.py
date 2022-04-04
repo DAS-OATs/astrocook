@@ -2469,3 +2469,35 @@ class CookbookAbsorbers(object):
         #z_cand =
 
         return sess
+
+
+    def lya_fit(self, z_start, z_end, sigma=3, iter_n=3):
+        """ @brief Fit the Lyman-alpha forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            iter_n = int(iter_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        thres = erf(sigma/np.sqrt(2))
+        self.systs_new_from_like(z_start=z_start, z_end=z_end,
+                                 modul=1, thres=thres)
+        self.systs_fit(refit_n=1)
+        for i in range(iter_n):
+            self.systs_new_from_like(z_start=z_start, z_end=z_end, col='deabs',
+                                     modul=1, thres=thres)
+            self.systs_fit(refit_n=1)
+
+        return 0
