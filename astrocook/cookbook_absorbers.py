@@ -1947,6 +1947,7 @@ class CookbookAbsorbers(object):
             abs = spec._t #[np.where(spec._t['y_abs'])]
             trans = trans_parse(s)
             z_all = [to_z(spec._t['x'], t) for t in trans]
+            #print(z_all)
             z_int = np.arange(z_start, z_end, dz)
             #z_int = np.arange(z_end, z_start, -dz)
             z_sel, abs_sel, abs_int = [], [], []
@@ -1955,7 +1956,12 @@ class CookbookAbsorbers(object):
                 if len(sel[0])>0:
                     #print(z, sel, len(sel))
                     z_sel.append(z[sel])
-                    er = (spec._t['cont'][sel]-spec._t[col][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
+                    cont = spec._t['cont'][sel]
+                    flux = spec._t[col][sel]
+                    err = spec._t['dy'][sel]
+                    #er = (cont-flux)/err/np.sqrt(2)/modul
+                    er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
+                         /np.sqrt(2)/modul
                     er = erf(er)
 
                     interp = np.interp(z_int, z[sel], er)
@@ -1978,11 +1984,12 @@ class CookbookAbsorbers(object):
                     #    logging.warning("I'm updating column '%s' in spectrum." % t)
                     if len(np.ravel([like]))==len(z_int):
                         x_int = to_x(z_int, t)
-                        sel = np.logical_and(spec._t['x']>np.min(x_int),
-                                             spec._t['x']<np.max(x_int))
-                        cand_t = np.interp(spec._t['x'][sel], x_int, like)
+                        sel = np.logical_and(spec._t['x'].to(au.nm)>np.min(x_int),
+                                             spec._t['x'].to(au.nm)<np.max(x_int))
+                        cand_t = np.interp(spec._t['x'][sel].to(au.nm), x_int, like)
                         #cand_t = 1 - np.power(1-cand_t, len(trans))
                         spec._t[t][sel] = cand_t
+                        #plt.step(x_int, like)
 
             #plt.step(z_sel[0], abs_sel[0], color='blue', alpha=0.2)
             #plt.step(z_sel[1], abs_sel[1], color='red', alpha=0.2)
@@ -2036,7 +2043,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2165,7 +2172,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2198,7 +2205,7 @@ class CookbookAbsorbers(object):
 
         try:
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2239,9 +2246,10 @@ class CookbookAbsorbers(object):
             if s in likes.keys():
                 #print(likes[s])
                 z_int = z_likes[s]
+                #print(s)
                 #plt.plot(z_int, likes[s])
                 w = np.where(likes[s]>thres)
-
+                #print(len(w[0]))
                 """
                 for s_o in series_o:
                     trans_o = trans_parse(s_o)
@@ -2257,6 +2265,8 @@ class CookbookAbsorbers(object):
                 # Check if likelihood peaks are higher than those of all other
                 # transitions at those wavelengths
                 x_w = np.array([to_x(z_int[w][p0], t) for t in trans])
+                #for x_wi in x_w:
+                #    plt.scatter(x_wi, likes[s][w][p0])
                 t_all = np.array([])
                 #for so in np.array(series_split):
                 for so in likes.keys():
@@ -2278,6 +2288,7 @@ class CookbookAbsorbers(object):
                 if k_list == []:
                     s_list = [s]*len(p)
                     z_list = z_int[w][p]
+                    #print(z_list)
                     logN_list = [logN]*len(p)
                     resol_list = [resol]*len(p)
                     if len(s_list)>0:
@@ -2298,10 +2309,10 @@ class CookbookAbsorbers(object):
                     self._spec_update()
             else:
                 id_list = []
-        #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
                 #print(k_list)
+        #plt.show()
 
         if compressed:
             systs._compress()
@@ -2470,16 +2481,17 @@ class CookbookAbsorbers(object):
 
         return sess
 
-
-    def lya_fit(self, z_start, z_end, sigma=3, iter_n=3):
-        """ @brief Fit the Lyman-alpha forest
-        @details The recipe identifies Lyman-alpha absorbers using the
-        likelihood method and fits them. The procedure is iterated on residuals
-        of the fit to improve it.
+    def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
+                            sigma=1, distance=10, append=True):
+        """ @brief New systems from error function
+        @details TBD
+        @param series Series of transitions
+        @param col Column to apply the likelihood
         @param z_start Start redshift
         @param z_end End redshift
         @param sigma Significance of absorbers (in units of the local error)
-        @param iter_n Number of iterations on residuals
+        @param distance Distance between systems in pixels
+        @param append Append systems to existing system list
         @return 0
         """
 
@@ -2487,18 +2499,94 @@ class CookbookAbsorbers(object):
             z_start = float(z_start)
             z_end = float(z_end)
             sigma = float(sigma)
+            distance = None if distance in [None, 'None'] else float(distance)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        modul = 5
+        thres = erf(sigma/np.sqrt(2)/modul)
+        #print(thres)
+        distance = 10
+        self.systs_new_from_like(series=series, col=col, z_start=z_start,
+                                 z_end=z_end, modul=modul, thres=thres,
+                                 distance=distance, append=append)
+
+        return 0
+
+    def _series_fit(self, series, z_start, z_end, sigma, iter_n):
+        self._systs_new_from_erf(series=series, z_start=z_start, z_end=z_end,
+                                 sigma=sigma)
+        self.systs_fit(refit_n=1)
+        for i in range(iter_n):
+            self._systs_new_from_erf(series=series, col='deabs',
+                                     z_start=z_start, z_end=z_end, sigma=sigma)
+            self.systs_fit(refit_n=1)
+
+
+    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+        """ @brief Fit the Lyman-alpha forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
+            sigma = float(sigma)
             iter_n = int(iter_n)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        thres = erf(sigma/np.sqrt(2))
-        self.systs_new_from_like(z_start=z_start, z_end=z_end,
-                                 modul=1, thres=thres)
-        self.systs_fit(refit_n=1)
-        for i in range(iter_n):
-            self.systs_new_from_like(z_start=z_start, z_end=z_end, col='deabs',
-                                     modul=1, thres=thres)
-            self.systs_fit(refit_n=1)
+        if zem != None:
+            z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+            z_end = zem
+
+        self._series_fit('Ly_a', z_start, z_end, sigma, iter_n)
+
+        return 0
+
+
+    def red_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+        """ @brief Fit the red part of the spectrum forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
+            sigma = float(sigma)
+            iter_n = int(iter_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        for s in ['CIV']:
+            t = trans_parse(s)
+            if zem != None:
+                z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
+                z_end = zem
+
+            self._series_fit(s, z_start, z_end, sigma, iter_n)
+            #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+            #                         sigma=sigma)
 
         return 0
