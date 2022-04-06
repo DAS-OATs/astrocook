@@ -2471,34 +2471,43 @@ class CookbookAbsorbers(object):
         return sess
 
 
-    def lya_fit(self, z_start, z_end, sigma=3, iter_n=3):
+    def _series_fit(self, series, z_start, z_end, sigma, iter_n):
+        self._systs_new_from_erf(series=series, z_start=z_start, z_end=z_end,
+                                 sigma=sigma)
+        self.systs_fit(refit_n=1)
+        for i in range(iter_n):
+            self._systs_new_from_erf(series=series, col='deabs',
+                                     z_start=z_start, z_end=z_end, sigma=sigma)
+            self.systs_fit(refit_n=1)
+
+
+    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
         """ @brief Fit the Lyman-alpha forest
         @details The recipe identifies Lyman-alpha absorbers using the
         likelihood method and fits them. The procedure is iterated on residuals
         of the fit to improve it.
-        @param z_start Start redshift
-        @param z_end End redshift
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
         @param sigma Significance of absorbers (in units of the local error)
         @param iter_n Number of iterations on residuals
         @return 0
         """
 
         try:
-            z_start = float(z_start)
-            z_end = float(z_end)
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
             sigma = float(sigma)
             iter_n = int(iter_n)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        thres = erf(sigma/np.sqrt(2))
-        self.systs_new_from_like(z_start=z_start, z_end=z_end,
-                                 modul=1, thres=thres)
-        self.systs_fit(refit_n=1)
-        for i in range(iter_n):
-            self.systs_new_from_like(z_start=z_start, z_end=z_end, col='deabs',
-                                     modul=1, thres=thres)
-            self.systs_fit(refit_n=1)
+        if zem != None:
+            z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+            z_end = zem
+
+        self._series_fit('Ly_a', z_start, z_end, sigma, iter_n)
 
         return 0
