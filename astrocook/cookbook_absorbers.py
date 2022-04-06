@@ -2470,6 +2470,39 @@ class CookbookAbsorbers(object):
 
         return sess
 
+    def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
+                            sigma=1, distance=10, append=True):
+        """ @brief New systems from error function
+        @details TBD
+        @param series Series of transitions
+        @param col Column to apply the likelihood
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param sigma Significance of absorbers (in units of the local error)
+        @param distance Distance between systems in pixels
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            sigma = float(sigma)
+            distance = None if distance in [None, 'None'] else float(distance)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        modul = 5
+        thres = erf(sigma/np.sqrt(2)/modul)
+        #print(thres)
+        distance = 10
+        self.systs_new_from_like(series=series, col=col, z_start=z_start,
+                                 z_end=z_end, modul=modul, thres=thres,
+                                 distance=distance, append=append)
+
+        return 0
+
 
     def _series_fit(self, series, z_start, z_end, sigma, iter_n):
         self._systs_new_from_erf(series=series, z_start=z_start, z_end=z_end,
