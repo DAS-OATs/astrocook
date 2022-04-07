@@ -1976,19 +1976,28 @@ class CookbookAbsorbers(object):
                 like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
                 likes[s] = like
                 z_likes[s] = z_int
+                if 'like_'+s not in spec._t.colnames:
+                    logging.info("I'm adding column 'like_%s' to spectrum." % s)
+                    spec._t['like_'+s] = np.empty(len(spec._t))
+                    spec._t['like_'+s][:] = np.nan
+                else:
+                    logging.warning("I'm updating column '%s' in spectrum." % s)
                 for t in trans:
+                    """
                     if t not in spec._t.colnames:
                         logging.info("I'm adding column '%s' to spectrum." % t)
                         spec._t[t] = np.zeros(len(spec._t))
-                    #else:
-                    #    logging.warning("I'm updating column '%s' in spectrum." % t)
+                    else:
+                        logging.warning("I'm updating column '%s' in spectrum." % t)
+                    """
                     if len(np.ravel([like]))==len(z_int):
                         x_int = to_x(z_int, t)
                         sel = np.logical_and(spec._t['x'].to(au.nm)>np.min(x_int),
                                              spec._t['x'].to(au.nm)<np.max(x_int))
                         cand_t = np.interp(spec._t['x'][sel].to(au.nm), x_int, like)
                         #cand_t = 1 - np.power(1-cand_t, len(trans))
-                        spec._t[t][sel] = cand_t
+                        #spec._t[t][sel] = cand_t
+                        spec._t['like_'+s][sel] = np.fmax(spec._t['like_'+s][sel], cand_t)
                         #plt.step(x_int, like)
 
             #plt.step(z_sel[0], abs_sel[0], color='blue', alpha=0.2)
@@ -2001,6 +2010,16 @@ class CookbookAbsorbers(object):
             #plt.step(spec._t['x'], cand_t, color='black')
 
         #plt.show()
+        if 'like' not in spec._t.colnames:
+            logging.info("I'm adding column 'like' to spectrum.")
+            spec._t['like'] = np.empty(len(spec._t))
+        else:
+            logging.warning("I'm updating column '%s' in spectrum." % t)
+        for c in spec._t.colnames:
+            if 'like_' in c:
+                spec._t['like'] = np.fmax(spec._t['like'], spec._t[c])
+
+
         return likes, z_likes
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
@@ -2262,6 +2281,7 @@ class CookbookAbsorbers(object):
                 p0, _ = find_peaks(likes[s][w], distance=distance)
                 #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
+                """
                 # Check if likelihood peaks are higher than those of all other
                 # transitions at those wavelengths
                 x_w = np.array([to_x(z_int[w][p0], t) for t in trans])
@@ -2283,7 +2303,17 @@ class CookbookAbsorbers(object):
                 #print(sel)
                 #print(p0)
                 #print(p0[np.where(sel)])
-                p = p0
+                """
+
+                x_w = to_x(z_int[w][p0], trans[0])
+                psel = []
+                for p, x in zip(p0, x_w):
+                    c = np.abs(x - spec._t['x']).argmin()
+                    if spec._t['like_'+s][c]==spec._t['like'][c]:
+                        psel.append(p)
+
+
+                p = psel
 
                 if k_list == []:
                     s_list = [s]*len(p)
@@ -2507,20 +2537,34 @@ class CookbookAbsorbers(object):
         modul = 5
         thres = erf(sigma/np.sqrt(2)/modul)
         #print(thres)
-        distance = 10
+        distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
                                  z_end=z_end, modul=modul, thres=thres,
                                  distance=distance, append=append)
 
         return 0
 
-    def _series_fit(self, series, z_start, z_end, sigma, iter_n):
-        self._systs_new_from_erf(series=series, z_start=z_start, z_end=z_end,
-                                 sigma=sigma)
+    def _series_fit(self, series, zem, z_start, z_end, sigma, iter_n):
+
+        def z_check(zem, z_start, z_end, s):
+            if zem != None:
+                if 'Ly_a' not in trans_parse(s):
+                    z_start = (1+zem)*xem_d['Ly_a']/xem_d[trans_parse(s)[-1]]-1
+                else:
+                    z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+                z_end = zem
+            return z_start, z_end
+
+        for s in series.split(';'):
+            z_start, z_end = z_check(zem, z_start, z_end, s)
+            self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+                                     sigma=sigma)
         self.systs_fit(refit_n=1)
         for i in range(iter_n):
-            self._systs_new_from_erf(series=series, col='deabs',
-                                     z_start=z_start, z_end=z_end, sigma=sigma)
+            for s in series.split(';'):
+                z_start, z_end = z_check(zem, z_start, z_end, s)
+                self._systs_new_from_erf(series=s, col='deabs',
+                                         z_start=z_start, z_end=z_end, sigma=sigma)
             self.systs_fit(refit_n=1)
 
 
@@ -2551,7 +2595,7 @@ class CookbookAbsorbers(object):
             z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
             z_end = zem
 
-        self._series_fit('Ly_a', z_start, z_end, sigma, iter_n)
+        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
 
         return 0
 
@@ -2579,13 +2623,15 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        for s in ['CIV']:
+        """
+        for s in ['CIV','MgII_2796,MgII_2803','SiIV']:
             t = trans_parse(s)
             if zem != None:
                 z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
                 z_end = zem
-
-            self._series_fit(s, z_start, z_end, sigma, iter_n)
+        """
+        series = 'SiIV;CIV;AlIII;MgII_2796,MgII_2803'
+        self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
             #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
             #                         sigma=sigma)
 
