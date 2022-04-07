@@ -2496,7 +2496,7 @@ class CookbookAbsorbers(object):
         modul = 5
         thres = erf(sigma/np.sqrt(2)/modul)
         #print(thres)
-        distance = 10
+        distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
                                  z_end=z_end, modul=modul, thres=thres,
                                  distance=distance, append=append)
