@@ -399,7 +399,7 @@ def to_z(x, trans):
 
 def trans_parse(series):
     trans = []
-    for s in series.replace(';',',').split(','):
+    for s in series.replace(';',',').replace(':',',').split(','):
         if '_' in s:
             trans.append(s)
         else:

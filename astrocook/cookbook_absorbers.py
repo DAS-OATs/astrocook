@@ -2013,6 +2013,7 @@ class CookbookAbsorbers(object):
         if 'like' not in spec._t.colnames:
             logging.info("I'm adding column 'like' to spectrum.")
             spec._t['like'] = np.empty(len(spec._t))
+            spec._t['like'][:] = np.nan
         else:
             logging.warning("I'm updating column '%s' in spectrum." % t)
         for c in spec._t.colnames:
@@ -2315,28 +2316,29 @@ class CookbookAbsorbers(object):
 
                 p = psel
 
-                if k_list == []:
-                    s_list = [s]*len(p)
-                    z_list = z_int[w][p]
-                    #print(z_list)
-                    logN_list = [logN]*len(p)
-                    resol_list = [resol]*len(p)
-                    if len(s_list)>0:
+                for ssub in s.split(':'):
+                    if k_list == []:
+                        s_list = [ssub]*len(p)
+                        z_list = z_int[w][p]
+                        #print(z_list)
+                        logN_list = [logN]*len(p)
+                        resol_list = [resol]*len(p)
+                        if len(s_list)>0:
+                            self._systs_prepare(append)
+                            id_list = self._systs_add(s_list, z_list, logN_list,
+                                                      resol_list=resol_list)
+                            self._spec_update()
+                        else:
+                            id_list = []
+                    else:
+                        s_list = [ssub]*len(z_list)
+                        logN_list = [logN]*len(z_list)
+                        resol_list = [resol]*len(z_list)
                         self._systs_prepare(append)
                         id_list = self._systs_add(s_list, z_list, logN_list,
-                                                  resol_list=resol_list)
+                                                  resol_list=resol_list, k_list=k_list)
+                        self._mods_recreate()
                         self._spec_update()
-                    else:
-                        id_list = []
-                else:
-                    s_list = [s]*len(z_list)
-                    logN_list = [logN]*len(z_list)
-                    resol_list = [resol]*len(z_list)
-                    self._systs_prepare(append)
-                    id_list = self._systs_add(s_list, z_list, logN_list,
-                                              resol_list=resol_list, k_list=k_list)
-                    self._mods_recreate()
-                    self._spec_update()
             else:
                 id_list = []
             if i == 0:
@@ -2630,7 +2632,8 @@ class CookbookAbsorbers(object):
                 z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
                 z_end = zem
         """
-        series = 'SiIV;CIV;AlIII;MgII_2796,MgII_2803'
+        series = 'CIV;SiIV:CIV;SiII_1526:CIV;AlIII;'\
+                 +'MgII_2796,MgII_2803;FeII_2382,FeII_2600:MgII_2796,MgII_2803'
         self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
             #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
             #                         sigma=sigma)
