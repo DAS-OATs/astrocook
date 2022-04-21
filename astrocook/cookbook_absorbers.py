@@ -1973,7 +1973,7 @@ class CookbookAbsorbers(object):
 
             #like = 1-np.power(1-np.nanprod(abs_int, axis=0), np.sum(~np.isnan(abs_int), axis=0))
             if len(abs_int) > 0:
-                like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
+                like = 1-np.power(1-np.nanprod(abs_int, axis=0), len(trans))
                 likes[s] = like
                 z_likes[s] = z_int
                 if 'like_'+s not in spec._t.colnames:
@@ -1981,7 +1981,7 @@ class CookbookAbsorbers(object):
                     spec._t['like_'+s] = np.empty(len(spec._t))
                     spec._t['like_'+s][:] = np.nan
                 else:
-                    logging.warning("I'm updating column '%s' in spectrum." % s)
+                    logging.warning("I'm updating column 'like_%s' in spectrum." % s)
                 for t in trans:
                     """
                     if t not in spec._t.colnames:
@@ -2015,7 +2015,7 @@ class CookbookAbsorbers(object):
             spec._t['like'] = np.empty(len(spec._t))
             spec._t['like'][:] = np.nan
         else:
-            logging.warning("I'm updating column '%s' in spectrum." % t)
+            logging.warning("I'm updating column 'like' in spectrum.")
         for c in spec._t.colnames:
             if 'like_' in c:
                 spec._t['like'] = np.fmax(spec._t['like'], spec._t[c])
@@ -2267,7 +2267,7 @@ class CookbookAbsorbers(object):
                 #print(likes[s])
                 z_int = z_likes[s]
                 #print(s)
-                #plt.plot(z_int, likes[s])
+                plt.plot(z_int, likes[s])
                 w = np.where(likes[s]>thres)
                 #print(len(w[0]))
                 """
@@ -2305,8 +2305,9 @@ class CookbookAbsorbers(object):
                 #print(p0)
                 #print(p0[np.where(sel)])
                 """
-
+                #print(z_int[w][p0])
                 x_w = to_x(z_int[w][p0], trans[0])
+                #print(x_w)
                 psel = []
                 for p, x in zip(p0, x_w):
                     c = np.abs(x - spec._t['x']).argmin()
@@ -2557,6 +2558,13 @@ class CookbookAbsorbers(object):
                 z_end = zem
             return z_start, z_end
 
+        def resid_peaks(std=10):
+            spec = self.sess.spec
+            #spec._gauss_convolve(std=std, input_col='deabs', output_col='deabs_mod')
+            spec.t['deabs_mod'] = np.maximum(1, spec.t['deabs'])
+            p, _ = find_peaks(spec.t['deabs_mod'], prominence=0.05)
+            #print(np.array(spec._t['x'][p]))
+
         for s in series.split(';'):
             z_start, z_end = z_check(zem, z_start, z_end, s)
             self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
@@ -2568,7 +2576,8 @@ class CookbookAbsorbers(object):
                 self._systs_new_from_erf(series=s, col='deabs',
                                          z_start=z_start, z_end=z_end, sigma=sigma)
             self.systs_fit(refit_n=1)
-
+            resid_peaks()
+        #plt.show()
 
     def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
         """ @brief Fit the Lyman-alpha forest
