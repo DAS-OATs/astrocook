@@ -1947,6 +1947,7 @@ class CookbookAbsorbers(object):
             abs = spec._t #[np.where(spec._t['y_abs'])]
             trans = trans_parse(s)
             z_all = [to_z(spec._t['x'], t) for t in trans]
+            #print(z_all)
             z_int = np.arange(z_start, z_end, dz)
             #z_int = np.arange(z_end, z_start, -dz)
             z_sel, abs_sel, abs_int = [], [], []
@@ -1955,7 +1956,12 @@ class CookbookAbsorbers(object):
                 if len(sel[0])>0:
                     #print(z, sel, len(sel))
                     z_sel.append(z[sel])
-                    er = (spec._t['cont'][sel]-spec._t[col][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
+                    cont = spec._t['cont'][sel]
+                    flux = spec._t[col][sel]
+                    err = spec._t['dy'][sel]
+                    #er = (cont-flux)/err/np.sqrt(2)/modul
+                    er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
+                         /np.sqrt(2)/modul
                     er = erf(er)
 
                     interp = np.interp(z_int, z[sel], er)
@@ -1970,19 +1976,29 @@ class CookbookAbsorbers(object):
                 like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
                 likes[s] = like
                 z_likes[s] = z_int
+                if 'like_'+s not in spec._t.colnames:
+                    logging.info("I'm adding column 'like_%s' to spectrum." % s)
+                    spec._t['like_'+s] = np.empty(len(spec._t))
+                    spec._t['like_'+s][:] = np.nan
+                else:
+                    logging.warning("I'm updating column '%s' in spectrum." % s)
                 for t in trans:
+                    """
                     if t not in spec._t.colnames:
                         logging.info("I'm adding column '%s' to spectrum." % t)
                         spec._t[t] = np.zeros(len(spec._t))
-                    #else:
-                    #    logging.warning("I'm updating column '%s' in spectrum." % t)
+                    else:
+                        logging.warning("I'm updating column '%s' in spectrum." % t)
+                    """
                     if len(np.ravel([like]))==len(z_int):
                         x_int = to_x(z_int, t)
-                        sel = np.logical_and(spec._t['x']>np.min(x_int),
-                                             spec._t['x']<np.max(x_int))
-                        cand_t = np.interp(spec._t['x'][sel], x_int, like)
+                        sel = np.logical_and(spec._t['x'].to(au.nm)>np.min(x_int),
+                                             spec._t['x'].to(au.nm)<np.max(x_int))
+                        cand_t = np.interp(spec._t['x'][sel].to(au.nm), x_int, like)
                         #cand_t = 1 - np.power(1-cand_t, len(trans))
-                        spec._t[t][sel] = cand_t
+                        #spec._t[t][sel] = cand_t
+                        spec._t['like_'+s][sel] = np.fmax(spec._t['like_'+s][sel], cand_t)
+                        #plt.step(x_int, like)
 
             #plt.step(z_sel[0], abs_sel[0], color='blue', alpha=0.2)
             #plt.step(z_sel[1], abs_sel[1], color='red', alpha=0.2)
@@ -1994,6 +2010,17 @@ class CookbookAbsorbers(object):
             #plt.step(spec._t['x'], cand_t, color='black')
 
         #plt.show()
+        if 'like' not in spec._t.colnames:
+            logging.info("I'm adding column 'like' to spectrum.")
+            spec._t['like'] = np.empty(len(spec._t))
+            spec._t['like'][:] = np.nan
+        else:
+            logging.warning("I'm updating column '%s' in spectrum." % t)
+        for c in spec._t.colnames:
+            if 'like_' in c:
+                spec._t['like'] = np.fmax(spec._t['like'], spec._t[c])
+
+
         return likes, z_likes
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
@@ -2036,7 +2063,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2165,7 +2192,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2198,7 +2225,7 @@ class CookbookAbsorbers(object):
 
         try:
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2239,9 +2266,10 @@ class CookbookAbsorbers(object):
             if s in likes.keys():
                 #print(likes[s])
                 z_int = z_likes[s]
+                #print(s)
                 #plt.plot(z_int, likes[s])
                 w = np.where(likes[s]>thres)
-
+                #print(len(w[0]))
                 """
                 for s_o in series_o:
                     trans_o = trans_parse(s_o)
@@ -2254,9 +2282,12 @@ class CookbookAbsorbers(object):
                 p0, _ = find_peaks(likes[s][w], distance=distance)
                 #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
+                """
                 # Check if likelihood peaks are higher than those of all other
                 # transitions at those wavelengths
                 x_w = np.array([to_x(z_int[w][p0], t) for t in trans])
+                #for x_wi in x_w:
+                #    plt.scatter(x_wi, likes[s][w][p0])
                 t_all = np.array([])
                 #for so in np.array(series_split):
                 for so in likes.keys():
@@ -2273,35 +2304,47 @@ class CookbookAbsorbers(object):
                 #print(sel)
                 #print(p0)
                 #print(p0[np.where(sel)])
-                p = p0
+                """
 
-                if k_list == []:
-                    s_list = [s]*len(p)
-                    z_list = z_int[w][p]
-                    logN_list = [logN]*len(p)
-                    resol_list = [resol]*len(p)
-                    if len(s_list)>0:
+                x_w = to_x(z_int[w][p0], trans[0])
+                psel = []
+                for p, x in zip(p0, x_w):
+                    c = np.abs(x - spec._t['x']).argmin()
+                    if spec._t['like_'+s][c]==spec._t['like'][c]:
+                        psel.append(p)
+
+
+                p = psel
+
+                for ssub in s.split(':'):
+                    if k_list == []:
+                        s_list = [ssub]*len(p)
+                        z_list = z_int[w][p]
+                        #print(z_list)
+                        logN_list = [logN]*len(p)
+                        resol_list = [resol]*len(p)
+                        if len(s_list)>0:
+                            self._systs_prepare(append)
+                            id_list = self._systs_add(s_list, z_list, logN_list,
+                                                      resol_list=resol_list)
+                            self._spec_update()
+                        else:
+                            id_list = []
+                    else:
+                        s_list = [ssub]*len(z_list)
+                        logN_list = [logN]*len(z_list)
+                        resol_list = [resol]*len(z_list)
                         self._systs_prepare(append)
                         id_list = self._systs_add(s_list, z_list, logN_list,
-                                                  resol_list=resol_list)
+                                                  resol_list=resol_list, k_list=k_list)
+                        self._mods_recreate()
                         self._spec_update()
-                    else:
-                        id_list = []
-                else:
-                    s_list = [s]*len(z_list)
-                    logN_list = [logN]*len(z_list)
-                    resol_list = [resol]*len(z_list)
-                    self._systs_prepare(append)
-                    id_list = self._systs_add(s_list, z_list, logN_list,
-                                              resol_list=resol_list, k_list=k_list)
-                    self._mods_recreate()
-                    self._spec_update()
             else:
                 id_list = []
-        #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
                 #print(k_list)
+        #plt.show()
 
         if compressed:
             systs._compress()
@@ -2503,14 +2546,27 @@ class CookbookAbsorbers(object):
 
         return 0
 
+    def _series_fit(self, series, zem, z_start, z_end, sigma, iter_n):
 
-    def _series_fit(self, series, z_start, z_end, sigma, iter_n):
-        self._systs_new_from_erf(series=series, z_start=z_start, z_end=z_end,
-                                 sigma=sigma)
+        def z_check(zem, z_start, z_end, s):
+            if zem != None:
+                if 'Ly_a' not in trans_parse(s):
+                    z_start = (1+zem)*xem_d['Ly_a']/xem_d[trans_parse(s)[-1]]-1
+                else:
+                    z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+                z_end = zem
+            return z_start, z_end
+
+        for s in series.split(';'):
+            z_start, z_end = z_check(zem, z_start, z_end, s)
+            self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+                                     sigma=sigma)
         self.systs_fit(refit_n=1)
         for i in range(iter_n):
-            self._systs_new_from_erf(series=series, col='deabs',
-                                     z_start=z_start, z_end=z_end, sigma=sigma)
+            for s in series.split(';'):
+                z_start, z_end = z_check(zem, z_start, z_end, s)
+                self._systs_new_from_erf(series=s, col='deabs',
+                                         z_start=z_start, z_end=z_end, sigma=sigma)
             self.systs_fit(refit_n=1)
 
 
@@ -2541,6 +2597,45 @@ class CookbookAbsorbers(object):
             z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
             z_end = zem
 
-        self._series_fit('Ly_a', z_start, z_end, sigma, iter_n)
+        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
+
+        return 0
+
+
+    def red_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+        """ @brief Fit the red part of the spectrum forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
+            sigma = float(sigma)
+            iter_n = int(iter_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        """
+        for s in ['CIV','MgII_2796,MgII_2803','SiIV']:
+            t = trans_parse(s)
+            if zem != None:
+                z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
+                z_end = zem
+        """
+        series = 'CIV;SiIV:CIV;SiII_1526:CIV;AlIII;'\
+                 +'MgII_2796,MgII_2803;FeII_2382,FeII_2600:MgII_2796,MgII_2803'
+        self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
+            #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+            #                         sigma=sigma)
 
         return 0
