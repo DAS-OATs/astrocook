@@ -160,11 +160,12 @@ class FeatList(object):
 
     def _load(self, new_dir, **kwargs):
         for file in sorted(os.listdir(new_dir)):
-            with open(new_dir+file, 'rb') as f:
-                o = pickle.load(f)
-                if 'systs' in kwargs:
-                    o._systs_join(kwargs['systs'])
-                self._l.append(o)
+            if 'Icon' not in file:  # Requested when working on Google Drive
+                with open(new_dir+file, 'rb') as f:
+                    o = pickle.load(f)
+                    if 'systs' in kwargs:
+                        o._systs_join(kwargs['systs'])
+                    self._l.append(o)
         self._table_update()
 
 
