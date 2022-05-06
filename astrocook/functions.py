@@ -21,13 +21,20 @@ def _gauss(x, *p):
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def _fadd(a, u):
+def _fadd(a, u, deriv=False):
     """ @brief Real part of the Faddeeva function Re(F)
     @param a First abstract variable
     @param u Second abstrac variable
     @return Re(F(a, u))
     """
-    return np.real(wofz(u + 1j * a))
+    D = wofz(u + 1j * a)
+    F = np.real(D)
+    if deriv:
+        dF_da = 2 * (F*a + np.imag(D)*u - 1/np.sqrt(np.pi))
+        dF_du = 2 * (np.imag(D)*a - F*u)
+        return F, (dF_da, dF_du)
+    else:
+        return F
 
 def _voigt_par_convert(x, z, N, b, btur, trans):
     if trans == 'unknown':
@@ -45,7 +52,7 @@ def _voigt_par_convert(x, z, N, b, btur, trans):
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
     return tau0, a, u
 
-def _voigt_par_convert_new(x, z, N, b, btur, trans):
+def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     if trans == 'unknown':
         xem = z #*au.nm
         xobs = z #*au.nm
@@ -56,18 +63,48 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans):
     gamma = gamma_d[trans] #/au.s
     b_qs = np.sqrt(b**2 + btur**2)
     atom = fosc *  844.7972564303736 #* au.Fr**2 * au.s / (au.kg * au.m)
+
     tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
-    #print(z, N, b, btur, fosc, gamma, atom, xem)
     a = 0.25 * gamma * xem / (np.pi * b_qs)
-    #print(b_qs, x, xobs)
     u = 299792458/b_qs * (x/xobs - 1)
-    #tau0 = tau0 * au.Fr**2 * au.nm * au.s**2 / (au.cm**2 * au.kg * au.km * au.m)
-    #a = a * au.nm / au.km
-    #u = u * au.m / au.km
-    tau0 = tau0 * 1e-17
-    a = a * 1e-12
-    u = u * 1e-3
-    return tau0, a, u
+
+    if deriv:
+        dtau0_dN = np.sqrt(np.pi) * atom * xem/b_qs
+        dtau0_db = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * b
+        dtau0_dbtur = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * btur
+
+        da_db = 0.25 * gamma * xem / (np.pi * b_qs**3) * b
+        da_dbtur = 0.25 * gamma * xem / (np.pi * b_qs**3) * btur
+
+        du_dz = -299792458/b_qs * x*xem/(xobs**2)
+        du_db = -299792458/(b_qs**3) * b * (x/xobs - 1)
+        du_dbtur = -299792458/(b_qs**3) * btur * (x/xobs - 1)
+
+    tau0_f = 1e-17
+    a_f = 1e-12
+    u_f = 1e-3
+
+    tau0 = tau0 * tau0_f
+    a = a * a_f
+    u = u * u_f
+
+    if deriv:
+        dtau0_dN = dtau0_dN * tau0_f
+        dtau0_db = dtau0_db * tau0_f
+        dtau0_dbtur = dtau0_dbtur * tau0_f
+
+        da_db = da_db * a_f
+        da_dbtur = da_dbtur * a_f
+
+        du_dz = du_dz * u_f
+        du_db = du_db * u_f
+        du_dbtur = du_dbtur * u_f
+
+        return tau0, a, u, \
+            (dtau0_dN, dtau0_db, dtau0_dbtur), \
+            (da_db, da_dbtur),  (du_dz, du_db, du_dbtur)
+    else:
+        return tau0, a, u
 
 def zero(x):
     return 0*x
@@ -227,6 +264,36 @@ def expr_eval(node):
         return expr_check(node)
 
 
+def lines_voigt_jac(x, z, logN, b, btur, series='Ly_a'):
+
+    x = x * au.nm
+    z = z * au.dimensionless_unscaled
+    N = 10**logN / au.cm**2
+    b = b * au.km/au.s
+    btur = btur * au.km/au.s
+
+    dI_dz = np.zeros(len(x))
+    dI_dN = np.zeros(len(x))
+    dI_db = np.zeros(len(x))
+    dI_dbtur = np.zeros(len(x))
+    for t in trans_parse(series):
+        tau0, a, u, \
+            (dtau0_dN, dtau0_db, dtau0_dbtur), \
+            (da_db, da_dbtur),  (du_dz, du_db, du_dbtur) \
+            = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+                                     btur.value, t, deriv=True)
+        F, (dF_da, dF_du) = _fadd(a, u, deriv=True)
+
+        dI_dtau0 = -F * np.exp(-tau0 * F)
+        dI_dF = -tau0 * np.exp(-tau0 * F)
+
+        dI_dz += dI_dF*dF_du*du_dz
+        dI_dN += dI_dtau0*dtau0_dN
+        dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
+        dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
+
+    return np.array([dI_dz, dI_dN, dI_db]).T#, dI_dbtur])
+
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
@@ -249,32 +316,11 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(np.size(np.array(x)))
-    #for t in series_d[series]:
     for t in trans_parse(series):
-        """
-        if series == 'unknown':
-            xem = z*au.nm
-            xobs = z*au.nm
-        else:
-            xem = xem_d[t]
-            xobs = xem*(1+z)
-        fosc = fosc_d[t]
-        gamma = gamma_d[t]/au.s
-        b_qs = np.sqrt(b**2 + btur**2)
-        atom = fosc * ac.e.esu**2 / (ac.m_e * ac.c)
-        tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
-        a = 0.25 * gamma * xem / (np.pi * b_qs)
-        u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
-        """
-        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
-        #print(tau0)#, tau0.to(au.dimensionless_unscaled))
-        #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
-        #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
-        #print(a, u, a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled))
-        model *= np.array(np.exp(-tau0 * _fadd(a, u)))
-        #model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
-        #                  * _fadd(a, u)))
-        #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
+        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+                                            btur.value, t)
+        F = _fadd(a, u)
+        model *= np.array(np.exp(-tau0 * F))
 
     return model
 

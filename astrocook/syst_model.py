@@ -55,6 +55,15 @@ class SystModel(LMComposite):
             #print('out', len(self._xf), self._xf)
             #fit_kws['x_scale'] = 'jac'
             #print(fit_kws)
+            #print(self._pars)
+            pars = [self._pars[p].value for p in self._pars]
+            #print(pars)
+            jac = globals()[self._lines_func.__name__+'_jac']\
+                (self._xf, pars[0], pars[1], pars[2], pars[3])
+            fit_kws['jac'] = globals()[self._lines_func.__name__+'_jac']
+            #fit_kws['args'] = np.array(self._xf)
+            #print(fit_kws)
+            #print(fit_kws['jac'](self._xf, *fit_kws['args']).shape)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -65,6 +74,9 @@ class SystModel(LMComposite):
             #print(fit.result.success)
             #print(fit.result.message)
             #print(fit.redchi)
+            #print(len(self._xf))
+            #print(fit.jac.shape)
+            #print(fit.jac)
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:
@@ -461,6 +473,15 @@ class SystModel(LMComposite):
              d['resol_min'], d['resol_max'], d['resol_expr']))
 
         self._lines = line_psf
+
+        """
+        x = np.array(self._spec._safe(self._spec.x).to(au.nm))
+        self._lines_jac = globals()[self._lines_func.__name__+'_jac']\
+            (x, d['z'], d['logN'], d['b'], d['btur'])
+
+        print(self._lines_jac)
+        print(self._lines_jac.shape)
+        """
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
