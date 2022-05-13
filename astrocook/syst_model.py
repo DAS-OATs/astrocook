@@ -58,10 +58,15 @@ class SystModel(LMComposite):
             #print(self._pars)
             pars = [self._pars[p].value for p in self._pars]
             #print(pars)
-            jac = globals()[self._lines_func.__name__+'_jac']\
-                (self._xf, pars[0], pars[1], pars[2], pars[3])
-            fit_kws['jac'] = globals()[self._lines_func.__name__+'_jac']
-            #fit_kws['args'] = np.array(self._xf)
+            #jac = globals()[self._lines_func.__name__+'_jac']\
+            #    (self._xf, pars[0], pars[1], pars[2], pars[3])
+
+            def _jac(x0, *args, **kwargs):
+                return globals()[self._lines_func.__name__+'_jac'](x0, self._xf, *args, **kwargs)
+
+
+            fit_kws['jac'] = _jac
+            #fit_kws['kwargs'] = {'x': np.array(self._xf)}
             #print(fit_kws)
             #print(fit_kws['jac'](self._xf, *fit_kws['args']).shape)
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
@@ -76,7 +81,11 @@ class SystModel(LMComposite):
             #print(fit.redchi)
             #print(len(self._xf))
             #print(fit.jac.shape)
-            #print(fit.jac)
+            print(fit.jac)
+            #plt.plot(self._xf, fit.jac[:,0])
+            #plt.plot(self._xf, fit.jac[:,1])
+            plt.plot(self._xf, fit.jac[:,2])
+            #plt.show()
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:

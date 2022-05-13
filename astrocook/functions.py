@@ -68,8 +68,9 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     a = 0.25 * gamma * xem / (np.pi * b_qs)
     u = 299792458/b_qs * (x/xobs - 1)
 
+    #print('before', a)
     if deriv:
-        dtau0_dN = np.sqrt(np.pi) * atom * xem/b_qs
+        dtau0_dN = np.sqrt(np.pi) * atom * xem / b_qs
         dtau0_db = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * b
         dtau0_dbtur = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * btur
 
@@ -87,9 +88,9 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     tau0 = tau0 * tau0_f
     a = a * a_f
     u = u * u_f
-
+    #print(a)
     if deriv:
-        dtau0_dN = dtau0_dN * tau0_f
+        dtau0_dN = dtau0_dN * tau0_f/a_f/u_f
         dtau0_db = dtau0_db * tau0_f
         dtau0_dbtur = dtau0_dbtur * tau0_f
 
@@ -264,8 +265,11 @@ def expr_eval(node):
         return expr_check(node)
 
 
-def lines_voigt_jac(x, z, logN, b, btur, series='Ly_a'):
+def lines_voigt_jac(x0, x, series='CIV', apply_bounds_transformation=True):
 
+    #z, logN, b, btur = x0
+    z, logN, b = x0
+    btur = 0
     x = x * au.nm
     z = z * au.dimensionless_unscaled
     N = 10**logN / au.cm**2
@@ -276,6 +280,7 @@ def lines_voigt_jac(x, z, logN, b, btur, series='Ly_a'):
     dI_dN = np.zeros(len(x))
     dI_db = np.zeros(len(x))
     dI_dbtur = np.zeros(len(x))
+    #print('jac', z, N, b)
     for t in trans_parse(series):
         tau0, a, u, \
             (dtau0_dN, dtau0_db, dtau0_dbtur), \
@@ -285,6 +290,7 @@ def lines_voigt_jac(x, z, logN, b, btur, series='Ly_a'):
         F, (dF_da, dF_du) = _fadd(a, u, deriv=True)
 
         dI_dtau0 = -F * np.exp(-tau0 * F)
+        #print('jac', a)
         dI_dF = -tau0 * np.exp(-tau0 * F)
 
         dI_dz += dI_dF*dF_du*du_dz
@@ -316,10 +322,12 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(np.size(np.array(x)))
+    #print('voigt', z, N, b)
     for t in trans_parse(series):
         tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
                                             btur.value, t)
         F = _fadd(a, u)
+        #print('voigt', a)
         model *= np.array(np.exp(-tau0 * F))
 
     return model

@@ -264,8 +264,8 @@ class CookbookGeneral(object):
                                           vend, dv)
 
             try:
-            #    ciao
-            #except:
+                ciao
+            except:
                 p0 = [1., 0., 1.]
                 fit_sel = np.logical_and(v_shift>-fit_hw.value, v_shift<fit_hw.value)
                 #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
@@ -274,8 +274,8 @@ class CookbookGeneral(object):
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
                 #print(peak, shift)
-            except:
-                peak, shift = np.nan, np.nan
+            #except:
+            #    peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
             shifts = np.append(shifts, shift)
 
