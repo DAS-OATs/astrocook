@@ -207,7 +207,6 @@ class CookbookGeneral(object):
         with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
-        #plt.show()
 
         return 0
 
@@ -260,14 +259,18 @@ class CookbookGeneral(object):
             sel = np.sort(np.unique(rint))
             #sel = np.unique(rint)
             spec._t = spec._t[sel]
+            #plt.plot(spec._t['x'], spec._t['y'])
             v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
                                           vend, dv)
 
+
+            v_shiftmax = v_shift[np.argmax(ccf)]
             try:
             #    ciao
             #except:
-                p0 = [1., 0., 1.]
-                fit_sel = np.logical_and(v_shift>-fit_hw.value, v_shift<fit_hw.value)
+                p0 = [1., v_shiftmax, 1.]
+                fit_sel = np.logical_and(v_shift>v_shiftmax-fit_hw.value,
+                                         v_shift<v_shiftmax+fit_hw.value)
                 #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
@@ -278,7 +281,7 @@ class CookbookGeneral(object):
                 peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
             shifts = np.append(shifts, shift)
-
+        #print(peaks, shifts)
             #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, "
             #             "mean %3.4f, shift %3.4f." \
             #             % (np.min(ccf), np.max(ccf), np.mean(ccf), shift))
@@ -289,7 +292,7 @@ class CookbookGeneral(object):
         with open(self.sess.name+'_ccf_stats.npy', 'wb') as f:
             np.save(f, peaks)
             np.save(f, shifts)
-
+        #plt.show()
         return 0
 
 
