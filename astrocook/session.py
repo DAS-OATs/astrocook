@@ -200,7 +200,8 @@ class Session(object):
 
         # FIRE spectrum
         if instr == 'FIRE':
-            self.spec = format.firehose_spectrum(hdul)
+            #self.spec = format.firehose_spectrum(hdul)
+            self.spec = format.generic_spectrum(self, hdul)
 
         # FIRE spectrum
         if instr == 'MagE':
