@@ -45,6 +45,7 @@ class SystModel(LMComposite):
             #for p in self._pars:
             #    if '_192' in p:
             #        print(self._pars[p])
+            #print('before')
             #self._pars.pretty_print()
             if 'max_nfev' in fit_kws:
                 max_nfev = fit_kws['max_nfev']
@@ -72,6 +73,8 @@ class SystModel(LMComposite):
             #        print(self._pars[p])
             #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
+            #if np.any(np.isnan(self._ys)):
+            #    self._pars.pretty_print()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic

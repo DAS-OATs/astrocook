@@ -1093,8 +1093,8 @@ class CookbookAbsorbers(object):
             #for s in self.sess.systs._d:
             #    self.sess.systs._d[s]._mod._pars.pretty_print()
             self.sess.feats._systs_update(self.sess.systs)
-        for f in self.sess.feats._l:
-            s = max(f._systs.keys())
+        #for f in self.sess.feats._l:
+        #    s = max(f._systs.keys())
         logging.info("I've prepared features to fit total column density.")
 
         return 0

@@ -108,8 +108,9 @@ class Feat():
         #print(z)
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
         if np.nansum(w)==0:
-            logging.warning("I cannot weight the positions of the systems by "
-                            "their errors and column densities.")
+            logging.warning("I cannot weight the positions of the systems "
+                            "around z = %.3f by their errors and column "
+                            "densities." % np.mean(z))
             self._z = np.mean(z)
             self._x = np.mean(x)*au.nm
         else:
@@ -195,6 +196,7 @@ class FeatList(object):
                     sel_t += range(start, end)
                 sel = sel_t
             l = [self._l[s] for s in sel]
+        print(len(l))
         for i, f in enumerate(l):
             s = max(f._systs.keys())
             syst = f._systs[s]
