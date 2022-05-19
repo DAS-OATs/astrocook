@@ -200,8 +200,7 @@ class Session(object):
 
         # FIRE spectrum
         if instr == 'FIRE':
-            #self.spec = format.firehose_spectrum(hdul)
-            self.spec = format.generic_spectrum(self, hdul)
+            self.spec = format.firehose_spectrum(hdul)
 
         # FIRE spectrum
         if instr == 'MagE':
@@ -342,6 +341,7 @@ class Session(object):
                             systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
                         mods_t_ok = self._model_open(systs)
+
                         """
                         mods_t_ok = False
                         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
