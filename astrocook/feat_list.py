@@ -105,12 +105,15 @@ class Feat():
              if s._pars['dz']!=0 and not np.isnan(s._pars['dz']) \
              else s._pars['logN'] for s in self._systs.values()]
         z = [s._pars['z'] for s in self._systs.values()]
-        #print(z)
         x = [to_x(zi, t).value for (zi, t) in zip(z, self._trans.values())]
-        if np.nansum(w)==0:
+        if len(z)==0:
+            logging.warning("The feature between %.3f and %.3f does not "
+                            "contain any system." \
+                            % (self._left[0], self._right[0]))
+        elif np.nansum(w)==0:
             logging.warning("I cannot weight the positions of the systems "
                             "around z = %.3f by their errors and column "
-                            "densities." % np.mean(z))
+                            "densities." % np.nanmean(z))
             self._z = np.mean(z)
             self._x = np.mean(x)*au.nm
         else:
@@ -154,7 +157,6 @@ class FeatList(object):
 
     def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
         self._maxs_from_spec(spec, height, prominence)
-
         for i, f in enumerate(self._maxs[:-1]):
             fe = self._maxs[i+1]
             sel = np.s_[f:fe]
@@ -164,7 +166,6 @@ class FeatList(object):
             if len(cut[0])>0:
                 #plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
                 self._add(spec._t[sel][cut], systs)
-
         self._table_update()
         #plt.show()
 
@@ -196,34 +197,38 @@ class FeatList(object):
                     sel_t += range(start, end)
                 sel = sel_t
             l = [self._l[s] for s in sel]
-        print(len(l))
         for i, f in enumerate(l):
-            s = max(f._systs.keys())
-            syst = f._systs[s]
-            if set_specs:
-                if len(f._systs.keys())>1:
-                    if s not in done:
-                        lines_pref = 'lines_voigt_%s_' % str(s)
-                        pars = dc(syst._mod._pars)
-                        pdel = []
-                        for p in pars:
-                            if int(p.split('_')[2]) not in f._systs.keys(): pdel.append(p)
-                        for p in pdel:
-                            del pars[p]
-                        N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
-                        N_other_expr = ''
-                        for p in pars:
-                            if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
-                                N_other_expr += '+10**%s' % p
-                        systs._N_tot_specs[s] = (lines_pref, N_tot, N_other_expr)
-                        done.append(s)
-                        #pars.pretty_print()
+            if len(f._systs)==0:
+                logging.warning("The feature between %.3f and %.3f does not "
+                                "contain any system." \
+                                % (f._left[0], f._right[0]))
             else:
-                try:
-                    f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
-                except:
-                    f._logN_tot_par = syst._mod._pars['lines_voigt_%s_logN' % str(s)]
-                f._systs_logN_tot()
+                s = max(f._systs.keys())
+                syst = f._systs[s]
+                if set_specs:
+                    if len(f._systs.keys())>1:
+                        if s not in done:
+                            lines_pref = 'lines_voigt_%s_' % str(s)
+                            pars = dc(syst._mod._pars)
+                            pdel = []
+                            for p in pars:
+                                if int(p.split('_')[2]) not in f._systs.keys(): pdel.append(p)
+                            for p in pdel:
+                                del pars[p]
+                            N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
+                            N_other_expr = ''
+                            for p in pars:
+                                if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
+                                    N_other_expr += '+10**%s' % p
+                            systs._N_tot_specs[s] = (lines_pref, N_tot, N_other_expr)
+                            done.append(s)
+                            #pars.pretty_print()
+                else:
+                    try:
+                        f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
+                    except:
+                        f._logN_tot_par = syst._mod._pars['lines_voigt_%s_logN' % str(s)]
+                    f._systs_logN_tot()
 
 
     def _maxs_from_spec(self, spec, height=1e-1, prominence=1e-1):

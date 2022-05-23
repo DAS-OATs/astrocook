@@ -608,17 +608,22 @@ class SystModel(LMComposite):
         self._pars[lines_pref+'logN'].vary = False
         if lines_pref+'N_tot' not in self._pars:
             self._pars.add_many(
-                (lines_pref+'N_tot', N_tot, True, 10**logN.min,
+                (lines_pref+'N_tot', N_tot, True, N_other,
                  10**logN.max, ''))
         else:
             self._pars[lines_pref+'N_tot'].value = N_tot
+            N_tot_min = N_other+0.5*10**self._pars[lines_pref+'logN']
+            if N_tot_min < 1e10: N_tot_min = 1e10
+            self._pars[lines_pref+'N_tot'].min = N_tot_min
         if lines_pref+'N_other' not in self._pars:
             self._pars.add_many(
                 (lines_pref+'N_other', N_other, True, 10**logN.min,
-                10**logN.max, N_other_expr))
+                N_tot, N_other_expr))
         else:
             self._pars[lines_pref+'N_other'].value = N_other
             self._pars[lines_pref+'N_other'].expr = N_other_expr
+            self._pars[lines_pref+'N_other'].max = N_tot\
+                -0.5*10**self._pars[lines_pref+'logN']
 
 
     def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,

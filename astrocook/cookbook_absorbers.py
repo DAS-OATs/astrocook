@@ -965,8 +965,11 @@ class CookbookAbsorbers(object):
                 systs._t[iw]['z'] = mod._pars[pref+'_z'].value
                 systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
                 if pref+'_N_tot' in mod._pars:
-                    systs._t[iw]['logN'] = np.log10(mod._pars[pref+'_N_tot'].value\
-                                                   -mod._pars[pref+'_N_other'].value)
+                    logN = np.log10(mod._pars[pref+'_N_tot'].value\
+                                    -mod._pars[pref+'_N_other'].value)
+                    if np.isnan(logN):
+                        logN = 10
+                    systs._t[iw]['logN'] = logN
                     systs._t[iw]['dlogN'] = np.nan
                 else:
                     systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
