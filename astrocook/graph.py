@@ -477,7 +477,7 @@ class Graph(object):
                     label = '%s, %s' % (struct, ycol)
 
                 if struct == 'systs': self._systs_id = True
-                if struct in ['spec','lines','nodes','systs']:
+                if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
                         x = dc(t[xcol])
@@ -488,7 +488,7 @@ class Graph(object):
                             y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t[ycol].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
                 #if detail: print(struct, xcol, x[0])
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)

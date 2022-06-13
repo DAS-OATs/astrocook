@@ -1,5 +1,6 @@
 from .functions import *
 from .message import *
+from .feat_list import FeatList
 from .syst_list import SystList
 from .syst_model import SystModel
 from .vars import *
@@ -111,7 +112,8 @@ class CookbookAbsorbers(object):
         rc = range(len(xc))
         rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
-        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        #xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-1:]), to_begin=np.ediff1d(xc[:2]))/2
         #print(len(xc), len(x_osampl), len(yc), len(y), len(eval_osampl))
         for i, xs in enumerate(x_shift):
             plot = False
@@ -148,7 +150,9 @@ class CookbookAbsorbers(object):
             deltax = x_shift[amax]
             deltav = v_shift[amax]
             #plt.scatter(xmean+x_shift[amax], 1)
-
+        #print(len(xc), len(xdiff))
+        #print(np.any(np.ediff1d(xc-xdiff)<=0))
+        #print(np.ediff1d(xc-xdiff))
         xshift = x_osampl+deltax
         digitized = np.digitize(xshift, xc-xdiff)-1
         yshift = 1-np.array([eval_osampl[digitized == j].mean() for j in range(len(xc))])
@@ -233,54 +237,56 @@ class CookbookAbsorbers(object):
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
                        dycol='dy', contcol='cont', modelcol='model', thr=1e-1,
-                       update_modelcol=False):
+                       update_modelcol=False, height=1e-1, prominence=1e-1):
         weight = str(weight) == 'True'
         spec = self.sess.spec
         systs = self.sess.systs
         feats = np.hstack(([0], systs._bounds, [-1]))
-        #plt.plot(spec._t['x'], spec._t['model'])
-        #plt.scatter(spec._t['x'][systs._bounds], spec._t['model'][systs._bounds])
-        #plt.show()
+
         deltav_arr = np.array([])
         xmean_arr = np.array([])
         if update_modelcol:
             spec._t[modelcol+'_shift'] = spec._t[modelcol]
-        for i, f in enum_tqdm(feats[:-1], len(feats)-1,
+        xcf = []
+        ycf = []
+        contcf = []
+        feats = FeatList() #xunit=spec._xunit, yunit=spec._yunit)
+        feats._maxs_from_spec(spec, height, prominence)
+        #print(feats._maxs)
+        for i, f in enum_tqdm(feats._maxs[:-1], len(feats._maxs)-1,
                               "cookbook_absorbers: Computing CCF for features"):
-            fe = feats[i+1]
+            fe = feats._maxs[i+1]
             sel = np.s_[f:fe]
             cut = np.where(spec._t[modelcol][sel]/spec._t[contcol][sel]<1-thr)
+            contc = spec._t[contcol][sel][cut]
             xc = spec._t[xcol][sel][cut]
-            yc = spec._t[ycol][sel][cut]/spec._t[contcol][sel][cut]
-            dyc = spec._t[dycol][sel][cut]/spec._t[contcol][sel][cut]
-            modelc = spec._t[modelcol][sel][cut]/spec._t[contcol][sel][cut]
-            #print(sel)
-            #print(spec._t[modelcol][sel]/spec._t[contcol][sel])
-            #print(cut)
-            if len(xc)>0:
+            yc = spec._t[ycol][sel][cut]/contc
+            dyc = spec._t[dycol][sel][cut]/contc
+            modelc = spec._t[modelcol][sel][cut]/contc
+            if len(cut[0])>0:
+                feats._add(spec._t[sel][cut], systs)
                 ccf, deltax, deltav, modelshift = self._feat_ccf_max(xc, yc, dyc, modelc,
                                                          vstart, vend, dv,
                                                          weight, verbose=False)
-            else:
+                feats._l[-1]._ccf_compute(np.mean(xc), deltav)
+            #else:
                 #print('xc len 0')
-                deltav = 0.0
-                modelshift = modelc
-            xmean_arr = np.append(xmean_arr, np.mean(xc))
-            deltav_arr = np.append(deltav_arr, deltav)
-            """
+            #    deltav = 0.0
+            #    modelshift = modelc
+                xmean_arr = np.append(xmean_arr, np.mean(xc))
+                deltav_arr = np.append(deltav_arr, deltav)
+                """
             for i in m['id']:
                 w = np.where(systs._t['id']==i)
                 systs._t['ccf_deltav'][w] = deltav
-            """
-            if update_modelcol:
-                #print(modelshift)
-                #print(modelc)
-                #print(spec._t[modelcol][sel][cut])
-                spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
-                #print(spec._t[modelcol][sel][cut])
-        #print(deltav_arr)
-        #plt.show()
+                """
+                if update_modelcol:
+                    spec._t[modelcol+'_shift'][sel][cut] = modelshift*spec._t[contcol][sel][cut]
 
+        empty = [np.nan]*len(xcf)
+        feats._table_update()
+        self.sess.feats = feats
+        #print(len(deltav_arr), len(feats._l))
         with open(self.sess.name+'_deltav.npy', 'wb') as f:
             np.save(f, xmean_arr)
             np.save(f, deltav_arr)
@@ -417,6 +423,7 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        #print(systs._constr)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -441,6 +448,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
+                    #print(systs._id, constr)
                     #print(systs._id)
                     #if systs._id == 46: print(systs._constr.items())
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
@@ -994,6 +1002,54 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    def feats(self, thres=1e-2, height=1e-1, prominence=1e-2):
+        """ @brief Organize systems into absorption features
+        @details Absorption features are portions of the model including one or
+        more systems, and limited by local maxima in the model.
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
+        @return 0
+        """
+
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.feats = FeatList()
+        self.sess.feats.create(self.sess.spec, self.sess.systs, thres, height,
+                               prominence)
+        logging.info("I've extracted %i features from the system models."\
+                     % len(self.sess.feats._l))
+
+        return 0
+
+
+    def feats_z_lock(self):
+        """ @brief Lock redshifts by absorption features
+        @details Lock the difference of systems redshift by absorption features.
+        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
+        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
+        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
+        @return 0
+        """
+
+        """
+        try:
+            thres = float(thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+        """
+        self.sess.feats._z_lock()
+        logging.info("I've locked redshifts by absorption features.")
+
+        return 0
+
+
+
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
         """ @brief Maximize data/model CCF
         @details Slide the system models around their mean wavelength to
@@ -1169,6 +1225,13 @@ class CookbookAbsorbers(object):
 
         self._systs_remove(rem)
         self._mods_recreate()
+
+        return 0
+
+    def _feats_select_isolated(self, thres=1e-1):
+        if not hasattr(self.sess, 'feats'):
+            self.feats()
+        self.sess.feats._select_isolate(thres)
 
         return 0
 
@@ -1843,11 +1906,12 @@ class CookbookAbsorbers(object):
         return count
 
 
-    def _abs_like(self, series='Ly-a', z_start=0, z_end=6, dz=1e-4, modul=1):
+    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=1):
         """ @brief Assign likelihood to absorbers
         @details For each spectral bin, compute the likelihood that it has been
         absorbed by a given species.
         @param series Series of transitions
+        @param col Column to apply the likelihood
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
@@ -1883,6 +1947,7 @@ class CookbookAbsorbers(object):
             abs = spec._t #[np.where(spec._t['y_abs'])]
             trans = trans_parse(s)
             z_all = [to_z(spec._t['x'], t) for t in trans]
+            #print(z_all)
             z_int = np.arange(z_start, z_end, dz)
             #z_int = np.arange(z_end, z_start, -dz)
             z_sel, abs_sel, abs_int = [], [], []
@@ -1891,7 +1956,12 @@ class CookbookAbsorbers(object):
                 if len(sel[0])>0:
                     #print(z, sel, len(sel))
                     z_sel.append(z[sel])
-                    er = (spec._t['cont'][sel]-spec._t['y'][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
+                    cont = spec._t['cont'][sel]
+                    flux = spec._t[col][sel]
+                    err = spec._t['dy'][sel]
+                    #er = (cont-flux)/err/np.sqrt(2)/modul
+                    er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
+                         /np.sqrt(2)/modul
                     er = erf(er)
 
                     interp = np.interp(z_int, z[sel], er)
@@ -1906,19 +1976,29 @@ class CookbookAbsorbers(object):
                 like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
                 likes[s] = like
                 z_likes[s] = z_int
+                if 'like_'+s not in spec._t.colnames:
+                    logging.info("I'm adding column 'like_%s' to spectrum." % s)
+                    spec._t['like_'+s] = np.empty(len(spec._t))
+                    spec._t['like_'+s][:] = np.nan
+                else:
+                    logging.warning("I'm updating column '%s' in spectrum." % s)
                 for t in trans:
+                    """
                     if t not in spec._t.colnames:
                         logging.info("I'm adding column '%s' to spectrum." % t)
                         spec._t[t] = np.zeros(len(spec._t))
-                    #else:
-                    #    logging.warning("I'm updating column '%s' in spectrum." % t)
+                    else:
+                        logging.warning("I'm updating column '%s' in spectrum." % t)
+                    """
                     if len(np.ravel([like]))==len(z_int):
                         x_int = to_x(z_int, t)
-                        sel = np.logical_and(spec._t['x']>np.min(x_int),
-                                             spec._t['x']<np.max(x_int))
-                        cand_t = np.interp(spec._t['x'][sel], x_int, like)
+                        sel = np.logical_and(spec._t['x'].to(au.nm)>np.min(x_int),
+                                             spec._t['x'].to(au.nm)<np.max(x_int))
+                        cand_t = np.interp(spec._t['x'][sel].to(au.nm), x_int, like)
                         #cand_t = 1 - np.power(1-cand_t, len(trans))
-                        spec._t[t][sel] = cand_t
+                        #spec._t[t][sel] = cand_t
+                        spec._t['like_'+s][sel] = np.fmax(spec._t['like_'+s][sel], cand_t)
+                        #plt.step(x_int, like)
 
             #plt.step(z_sel[0], abs_sel[0], color='blue', alpha=0.2)
             #plt.step(z_sel[1], abs_sel[1], color='red', alpha=0.2)
@@ -1930,6 +2010,17 @@ class CookbookAbsorbers(object):
             #plt.step(spec._t['x'], cand_t, color='black')
 
         #plt.show()
+        if 'like' not in spec._t.colnames:
+            logging.info("I'm adding column 'like' to spectrum.")
+            spec._t['like'] = np.empty(len(spec._t))
+            spec._t['like'][:] = np.nan
+        else:
+            logging.warning("I'm updating column '%s' in spectrum." % t)
+        for c in spec._t.colnames:
+            if 'like_' in c:
+                spec._t['like'] = np.fmax(spec._t['like'], spec._t[c])
+
+
         return likes, z_likes
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
@@ -1972,7 +2063,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2037,7 +2128,7 @@ class CookbookAbsorbers(object):
                 z_e = np.nan
             #print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
-                likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
+                likes, z_likes = self._abs_like(series, col, z_s, z_e, dz, modul)
                 """
             for s in likes.keys():
                 if s not in self._likes.keys():
@@ -2063,7 +2154,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_new_from_like(self, series='Ly-a', z_start=0, z_end=6,
+    def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
                             dz=1e-4, modul=1, thres=0.997, distance=10,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
@@ -2073,6 +2164,7 @@ class CookbookAbsorbers(object):
         """ @brief New systems from likelihood
         @details TBD
         @param series Series of transitions
+        @param col Column to apply the likelihood
         @param z_start Start redshift
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
@@ -2100,7 +2192,7 @@ class CookbookAbsorbers(object):
             dz = float(dz)
             modul = float(modul)
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2118,7 +2210,7 @@ class CookbookAbsorbers(object):
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
 
-        self._likes, self._z_likes = self._abs_like(series, z_start, z_end, dz,
+        self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
                                                     modul)
         self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
@@ -2133,7 +2225,7 @@ class CookbookAbsorbers(object):
 
         try:
             thres = float(thres)
-            distance = float(distance)
+            distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2174,9 +2266,10 @@ class CookbookAbsorbers(object):
             if s in likes.keys():
                 #print(likes[s])
                 z_int = z_likes[s]
+                #print(s)
                 #plt.plot(z_int, likes[s])
                 w = np.where(likes[s]>thres)
-
+                #print(len(w[0]))
                 """
                 for s_o in series_o:
                     trans_o = trans_parse(s_o)
@@ -2189,9 +2282,12 @@ class CookbookAbsorbers(object):
                 p0, _ = find_peaks(likes[s][w], distance=distance)
                 #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
+                """
                 # Check if likelihood peaks are higher than those of all other
                 # transitions at those wavelengths
                 x_w = np.array([to_x(z_int[w][p0], t) for t in trans])
+                #for x_wi in x_w:
+                #    plt.scatter(x_wi, likes[s][w][p0])
                 t_all = np.array([])
                 #for so in np.array(series_split):
                 for so in likes.keys():
@@ -2208,35 +2304,47 @@ class CookbookAbsorbers(object):
                 #print(sel)
                 #print(p0)
                 #print(p0[np.where(sel)])
-                p = p0
+                """
 
-                if k_list == []:
-                    s_list = [s]*len(p)
-                    z_list = z_int[w][p]
-                    logN_list = [logN]*len(p)
-                    resol_list = [resol]*len(p)
-                    if len(s_list)>0:
+                x_w = to_x(z_int[w][p0], trans[0])
+                psel = []
+                for p, x in zip(p0, x_w):
+                    c = np.abs(x - spec._t['x']).argmin()
+                    if spec._t['like_'+s][c]==spec._t['like'][c]:
+                        psel.append(p)
+
+
+                p = psel
+
+                for ssub in s.split(':'):
+                    if k_list == []:
+                        s_list = [ssub]*len(p)
+                        z_list = z_int[w][p]
+                        #print(z_list)
+                        logN_list = [logN]*len(p)
+                        resol_list = [resol]*len(p)
+                        if len(s_list)>0:
+                            self._systs_prepare(append)
+                            id_list = self._systs_add(s_list, z_list, logN_list,
+                                                      resol_list=resol_list)
+                            self._spec_update()
+                        else:
+                            id_list = []
+                    else:
+                        s_list = [ssub]*len(z_list)
+                        logN_list = [logN]*len(z_list)
+                        resol_list = [resol]*len(z_list)
                         self._systs_prepare(append)
                         id_list = self._systs_add(s_list, z_list, logN_list,
-                                                  resol_list=resol_list)
+                                                  resol_list=resol_list, k_list=k_list)
+                        self._mods_recreate()
                         self._spec_update()
-                    else:
-                        id_list = []
-                else:
-                    s_list = [s]*len(z_list)
-                    logN_list = [logN]*len(z_list)
-                    resol_list = [resol]*len(z_list)
-                    self._systs_prepare(append)
-                    id_list = self._systs_add(s_list, z_list, logN_list,
-                                              resol_list=resol_list, k_list=k_list)
-                    self._mods_recreate()
-                    self._spec_update()
             else:
                 id_list = []
-        #plt.show()
             if i == 0:
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
                 #print(k_list)
+        #plt.show()
 
         if compressed:
             systs._compress()
@@ -2404,3 +2512,130 @@ class CookbookAbsorbers(object):
         #z_cand =
 
         return sess
+
+    def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
+                            sigma=1, distance=10, append=True):
+        """ @brief New systems from error function
+        @details TBD
+        @param series Series of transitions
+        @param col Column to apply the likelihood
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param sigma Significance of absorbers (in units of the local error)
+        @param distance Distance between systems in pixels
+        @param append Append systems to existing system list
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            sigma = float(sigma)
+            distance = None if distance in [None, 'None'] else float(distance)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        modul = 5
+        thres = erf(sigma/np.sqrt(2)/modul)
+        #print(thres)
+        distance = 3
+        self.systs_new_from_like(series=series, col=col, z_start=z_start,
+                                 z_end=z_end, modul=modul, thres=thres,
+                                 distance=distance, append=append)
+
+        return 0
+
+    def _series_fit(self, series, zem, z_start, z_end, sigma, iter_n):
+
+        def z_check(zem, z_start, z_end, s):
+            if zem != None:
+                if 'Ly_a' not in trans_parse(s):
+                    z_start = (1+zem)*xem_d['Ly_a']/xem_d[trans_parse(s)[-1]]-1
+                else:
+                    z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+                z_end = zem
+            return z_start, z_end
+
+        for s in series.split(';'):
+            z_start, z_end = z_check(zem, z_start, z_end, s)
+            self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+                                     sigma=sigma)
+        self.systs_fit(refit_n=1)
+        for i in range(iter_n):
+            for s in series.split(';'):
+                z_start, z_end = z_check(zem, z_start, z_end, s)
+                self._systs_new_from_erf(series=s, col='deabs',
+                                         z_start=z_start, z_end=z_end, sigma=sigma)
+            self.systs_fit(refit_n=1)
+
+
+    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+        """ @brief Fit the Lyman-alpha forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
+            sigma = float(sigma)
+            iter_n = int(iter_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        if zem != None:
+            z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
+            z_end = zem
+
+        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
+
+        return 0
+
+
+    def red_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+        """ @brief Fit the red part of the spectrum forest
+        @details The recipe identifies Lyman-alpha absorbers using the
+        likelihood method and fits them. The procedure is iterated on residuals
+        of the fit to improve it.
+        @param zem Emission redshift
+        @param z_start Start redshift (ignored if zem is specified)
+        @param z_end End redshift (ignored if zem is specified)
+        @param sigma Significance of absorbers (in units of the local error)
+        @param iter_n Number of iterations on residuals
+        @return 0
+        """
+
+        try:
+            zem = None if zem in [None, 'None'] else float(zem)
+            z_start = None if z_start in [None, 'None'] else float(z_start)
+            z_end = None if z_end in [None, 'None'] else float(z_end)
+            sigma = float(sigma)
+            iter_n = int(iter_n)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        """
+        for s in ['CIV','MgII_2796,MgII_2803','SiIV']:
+            t = trans_parse(s)
+            if zem != None:
+                z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
+                z_end = zem
+        """
+        series = 'CIV;SiIV:CIV;SiII_1526:CIV;AlIII;'\
+                 +'MgII_2796,MgII_2803;FeII_2382,FeII_2600:MgII_2796,MgII_2803'
+        self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
+            #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
+            #                         sigma=sigma)
+
+        return 0

@@ -366,22 +366,24 @@ class Format(object):
         y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
         dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
         """
+        #span = 550
+        span = 0
         if row is None and slice is None:
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
-            y = np.ravel(hdul['SCIDATA'].data)
-            dy = np.ravel(hdul['ERRDATA'].data)
-            q = np.ravel(hdul['QUALDATA'].data)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
         elif row is None:
             r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
-            y = np.ravel(hdul['SCIDATA'].data[r,:])
-            dy = np.ravel(hdul['ERRDATA'].data[r,:])
-            q = np.ravel(hdul['QUALDATA'].data[r,:])
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
         else:
-            x = hdul['WAVEDATA_VAC_BARY'].data[row,:]
-            y = hdul['SCIDATA'].data[row,:]
-            dy = hdul['ERRDATA'].data[row,:]
-            q = hdul['QUALDATA'].data[row,:]
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
+            y = hdul['SCIDATA'].data[row,span:-span-1]
+            dy = hdul['ERRDATA'].data[row,span:-span-1]
+            q = hdul['QUALDATA'].data[row,span:-span-1]
 
 
 
@@ -524,6 +526,7 @@ class Format(object):
                 xunit = data_s.__dict__['_coldefs'][x_name]._unit
             except:
                 xunit = None
+
             if xunit == None:
                 xunit = au.nm
                 if np.nanmax(x)>3000:
@@ -534,6 +537,7 @@ class Format(object):
                 yunit = au.Unit(data_s.__dict__['_coldefs'][y_name]._unit)
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
+
 
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}

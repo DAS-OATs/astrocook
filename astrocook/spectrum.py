@@ -114,6 +114,7 @@ class Spectrum(Frame):
         x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
         xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
+        #print(x_shift[0], x_shift[-1], xstart, xend)
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
         #print(xmin+xstart, xmax+xend, dx)
@@ -126,6 +127,10 @@ class Spectrum(Frame):
         #print(y2_osampl)
         #print(len(x_shift))
         pan = len(x_shift)//2
+        #print(np.abs(xend-xstart))
+        pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
+            int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
+        #print(pan, pan_l, pan_r)
         ccf = []
         #print(v_shift[0], v_shift[-1], v_shift[pan], len(v_shift), pan)
         #print(x_shift[0], x_shift[-1], x_shift[pan], len(x_shift), pan)
@@ -136,10 +141,12 @@ class Spectrum(Frame):
             #print(len(digitized))
             #ym = [y2_osampl[digitized == i].mean() \
             #      for i in range(0, len(spec_x))]
-
-            y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
-            y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
-
+            #print(x, x_osampl[pan])
+            #y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
+            #y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
+            y1 = y1_osampl[pan_l:-pan_r-1]-np.nanmean(y1_osampl)
+            y2 = y2_osampl[i:-pan_l-pan_r+i-1]-np.nanmean(y2_osampl)
+            #print(pan, pan_l, pan_r, len(y1), len(y2))
             #dy1 = dy1_osampl[pan:-pan-1]
             #dy2 = dy2_osampl[i:-2*pan+i-1]
             #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
