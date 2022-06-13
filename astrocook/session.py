@@ -154,19 +154,28 @@ class Session(object):
         # ESO ADP spectrum
         if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
             self.spec = format.eso_adp(hdul)
+            return 0
+
+        # SDSS (should work for all release till 17)
+        if telesc == "SDSS 2.5-M":
+            self.spec = format.sdss_spectrum(hdul)
+            return 0
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS' and telesc != 'ESO-NTT':
             if len(hdul) == 1:
                 #self.spec = format.eso_midas_image(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
             else:
                 #self.spec = format.eso_midas_table(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
 
         # NTT spectra are parsed incorrectly, temp fix while Guido fixes the issue
         if instr in ['EFOSC', 'LDSS3-'] or orig == 'ESO-MIDAS' and telesc == 'ESO-NTT':
             self.spec = format.efosc2_spectrum(hdul)
+            return 0
 
         # ESPRESSO S1D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
@@ -174,6 +183,7 @@ class Session(object):
             p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read(p+'espr_spec_form.dat'))
+            return 0
 
         # ESPRESSO S2D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
@@ -190,6 +200,7 @@ class Session(object):
                 self._row = None
             self._order = np.append(np.repeat(range(161,116,-1), 2),
                                     np.repeat(range(117,77,-1), 2))
+            return 0
 
         # ESPRESSO DAS spectrum
         if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
@@ -197,6 +208,7 @@ class Session(object):
             p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read(p+'espr_spec_form.dat'))
+            return 0
 
         # FIRE spectrum
         if instr == 'FIRE':
@@ -206,14 +218,17 @@ class Session(object):
         # FIRE spectrum
         if instr == 'MagE':
             self.spec = format.mage_spectrum(hdul)
+            return 0
 
         # QUBRICS spectrum
         if orig == 'QUBRICS':
             self.spec = format.qubrics_spectrum(hdul)
+            return 0
 
         # TNG LRS spectrum
         if instr == 'LRS' and orig == 'ESO-MIDAS':
             self.spec = format.lrs_spectrum(hdul)
+            return 0
 
         # UVES Spectrum
         if instr == 'UVES':
@@ -221,42 +236,52 @@ class Session(object):
                 hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
                                                        'FLUXCAL_ERRORBAR_SCI'))
                 self.spec = format.uves_spectrum(hdul, hdul_err)
+                return 0
 
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+            return 0
 
         # WFCCD Spectrum
         if instr[:5] == 'WFCCD':
             self.spec = format.wfccd_spectrum(hdul)
+            return 0
 
         # XSHOOTER MERGE1D spectrum
         if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
             if hdul[0].header['NAXIS'] == 0:
                 self.spec = format.xshooter_vacbary_spectrum(hdul)
+                return 0
             else:
                 self.spec = format.xshooter_merge1d_spectrum(hdul)
+                return 0
 
         # XQR-30 spectrum
         if instr == 'XSHOOTER' and orig == 'XQR-30':
             self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
             self._open_twin = not self._open_twin
+            return 0
 
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
             self.spec = format.xshooter_das_spectrum(hdul)
+            return 0
 
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
+            return 0
 
         # generic
         if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
+                return 0
             else:
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
 
 
     def open(self):
