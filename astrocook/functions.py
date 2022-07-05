@@ -81,24 +81,32 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
         du_db = -299792458/(b_qs**3) * b * (x/xobs - 1)
         du_dbtur = -299792458/(b_qs**3) * btur * (x/xobs - 1)
 
+
     tau0_f = 1e-17
     a_f = 1e-12
     u_f = 1e-3
 
+    tau0_f_mod = 1.35e-1
+    a_f_mod = 2e-8
+    u_f_mod = 6e-2
+
     tau0 = tau0 * tau0_f
+    #print(N, tau0)
+    #print(N+10, np.sqrt(np.pi) * atom * (N+10) * xem / b_qs * tau0_f)
+    #print((np.sqrt(np.pi) * atom * (N+10) * xem / b_qs * tau0_f-tau0)/10)
     a = a * a_f
     u = u * u_f
     #print(a)
     if deriv:
-        dtau0_dN = dtau0_dN * tau0_f/a_f/u_f
-        dtau0_db = dtau0_db * tau0_f
+        dtau0_dN = dtau0_dN * tau0_f * 1.35e16
+        dtau0_db = dtau0_db * tau0_f * 5e1
         dtau0_dbtur = dtau0_dbtur * tau0_f
 
-        da_db = da_db * a_f
+        da_db = da_db * a_f * 2e4
         da_dbtur = da_dbtur * a_f
 
-        du_dz = du_dz * u_f
-        du_db = du_db * u_f
+        du_dz = du_dz * u_f * 6e1
+        du_db = du_db * u_f * 5e1
         du_dbtur = du_dbtur * u_f
 
         return tau0, a, u, \
@@ -265,40 +273,60 @@ def expr_eval(node):
         return expr_check(node)
 
 
-def lines_voigt_jac(x0, x, series='CIV', apply_bounds_transformation=True):
+def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_transformation=True):
+    for i in range(0, len(x0), 3):
+        z, logN, b = x0[i], x0[i+1], x0[i+2]
+        btur = 0
+        x = x * au.nm
+        z = z * au.dimensionless_unscaled
+        N = 10**logN / au.cm**2
+        b = b * au.km/au.s
+        btur = btur * au.km/au.s
 
-    #z, logN, b, btur = x0
-    z, logN, b = x0
-    btur = 0
-    x = x * au.nm
-    z = z * au.dimensionless_unscaled
-    N = 10**logN / au.cm**2
-    b = b * au.km/au.s
-    btur = btur * au.km/au.s
+        dI_dz = np.zeros(len(x))
+        dI_dN = np.zeros(len(x))
+        dI_db = np.zeros(len(x))
+        dI_dbtur = np.zeros(len(x))
+        #print('jac', z, N, b)
+        for t in trans_parse(series):
+            tau0, a, u, \
+                (dtau0_dN, dtau0_db, dtau0_dbtur), \
+                (da_db, da_dbtur),  (du_dz, du_db, du_dbtur) \
+                = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+                                         btur.value, t, deriv=True)
+            F, (dF_da, dF_du) = _fadd(a, u, deriv=True)
 
-    dI_dz = np.zeros(len(x))
-    dI_dN = np.zeros(len(x))
-    dI_db = np.zeros(len(x))
-    dI_dbtur = np.zeros(len(x))
-    #print('jac', z, N, b)
-    for t in trans_parse(series):
-        tau0, a, u, \
-            (dtau0_dN, dtau0_db, dtau0_dbtur), \
-            (da_db, da_dbtur),  (du_dz, du_db, du_dbtur) \
-            = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
-                                     btur.value, t, deriv=True)
-        F, (dF_da, dF_du) = _fadd(a, u, deriv=True)
+            dI_dtau0 = -F * np.exp(-tau0 * F)
+            #print('jac', a)
+            dI_dF = -tau0 * np.exp(-tau0 * F)
 
-        dI_dtau0 = -F * np.exp(-tau0 * F)
-        #print('jac', a)
-        dI_dF = -tau0 * np.exp(-tau0 * F)
+            dI_dz += dI_dF*dF_du*du_dz
+            dI_dN += dI_dtau0*dtau0_dN
+            dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
+            dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
 
-        dI_dz += dI_dF*dF_du*du_dz
-        dI_dN += dI_dtau0*dtau0_dN
-        dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
-        dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
+        dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
+        dI_dN = convolve_simple(dI_dN, psf_gauss(x.value, resol, spec))
+        dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
 
+        """
+    print(np.array([dI_dz, dI_dN, dI_db]).T)
     return np.array([dI_dz, dI_dN, dI_db]).T#, dI_dbtur])
+        """
+        if i==0:
+            J = np.array([dI_dz, dI_dN, dI_db])
+        else:
+            #print(J)
+            J = np.append(J, [dI_dz], axis=0)
+            J = np.append(J, [dI_dN], axis=0)
+            J = np.append(J, [dI_db], axis=0)
+            #print(J)
+    #print(J)
+    #J = np.reshape(J, (len(J)//len(x0), len(x0)))
+    #print(J)
+    return J.T
+    #"""
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
@@ -326,7 +354,13 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     for t in trans_parse(series):
         tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
                                             btur.value, t)
+        dtau0, da, du = _voigt_par_convert_new(x.value, z.value, N.value+10, b.value,
+                                              btur.value, t)
         F = _fadd(a, u)
+        dF = _fadd(da, du)
+        #print(tau0, F, np.exp(-tau0 * F))
+        #print(dtau0, dF, np.exp(-dtau0 * dF))
+        #print((np.exp(-dtau0 * dF)-np.exp(-tau0 * F))/10)
         #print('voigt', a)
         model *= np.array(np.exp(-tau0 * F))
 

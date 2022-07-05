@@ -60,15 +60,19 @@ class SystModel(LMComposite):
             #print(pars)
             #jac = globals()[self._lines_func.__name__+'_jac']\
             #    (self._xf, pars[0], pars[1], pars[2], pars[3])
-
             def _jac(x0, *args, **kwargs):
-                return globals()[self._lines_func.__name__+'_jac'](x0, self._xf, *args, **kwargs)
+                return globals()[self._lines_func.__name__+'_jac']\
+                    (x0, self._xf, series=self._series, resol=self._resol,
+                    spec=self._spec, *args, **kwargs)
 
 
             fit_kws['jac'] = _jac
             #fit_kws['kwargs'] = {'x': np.array(self._xf)}
             #print(fit_kws)
-            #print(fit_kws['jac'](self._xf, *fit_kws['args']).shape)
+            #x0 = [self._pars['lines_voigt_0_z'], self._pars['lines_voigt_0_logN'], self._pars['lines_voigt_0_b']]
+            #print(fit_kws['jac'](x0))
+            col = 1
+            #plt.plot(self._xf, _jac(x0)[:,col], color='red')
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -76,16 +80,28 @@ class SystModel(LMComposite):
                                              nan_policy='omit',
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
+            """
+            pars2 = dc(self._pars)
+            ch = ['z', 'logN', 'b']
+            diff = [1e-6, 1e-2, 1e-2]
+            pars2['lines_voigt_0_%s' % ch[col]].value = self._pars['lines_voigt_0_%s' % ch[col]] + diff[col]
+            fit2 = super(SystModel, self).fit(self._yf, pars2, x=self._xf,
+                                             weights=self._wf,
+                                             max_nfev=max_nfev,
+                                             fit_kws=fit_kws,
+                                             nan_policy='omit',
+                                             #fit_kws={'method':'lm'},
+                                             method='least_squares')
+            """
+            #print(fit.nfev)
             #print(fit.result.success)
             #print(fit.result.message)
             #print(fit.redchi)
             #print(len(self._xf))
             #print(fit.jac.shape)
-            print(fit.jac)
-            #plt.plot(self._xf, fit.jac[:,0])
-            #plt.plot(self._xf, fit.jac[:,1])
-            plt.plot(self._xf, fit.jac[:,2])
-            #plt.show()
+            #print(fit.jac)
+            #plt.plot(self._xf, fit.jac[:,col], color='green')
+            plt.show()
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:
@@ -93,6 +109,9 @@ class SystModel(LMComposite):
             #        print(self._pars[p])
             #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
+            #ys2 = self.eval(x=self._xs, params=pars2)
+            #plt.plot(self._xs, (ys2-self._ys)/diff[col]*59, color='blue')
+            #plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic
