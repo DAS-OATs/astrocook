@@ -541,6 +541,7 @@ class GUITableSystList(GUITable):
                     self._tab.SetCellBackgroundColour(j, i, None)
         self._tab.ForceRefresh()
 
+        
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
         if update_mod:

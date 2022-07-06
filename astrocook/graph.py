@@ -17,6 +17,7 @@ import matplotlib.ticker as mticker
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
+import time
 import wx
 
 # Force a given format in axis - currently not uses
@@ -460,7 +461,6 @@ class Graph(object):
         #print(detail, sess.spec.x.unit)
         self._systs_id = False
 
-
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
@@ -534,6 +534,16 @@ class Graph(object):
                         else:
                             x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
 
+                        """
+                        print(x)
+                        x_sel = np.logical_and(x>-1000,x<1000)
+                        x = x[x_sel]
+                        try:
+                            y = y[y_sel]
+                        except:
+                            pass
+                        print(x)
+                        #"""
                         #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat
@@ -580,7 +590,19 @@ class Graph(object):
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
+
+                        fast = True
+                        if fast and detail:
+                            x_sel = np.logical_and(x>ax.get_xlim()[0],x<ax.get_xlim()[1])
+                            x = x[x_sel]
+                            try:
+                                y = y[x_sel]
+                            except:
+                                pass
+
+                        tt = time.time()
                         getattr(ax, mode)(x, y, label=label, **kwargs)
+                        #print('%i %s %i %.4f' % (detail, mode, len(x), time.time()-tt))
 
                     if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
