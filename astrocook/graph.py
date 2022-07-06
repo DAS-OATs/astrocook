@@ -461,6 +461,7 @@ class Graph(object):
         #print(detail, sess.spec.x.unit)
         self._systs_id = False
 
+        fast = sess.defs.dict['graph']['fast']
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
@@ -569,6 +570,16 @@ class Graph(object):
                         kwargs['s'] = (5*float(width))**2
                     kwargs['color'] = color
                     kwargs['alpha'] = float(alpha)
+
+
+                    if fast and detail:
+                        try:
+                            x_sel = np.logical_and(x>ax.get_xlim()[0],x<ax.get_xlim()[1])
+                            x = x[x_sel]
+                        except:
+                            x_sel = np.logical_and(x.value>ax.get_xlim()[0],x.value<ax.get_xlim()[1])
+                            x = x[x_sel]*x.unit
+
                     if mode == 'axvline':
                         #print(self._ax, x.value)
                         for xi in x.value:
@@ -590,15 +601,8 @@ class Graph(object):
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
-
-                        fast = True
                         if fast and detail:
-                            x_sel = np.logical_and(x>ax.get_xlim()[0],x<ax.get_xlim()[1])
-                            x = x[x_sel]
-                            try:
-                                y = y[x_sel]
-                            except:
-                                pass
+                            y = y[x_sel]
 
                         tt = time.time()
                         getattr(ax, mode)(x, y, label=label, **kwargs)
