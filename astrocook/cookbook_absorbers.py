@@ -2280,8 +2280,11 @@ class CookbookAbsorbers(object):
                 """
 
                 p0, _ = find_peaks(likes[s][w], distance=distance)
-                plt.scatter(z_int[w][p0], likes[s][w][p0])
-                plt.savefig('like_%s.pdf' % time.time(), fmt='pdf')
+                plt.step(z_int[w], likes[s][w])
+                tt =  time.time()
+                plt.savefig('like_%s.pdf' % tt, fmt='pdf')
+                np.save('z_int_%s.npy' % tt, z_int[w])
+                np.save('likes_%s.npy' % tt, likes[s][w])
 
                 """
                 # Check if likelihood peaks are higher than those of all other
