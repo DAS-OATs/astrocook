@@ -368,12 +368,6 @@ class Frame():
         self.x = x_convert(self.x, zem, xunit)
         self.xmin = x_convert(self.xmin, zem, xunit)
         self.xmax = x_convert(self.xmax, zem, xunit)
-        try:
-            self._gui._data_lim[0] = x_convert(self._gui._data_lim[0], zem, xunit)
-            self._gui._data_lim[1] = x_convert(self._gui._data_lim[1], zem, xunit)
-            self._gui._refresh()
-        except:
-            pass
         return 0
 
 

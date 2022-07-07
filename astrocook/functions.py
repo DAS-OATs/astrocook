@@ -507,7 +507,6 @@ def class_unmute(obj, cl, targ):
 def x_convert(x, zem=0, xunit=au.km/au.s):
     xem = (1+zem) * 121.567*au.nm
     equiv = [(au.nm, au.km/au.s,
-              lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-              lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-
+              lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
+              lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
     return x.to(xunit, equivalencies=equiv)
