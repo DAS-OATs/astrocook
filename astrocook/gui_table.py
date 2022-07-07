@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pprint
 import pstats
+import time
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -509,12 +510,12 @@ class GUITableSystList(GUITable):
 
 
     def _data_detail(self, row_z, row_series, row_id, span=30):
+        tt = time.time()
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         else:
             self._gui._graph_det._graph._fig.clear()
-
         z = row_z #row['z']
         series = trans_parse(row_series) #row['series'])
         self._gui._graph_main._z_sel = z
@@ -541,7 +542,7 @@ class GUITableSystList(GUITable):
                     self._tab.SetCellBackgroundColour(j, i, None)
         self._tab.ForceRefresh()
 
-        
+
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
         if update_mod:

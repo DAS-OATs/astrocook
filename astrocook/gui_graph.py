@@ -13,6 +13,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
+import time
 import wx
 
 class GUIGraphMain(wx.Frame):

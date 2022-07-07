@@ -20,6 +20,12 @@ import numpy as np
 import time
 import wx
 
+
+import matplotlib.style as mplstyle
+mplstyle.use('fast')
+
+#plt.rcParams["path.simplify_threshold"] = 1.0
+
 # Force a given format in axis - currently not uses
 # From https://stackoverflow.com/questions/49351275/matplotlib-use-fixed-number-of-decimals-with-scientific-notation-in-tick-labels
 class ScalarFormatterForceFormat(mticker.ScalarFormatter):
@@ -257,6 +263,7 @@ class Graph(object):
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
+
         sess = np.array(sess, ndmin=1)
         #import datetime as dt
         #start = dt.datetime.now()
@@ -411,6 +418,7 @@ class Graph(object):
 
         self._ax.callbacks.connect('xlim_changed', self._on_zoom)
         self._ax.callbacks.connect('ylim_changed', self._on_zoom)
+
         dl = self._ax.__dict__['dataLim']
         #print(dl)
         self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
