@@ -1,5 +1,5 @@
 from .message import *
-from .functions import trans_parse, x_convert
+from .functions import trans_parse
 from .vars import *
 from astropy import units as au
 from astropy import constants as aconst
@@ -413,7 +413,6 @@ class Graph(object):
         dl = self._ax.__dict__['dataLim']
         #print(dl)
         self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
-        print(self._gui._data_lim)
 
 
     def _reg_shade(self):
@@ -509,28 +508,15 @@ class Graph(object):
                         series_flat = trans_parse(series)
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
-
-
                     if hasattr(self._gui._sess_sel.spec, '_rfz'):
                         x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     else:
                         x = xem*(1+z_flat)
-
-                    # Convert to spectrum x units if needed
-                    try:
-                        x = x_convert(x, self._gui._sess_sel.spec._zem,
-                                      self._gui._sess_sel.spec._xunit)
-                        x_iswave = True
-                    except:
-                        x_iswave = False
-                    """
                     try:
                         x = x.to(sess.spec._xunit)
-                        #sess.spec_x_convert(self, zem=0, xunit=au.km/au.s)
                         x_iswave = True
                     except:
                         x_iswave = False
-                    """
                     #print(graph._xs)
                     #print(self._zems, self._series, self._axes, self._ax)
                     #print(zems)
