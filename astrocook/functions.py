@@ -503,3 +503,10 @@ def class_unmute(obj, cl, targ):
         for i in obj:
             if obj[i]==str(cl):
                 obj[i] = targ
+
+def x_convert(x, zem=0, xunit=au.km/au.s):
+    xem = (1+zem) * 121.567*au.nm
+    equiv = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
+              lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
+    return x.to(xunit, equivalencies=equiv)

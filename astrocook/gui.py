@@ -1,6 +1,6 @@
 from . import * #version
 from .defaults import *
-from .functions import expr_eval
+from .functions import expr_eval, x_convert
 from .gui_graph import *
 from .gui_image import *
 from .gui_log import *
@@ -8,6 +8,7 @@ from .gui_menu import *
 from .gui_table import *
 from .message import *
 from astropy import table as at
+from astropy import constants as ac
 from collections import OrderedDict
 from copy import deepcopy as dc
 import datetime as dt
@@ -290,6 +291,22 @@ class GUI(object):
             dl = (xlim[0], xlim[1], ylim[0], ylim[1])
         #print(self._graph_main._graph._zoom)
 
+        # Convert xlim and dl if needed
+        if not hasattr(self._sess_sel.spec, '_xunit_old'):
+            self._sess_sel.spec._xunit_old = au.nm
+            self._sess_sel.spec._zem = 0
+        try:
+            xunit_old = self._sess_sel.spec._xunit_old
+            xunit = self._sess_sel.spec._xunit
+            zem = self._sess_sel.spec._zem
+            if xunit_old != xunit:
+                xlim = (x_convert((xlim[0]*xunit_old), zem, xunit).value,
+                        x_convert(xlim[1]*xunit_old, zem, xunit).value)
+                dl = (x_convert(dl[0]*xunit_old, zem, xunit).value,
+                      x_convert(dl[1]*xunit_old, zem, xunit).value, dl[2], dl[3])
+        except:
+            pass
+
 
         #axc.set_xlim(0, 1)
         #axc.set_ylim(0, 1)
@@ -304,13 +321,17 @@ class GUI(object):
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
         if autolim and goodlim and _xlim != None and _ylim != None:
+            print('1')
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim),
                                       ylim=list(_ylim))
         elif autolim and goodlim and _xlim != None:
+            print('2')
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         elif autolim and goodlim and self._graph_main._graph._zoom:
+            print('3')
             self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
+            print('4')
             self._graph_main._refresh(self._sess_items)
 
         if hasattr(self, '_graph_det'):
