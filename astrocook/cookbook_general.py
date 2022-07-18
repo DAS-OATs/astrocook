@@ -24,6 +24,8 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin=x, xmax=None)
 
 
+
+
     def combine(self, name='*_combined', _sel=''):
         """ @brief Combine two or more sessions
         @details Create a new session combining the spectra from two or more
@@ -155,6 +157,22 @@ class CookbookGeneral(object):
                 sess.spec.dy = f*sess.spec.dy
                 if cont and 'cont' in sess.spec._t.colnames:
                     sess.spec._t['cont'] = f*sess.spec._t['cont']
+
+        return 0
+
+
+    def dx_est(self):
+        """ @brief Estimate bin size in x
+        @details Compute statistics on xmax-xmin, to determine the typical
+        binsize in wavelength and velocity space.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        dx = spec.t['xmax'][1:-1]-spec.t['xmin'][1:-1]
+        dx_mean = np.mean(dx)
+        dx_std = np.std(dx)
+        logging.info('Distribution of dx: %.6f±%.6f' % (dx_mean, dx_std))
 
         return 0
 

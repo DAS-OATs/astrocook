@@ -576,6 +576,7 @@ class GUIMenuGeneral(GUIMenu):
                      {'targ': 'snr_est', 'append': 'spec'},
                      {'targ': 'resol_est', 'append': 'spec'},
                      {'targ': 'rms_est', 'append': 'spec'},
+                     {'targ': 'dx_est', 'append': 'spec'},
                      '--',
                      {'targ': 'rebin', 'append': 'spec'},
                      {'targ': 'gauss_convolve', 'append': 'spec'},
