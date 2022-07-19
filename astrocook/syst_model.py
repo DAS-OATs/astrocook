@@ -63,8 +63,8 @@ class SystModel(LMComposite):
                                              nan_policy='omit',
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
-            print(fit.result.success)
-            print(fit.result.message)
+            #print(fit.result.success)
+            #print(fit.result.message)
             #print(fit.result.covar)
             #print(fit.result.errorbars)
             #print(fit.redchi)
