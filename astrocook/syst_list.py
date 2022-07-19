@@ -8,6 +8,22 @@ from copy import deepcopy as dc
 import logging
 import numpy as np
 
+class Syst(object):
+
+    def __init__(self,
+                 func,
+                 series,
+                 pars,
+                 mod):
+        self._func = func
+        self._series = series
+        self._pars = pars
+        self._mod = mod
+        self._x = {}
+        for t in trans_parse(self._series):
+            self._x[t] = to_x(self._pars['z'], t)
+
+
 class SystList(object):
     """ Class for system lists
 
@@ -24,6 +40,8 @@ class SystList(object):
                  dlogN=[],
                  b=[],
                  db=[],
+                 btur=[],
+                 dbtur=[],
                  mod=[],
                  resol=[],
                  chi2r=[],
@@ -31,6 +49,8 @@ class SystList(object):
                  id=[],
                  meta={},
                  dtype=float):
+
+        self._d = {}
 
         self._id = id_start
         self._constr = {}
@@ -50,6 +70,8 @@ class SystList(object):
                                unit=logNunit)
         t['b'] = at.Column(np.array(b, ndmin=1), dtype=dtype, unit=bunit)
         t['db'] = at.Column(np.array(db, ndmin=1), dtype=dtype, unit=bunit)
+        t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
+        t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
         #if resol != []:
         if len(resol)==len(self.z) and len(resol)>0:
@@ -92,6 +114,29 @@ class SystList(object):
         self._dtype = dtype
 
         self._compressed = False
+
+        self._dict_update()
+
+
+    def _dict_update(self, mods=False):
+        self._t.sort('id')
+        for s in self._t:
+            pars = {'z': s['z'], 'dz': s['dz'], 'logN': s['logN'],
+                    'dlogN': s['dlogN'], 'b': s['b'], 'db': s['db'],
+                    'resol': s['resol']}
+            if mods:
+                #Don't try to be smart and use
+                #“for id, mod in self._mods_t['id','mod']” instead.
+                #It changes the structure of the system table and produces an
+                #infinite recursion when saving it
+                for id, mod in zip(self._mods_t['id'],self._mods_t['mod']):
+                    if s['id'] in id: break #mod = self._mods_t['mod']
+            else:
+                mod = None
+            self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
+
+
+
 
     @property
     def t(self):
@@ -205,6 +250,7 @@ class SystList(object):
     def _constrain(self, dict):
         #self._constr = {}
         #print(self)
+        #print(dict)
         for k, v in dict.items():
             #print(k, dict[k])
             for m in self._mods_t:
@@ -261,7 +307,6 @@ class SystList(object):
         s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
         where[s] = False
         reg._t.remove_rows(where)
-
         if len(reg.t) == 0:
             #logging.error(msg_output_fail)
             return None
@@ -296,17 +341,23 @@ class SystList(object):
         if t:
             modw = np.where(mod == self._mods_t['mod'])[0][0]
             ids = self._mods_t['id'][modw]
-            #print(ids)
             for i in ids:
                 try:
                     iw = np.where(self._t['id']==i)[0][0]
                     pref = 'lines_voigt_'+str(i)
                     self._t[iw]['z'] = mod._pars[pref+'_z'].value
                     self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                    self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                    self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                    if pref+'_N_tot' in mod._pars:
+                        self._t[iw]['logN'] = np.log10(mod._pars[pref+'_N_tot'].value\
+                                                       -mod._pars[pref+'_N_other'].value)
+                        self._t[iw]['dlogN'] = np.nan
+                    else:
+                        self._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                        self._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                     self._t[iw]['b'] = mod._pars[pref+'_b'].value
                     self._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                    self._t[iw]['btur'] = mod._pars[pref+'_btur'].value
+                    self._t[iw]['dbtur'] = mod._pars[pref+'_btur'].stderr
                     try:
                         self._t[iw]['chi2r'] = mod._chi2r
                     except:
@@ -317,5 +368,6 @@ class SystList(object):
 
         self._id += 1
 
+        self._dict_update()
         #print(self._mods_t['id', 'chi2r'])
         #print(self._t)

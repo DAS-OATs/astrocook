@@ -4,14 +4,15 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
-import scipy.ndimage.filters as filters
-import scipy.ndimage.morphology as morphology
-from scipy.special import wofz
-#from lmfit.lineshapes import gaussian as gauss
+import json
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+import scipy.ndimage.filters as filters
+import scipy.ndimage.morphology as morphology
+from scipy.special import wofz
+#from lmfit.lineshapes import gaussian as gauss
 
 prefix = 'functions'
 
@@ -68,6 +69,10 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans):
     u = u * 1e-3
     return tau0, a, u
 
+def zero(x):
+    return 0*x
+
+
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
     model = np.ones(len(x))
     #for t in series_d[series]:
@@ -108,10 +113,12 @@ def convolve_simple(dat, kernel):
     """simple convolution of two arrays"""
     npts = len(dat) #max(len(dat), len(kernel))
     pad = np.ones(npts)
-    tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
+    tmp = np.pad(dat, (npts, npts), 'edge')
     out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
-    noff = int((len(out) - npts) / 2)
-    ret = (out[noff:])[:npts]
+    noff = int((len(out) - npts) * 0.5)
+    #ret = (out[noff:])[:npts]
+    ret = out[noff:noff+npts]
     #print(len(dat), len(kernel), len(ret))
     return ret
 
@@ -121,6 +128,7 @@ def create_xmin_xmax(x):
     xmin = np.append(x[0], mean)
     xmax = np.append(mean, x[-1])
     return xmin, xmax
+
 
 def detect_local_minima(arr):
     #https://stackoverflow.com/questions/3986345/how-to-find-the-local-minima-of-a-smooth-multidimensional-array-in-numpy-efficie
@@ -217,6 +225,13 @@ def expr_eval(node):
     else:
         #raise TypeError(node)
         return expr_check(node)
+
+def lines_voigt_N_tot(x, z, N_tot, N_other, b, btur, series='Ly_a'):
+#def lines_voigt_N_tot(x, z, logN_tot, logN_other, b, btur, series='Ly_a'):
+    logN = np.log10(N_tot-N_other)
+    if logN == -np.inf:
+        logN = pars_std_d['logN']
+    return lines_voigt(x, z, logN, b, btur, series)
 
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
@@ -391,11 +406,11 @@ def to_z(x, trans):
 
 def trans_parse(series):
     trans = []
-    for s in series.replace(';',',').split(','):
+    for s in series.replace(';',',').replace(':',',').split(','):
         if '_' in s:
-            trans.append(s)
+            trans.append(s.strip())
         else:
-            for t in series_d[s]:
+            for t in series_d[s.strip()]:
                 trans.append(t)
     return trans
 
@@ -454,3 +469,51 @@ def get_selected_cells(grid):
         return [GridCellCoords(row, col)]
 
     return [GridCellCoords(row, col)]+selection
+
+
+def str_to_dict(str):
+    return json.loads(str)
+
+def class_find(obj, cl, up=[]):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            #print(obj, i)
+            if isinstance(obj.__dict__[i], cl):
+                print(up, i, 'caught!')
+            else:
+                class_find(obj.__dict__[i], cl, up+[i])
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                print(up, i, 'caught!')
+
+def class_mute(obj, cl):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if isinstance(obj.__dict__[i], cl):
+                obj.__dict__[i] = str(cl)
+            else:
+                class_mute(obj.__dict__[i], cl)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if isinstance(obj[i], cl):
+                obj[i] = str(cl)
+
+def class_unmute(obj, cl, targ):
+    if hasattr(obj, '__dict__'):
+        for i in obj.__dict__:
+            if obj.__dict__[i]==str(cl):
+                obj.__dict__[i] = targ
+            else:
+                class_unmute(obj.__dict__[i], cl, targ)
+    elif isinstance(obj, dict):
+        for i in obj:
+            if obj[i]==str(cl):
+                obj[i] = targ
+
+def x_convert(x, zem=0, xunit=au.km/au.s):
+    xem = (1+zem) * 121.567*au.nm
+    equiv = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
+              lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
+    return x.to(xunit, equivalencies=equiv)

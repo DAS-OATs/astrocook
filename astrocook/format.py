@@ -39,7 +39,13 @@ class Format(object):
             dy = data['dy']
             xunit = au.nm
             yunit = au.erg/au.cm**2/au.s/au.Angstrom
-            meta = hdr
+            meta = hdr[:50]
+            delete = []
+            for m in meta:
+                if 'AC' not in m and len(m)>8:
+                    delete.append(m)
+            for d in delete:
+                del meta[d]
             """
             try:
                 meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
@@ -107,12 +113,18 @@ class Format(object):
             dlogN = data['dlogN']
             b = data['b']
             db = data['db']
+            try:
+                btur = data['btur']
+                dbtur = data['dbtur']
+            except:
+                btur = np.zeros(len(data))
+                dbtur = [np.nan]*len(data)
             resol = data['resol']
             chi2r = data['chi2r']
             id = data['id']
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
-                           id=id)
+                           dlogN=dlogN, b=b, db=db, btur=btur, dbtur=dbtur,
+                           resol=resol, chi2r=chi2r, id=id)
             out._t['z0'] = data['z0']
             for c in Table(data).colnames:
                 if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
@@ -360,22 +372,24 @@ class Format(object):
         y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
         dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
         """
+        #span = 550
+        span = 0
         if row is None and slice is None:
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
-            y = np.ravel(hdul['SCIDATA'].data)
-            dy = np.ravel(hdul['ERRDATA'].data)
-            q = np.ravel(hdul['QUALDATA'].data)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
         elif row is None:
             r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
-            y = np.ravel(hdul['SCIDATA'].data[r,:])
-            dy = np.ravel(hdul['ERRDATA'].data[r,:])
-            q = np.ravel(hdul['QUALDATA'].data[r,:])
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
         else:
-            x = hdul['WAVEDATA_VAC_BARY'].data[row,:]
-            y = hdul['SCIDATA'].data[row,:]
-            dy = hdul['ERRDATA'].data[row,:]
-            q = hdul['QUALDATA'].data[row,:]
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
+            y = hdul['SCIDATA'].data[row,span:-span-1]
+            dy = hdul['ERRDATA'].data[row,span:-span-1]
+            q = hdul['QUALDATA'].data[row,span:-span-1]
 
 
 
@@ -505,6 +519,7 @@ class Format(object):
                 except:
                     logging.error("I can't recognize columns.")
                     return 0
+
             else:
                 data_s = hdul[0].data
                 data = hdul[0].data
@@ -516,13 +531,19 @@ class Format(object):
             try:
                 xunit = data_s.__dict__['_coldefs'][x_name]._unit
             except:
+                xunit = None
+
+            if xunit == None:
                 xunit = au.nm
                 if np.nanmax(x)>3000:
                     x = x*0.1
+                if np.nanmax(x)<3:
+                    x = x*1000
             try:
-                yunit = data_s.__dict__['_coldefs'][y_name]._unit
+                yunit = au.Unit(data_s.__dict__['_coldefs'][y_name]._unit)
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
+
 
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
@@ -858,3 +879,26 @@ class Format(object):
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
         meta = hdr
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+def sdss_spectrum(self, hdul):
+    """SDSS spectrum"""
+    logging.info(msg_format('SDSS'))
+
+    def revIVar(x, m):
+        if x == 0:
+            return m
+        return np.sqrt(1 / x)
+    vectRevIVar = np.vectorize(revIVar)
+
+    hdr = hdul[1].header 
+    data = np.array([np.array(i) for i in hdul[1].data])
+
+    y = data[:, 0]
+    x = (10 ** data[:, 1])
+    xmin, xmax = self._create_xmin_xmax(x)
+    dy = vectRevIVar(data[:, 2], max(y))
+
+    xunit = au.Angstrom
+    yunit = au.erg/au.cm**2/au.s/au.Angstrom
+    meta = hdr
+    return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

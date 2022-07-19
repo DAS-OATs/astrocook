@@ -1,6 +1,6 @@
 from . import * #version
 from .defaults import *
-from .functions import expr_eval
+from .functions import expr_eval, x_convert
 from .gui_graph import *
 from .gui_image import *
 from .gui_log import *
@@ -8,6 +8,7 @@ from .gui_menu import *
 from .gui_table import *
 from .message import *
 from astropy import table as at
+from astropy import constants as ac
 from collections import OrderedDict
 from copy import deepcopy as dc
 import datetime as dt
@@ -27,16 +28,17 @@ class GUI(object):
 
         self._flags = flags
         try:
-            l = ['─']*(16+len(version))
+            banner = 'ASTROCOOK 🍪 v'
+            l = ['─']*(3+len(banner)+len(version))
             print("┌%s┐" % ''.join(l))
-            print("│ ASTROCOOK 🍪 v%3s │" % version)
+            print("│ %s%3s │" % (banner, version))
             print("└%s┘" % ''.join(l))
         except:
             l = ['-']*(17+len(version))
             print(''.join(l))
             print(" ASTROCOOK  v%3s " % version)
             print(''.join(l))
-        print("Cupani et al. 2017-2020 * INAF-OATs")
+        print("Cupani et al. 2017-%s * INAF-OATs" % current_year)
         self._sess_list = []
         self._sess_item_list = []
         #self._graph_elem_list = []
@@ -51,6 +53,7 @@ class GUI(object):
         self._menu_systs_id = []
         self._menu_z0_id = []
         self._menu_mods_id = []
+        self._menu_feats_id = []
         self._menu_tab_id = []
         self._defs = Defaults(self)
         self._panel_sess = GUIPanelSession(self)
@@ -213,7 +216,6 @@ class GUI(object):
     def _refresh(self, init_cursor=False, init_tab=True, init_bar=False,
                  autolim=True, autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
-
         self._defs = self._sess_sel.defs
 
         self._panel_sess._refresh()
@@ -287,6 +289,22 @@ class GUI(object):
             self._graph_main._graph._zoom = False
             dl = (xlim[0], xlim[1], ylim[0], ylim[1])
         #print(self._graph_main._graph._zoom)
+
+        # Convert xlim and dl if needed
+        if not hasattr(self._sess_sel.spec, '_xunit_old'):
+            self._sess_sel.spec._xunit_old = au.nm
+            self._sess_sel.spec._zem = 0
+        try:
+            xunit_old = self._sess_sel.spec._xunit_old
+            xunit = self._sess_sel.spec._xunit
+            zem = self._sess_sel.spec._zem
+            if xunit_old != xunit:
+                xlim = (x_convert((xlim[0]*xunit_old), zem, xunit).value,
+                        x_convert(xlim[1]*xunit_old, zem, xunit).value)
+                dl = (x_convert(dl[0]*xunit_old, zem, xunit).value,
+                      x_convert(dl[1]*xunit_old, zem, xunit).value, dl[2], dl[3])
+        except:
+            pass
 
 
         #axc.set_xlim(0, 1)
@@ -564,7 +582,8 @@ class GUIPanelSession(wx.Frame):
 
         if _flags is None or _flags==[] and self._gui._flags is not None:
             _flags = self._gui._flags
-        elif self._gui._flags is None or self._gui._flags==[] and _flags is not None:
+        #elif self._gui._flags is None or self._gui._flags==[] and _flags is not None:
+        elif _flags is not None:
             self._gui._flags = _flags
 
         name = '.'.join(path.split('/')[-1].split('.')[:-1])

@@ -15,7 +15,7 @@
       }
     },
     {
-      "cookbook": "_panel_sess",
+      "cookbook": "cb",
       "recipe": "equalize",
       "params": {
         "xmin": "550",
@@ -27,7 +27,7 @@
       }
     },
     {
-      "cookbook": "_panel_sess",
+      "cookbook": "cb",
       "recipe": "combine",
       "params": {
         "name": "*_combined",
@@ -45,7 +45,7 @@
         "xend": "None",
         "dx": "10.0",
         "xunit": "km / s",
-        "norm": "True"
+        "norm": "False"
       }
     },
     {

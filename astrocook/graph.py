@@ -17,7 +17,14 @@ import matplotlib.ticker as mticker
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
+import time
 import wx
+
+
+import matplotlib.style as mplstyle
+mplstyle.use('fast')
+
+#plt.rcParams["path.simplify_threshold"] = 1.0
 
 # Force a given format in axis - currently not uses
 # From https://stackoverflow.com/questions/49351275/matplotlib-use-fixed-number-of-decimals-with-scientific-notation-in-tick-labels
@@ -256,6 +263,7 @@ class Graph(object):
 
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
+
         sess = np.array(sess, ndmin=1)
         #import datetime as dt
         #start = dt.datetime.now()
@@ -390,12 +398,12 @@ class Graph(object):
         if ylim is not None and not autoylim:
             self._ax.set_ylim(ylim)
 
-        for s in sess:
+        for s in [sess[0]]:
             self._seq(s, norm, init_cursor=init_cursor)
         if legend:
             self._ax.legend()
 
-        for s in sess:
+        for s in [sess[0]]:
             if s._shade:
                 x = self._gui._sess_sel.spec.x.value
                 trans = transforms.blended_transform_factory(
@@ -410,6 +418,7 @@ class Graph(object):
 
         self._ax.callbacks.connect('xlim_changed', self._on_zoom)
         self._ax.callbacks.connect('ylim_changed', self._on_zoom)
+
         dl = self._ax.__dict__['dataLim']
         #print(dl)
         self._gui._data_lim = (dl.x0, dl.x1, dl.y0, dl.y1)
@@ -459,6 +468,8 @@ class Graph(object):
         #if detail: sess.cb.x_convert(zem=self._zem)
         #print(detail, sess.spec.x.unit)
         self._systs_id = False
+
+        fast = sess.defs.dict['graph']['fast']
         for e in focus._elem.split('\n'):
         #for e in self._gui._graph_main._elem.split('\n'):
             try:
@@ -475,7 +486,7 @@ class Graph(object):
                     label = '%s, %s' % (struct, ycol)
 
                 if struct == 'systs': self._systs_id = True
-                if struct in ['spec','lines','nodes','systs']:
+                if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
                         x = dc(t[xcol])
@@ -486,7 +497,7 @@ class Graph(object):
                             y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t[ycol].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
                 #if detail: print(struct, xcol, x[0])
                 #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
@@ -532,6 +543,16 @@ class Graph(object):
                         else:
                             x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
 
+                        """
+                        print(x)
+                        x_sel = np.logical_and(x>-1000,x<1000)
+                        x = x[x_sel]
+                        try:
+                            y = y[y_sel]
+                        except:
+                            pass
+                        print(x)
+                        #"""
                         #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat
@@ -557,6 +578,16 @@ class Graph(object):
                         kwargs['s'] = (5*float(width))**2
                     kwargs['color'] = color
                     kwargs['alpha'] = float(alpha)
+
+
+                    if fast and detail:
+                        try:
+                            x_sel = np.logical_and(x>ax.get_xlim()[0],x<ax.get_xlim()[1])
+                            x = x[x_sel]
+                        except:
+                            x_sel = np.logical_and(x.value>ax.get_xlim()[0],x.value<ax.get_xlim()[1])
+                            x = x[x_sel]*x.unit
+
                     if mode == 'axvline':
                         #print(self._ax, x.value)
                         for xi in x.value:
@@ -578,7 +609,12 @@ class Graph(object):
                     else:
                         if type(y) in [int, float]:
                             y = [y]*len(x)
+                        if fast and detail:
+                            y = y[x_sel]
+
+                        tt = time.time()
                         getattr(ax, mode)(x, y, label=label, **kwargs)
+                        #print('%i %s %i %.4f' % (detail, mode, len(x), time.time()-tt))
 
                     if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
@@ -603,7 +639,7 @@ class Graph(object):
                                 if z > 1e-10:
                                     ax.text(xi, 0.05, s, **kwargs_text)
                                     kwargs_text['va'] = 'top'
-                                    ax.text(xi, 0.95, "%3.3f" % z, **kwargs_text)
+                                    ax.text(xi, 0.95, "%3.5f" % z, **kwargs_text)
                                 else:
                                     kwargs_text['va'] = 'top'
                                     ax.text(xi, 0.95, s, **kwargs_text)
@@ -611,6 +647,7 @@ class Graph(object):
                         self._systs_color = color
                 except:
                     logging.error("I can't parse this graph specification: %s." % e)
+
             except:
                 pass
 

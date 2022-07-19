@@ -1,4 +1,4 @@
-from .functions import get_selected_cells, trans_parse
+from .functions import get_selected_cells, to_x, to_z, trans_parse
 from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pprint
 import pstats
+import time
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
@@ -66,6 +67,7 @@ class GUITable(wx.Frame):
         if self._attr == 'systs':
             sess.cb._systs_remove([row])
             sess.cb._mods_recreate()
+            sess.cb._spec_update()
         else:
             tab = getattr(self._gui, '_tab_'+attr)
             tab._data.t.remove_row(row)
@@ -89,9 +91,9 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
-
         for j, r in enumerate(tab._data.t):
             for i, n in enumerate(tab._data.t.colnames):
+
                 if j == 0:
                     tab._tab.SetColSize(i, 150)
                     tab._tab.SetColLabelValue(i, "%s\n%s" \
@@ -105,7 +107,7 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                    if n in ['logN', 'dlogN', 'b', 'db', 'btur', 'dbtur', 'resol', 'chi2r', \
                              'snr']:
                         format = '%3.3'
                     else:
@@ -226,6 +228,7 @@ class GUITable(wx.Frame):
             self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
+            self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
             title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
             attr = ['sort', 'sort_reverse', None, 'histogram']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title,
@@ -267,7 +270,7 @@ class GUITable(wx.Frame):
         sess.log.append_full('cb', '_spec_update', {})
 
         self._data_remove(row, self._attr)
-        sess.cb._spec_update()
+        #sess.cb._spec_update()
         #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
         #self._fill()
         self._gui._refresh(init_cursor=True)
@@ -461,7 +464,7 @@ class GUITableSystList(GUITable):
         #self._cells_sel = []
         self._data_cells_desel()
         for s in sel:
-            if s[1] in [3, 5, 7]: #self._cells_sel.append(s)
+            if s[1] in [3, 5, 7, 9]: #self._cells_sel.append(s)
                 row = s[0]
                 col = s[1]
                 self._data_cells_sel(row, col)
@@ -507,12 +510,12 @@ class GUITableSystList(GUITable):
 
 
     def _data_detail(self, row_z, row_series, row_id, span=30):
+        tt = time.time()
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         else:
             self._gui._graph_det._graph._fig.clear()
-
         z = row_z #row['z']
         series = trans_parse(row_series) #row['series'])
         self._gui._graph_main._z_sel = z
@@ -544,21 +547,40 @@ class GUITableSystList(GUITable):
                     self._tab.SetCellBackgroundColour(j, i, None)
         self._tab.ForceRefresh()
 
+
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
         if update_mod:
             id = self._id_extract(row)
             mod = self._mod_extract(row)
-            try:
-                vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
-                expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
-                mod._pars['lines_voigt_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
-            except:
-                vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
-                expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
-                mod._pars['psf_gauss_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
+            if label == 'series':
+                z0 = float(self._tab.GetCellValue(row, 3))
+                z = mod._pars['lines_voigt_%i_z' % id].value
+                z0_new = to_z(to_x(z0, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                z_new = to_z(to_x(z, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                vary = mod._pars['lines_voigt_%i_z' % id].vary
+                expr = mod._pars['lines_voigt_%i_z' % id].expr
+                mod._pars['lines_voigt_%i_z' % id].set(
+                    value=z_new, vary=vary, expr=expr)
+                self._tab.SetCellValue(row, 2, "%.7f" % z0_new)
+                self._tab.SetCellValue(row, 3, "%.7f" % z_new)
+                self._data.t['z0'][row] = z0_new
+                self._data.t['z'][row] = z_new
+                mod._series = value
+                self._gui._sess_sel.cb._mods_recreate2()
+            else:
+                try:
+                    vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
+                    expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
+                    mod._pars['lines_voigt_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
+                except:
+                    vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
+                    expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
+                    mod._pars['psf_gauss_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
 
 
     def _data_fit(self, row):
@@ -634,6 +656,7 @@ class GUITableSystList(GUITable):
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
+        #print(self._links_d)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
@@ -658,6 +681,8 @@ class GUITableSystList(GUITable):
                     self._data_edit(r, labels[c], v, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
+        #print(self._freezes_d)
+        #print(self._links_d)
         systs._constrain(self._links_d)
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
@@ -719,7 +744,7 @@ class GUITableSystList(GUITable):
         row = event.GetRow()
         col = event.GetCol()
         self._data_cell_right_click(row, col)
-        if col in [3, 5, 7]:
+        if col in [3, 5, 7, 9]:
             title = []
             attr = []
             if len(self._cells_sel) > 1:
@@ -773,7 +798,10 @@ class GUITableSystList(GUITable):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
         label = labels[col]
-        value = float(self._tab.GetCellValue(row, col))
+        if col>=1:
+            value = str(self._tab.GetCellValue(row, col))
+        else:
+            value = float(self._tab.GetCellValue(row, col))
         sess = self._gui._sess_sel
         """
         sess.json += self._gui._json_update("_tab_systs", "_data_edit",
@@ -987,12 +1015,12 @@ class GUITableSystList(GUITable):
                     #mod._pars.pretty_print()
                     #print(id(m))
             for p,v in mod._pars.items():
-                if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                if p.split('_')[-1] in ['z', 'logN', 'b', 'btur', 'resol']:
                     try:
                         c = np.where(labels==p.split('_')[-1])[0][0]
                     except:
                         c = None
-                    r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
+                    r = i if c == 11 else self._row_extract(int(p.split('_')[-2]))
                     #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
                     #    print(idi, p,v)
                     if v.vary == False and r != None and c != None:
@@ -1000,9 +1028,14 @@ class GUITableSystList(GUITable):
                     if v.expr != None and r != None and c != None:
                         r2 = self._row_extract(int(v.expr.split('_')[-2]))
                         c2 = np.where(labels==p.split('_')[-1])[0][0]
-                        if v.expr not in self._links_c:
-                            self._links_c[v.expr] = self._colours[self._colourc\
+                        vs = v.expr.split('*')[0]
+                        if vs not in self._links_c:
+                            self._links_c[vs] = self._colours[self._colourc\
                                                     %len(self._colours)]
                             self._colourc += 1
-                        self._tab.SetCellTextColour(r, c, self._links_c[v.expr])
-                        self._tab.SetCellTextColour(r2, c2, self._links_c[v.expr])
+                        self._tab.SetCellTextColour(r, c, self._links_c[vs])
+                        self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
+            if not mod._active:
+                cols = self._tab.GetNumberCols()
+                for c in range(cols):
+                    self._tab.SetCellTextColour(r, c, 'light grey')

@@ -1,8 +1,9 @@
-from .functions import _gauss, expr_eval, running_mean, running_rms
+from .functions import _gauss, expr_eval, running_mean, running_rms, x_convert
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
+from astropy.units import Unit
 from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,6 +23,8 @@ class CookbookGeneral(object):
 
     def bin_zap(self, x):
         self.sess.spec._zap(xmin=x, xmax=None)
+
+
 
 
     def combine(self, name='*_combined', _sel=''):
@@ -95,7 +98,7 @@ class CookbookGeneral(object):
         return sess
 
 
-    def equalize(self, xmin, xmax, _sel=''):
+    def equalize(self, xmin, xmax, _sel='', cont=True):
         """ @brief Equalize two sessions
         @details Equalize the spectrum of two sessions, based on their flux
         ratio within a wavelength window.
@@ -153,6 +156,33 @@ class CookbookGeneral(object):
                 logging.info("Equalization factor: %3.4f." % f)
                 sess.spec.y = f*sess.spec.y
                 sess.spec.dy = f*sess.spec.dy
+                if cont and 'cont' in sess.spec._t.colnames:
+                    sess.spec._t['cont'] = f*sess.spec._t['cont']
+
+        return 0
+
+
+    def dx_est(self):
+        """ @brief Estimate bin size in x
+        @details Compute statistics on xmax-xmin, to determine the typical
+        binsize in wavelength and velocity space.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        logging.info("Distribution of dx:")
+        for unit in ['nm', 'km/s']:
+            xmin = x_convert(spec.t['xmin'][1:-1], xunit=Unit(unit))
+            xmax = x_convert(spec.t['xmax'][1:-1], xunit=Unit(unit))
+            dx = xmax-xmin
+            dx_mean = np.mean(dx)
+            dx_std = np.std(dx)
+            if unit == 'nm':
+                logging.info(" in wavelength space: %.5f±%.5f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
+            elif unit == 'km/s':
+                logging.info(" in velocity space:   %.2f±%.2f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
 
         return 0
 
@@ -205,7 +235,6 @@ class CookbookGeneral(object):
         with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
-        #plt.show()
 
         return 0
 
@@ -258,14 +287,18 @@ class CookbookGeneral(object):
             sel = np.sort(np.unique(rint))
             #sel = np.unique(rint)
             spec._t = spec._t[sel]
+            #plt.plot(spec._t['x'], spec._t['y'])
             v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
                                           vend, dv)
 
+
+            v_shiftmax = v_shift[np.argmax(ccf)]
             try:
             #    ciao
             #except:
-                p0 = [1., 0., 1.]
-                fit_sel = np.logical_and(v_shift>-fit_hw.value, v_shift<fit_hw.value)
+                p0 = [1., v_shiftmax, 1.]
+                fit_sel = np.logical_and(v_shift>v_shiftmax-fit_hw.value,
+                                         v_shift<v_shiftmax+fit_hw.value)
                 #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
@@ -276,7 +309,7 @@ class CookbookGeneral(object):
                 peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
             shifts = np.append(shifts, shift)
-
+        #print(peaks, shifts)
             #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, "
             #             "mean %3.4f, shift %3.4f." \
             #             % (np.min(ccf), np.max(ccf), np.mean(ccf), shift))
@@ -287,7 +320,7 @@ class CookbookGeneral(object):
         with open(self.sess.name+'_ccf_stats.npy', 'wb') as f:
             np.save(f, peaks)
             np.save(f, shifts)
-
+        #plt.show()
         return 0
 
 
@@ -393,7 +426,7 @@ class CookbookGeneral(object):
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=True, filling=np.nan):
+              norm=False, filling=np.nan):
         """ @brief Re-bin spectrum
         @details Apply a new binning to a spectrum, with a constant bin size.
 
@@ -433,6 +466,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            norm = str(norm) == 'True'
             filling = float(filling)
         except ValueError:
             logging.error(msg_param_fail)
@@ -468,7 +502,12 @@ class CookbookGeneral(object):
 
         spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
         if cont:
-            spec_out.t['cont'] = 1
+            if not norm:
+                spec_out.t['cont'] = np.interp(
+                    spec_out.x.to(au.nm).value,spec_in.x.to(au.nm).value,
+                    spec_in.t['cont']) * spec_out.y.unit
+            else:
+                spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
         # Create a new session
         from .session import Session
@@ -504,8 +543,7 @@ class CookbookGeneral(object):
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         for s in self.sess.seq:
             try:
-                struct = getattr(self.sess, s)._region_extract(xmin, xmax,
-                                                               verbose)
+                struct = getattr(self.sess, s)._region_extract(xmin, xmax)
                 if struct is None:
                     logging.warning(msg_empty(s))
                 else:
@@ -670,7 +708,7 @@ class CookbookGeneral(object):
         return 0
 
 
-    def telluric_mask(self, shift=0, apply=True):
+    def telluric_mask(self, shift=0, thres=0.99, apply=True):
         """ @brief Mask telluric absorption
         @details Mask spectral regions affected by telluric absorptions.
 
@@ -682,12 +720,15 @@ class CookbookGeneral(object):
         If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
         `telluric` is 1.
         @param shift Shift to the heliocentric frame (km/s)
+        @param thres Threshold to cut telluric lines in the model (normalized to
+        continuum)
         @param apply Apply mask to flux
         @return 0
         """
 
         try:
             shift = float(shift)
+            thres = float(thres)
             apply = str(apply) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -702,8 +743,8 @@ class CookbookGeneral(object):
         #p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
-        x = np.array(telluric['WAVEL'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t!=0 for t in telluric['MASK']], dtype=float)
+        x = np.array(telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        mask = np.array([t<thres for t in telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell!=1, dtype=bool)
 

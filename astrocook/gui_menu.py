@@ -299,7 +299,6 @@ class GUIMenu(object):
             self._gui._panel_sess._open_rec = '_on_open'
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
-
     def _refresh(self, init_bar=False):
         # Nested loops! WOOOO!
         sess = self._gui._sess_sel
@@ -410,6 +409,8 @@ class GUIMenuAbsorbers(GUIMenu):
                      {'targ': 'comp_extract', 'append': 'z0'},
                      {'targ': 'systs_merge', 'append': 'z0'},
                      '<',
+                     '--',
+                     {'targ': 'feats', 'append': 'z0'},
                      '--',
                      {'targ': 'mods_ccf_max', 'append': 'z0'},
                      {'targ': 'systs_sigmav', 'append': 'z0'},
@@ -587,6 +588,7 @@ class GUIMenuGeneral(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
+
         self._rec = [{'targ': 'region_extract', 'append': 'spec'},
                      {'targ': 'part_extract', 'append': 'spec'},
                      '--',
@@ -599,6 +601,7 @@ class GUIMenuGeneral(GUIMenu):
                      {'targ': 'snr_est', 'append': 'spec'},
                      {'targ': 'resol_est', 'append': 'spec'},
                      {'targ': 'rms_est', 'append': 'spec'},
+                     {'targ': 'dx_est', 'append': 'spec'},
                      '--',
                      {'targ': 'rebin', 'append': 'spec'},
                      {'targ': 'gauss_convolve', 'append': 'spec'},

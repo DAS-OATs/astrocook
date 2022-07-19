@@ -142,7 +142,6 @@ class CookbookEdit(object):
         if parse is None: return 0
         attrn, attr, _ = parse
         attr = dc(attr)
-
         if attrn == 'systs' \
             and 'cont' not in self.sess._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
@@ -154,19 +153,24 @@ class CookbookEdit(object):
                 logging.warning("I'm replacing structure with None.")
                 setattr(self.sess._gui._sess_sel, attrn, attr)
                 return 0
+
             if attrn in ['lines', 'systs']:
                 #spec = self.sess._gui._sess_sel.spec
                 x = self.sess._gui._sess_sel.spec.x.to(au.nm)
                 attr = attr._region_extract(np.min(x), np.max(x))
+            if attr is None:
+                logging.warning("I'm replacing structure with None")
+                setattr(self.sess._gui._sess_sel, attrn, attr)
+                return 0
 
                 # Redefine regions from spectrum
             if attrn == 'systs':
-                for m in attr._mods_t:
+                for i, m in enumerate(attr._mods_t):
                     mod = m['mod']
                     mod._spec = self.sess._gui._sess_sel.spec
-                    mod._xf, mod._yf, mod._wf, mod._ys = \
+                    mod._xf, mod._yf, mod._wf = \
                         mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
-                                               .to(au.nm).value)
+                                               .to(au.nm).value, eval=True)
             setattr(self.sess._gui._sess_sel, attrn, attr)
 
         if mode=='append':
