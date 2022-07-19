@@ -1,8 +1,9 @@
-from .functions import _gauss, expr_eval, running_mean, running_rms
+from .functions import _gauss, expr_eval, running_mean, running_rms, x_convert
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
+from astropy.units import Unit
 from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,6 +23,8 @@ class CookbookGeneral(object):
 
     def bin_zap(self, x):
         self.sess.spec._zap(xmin=x, xmax=None)
+
+
 
 
     def combine(self, name='*_combined', _sel=''):
@@ -155,6 +158,31 @@ class CookbookGeneral(object):
                 sess.spec.dy = f*sess.spec.dy
                 if cont and 'cont' in sess.spec._t.colnames:
                     sess.spec._t['cont'] = f*sess.spec._t['cont']
+
+        return 0
+
+
+    def dx_est(self):
+        """ @brief Estimate bin size in x
+        @details Compute statistics on xmax-xmin, to determine the typical
+        binsize in wavelength and velocity space.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        logging.info("Distribution of dx:")
+        for unit in ['nm', 'km/s']:
+            xmin = x_convert(spec.t['xmin'][1:-1], xunit=Unit(unit))
+            xmax = x_convert(spec.t['xmax'][1:-1], xunit=Unit(unit))
+            dx = xmax-xmin
+            dx_mean = np.mean(dx)
+            dx_std = np.std(dx)
+            if unit == 'nm':
+                logging.info(" in wavelength space: %.5f±%.5f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
+            elif unit == 'km/s':
+                logging.info(" in velocity space:   %.2f±%.2f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
 
         return 0
 
