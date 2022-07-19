@@ -463,9 +463,11 @@ class CookbookAbsorbers(object):
                                    defs=self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+                    #mod._pars.pretty_print()
                     self._mods_update(mod)
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+
                 else:
                     systs._id = np.max(systs._t['id'])+1
 
@@ -586,7 +588,7 @@ class CookbookAbsorbers(object):
                                 "one." % z)
             return None
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                          None, resol, None, None, systs._id])
+                          None, 0.0, None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -941,6 +943,8 @@ class CookbookAbsorbers(object):
                 systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                systs._t[iw]['btur'] = mod._pars[pref+'_btur'].value
+                systs._t[iw]['dbtur'] = mod._pars[pref+'_btur'].stderr
                 try:
                     systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:

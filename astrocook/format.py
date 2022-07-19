@@ -113,12 +113,18 @@ class Format(object):
             dlogN = data['dlogN']
             b = data['b']
             db = data['db']
+            try:
+                btur = data['btur']
+                dbtur = data['dbtur']
+            except:
+                btur = np.zeros(len(data))
+                dbtur = [np.nan]*len(data)
             resol = data['resol']
             chi2r = data['chi2r']
             id = data['id']
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
-                           id=id)
+                           dlogN=dlogN, b=b, db=db, btur=btur, dbtur=dbtur,
+                           resol=resol, chi2r=chi2r, id=id)
             out._t['z0'] = data['z0']
             for c in Table(data).colnames:
                 if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
