@@ -165,7 +165,7 @@ class CookbookEdit(object):
 
                 # Redefine regions from spectrum
             if attrn == 'systs':
-                for m in attr._mods_t:
+                for i, m in enumerate(attr._mods_t):
                     mod = m['mod']
                     mod._spec = self.sess._gui._sess_sel.spec
                     mod._xf, mod._yf, mod._wf = \

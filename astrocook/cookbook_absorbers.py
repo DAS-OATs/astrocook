@@ -423,6 +423,20 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        # Collect existing specifications for logN_tot
+        """
+        N_tot_specs_dict = {}
+        for m in systs._mods_t['mod']:
+            if hasattr(m, '_N_tot_spec'):
+                N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
+        print(N_tot_specs_dict)
+        """
+
+        N_tot_specs_d = {}
+        if hasattr(systs, '_N_tot_specs'):
+            N_tot_specs_d = systs._N_tot_specs
+        #print(N_tot_specs_d)
+
         #print(systs._constr)
         if not fast:
 
@@ -458,9 +472,19 @@ class CookbookAbsorbers(object):
                         mod._id = np.max(systs_t['id'])+1
                     #print(self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), end=' ')
+
+                    # Implement existing specifications for logN_tot
+                    if mod._id in N_tot_specs_d:
+                        N_tot = True
+                        N_tot_specs = N_tot_specs_d[mod._id]
+                    else:
+                        N_tot = False
+                        N_tot_specs = (None, None, None)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs.dict['voigt'])
+                                   defs=self.sess.defs.dict['voigt'],
+                                   N_tot=N_tot, N_tot_specs=N_tot_specs)
+                    #mod._pars.pretty_print()
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
                     #mod._pars.pretty_print()
@@ -479,7 +503,7 @@ class CookbookAbsorbers(object):
 
         spec.t['fit_mask'] = False
         active_c = 0
-        for m in systs._mods_t:
+        for i, m in enumerate(systs._mods_t):
             mod = m['mod']
             try:
                 active = mod._active
@@ -491,13 +515,16 @@ class CookbookAbsorbers(object):
                 active_c += 1
                 c = []
                 t = 1e-2
-                while len(c)==0:
+                j = 0
+                while len(c)==0 and j<1000:
                     try:
                         c = np.where(mod._yl<1-t)[0]
                     except:
                         c = np.where(mod._ys<1-t)[0]
                     t = t*0.5
-                #print(c)
+                    #print(i, j, len(c))
+                    j += 1
+
                 spec.t['fit_mask'][c] = True
 
 
@@ -939,8 +966,16 @@ class CookbookAbsorbers(object):
                 pref = 'lines_voigt_'+str(i)
                 systs._t[iw]['z'] = mod._pars[pref+'_z'].value
                 systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                if pref+'_N_tot' in mod._pars:
+                    logN = np.log10(mod._pars[pref+'_N_tot'].value\
+                                    -mod._pars[pref+'_N_other'].value)
+                    if np.isnan(logN):
+                        logN = 10
+                    systs._t[iw]['logN'] = logN
+                    systs._t[iw]['dlogN'] = np.nan
+                else:
+                    systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                    systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
                 systs._t[iw]['btur'] = mod._pars[pref+'_btur'].value
@@ -1034,24 +1069,42 @@ class CookbookAbsorbers(object):
     def feats_z_lock(self):
         """ @brief Lock redshifts by absorption features
         @details Lock the difference of systems redshift by absorption features.
-        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
-        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
-        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
         @return 0
         """
 
-        """
-        try:
-            thres = float(thres)
-        except:
-            logging.error(msg_param_fail)
-            return 0
-        """
         self.sess.feats._z_lock()
         logging.info("I've locked redshifts by absorption features.")
 
         return 0
 
+
+    def feats_logN_tot(self, set_specs=True, sel=None):
+        """ @brief Prepare features to fit total column density
+        @details The last system in each feature is prepared to be modeled as
+        a function of the total column density of the feature itself, to obtain
+        realistic errors on the total column density.
+        @param set_pars Set the parameters to model the systems (if False, total column densities will be only extracted from the models)
+        @param sel Feature selected to be modeled in this way (None to select all)
+        @return 0
+        """
+
+        self.sess.feats._logN_tot(self.sess.systs, set_specs, sel)
+        if set_specs:
+            self._mods_recreate()
+            for m in self.sess.systs._mods_t:
+                #m._pars.pretty_print()
+                self._systs_update(m['mod'])
+                for i in m['id']:
+                    self.sess.systs._d[i]._mod = m['mod']
+
+            #for s in self.sess.systs._d:
+            #    self.sess.systs._d[s]._mod._pars.pretty_print()
+            self.sess.feats._systs_update(self.sess.systs)
+        #for f in self.sess.feats._l:
+        #    s = max(f._systs.keys())
+        logging.info("I've prepared features to fit total column density.")
+
+        return 0
 
 
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):

@@ -226,6 +226,13 @@ def expr_eval(node):
         #raise TypeError(node)
         return expr_check(node)
 
+def lines_voigt_N_tot(x, z, N_tot, N_other, b, btur, series='Ly_a'):
+#def lines_voigt_N_tot(x, z, logN_tot, logN_other, b, btur, series='Ly_a'):
+    logN = np.log10(N_tot-N_other)
+    if logN == -np.inf:
+        logN = pars_std_d['logN']
+    return lines_voigt(x, z, logN, b, btur, series)
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a

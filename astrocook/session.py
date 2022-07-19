@@ -583,7 +583,7 @@ class Session(object):
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
-
+        
         import warnings
         warnings.filterwarnings("ignore")
 
