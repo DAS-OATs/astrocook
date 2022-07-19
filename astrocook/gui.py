@@ -321,17 +321,13 @@ class GUI(object):
         if xlim == (0.0, 1.0) and ylim == (0.0, 1.0):
             goodlim = False
         if autolim and goodlim and _xlim != None and _ylim != None:
-            print('1')
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim),
                                       ylim=list(_ylim))
         elif autolim and goodlim and _xlim != None:
-            print('2')
             self._graph_main._refresh(self._sess_items, xlim=list(_xlim))
         elif autolim and goodlim and self._graph_main._graph._zoom:
-            print('3')
             self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
-            print('4')
             self._graph_main._refresh(self._sess_items)
 
         if hasattr(self, '_graph_det'):

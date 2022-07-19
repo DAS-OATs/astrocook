@@ -1,8 +1,9 @@
-from .functions import _gauss, expr_eval, running_mean, running_rms
+from .functions import _gauss, expr_eval, running_mean, running_rms, x_convert
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
+from astropy.units import Unit
 from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
@@ -169,10 +170,19 @@ class CookbookGeneral(object):
         """
 
         spec = self.sess.spec
-        dx = spec.t['xmax'][1:-1]-spec.t['xmin'][1:-1]
-        dx_mean = np.mean(dx)
-        dx_std = np.std(dx)
-        logging.info('Distribution of dx: %.6f±%.6f' % (dx_mean, dx_std))
+        logging.info("Distribution of dx:")
+        for unit in ['nm', 'km/s']:
+            xmin = x_convert(spec.t['xmin'][1:-1], xunit=Unit(unit))
+            xmax = x_convert(spec.t['xmax'][1:-1], xunit=Unit(unit))
+            dx = xmax-xmin
+            dx_mean = np.mean(dx)
+            dx_std = np.std(dx)
+            if unit == 'nm':
+                logging.info(" in wavelength space: %.5f±%.5f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
+            elif unit == 'km/s':
+                logging.info(" in velocity space:   %.2f±%.2f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
 
         return 0
 
