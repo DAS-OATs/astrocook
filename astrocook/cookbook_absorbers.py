@@ -703,7 +703,6 @@ class CookbookAbsorbers(object):
             if mod is not None:
                 systs_n += 1
                 self._systs_update(mod)
-
                 id_list.append(mod._id)
                 if k is not None:
                     self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \

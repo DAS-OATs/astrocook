@@ -694,7 +694,7 @@ class Session(object):
                     #print([t[c].format for c in t.colnames] )
                     try:
                         ascii.write(t, name_dat, names=t.colnames,
-                        	        format='commented_header', overwrite=True)
+                                    format='commented_header', overwrite=True)
                         arch.add(name, arcname=stem+'_'+s+'.fits')
                         arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                         os.remove(name)
@@ -796,7 +796,6 @@ class Session(object):
                     try:
                         if (i+1)%panel_n == 0:
                             ax.text(0.48,-0.5, j+1, size=13, transform=ax.transAxes)
-
                         sel = np.where(np.logical_and(x>xran[i], x<xran[i+1]))
                         #ymin = np.floor(np.nanmin(y[sel]))
                         if main._norm:

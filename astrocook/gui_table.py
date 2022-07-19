@@ -528,8 +528,13 @@ class GUITableSystList(GUITable):
             GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
         else:
             #self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
-            self._gui._dlg_mini_systems._refresh(row_series, row_z)
-
+            try:
+                self._gui._dlg_mini_systems._refresh(row_series, row_z)
+            except:
+                GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
+        dlg_mini_systems = self._gui._dlg_mini_systems
+        dlg_mini_systems._menu.FindItemById(dlg_mini_systems._dlg_id[4]).Check(True)
+        
         # Color background of systems in the same group
         #mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
         mods_sel = np.where([row_id in i \

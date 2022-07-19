@@ -78,7 +78,7 @@ graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
              #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
              #'systs_z_series',
-             'spec_h2o_reg'
+             'spec_h2o_reg',
              ]
 graph_cols_sel = ''
 
