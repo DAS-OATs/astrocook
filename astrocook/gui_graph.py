@@ -13,6 +13,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
+import time
 import wx
 
 class GUIGraphMain(wx.Frame):
@@ -47,6 +48,7 @@ class GUIGraphMain(wx.Frame):
         self._norm = False
         self._legend = False
         self._closed = False
+        self._refreshed = False
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
@@ -83,6 +85,7 @@ class GUIGraphMain(wx.Frame):
             self._init()
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
+        self._refreshed = True
         self.Show()
 
     #def _on_line_new(self, event):

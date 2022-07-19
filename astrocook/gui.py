@@ -216,7 +216,6 @@ class GUI(object):
     def _refresh(self, init_cursor=False, init_tab=True, init_bar=False,
                  autolim=True, autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
-
         self._defs = self._sess_sel.defs
 
         self._panel_sess._refresh()
