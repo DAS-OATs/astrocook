@@ -1,4 +1,4 @@
-from .functions import get_selected_cells, trans_parse
+from .functions import get_selected_cells, to_x, to_z, trans_parse
 from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
@@ -546,16 +546,34 @@ class GUITableSystList(GUITable):
         if update_mod:
             id = self._id_extract(row)
             mod = self._mod_extract(row)
-            try:
-                vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
-                expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
-                mod._pars['lines_voigt_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
-            except:
-                vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
-                expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
-                mod._pars['psf_gauss_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
+            if label == 'series':
+                z0 = float(self._tab.GetCellValue(row, 3))
+                z = mod._pars['lines_voigt_%i_z' % id].value
+                z0_new = to_z(to_x(z0, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                z_new = to_z(to_x(z, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                vary = mod._pars['lines_voigt_%i_z' % id].vary
+                expr = mod._pars['lines_voigt_%i_z' % id].expr
+                mod._pars['lines_voigt_%i_z' % id].set(
+                    value=z_new, vary=vary, expr=expr)
+                self._tab.SetCellValue(row, 2, "%.7f" % z0_new)
+                self._tab.SetCellValue(row, 3, "%.7f" % z_new)
+                self._data.t['z0'][row] = z0_new
+                self._data.t['z'][row] = z_new
+                mod._series = value
+                self._gui._sess_sel.cb._mods_recreate2()
+            else:
+                try:
+                    vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
+                    expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
+                    mod._pars['lines_voigt_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
+                except:
+                    vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
+                    expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
+                    mod._pars['psf_gauss_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
 
 
     def _data_fit(self, row):
@@ -773,7 +791,10 @@ class GUITableSystList(GUITable):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
         label = labels[col]
-        value = float(self._tab.GetCellValue(row, col))
+        if col>=1:
+            value = str(self._tab.GetCellValue(row, col))
+        else:
+            value = float(self._tab.GetCellValue(row, col))
         sess = self._gui._sess_sel
         """
         sess.json += self._gui._json_update("_tab_systs", "_data_edit",
