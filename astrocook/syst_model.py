@@ -51,28 +51,26 @@ class SystModel(LMComposite):
                 del fit_kws['max_nfev']
             else:
                 max_nfev = None
-            #print(fit_kws)
-            #print('out', len(self._xf), self._xf)
-            #fit_kws['x_scale'] = 'jac'
-            #print(fit_kws)
-            #print(self._pars)
-            pars = [self._pars[p].value for p in self._pars]
-            #print(pars)
-            #jac = globals()[self._lines_func.__name__+'_jac']\
-            #    (self._xf, pars[0], pars[1], pars[2], pars[3])
+            pars = [self._pars[p].value for p in self._pars if 'z' in p or 'logN' in p or 'b' in p and 'btur' not in p]
             def _jac(x0, *args, **kwargs):
                 return globals()[self._lines_func.__name__+'_jac']\
                     (x0, self._xf, series=self._series, resol=self._resol,
                     spec=self._spec, *args, **kwargs)
 
-
-            fit_kws['jac'] = _jac
-            #fit_kws['kwargs'] = {'x': np.array(self._xf)}
-            #print(fit_kws)
+            both = True
+            jacobian = False
+            if jacobian:
+                fit_kws['jac'] = _jac
             #x0 = [self._pars['lines_voigt_0_z'], self._pars['lines_voigt_0_logN'], self._pars['lines_voigt_0_b']]
-            #print(fit_kws['jac'](x0))
             col = 1
-            #plt.plot(self._xf, _jac(x0)[:,col], color='red')
+            systn = '15'
+            systsel = len([p for p in self._pars if 'z' in p and systn in p])
+            if systsel:
+                print(pars)
+                if jacobian and not both:
+                    plt.plot(self._xf, _jac(pars)[:,col])
+                if both:
+                    plt.plot(self._xf, _jac(pars)[:,col], color='red')
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -100,8 +98,14 @@ class SystModel(LMComposite):
             #print(len(self._xf))
             #print(fit.jac.shape)
             #print(fit.jac)
-            #plt.plot(self._xf, fit.jac[:,col], color='green')
-            plt.show()
+            if systsel and not jacobian:
+                if not jacobian and not both:
+                    plt.plot(self._xf, fit.jac[:,col])
+                if both:
+                    try:
+                        plt.plot(self._xf, fit.jac[:,col], color='blue')
+                    except:
+                        pass
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:

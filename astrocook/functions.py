@@ -421,6 +421,7 @@ def psf_gauss_wrong(x, #center, resol):
 def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
+    resol = 40000
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
