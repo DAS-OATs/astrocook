@@ -4,6 +4,16 @@ import os
 import pathlib
 import wx
 
+
+def _dict_merge(dict1, dict2):
+    for k1 in dict1:
+        if k1 not in dict2:
+            dict2[k1] = {}
+        for k2 in dict1[k1]:
+            dict2[k1][k2] = dict1[k1][k2]
+    return dict2
+
+
 class Defaults(object):
 
     def __init__(self,
@@ -18,23 +28,22 @@ class Defaults(object):
     def open(self, path=None, file='defaults.json'):
 
         if path is None:
-            path = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
-                   + '/../' + file
-        with open(path) as json_file:
+            pathfile = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
+                       + '/../' + file
+        else:
+            pathfile = path+'/'+file
+        with open(pathfile) as json_file:
             self.str = json_file.read()
             self.str = self.str.replace('“', '"')
             self.str = self.str.replace('”', '"')
             self.str = self.str.replace('—', '--')
         self.dict = json.loads(self.str)
-        self._dict_extend()
+        #self._dict_extend()
+        self.dict = _dict_merge(self._extend, self.dict)
 
 
     def update(self, str):
         self.str = str
         self.dict = json.loads(self.str)
-        self._dict_extend()
-
-    def _dict_extend(self):
-        for k1 in self._extend:
-            for k2 in self._extend[k1]:
-                self.dict[k1][k2] = self._extend[k1][k2]
+        #self._dict_extend()
+        self.dict = _dict_merge(self._extend, self.dict)
