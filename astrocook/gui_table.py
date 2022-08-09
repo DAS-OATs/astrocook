@@ -534,7 +534,7 @@ class GUITableSystList(GUITable):
                 GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
         dlg_mini_systems = self._gui._dlg_mini_systems
         dlg_mini_systems._menu.FindItemById(dlg_mini_systems._dlg_id[4]).Check(True)
-        
+
         # Color background of systems in the same group
         #mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
         mods_sel = np.where([row_id in i \
@@ -798,7 +798,7 @@ class GUITableSystList(GUITable):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
         label = labels[col]
-        if col>=1:
+        if col<=1:
             value = str(self._tab.GetCellValue(row, col))
         else:
             value = float(self._tab.GetCellValue(row, col))
