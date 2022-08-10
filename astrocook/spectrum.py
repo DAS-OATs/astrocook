@@ -218,7 +218,6 @@ class Spectrum(Frame):
                         verb=True):
 
         # Create profile
-        xunit = self.x.unit
         self._x_convert()
         x = self._safe(self.x)
         mean = np.median(x)
@@ -239,7 +238,8 @@ class Spectrum(Frame):
         except:
             conv[self._where_safe] = fftconvolve(safe, prof, mode='same')
         self._t[output_col] = conv
-        self._x_convert(xunit=xunit)
+        self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
 
         return 0
 
@@ -586,6 +586,7 @@ class Spectrum(Frame):
                        meta=self.meta)
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
         return out
 
 
@@ -613,14 +614,14 @@ class Spectrum(Frame):
         @return 0
         """
 
-        xunit_orig = self._xunit
         self._x_convert(xunit=xunit)
         x = self._safe(self.x)
         self._t['slice'] = np.empty(len(self.x), dtype=int)
         self._t['slice'][self._where_safe] = np.array(x//delta_x)
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
-        self._x_convert(xunit=xunit_orig)
+        self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
         return 0
 
 
