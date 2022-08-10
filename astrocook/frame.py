@@ -359,7 +359,7 @@ class Frame():
                   lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
         """
         self._xunit = xunit
-        self._xunit_old = self.x.unit
+        self._xunit_old = self._t['x'].unit
         """
         self.x = self.x.to(xunit, equivalencies=equiv)
         self.xmin = self.xmin.to(xunit, equivalencies=equiv)

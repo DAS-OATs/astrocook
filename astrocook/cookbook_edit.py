@@ -266,6 +266,7 @@ class CookbookEdit(object):
         for s in self.sess.seq:
             try:
                 getattr(self.sess, s)._x_convert(zem, xunit)
+                getattr(self.sess, s)._xunit_old = xunit
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
