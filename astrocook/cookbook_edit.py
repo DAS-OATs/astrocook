@@ -209,9 +209,41 @@ class CookbookEdit(object):
         @return 0
         """
 
+        if col.startswith('all') and expr.startswith('all'):
+            for i, s in enumerate(self.sess._gui._sess_list[::-1]):
+                try:
+                    self.struct_modify(col.replace('all', str(i), 1),
+                                       expr.replace('all', str(i), 1))
+                except:
+                    pass
+            return 0
+            
+        if ',all,' in col and ',all,' in expr:
+            for st in seq:
+                try:
+                    self.struct_modify(col.replace(',all,', ',%s,' % st),
+                                       expr.replace(',all,', ',%s,' % st))
+                except:
+                    pass
+        else:
+            self._struct_modify(col, expr)
+        return 0
+
+
+    def _struct_modify(self, col='', expr=''):
+
         # Reversed to parse sessions with higher number first, and avoid overwriting
         sess_list = self.sess._gui._sess_list[::-1]
         for i, s in enumerate(sess_list):
+            for st in s.seq:
+                struct = getattr(s, st)
+                if struct is not None:
+                    for c in sorted(struct._t.colnames, key=len, reverse=True):
+                        expr = expr.replace('%i,%s,%s' \
+                                            % (len(sess_list)-1-i, st, c),
+                                            str(list(np.array(struct._t[c]))))
+
+            """
             if s.spec is not None:
                 for c in sorted(s.spec._t.colnames, key=len, reverse=True):
                     expr = expr.replace('%i,spec,%s' % (len(sess_list)-1-i, c),
@@ -224,7 +256,7 @@ class CookbookEdit(object):
                 for c in sorted(s.systs._t.colnames, key=len, reverse=True):
                     expr = expr.replace('%i,systs,%s' % (len(sess_list)-1-i, c),
                                         str(list(np.array(s.systs._t[c]))))
-
+            """
         #print(expr)
         #print(len(expr))
         out = expr_eval(ast.parse(expr, mode='eval').body)
