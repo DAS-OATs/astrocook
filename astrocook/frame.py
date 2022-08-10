@@ -389,6 +389,6 @@ class Frame():
         return 0
 
     def _y_scale(self, fact):
-        self.y = self.y * fact
-        self.dy = self.dy * fact
+        self.y = self.y * fact * self.y.unit
+        self.dy = self.dy * fact * self.dy.unit
         return 0
