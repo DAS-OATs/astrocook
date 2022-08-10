@@ -306,7 +306,6 @@ class GUI(object):
         except:
             pass
 
-
         #axc.set_xlim(0, 1)
         #axc.set_ylim(0, 1)
         #print(self._graph_main._graph._zoom)
