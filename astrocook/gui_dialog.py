@@ -916,9 +916,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
             del self._gui._sess_sel._series_sel
         if hasattr(self._gui._sess_sel, '_hwin_sel'):
             del self._gui._sess_sel._hwin_sel
-        print(self._menu.FindItemById(self._dlg_id[4]).IsChecked())
         self._menu.FindItemById(self._dlg_id[4]).Check(False)
-        print(self._menu.FindItemById(self._dlg_id[4]).IsChecked())
         self.Destroy()
         self._gui._refresh(init_cursor=True, init_tab=False)
 
