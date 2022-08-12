@@ -25,6 +25,7 @@ class Feat():
 
 
     def _ccf_compute(self, xmean, deltav):
+        # Incomplete
         self._ccf_xmean = xmean
         self._ccf_deltav = deltav
 
@@ -81,6 +82,7 @@ class Feat():
 
 
     def _systs_logN_tot(self):
+        self._logN_tot = None
         self._dlogN_tot = None
         if hasattr(self, '_N_tot_par'):
             value = self._N_tot_par.value
@@ -88,11 +90,9 @@ class Feat():
             self._logN_tot = np.log10(value)
             if self._N_tot_par.stderr is not None:
                 self._dlogN_tot = 0.5*np.log10((value+stderr)/(value-stderr))
-            #print(self._logN_tot, self._dlogN_tot, 'est')
-        else:
+        elif hasattr(self, '_logN_tot_par'):
             self._logN_tot = self._logN_tot_par.value
             self._dlogN_tot = self._logN_tot_par.stderr
-            #print(self._logN_tot, self._dlogN_tot)
 
 
     def _systs_stats(self):
@@ -158,23 +158,6 @@ class FeatList(object):
             return None
 
 
-    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
-        self._maxs_from_spec(spec, height, prominence)
-        for i, f in enumerate(self._maxs[:-1]):
-            fe = self._maxs[i+1]
-            sel = np.s_[f:fe]
-            modeln = spec._t['model'][sel]/spec._t['cont'][sel]
-            min = np.amin(modeln)
-            cut = np.where(modeln<1-thres*(1-min))
-            if len(cut[0])>0:
-                #plt.plot(spec._t[sel][cut]['x'], spec._t[sel][cut]['model'])
-                self._add(spec._t[sel][cut], systs)
-        self._table_update()
-        #plt.show()
-
-
-
-
     def _load(self, new_dir, **kwargs):
         for file in sorted(os.listdir(new_dir)):
             if 'Icon' not in file:  # Requested when working on Google Drive
@@ -191,21 +174,25 @@ class FeatList(object):
         done = []
         if sel==None:
             l = self._l
-        else:
-            if type(sel)==str:
-                sel_t = []
-                for subs in sel.split(','):
-                    subs_s = subs.split(':')
-                    start = min(len(self._l), int(subs_s[0]))
-                    end = min(len(self._l), int(subs_s[1]))
-                    sel_t += range(start, end)
-                sel = sel_t
+        elif type(sel)==str:
+            sel_t = []
+            for subs in sel.split(','):
+                subs_s = subs.split(':')
+                start = min(len(self._l), int(subs_s[0]))
+                end = min(len(self._l), int(subs_s[1]))
+                sel_t += range(start, end)
+            sel = sel_t
             l = [self._l[s] for s in sel]
+        else:
+            logging.error("Parameter 'sel' must be a string.")
+            return 0
+
         for i, f in enumerate(l):
             if len(f._systs)==0:
                 logging.warning("The feature between %.3f and %.3f does not "
                                 "contain any system." \
                                 % (f._left[0], f._right[0]))
+                return 0
             else:
                 s = max(f._systs.keys())
                 syst = f._systs[s]
@@ -226,7 +213,6 @@ class FeatList(object):
                                     N_other_expr += '+10**%s' % p
                             systs._N_tot_specs[s] = (lines_pref, N_tot, N_other_expr)
                             done.append(s)
-                            #pars.pretty_print()
                 else:
                     try:
                         f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
@@ -251,7 +237,8 @@ class FeatList(object):
 
 
     def _select_isolated(self, thres=1e-1):
-        norm = self._t['y']/self._t['cont']
+        # Incomplete
+        norm = self._t['model']/self._t['cont']
         sel = np.where(norm>1-thres)
 
 
@@ -272,43 +259,42 @@ class FeatList(object):
             c.append(f._left[2])
             c.append(f._right[2])
         self._xleft = xl
-        #self._t = FeatTable(x, m, c, self._check_attr('_xunit'),
-        #                    self._check_attr('_yunit'))
         self._t = at.Table()
         self._t['x'] = at.Column(np.array(x, ndmin=1), dtype=float, unit=self._check_attr('_xunit'))
         self._t['model'] = at.Column(np.array(m, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
         self._t['cont'] = at.Column(np.array(c, ndmin=1), dtype=float, unit=self._check_attr('_yunit'))
-        #print(self)
-        #print(self._t)
-        #for f in self._l:
-        #    print(f._left[0], f._right[0])
-        #print(len(self._t))
+
 
     def _z_lock(self):
         for i, f in enumerate(self._l):
             first = True
             for s in f._systs:
-                #print(s)
                 syst = f._systs[s]
-                #print(f._systs[s]._pars)
                 pars = syst._mod._pars
                 z = 'lines_'+syst._func+'_'+str(s)+'_z'
                 b = 'lines_'+syst._func+'_'+str(s)+'_b'
-                #print(z)
                 if first:
                     zref = z
                     first = False
                     dict = {b: (s, 'vary', False)}
                 elif zref in pars:
-                    #pars.pretty_print()
-                    #pars[z].set(expr = zref+'+%.14f' % (pars[z]-pars[zref]))
                     dict = {z: (s, 'expr', zref+'+%.14f' % (pars[z]-pars[zref])),
                             b: (s, 'vary', False)}
                 f._systs_orig._constrain(dict)
-                    #print(f._systs_orig._constr)
-                    #pars.pretty_print()
-                #print(z, zref)
-        #print(f._systs_orig._constr)
+
+
+    def create(self, spec, systs, thres, height=1e-1, prominence=1e-1):
+        self._maxs_from_spec(spec, height, prominence)
+        for i, f in enumerate(self._maxs[:-1]):
+            fe = self._maxs[i+1]
+            sel = np.s_[f:fe]
+            modeln = spec._t['model'][sel]/spec._t['cont'][sel]
+            min = np.amin(modeln)
+            cut = np.where(modeln<1-thres*(1-min))
+            if len(cut[0])>0:
+                self._add(spec._t[sel][cut], systs)
+        self._table_update()
+
 
 class FeatTable(at.Table):
 
@@ -320,7 +306,7 @@ class FeatTable(at.Table):
                  yunit=None,
                  dtype=float):
 
-        #super(FeatTable, self).__init__()
+        super(FeatTable, self).__init__()
         self['x'] = at.Column(np.array(x, ndmin=1), dtype=dtype, unit=xunit)
         self['model'] = at.Column(np.array(model, ndmin=1), dtype=dtype, unit=yunit)
         self['cont'] = at.Column(np.array(cont, ndmin=1), dtype=dtype, unit=yunit)
