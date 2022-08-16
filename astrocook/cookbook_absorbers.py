@@ -14,7 +14,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy.signal import argrelmin, argrelmax, find_peaks
-from scipy.special import erf, erfc
+from scipy.special import erf, erfc, erfinv
 import sys
 import time
 
@@ -1962,7 +1962,7 @@ class CookbookAbsorbers(object):
         return count
 
 
-    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=1):
+    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=10):
         """ @brief Assign likelihood to absorbers
         @details For each spectral bin, compute the likelihood that it has been
         absorbed by a given species.
@@ -2016,9 +2016,11 @@ class CookbookAbsorbers(object):
                     flux = spec._t[col][sel]
                     err = spec._t['dy'][sel]
                     #er = (cont-flux)/err/np.sqrt(2)/modul
-                    er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
-                         /np.sqrt(2)/modul
-                    er = erf(er)
+                    #er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
+                    #     /np.sqrt(2)/modul
+                    #er = erf(er)
+
+                    er = erf(np.abs((cont-flux)/err)/np.sqrt(2)/modul)
 
                     interp = np.interp(z_int, z[sel], er)
                     interp[z_int<np.min(z[sel])] = np.nan
@@ -2029,7 +2031,8 @@ class CookbookAbsorbers(object):
 
             #like = 1-np.power(1-np.nanprod(abs_int, axis=0), np.sum(~np.isnan(abs_int), axis=0))
             if len(abs_int) > 0:
-                like = 1-np.power(1-np.nanprod(abs_int, axis=0), len(trans))
+                #like = 1-np.power(1-np.nanprod(abs_int, axis=0), len(trans))
+                like = erfinv(np.nanprod(abs_int, axis=0))*np.sqrt(2)*modul
                 likes[s] = like
                 z_likes[s] = z_int
                 if 'like_'+s not in spec._t.colnames:
@@ -2081,7 +2084,7 @@ class CookbookAbsorbers(object):
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
                                  z_end=6, binz=1e-2, dz=1e-4,
-                                 modul=1, thres=0.997, distance=10,
+                                 modul=10, thres=5, distance=3,
                                  logN=logN_def, b=b_def, resol=resol_def,
                                  chi2r_thres=np.inf, dlogN_thres=np.inf,
                                  refit_n=0, chi2rav_thres=1e-2,
@@ -2211,7 +2214,7 @@ class CookbookAbsorbers(object):
 
 
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            dz=1e-4, modul=1, thres=0.997, distance=10,
+                            dz=1e-4, modul=10, thres=5, distance=3,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
@@ -2274,7 +2277,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_like(self, series='Ly-a', thres=0.997, distance=10, logN=logN_def,
+    def _systs_like(self, series='Ly-a', thres=0.997, distance=3, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
                     max_nfev=max_nfev_def, append=True):
@@ -2336,7 +2339,7 @@ class CookbookAbsorbers(object):
                 """
 
                 p0, _ = find_peaks(likes[s][w], distance=distance)
-                #plt.scatter(z_int[w][p0], likes[s][w][p0])
+                plt.scatter(z_int[w][p0], likes[s][w][p0])
 
                 """
                 # Check if likelihood peaks are higher than those of all other
@@ -2571,7 +2574,7 @@ class CookbookAbsorbers(object):
         return sess
 
     def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            sigma=1, distance=10, append=True):
+                            sigma=1, distance=3, append=True):
         """ @brief New systems from error function
         @details TBD
         @param series Series of transitions
@@ -2594,8 +2597,9 @@ class CookbookAbsorbers(object):
             return 0
 
         modul = 5
-        thres = erf(sigma/np.sqrt(2)/modul)
+        #thres = erf(sigma/np.sqrt(2)/modul)
         #print(thres)
+        thres = sigma
         distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
                                  z_end=z_end, modul=modul, thres=thres,
@@ -2625,15 +2629,16 @@ class CookbookAbsorbers(object):
             z_start, z_end = z_check(zem, z_start, z_end, s)
             self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
                                      sigma=sigma)
-        self.systs_fit(refit_n=1)
+        self.systs_fit(refit_n=1)#, max_nfev=0)
         for i in range(iter_n):
             for s in series.split(';'):
                 z_start, z_end = z_check(zem, z_start, z_end, s)
                 self._systs_new_from_erf(series=s, col='deabs',
                                          z_start=z_start, z_end=z_end, sigma=sigma)
-            self.systs_fit(refit_n=1)
+            self.systs_fit(refit_n=1)#, max_nfev=0)
             resid_peaks()
         #plt.show()
+
 
     def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
         """ @brief Fit the Lyman-alpha forest
