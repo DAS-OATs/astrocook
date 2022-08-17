@@ -2084,7 +2084,7 @@ class CookbookAbsorbers(object):
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
                                  z_end=6, binz=1e-2, dz=1e-4,
-                                 modul=10, thres=5, distance=3,
+                                 modul=10, sigma=2, distance=3,
                                  logN=logN_def, b=b_def, resol=resol_def,
                                  chi2r_thres=np.inf, dlogN_thres=np.inf,
                                  refit_n=0, chi2rav_thres=1e-2,
@@ -2098,7 +2098,7 @@ class CookbookAbsorbers(object):
         @param binz Bin size to group existing redshifts
         @param dz Threshold for redshift coincidence
         @param modul Modulation of the error function
-        @param thres Threshold for accepting
+        @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
@@ -2121,7 +2121,7 @@ class CookbookAbsorbers(object):
             binz = float(binz)
             dz = float(dz)
             modul = float(modul)
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2199,7 +2199,7 @@ class CookbookAbsorbers(object):
                 """
                 self._likes = likes
                 self._z_likes = z_likes
-                self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+                self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
                                  dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         if compressed:
@@ -2214,7 +2214,7 @@ class CookbookAbsorbers(object):
 
 
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            dz=1e-4, modul=10, thres=5, distance=3,
+                            dz=1e-4, modul=10, sigma=2, distance=3,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
@@ -2228,7 +2228,7 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param modul Modulation of the error function
-        @param thres Threshold for accepting likelihood
+        @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
@@ -2250,7 +2250,7 @@ class CookbookAbsorbers(object):
                 z_end = np.inf
             dz = float(dz)
             modul = float(modul)
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2271,19 +2271,19 @@ class CookbookAbsorbers(object):
 
         self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
                                                     modul)
-        self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+        self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         return 0
 
 
-    def _systs_like(self, series='Ly-a', thres=0.997, distance=3, logN=logN_def,
+    def _systs_like(self, series='Ly-a', sigma=2, distance=3, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
                     max_nfev=max_nfev_def, append=True):
 
         try:
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2326,8 +2326,8 @@ class CookbookAbsorbers(object):
                 #print(likes[s])
                 z_int = z_likes[s]
                 #print(s)
-                plt.plot(z_int, likes[s])
-                w = np.where(likes[s]>thres)
+                #plt.plot(z_int, likes[s])
+                w = np.where(likes[s]>sigma)
                 #print(len(w[0]))
                 """
                 for s_o in series_o:
@@ -2339,7 +2339,7 @@ class CookbookAbsorbers(object):
                 """
 
                 p0, _ = find_peaks(likes[s][w], distance=distance)
-                plt.scatter(z_int[w][p0], likes[s][w][p0])
+                #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
                 """
                 # Check if likelihood peaks are higher than those of all other
@@ -2596,13 +2596,10 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        modul = 5
-        #thres = erf(sigma/np.sqrt(2)/modul)
-        #print(thres)
-        thres = sigma
+        modul = 10
         distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
-                                 z_end=z_end, modul=modul, thres=thres,
+                                 z_end=z_end, modul=modul, sigma=sigma,
                                  distance=distance, append=append)
 
         return 0
