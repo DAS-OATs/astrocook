@@ -54,5 +54,5 @@ def msg_z_range(z_list):
                    % (np.min(z_list), np.max(z_list))
 
 def enum_tqdm(iter, total, msg):
-    return enumerate(tqdm(iter, ncols=120, total=total, leave=False,
+    return enumerate(tqdm(iter, total=total, leave=False,
                           desc="[INFO] "+msg))
