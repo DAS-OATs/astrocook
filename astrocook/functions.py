@@ -370,6 +370,13 @@ def expr_eval(node):
         #raise TypeError(node)
         return expr_check(node)
 
+def lines_voigt_N_tot(x, z, N_tot, N_other, b, btur, series='Ly_a'):
+#def lines_voigt_N_tot(x, z, logN_tot, logN_other, b, btur, series='Ly_a'):
+    logN = np.log10(N_tot-N_other)
+    if logN == -np.inf:
+        logN = pars_std_d['logN']
+    return lines_voigt(x, z, logN, b, btur, series)
+
 
 def log2_range(start, end, step):
     start = np.log2(start)
@@ -597,3 +604,10 @@ def class_unmute(obj, cl, targ):
         for i in obj:
             if obj[i]==str(cl):
                 obj[i] = targ
+
+def x_convert(x, zem=0, xunit=au.km/au.s):
+    xem = (1+zem) * 121.567*au.nm
+    equiv = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
+              lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
+    return x.to(xunit, equivalencies=equiv)

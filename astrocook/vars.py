@@ -78,7 +78,7 @@ graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
              #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
              #'systs_z_series',
-             'spec_h2o_reg'
+             'spec_h2o_reg',
              ]
 graph_cols_sel = ''
 
@@ -133,9 +133,9 @@ psf_gauss_d = {
 forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
                       'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
-x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
-y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal', 'sigma'])
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength', 'OPT_WAVE'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal', 'OPT_COUNTS'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal', 'sigma', 'OPT_COUNTS_SIG'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 

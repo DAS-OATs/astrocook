@@ -312,6 +312,9 @@ class GUIDialogMini(wx.Dialog):
         #self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
         self._init()
+        self._dlg_id = self._gui._menu_dlg_id
+        self._menu = self._gui._panel_sess._menu._view._menu
+
 
     def _init(self):
         self._panel = wx.Panel(self)
@@ -427,6 +430,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[1]).Check(False)
 
     def _refresh(self):
         self._ctrl_defs.SetValue(self._defs_str)
@@ -557,6 +561,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[3]).Check(False)
 
 
     def _refresh(self):
@@ -663,7 +668,7 @@ class GUIDialogMiniLog(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
-
+        self._menu.FindItemById(self._dlg_id[2]).Check(False)
 
     def _on_save(self, e=None, path=None):
         if path is None:
@@ -776,6 +781,7 @@ class GUIDialogMiniMeta(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[0]).Check(False)
 
 
     def _refresh(self):
@@ -816,6 +822,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._z = z
         self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
 
     def _box_ctrl(self):
@@ -895,7 +902,6 @@ class GUIDialogMiniSystems(GUIDialogMini):
             self._cursor_button.SetLabel("Show cursor")
         self._shown = not self._shown
 
-
     def _on_stick(self, e):
         self._gui._graph_main._on_cursor_stick(e)
 
@@ -910,6 +916,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
             del self._gui._sess_sel._series_sel
         if hasattr(self._gui._sess_sel, '_hwin_sel'):
             del self._gui._sess_sel._hwin_sel
+        self._menu.FindItemById(self._dlg_id[4]).Check(False)
+        self.Destroy()
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 

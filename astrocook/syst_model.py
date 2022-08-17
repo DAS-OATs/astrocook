@@ -45,6 +45,7 @@ class SystModel(LMComposite):
             #for p in self._pars:
             #    if '_192' in p:
             #        print(self._pars[p])
+            #print('before')
             #self._pars.pretty_print()
             if 'max_nfev' in fit_kws:
                 max_nfev = fit_kws['max_nfev']
@@ -96,6 +97,8 @@ class SystModel(LMComposite):
             #print(fit.nfev)
             #print(fit.result.success)
             #print(fit.result.message)
+            #print(fit.result.covar)
+            #print(fit.result.errorbars)
             #print(fit.redchi)
             #print(len(self._xf))
             #print(fit.jac.shape)
@@ -314,7 +317,7 @@ class SystModel(LMComposite):
             cond, pars_cond = False, False
             for p,v in self._constr.items():
                 for mod_p,mod_v in mod._pars.items():
-                    cond = cond or v==mod_p
+                    cond = cond or v.split('*')[0]==mod_p
             if cond: pars_cond = True
             if time_check:
                 print('1 %.4f' % (time.time()-ttt))
@@ -336,7 +339,6 @@ class SystModel(LMComposite):
             if time_check:
                 print('4 %.4f' % (time.time()-ttt))
                 ttt = time.time()
-            #print(s['id'], cond)
             if cond and self._active==mod._active: #y_cond or pars_cond:
                 #print('mod')
                 #mod._pars.pretty_print()
@@ -346,6 +348,7 @@ class SystModel(LMComposite):
                 if time_check:
                     print('b %.4f' % (time.time()-ttt))
                     ttt = time.time()
+
                 self._group *= mod._group
                 if time_check:
                     print('a %.4f' % (time.time()-ttt))
@@ -364,11 +367,13 @@ class SystModel(LMComposite):
                     ttt = time.time()
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
+                        if all([p in self._pars for p in v.split('+10**')[1:]]):
+                            self._pars[p].set(expr = v)
                         if v.split('+')[0] in self._pars:
                             self._pars[p].set(expr = v)
                         #"""
                         #self._pars[p].expr = v
-                        if v != '':
+                        if v != '' and '**' not in v:
                             vs = v.split('*')
                             f = float(vs[1]) if len(vs)==2 else 1
                             try:
@@ -459,7 +464,11 @@ class SystModel(LMComposite):
         self._lines = line
 
 
-    def _make_lines_psf(self):
+    def _make_lines_psf(self, N_tot=False):
+        if N_tot:
+            lines_func = lines_voigt_N_tot
+        else:
+            lines_func = self._lines_func
         time_check = False
         if time_check:
             tt = time.time()
@@ -468,7 +477,7 @@ class SystModel(LMComposite):
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
-        line = LMModel(self._lines_func, prefix=self._lines_pref,
+        line = LMModel(lines_func, prefix=self._lines_pref,
                        series=self._series)
         if time_check:
             print('b %.4f' % (time.time()-tt))
@@ -494,7 +503,6 @@ class SystModel(LMComposite):
             d['resol'] = self._resol
 
         self._pars = line_psf.make_params()
-        #print(d['z'])
         self._pars.add_many(
             #(self._lines_pref+'z', d['z'], d['z_vary'], 0, 10,
             (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-d['z_min'],
@@ -507,6 +515,19 @@ class SystModel(LMComposite):
              d['btur_max'], d['btur_expr']),
             (self._psf_pref+'resol', d['resol'], d['resol_vary'],
              d['resol_min'], d['resol_max'], d['resol_expr']))
+
+        if N_tot:
+            self._pars.add_many(
+                (self._lines_pref+'N_tot', 10**d['logN_min'], d['logN_vary'],
+                 10**d['logN_min'], 10**d['logN_max'], ''),
+                (self._lines_pref+'N_other', 10**d['logN_min'], True,
+                 10**d['logN_min'], 10**d['logN_max'], ''))
+        """
+                (self._lines_pref+'logN_tot', d['logN_min'], d['logN_vary'],
+                 d['logN_min'], d['logN_max'], ''),
+                (self._lines_pref+'logN_other', d['logN_min'], True,
+                 d['logN_min'], d['logN_max'], ''))
+        """
 
         self._lines = line_psf
 
@@ -580,9 +601,11 @@ class SystModel(LMComposite):
         #print('xs', len(xs))
         c = []
         t = thres
-        while len(c)==0:
+        j = 0
+        while len(c)==0 and j<1000:
             c = np.where(ys<1-t)[0]
             t = t*0.5
+            j += 1
 
         #c = np.where(ys<1-thres)[0]
         #plt.plot(xs, ys)
@@ -623,7 +646,46 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None, defs=None):
+    def _make_N_tot(self, N_tot_specs=(None, None, None)):
+        lines_pref, N_tot, N_other_expr = N_tot_specs
+        if lines_pref is None: lines_pref = self._lines_pref
+        pars = self._pars
+        logN = pars[lines_pref+'logN']
+        if N_tot is None:
+            N_tot = np.sum([10**pars[p] for p in pars if 'logN' in p])
+        N_other = N_tot-10**logN
+        if N_other_expr is None:
+            N_other_expr = ''
+            for p in pars:
+                if 'logN' in p and 'logN_' not in p and p != lines_pref+'logN':
+                    N_other_expr += '+10**%s' % p
+                    #N_other_expr += '%s' % p
+
+        self._pars[lines_pref+'logN'].vary = False
+        if lines_pref+'N_tot' not in self._pars:
+            self._pars.add_many(
+                (lines_pref+'N_tot', N_tot, True, N_other,
+                 10**logN.max, ''))
+        else:
+            self._pars[lines_pref+'N_tot'].value = N_tot
+            N_tot_min = N_other+0.5*10**self._pars[lines_pref+'logN']
+            if N_tot_min < 1e10: N_tot_min = 1e10
+            self._pars[lines_pref+'N_tot'].min = N_tot_min
+        if lines_pref+'N_other' not in self._pars:
+            self._pars.add_many(
+                (lines_pref+'N_other', N_other, True, 10**logN.min,
+                N_tot, N_other_expr))
+        else:
+            self._pars[lines_pref+'N_other'].value = N_other
+            self._pars[lines_pref+'N_other'].expr = N_other_expr
+            self._pars[lines_pref+'N_other'].max = N_tot\
+                -0.5*10**self._pars[lines_pref+'logN']
+
+
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
+                   defs=None, N_tot=False, N_tot_specs=(None, None, None)):
+
+
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
@@ -642,8 +704,10 @@ class SystModel(LMComposite):
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
 
+        #N_tot = '47' == str(self._id)
+
         #self._make_lines()
-        self._make_lines_psf()
+        self._make_lines_psf(N_tot)
         if time_check:
             print('b %.4f' % (time.time()-tt))
             tt = time.time()
@@ -665,3 +729,6 @@ class SystModel(LMComposite):
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
         self._xf, self._yf, self._wf = self._xr, self._yr, self._wr
+
+        if N_tot:
+            self._make_N_tot(N_tot_specs)

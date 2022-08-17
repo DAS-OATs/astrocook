@@ -14,7 +14,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy.signal import argrelmin, argrelmax, find_peaks
-from scipy.special import erf, erfc
+from scipy.special import erf, erfc, erfinv
 import sys
 import time
 
@@ -423,6 +423,20 @@ class CookbookAbsorbers(object):
         #    mod = m['mod']
             #print(mod.func)
 
+        # Collect existing specifications for logN_tot
+        """
+        N_tot_specs_dict = {}
+        for m in systs._mods_t['mod']:
+            if hasattr(m, '_N_tot_spec'):
+                N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
+        print(N_tot_specs_dict)
+        """
+
+        N_tot_specs_d = {}
+        if hasattr(systs, '_N_tot_specs'):
+            N_tot_specs_d = systs._N_tot_specs
+        #print(N_tot_specs_d)
+
         #print(systs._constr)
         if not fast:
 
@@ -458,14 +472,26 @@ class CookbookAbsorbers(object):
                         mod._id = np.max(systs_t['id'])+1
                     #print(self.sess.defs.dict['voigt'])
                     #print(len(systs._mods_t), end=' ')
+
+                    # Implement existing specifications for logN_tot
+                    if mod._id in N_tot_specs_d:
+                        N_tot = True
+                        N_tot_specs = N_tot_specs_d[mod._id]
+                    else:
+                        N_tot = False
+                        N_tot_specs = (None, None, None)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs.dict['voigt'])
+                                   defs=self.sess.defs.dict['voigt'],
+                                   N_tot=N_tot, N_tot_specs=N_tot_specs)
+                    #mod._pars.pretty_print()
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+                    #mod._pars.pretty_print()
                     self._mods_update(mod)
                     #print(len(systs._mods_t), time.time()-tt)
                     #tt = time.time()
+
                 else:
                     systs._id = np.max(systs._t['id'])+1
 
@@ -477,7 +503,7 @@ class CookbookAbsorbers(object):
 
         spec.t['fit_mask'] = False
         active_c = 0
-        for m in systs._mods_t:
+        for i, m in enumerate(systs._mods_t):
             mod = m['mod']
             try:
                 active = mod._active
@@ -489,13 +515,16 @@ class CookbookAbsorbers(object):
                 active_c += 1
                 c = []
                 t = 1e-2
-                while len(c)==0:
+                j = 0
+                while len(c)==0 and j<1000:
                     try:
                         c = np.where(mod._yl<1-t)[0]
                     except:
                         c = np.where(mod._ys<1-t)[0]
                     t = t*0.5
-                #print(c)
+                    #print(i, j, len(c))
+                    j += 1
+
                 spec.t['fit_mask'][c] = True
 
 
@@ -586,7 +615,7 @@ class CookbookAbsorbers(object):
                                 "one." % z)
             return None
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                          None, resol, None, None, systs._id])
+                          None, 0.0, None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z)
@@ -674,7 +703,6 @@ class CookbookAbsorbers(object):
             if mod is not None:
                 systs_n += 1
                 self._systs_update(mod)
-
                 id_list.append(mod._id)
                 if k is not None:
                     self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
@@ -937,10 +965,20 @@ class CookbookAbsorbers(object):
                 pref = 'lines_voigt_'+str(i)
                 systs._t[iw]['z'] = mod._pars[pref+'_z'].value
                 systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
-                systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
-                systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
+                if pref+'_N_tot' in mod._pars:
+                    logN = np.log10(mod._pars[pref+'_N_tot'].value\
+                                    -mod._pars[pref+'_N_other'].value)
+                    if np.isnan(logN):
+                        logN = 10
+                    systs._t[iw]['logN'] = logN
+                    systs._t[iw]['dlogN'] = np.nan
+                else:
+                    systs._t[iw]['logN'] = mod._pars[pref+'_logN'].value
+                    systs._t[iw]['dlogN'] = mod._pars[pref+'_logN'].stderr
                 systs._t[iw]['b'] = mod._pars[pref+'_b'].value
                 systs._t[iw]['db'] = mod._pars[pref+'_b'].stderr
+                systs._t[iw]['btur'] = mod._pars[pref+'_btur'].value
+                systs._t[iw]['dbtur'] = mod._pars[pref+'_btur'].stderr
                 try:
                     systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:
@@ -1030,24 +1068,42 @@ class CookbookAbsorbers(object):
     def feats_z_lock(self):
         """ @brief Lock redshifts by absorption features
         @details Lock the difference of systems redshift by absorption features.
-        @param thres Threshold for cutting the model when it gets close to continuum, normalized to continuum
-        @param height Minimum height for the local maxima to count as boundaries, normalized to continuum
-        @param prominence Minimum prominence for the local maxima to count as boundaries, normalized to continuum
         @return 0
         """
 
-        """
-        try:
-            thres = float(thres)
-        except:
-            logging.error(msg_param_fail)
-            return 0
-        """
         self.sess.feats._z_lock()
         logging.info("I've locked redshifts by absorption features.")
 
         return 0
 
+
+    def feats_logN_tot(self, set_specs=True, sel=None):
+        """ @brief Prepare features to fit total column density
+        @details The last system in each feature is prepared to be modeled as
+        a function of the total column density of the feature itself, to obtain
+        realistic errors on the total column density.
+        @param set_pars Set the parameters to model the systems (if False, total column densities will be only extracted from the models)
+        @param sel Feature selected to be modeled in this way (None to select all)
+        @return 0
+        """
+
+        self.sess.feats._logN_tot(self.sess.systs, set_specs, sel)
+        if set_specs:
+            self._mods_recreate()
+            for m in self.sess.systs._mods_t:
+                #m._pars.pretty_print()
+                self._systs_update(m['mod'])
+                for i in m['id']:
+                    self.sess.systs._d[i]._mod = m['mod']
+
+            #for s in self.sess.systs._d:
+            #    self.sess.systs._d[s]._mod._pars.pretty_print()
+            self.sess.feats._systs_update(self.sess.systs)
+        #for f in self.sess.feats._l:
+        #    s = max(f._systs.keys())
+        logging.info("I've prepared features to fit total column density.")
+
+        return 0
 
 
     def mods_ccf_max(self, vstart=-5, vend=5, dv=0.01, weight=False):
@@ -1906,7 +1962,7 @@ class CookbookAbsorbers(object):
         return count
 
 
-    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=1):
+    def _abs_like(self, series='Ly-a', col='y', z_start=0, z_end=6, dz=1e-4, modul=10):
         """ @brief Assign likelihood to absorbers
         @details For each spectral bin, compute the likelihood that it has been
         absorbed by a given species.
@@ -1960,9 +2016,11 @@ class CookbookAbsorbers(object):
                     flux = spec._t[col][sel]
                     err = spec._t['dy'][sel]
                     #er = (cont-flux)/err/np.sqrt(2)/modul
-                    er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
-                         /np.sqrt(2)/modul
-                    er = erf(er)
+                    #er = (np.log(flux)-np.log(cont))/(err*(-1/flux))\
+                    #     /np.sqrt(2)/modul
+                    #er = erf(er)
+
+                    er = erf(np.abs((cont-flux)/err)/np.sqrt(2)/modul)
 
                     interp = np.interp(z_int, z[sel], er)
                     interp[z_int<np.min(z[sel])] = np.nan
@@ -1973,7 +2031,8 @@ class CookbookAbsorbers(object):
 
             #like = 1-np.power(1-np.nanprod(abs_int, axis=0), np.sum(~np.isnan(abs_int), axis=0))
             if len(abs_int) > 0:
-                like = 1-np.power(1-np.prod(abs_int, axis=0), len(trans))
+                #like = 1-np.power(1-np.nanprod(abs_int, axis=0), len(trans))
+                like = erfinv(np.nanprod(abs_int, axis=0))*np.sqrt(2)*modul
                 likes[s] = like
                 z_likes[s] = z_int
                 if 'like_'+s not in spec._t.colnames:
@@ -1981,7 +2040,7 @@ class CookbookAbsorbers(object):
                     spec._t['like_'+s] = np.empty(len(spec._t))
                     spec._t['like_'+s][:] = np.nan
                 else:
-                    logging.warning("I'm updating column '%s' in spectrum." % s)
+                    logging.warning("I'm updating column 'like_%s' in spectrum." % s)
                 for t in trans:
                     """
                     if t not in spec._t.colnames:
@@ -2015,7 +2074,7 @@ class CookbookAbsorbers(object):
             spec._t['like'] = np.empty(len(spec._t))
             spec._t['like'][:] = np.nan
         else:
-            logging.warning("I'm updating column '%s' in spectrum." % t)
+            logging.warning("I'm updating column 'like' in spectrum.")
         for c in spec._t.colnames:
             if 'like_' in c:
                 spec._t['like'] = np.fmax(spec._t['like'], spec._t[c])
@@ -2025,7 +2084,7 @@ class CookbookAbsorbers(object):
 
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
                                  z_end=6, binz=1e-2, dz=1e-4,
-                                 modul=1, thres=0.997, distance=10,
+                                 modul=10, sigma=2, distance=3,
                                  logN=logN_def, b=b_def, resol=resol_def,
                                  chi2r_thres=np.inf, dlogN_thres=np.inf,
                                  refit_n=0, chi2rav_thres=1e-2,
@@ -2039,7 +2098,7 @@ class CookbookAbsorbers(object):
         @param binz Bin size to group existing redshifts
         @param dz Threshold for redshift coincidence
         @param modul Modulation of the error function
-        @param thres Threshold for accepting
+        @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
@@ -2062,7 +2121,7 @@ class CookbookAbsorbers(object):
             binz = float(binz)
             dz = float(dz)
             modul = float(modul)
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2140,7 +2199,7 @@ class CookbookAbsorbers(object):
                 """
                 self._likes = likes
                 self._z_likes = z_likes
-                self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+                self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
                                  dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         if compressed:
@@ -2155,7 +2214,7 @@ class CookbookAbsorbers(object):
 
 
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            dz=1e-4, modul=1, thres=0.997, distance=10,
+                            dz=1e-4, modul=10, sigma=2, distance=3,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
@@ -2169,7 +2228,7 @@ class CookbookAbsorbers(object):
         @param z_end End redshift
         @param dz Threshold for redshift coincidence
         @param modul Modulation of the error function
-        @param thres Threshold for accepting likelihood
+        @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
@@ -2191,7 +2250,7 @@ class CookbookAbsorbers(object):
                 z_end = np.inf
             dz = float(dz)
             modul = float(modul)
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2212,19 +2271,19 @@ class CookbookAbsorbers(object):
 
         self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
                                                     modul)
-        self._systs_like(series, thres, distance, logN, b, resol, chi2r_thres,
+        self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         return 0
 
 
-    def _systs_like(self, series='Ly-a', thres=0.997, distance=10, logN=logN_def,
+    def _systs_like(self, series='Ly-a', sigma=2, distance=3, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
                     max_nfev=max_nfev_def, append=True):
 
         try:
-            thres = float(thres)
+            sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
             if logN is not None:
                 logN = float(logN)
@@ -2268,7 +2327,7 @@ class CookbookAbsorbers(object):
                 z_int = z_likes[s]
                 #print(s)
                 #plt.plot(z_int, likes[s])
-                w = np.where(likes[s]>thres)
+                w = np.where(likes[s]>sigma)
                 #print(len(w[0]))
                 """
                 for s_o in series_o:
@@ -2305,8 +2364,9 @@ class CookbookAbsorbers(object):
                 #print(p0)
                 #print(p0[np.where(sel)])
                 """
-
+                #print(z_int[w][p0])
                 x_w = to_x(z_int[w][p0], trans[0])
+                #print(x_w)
                 psel = []
                 for p, x in zip(p0, x_w):
                     c = np.abs(x - spec._t['x']).argmin()
@@ -2514,7 +2574,7 @@ class CookbookAbsorbers(object):
         return sess
 
     def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            sigma=1, distance=10, append=True):
+                            sigma=1, distance=3, append=True):
         """ @brief New systems from error function
         @details TBD
         @param series Series of transitions
@@ -2536,12 +2596,10 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        modul = 5
-        thres = erf(sigma/np.sqrt(2)/modul)
-        #print(thres)
+        modul = 10
         distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
-                                 z_end=z_end, modul=modul, thres=thres,
+                                 z_end=z_end, modul=modul, sigma=sigma,
                                  distance=distance, append=append)
 
         return 0
@@ -2557,17 +2615,26 @@ class CookbookAbsorbers(object):
                 z_end = zem
             return z_start, z_end
 
+        def resid_peaks(std=10):
+            spec = self.sess.spec
+            #spec._gauss_convolve(std=std, input_col='deabs', output_col='deabs_mod')
+            spec.t['deabs_mod'] = np.maximum(1, spec.t['deabs'])
+            p, _ = find_peaks(spec.t['deabs_mod'], prominence=0.05)
+            #print(np.array(spec._t['x'][p]))
+
         for s in series.split(';'):
             z_start, z_end = z_check(zem, z_start, z_end, s)
             self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
                                      sigma=sigma)
-        self.systs_fit(refit_n=1)
+        self.systs_fit(refit_n=1)#, max_nfev=0)
         for i in range(iter_n):
             for s in series.split(';'):
                 z_start, z_end = z_check(zem, z_start, z_end, s)
                 self._systs_new_from_erf(series=s, col='deabs',
                                          z_start=z_start, z_end=z_end, sigma=sigma)
-            self.systs_fit(refit_n=1)
+            self.systs_fit(refit_n=1)#, max_nfev=0)
+            resid_peaks()
+        #plt.show()
 
 
     def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):

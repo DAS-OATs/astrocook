@@ -2,7 +2,8 @@
 #locale.setlocale(locale.LC_ALL, 'en_US')
 #import wx
 #wx.Locale(wx.LANGUAGE_DEFAULT)
-version = "1.0.0"
+version = "1.5.1"
+current_year = 2022
 
 from .session import Session
 from .syst_list import SystList
