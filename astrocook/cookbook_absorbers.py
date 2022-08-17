@@ -2665,7 +2665,7 @@ class CookbookAbsorbers(object):
             z_end = zem
 
         self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
-
+        #plt.show()
         return 0
 
 
