@@ -57,20 +57,22 @@ class SystModel(LMComposite):
                     (x0, self._xf, series=self._series, resol=self._resol,
                     spec=self._spec, *args, **kwargs)
 
-            both = True
-            jacobian = False
+            both = False
+            jacobian = True
             if jacobian:
                 fit_kws['jac'] = _jac
             #x0 = [self._pars['lines_voigt_0_z'], self._pars['lines_voigt_0_logN'], self._pars['lines_voigt_0_b']]
             col = 1
             systn = '0'
             systsel = len([p for p in self._pars if 'z' in p and systn in p])
+            """
             if systsel:
-                print(pars)
+                #print(pars)
                 if jacobian and not both:
                     plt.plot(self._xf, _jac(pars)[:,col])
                 if both:
                     plt.plot(self._xf, _jac(pars)[:,col], color='red')
+            """
             fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
@@ -98,6 +100,7 @@ class SystModel(LMComposite):
             #print(len(self._xf))
             #print(fit.jac.shape)
             #print(fit.jac)
+            """
             if systsel and not jacobian:
                 if not jacobian and not both:
                     plt.plot(self._xf, fit.jac[:,col])
@@ -106,6 +109,7 @@ class SystModel(LMComposite):
                         plt.plot(self._xf, fit.jac[:,col], color='blue')
                     except:
                         pass
+            """
             time_end = datetime.datetime.now()
             self._pars = fit.params
             #for p in self._pars:
@@ -115,7 +119,7 @@ class SystModel(LMComposite):
             self._ys = self.eval(x=self._xs, params=self._pars)
             #ys2 = self.eval(x=self._xs, params=pars2)
             #plt.plot(self._xs, (ys2-self._ys)/diff[col]*59, color='blue')
-            plt.show()
+            #plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic
