@@ -63,7 +63,7 @@ class SystModel(LMComposite):
                 fit_kws['jac'] = _jac
             #x0 = [self._pars['lines_voigt_0_z'], self._pars['lines_voigt_0_logN'], self._pars['lines_voigt_0_b']]
             col = 1
-            systn = '15'
+            systn = '0'
             systsel = len([p for p in self._pars if 'z' in p and systn in p])
             if systsel:
                 print(pars)
@@ -115,7 +115,7 @@ class SystModel(LMComposite):
             self._ys = self.eval(x=self._xs, params=self._pars)
             #ys2 = self.eval(x=self._xs, params=pars2)
             #plt.plot(self._xs, (ys2-self._ys)/diff[col]*59, color='blue')
-            #plt.show()
+            plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic

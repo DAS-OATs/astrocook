@@ -70,7 +70,8 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
 
     #print('before', a)
     if deriv:
-        dtau0_dN = np.sqrt(np.pi) * atom * xem / b_qs
+        print("%.3e" % (N * np.log(np.log10(N))))
+        dtau0_dlogN = np.sqrt(np.pi) * atom * xem / b_qs * N * np.log(np.log10(N))
         dtau0_db = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * b
         dtau0_dbtur = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * btur
 
@@ -98,7 +99,7 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     u = u * u_f
     #print(a)
     if deriv:
-        dtau0_dN = dtau0_dN * tau0_f * 1.35e16
+        dtau0_dlogN = dtau0_dlogN * tau0_f #* 1.35e16
         dtau0_db = dtau0_db * tau0_f * 5e1
         dtau0_dbtur = dtau0_dbtur * tau0_f
 
@@ -110,7 +111,7 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
         du_dbtur = du_dbtur * u_f
 
         return tau0, a, u, \
-            (dtau0_dN, dtau0_db, dtau0_dbtur), \
+            (dtau0_dlogN, dtau0_db, dtau0_dbtur), \
             (da_db, da_dbtur),  (du_dz, du_db, du_dbtur)
     else:
         return tau0, a, u
@@ -284,13 +285,13 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
         btur = btur * au.km/au.s
 
         dI_dz = np.zeros(len(x))
-        dI_dN = np.zeros(len(x))
+        dI_dlogN = np.zeros(len(x))
         dI_db = np.zeros(len(x))
         dI_dbtur = np.zeros(len(x))
         #print('jac', z, N, b)
         for t in trans_parse(series):
             tau0, a, u, \
-                (dtau0_dN, dtau0_db, dtau0_dbtur), \
+                (dtau0_dlogN, dtau0_db, dtau0_dbtur), \
                 (da_db, da_dbtur),  (du_dz, du_db, du_dbtur) \
                 = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
                                          btur.value, t, deriv=True)
@@ -301,24 +302,24 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
             dI_dF = -tau0 * np.exp(-tau0 * F)
 
             dI_dz += dI_dF*dF_du*du_dz
-            dI_dN += dI_dtau0*dtau0_dN
+            dI_dlogN += dI_dtau0*dtau0_dlogN
             dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
             dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
 
         dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
-        dI_dN = convolve_simple(dI_dN, psf_gauss(x.value, resol, spec))
+        dI_dlogN = convolve_simple(dI_dlogN, psf_gauss(x.value, resol, spec))
         dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
 
         """
-    print(np.array([dI_dz, dI_dN, dI_db]).T)
-    return np.array([dI_dz, dI_dN, dI_db]).T#, dI_dbtur])
+    print(np.array([dI_dz, dI_dlogN, dI_db]).T)
+    return np.array([dI_dz, dI_dlogN, dI_db]).T#, dI_dbtur])
         """
         if i==0:
-            J = np.array([dI_dz, dI_dN, dI_db])
+            J = np.array([dI_dz, dI_dlogN, dI_db])
         else:
             #print(J)
             J = np.append(J, [dI_dz], axis=0)
-            J = np.append(J, [dI_dN], axis=0)
+            J = np.append(J, [dI_dlogN], axis=0)
             J = np.append(J, [dI_db], axis=0)
             #print(J)
     #print(J)
