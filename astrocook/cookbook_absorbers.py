@@ -1156,8 +1156,61 @@ class CookbookAbsorbers(object):
         self.sess.systs._collapse()
         return 0
 
-    def syst_fit(self, num=1, refit_n=0, chi2rav_thres=1e-2,
+    def syst_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
+        """ @brief Fit an individual systems
+        @details Fit a system, freezing the components of all other systems
+        @param id System id
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+        try:
+            id = int(id)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = int(max_nfev)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+        self.sess.systs._freeze_pars(exclude=[id])
+        self.systs_fit(refit_n)
+        self.sess.systs._unfreeze_pars(exclude=[id])
+        self._spec_update()
+
+        return 0
+
+
+    def group_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
+                  max_nfev=max_nfev_def):
+        """ @brief Fit a group systems
+        @details Fit together all systems that are grouped to the selected system
+        @param id System id
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+        try:
+            id = int(id)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = int(max_nfev)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        mods_t = self.sess.systs._mods_t
+        mod = mods_t['mod'][id in mods_t['id']]
+        self._systs_cycle(mod)
+        self._spec_update()
+
+        return 0
+
+
+    def syst_fit_old(self, num=1, refit_n=0, chi2rav_thres=1e-2,
+                     max_nfev=max_nfev_def):
         """ @brief Fit a systems
         @details Fit all Voigt model from a list of systems.
         @param num Number of the system in the list
@@ -1179,7 +1232,7 @@ class CookbookAbsorbers(object):
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
         #self._syst_fit(mod)
-        self._systs_cycle()
+        self._systs_cycle(mod)
         self._spec_update()
 
         return 0

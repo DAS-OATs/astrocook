@@ -825,6 +825,7 @@ class GUITableSystList(GUITable):
 
 
     def _on_fit(self, event):
+        # Deprecated
         row = self._gui._tab_popup._event.GetRow()
         sess = self._gui._sess_sel
         """
@@ -839,7 +840,28 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
 
+    def _on_syst_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_group_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit group', 'group_fit',
+                              params_last=params)
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_fit_dialog(self, event):
+        # Deprecated
         row = self._data.t[self._gui._tab_popup._event.GetRow()]
         #print(row._index)
         #params = [{'series': row['series'], 'z': "%3.7f" % float(row['z']),
@@ -917,14 +939,14 @@ class GUITableSystList(GUITable):
                            event.GetPosition())
         if col == -1:
             if self._gui._sess_sel.systs._compressed:
-                title = ['Fit', 'Fit (open dialog)', 'Remove', 'Merge', 'sep',
+                title = ['Fit system...', 'Fit group...', 'Remove', 'Merge', 'sep',
                          'CCF', 'Maximize CCF', 'sep', 'Improve all']
-                attr = ['fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
+                attr = ['syst_fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
                         'ccf_max', None, 'improve']
             else:
-                title = ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF',
+                title = ['Fit system...', 'Fit group...', 'Remove', 'sep', 'CCF',
                          'Maximize CCF', 'sep', 'Improve all']
-                attr = ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
+                attr = ['syst_fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
                         None, 'improve']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())

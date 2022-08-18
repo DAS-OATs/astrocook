@@ -329,7 +329,8 @@ class SystList(object):
         """ Freeze values of z, logN, and b
         """
 
-        self._constr_backup = dc(self._constr)
+        #self._t_backup = dc(self._t)
+        #self._constr_backup = dc(self._constr)
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude)
         return 0
@@ -341,8 +342,10 @@ class SystList(object):
 
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude,reverse=True)
-        if hasattr(self, '_constr_backup'):
-            self._constr = self._constr_backup
+        #if hasattr(self, '_t_backup'):
+        #    self._t = self._t_backup
+        #if hasattr(self, '_constr_backup'):
+        #    self._constr = self._constr_backup
         return 0
 
 
