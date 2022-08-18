@@ -198,6 +198,17 @@ class GUIGraphMain(wx.Frame):
         sess._shade = False
         self._gui._refresh()
 
+
+    def _on_syst_fit(self, event):
+        id = self._gui._graph_main._graph._systs_id_argmin
+        cb = self._gui._sess_sel.cb
+        cb.sess.systs._freeze_pars(exclude=[id])
+        cb.systs_fit(refit_n=0)
+        cb.sess.systs._unfreeze_pars(exclude=[id])
+        cb._spec_update()
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
 

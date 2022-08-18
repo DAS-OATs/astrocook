@@ -141,6 +141,9 @@ class Graph(object):
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
+            if sess.systs._t is not None:
+                title.append('Fit system')
+                attr.append('syst_fit')
 
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event,
@@ -202,7 +205,7 @@ class Graph(object):
 
         # Make system id appear when you hover close enough to a system axvline
         try:
-            if self._systs_id:
+            if self._systs_label:
                 xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
                 argmin = np.argmin(xdiff)
                 try:
@@ -212,12 +215,14 @@ class Graph(object):
                 if self._systs_x.si.unit == au.m: thres = 0.5
                 if self._systs_x.si.unit == au.m/au.s: thres = 5
                 if xdiff[argmin] < thres:
-                    self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
-                                        % (self._systs_series[argmin],
+                    self._tag = ax.text(x,y, "System %s\n%s\nx = %1.3f %s\nz = %1.7f" \
+                                        % (self._systs_id[argmin],
+                                           self._systs_series[argmin],
                                            self._systs_l[argmin].value,
                                            self._systs_l[argmin].unit,
                                            self._systs_z[argmin]),
                                         color=self._systs_color)
+                    self._systs_id_argmin = self._systs_id[argmin]
         except:
             pass
 
@@ -467,7 +472,7 @@ class Graph(object):
         #print(self._zem)
         #if detail: sess.cb.x_convert(zem=self._zem)
         #print(detail, sess.spec.x.unit)
-        self._systs_id = False
+        self._systs_label = False
 
         fast = sess.defs.dict['graph']['fast']
         for e in focus._elem.split('\n'):
@@ -485,7 +490,7 @@ class Graph(object):
                 else:
                     label = '%s, %s' % (struct, ycol)
 
-                if struct == 'systs': self._systs_id = True
+                if struct == 'systs': self._systs_label = True
                 if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
@@ -557,6 +562,7 @@ class Graph(object):
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
+                    self._systs_id = t['id']
 
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel

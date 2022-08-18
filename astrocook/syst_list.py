@@ -304,42 +304,43 @@ class SystList(object):
         return t, mods_t
 
 
-    def _freeze_par_all(self, par, reverse=False):
-        """ Freeze or unfreeze all values of a given parameter (z, logN, or b)
+    def _freeze_par(self, par, exclude=[], reverse=False):
+        """ Freeze or unfreeze values of a given parameter (z, logN, or b)
         """
 
         self._dict_update(mods=True)
         freezes = {}
         for i in self._t['id']:
-            n = 'lines_voigt_{}_{}'.format(i,par)
-            s = self._d[i]
-            if not s._check_voigt():
-                logging.error("Only Voigt function is supported for "
-                              "fitting. I cannot freeze "
-                              "parameter {}.".format(par))
-                return 0
-            freezes[n] = (i, 'vary', reverse)
-            
+            if i not in exclude:
+                n = 'lines_voigt_{}_{}'.format(i,par)
+                s = self._d[i]
+                if not s._check_voigt():
+                    logging.error("Only Voigt function is supported for "
+                                  "fitting. I cannot freeze "
+                                  "parameter {}.".format(par))
+                    return 0
+                freezes[n] = (i, 'vary', reverse)
+
         self._constrain(freezes)
         return freezes
 
 
-    def _freeze_pars_all(self):
-        """ Freeze all values of z, logN, and b
+    def _freeze_pars(self, exclude=[]):
+        """ Freeze values of z, logN, and b
         """
 
         self._constr_backup = dc(self._constr)
         for p in ['z', 'logN', 'b']:
-            self._freeze_par_all(p)
+            self._freeze_par(p, exclude)
         return 0
 
 
-    def _unfreeze_pars_all(self):
-        """ Unfreeze all values of z, logN, and b
+    def _unfreeze_pars(self, exclude=[]):
+        """ Unfreeze values of z, logN, and b
         """
 
         for p in ['z', 'logN', 'b']:
-            self._freeze_par_all(p, reverse=True)
+            self._freeze_par(p, exclude,reverse=True)
         if hasattr(self, '_constr_backup'):
             self._constr = self._constr_backup
         return 0
