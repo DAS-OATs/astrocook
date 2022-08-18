@@ -840,6 +840,16 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
 
+    def _on_group_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit group', 'group_fit',
+                              params_last=params)
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_syst_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
         id = self._id_extract(row)
@@ -850,13 +860,11 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
 
-    def _on_group_fit(self, event):
-        row = self._gui._tab_popup._event.GetRow()
-        id = self._id_extract(row)
-        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
-                   'max_nfev': max_nfev_def}]
-        dlg = GUIDialogMethod(self._gui, 'Fit group', 'group_fit',
-                              params_last=params)
+    def _on_systs_fit(self, event):
+        params = [{'refit_n': 0, 'chi2rav_thres': 1e-2, 'max_nfev': max_nfev_def,
+                   'sel_fit': False}]
+        dlg = GUIDialogMethod(self._gui, 'Fit systems', 'systs_fit',
+                              params_last = params)
         self._gui._refresh(init_cursor=True)
 
 
@@ -937,17 +945,21 @@ class GUITableSystList(GUITable):
                 attr += [None, 'freeze_par_all', 'unfreeze_par_all']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
-        if col == -1:
+        if row == -1 and col == -1:
+            title = ['Fit all systems...']#, 'Improve all systems']
+            attr = ['systs_fit']#, 'improve']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                event.GetPosition())
+        if row > 0 and col == -1:
             if self._gui._sess_sel.systs._compressed:
                 title = ['Fit system...', 'Fit group...', 'Remove', 'Merge', 'sep',
-                         'CCF', 'Maximize CCF', 'sep', 'Improve all']
-                attr = ['syst_fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
-                        'ccf_max', None, 'improve']
+                         'CCF', 'Maximize CCF']
+                attr = ['syst_fit', 'group_fit', 'remove', 'merge', None, 'ccf',
+                        'ccf_max']
             else:
                 title = ['Fit system...', 'Fit group...', 'Remove', 'sep', 'CCF',
-                         'Maximize CCF', 'sep', 'Improve all']
-                attr = ['syst_fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
-                        None, 'improve']
+                         'Maximize CCF']
+                attr = ['syst_fit', 'group_fit', 'remove', None, 'ccf', 'ccf_max']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 

@@ -1159,7 +1159,7 @@ class CookbookAbsorbers(object):
     def syst_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit an individual systems
-        @details Fit a system, freezing the components of all other systems
+        @details Fit a system, freezing the components of all other systems.
         @param id System id
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
@@ -1185,7 +1185,7 @@ class CookbookAbsorbers(object):
     def group_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
                   max_nfev=max_nfev_def):
         """ @brief Fit a group systems
-        @details Fit together all systems that are grouped to the selected system
+        @details Fit together all systems that are grouped to the selected system.
         @param id System id
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
@@ -1202,7 +1202,9 @@ class CookbookAbsorbers(object):
             return 0
 
         mods_t = self.sess.systs._mods_t
-        mod = mods_t['mod'][id in mods_t['id']]
+        for m in mods_t:
+            if id in m['id']:
+                mod = m['mod']
         self._systs_cycle(mod)
         self._spec_update()
 
