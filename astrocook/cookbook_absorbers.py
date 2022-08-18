@@ -2632,13 +2632,13 @@ class CookbookAbsorbers(object):
                                      sigma=sigma)
         self.systs_fit(refit_n=1)#, max_nfev=0)
         for i in range(iter_n):
-            #self.sess.systs._freeze_pars_all()
+            self.sess.systs._freeze_pars_all()
             for s in series.split(';'):
                 z_start, z_end = z_check(zem, z_start, z_end, s)
                 self._systs_new_from_erf(series=s, col='deabs',
                                          z_start=z_start, z_end=z_end, sigma=sigma)
             self.systs_fit(refit_n=0)#, max_nfev=0)
-            #self.sess.systs._unfreeze_pars_all()
+            self.sess.systs._unfreeze_pars_all()
             resid_peaks()
         self.systs_fit(refit_n=1)
         #plt.show()
