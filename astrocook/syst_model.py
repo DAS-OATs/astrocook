@@ -40,43 +40,59 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         vary = np.any([self._pars[p].vary for p in self._pars])
         #print(vary)
+        fit_kws_c = dc(fit_kws)
         if vary:
             time_start = datetime.datetime.now()
-            #for p in self._pars:
-            #    if '_192' in p:
-            #        print(self._pars[p])
-            #print('before')
-            #self._pars.pretty_print()
-            if 'max_nfev' in fit_kws:
-                max_nfev = fit_kws['max_nfev']
-                del fit_kws['max_nfev']
+            if 'use_jac' in fit_kws_c:
+                use_jac = fit_kws_c['use_jac']
+                del fit_kws_c['use_jac']
+            else:
+                use_jac = False
+            if 'max_nfev' in fit_kws_c:
+                max_nfev = fit_kws_c['max_nfev']
+                del fit_kws_c['max_nfev']
             else:
                 max_nfev = None
-            #print(fit_kws)
-            #print('out', len(self._xf), self._xf)
-            #fit_kws['x_scale'] = 'jac'
-            #print(fit_kws)
-            fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                             weights=self._wf,
-                                             max_nfev=max_nfev,
-                                             fit_kws=fit_kws,
-                                             nan_policy='omit',
-                                             #fit_kws={'method':'lm'},
-                                             method='least_squares')
-            #print(fit.result.success)
-            #print(fit.result.message)
-            #print(fit.result.covar)
-            #print(fit.result.errorbars)
-            #print(fit.redchi)
+
+            plot_jac = False
+
+            if use_jac:
+                pars = [self._pars[p].value for p in self._pars if 'z' in p
+                        or 'logN' in p or 'b' in p and 'btur' not in p]
+                def _jac(x0, *args, **kwargs):
+                    return globals()[self._lines_func.__name__+'_jac']\
+                        (x0, self._xf, series=self._series, resol=self._resol,
+                        spec=self._spec, *args, **kwargs)
+                fit_kws_c['jac'] = _jac
+
+                if plot_jac:
+                    col = 1
+                    systn = '0'
+                    plt.plot(self._xf, _jac(pars)[:,col], color='red')
+
+                try:
+                    fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                                     weights=self._wf,
+                                                     max_nfev=max_nfev,
+                                                     fit_kws=fit_kws_c,
+                                                     nan_policy='omit',
+                                                     method='least_squares')
+                    if plot_jac:
+                        plt.plot(self._xf, fit.jac[:,col], color='blue')
+                except:
+                    del fit_kws_c['jac']
+                    use_jac = False
+            if not use_jac:
+                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                                 weights=self._wf,
+                                                 max_nfev=max_nfev,
+                                                 fit_kws=fit_kws_c,
+                                                 nan_policy='omit',
+                                                 method='least_squares')
+
             time_end = datetime.datetime.now()
             self._pars = fit.params
-            #for p in self._pars:
-            #    if '_192' in p:
-            #        print(self._pars[p])
-            #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
-            #if np.any(np.isnan(self._ys)):
-            #    self._pars.pretty_print()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic
@@ -484,6 +500,15 @@ class SystModel(LMComposite):
         """
 
         self._lines = line_psf
+
+        """
+        x = np.array(self._spec._safe(self._spec.x).to(au.nm))
+        self._lines_jac = globals()[self._lines_func.__name__+'_jac']\
+            (x, d['z'], d['logN'], d['b'], d['btur'])
+
+        print(self._lines_jac)
+        print(self._lines_jac.shape)
+        """
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
