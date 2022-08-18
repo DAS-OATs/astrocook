@@ -40,99 +40,59 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         vary = np.any([self._pars[p].vary for p in self._pars])
         #print(vary)
+        fit_kws_c = dc(fit_kws)
         if vary:
             time_start = datetime.datetime.now()
-            #for p in self._pars:
-            #    if '_192' in p:
-            #        print(self._pars[p])
-            #print('before')
-            #self._pars.pretty_print()
-            if 'max_nfev' in fit_kws:
-                max_nfev = fit_kws['max_nfev']
-                del fit_kws['max_nfev']
+            if 'use_jac' in fit_kws_c:
+                use_jac = fit_kws_c['use_jac']
+                del fit_kws_c['use_jac']
+            else:
+                use_jac = False
+            if 'max_nfev' in fit_kws_c:
+                max_nfev = fit_kws_c['max_nfev']
+                del fit_kws_c['max_nfev']
             else:
                 max_nfev = None
-            pars = [self._pars[p].value for p in self._pars if 'z' in p or 'logN' in p or 'b' in p and 'btur' not in p]
-            def _jac(x0, *args, **kwargs):
-                return globals()[self._lines_func.__name__+'_jac']\
-                    (x0, self._xf, series=self._series, resol=self._resol,
-                    spec=self._spec, *args, **kwargs)
 
-            both = False
-            jacobian = True
-            if jacobian:
-                fit_kws['jac'] = _jac
-            #x0 = [self._pars['lines_voigt_0_z'], self._pars['lines_voigt_0_logN'], self._pars['lines_voigt_0_b']]
-            col = 1
-            systn = '0'
-            systsel = len([p for p in self._pars if 'z' in p and systn in p])
-            """
-            if systsel:
-                #print(pars)
-                if jacobian and not both:
-                    plt.plot(self._xf, _jac(pars)[:,col])
-                if both:
+            plot_jac = False
+
+            if use_jac:
+                pars = [self._pars[p].value for p in self._pars if 'z' in p
+                        or 'logN' in p or 'b' in p and 'btur' not in p]
+                def _jac(x0, *args, **kwargs):
+                    return globals()[self._lines_func.__name__+'_jac']\
+                        (x0, self._xf, series=self._series, resol=self._resol,
+                        spec=self._spec, *args, **kwargs)
+                fit_kws_c['jac'] = _jac
+
+                if plot_jac:
+                    col = 1
+                    systn = '0'
                     plt.plot(self._xf, _jac(pars)[:,col], color='red')
-            """
-            try:
-                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                                 weights=self._wf,
-                                                 max_nfev=max_nfev,
-                                                 fit_kws=fit_kws,
-                                                 nan_policy='omit',
-                                                 #fit_kws={'method':'lm'},
-                                                 method='least_squares')
-            except:
-                del fit_kws['jac']
-                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                                 weights=self._wf,
-                                                 max_nfev=max_nfev,
-                                                 fit_kws=fit_kws,
-                                                 nan_policy='omit',
-                                                 #fit_kws={'method':'lm'},
-                                                 method='least_squares')
-            """
-            pars2 = dc(self._pars)
-            ch = ['z', 'logN', 'b']
-            diff = [1e-6, 1e-2, 1e-2]
-            pars2['lines_voigt_0_%s' % ch[col]].value = self._pars['lines_voigt_0_%s' % ch[col]] + diff[col]
-            fit2 = super(SystModel, self).fit(self._yf, pars2, x=self._xf,
-                                             weights=self._wf,
-                                             max_nfev=max_nfev,
-                                             fit_kws=fit_kws,
-                                             nan_policy='omit',
-                                             #fit_kws={'method':'lm'},
-                                             method='least_squares')
-            """
-            #print(fit.nfev)
-            #print(fit.result.success)
-            #print(fit.result.message)
-            #print(fit.result.covar)
-            #print(fit.result.errorbars)
-            #print(fit.redchi)
-            #print(len(self._xf))
-            #print(fit.jac.shape)
-            #print(fit.jac)
-            """
-            if systsel and not jacobian:
-                if not jacobian and not both:
-                    plt.plot(self._xf, fit.jac[:,col])
-                if both:
-                    try:
+
+                try:
+                    fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                                     weights=self._wf,
+                                                     max_nfev=max_nfev,
+                                                     fit_kws=fit_kws_c,
+                                                     nan_policy='omit',
+                                                     method='least_squares')
+                    if plot_jac:
                         plt.plot(self._xf, fit.jac[:,col], color='blue')
-                    except:
-                        pass
-            """
+                except:
+                    del fit_kws_c['jac']
+                    use_jac = False
+            if not use_jac:
+                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                                                 weights=self._wf,
+                                                 max_nfev=max_nfev,
+                                                 fit_kws=fit_kws_c,
+                                                 nan_policy='omit',
+                                                 method='least_squares')
+
             time_end = datetime.datetime.now()
             self._pars = fit.params
-            #for p in self._pars:
-            #    if '_192' in p:
-            #        print(self._pars[p])
-            #self._pars.pretty_print()
             self._ys = self.eval(x=self._xs, params=self._pars)
-            #ys2 = self.eval(x=self._xs, params=pars2)
-            #plt.plot(self._xs, (ys2-self._ys)/diff[col]*59, color='blue')
-            #plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic

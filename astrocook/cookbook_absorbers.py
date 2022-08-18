@@ -2082,6 +2082,7 @@ class CookbookAbsorbers(object):
 
         return likes, z_likes
 
+    @arg_fix(arg_mapping={'thres': 'sigma'})
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
                                  z_end=6, binz=1e-2, dz=1e-4,
                                  modul=10, sigma=2, distance=3,
@@ -2213,6 +2214,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    @arg_fix(arg_mapping={'thres': 'sigma'})
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
                             dz=1e-4, modul=10, sigma=2, distance=3,
                             logN=logN_def, b=b_def, resol=resol_def,
@@ -2277,6 +2279,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    @arg_fix(arg_mapping={'thres': 'sigma'})
     def _systs_like(self, series='Ly-a', sigma=2, distance=3, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
@@ -2573,6 +2576,7 @@ class CookbookAbsorbers(object):
 
         return sess
 
+    @arg_fix(arg_mapping={'thres': 'sigma'})
     def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
                             sigma=1, distance=3, append=True):
         """ @brief New systems from error function
@@ -2669,6 +2673,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
+    @arg_fix(arg_mapping={'thres': 'sigma'})
     def red_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
         """ @brief Fit the red part of the spectrum forest
         @details The recipe identifies Lyman-alpha absorbers using the

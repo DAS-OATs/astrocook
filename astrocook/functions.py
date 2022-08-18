@@ -98,11 +98,11 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     u = u * u_f
     #print(a)
     if deriv:
-        dtau0_dlogN = dtau0_dlogN * tau0_f * 65
-        dtau0_db = dtau0_db * tau0_f * 6e1
+        dtau0_dlogN = dtau0_dlogN * tau0_f #* 60
+        dtau0_db = dtau0_db * tau0_f #* 6e1
         dtau0_dbtur = dtau0_dbtur * tau0_f
 
-        da_db = da_db * a_f * 2e4
+        da_db = da_db * a_f #* 2e4
         da_dbtur = da_dbtur * a_f
 
         du_dz = du_dz * u_f * 6e1
@@ -128,12 +128,12 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
 
         dI_dz = np.zeros(len(x))
         dI_dlogN = np.zeros(len(x))
-        dI_dlogN_new = np.zeros(len(x))
+        #dI_dlogN_new = np.zeros(len(x))
         dI_db = np.zeros(len(x))
         dI_dbtur = np.zeros(len(x))
         #print('jac', z, N, b)
 
-        model = lines_voigt(x, z, logN, b, btur, series)
+        #model = lines_voigt(x, z, logN, b, btur, series)
         for t in trans_parse(series):
             tau0, a, u, \
                 (dtau0_dlogN, dtau0_db, dtau0_dbtur), \
@@ -148,13 +148,13 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
 
             dI_dz += dI_dF*dF_du*du_dz
             dI_dlogN += dI_dtau0*dtau0_dlogN
-            dI_dlogN_new += F*dtau0_dlogN
+            #dI_dlogN_new += F*dtau0_dlogN
             dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
             dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
 
-        dI_dlogN_new = -model*dI_dlogN_new
+        #dI_dlogN_new = -model*dI_dlogN_new
         dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
-        dI_dlogN = convolve_simple(dI_dlogN_new, psf_gauss(x.value, resol, spec))
+        dI_dlogN = convolve_simple(dI_dlogN, psf_gauss(x.value, resol, spec))
         dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
 
         """
@@ -433,7 +433,7 @@ def psf_gauss_wrong(x, #center, resol):
 def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
-    resol = 40000
+    #resol = 40000
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
@@ -611,3 +611,37 @@ def x_convert(x, zem=0, xunit=au.km/au.s):
               lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
               lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
     return x.to(xunit, equivalencies=equiv)
+
+import functools
+import warnings
+
+class arg_fix:
+    """Decorator ensuring backward compatibility when an argument name is
+    modified in a function definition.
+    from https://gist.github.com/rfezzani/002181c8667ec4c671421a4d938167eb
+    """
+
+    def __init__(self, arg_mapping):
+        """
+        Args:
+            arg_mapping (dict): mapping between the function's old argument
+                names and the new ones.
+        """
+        self.arg_mapping = arg_mapping
+        self.warning_msg = ("'%s' is a deprecated argument name " +
+                            "for the function '%s', use '%s' instead.")
+
+    def __call__(self, f):
+        @functools.wraps(f)
+        def fixed_f(*args, **kwargs):
+            for old_arg, new_arg in self.arg_mapping.items():
+                if old_arg in kwargs:
+                    #  warn that the function interface has changed:
+                    warnings.warn(self.warning_msg %
+                        (old_arg, f.__name__, new_arg), DeprecationWarning)
+                    # Substitute new_arg to old_arg
+                    kwargs[new_arg] = kwargs.pop(old_arg)
+
+            # Call the function with the fixed arguments
+            return f(*args, **kwargs)
+        return fixed_f
