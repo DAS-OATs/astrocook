@@ -608,13 +608,19 @@ class GUITableSystList(GUITable):
         self._text_colours()
 
 
-    def _data_freeze_par_all(self, col):
+    def _data_freeze_par_all(self, col, reverse):
+        """
         for i in range(self._tab.GetNumberRows()):
             id, parn = self._key_extract(i, col)
             self._freezes_d[parn] = (id, 'vary', False)
+        """
+        par = self._labels_extract()[col]
         self._tab.ForceRefresh()
-        self._gui._sess_sel.systs._constrain(self._freezes_d)
+        self._freezes_d = self._gui._sess_sel.systs._freeze_par_all(par, reverse)
+        print(self._freezes_d)
+        #self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
+
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
         super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
@@ -862,7 +868,7 @@ class GUITableSystList(GUITable):
         self._data_freeze_par(row, col)
 
 
-    def _on_freeze_par_all(self, event=None, col=None):
+    def _on_freeze_par_all(self, event=None, col=None, reverse=False):
         if event is not None:
             col = self._gui._tab_popup._event.GetCol()
             sess = self._gui._sess_sel
@@ -876,7 +882,7 @@ class GUITableSystList(GUITable):
             if hasattr(self._gui, '_dlg_mini_log') \
                 and self._gui._dlg_mini_log._shown:
                 self._gui._dlg_mini_log._refresh()
-            self._data_freeze_par_all(col)
+            self._data_freeze_par_all(col, reverse)
 
 
     def _on_improve(self, event):
@@ -905,8 +911,8 @@ class GUITableSystList(GUITable):
             title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
             attr = ['sort', 'sort_reverse', None, 'histogram']
             if col in [3,5,7]:
-                title += ['sep', 'Freeze all']
-                attr += [None, 'freeze_par_all']
+                title += ['sep', 'Freeze all', 'Unfreeze all']
+                attr += [None, 'freeze_par_all', 'unfreeze_par_all']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
         if col == -1:
@@ -964,6 +970,11 @@ class GUITableSystList(GUITable):
                               params_last=[{'num1': row._index+1}])
 
         self._gui._refresh(init_cursor=True)
+
+
+    def _on_unfreeze_par_all(self, event=None, col=None):
+        self._on_freeze_par_all(event, col, reverse=True)
+
 
     def _on_view(self, event, **kwargs):
         profile = cProfile.Profile()

@@ -24,6 +24,14 @@ class Syst(object):
             self._x[t] = to_x(self._pars['z'], t)
 
 
+    def _check_voigt(self):
+        """ Check if function is Voigt
+        """
+
+        return self._func == 'voigt'
+
+
+
 class SystList(object):
     """ Class for system lists
 
@@ -200,6 +208,9 @@ class SystList(object):
         return 0
 
 
+
+
+
     def _clean(self, chi2r_thres=np.inf, verb=True):
 
         rem = np.where(self._t['chi2r'] > chi2r_thres)[0]
@@ -291,6 +302,47 @@ class SystList(object):
             m['id'] = dc(self._mods_t['id'][i])
 
         return t, mods_t
+
+
+    def _freeze_par_all(self, par, reverse=False):
+        """ Freeze or unfreeze all values of a given parameter (z, logN, or b)
+        """
+
+        self._dict_update(mods=True)
+        freezes = {}
+        for i in self._t['id']:
+            n = 'lines_voigt_{}_{}'.format(i,par)
+            s = self._d[i]
+            if not s._check_voigt():
+                logging.error("Only Voigt function is supported for "
+                              "fitting. I cannot freeze "
+                              "parameter {}.".format(par))
+                return 0
+            freezes[n] = (i, 'vary', reverse)
+            
+        self._constrain(freezes)
+        return freezes
+
+
+    def _freeze_pars_all(self):
+        """ Freeze all values of z, logN, and b
+        """
+
+        self._constr_backup = dc(self._constr)
+        for p in ['z', 'logN', 'b']:
+            self._freeze_par_all(p)
+        return 0
+
+
+    def _unfreeze_pars_all(self):
+        """ Unfreeze all values of z, logN, and b
+        """
+
+        for p in ['z', 'logN', 'b']:
+            self._freeze_par_all(p, reverse=True)
+        if hasattr(self, '_constr_backup'):
+            self._constr = self._constr_backup
+        return 0
 
 
     def _region_extract(self, xmin, xmax):
