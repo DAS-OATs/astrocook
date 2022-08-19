@@ -358,8 +358,14 @@ class SystList(object):
             rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
             for r in rows:
                 self._t_backup.add_row(self._t[r])
-            self._t_backup.sort(['z','id'])
-            self._t = self._t_backup
+            for ri, r in enumerate(self._t):
+                rb = np.where(self._t_backup['id'] == r['id'])[0]
+                if len(rb)>0:
+                    self._t.remove_row(ri)
+                    self._t.add_row(self._t_backup[rb[0]])
+            #self._t = self._t_backup
+            self._t.sort(['z','id'])
+
         return 0
 
 
