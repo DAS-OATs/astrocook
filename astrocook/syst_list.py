@@ -277,12 +277,16 @@ class SystList(object):
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)
+                        if k in self._constr:
+                            self._constr[k+'_backup'] = self._constr[k]
                         self._constr[k] = (v[0], k.split('_')[-1], v[2])
                     if v[1]=='vary':
                         m['mod']._pars[k].set(vary=v[2])
                         if v[2]:
                             if k in self._constr: del self._constr[k]
                         else:
+                            if k in self._constr:
+                                self._constr[k+'_backup'] = self._constr[k]
                             self._constr[k] = (v[0], k.split('_')[-1], None)
                         #print(v[0], v[1], v[2])
                         #print(m['mod']._pars[k].__dict__)
@@ -320,7 +324,13 @@ class SystList(object):
                                   "parameter {}.".format(par))
                     return 0
                 freezes[n] = (i, 'vary', reverse)
-
+                if reverse and n+'_backup' in self._constr:
+                    v = self._constr[n+'_backup']
+                    if type(v[2]) == str:
+                        freezes[n] = (v[0], 'expr', v[2])
+                    if v[2] is None:
+                        freezes[n] = (v[0], 'vary', None)
+                    del self._constr[n+'_backup']
         self._constrain(freezes)
         return freezes
 
@@ -331,8 +341,10 @@ class SystList(object):
 
         #self._t_backup = dc(self._t)
         #self._constr_backup = dc(self._constr)
+        print('freeze in', self._constr)
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude)
+        print('freeze out', self._constr)
         return 0
 
 
@@ -340,12 +352,14 @@ class SystList(object):
         """ Unfreeze values of z, logN, and b
         """
 
+        print('unfreeze in', self._constr)
         for p in ['z', 'logN', 'b']:
-            self._freeze_par(p, exclude,reverse=True)
+            self._freeze_par(p, exclude, reverse=True)
         #if hasattr(self, '_t_backup'):
         #    self._t = self._t_backup
         #if hasattr(self, '_constr_backup'):
         #    self._constr = self._constr_backup
+        print('unfreeze out', self._constr)
         return 0
 
 
