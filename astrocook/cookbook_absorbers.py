@@ -2663,7 +2663,7 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def _series_fit(self, series, zem, z_start, z_end, sigma, iter_n):
+    def _series_fit(self, series, zem, z_start=None, z_end=None, sigma=2, iter_n=3):
 
         def z_check(zem, z_start, z_end, s):
             if zem != None:

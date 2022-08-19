@@ -592,8 +592,12 @@ class Spectrum(Frame):
 
     def _resol_est(self, px, update):
         dx = self.xmax[px-1:].value-self.xmin[:1-px].value
-        dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
-             *self.x.unit
+        if px%2:
+            dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
+                 *self.x.unit
+        else:
+            dx = np.append([dx[0]]*(px//2), dx)*self.x.unit
+
         if update:
             if 'resol' not in self._t.colnames:
                 logging.info("I'm adding column 'resol'.")
