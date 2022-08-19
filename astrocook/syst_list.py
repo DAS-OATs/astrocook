@@ -339,12 +339,12 @@ class SystList(object):
         """ Freeze values of z, logN, and b
         """
 
-        #self._t_backup = dc(self._t)
+        self._t_backup = dc(self._t)
+        r = [np.where(self._t_backup['id'] == e)[0][0] for e in exclude]
+        self._t_backup.remove_rows(r)
         #self._constr_backup = dc(self._constr)
-        print('freeze in', self._constr)
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude)
-        print('freeze out', self._constr)
         return 0
 
 
@@ -352,14 +352,14 @@ class SystList(object):
         """ Unfreeze values of z, logN, and b
         """
 
-        print('unfreeze in', self._constr)
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude, reverse=True)
-        #if hasattr(self, '_t_backup'):
-        #    self._t = self._t_backup
-        #if hasattr(self, '_constr_backup'):
-        #    self._constr = self._constr_backup
-        print('unfreeze out', self._constr)
+        if hasattr(self, '_t_backup'):
+            rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
+            for r in rows:
+                self._t_backup.add_row(self._t[r])
+            self._t_backup.sort(['z','id'])
+            self._t = self._t_backup
         return 0
 
 
