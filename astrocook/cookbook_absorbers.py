@@ -2701,7 +2701,8 @@ class CookbookAbsorbers(object):
             self.systs_fit(refit_n=0)#, max_nfev=0)
             self.sess.systs._unfreeze_pars()
             resid_peaks()
-        self.systs_fit(refit_n=1)
+        if iter_n > 0:
+            self.systs_fit(refit_n=1)
         #plt.show()
 
 
