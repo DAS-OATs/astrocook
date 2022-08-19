@@ -2384,8 +2384,9 @@ class CookbookAbsorbers(object):
                 #print(likes[s])
                 z_int = z_likes[s]
                 #print(s)
-                #plt.plot(z_int, likes[s])
-                w = np.where(likes[s]>sigma)
+                plt.plot(z_int, likes[s])
+                #w = np.where(likes[s]>sigma)
+                #plt.plot(z_int[w], likes[s][w])
                 #print(len(w[0]))
                 """
                 for s_o in series_o:
@@ -2395,9 +2396,11 @@ class CookbookAbsorbers(object):
                         t_o = np.interp(x_w, spec._t['x'], spec._t[t])
                         print(likes_o)
                 """
-
-                p0, _ = find_peaks(likes[s][w], distance=distance)
+                p0, _ = find_peaks(likes[s], distance=distance)
                 #plt.scatter(z_int[w][p0], likes[s][w][p0])
+                pw = np.where(likes[s][p0]>sigma)
+                p0 = p0[pw]
+                plt.scatter(z_int[p0], likes[s][p0])
 
                 """
                 # Check if likelihood peaks are higher than those of all other
@@ -2423,7 +2426,8 @@ class CookbookAbsorbers(object):
                 #print(p0[np.where(sel)])
                 """
                 #print(z_int[w][p0])
-                x_w = to_x(z_int[w][p0], trans[0])
+                #x_w = to_x(z_int[w][p0], trans[0])
+                x_w = to_x(z_int[p0], trans[0])
                 #print(x_w)
                 psel = []
                 for p, x in zip(p0, x_w):
@@ -2437,8 +2441,8 @@ class CookbookAbsorbers(object):
                 for ssub in s.split(':'):
                     if k_list == []:
                         s_list = [ssub]*len(p)
-                        z_list = z_int[w][p]
-                        #print(z_list)
+                        #z_list = z_int[w][p]
+                        z_list = z_int[p]
                         logN_list = [logN]*len(p)
                         resol_list = [resol]*len(p)
                         if len(s_list)>0:
