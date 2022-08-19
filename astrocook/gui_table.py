@@ -616,8 +616,7 @@ class GUITableSystList(GUITable):
         """
         par = self._labels_extract()[col]
         self._tab.ForceRefresh()
-        self._freezes_d = self._gui._sess_sel.systs._freeze_par(par, reverse)
-        print(self._freezes_d)
+        self._freezes_d = self._gui._sess_sel.systs._freeze_par(par, [], reverse)
         #self._gui._sess_sel.systs._constrain(self._freezes_d)
         self._text_colours()
 
