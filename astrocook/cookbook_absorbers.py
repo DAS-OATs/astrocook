@@ -1052,6 +1052,8 @@ class CookbookAbsorbers(object):
 
         try:
             thres = float(thres)
+            height = float(height)
+            prominence = float(prominence)
         except:
             logging.error(msg_param_fail)
             return 0
