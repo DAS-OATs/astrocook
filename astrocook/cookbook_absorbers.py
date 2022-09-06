@@ -2090,6 +2090,7 @@ class CookbookAbsorbers(object):
             if len(abs_int) > 0:
                 #like = 1-np.power(1-np.nanprod(abs_int, axis=0), len(trans))
                 like = erfinv(np.nanprod(abs_int, axis=0))*np.sqrt(2)*modul
+                like[np.isinf(like)] = -np.inf
                 likes[s] = like
                 z_likes[s] = z_int
                 if 'like_'+s not in spec._t.colnames:
@@ -2445,10 +2446,25 @@ class CookbookAbsorbers(object):
                 for ssub in s.split(':'):
                     if k_list == []:
                         s_list = [ssub]*len(p)
+
                         #z_list = z_int[w][p]
                         z_list = z_int[p]
                         logN_list = [logN]*len(p)
                         resol_list = [resol]*len(p)
+                        sel = []
+                        for ssel,zsel in zip(s_list, z_list):
+                            xint = []
+                            for t in trans_parse(ssel):
+                                xsel = to_x(zsel, t)
+                                xint.append(np.interp(xsel, spec._t['x'],
+                                                      spec._t['y']))
+                            sel.append(not np.any(np.isnan(xint)))
+                        wsel = np.where(sel)[0]
+                        s_list = np.array(s_list)[wsel]
+                        z_list = np.array(z_list)[wsel]
+                        logN_list = np.array(logN_list)[wsel]
+                        resol_list = np.array(resol_list)[wsel]
+
                         if len(s_list)>0:
                             self._systs_prepare(append)
                             id_list = self._systs_add(s_list, z_list, logN_list,
@@ -2471,10 +2487,9 @@ class CookbookAbsorbers(object):
                 k_list = ['lines_voigt_%i_z' % id for id in id_list]
                 #print(k_list)
         #plt.show()
-
         if compressed:
             systs._compress()
-
+        #print('end')
         return 0
 
 
@@ -2773,6 +2788,7 @@ class CookbookAbsorbers(object):
         """
         series = 'CIV;SiIV:CIV;SiII_1526:CIV;AlIII;'\
                  +'MgII_2796,MgII_2803;FeII_2382,FeII_2600:MgII_2796,MgII_2803'
+        #series = 'SiIV:CIV'
         self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
             #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
             #                         sigma=sigma)

@@ -556,7 +556,7 @@ class Format(object):
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
             if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
-                    if c not in [x_name, y_name, dy_name]:
+                    if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
                         spec._t[c] = data[c]
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
@@ -890,7 +890,7 @@ def sdss_spectrum(self, hdul):
         return np.sqrt(1 / x)
     vectRevIVar = np.vectorize(revIVar)
 
-    hdr = hdul[1].header 
+    hdr = hdul[1].header
     data = np.array([np.array(i) for i in hdul[1].data])
 
     y = data[:, 0]
