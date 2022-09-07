@@ -2376,6 +2376,26 @@ class CookbookAbsorbers(object):
         likes = self._likes
         z_likes = self._z_likes
         series_split = series.split(';')
+
+        def _nan_check(spec, s_list, z_list, logN_list, resol_list):
+            # Check that components do not fall in masked regions
+            sel = []
+            for ssel,zsel in zip(s_list, z_list):
+                xint = []
+                for t in trans_parse(ssel):
+                    xsel = to_x(zsel, t)
+                    xint.append(np.interp(xsel, spec._t['x'],
+                                          spec._t['y']))
+                sel.append(not np.any(np.isnan(xint)))
+            wsel = np.where(sel)[0]
+            s_list = np.array(s_list)[wsel]
+            z_list = np.array(z_list)[wsel]
+            logN_list = np.array(logN_list)[wsel]
+            resol_list = np.array(resol_list)[wsel]
+            return s_list, z_list, logN_list, resol_list
+
+
+
         k_list = []
         id_list = []
         for i, s in enumerate(series_split):
@@ -2451,6 +2471,9 @@ class CookbookAbsorbers(object):
                         z_list = z_int[p]
                         logN_list = [logN]*len(p)
                         resol_list = [resol]*len(p)
+
+                        # Check that components do not fall in masked regions
+                        """
                         sel = []
                         for ssel,zsel in zip(s_list, z_list):
                             xint = []
@@ -2464,6 +2487,9 @@ class CookbookAbsorbers(object):
                         z_list = np.array(z_list)[wsel]
                         logN_list = np.array(logN_list)[wsel]
                         resol_list = np.array(resol_list)[wsel]
+                        """
+                        s_list, z_list, logN_list, resol_list = \
+                            _nan_check(spec, s_list, z_list, logN_list, resol_list)
 
                         if len(s_list)>0:
                             self._systs_prepare(append)
@@ -2476,6 +2502,10 @@ class CookbookAbsorbers(object):
                         s_list = [ssub]*len(z_list)
                         logN_list = [logN]*len(z_list)
                         resol_list = [resol]*len(z_list)
+
+                        s_list, z_list, logN_list, resol_list = \
+                            _nan_check(spec, s_list, z_list, logN_list, resol_list)
+
                         self._systs_prepare(append)
                         id_list = self._systs_add(s_list, z_list, logN_list,
                                                   resol_list=resol_list, k_list=k_list)
