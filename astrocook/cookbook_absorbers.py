@@ -2246,7 +2246,7 @@ class CookbookAbsorbers(object):
                 z_e = np.nan
             #print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
-                likes, z_likes = self._abs_like(series, col, z_s, z_e, dz, modul)
+                likes, z_likes = self._abs_like(series, 'y', z_s, z_e, dz, modul)
                 """
             for s in likes.keys():
                 if s not in self._likes.keys():
