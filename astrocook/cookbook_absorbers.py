@@ -2381,12 +2381,12 @@ class CookbookAbsorbers(object):
             # Check that components do not fall in masked regions
             sel = []
             for ssel,zsel in zip(s_list, z_list):
-                xint = []
+                ysel = []
                 for t in trans_parse(ssel):
                     xsel = to_x(zsel, t)
-                    xint.append(np.interp(xsel, spec._t['x'],
+                    ysel.append(np.interp(xsel, spec._t['x'],
                                           spec._t['y']))
-                sel.append(not np.any(np.isnan(xint)))
+                sel.append(not np.any(np.isnan(ysel)))
             wsel = np.where(sel)[0]
             s_list = np.array(s_list)[wsel]
             z_list = np.array(z_list)[wsel]
@@ -2786,7 +2786,10 @@ class CookbookAbsorbers(object):
 
 
     @arg_fix(arg_mapping={'thres': 'sigma'})
-    def red_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+    def red_fit(self,
+                series='CIV;SiIV:CIV;SiII_1526:CIV;AlIII;MgII_2796,MgII_2803;'\
+                       +'FeII_2382,FeII_2600:MgII_2796,MgII_2803',
+                zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
         """ @brief Fit the red part of the spectrum forest
         @details The recipe identifies Lyman-alpha absorbers using the
         likelihood method and fits them. The procedure is iterated on residuals
@@ -2816,9 +2819,6 @@ class CookbookAbsorbers(object):
                 z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
                 z_end = zem
         """
-        series = 'CIV;SiIV:CIV;SiII_1526:CIV;AlIII;'\
-                 +'MgII_2796,MgII_2803;FeII_2382,FeII_2600:MgII_2796,MgII_2803'
-        #series = 'SiIV:CIV'
         self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
             #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
             #                         sigma=sigma)
