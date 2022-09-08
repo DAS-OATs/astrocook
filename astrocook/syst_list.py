@@ -143,8 +143,6 @@ class SystList(object):
         self._t.sort('z')
 
 
-
-
     @property
     def t(self):
         return self._t
@@ -194,24 +192,13 @@ class SystList(object):
     def _append(self, frame, unique=False):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
-
-        #print(np.array(self._mods_t['z0']))
-        #print(np.array(frame._mods_t['id']))
-        #print(np.array(vstack_mods_t['id']))
-
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
-#            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
         else:
             self._t = vstack_t
             self._mods_t = vstack_mods_t
-        #print(self._mods_t['z0', 'id'])
-        #print(len(self._mods_t))
         return 0
-
-
-
 
 
     def _clean(self, chi2r_thres=np.inf, verb=True):
@@ -247,12 +234,6 @@ class SystList(object):
             for c in t_by_group.colnames[10:-1]:
                 t[c] = at.Column(np.array([g[c][len(g)//2] \
                                            for g in t_by_group.groups]))
-            """
-            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] \
-                                             for g in t_by_group.groups]))
-            t['id'] = at.Column(np.array([g['id'][len(g)//2] \
-                                          for g in t_by_group.groups]))
-            """
             t.sort(['z','id'])
             self._t = t
             self._compressed = True
@@ -262,21 +243,10 @@ class SystList(object):
 
 
     def _constrain(self, dict):
-        #self._constr = {}
-        #print(self)
-        #print(dict)
         for k, v in dict.items():
-            #print(k, dict[k])
             for m in self._mods_t:
                 if v[0] in m['id']:
-                    """
-                    if k in ['lines_voigt_%i_b' %i for i in (33,34,35,40,41,42)]:
-                        print('inside')
-                        print(v)
-                        m['mod']._pars.pretty_print()
-                    """
                     if v[1]=='expr':
-                        #print(k, v[2], type(v[2]))
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)
@@ -291,12 +261,7 @@ class SystList(object):
                             if k in self._constr:
                                 self._constr[k+'_backup'] = self._constr[k]
                             self._constr[k] = (v[0], k.split('_')[-1], None)
-                        #print(v[0], v[1], v[2])
-                        #print(m['mod']._pars[k].__dict__)
-        #print(self._constr)
-                #print(m['mod']._pars)
-                #m['mod']._pars.pretty_print()
-                #print('[',id(m),']')
+
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t
@@ -345,7 +310,6 @@ class SystList(object):
         self._t_backup = dc(self._t)
         r = [np.where(self._t_backup['id'] == e)[0][0] for e in exclude]
         self._t_backup.remove_rows(r)
-        #self._constr_backup = dc(self._constr)
         for p in ['z', 'logN', 'b']:
             self._freeze_par(p, exclude)
         return 0
@@ -361,12 +325,16 @@ class SystList(object):
             rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
             for r in rows:
                 self._t_backup.add_row(self._t[r])
+            removes = []
+            adds = []
             for ri, r in enumerate(self._t):
                 rb = np.where(self._t_backup['id'] == r['id'])[0]
                 if len(rb)>0:
-                    self._t.remove_row(ri)
-                    self._t.add_row(self._t_backup[rb[0]])
-            #self._t = self._t_backup
+                    removes.append(ri)
+                    adds.append(self._t_backup[rb[0]])
+            self._t.remove_rows(removes)
+            for a in adds:
+                self._t.add_row(a)
             self._t.sort(['z','id'])
 
         return 0
@@ -448,5 +416,3 @@ class SystList(object):
         self._id += 1
 
         self._dict_update()
-        #print(self._mods_t['id', 'chi2r'])
-        #print(self._t)

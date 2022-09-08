@@ -370,9 +370,8 @@ class CookbookAbsorbers(object):
                 for w in mod_w:
                     mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
-
         # When a model has been added
-        elif mod_new is not None:
+        if mod_new is not None:
             mod_sel = np.array([], dtype=int)
             mod_w = np.array([], dtype=int)
             ys = mod_new._ys
@@ -427,7 +426,6 @@ class CookbookAbsorbers(object):
                     vars = {}
                     constr = {}
                     for k, v in systs._constr.items():
-                        #print(v)
                         if v[0]==systs._id:
                             if v[2]!=None:
                                 constr[k] = v[2]
