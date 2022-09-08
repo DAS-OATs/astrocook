@@ -39,7 +39,6 @@ class SystModel(LMComposite):
 
     def _fit(self, fit_kws={}):
         vary = np.any([self._pars[p].vary for p in self._pars])
-        #print(vary)
         fit_kws_c = dc(fit_kws)
         if vary:
             time_start = datetime.datetime.now()

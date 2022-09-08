@@ -1145,7 +1145,7 @@ class CookbookAbsorbers(object):
         @return 0
         """
         try:
-            id = int(id)
+            id = int(id)-1
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
