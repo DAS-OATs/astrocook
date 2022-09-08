@@ -73,7 +73,7 @@ class SystList(object):
         if z0==[] and z!=[]:
             t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         else:
-            t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)            
+            t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)
         t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['dz'] = at.Column(np.array(dz, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,
@@ -140,6 +140,7 @@ class SystList(object):
             else:
                 mod = None
             self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
+        self._t.sort('z')
 
 
 
