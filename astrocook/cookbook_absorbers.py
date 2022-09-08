@@ -348,7 +348,6 @@ class CookbookAbsorbers(object):
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
-        #print(systs._constr)
 
         # When constraints have been added
         if only_constr:
@@ -361,14 +360,7 @@ class CookbookAbsorbers(object):
                     else:
                         mod_sel = np.append(mod_sel,
                                             [int(v[2].split('_')[-2]),v[0]])
-            #print(mod_sel)
             mod_sel = np.ravel(mod_sel)
-            #print(mod_sel)
-
-            #    mod_sel = np.ravel([[int(v[2].split('_')[-2]),v[0]] \
-            #                   for k,v in systs._constr.items() \
-            #                   if v[2]!=None and v[2]!=''])
-            #mod_w = np.array([], dtype=int)
 
             for i in range(2):
                 for id in mod_sel:
@@ -378,8 +370,6 @@ class CookbookAbsorbers(object):
                 for w in mod_w:
                     mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
-            #mod_sel = np.ravel(np.array([m for m in systs._mods_t['id'][mod_w]]))
-            #print(mod_sel)
 
         # When a model has been added
         elif mod_new is not None:
@@ -393,7 +383,6 @@ class CookbookAbsorbers(object):
                 thres = 1e-2
                 y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
                 pars_cond = False
-                #for p,v in self._pars.items():
                 for p,v in mod_new._constr.items():
                     for mod_p,mod_v in mod._pars.items():
                         pars_cond = pars_cond or v==mod_p
@@ -412,44 +401,26 @@ class CookbookAbsorbers(object):
             mod_w = range(len(systs._mods_t))
             mod_sel = np.array(systs._t['id'])
 
-        #print(mod_sel)
         compressed = False
         if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
         else:
             systs_t = systs._t
 
-        #for m in systs._mods_t:
-        #    mod = m['mod']
-            #print(mod.func)
-
         # Collect existing specifications for logN_tot
-        """
-        N_tot_specs_dict = {}
-        for m in systs._mods_t['mod']:
-            if hasattr(m, '_N_tot_spec'):
-                N_tot_specs_dict[m._N_tot_spec[0]] = m._N_tot_spec[1:]
-        print(N_tot_specs_dict)
-        """
-
         N_tot_specs_d = {}
         if hasattr(systs, '_N_tot_specs'):
             N_tot_specs_d = systs._N_tot_specs
-        #print(N_tot_specs_d)
 
-        #print(systs._constr)
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
-            #print(systs._mods_t)
-            #for i,s in enumerate(systs._t):
 
             systs_t.sort('id')
             wrong_id = []
             corr_id = []
-            #print(systs_t)
             tt = time.time()
-            for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
+            for i,s in enum_tqdm(systs_t, len(mod_sel),
                                  "cookbook_absorbers: Recreating"):
                 systs._id = s['id']
                 if systs._id in mod_sel:
@@ -462,16 +433,11 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
-                    #print(systs._id, constr)
-                    #print(systs._id)
-                    #if systs._id == 46: print(systs._constr.items())
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                     if any([mod._id in i for i in systs._mods_t['id']]):
                         wrong_id.append(mod._id)
                         corr_id.append(np.max(systs_t['id'])+1)
                         mod._id = np.max(systs_t['id'])+1
-                    #print(self.sess.defs.dict['voigt'])
-                    #print(len(systs._mods_t), end=' ')
 
                     # Implement existing specifications for logN_tot
                     if mod._id in N_tot_specs_d:
@@ -484,13 +450,7 @@ class CookbookAbsorbers(object):
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
-                    #mod._pars.pretty_print()
-                    #print(len(systs._mods_t), time.time()-tt)
-                    #tt = time.time()
-                    #mod._pars.pretty_print()
                     self._mods_update(mod)
-                    #print(len(systs._mods_t), time.time()-tt)
-                    #tt = time.time()
 
                 else:
                     systs._id = np.max(systs._t['id'])+1
@@ -509,8 +469,6 @@ class CookbookAbsorbers(object):
                 active = mod._active
             except:
                 active = True
-            #print(active)
-            #print(np.where(spec.t['fit_mask']==True))
             if active:
                 active_c += 1
                 c = []
@@ -530,10 +488,7 @@ class CookbookAbsorbers(object):
 
 
         systs_t.sort(['z','id'])
-        #systs._mods_t['id'].pprint(max_lines=-1)
-        #print(len(systs._mods_t))
         systs_n = len(systs._t)
-        #systs._id = np.max(systs._t['id'])
         mods_n = len(systs._mods_t)
         if verbose:
             logging.info("I've recreated %i model%s (including %i system%s)." \
@@ -543,9 +498,6 @@ class CookbookAbsorbers(object):
                 logging.info("Only %i model%s %s active and eligible for "
                              "fitting." % (active_c, '' if active_c==1 else 's',
                              'is' if active_c==1 else 'are'))
-        #profile.disable()
-        #ps = pstats.Stats(profile)
-        #ps.sort_stats('cumtime').print_stats(20)
 
         return 0
 

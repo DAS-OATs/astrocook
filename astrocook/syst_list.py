@@ -42,6 +42,7 @@ class SystList(object):
                  id_start=0,
                  func=[],
                  series=[],
+                 z0=[],
                  z=[],
                  dz=[],
                  logN=[],
@@ -69,7 +70,10 @@ class SystList(object):
         bunit = au.km/au.s
         t['func'] = at.Column(np.array(func, ndmin=1), dtype='S5')
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
-        t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        if z0==[] and z!=[]:
+            t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        else:
+            t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)            
         t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['dz'] = at.Column(np.array(dz, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,
@@ -81,12 +85,10 @@ class SystList(object):
         t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
         t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
-        #if resol != []:
         if len(resol)==len(self.z) and len(resol)>0:
             self._t['resol'] = resol
         else:
             self._t['resol'] = np.empty(len(self.z), dtype=dtype)
-#        if chi2r != []:
         if len(chi2r)==len(self.z) and len(chi2r)>0:
             self._t['chi2r'] = chi2r
         else:
@@ -96,7 +98,6 @@ class SystList(object):
         else:
             self._t['snr'] = np.empty(len(self.z), dtype=dtype)
             self._t['snr'] = np.nan
-#        if id != []:
         if len(id)==len(self.z) and len(id)>0:
             self._t['id'] = id
         else:
@@ -111,14 +112,11 @@ class SystList(object):
             mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
         except:
             mods_t['mod'] = None
-        #mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
-        #mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
         self._mods_t = mods_t
         self._mods_t['chi2r'] = np.empty(len(self.z), dtype=dtype)
         self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
         self._meta = meta
-        #self._meta = self._constr
         self._dtype = dtype
 
         self._compressed = False
