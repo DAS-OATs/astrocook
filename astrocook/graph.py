@@ -511,15 +511,19 @@ class Graph(object):
                     #if struct == 'systs':
                         z = sess.systs.z
                         series = sess.systs.series
+                        id = sess.systs.id
                         z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
                         series_list = [trans_parse(s) for s in series]
+                        id_list = [[idf]*len(trans_parse(s)) for idf,s in zip(id,series)]
                         z_flat = np.array([z for zl in z_list for z in zl])
                         series_flat = np.array([s for sl in series_list for s in sl])
+                        id_flat = np.array([id for idl in id_list for id in idl])
                     else:
                         z = float(xcol)
                         series = sess._cursors[xcol]._series
                         z_flat = np.array([z]*len(trans_parse(series)))
                         series_flat = trans_parse(series)
+                        id_flat = np.array(['']*len(trans_parse(series)))
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
                     if hasattr(self._gui._sess_sel.spec, '_rfz'):
@@ -562,8 +566,8 @@ class Graph(object):
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
-                    self._systs_id = t['id']
-
+                    self._systs_id = id_flat
+                    
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
                         series_sel = self._gui._graph_main._series_sel

@@ -155,6 +155,10 @@ class SystList(object):
         return self._mods_t
 
     @property
+    def id(self):
+        return self._t['id']
+
+    @property
     def series(self):
         return self._t['series']
 
