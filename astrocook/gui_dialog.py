@@ -134,12 +134,6 @@ class GUIDialog(wx.Dialog):
 
             if '_sel' in p_l:
                 p_l['_sel'] = self._gui._sess_item_sel
-            """
-            try:
-                p_l['_sel'] = self._gui._sess_item_sel
-            except:
-                logging.info('No selected session.')
-            """
 
             start = dt.datetime.now()
             out = m(**p_l)
@@ -151,7 +145,6 @@ class GUIDialog(wx.Dialog):
 
             if out is not None:
                 if out is 0:
-                    #self._gui._refresh()
                     pass
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
@@ -180,19 +173,6 @@ class GUIDialog(wx.Dialog):
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
                 self._gui._dlg_mini_systems._cursor_refresh()
-                """
-                # Unfreeze cursors in case they were frozen
-                self._gui._graph_main._graph._cursor_frozen = False
-                self._gui._graph_det._graph._cursor_frozen = False
-
-                # Refresh cursor
-                shown = True if self._gui._dlg_mini_systems._shown else False
-                self._gui._dlg_mini_systems._shown = False
-                self._gui._dlg_mini_systems._on_cancel(e=None)
-                self._gui._dlg_mini_systems._shown = True
-                self._gui._dlg_mini_systems._on_apply(e=None)
-                self._gui._dlg_mini_systems._shown = shown
-                """
 
 
     def _update_params(self):
