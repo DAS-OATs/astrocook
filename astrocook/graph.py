@@ -460,25 +460,17 @@ class Graph(object):
 
     def _seq_core(self, sess, norm, init_cursor, detail, focus, ax,
                   cursor_list=['cursor']):
-#        ax = self._ax
 
         xunit_orig = dc(sess.spec.x.unit)
-        #print(detail, sess.spec.x.unit)
-        #print(self._zem)
-        #if detail: sess.cb.x_convert(zem=self._zem)
-        #print(detail, sess.spec.x.unit)
         self._systs_id = False
 
         fast = sess.defs.dict['graph']['fast']
         for e in focus._elem.split('\n'):
-        #for e in self._gui._graph_main._elem.split('\n'):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
                     = e.split(',')
-                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 sessw = self._gui._sess_item_list.index(int(sel))
                 sess = self._gui._sess_list[sessw]
-                #sess = self._gui._sess_sel
                 xunit = sess.spec.x.unit
                 if mcol != 'None':
                     label = '%s, %s (%s)' % (struct, ycol, mcol)
@@ -496,14 +488,11 @@ class Graph(object):
                         except:
                             y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
-                        x[t[mcol]==0] = np.nan
+                        y[t[mcol]==0] = np.nan
                     if norm and 'cont' in t.colnames and t[ycol].unit == t[ycol].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
-                #if detail: print(struct, xcol, x[0])
-                #print(sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha)
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
-                    #if struct == 'systs':
                         z = sess.systs.z
                         series = sess.systs.series
                         z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
@@ -526,15 +515,8 @@ class Graph(object):
                         x_iswave = True
                     except:
                         x_iswave = False
-                    #print(graph._xs)
-                    #print(self._zems, self._series, self._axes, self._ax)
-                    #print(zems)
                     self._systs_l = x
                     if detail:
-                        #print(z, self._zem)
-                        #print((1+self._zem)*121.567)
-                        #print(self._zem)
-                        #x = np.log(x.value/((1+self._zem)*121.567))*aconst.c.to(au.km/au.s)
                         for k in self._axes:
                             if self._axes[k] == ax:
                                 zem = self._zems[k]
@@ -542,18 +524,6 @@ class Graph(object):
                             x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
                         else:
                             x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
-
-                        """
-                        print(x)
-                        x_sel = np.logical_and(x>-1000,x<1000)
-                        x = x[x_sel]
-                        try:
-                            y = y[y_sel]
-                        except:
-                            pass
-                        print(x)
-                        #"""
-                        #print(set(zip(series_flat,x)))
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
@@ -614,7 +584,6 @@ class Graph(object):
 
                         tt = time.time()
                         getattr(ax, mode)(x, y, label=label, **kwargs)
-                        #print('%i %s %i %.4f' % (detail, mode, len(x), time.time()-tt))
 
                     if struct in cursor_list:
                         trans = transforms.blended_transform_factory(
@@ -663,15 +632,12 @@ class Graph(object):
                 gs = s(sess, norm)
                 if gs._type == 'axvline':
                     for x in gs._x:
-                        #print(x)
-                        #print(**gs._kwargs)
                         ax.axvline(x.to(self._xunit).value,
                                          color=c, alpha=a, linewidth=1.5,
                                          **gs._kwargs)
                         gs._kwargs.pop('label', None)
                     try:
                         for x in gs._xalt:
-                            #print(x)
                             ax.axvline(x.to(self._xunit).value,
                                              color=c, alpha=a,
                                              linewidth=0.5, **gs._kwargs)
@@ -698,13 +664,10 @@ class Graph(object):
 
                 elif gs._type == 'text':
                     for (x, t) in zip(gs._x, gs._y):
-                        #print(x,t)
                         ax.text(x.to(self._xunit).value, 0.8, t,
                                       horizontalalignment='center',
                                       transform=trans)
-                        #print("here", x,t)
                         gs._kwargs.pop('label', None)
-                        #print("after", x,t)
                 elif gs._type == 'axvline_special':
                     try:
                         cz = self._cursor._z
@@ -715,21 +678,12 @@ class Graph(object):
 
                     self._cursor_line = []
                     if gs._z == 0:
-                        #break
-                        #gs._z = (1+self._zems[self._text])*xem_d['Ly_a']/gs._xmean-1
-                        #print('gs_xem', gs._xem)
-                        #gs._z = (1+self._zem)*xem_d['Ly_a']/(np.min(gs._xem)*au.nm)-1
                         try:
                             gs._z = cz
                         except:
                             gs._z = self._z
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
-                        #xem = self._x
-                        #print(xem)
-                        #equiv = [(au.nm, au.km/au.s,
-                        #         lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                        #         lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
                         gs._x = np.log(gs._x/xem)*aconst.c.to(au.km/au.s)
                     for i, x in enumerate(gs._x):
                         if i==1:
@@ -739,19 +693,12 @@ class Graph(object):
                                 x.to(self._xunit).value, #alpha=0,
                                 color=c, alpha=a, linewidth=2,
                                 **gs._kwargs))
-                        """
-                        if focus==self._gui._graph_main:
-                            ax.axvline(
-                                x.to(self._xunit).value,
-                                color='C3', alpha=0.3, linewidth=10)
-                        """
 
                     self._cursor_lines.append(self._cursor_line)
                 else:
                     graph = getattr(ax, gs._type)
                     graph(gs._x, gs._y, zorder=z, color=c, alpha=a,
                           **gs._kwargs)
-                #self._c += 1
             except:
                 pass
             if self._axt != None:
@@ -761,17 +708,6 @@ class Graph(object):
                 if self._axt_mode == 'z':
                     self._axt.set_xlim((np.array(ax.get_xlim())*self._xunit \
                         / xem_d[sess._ztrans]).to(au.dimensionless_unscaled)-1)
-
-        #if detail: sess.cb.x_convert(zem=self._zem, xunit=xunit_orig)
-
-        """
-        for c in self._gui._graph_main._cols_sel.split(','):
-            if c in sess.spec.t.colnames:
-                y = sess.spec.t[c]
-                if norm and 'cont' in sess.spec._t.colnames:
-                    y = y/sess.spec.t['cont']
-                ax.plot(sess.spec.x, y)
-        """
 
 
 class GraphLineListXY(object):
