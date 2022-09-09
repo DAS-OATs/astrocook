@@ -191,7 +191,7 @@ class Graph(object):
         except:
             pass
 
-        if not hasattr(self, '_cursor'):
+        if not hasattr(self, '_cursor') and 'cursor_z_series' in self._sel:
             self._refresh_canvas_lists()
             self._seq_addons(sess, ax)
         if 'cursor_z_series' in self._sel and self._cursor_frozen == False:
