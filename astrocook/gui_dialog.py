@@ -851,6 +851,9 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _cursor_delete(self, refresh=False):
         if hasattr(self._gui, '_cursor'):
             self._gui._cursor.Check(False)
+            if hasattr(self._gui, '_graph_main') \
+                and hasattr(self._gui._graph_main._graph, '_cursor'):
+                del self._gui._graph_main._graph._cursor
             if hasattr(self._gui, '_graph_det') \
                 and hasattr(self._gui._graph_det._graph, '_cursor'):
                 del self._gui._graph_det._graph._cursor
@@ -903,6 +906,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
             self._cursor_delete(refresh=True)
             self._cursor_button.SetLabel("Show cursor")
         self._shown = not self._shown
+
 
     def _on_stick(self, e):
         self._gui._graph_main._on_cursor_stick(e)
