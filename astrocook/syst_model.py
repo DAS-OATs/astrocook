@@ -54,20 +54,18 @@ class SystModel(LMComposite):
                 max_nfev = None
 
             plot_jac = False
+            if plot_jac: col = 1
+
+            def _jac(x0, *args, **kwargs):
+                return globals()[self._lines_func.__name__+'_jac']\
+                    (x0, self._xf, series=self._series, resol=self._resol,
+                    spec=self._spec, *args, **kwargs)
+            pars = [self._pars[p].value for p in self._pars if 'z' in p
+                    or 'logN' in p or 'b' in p and 'btur' not in p]
+            if plot_jac: plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
             if use_jac:
-                pars = [self._pars[p].value for p in self._pars if 'z' in p
-                        or 'logN' in p or 'b' in p and 'btur' not in p]
-                def _jac(x0, *args, **kwargs):
-                    return globals()[self._lines_func.__name__+'_jac']\
-                        (x0, self._xf, series=self._series, resol=self._resol,
-                        spec=self._spec, *args, **kwargs)
                 fit_kws_c['jac'] = _jac
-
-                if plot_jac:
-                    col = 1
-                    systn = '0'
-                    plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
                 try:
                     fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
@@ -76,8 +74,7 @@ class SystModel(LMComposite):
                                                      fit_kws=fit_kws_c,
                                                      nan_policy='omit',
                                                      method='least_squares')
-                    if plot_jac:
-                        plt.plot(self._xf, fit.jac[:,col], color='blue')
+                    if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='green')
                 except:
                     del fit_kws_c['jac']
                     use_jac = False
@@ -88,7 +85,8 @@ class SystModel(LMComposite):
                                                  fit_kws=fit_kws_c,
                                                  nan_policy='omit',
                                                  method='least_squares')
-
+                if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='blue')
+            if plot_jac: plt.show()
             time_end = datetime.datetime.now()
             self._pars = fit.params
             self._ys = self.eval(x=self._xs, params=self._pars)
