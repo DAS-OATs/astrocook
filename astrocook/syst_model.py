@@ -335,7 +335,8 @@ class SystModel(LMComposite):
                 if pars_cond or self._constr != {}:
                     for p,v in self._constr.items():
                         if all([p in self._pars for p in v.split('+10**')[1:]]):
-                            self._pars[p].set(expr = v)
+                            if 'backup' not in p:
+                                self._pars[p].set(expr = v)
                         if v.split('+')[0] in self._pars:
                             self._pars[p].set(expr = v)
                         #"""
