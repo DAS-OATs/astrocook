@@ -1634,12 +1634,17 @@ class CookbookAbsorbers(object):
             if mod is None: return 0
             #"""
 
-            # Link z
+            # Link z and b
             if i==0:
-                k = 'lines_voigt_%i_z' % mod._id
+                mass_r = mass_d[trans_parse(s)[0]]
+                kz = 'lines_voigt_%i_z' % mod._id
+                kb = 'lines_voigt_%i_b' % mod._id
             else:
-                #mod._pars['lines_voigt_%i_z' % mod._id].set(expr=k)
-                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', k)
+                mass = mass_d[trans_parse(s)[0]]
+                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', kz)
+                self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
+                    (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))
+
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)
             self._sel_fit = True
