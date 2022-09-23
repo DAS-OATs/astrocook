@@ -60,12 +60,12 @@ class GUITable(wx.Frame):
         self._fill(attr)
 
 
-    def _data_remove(self, row, attr=None, log=True):
+    def _data_remove(self, rows, attr=None, log=True):
         sess = self._gui._sess_sel
         if attr is None: attr = self._attr
 
         if self._attr == 'systs':
-            sess.cb._systs_remove([row])
+            sess.cb._systs_remove(rows)
             sess.cb._mods_recreate()
             sess.cb._spec_update()
         else:
@@ -238,41 +238,24 @@ class GUITable(wx.Frame):
                                          'remove'), event.GetPosition())
 
     def _on_remove(self, event):
-        row = self._gui._tab_popup._event.GetRow()
+        rows = [c[0] for c in self._cells_sel]
+        if rows == []:
+            rows = [self._gui._tab_popup._event.GetRow()]
 
         sess = self._gui._sess_sel
         if self._attr == 'systs':
-            """
-            sess.json += self._gui._json_update("_tab", "_data_init",
-                                                {"attr": self._attr})
-            sess.json += self._gui._json_update("cb", "_systs_remove",
-                                                {"rem": [row]})
-            sess.json += self._gui._json_update("cb", "_mods_recreate", {})
-            """
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
-            sess.log.append_full('cb', '_systs_remove', {'rem': [row]})
+            sess.log.append_full('cb', '_systs_remove', {'rem': rows})
             sess.log.append_full('cb', '_mods_recreate', {})
         else:
-            """
-            sess.json += self._gui._json_update("_tab", "_data_init",
-                                                {"attr": self._attr})
-            sess.json += self._gui._json_update("_tab", "_data_remove",
-                                                {"row": row, "attr": self._attr})
-            """
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
             sess.log.append_full('_tab', '_data_remove',
-                                 {'row': row, 'attr': self._attr})
-        """
-        sess.json += self._gui._json_update("cb", "_spec_update", {})
-        """
+                                 {'row': rows, 'attr': self._attr})
         sess.log.append_full('cb', '_spec_update', {})
 
-        self._data_remove(row, self._attr)
-        #sess.cb._spec_update()
-        #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
-        #self._fill()
+        self._data_remove(rows, self._attr)
         self._gui._refresh(init_cursor=True)
 
 
@@ -464,7 +447,7 @@ class GUITableSystList(GUITable):
         #self._cells_sel = []
         self._data_cells_desel()
         for s in sel:
-            if s[1] in [3, 5, 7, 9]: #self._cells_sel.append(s)
+            if s[1] in [1, 3, 5, 7, 9]: #self._cells_sel.append(s)
                 row = s[0]
                 col = s[1]
                 self._data_cells_sel(row, col)
@@ -744,9 +727,9 @@ class GUITableSystList(GUITable):
         row = event.GetRow()
         col = event.GetCol()
         self._data_cell_right_click(row, col)
+        title = []
+        attr = []
         if col in [3, 5, 7, 9]:
-            title = []
-            attr = []
             if len(self._cells_sel) > 1:
                 if self._tab.GetCellTextColour(row, col) in self._colours:
                     title = ['Unlink']
@@ -764,6 +747,14 @@ class GUITableSystList(GUITable):
             else:
                 title += ['Freeze']
             attr += ['freeze_par']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                           event.GetPosition())
+        if col in [1]:
+            if len(self._cells_sel) > 1:
+                title += ['Remove all']
+            else:
+                title += ['Remove']
+            attr += ['remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
