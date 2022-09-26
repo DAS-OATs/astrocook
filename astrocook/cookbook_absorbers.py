@@ -940,17 +940,18 @@ class CookbookAbsorbers(object):
 
     def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
-        #print(systs._constr.items())
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
             sel = [t_id[r] in m for m in mods_t_id]
             k_del = []
             for k, v in systs._constr.items():
-                if v[0] == t_id[r]:
+                try:
+                    id_check = v[2].split('_')[-2]
+                except:
+                    id_check = ''
+                if str(t_id[r]) in [v[0], id_check]:
                     k_del.append(k)
-            #if not np.all(np.in1d(mods_t_id[sel][0], t_id[rem])):
-            #    refit_id.append(np.setdiff1d(mods_t_id[sel][0], t_id[rem])[0])
         systs._t.remove_rows(rem)
         for k in k_del:
             del systs._constr[k]
