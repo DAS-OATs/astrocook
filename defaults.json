@@ -21,7 +21,7 @@
     "x_lim": null
   },
   "fit": {
-    "use_jac": true,
+    "use_jac": false,
     "ftol": 1e-2,
     "xtol": 1e-3,
     "gtol": 1e-3,
