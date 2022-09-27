@@ -338,7 +338,8 @@ class SystModel(LMComposite):
                             if 'backup' not in p:
                                 self._pars[p].set(expr = v)
                         if v.split('+')[0] in self._pars:
-                            self._pars[p].set(expr = v)
+                            if 'backup' not in p:
+                                self._pars[p].set(expr = v)
                         #"""
                         #self._pars[p].expr = v
                         if v != '' and '**' not in v:
