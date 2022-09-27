@@ -296,7 +296,6 @@ class Session(object):
 
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
-            #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
                 try:
@@ -314,7 +313,6 @@ class Session(object):
             hdr = hdul[0].header
 
         self._data_iden(hdul, hdr)
-        #print(self._orig, self._catg, self._instr)
 
         # Astrocook structures
         format = Format()
@@ -336,7 +334,6 @@ class Session(object):
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'.dat')
                         setattr(self, s, format.astrocook(data, s))
-                        #os.remove(self.path[:-4]+'_'+s+'.dat')
                     except:
                         pass
                 if s == 'systs':
@@ -348,61 +345,19 @@ class Session(object):
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
                         os.remove(self.path[:-4]+'_'+s+'_mods.dat')
-                        #print(data.info)
-                        #data['id'] = object
-                        #for i,id in enumerate(data['id']):
-                        #    data['id'][i] = np.array(list(map(int, id[1:-1].split(','))))
-                        #print(data.info)
                         setattr(systs, '_mods_t', data['z0', 'chi2r'])
                         systs._mods_t.remove_column('chi2r')
-
-                        #systs._mods_t['mod'] = None
                         systs._mods_t['mod'] = np.empty(len(data), dtype=object)
                         systs._mods_t['chi2r'] = data['chi2r']
                         systs._mods_t['id'] = np.empty(len(data), dtype=object)
                         for i in range(len(data)):
-                            #print(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
-                            #print(type(np.array(list(map(int, data['id'][i][1:-1].split(','))))))
-                            #systs._mods_t['id'][i] = list(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
                             systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
                         mods_t_ok = self._model_open(systs)
-
-                        """
-                        mods_t_ok = False
-                        for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
-                                             "session: Opening models"):
-                        #for m in systs._mods_t:
-                            try:
-                                name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
-                                with open(name_mod_dat, 'rb') as f:
-                                    mod = pickle.load(f)
-                            #setattr(mod.__init__, '_tmp', mod.func)
-
-                                for attr in ['_lines', '_group', 'left', 'right']:
-                                    name_attr_dat = self.path[:-4]+'_'+s\
-                                        +'_mods_%i_%s.dat' % (m['id'][0], attr)
-                                    setattr(mod, attr, load_model(name_attr_dat,
-                                            funcdefs=funcdefs))
-                                    os.remove(name_attr_dat)
-                                super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
-                                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
-                                class_unmute(mod, Spectrum, self.spec)
-                                m['mod'] = mod
-                                os.remove(name_mod_dat)
-                                mods_t_ok = True
-                            except:
-                                pass
-                        #"""
-
                         if mods_t_ok:
                             for m in systs._mods_t['mod']:
                                 for attr in ['_mods_t']:
                                     setattr(m, attr, getattr(systs, attr))
-
-
-                            #print(m.func)
-
                             only_constr = True
                             fast = True
             if self.spec is not None and self.systs is not None:
@@ -417,20 +372,13 @@ class Session(object):
         else:
             self._other_open(hdul, hdr)
 
-        #if self._gui._flags is not None \
-        #    and '--systs' in [f[:7] for f in self._gui._flags]:
         if self._gui._flags_cond('--systs'):
-            #paths = [f.split('=')[-1] for f in self._gui._flags if f[:7]=='--systs']
-            #if len(paths)>1:
-            #    logging.warning("You gave me too many system lists! I will "\
-            #                    "load the first one.")
             path = self._gui._flags_extr('--systs')
 
             try:
                 mode = self._gui._flags_extr('--mode')
             except:
                 mode = 'std'
-
 
             # Only ascii for now
             logging.info("I'm using line list %s." % path)
@@ -469,7 +417,6 @@ class Session(object):
             out._t['z0'] = z
             self.spec._t['cont'] = 1
             setattr(self, 'systs', out)
-            #print(out._t)
             self.cb._mods_recreate()
             self.cb._spec_update()
 
@@ -480,15 +427,12 @@ class Session(object):
                     'zero': zero}
 
         mods_t_ok = True
-        #systs = systs
         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                              "session: Opening models"):
-        #for m in systs._mods_t:
             try:
                 name_mod_dat = self.path[:-4]+'_systs_mods_%i.dat' % m['id'][0]
                 with open(name_mod_dat, 'rb') as f:
                     mod = pickle.load(f)
-            #setattr(mod.__init__, '_tmp', mod.func)
 
                 for attr in ['_lines', '_group', 'left', 'right']:
                     name_attr_dat = self.path[:-4]+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
@@ -496,7 +440,6 @@ class Session(object):
                             funcdefs=funcdefs))
                     os.remove(name_attr_dat)
                 super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
-                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
                 class_unmute(mod, Spectrum, self.spec)
                 m['mod'] = mod
                 os.remove(name_mod_dat)
@@ -583,7 +526,7 @@ class Session(object):
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
-        
+
         import warnings
         warnings.filterwarnings("ignore")
 

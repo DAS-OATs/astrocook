@@ -135,6 +135,9 @@ class Graph(object):
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
+            if sess.systs._t is not None:
+                title.append('Fit system')
+                attr.append('syst_fit')
 
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event, title, attr))
@@ -172,7 +175,7 @@ class Graph(object):
 
         # Make system id appear when you hover close enough to a system axvline
         try:
-            if self._systs_id:
+            if self._systs_label:
                 xdiff = np.abs((self._systs_x-dx.to(self._systs_x.unit)).value-x)
                 argmin = np.argmin(xdiff)
                 try:
@@ -182,12 +185,14 @@ class Graph(object):
                 if self._systs_x.si.unit == au.m: thres = 0.5
                 if self._systs_x.si.unit == au.m/au.s: thres = 5
                 if xdiff[argmin] < thres:
-                    self._tag = ax.text(x,y, "%s\nx = %1.7f %s\nz = %1.7f" \
-                                        % (self._systs_series[argmin],
+                    self._tag = ax.text(x,y, "System %s\n%s\nx = %1.3f %s\nz = %1.7f" \
+                                        % (self._systs_id[argmin],
+                                           self._systs_series[argmin],
                                            self._systs_l[argmin].value,
                                            self._systs_l[argmin].unit,
                                            self._systs_z[argmin]),
                                         color=self._systs_color)
+                    self._systs_id_argmin = self._systs_id[argmin]
         except:
             pass
 
@@ -394,7 +399,7 @@ class Graph(object):
                   cursor_list=['cursor']):
 
         xunit_orig = dc(sess.spec.x.unit)
-        self._systs_id = False
+        self._systs_label = False
 
         fast = sess.defs.dict['graph']['fast']
         for e in focus._elem.split('\n'):
@@ -409,7 +414,7 @@ class Graph(object):
                 else:
                     label = '%s, %s' % (struct, ycol)
 
-                if struct == 'systs': self._systs_id = True
+                if struct == 'systs': self._systs_label = True
                 if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
@@ -420,22 +425,26 @@ class Graph(object):
                         except:
                             y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
-                        y[t[mcol]==0] = np.nan
-                    if norm and 'cont' in t.colnames and t[ycol].unit == t[ycol].unit and len(y)==len(t['cont']):
+                        x[t[mcol]==0] = np.nan
+                    if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
                         z = sess.systs.z
                         series = sess.systs.series
+                        id = sess.systs.id
                         z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
                         series_list = [trans_parse(s) for s in series]
+                        id_list = [[idf]*len(trans_parse(s)) for idf,s in zip(id,series)]
                         z_flat = np.array([z for zl in z_list for z in zl])
                         series_flat = np.array([s for sl in series_list for s in sl])
+                        id_flat = np.array([id for idl in id_list for id in idl])
                     else:
                         z = float(xcol)
                         series = sess._cursors[xcol]._series
                         z_flat = np.array([z]*len(trans_parse(series)))
                         series_flat = trans_parse(series)
+                        id_flat = np.array(['']*len(trans_parse(series)))
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
                     if hasattr(self._gui._sess_sel.spec, '_rfz'):
@@ -459,7 +468,8 @@ class Graph(object):
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
-
+                    self._systs_id = id_flat
+                    
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
                         series_sel = self._gui._graph_main._series_sel

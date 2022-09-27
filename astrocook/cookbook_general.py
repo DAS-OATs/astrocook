@@ -294,8 +294,6 @@ class CookbookGeneral(object):
 
             v_shiftmax = v_shift[np.argmax(ccf)]
             try:
-            #    ciao
-            #except:
                 p0 = [1., v_shiftmax, 1.]
                 fit_sel = np.logical_and(v_shift>v_shiftmax-fit_hw.value,
                                          v_shift<v_shiftmax+fit_hw.value)

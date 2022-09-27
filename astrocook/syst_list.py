@@ -24,6 +24,14 @@ class Syst(object):
             self._x[t] = to_x(self._pars['z'], t)
 
 
+    def _check_voigt(self):
+        """ Check if function is Voigt
+        """
+
+        return self._func == 'voigt'
+
+
+
 class SystList(object):
     """ Class for system lists
 
@@ -34,6 +42,7 @@ class SystList(object):
                  id_start=0,
                  func=[],
                  series=[],
+                 z0=[],
                  z=[],
                  dz=[],
                  logN=[],
@@ -61,7 +70,10 @@ class SystList(object):
         bunit = au.km/au.s
         t['func'] = at.Column(np.array(func, ndmin=1), dtype='S5')
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
-        t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        if z0==[] and z!=[]:
+            t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        else:
+            t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)
         t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         t['dz'] = at.Column(np.array(dz, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,
@@ -73,12 +85,10 @@ class SystList(object):
         t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
         t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
-        #if resol != []:
         if len(resol)==len(self.z) and len(resol)>0:
             self._t['resol'] = resol
         else:
             self._t['resol'] = np.empty(len(self.z), dtype=dtype)
-#        if chi2r != []:
         if len(chi2r)==len(self.z) and len(chi2r)>0:
             self._t['chi2r'] = chi2r
         else:
@@ -88,7 +98,6 @@ class SystList(object):
         else:
             self._t['snr'] = np.empty(len(self.z), dtype=dtype)
             self._t['snr'] = np.nan
-#        if id != []:
         if len(id)==len(self.z) and len(id)>0:
             self._t['id'] = id
         else:
@@ -103,14 +112,11 @@ class SystList(object):
             mods_t['mod'] = at.Column(np.array(mod, ndmin=1), dtype=object)
         except:
             mods_t['mod'] = None
-        #mods_t['chi2r'] = at.Column(np.array(chi2r, ndmin=1), dtype=dtype)
-        #mods_t['id'] = at.Column(np.array(id, ndmin=1), dtype=object)
         self._mods_t = mods_t
         self._mods_t['chi2r'] = np.empty(len(self.z), dtype=dtype)
         self._mods_t['id'] = np.empty(len(self.z), dtype=object)
 
         self._meta = meta
-        #self._meta = self._constr
         self._dtype = dtype
 
         self._compressed = False
@@ -134,8 +140,7 @@ class SystList(object):
             else:
                 mod = None
             self._d[s['id']] = Syst(s['func'], s['series'], pars, mod)
-
-
+        self._t.sort('z')
 
 
     @property
@@ -145,6 +150,10 @@ class SystList(object):
     @property
     def mods_t(self):
         return self._mods_t
+
+    @property
+    def id(self):
+        return self._t['id']
 
     @property
     def series(self):
@@ -183,20 +192,12 @@ class SystList(object):
     def _append(self, frame, unique=False):
         vstack_t = at.vstack([self._t, frame._t])
         vstack_mods_t = at.vstack([self._mods_t, frame._mods_t])
-
-        #print(np.array(self._mods_t['z0']))
-        #print(np.array(frame._mods_t['id']))
-        #print(np.array(vstack_mods_t['id']))
-
         if unique:
             self._t = at.unique(vstack_t, keys=['z0', 'z'])
-#            self._mods_t = at.unique(vstack_mods_t, keys=['z0'])
             self._mods_t = at.unique(vstack_mods_t, keys=['z0', 'id'])
         else:
             self._t = vstack_t
             self._mods_t = vstack_mods_t
-        #print(self._mods_t['z0', 'id'])
-        #print(len(self._mods_t))
         return 0
 
 
@@ -233,12 +234,6 @@ class SystList(object):
             for c in t_by_group.colnames[10:-1]:
                 t[c] = at.Column(np.array([g[c][len(g)//2] \
                                            for g in t_by_group.groups]))
-            """
-            t['chi2r'] = at.Column(np.array([g['chi2r'][len(g)//2] \
-                                             for g in t_by_group.groups]))
-            t['id'] = at.Column(np.array([g['id'][len(g)//2] \
-                                          for g in t_by_group.groups]))
-            """
             t.sort(['z','id'])
             self._t = t
             self._compressed = True
@@ -248,37 +243,25 @@ class SystList(object):
 
 
     def _constrain(self, dict):
-        #self._constr = {}
-        #print(self)
-        #print(dict)
         for k, v in dict.items():
-            #print(k, dict[k])
             for m in self._mods_t:
                 if v[0] in m['id']:
-                    """
-                    if k in ['lines_voigt_%i_b' %i for i in (33,34,35,40,41,42)]:
-                        print('inside')
-                        print(v)
-                        m['mod']._pars.pretty_print()
-                    """
                     if v[1]=='expr':
-                        #print(k, v[2], type(v[2]))
                         m['mod']._pars[k].set(expr=v[2])
                         if v[2]=='':
                             m['mod']._pars[k].set(vary=True)
+                        if k in self._constr:
+                            self._constr[k+'_backup'] = self._constr[k]
                         self._constr[k] = (v[0], k.split('_')[-1], v[2])
                     if v[1]=='vary':
                         m['mod']._pars[k].set(vary=v[2])
                         if v[2]:
                             if k in self._constr: del self._constr[k]
                         else:
+                            if k in self._constr:
+                                self._constr[k+'_backup'] = self._constr[k]
                             self._constr[k] = (v[0], k.split('_')[-1], None)
-                        #print(v[0], v[1], v[2])
-                        #print(m['mod']._pars[k].__dict__)
-        #print(self._constr)
-                #print(m['mod']._pars)
-                #m['mod']._pars.pretty_print()
-                #print('[',id(m),']')
+
 
     def _freeze(self):
         """ Create a frozen copy of the tables self._t and self._mods_t
@@ -291,6 +274,70 @@ class SystList(object):
             m['id'] = dc(self._mods_t['id'][i])
 
         return t, mods_t
+
+
+    def _freeze_par(self, par, exclude=[], reverse=False):
+        """ Freeze or unfreeze values of a given parameter (z, logN, or b)
+        """
+
+        self._dict_update(mods=True)
+        freezes = {}
+        for i in self._t['id']:
+            if i not in exclude:
+                n = 'lines_voigt_{}_{}'.format(i,par)
+                s = self._d[i]
+                if not s._check_voigt():
+                    logging.error("Only Voigt function is supported for "
+                                  "fitting. I cannot freeze "
+                                  "parameter {}.".format(par))
+                    return 0
+                freezes[n] = (i, 'vary', reverse)
+                if reverse and n+'_backup' in self._constr:
+                    v = self._constr[n+'_backup']
+                    if type(v[2]) == str:
+                        freezes[n] = (v[0], 'expr', v[2])
+                    if v[2] is None:
+                        freezes[n] = (v[0], 'vary', None)
+                    del self._constr[n+'_backup']
+        self._constrain(freezes)
+        return freezes
+
+
+    def _freeze_pars(self, exclude=[]):
+        """ Freeze values of z, logN, and b
+        """
+
+        self._t_backup = dc(self._t)
+        r = [np.where(self._t_backup['id'] == e)[0][0] for e in exclude]
+        self._t_backup.remove_rows(r)
+        for p in ['z', 'logN', 'b']:
+            self._freeze_par(p, exclude)
+        return 0
+
+
+    def _unfreeze_pars(self, exclude=[]):
+        """ Unfreeze values of z, logN, and b
+        """
+
+        for p in ['z', 'logN', 'b']:
+            self._freeze_par(p, exclude, reverse=True)
+        if hasattr(self, '_t_backup'):
+            rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
+            for r in rows:
+                self._t_backup.add_row(self._t[r])
+            removes = []
+            adds = []
+            for ri, r in enumerate(self._t):
+                rb = np.where(self._t_backup['id'] == r['id'])[0]
+                if len(rb)>0:
+                    removes.append(ri)
+                    adds.append(self._t_backup[rb[0]])
+            self._t.remove_rows(removes)
+            for a in adds:
+                self._t.add_row(a)
+            self._t.sort(['z','id'])
+
+        return 0
 
 
     def _region_extract(self, xmin, xmax):
@@ -369,5 +416,3 @@ class SystList(object):
         self._id += 1
 
         self._dict_update()
-        #print(self._mods_t['id', 'chi2r'])
-        #print(self._t)

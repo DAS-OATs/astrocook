@@ -46,13 +46,6 @@ class Format(object):
                     delete.append(m)
             for d in delete:
                 del meta[d]
-            """
-            try:
-                meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
-            except:
-                meta['object'] = ''
-                logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-            """
             if struct in ['spec', 'nodes']:
                 out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=yunit,
                                meta=meta)
@@ -107,6 +100,7 @@ class Format(object):
         if struct in ['systs']:
             series = data['series']
             func = data['func']
+            z0 = data['z0']
             z = data['z']
             dz = data['dz']
             logN = data['logN']
@@ -122,12 +116,13 @@ class Format(object):
             resol = data['resol']
             chi2r = data['chi2r']
             id = data['id']
-            out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, btur=btur, dbtur=dbtur,
-                           resol=resol, chi2r=chi2r, id=id)
-            out._t['z0'] = data['z0']
+            out = SystList(func=func, series=series, z0=z0, z=z, dz=dz,
+                           logN=logN, dlogN=dlogN, b=b, db=db, btur=btur,
+                           dbtur=dbtur, resol=resol, chi2r=chi2r, id=id)
+            out._t.sort('z')
             for c in Table(data).colnames:
-                if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
+                if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b',
+                             'db', 'resol', 'chi2r', 'id', 'z0']:
                     out._t[c] = data[c]
             for k in hdr:
                 ks = k.split(' ')
@@ -138,8 +133,8 @@ class Format(object):
                         if 'PAR' in ks: par = hdr[k]
                         if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
                             = (id, par, hdr[k])
-            #print(out._constr)
         return out
+
 
     def eso_adp(self, hdul):
         logging.info(msg_format('ESO Advanced Data Product'))
@@ -556,7 +551,7 @@ class Format(object):
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
             if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
-                    if c not in [x_name, y_name, dy_name]:
+                    if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
                         spec._t[c] = data[c]
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
@@ -890,7 +885,7 @@ def sdss_spectrum(self, hdul):
         return np.sqrt(1 / x)
     vectRevIVar = np.vectorize(revIVar)
 
-    hdr = hdul[1].header 
+    hdr = hdul[1].header
     data = np.array([np.array(i) for i in hdul[1].data])
 
     y = data[:, 0]

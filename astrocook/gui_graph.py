@@ -198,6 +198,17 @@ class GUIGraphMain(wx.Frame):
         sess._shade = False
         self._gui._refresh()
 
+
+    def _on_syst_fit(self, event):
+        id = self._gui._graph_main._graph._systs_id_argmin
+
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system...', 'syst_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
 
