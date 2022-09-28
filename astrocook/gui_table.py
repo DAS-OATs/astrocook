@@ -690,10 +690,10 @@ class GUITableSystList(GUITable):
                            event.GetPosition())
         if col in [1]:
             if len(self._cells_sel) > 1:
-                title += ['Remove all']
+                title += ['Fit all systems...', 'Remove all']
             else:
-                title += ['Remove']
-            attr += ['remove']
+                title += ['Fit system...', 'Remove']
+            attr += ['syst_fit', 'remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
@@ -761,9 +761,11 @@ class GUITableSystList(GUITable):
 
 
     def _on_syst_fit(self, event):
-        row = self._gui._tab_popup._event.GetRow()
-        id = self._id_extract(row)
-        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+        rows = [c[0] for c in self._cells_sel]
+        if rows == []:
+            rows = [self._gui._tab_popup._event.GetRow()]
+        ids = [self._id_extract(r) for r in rows]
+        params = [{'ids': ids, 'refit_n': 0, 'chi2rav_thres': 1e-2,
                    'max_nfev': max_nfev_def}]
         dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
                               params_last = params)

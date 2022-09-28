@@ -1122,10 +1122,10 @@ class CookbookAbsorbers(object):
         self.sess.systs._collapse()
         return 0
 
-    def syst_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
+    def syst_fit(self, ids=[1], refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
-        """ @brief Fit an individual systems
-        @details Fit a system, freezing the components of all other systems.
+        """ @brief Fit individual systems
+        @details Fit one or more system, freezing the components of all other systems.
         @param id System id
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
@@ -1133,16 +1133,16 @@ class CookbookAbsorbers(object):
         @return 0
         """
         try:
-            id = int(id)
+            ids = [int(i) for i in ids[1:-1].split(',')]
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
         except:
             logging.error(msg_param_fail)
             return 0
-        self.sess.systs._freeze_pars(exclude=[id])
+        self.sess.systs._freeze_pars(exclude=ids)
         self.systs_fit(refit_n)
-        self.sess.systs._unfreeze_pars(exclude=[id])
+        self.sess.systs._unfreeze_pars(exclude=ids)
         self._spec_update()
 
         return 0
