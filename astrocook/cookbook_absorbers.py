@@ -419,14 +419,14 @@ class CookbookAbsorbers(object):
             wrong_id = []
             corr_id = []
             tt = time.time()
-            #for i,s in enum_tqdm(systs_t, len(mod_sel),
-            #                     "cookbook_absorbers: Recreating"):
-            for i,m in enum_tqdm(mod_sel, len(mod_sel),
+            for i,s in enum_tqdm(systs_t, len(systs_t), #len(mod_sel),
                                  "cookbook_absorbers: Recreating"):
-                #systs._id = s['id']
-                systs._id = m
-                #if systs._id in mod_sel:
-                for s in systs_t[np.where(systs_t['id']==m)[0]]:
+            #for i,m in enum_tqdm(mod_sel, len(mod_sel),
+            #                     "cookbook_absorbers: Recreating"):
+                systs._id = s['id']
+                #systs._id = m
+                if systs._id in mod_sel:
+                #for s in systs_t[np.where(systs_t['id']==m)[0]]:
                     vars = {}
                     constr = {}
                     for k, v in systs._constr.items():
@@ -437,9 +437,7 @@ class CookbookAbsorbers(object):
                                 id_check = ''
                             ids = [str(id) for id in systs_t['id']]+['']
 
-                            if id_check in ['56', '57', '58', '59']: print(s['id'], id_check, ids, id_check in ids )
                             if v[2]!=None and id_check in ids:
-                                if id_check in ['56', '57', '58', '59']: print('ok')
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
@@ -462,9 +460,9 @@ class CookbookAbsorbers(object):
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
                     self._mods_update(mod)
 
-                #else:
-                #    systs._id = np.max(systs._t['id'])+1
-            systs._id = np.max(systs._t['id'])+1
+                else:
+                    systs._id = np.max(systs._t['id'])+1
+            #systs._id = np.max(systs._t['id'])+1
 
             for w, c in zip(wrong_id, corr_id):
                 logging.warning("System %i had a duplicated id! I changed it "
