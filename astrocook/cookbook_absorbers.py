@@ -371,7 +371,7 @@ class CookbookAbsorbers(object):
                     mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
         # When a model has been added
-        if mod_new is not None:
+        elif mod_new is not None:
             mod_sel = np.array([], dtype=int)
             mod_w = np.array([], dtype=int)
             ys = mod_new._ys
@@ -419,10 +419,14 @@ class CookbookAbsorbers(object):
             wrong_id = []
             corr_id = []
             tt = time.time()
-            for i,s in enum_tqdm(systs_t, len(mod_sel),
+            #for i,s in enum_tqdm(systs_t, len(mod_sel),
+            #                     "cookbook_absorbers: Recreating"):
+            for i,m in enum_tqdm(mod_sel, len(mod_sel),
                                  "cookbook_absorbers: Recreating"):
-                systs._id = s['id']
-                if systs._id in mod_sel:
+                #systs._id = s['id']
+                systs._id = m
+                #if systs._id in mod_sel:
+                for s in systs_t[np.where(systs_t['id']==m)[0]]:
                     vars = {}
                     constr = {}
                     for k, v in systs._constr.items():
@@ -450,8 +454,9 @@ class CookbookAbsorbers(object):
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
                     self._mods_update(mod)
 
-                else:
-                    systs._id = np.max(systs._t['id'])+1
+                #else:
+                #    systs._id = np.max(systs._t['id'])+1
+            systs._id = np.max(systs._t['id'])+1
 
             for w, c in zip(wrong_id, corr_id):
                 logging.warning("System %i had a duplicated id! I changed it "
