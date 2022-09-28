@@ -431,7 +431,15 @@ class CookbookAbsorbers(object):
                     constr = {}
                     for k, v in systs._constr.items():
                         if v[0]==systs._id:
-                            if v[2]!=None:
+                            try:
+                                id_check = v[2].split('_')[-2]
+                            except:
+                                id_check = ''
+                            ids = [str(id) for id in systs_t['id']]+['']
+
+                            if id_check in ['56', '57', '58', '59']: print(s['id'], id_check, ids, id_check in ids )
+                            if v[2]!=None and id_check in ids:
+                                if id_check in ['56', '57', '58', '59']: print('ok')
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
@@ -907,9 +915,11 @@ class CookbookAbsorbers(object):
                     id_check = ''
                 if str(t_id[r]) in [v[0], id_check]:
                     k_del.append(k)
+
         systs._t.remove_rows(rem)
         for k in k_del:
             del systs._constr[k]
+
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
