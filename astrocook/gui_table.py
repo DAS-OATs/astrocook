@@ -936,7 +936,8 @@ class GUITableSystList(GUITable):
                                                     %len(self._colours)]
                             self._colourc += 1
                         self._tab.SetCellTextColour(r, c, self._links_c[vs])
-                        self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
+                        if r2 != None and c2 != None:
+                            self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
             if not mod._active:
                 cols = self._tab.GetNumberCols()
                 for c in range(cols):
