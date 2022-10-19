@@ -64,6 +64,7 @@ class SystModel(LMComposite):
                     or 'logN' in p or 'b' in p and 'btur' not in p]
             if plot_jac: plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
+            plt.plot(self._xf, self._yf)
             if use_jac:
                 fit_kws_c['jac'] = _jac
 
@@ -90,6 +91,11 @@ class SystModel(LMComposite):
             time_end = datetime.datetime.now()
             self._pars = fit.params
             self._ys = self.eval(x=self._xs, params=self._pars)
+            prova = np.where(self._xs<1000)[0]
+            #plt.plot(self._xs, self._ys)
+            #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))
+            #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
+            #plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic

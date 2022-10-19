@@ -551,7 +551,25 @@ class Session(object):
                     name = root+'_'+s+'.fits'
                     name_dat = root+'_'+s+'.dat'
                     #print(getattr(self, s).__dict__)
-                    obj = dc(getattr(self, s))
+                    """
+                    try:
+                        mods = getattr(self, s)._mods_t
+                        w = []
+                        for m in mods:
+                            w.append(744 in m['id'])
+
+                        print(w)
+                        mod = mods[w]
+                        print(mod['id'][0])
+                        print(mod['mod'][0].__dict__)
+                        mod['mod'][0]._pars.pretty_print()
+                    except:
+                        pass
+                    """
+                    try:
+                        obj = dc(getattr(self, s))
+                    except:
+                        obj = getattr(self, s)
                     t = dc(obj._t)
                     if s == 'systs':
                         name_mods_dat = root+'_'+s+'_mods.dat'

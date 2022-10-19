@@ -400,6 +400,8 @@ class CookbookAbsorbers(object):
             mod_w = range(len(systs._mods_t))
             mod_sel = np.array(systs._t['id'])
 
+        #print(mod_sel)
+
         compressed = False
         if systs is not None and systs._compressed:
             systs_t = systs._t_uncompressed
@@ -699,7 +701,13 @@ class CookbookAbsorbers(object):
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
-                fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+                if mod is None:
+                    fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+                else:
+                    self._syst_fit(mod=mod, verbose=False)
+                    fit_list = [True]
+                    chi2r_list = [mod._chi2r]
+                    z_list = [mod._z0]
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                              -np.array(chi2r_list_old)))
@@ -707,7 +715,14 @@ class CookbookAbsorbers(object):
                 self._systs_reject(mod=mod, verbose=verbose)
                 self._mods_recreate(verbose=False)
             #print(chi2rav, chi2rav_old)
-        fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+        if mod is None:
+            fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+        else:
+            self._syst_fit(mod=mod, verbose=False)
+            fit_list = [True]
+            chi2r_list = mod._chi2r
+            z_list = [mod._z0]
+
         self._systs_reject(mod=mod, verbose=verbose)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
