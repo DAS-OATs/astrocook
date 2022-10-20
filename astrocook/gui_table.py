@@ -65,11 +65,11 @@ class GUITable(wx.Frame):
 
         if self._attr == 'systs':
             sess.cb._systs_remove(rows)
-            sess.cb._mods_recreate()
+            sess.cb._mods_recreate(rem=rows)
             sess.cb._spec_update()
         else:
             tab = getattr(self._gui, '_tab_'+attr)
-            tab._data.t.remove_row(row)
+            tab._data.t.remove_rows(rows)
 
 
     def _data_sort(self, label, reverse=False, attr=None, log=True):

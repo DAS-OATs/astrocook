@@ -343,7 +343,8 @@ class CookbookAbsorbers(object):
                          % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
-    def _mods_recreate2(self, only_constr=False, mod_new=None, fast=False, verbose=True):
+    def _mods_recreate2(self, only_constr=False, mod_new=None, rem=None,
+                        fast=False, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
         spec.t['fit_mask'] = False
@@ -395,12 +396,19 @@ class CookbookAbsorbers(object):
                     for w in mod_w:
                         mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
+        #When a system has been removed
+        elif rem is not None:
+            mod_sel = np.array([], dtype=int)
+            t_id = systs._t['id']
+            mods_t_id = systs._mods_t['id']
+            for r in rem:
+                mod_w = [t_id[r] in m for m in mods_t_id]
+                mod_sel = np.append(mod_sel, mods_t_id[mod_w][0])
+
 
         else:
             mod_w = range(len(systs._mods_t))
             mod_sel = np.array(systs._t['id'])
-
-        #print(mod_sel)
 
         compressed = False
         if systs is not None and systs._compressed:
@@ -713,7 +721,7 @@ class CookbookAbsorbers(object):
                                              -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
                 self._systs_reject(mod=mod, verbose=verbose)
-                self._mods_recreate(verbose=False)
+                self._mods_recreate(mod_new=mod, verbose=verbose)
             #print(chi2rav, chi2rav_old)
         if mod is None:
             fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
@@ -724,6 +732,7 @@ class CookbookAbsorbers(object):
             z_list = [mod._z0]
 
         self._systs_reject(mod=mod, verbose=verbose)
+        self._mods_recreate(mod_new=mod, verbose=verbose)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (np.sum(fit_list), msg_z_range(z_list)))
