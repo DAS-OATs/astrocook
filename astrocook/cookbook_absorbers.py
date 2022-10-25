@@ -1149,8 +1149,20 @@ class CookbookAbsorbers(object):
         except:
             logging.error(msg_param_fail)
             return 0
+
         self.sess.systs._freeze_pars(exclude=ids)
-        self.systs_fit(refit_n)
+
+        # Select model
+        mods_t = self.sess.systs._mods_t
+
+        for i,id in enum_tqdm(ids, len(ids), 'cookbook_absorbers: Fitting'):
+            for m in mods_t:
+                if id in m['id']:
+                    mod = m['mod']
+            self.systs_fit(refit_n, _mod=mod)
+        logging.info("I've fitted %i system%s." \
+                     % (len(ids), 's' if len(ids)>1 else ''))
+
         self.sess.systs._unfreeze_pars(exclude=ids)
         self._spec_update()
 
@@ -1176,15 +1188,19 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        t = self.sess.systs._t
+        # Select model
         mods_t = self.sess.systs._mods_t
         for m in mods_t:
             if id in m['id']:
                 mod = m['mod']
+
+        # Select system
+        t = self.sess.systs._t
         for s in t:
             if id == s['id']:
                 s['dz'] = np.nan
         self._sel_fit = True
+
         self._systs_cycle(mod=mod)
         self._spec_update()
 
@@ -1248,7 +1264,7 @@ class CookbookAbsorbers(object):
 
 
     def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
-                  sel_fit=False):
+                  sel_fit=False, _mod=None):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
@@ -1268,7 +1284,7 @@ class CookbookAbsorbers(object):
             return 0
 
         #self._systs_fit()
-        self._systs_cycle()
+        self._systs_cycle(mod=_mod, verbose=False)
         self._spec_update()
 
         return 0
