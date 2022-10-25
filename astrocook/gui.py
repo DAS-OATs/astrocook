@@ -321,9 +321,14 @@ class GUI(object):
 
                 if hasattr(self, '_col_sel') \
                     and self._col_sel < self._col_tab.GetNumberCols():
-                    self._col_values = \
-                        [float(self._col_tab.GetCellValue(i, self._col_sel)) \
-                         for i in range(self._col_tab.GetNumberRows())]
+                    try:
+                        self._col_values = \
+                            [float(self._col_tab.GetCellValue(i, self._col_sel)) \
+                            for i in range(self._col_tab.GetNumberRows())]
+                    except:
+                        self._col_values = \
+                            [self._col_tab.GetCellValue(i, self._col_sel) \
+                            for i in range(self._col_tab.GetNumberRows())]
         if hasattr(self, '_tab_systs') and self._tab_systs._shown:
             try:
                 self._tab_systs._text_colours()

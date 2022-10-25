@@ -709,27 +709,16 @@ class CookbookAbsorbers(object):
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
-                if mod is None:
-                    fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
-                else:
-                    self._syst_fit(mod=mod, verbose=False)
-                    fit_list = [True]
-                    chi2r_list = [mod._chi2r]
-                    z_list = [mod._z0]
+                fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                              -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
                 self._systs_reject(mod=mod, verbose=verbose)
+                #self._mods_recreate(verbose=False)
                 self._mods_recreate(mod_new=mod, verbose=verbose)
             #print(chi2rav, chi2rav_old)
-        if mod is None:
-            fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
-        else:
-            self._syst_fit(mod=mod, verbose=False)
-            fit_list = [True]
-            chi2r_list = mod._chi2r
-            z_list = [mod._z0]
+        fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
 
         self._systs_reject(mod=mod, verbose=verbose)
         self._mods_recreate(mod_new=mod, verbose=verbose)
@@ -750,13 +739,8 @@ class CookbookAbsorbers(object):
             fit_list = []
             for i,m in enumerate(mods_t):
                 if self._sel_fit:
-                    #print(m['id'])
-                    #print(systs._t['id'])
-                    #print([np.where(systs._t['id']==id) for id in m['id']])
-                    #print([np.where(systs._t['id']==id)[0][0] for id in m['id']])
                     dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
                           for id in m['id']]
-                    #print(np.isnan(dz).any())
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
@@ -945,6 +929,7 @@ class CookbookAbsorbers(object):
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
+        #print(systs._mods_t['mod'])
         modw = np.where(mod == systs._mods_t['mod'])[0][0]
         ids = systs._mods_t['id'][modw]
         for i in ids:
@@ -1191,11 +1176,16 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        t = self.sess.systs._t
         mods_t = self.sess.systs._mods_t
         for m in mods_t:
             if id in m['id']:
                 mod = m['mod']
-        self._systs_cycle(mod)
+        for s in t:
+            if id == s['id']:
+                s['dz'] = np.nan
+        self._sel_fit = True
+        self._systs_cycle(mod=mod)
         self._spec_update()
 
         return 0

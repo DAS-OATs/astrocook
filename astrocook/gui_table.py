@@ -821,10 +821,13 @@ class GUITableSystList(GUITable):
 
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
-        if row == -1 and col>1:
+        if row == -1 and col>0:
             self._data_top_label_right_click(col)
-            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
-            attr = ['sort', 'sort_reverse', None, 'histogram']
+            title = ['Sort ascending', 'Sort descending']
+            attr = ['sort', 'sort_reverse']
+            if col > 1:
+                title += ['sep', 'Histogram']
+                attr += [None, 'histogram']
             if col in [3,5,7]:
                 title += ['sep', 'Freeze all', 'Unfreeze all']
                 attr += [None, 'freeze_par_all', 'unfreeze_par_all']
