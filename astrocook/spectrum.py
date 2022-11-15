@@ -698,6 +698,16 @@ class Spectrum(Frame):
         self._t[output_col] = pl(self.x)
 
 
+    def _y_scale(self, fact):
+        super(Spectrum, self)._yscale(fact)
+
+        cols = ['model', 'deabs', 'y_rm', 'cont']
+        for c in cols:
+            if c in self._t.colnames:
+                self._t[c] = self._t[c] * fact
+        return 0
+
+
     def _zap(self, xmin, xmax):
 
         xmin = np.ravel(np.array(xmin))
