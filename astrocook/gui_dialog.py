@@ -853,7 +853,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
         # Refresh cursor
         shown = True if self._shown else False
         self._shown = False
-        self._on_cancel(e=None)
+        #self._on_cancel(e=None)
+        self._cursor_delete()
         self._shown = True
         self._on_apply(e=None)
         self._shown = shown
@@ -891,13 +892,13 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _on_stick(self, e):
         self._gui._graph_main._on_cursor_stick(e)
 
-
-
-
     def _on_cancel(self, e):
         self._cursor_delete()
         self._menu.FindItemById(self._dlg_id[4]).Check(False)
-        self.Destroy()
+        try:
+            self.Destroy()
+        except:
+            pass
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 

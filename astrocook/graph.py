@@ -1,5 +1,5 @@
 from .message import *
-from .functions import trans_parse
+from .functions import trans_parse, x_convert
 from .vars import *
 from astropy import units as au
 from astropy import constants as aconst
@@ -217,9 +217,22 @@ class Graph(object):
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
                                             % (x, y, self._cursor._series, z_obs))
             else:
-                z = (x/self._cursor._xmean.to(sess.spec._xunit).value-1)#*(1+sess.spec._rfz)
-                for c, xem in zip(self._cursor_line, self._cursor._xem):
-                    c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
+
+                try:  # X-axis in wavelengths
+                    z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
+                    xzs = [xem*au.nm.to(sess.spec._xunit)*(1+z)
+                            for xem in self._cursor._xem]
+                except:  # X-axis in velocities
+                    xc = x_convert(x*sess.spec._xunit, sess.spec._zem,
+                                   au.nm).value
+                    z = xc/self._cursor._xmean.to(au.nm).value-1
+                    xzs = [x_convert(xem*au.nm*(1+z), sess.spec._zem,
+                                      sess.spec._xunit)
+                           for xem in self._cursor._xem]
+
+                for c, xz in zip(self._cursor_line, xzs):
+                    #c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
+                    c.set_xdata(xz)
                     c.set_alpha(0.5)
                 z_obs = z*(1+sess.spec._rfz)
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
@@ -453,23 +466,26 @@ class Graph(object):
                         x = xem*(1+z_flat)
                     try:
                         x = x.to(sess.spec._xunit)
-                        x_iswave = True
+                        self._x_iswave = True
                     except:
-                        x_iswave = False
+                        x = x.to(sess.spec._xunit, equivalencies=equiv_w_v)
+                        self._x_iswave = False
                     self._systs_l = x
                     if detail:
                         for k in self._axes:
                             if self._axes[k] == ax:
                                 zem = self._zems[k]
-                        if x_iswave:
-                            x = np.log(x.to(au.nm).value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                        if self._x_iswave:
+                            x = np.log(x.to(au.nm).value/((1+zem)*121.567))\
+                                *aconst.c.to(au.km/au.s)
                         else:
-                            x = np.log(x.value/((1+zem)*121.567))*aconst.c.to(au.km/au.s)
+                            x = np.log(x.value/((1+zem)*121.567))\
+                                *aconst.c.to(au.km/au.s)
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
                     self._systs_id = id_flat
-                    
+
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
                         series_sel = self._gui._graph_main._series_sel
@@ -631,14 +647,18 @@ class Graph(object):
                         gs._x = gs._xem*(1+gs._z)*au.nm
                         xem = self._xs[self._text]
                         gs._x = np.log(gs._x/xem)*aconst.c.to(au.km/au.s)
+
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
+                        if self._x_iswave:
+                            xv = x.to(self._xunit).value
+                        else:
+                            xv = x_convert(x, sess.spec._zem,
+                                           sess.spec._xunit).value
                         self._cursor_line.append(
-                            ax.axvline(
-                                x.to(self._xunit).value, #alpha=0,
-                                color=c, alpha=a, linewidth=2,
-                                **gs._kwargs))
+                            ax.axvline(xv, color=c, alpha=a, linewidth=2,
+                                       **gs._kwargs))
 
                     self._cursor_lines.append(self._cursor_line)
                 else:
@@ -827,7 +847,7 @@ class GraphCursorZSeries(object):
         self._xem = np.array([xem_d[t].value for t in trans_parse(self._series)])
         self._xmean = np.mean(self._xem)*au.nm
         try:
-            self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
+            #self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
             self._z = sess._z_sel
         except:
             self._z = 0

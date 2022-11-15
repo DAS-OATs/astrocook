@@ -350,21 +350,9 @@ class Frame():
         return 0
 
     def _x_convert(self, zem=0, xunit=au.km/au.s):
-
         self._zem = zem
-        """
-        xem = (1+zem) * 121.567*au.nm
-        equiv = [(au.nm, au.km/au.s,
-                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-        """
         self._xunit = xunit
         self._xunit_old = self._t['x'].unit
-        """
-        self.x = self.x.to(xunit, equivalencies=equiv)
-        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
-        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
-        """
         self.x = x_convert(self.x, zem, xunit)
         self.xmin = x_convert(self.xmin, zem, xunit)
         self.xmax = x_convert(self.xmax, zem, xunit)
