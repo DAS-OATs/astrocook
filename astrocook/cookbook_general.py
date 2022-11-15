@@ -501,9 +501,15 @@ class CookbookGeneral(object):
         spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
         if cont:
             if not norm:
-                spec_out.t['cont'] = np.interp(
-                    spec_out.x.to(au.nm).value,spec_in.x.to(au.nm).value,
-                    spec_in.t['cont']) * spec_out.y.unit
+                try:  # x-axis in wavelengths
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.nm).value, spec_in.x.to(au.nm).value,
+                        spec_in.t['cont']) * spec_out.y.unit
+                except:  # x-axis in velocities
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.km/au.s).value,
+                        spec_in.x.to(au.km/au.s).value,
+                        spec_in.t['cont']) * spec_out.y.unit
             else:
                 spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
