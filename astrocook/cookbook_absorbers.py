@@ -505,7 +505,6 @@ class CookbookAbsorbers(object):
                 spec.t['fit_mask'][c] = True
 
 
-
         systs_t.sort(['z','id'])
         systs_n = len(systs._t)
         mods_n = len(systs._mods_t)

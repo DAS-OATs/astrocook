@@ -600,9 +600,12 @@ class GUITableSystList(GUITable):
                 if parn != val:
                     v = self._tab.GetCellValue(self._cells_sel[ref][0],
                                                self._cells_sel[ref][1])
+                    # Value from data table, to get full precision
+                    vt = self._data.t[parn.split('_')[-1]]\
+                             [self._cells_sel[ref][0]]
                     self._tab.SetCellValue(r, c, v)
                     self._links_d[parn] = (id, 'expr', val)
-                    self._data_edit(r, labels[c], v, update_mod=False)
+                    self._data_edit(r, labels[c], vt, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
