@@ -64,8 +64,7 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         if self._attr == 'systs':
-            sess.cb._systs_remove(rows)
-            sess.cb._mods_recreate(rem=rows)
+            rem_id = sess.cb._systs_remove(rows)
             sess.cb._spec_update()
         else:
             tab = getattr(self._gui, '_tab_'+attr)
@@ -232,7 +231,6 @@ class GUITable(wx.Frame):
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
             sess.log.append_full('cb', '_systs_remove', {'rem': rows})
-            sess.log.append_full('cb', '_mods_recreate', {})
         else:
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
