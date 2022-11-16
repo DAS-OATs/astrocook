@@ -152,6 +152,7 @@ class Session(object):
 
         instr, catg, orig, telesc = self._instr, self._catg, self._orig, self._telesc
 
+        print(instr, catg, orig, telesc)
         # ESO ADP spectrum
         if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
             self.spec = format.eso_adp(hdul)
@@ -284,6 +285,11 @@ class Session(object):
                 self.spec = format.generic_spectrum(self, hdul)
                 return 0
 
+        # Astrocook spectrum-only
+        if orig == 'Astrocook':
+            self.spec = format.generic_spectrum(self, hdul)
+            return 0
+            
 
     def open(self):
 
@@ -333,6 +339,7 @@ class Session(object):
         format = Format()
         only_constr = False
         fast = False
+
         if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
             for s in self.seq:
                 if s == 'feats':
