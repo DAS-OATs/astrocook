@@ -471,20 +471,24 @@ class GUIPanelSession(wx.Frame):
         self._gui._sess_sel = self._gui._sess_list[self._sel]
         self._gui._sess_items = [self._gui._sess_sel]
         if open:
-            success = self._gui._sess_sel.open()
+            ko = self._gui._sess_sel.open()
+        else:
+            ko = False
 
-        x = sess.spec._safe(sess.spec.x)
-        self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
-        self._gui._sess_sel._graph_lim = graph_lim_def
+        if not ko:
+            x = sess.spec._safe(sess.spec.x)
+            self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+            self._gui._sess_sel._graph_lim = graph_lim_def
 
-        self._gui._refresh(init_tab=False, autolim=False)
+            self._gui._refresh(init_tab=False, autolim=False)
 
-        # Enable import from depending on how many sessions are present
-        for menu in [self._menu._edit, self._menu._cb_general]:
-            menu_dict = menu._menu.__dict__
-            for m in menu_dict:
-                menu._menu.Enable(menu_dict[m]['start_id'],
-                menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
+            # Enable import from depending on how many sessions are present
+            for menu in [self._menu._edit, self._menu._cb_general]:
+                menu_dict = menu._menu.__dict__
+                for m in menu_dict:
+                    menu._menu.Enable(menu_dict[m]['start_id'],
+                    menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
+        self._gui._ok = not ko
 
 
     def _on_edit(self, event):

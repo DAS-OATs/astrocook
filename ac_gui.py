@@ -14,8 +14,12 @@ def main():
         paths = list(np.array(sys.argv[1:])[pw])
         flags = list(np.array(sys.argv[1:])[fw])
         gui = GUI(paths, flags)
+        ok = gui._ok
     except:
-        logging.exception("I found some problems loading this session.")
+        logging.error("I found some problems loading this session.")
+        ok = False
+
+    if not ok:
         logging.warning("Re-starting with an empty session.")
         gui = GUI()
     app.MainLoop()
