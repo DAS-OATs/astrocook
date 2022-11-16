@@ -343,7 +343,7 @@ class CookbookAbsorbers(object):
                          % (mods_n, '' if mods_n==1 else 's'))
         return 0
 
-    def _mods_recreate2(self, only_constr=False, mod_new=None, rem=None,
+    def _mods_recreate2(self, only_constr=False, mod_new=None, rem_id=None,
                         fast=False, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
@@ -397,13 +397,13 @@ class CookbookAbsorbers(object):
                         mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
         #When a system has been removed
-        elif rem is not None:
+        elif rem_id is not None:
             mod_sel = np.array([], dtype=int)
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
-            for r in rem:
-                mod_w = [t_id[r] in m for m in mods_t_id]
-                mod_sel = np.append(mod_sel, mods_t_id[mod_w][0])
+            for r in rem_id:
+                mod_w = [r in m for m in mods_t_id]
+            mod_sel = np.append(mod_sel, mods_t_id[mod_w][0])
 
 
         else:
@@ -472,6 +472,7 @@ class CookbookAbsorbers(object):
 
                 else:
                     systs._id = np.max(systs._t['id'])+1
+
             #systs._id = np.max(systs._t['id'])+1
 
             for w, c in zip(wrong_id, corr_id):
@@ -908,9 +909,10 @@ class CookbookAbsorbers(object):
 
     def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
+        t_id = systs._t['id']
+        mods_t_id = systs._mods_t['id']
+        rem_id = [t_id[r] for r in rem]
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
-            t_id = systs._t['id']
-            mods_t_id = systs._mods_t['id']
             sel = [t_id[r] in m for m in mods_t_id]
             k_del = []
             for k, v in systs._constr.items():
@@ -924,6 +926,9 @@ class CookbookAbsorbers(object):
         systs._t.remove_rows(rem)
         for k in k_del:
             del systs._constr[k]
+
+        self._mods_recreate(rem_id=rem_id)
+        return 0
 
 
     def _systs_update(self, mod, incr=True):
