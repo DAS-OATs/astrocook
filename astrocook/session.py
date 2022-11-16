@@ -20,6 +20,7 @@ from astropy.io import ascii, fits
 from astropy.table import Column, Table
 from collections import OrderedDict
 from copy import deepcopy as dc
+import glob
 import json
 from lmfit.model import Model
 import logging
@@ -299,7 +300,21 @@ class Session(object):
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
                 try:
-                    hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    try:
+                        hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    except:
+                        try:
+                            hdul = fits.open(root+'/'+\
+                                             glob.glob('*_spec.fits')[0])
+                            #logging.warning("I didn't find %s in %s. I took "\
+                            #                "the first *_spec.fits frame in "\
+                            #                "the archive." \
+                            #                % (stem+'_spec.fits', stem+'.acs'))
+                        except:
+                            logging.error("I didn't find any *_spec.fits "
+                                            "frame in the archive.")
+                            return True
+
                     hdr = hdul[1].header
                 except:
                     dat = True
@@ -332,10 +347,21 @@ class Session(object):
                     os.remove(self.path[:-4]+'_'+s+'.dat')
                 except:
                     try:
-                        data = ascii.read(self.path[:-4]+'_'+s+'.dat')
-                        setattr(self, s, format.astrocook(data, s))
+                        p = root+'/'+glob.glob('*_%s.fits' % s)[0]
+                        hdul = fits.open(p)
+                        setattr(self, s, format.astrocook(hdul, s))
+                        os.remove(p)
+                        os.remove(p[:-5]+'.dat')
+                        logging.warning("I didn't find %s in %s. I took "\
+                                        "the first *_%s.fits frame in "\
+                                        "the archive." \
+                                        % (stem+'_'+s+'.fits', stem+'.acs', s))
                     except:
-                        pass
+                        try:
+                            data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                            setattr(self, s, format.astrocook(data, s))
+                        except:
+                            pass
                 if s == 'systs':
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -449,7 +475,6 @@ class Session(object):
 
 
     def _load(self, struct, dir, stem, **kwargs):
-        logging.info("I'm loading %s from %s.acs..." % (struct, stem))
 
         new_dir = dir+'/'+stem+'_'+struct+'/'
 
@@ -462,7 +487,7 @@ class Session(object):
         s._load(new_dir, **kwargs)
         setattr(self, struct, s)
         shutil.rmtree(new_dir, ignore_errors=True)
-        logging.info("done!")
+        logging.info("I loaded %s from %s.acs." % (struct, stem))
 
 
     def _save(self, struct, dir, stem, arch):
