@@ -58,6 +58,7 @@ class GUI(object):
         self._id_zoom = 9
         self._data_lim = None
         self._tag = ""
+        self._ok = True
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
