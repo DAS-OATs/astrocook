@@ -415,6 +415,7 @@ class Graph(object):
         self._systs_label = False
 
         fast = sess.defs.dict['graph']['fast']
+
         for e in focus._elem.split('\n'):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
@@ -464,12 +465,16 @@ class Graph(object):
                         x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     else:
                         x = xem*(1+z_flat)
-                    try:
-                        x = x.to(sess.spec._xunit)
+                    if detail:
                         self._x_iswave = True
-                    except:
-                        x = x.to(sess.spec._xunit, equivalencies=equiv_w_v)
-                        self._x_iswave = False
+                    else:
+                        try:
+                            x = x.to(sess.spec._xunit)
+                            self._x_iswave = True
+                        except:
+                            x = x.to(sess.spec._xunit, equivalencies=equiv_w_v)
+                            self._x_iswave = False
+
                     self._systs_l = x
                     if detail:
                         for k in self._axes:
@@ -481,6 +486,7 @@ class Graph(object):
                         else:
                             x = np.log(x.value/((1+zem)*121.567))\
                                 *aconst.c.to(au.km/au.s)
+
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
