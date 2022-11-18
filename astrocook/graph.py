@@ -498,6 +498,14 @@ class Graph(object):
                         xem_sel = np.array([xem_d[s].to(au.nm).value \
                                             for s in series_sel])
                         x_sel = xem_sel*(1+z_sel)
+
+                        # In case the x axis is not in nm
+                        try:
+                            x_sel = [x_convert(xs*au.nm, sess.spec._zem,
+                                               sess.spec._xunit).value
+                                     for xs in x_sel]
+                        except:
+                            pass
                     else:
                         x_sel = []
                 try:

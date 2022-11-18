@@ -160,7 +160,7 @@ class GUIDialog(wx.Dialog):
 
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
-                self._gui._dlg_mini_systems._cursor_refresh()
+                self._gui._dlg_mini_systems._cursor_refresh(refresh=False)
 
 
     def _update_params(self):
@@ -844,7 +844,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
 
 
-    def _cursor_refresh(self):
+    def _cursor_refresh(self, refresh=True):
         # Unfreeze cursors in case they were frozen
         self._gui._graph_main._graph._cursor_frozen = False
         if hasattr(self._gui, '_graph_det'):
@@ -856,7 +856,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         #self._on_cancel(e=None)
         self._cursor_delete()
         self._shown = True
-        self._on_apply(e=None)
+        self._on_apply(e=None, refresh=refresh)
         self._shown = shown
 
 
