@@ -1,4 +1,4 @@
-from .functions import elem_expand
+from .functions import elem_expand, x_convert
 from .graph import Graph
 from .gui_dialog import * #GUIDialogMini
 from .syst_list import SystList
@@ -320,7 +320,23 @@ class GUIGraphDetail(GUIGraphMain):
         #graph._axes = []
         #for i, (x, zem) in enumerate(zip(graph._xs, graph._zems)):
             xunit = self._gui._sess_sel.spec.x.unit
-            self._gui._sess_sel.cb.x_convert(zem=zem)
+
+            # Convert x axis back to nm (if needed)
+            db = {}
+            for s in seq:
+                db[s] = dc(getattr(self._gui._sess_sel, s))
+            try:
+                db['spec']._t['x'] = db['spec']._t['x'].to('nm')
+                x_iswave = True
+            except:
+                x_iswave = False
+
+            if not x_iswave:
+                self._gui._sess_sel.cb.x_convert(zem=0, xunit='nm')
+
+            # Convert x axis to the redshift space
+            self._gui._sess_sel.cb.x_convert(zem=zem, _update_zem=False)
+            
             self._gui._sess_sel._xdet = x
             self._gui._sess_sel._ydet = 0.0
             _, ylim = self._define_lim(0)#, norm=True)
@@ -347,7 +363,11 @@ class GUIGraphDetail(GUIGraphMain):
                 self._gui._sess_items, text=key,
                 xlim=(-hwin,hwin), ylim=ylim)
 
-            self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
+            # Convert x axis back to the original units
+            #self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit, _update_zem=False)
+            for s in seq:
+                setattr(self._gui._sess_sel, s, db[s])
+
 
 class GUIGraphHistogram(GUIGraphMain):
 

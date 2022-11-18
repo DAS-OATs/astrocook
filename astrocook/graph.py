@@ -442,6 +442,7 @@ class Graph(object):
                         x[t[mcol]==0] = np.nan
                     if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
+
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
                         z = sess.systs.z

@@ -349,8 +349,9 @@ class Frame():
         self.xmax = self.xmax*fact
         return 0
 
-    def _x_convert(self, zem=0, xunit=au.km/au.s):
-        self._zem = zem
+    def _x_convert(self, zem=0, xunit=au.km/au.s, _update_zem=True):
+        if _update_zem:
+            self._zem = zem
         self._xunit = xunit
         self._xunit_old = self._t['x'].unit
         self.x = x_convert(self.x, zem, xunit)

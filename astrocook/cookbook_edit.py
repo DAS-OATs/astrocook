@@ -217,7 +217,7 @@ class CookbookEdit(object):
                 except:
                     pass
             return 0
-            
+
         if ',all,' in col and ',all,' in expr:
             for st in seq:
                 try:
@@ -275,7 +275,7 @@ class CookbookEdit(object):
         return 0
 
 
-    def x_convert(self, zem=0, xunit=au.km/au.s):
+    def x_convert(self, zem=0, xunit=au.km/au.s, _update_zem=True):
         """ @brief Convert x axis
         @details Convert the x axis to wavelength or velocity units. The x axis
         can be converted to any unit of wavelength or velocity (default: nm and
@@ -297,7 +297,7 @@ class CookbookEdit(object):
         xunit = au.Unit(xunit)
         for s in self.sess.seq:
             try:
-                getattr(self.sess, s)._x_convert(zem, xunit)
+                getattr(self.sess, s)._x_convert(zem, xunit, _update_zem)
                 getattr(self.sess, s)._xunit_old = xunit
             except:
                 logging.debug(msg_attr_miss(s))
