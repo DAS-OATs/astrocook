@@ -135,7 +135,7 @@ class Graph(object):
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
-            if sess.systs._t is not None:
+            if sess.systs is not None and sess.systs._t is not None:
                 title.append('Fit system')
                 attr.append('syst_fit')
 
