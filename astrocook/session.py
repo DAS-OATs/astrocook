@@ -715,7 +715,11 @@ class Session(object):
                             id = r['id']
                             m = r['mod']
                             try:
-                                class_mute(m, Spectrum)
+                                try:
+                                    class_mute(m, Spectrum)
+                                except:
+                                    self.cb._mods_recreate(verbose=False)
+                                    class_mute(m, Spectrum)
                                 for attr in ['_lines', '_group', 'left', 'right']:
                                     name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
                                     save_model(getattr(m, attr), name_attr_dat)
@@ -745,6 +749,7 @@ class Session(object):
 
                             except:
                                 fail.append(id)
+
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
                                             "models. They were not saved." \
