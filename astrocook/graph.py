@@ -135,7 +135,7 @@ class Graph(object):
                 and 'cursor_z_series' in self._sel:
                 title.append('New system')
                 attr.append('syst_new')
-            if sess.systs._t is not None:
+            if sess.systs is not None and sess.systs._t is not None:
                 title.append('Fit system')
                 attr.append('syst_fit')
 
@@ -442,6 +442,16 @@ class Graph(object):
                         x[t[mcol]==0] = np.nan
                     if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
+                    if detail:
+                        self._x_iswave = True
+                    else:
+                        try:
+                            xp = x.to('nm')
+                            self._x_iswave = True
+                        except:
+                            xp = x.to('km/s', equivalencies=equiv_w_v)
+                            self._x_iswave = False
+
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
                         z = sess.systs.z
@@ -465,6 +475,7 @@ class Graph(object):
                         x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
                     else:
                         x = xem*(1+z_flat)
+
                     if detail:
                         self._x_iswave = True
                     else:
@@ -593,6 +604,7 @@ class Graph(object):
         self._seq_addons(sess, ax)
 
     def _seq_addons(self, sess, ax):
+        detail = self._panel != self._gui._graph_main._panel
         for z, (s, c, a) \
             in enumerate(zip(self._canvas_l, self._color_l, self._alpha_l)):
             try:
@@ -657,7 +669,7 @@ class Graph(object):
                     for i, x in enumerate(gs._x):
                         if i==1:
                             del gs._kwargs['label']
-                        if self._x_iswave:
+                        if self._x_iswave and not detail:
                             xv = x.to(self._xunit).value
                         else:
                             xv = x_convert(x, sess.spec._zem,
@@ -665,6 +677,7 @@ class Graph(object):
                         self._cursor_line.append(
                             ax.axvline(xv, color=c, alpha=a, linewidth=2,
                                        **gs._kwargs))
+
 
                     self._cursor_lines.append(self._cursor_line)
                 else:
