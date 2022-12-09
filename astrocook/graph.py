@@ -261,7 +261,7 @@ class Graph(object):
         #start = dt.datetime.now()
         self._text = text
         self._ax.clear()
-        self._ax.grid(True, which='both', linestyle=':')
+        #self._ax.grid(True, which='both', linestyle=':')
         if title != None:
             self._ax.set_title(title)
         if text != None:
