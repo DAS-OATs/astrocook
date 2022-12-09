@@ -262,6 +262,7 @@ class Graph(object):
         self._text = text
         self._ax.clear()
         #self._ax.grid(True, which='both', linestyle=':')
+        self._ax.xaxis.grid(True, which='both', linestyle=':')
         if title != None:
             self._ax.set_title(title)
         if text != None:
