@@ -440,6 +440,7 @@ class Graph(object):
                             y = dc(t[ycol])
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
+
                     if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
 
@@ -447,11 +448,12 @@ class Graph(object):
                         self._x_iswave = True
                     else:
                         try:
-                            xp = x.to('nm')
+                            xp = sess.spec._t['x'].to('nm')
                             self._x_iswave = True
                         except:
-                            xp = x.to('km/s', equivalencies=equiv_w_v)
+                            xp = sess.spec._t['x'].to('km/s', equivalencies=equiv_w_v)
                             self._x_iswave = False
+
 
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
@@ -486,7 +488,6 @@ class Graph(object):
                         except:
                             x = x.to(sess.spec._xunit, equivalencies=equiv_w_v)
                             self._x_iswave = False
-                    #"""
 
                     self._systs_l = x
                     if detail:
@@ -513,6 +514,7 @@ class Graph(object):
                         x_sel = xem_sel*(1+z_sel)
                     else:
                         x_sel = []
+
                 try:
                     kwargs = {}
                     if mode in ['plot', 'step', 'axvline']:
@@ -536,6 +538,7 @@ class Graph(object):
                             x = x[x_sel]*x.unit
 
                     if mode == 'axvline':
+
                         for xi in x.value:
                             if xi==x[0].value:
                                 getattr(ax, mode)(xi, label='systs', **kwargs)
