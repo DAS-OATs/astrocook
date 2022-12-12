@@ -442,6 +442,7 @@ class Graph(object):
                         x[t[mcol]==0] = np.nan
                     if norm and 'cont' in t.colnames and t[ycol].unit == t['y'].unit and len(y)==len(t['cont']):
                         y = y/t['cont']
+
                     if detail:
                         self._x_iswave = True
                     else:
@@ -485,6 +486,7 @@ class Graph(object):
                         except:
                             x = x.to(sess.spec._xunit, equivalencies=equiv_w_v)
                             self._x_iswave = False
+                    #"""
 
                     self._systs_l = x
                     if detail:
