@@ -699,7 +699,7 @@ class Spectrum(Frame):
 
 
     def _y_scale(self, fact):
-        super(Spectrum, self)._yscale(fact)
+        super(Spectrum, self)._y_scale(fact)
 
         cols = ['model', 'deabs', 'y_rm', 'cont']
         for c in cols:
