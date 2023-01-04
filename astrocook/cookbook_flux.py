@@ -168,9 +168,14 @@ class CookbookFlux(object):
 
         for s in self.sess.seq:
             try:
-                getattr(self.sess, s)._y_scale(fact)
+                struct = getattr(self.sess, s)
             except:
                 logging.debug(msg_attr_miss(s))
+
+            try:
+                struct._y_scale(fact)
+            except:
+                logging.debug("I couldn't scale structure %s!" % s)
         return 0
 
 
@@ -185,14 +190,9 @@ class CookbookFlux(object):
         @return 0
         """
 
-        fact = 1/np.median(self.sess.spec.y)
+        fact = 1/np.nanmedian(self.sess.spec.y).value
+        self.y_scale(fact)
 
-        for s in self.sess.seq:
-            try:
-                struct = getattr(self.sess, s)
-                struct._y_scale(fact)
-            except:
-                logging.debug(msg_attr_miss(s))
         return 0
 
 
