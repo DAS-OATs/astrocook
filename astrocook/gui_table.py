@@ -692,9 +692,10 @@ class GUITableSystList(GUITable):
         if col in [1]:
             if len(self._cells_sel) > 1:
                 title += ['Fit all systems...', 'Remove all']
+                attr += ['syst_fit', 'remove']
             else:
-                title += ['Fit system...', 'Remove']
-            attr += ['syst_fit', 'remove']
+                title += ['Fit system...', 'Fit group...', 'Remove']
+                attr += ['syst_fit', 'group_fit', 'remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
@@ -837,18 +838,6 @@ class GUITableSystList(GUITable):
         if row == -1 and col == -1:
             title = ['Fit all systems...']
             attr = ['systs_fit']
-            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
-                event.GetPosition())
-        if row >= 0 and col == -1:
-            if self._gui._sess_sel.systs._compressed:
-                title = ['Fit system...', 'Fit group...', 'Remove', 'Merge', 'sep',
-                         'CCF', 'Maximize CCF']
-                attr = ['syst_fit', 'group_fit', 'remove', 'merge', None, 'ccf',
-                        'ccf_max']
-            else:
-                title = ['Fit system...', 'Fit group...', 'Remove', 'sep', 'CCF',
-                         'Maximize CCF']
-                attr = ['syst_fit', 'group_fit', 'remove', None, 'ccf', 'ccf_max']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 
