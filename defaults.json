@@ -8,6 +8,8 @@
     "Templates"
   ],
   "voigt": {
+    "logN": 14,
+    "b": 10.0,
     "z_min": 1e-3,
     "logN_min": 10,
     "b_min": 1.0,

@@ -38,6 +38,7 @@ class CookbookAbsorbers(object):
         self._max_nfev = max_nfev_def
         self._sel_fit = False
 
+
     def _lines_cands_find(self, series, z_start, z_end, dz):
         return self.sess.lines._cands_find(series, z_start, z_end, dz)
 
@@ -2329,6 +2330,9 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        logN = self.sess.defs.dict['voigt']['logN']
+        b = self.sess.defs.dict['voigt']['b']
+
         check, resol = resol_check(self.sess.spec, resol)
         if not check: return 0
 
@@ -2626,12 +2630,10 @@ class CookbookAbsorbers(object):
 
 
             self._systs_prepare(append)
-            #self._logN_guess(series, z_list[0], b, resol)
-            #logN_list = self._systs_guess(series_list, z_list)
             self._systs_add(s_list, z_list, logN_list, resol_list=resol_list)
-            #self._systs_fit()
             self._systs_cycle()
             self._spec_update()
+
 
         if compressed:
             systs._compress()

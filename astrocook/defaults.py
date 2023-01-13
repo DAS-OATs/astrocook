@@ -15,6 +15,7 @@ class Defaults(object):
                         "resol": 35000}}
         self.open()
 
+
     def open(self, path=None, file='defaults.json'):
 
         if path is None:
@@ -34,7 +35,9 @@ class Defaults(object):
         self.dict = json.loads(self.str)
         self._dict_extend()
 
+
     def _dict_extend(self):
         for k1 in self._extend:
             for k2 in self._extend[k1]:
-                self.dict[k1][k2] = self._extend[k1][k2]
+                if k2 not in self.dict[k1]:
+                    self.dict[k1][k2] = self._extend[k1][k2]
