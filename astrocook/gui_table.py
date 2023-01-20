@@ -776,7 +776,7 @@ class GUITableSystList(GUITable):
 
     def _on_systs_fit(self, event):
         params = [{'refit_n': 0, 'chi2rav_thres': 1e-2, 'max_nfev': max_nfev_def,
-                   'sel_fit': False}]
+                   'sel_fit': False, '_mod': None}]
         dlg = GUIDialogMethod(self._gui, 'Fit systems', 'systs_fit',
                               params_last = params)
         self._gui._refresh(init_cursor=True)
