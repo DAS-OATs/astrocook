@@ -537,6 +537,8 @@ class GUITableSystList(GUITable):
         self._tab.ForceRefresh()
         self._freezes_d = self._gui._sess_sel.systs._freeze_par(par, [], reverse)
         self._text_colours()
+        if reverse:
+            self._gui._refresh(init_cursor=True)
 
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
@@ -920,19 +922,22 @@ class GUITableSystList(GUITable):
                     except:
                         c = None
                     r = i if c == 11 else self._row_extract(int(p.split('_')[-2]))
-                    if v.vary == False and r != None and c != None:
-                        self._tab.SetCellTextColour(r, c, 'grey')
-                    if v.expr != None and r != None and c != None:
-                        r2 = self._row_extract(int(v.expr.split('_')[-2]))
-                        c2 = np.where(labels==p.split('_')[-1])[0][0]
-                        vs = v.expr.split('*')[0]
-                        if vs not in self._links_c:
-                            self._links_c[vs] = self._colours[self._colourc\
-                                                    %len(self._colours)]
-                            self._colourc += 1
-                        self._tab.SetCellTextColour(r, c, self._links_c[vs])
-                        if r2 != None and c2 != None:
-                            self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
+                    if r!=None and c!=None:
+                        if v.vary==False: # and r != None and c != None:
+                            self._tab.SetCellTextColour(r, c, 'grey')
+                        if v.expr!=None: #and r != None and c != None:
+                            r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                            c2 = np.where(labels==p.split('_')[-1])[0][0]
+                            vs = v.expr.split('*')[0]
+                            if vs not in self._links_c:
+                                self._links_c[vs] = self._colours[self._colourc\
+                                                        %len(self._colours)]
+                                self._colourc += 1
+                            self._tab.SetCellTextColour(r, c, self._links_c[vs])
+                            if r2 != None and c2 != None:
+                                self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
+                        #if v.vary==True and v.expr==None:
+                        #    self._tab.SetCellTextColour(r, c, 'black')
             if not mod._active:
                 cols = self._tab.GetNumberCols()
                 for c in range(cols):
