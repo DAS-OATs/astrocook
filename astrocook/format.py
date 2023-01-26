@@ -217,7 +217,7 @@ class Format(object):
         y_col_names = np.array(['fluxc', 'flux', 'FLUX'])
         dy_col_names = np.array(['errc', 'err', 'sigma', 'STDEV'])
         wpix_col_names = np.array(['wpix', 'WPIX'])
-        cont_col_names = np.array(['cont', 'CONT'])
+        cont_col_names = np.array(['cont', 'CONT', 'Continuum'])
         norm_col_names = np.array(['normflux', 'NORMFLUX'])
 
         x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -360,14 +360,7 @@ class Format(object):
         """ ESPRESSO DRS S2D format """
         logging.info(msg_format('ESPRESSO DRS S2D'))
         hdr = hdul[0].header
-        #print(hdul['WAVEDATA_VAC_BARY'].data)
-        #print(hdul['WAVEDATA_VAC_BARY'].data[:,:-10])
-        """
-        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,200:-200])
-        y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
-        dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
-        """
-        #span = 550
+
         span = 0
         if row is None and slice is None:
             x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
@@ -400,21 +393,10 @@ class Format(object):
         w = np.where(q<1) #4**7)
         x,xmin,xmax,y,dy,q = x[w],xmin[w],xmax[w],y[w],dy[w],q[w]
 
-        #ww = np.where(np.logical_and(x>6769.5,x<6769.8))
-        #print(y[ww])
-
-
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.erg / au.Angstrom / au.cm**2 / au.s
-        meta = hdr #{'instr': 'ESPRESSO'}
-        """
-        try:
-            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
-        except:
-            meta['object'] = ''
-            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        """
+        meta = hdr
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
         spec._t['quality'] = q
         return spec
@@ -442,7 +424,6 @@ class Format(object):
 
         hdr = hdul[0].header
         data = hdul[5].data
-        #print(data)
         x = data['WAVE'][0]*0.1
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
@@ -471,6 +452,7 @@ class Format(object):
         if col == 'x': col_names = x_col_names
         if col == 'y': col_names = y_col_names
         if col == 'dy': col_names = dy_col_names
+        if col == 'cont': col_names = cont_col_names
         col_sel = np.where([c in data.colnames for c in col_names])[0]
         try:
             col_sel = [col_sel[0]]
@@ -506,10 +488,13 @@ class Format(object):
                 x_name = self._col_name(data, 'x')
                 y_name = self._col_name(data, 'y')
                 dy_name = self._col_name(data, 'dy')
+                cont_name = self._col_name(data, 'cont')
                 try:
                     x = np.ravel(data[x_name])
                     y = np.ravel(data[y_name])
                     dy = data[dy_name] if dy_name is not None \
+                        else np.full(len(y), np.nan)
+                    cont = data[cont_name] if cont_name is not None \
                         else np.full(len(y), np.nan)
                 except:
                     logging.error("I can't recognize columns.")
@@ -521,6 +506,11 @@ class Format(object):
                 x = data[0][:]
                 y = data[1][:]
                 dy = data[2][:]
+                try:
+                    cont = data[3][:]
+                except:
+                    cont = []
+
 
             # Import unit (if present)
             try:
@@ -542,13 +532,14 @@ class Format(object):
 
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
-            """
-            try:
-                meta['object'] = hdr['OBJECT']
-            except:
-                meta['object'] = ''
-            """
-            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+            # De-normalize
+            norm_check = np.median(y)*np.max(y)
+            if norm_check > 0.7 and norm_check < 1.3:
+                y = y*cont
+                dy = dy*cont
+
+            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
             if hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
                     if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
