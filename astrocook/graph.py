@@ -502,9 +502,11 @@ class Graph(object):
 
                         # In case the x axis is not in nm
                         try:
+                            print('before', x_sel, sess.spec._zem)
                             x_sel = [x_convert(xs*au.nm, sess.spec._zem,
                                                sess.spec._xunit).value
                                      for xs in x_sel]
+                            print('after ', x_sel)
                         except:
                             pass
                     else:
@@ -538,6 +540,7 @@ class Graph(object):
                             else:
                                 getattr(ax, mode)(xi, **kwargs)
                         if focus == self._gui._graph_main:
+                            print(x_sel)
                             for xi_sel in x_sel:
                                 kwargs['linestyle'] = '-'
                                 kwargs['linewidth'] = 10.0

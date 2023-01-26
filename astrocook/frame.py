@@ -351,6 +351,7 @@ class Frame():
 
     def _x_convert(self, zem=0, xunit=au.km/au.s, _update_zem=True):
         if _update_zem:
+            print('upd')
             self._zem = zem
         self._xunit = xunit
         self._xunit_old = self._t['x'].unit
