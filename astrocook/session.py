@@ -107,6 +107,10 @@ class Session(object):
         except:
             telesc = 'undefined'
 
+        # Impose generic format to Astrocook-processed data
+        if orig=='Astrocook':
+            catg = 'undefined'
+
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
             hist = [i for j in hist for i in j]
@@ -144,6 +148,7 @@ class Session(object):
 
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
+
 
         self._instr, self._catg, self._orig, self._telesc = instr, catg, orig, telesc
 
