@@ -6,6 +6,7 @@ from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
+from astropy.table import Column
 from astropy.stats import sigma_clip
 import bisect
 #from astropy import constants as aconst
@@ -231,13 +232,20 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
+
+        # Add padding to avoid edge issues
+        len_conv = len(conv)
+        conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
+        conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
+        
         safe = np.array(self._safe(conv), dtype=float)
+        mode = 'same'
         try:
-            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
+            conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)\
                                                  *self._t[input_col].unit
         except:
-            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')
-        self._t[output_col] = conv
+            conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)
+        self._t[output_col] = conv[len_conv:-len_conv]
         self._x_convert(xunit=self._xunit_old)
         self._xunit_old = self._xunit
 
