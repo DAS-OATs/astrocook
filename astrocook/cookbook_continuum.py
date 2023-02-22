@@ -462,9 +462,6 @@ class CookbookContinuum(object):
         lines = self.sess.lines
 
         y_rm = running_mean(spec._t['y'], h=hwindow)
-        #plt.plot(spec._t['x'], spec._t['y'])
-        #plt.plot(spec._t['x'], y_rm)
-        #plt.show()
 
         if 'y_rm' not in spec._t.colnames:
             logging.info("I'm adding column 'y_rm'.")
@@ -493,10 +490,17 @@ class CookbookContinuum(object):
             spec._t['y_em'][sel] = 0
             spec._t['y_abs'][sel] = 1
             x_rm = spec._t['x'][~sel]
-            y_rm = running_mean(spec._t['y'][~sel], h=hwindow)
+            if 2*hwindow+1>len(spec._t['y'][~sel]):
+                logging.warning("Too many outliers to compute a running "
+                                "median at iteration %i! Try increasing sigma."
+                                % i)
+                y_rm = np.ones(len(spec._t['y'][~sel])) \
+                       * np.median(spec._t['y'][~sel])
+            else:
+                y_rm = running_mean(spec._t['y'][~sel], h=hwindow)
 
             if i == iter-1 and sum_sel != np.sum(sel):
-                logging.warning("Clipping not converged after %i iterations. "
+                logging.warning("Clipping not converged after %i iterations! "
                                 "Try iterating more." % (i+1))
             if sum_sel != np.sum(sel):
                 sum_sel = np.sum(sel)
