@@ -471,7 +471,6 @@ def running_mean(x, h=1):
     n = 2*h+1
     cs = np.nancumsum(np.insert(x, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
-    #rm = (cs[n:] - cs[:-n]) / float(n)
     rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
