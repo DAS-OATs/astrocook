@@ -145,8 +145,8 @@ class Spectrum(Frame):
             #print(x, x_osampl[pan])
             #y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
             #y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
-            y1 = y1_osampl[pan_l:-pan_r-1]-np.nanmean(y1_osampl)
-            y2 = y2_osampl[i:-pan_l-pan_r+i-1]-np.nanmean(y2_osampl)
+            y1 = y1_osampl[pan_l:-pan_r-1]-np.nanmedian(y1_osampl[pan_l:-pan_r-1])
+            y2 = y2_osampl[i:-pan_l-pan_r+i-1]-np.nanmedian(y2_osampl[i:-pan_l-pan_r+i-1])
             #print(pan, pan_l, pan_r, len(y1), len(y2))
             #dy1 = dy1_osampl[pan:-pan-1]
             #dy2 = dy2_osampl[i:-2*pan+i-1]
@@ -237,7 +237,7 @@ class Spectrum(Frame):
         len_conv = len(conv)
         conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
         conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
-        
+
         safe = np.array(self._safe(conv), dtype=float)
         mode = 'same'
         try:
