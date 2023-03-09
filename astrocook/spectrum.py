@@ -136,25 +136,17 @@ class Spectrum(Frame):
         #print(v_shift[0], v_shift[-1], v_shift[pan], len(v_shift), pan)
         #print(x_shift[0], x_shift[-1], x_shift[pan], len(x_shift), pan)
         for i, xs in enumerate(x_shift):
-            #print(v_shift[i])
             x = x_osampl+xs
-            #digitized = np.digitize(x, spec_x)
-            #print(len(digitized))
-            #ym = [y2_osampl[digitized == i].mean() \
-            #      for i in range(0, len(spec_x))]
-            #print(x, x_osampl[pan])
-            #y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
-            #y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
+
             y1 = y1_osampl[pan_l:-pan_r-1]-np.nanmedian(y1_osampl[pan_l:-pan_r-1])
             y2 = y2_osampl[i:-pan_l-pan_r+i-1]-np.nanmedian(y2_osampl[i:-pan_l-pan_r+i-1])
-            #print(pan, pan_l, pan_r, len(y1), len(y2))
-            #dy1 = dy1_osampl[pan:-pan-1]
-            #dy2 = dy2_osampl[i:-2*pan+i-1]
-            #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
-            #y2 = y2_osampl[i:-2*pan+i-1]+dy2-np.nanmean(y2_osampl)
-            #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
+
             ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
-            #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
+            #ccf.append(1/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
+
+        #from scipy.signal import correlate
+        #good = np.logical_and(~np.isnan(y1_osampl), ~np.isnan(y2_osampl))
+        #ccf *= correlate(y1_osampl[good], y2_osampl[good], mode='valid')
 
         #ccf = ccf/np.max(ccf)
         #plt.plot(v_shift, ccf)
