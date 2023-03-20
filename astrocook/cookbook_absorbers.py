@@ -2275,7 +2275,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    @arg_fix(arg_mapping={'thres': 'sigma'})
+    #@arg_fix(arg_mapping={'thres': 'sigma'})
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
                             dz=1e-4, modul=10, sigma=2, distance=3,
                             logN=logN_def, b=b_def, resol=resol_def,
