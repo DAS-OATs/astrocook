@@ -10,8 +10,7 @@ matplotlib.use('WxAgg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-    NavigationToolbar2WxAgg, _convert_agg_to_wx_bitmap
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as mticker
 import matplotlib.transforms as transforms
