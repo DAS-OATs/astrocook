@@ -2284,7 +2284,9 @@ class CookbookAbsorbers(object):
                             append=True):
 
         """ @brief New systems from likelihood
-        @details TBD
+        @details Add Voigt models by testing transitions in a given redshift
+        range and assignign the most likely identification to absorption
+        features.
         @param series Series of transitions
         @param col Column to apply the likelihood
         @param z_start Start redshift

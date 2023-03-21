@@ -4,6 +4,7 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
+from decorator import decorator
 import json
 import logging
 from matplotlib import pyplot as plt
@@ -614,6 +615,7 @@ def x_convert(x, zem=0, xunit=au.km/au.s):
 import functools
 import warnings
 
+@decorator
 class arg_fix:
     """Decorator ensuring backward compatibility when an argument name is
     modified in a function definition.
