@@ -80,6 +80,7 @@ class GUIDialog(wx.Dialog):
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
+
     def _get_last(self, method):
         if self._params_last is not None:
             for pls in self._params_last:
@@ -97,6 +98,7 @@ class GUIDialog(wx.Dialog):
         defs = [str(d) for d in defs]
         values = np.append(['']*(len(keys)-len(defs)), defs)
         self._params.append(OrderedDict(zip(keys, values)))
+
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_dlg_mini_systems'):
