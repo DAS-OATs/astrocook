@@ -228,14 +228,15 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return 0
 
-        v_shift, ccf, chi2 = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2,
-                                                      vstart, vend, dv)
+        v_shift, ccf, chi2, chi2r = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2,
+                                                             vstart, vend, dv)
         logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
                      % (np.min(ccf), np.max(ccf), np.mean(ccf)))
         with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
             np.save(f, chi2)
+            np.save(f, chi2r)
 
         return 0
 
@@ -289,8 +290,8 @@ class CookbookGeneral(object):
             #sel = np.unique(rint)
             spec._t = spec._t[sel]
             #plt.plot(spec._t['x'], spec._t['y'])
-            v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
-                                          vend, dv)
+            v_shift, ccf, _, _ = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
+                                                vend, dv)
 
 
             v_shiftmax = v_shift[np.argmax(ccf)]

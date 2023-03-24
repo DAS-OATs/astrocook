@@ -109,6 +109,7 @@ class Spectrum(Frame):
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
+        dv_orig = (self._t['xmax']-self._t['xmin'])/spec_x*aconst.c.to(au.km/au.s).value
         xmean = 0.5*(xmin+xmax)
         v_shift = np.arange(vstart, vend+dv, dv)
 
@@ -116,6 +117,8 @@ class Spectrum(Frame):
         xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
+
+        scale = int(np.rint(np.nanmedian(dv_orig)/dv))
 
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
@@ -133,17 +136,20 @@ class Spectrum(Frame):
 
             y1 = y1_osampl[pan_l:-pan_r-1]
             y2 = y2_osampl[i:-pan_l-pan_r+i-1]
-
             dy = dy1_osampl[i:-pan_l-pan_r+i-1]
 
-            y1m = y1-np.nanmedian(y1_osampl[pan_l:-pan_r-1])
-            y2m = y2-np.nanmedian(y2_osampl[i:-pan_l-pan_r+i-1])
+            y1 = y1[::scale]
+            y2 = y2[::scale]
+            dy = dy[::scale]
+
+            y1m = y1-np.nanmedian(y1)
+            y2m = y2-np.nanmedian(y2)
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
             chi2.append(np.nansum((y1-y2)**2/dy**2))
             chi2r.append(np.nansum((y1-y2)**2/dy**2)/len(y1))
 
-        return np.array(v_shift), np.array(ccf), np.array(chi2)
+        return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
 
     def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
