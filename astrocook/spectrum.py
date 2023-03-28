@@ -125,6 +125,7 @@ class Spectrum(Frame):
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
         dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
         dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
+
         pan = len(x_shift)//2
         pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
             int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
@@ -136,7 +137,8 @@ class Spectrum(Frame):
 
             y1 = y1_osampl[pan_l:-pan_r-1]
             y2 = y2_osampl[i:-pan_l-pan_r+i-1]
-            dy = dy1_osampl[i:-pan_l-pan_r+i-1]
+            
+            dy = dy1_osampl[pan_l:-pan_r-1]
 
             y1 = y1[::scale]
             y2 = y2[::scale]
