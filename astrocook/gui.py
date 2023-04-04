@@ -293,8 +293,8 @@ class GUI(object):
             except:
                 pass
 
-    # update firts element of stack
-    update_home_limits(stack_elems, xlim=mghl_x, ylim=None)
+            # update firts element of stack
+            update_home_limits(stack_elems, xlim=mghl_x, ylim=None)
 
         if hasattr(self, '_graph_det'):
             if self._sess_sel.systs is None:
