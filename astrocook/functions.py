@@ -612,8 +612,27 @@ def x_convert(x, zem=0, xunit=au.km/au.s):
               lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
     return x.to(xunit, equivalencies=equiv)
 
-import functools
-import warnings
+def get_home_limits(stack_elements):
+    if len(stack_elements) > 0:
+        key = list(stack_elements[0].keys())[0]
+        return stack_elements[0][key][0]
+
+def update_home_limits(stack_elements, xlim = None, ylim = None):
+    if len(stack_elements) > 0:
+        key = list(stack_elements[0].keys())[0]
+        home_update_list = []
+        for _ in stack_elements[0][key]:
+            home_update_list.append(_)
+        if xlim is None and ylim is None:
+            return 
+        if ylim is None:
+            home_update_list[0] = (*xlim, *home_update_list[0][2:])
+        elif xlim is None:
+            home_update_list[0] = (*home_update_list[0][0:2], *ylim)
+        else:
+            home_update_list[0] = (*xlim, *ylim)
+        # Replace in the stack
+        stack_elements[0][key] = tuple(home_update_list)
 
 """
 @decorator

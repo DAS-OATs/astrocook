@@ -1,6 +1,6 @@
 from . import *
 from .defaults import *
-from .functions import expr_eval, x_convert
+from .functions import expr_eval, x_convert, get_home_limits, update_home_limits
 from .gui_graph import *
 from .gui_image import *
 from .gui_log import *
@@ -192,6 +192,10 @@ class GUI(object):
                  autolim=True, autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
         self._defs = self._sess_sel.defs
+        try:
+            old_xaxis_unit = self._sess_sel._gui._graph_main._graph._xunit
+        except:
+            old_xaxis_unit = au.nm
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh(init_bar=init_bar)
@@ -272,6 +276,25 @@ class GUI(object):
             self._graph_main._refresh(self._sess_items, xlim=xlim, ylim=ylim)
         else:
             self._graph_main._refresh(self._sess_items)
+
+        # update stack to fix bug with home button
+        # get stack
+        stack_elems = self._sess_sel._gui._graph_main._graph._toolbar._nav_stack._elements
+        xaxis_unit = self._sess_sel._gui._graph_main._graph._xunit
+        # get limits
+        main_graph_home_limits = get_home_limits(stack_elems)
+        if main_graph_home_limits is not None:
+            mghl_x = main_graph_home_limits[0:2]
+            # technically we should do the same for y
+            mghl_y = main_graph_home_limits[2:]
+            try:
+                mghl_x = (x_convert(mghl_x[0]*old_xaxis_unit, zem, xaxis_unit).value,
+                            x_convert(mghl_x[1]*old_xaxis_unit, zem, xaxis_unit).value)
+            except:
+                pass
+
+    # update firts element of stack
+    update_home_limits(stack_elems, xlim=mghl_x, ylim=None)
 
         if hasattr(self, '_graph_det'):
             if self._sess_sel.systs is None:
