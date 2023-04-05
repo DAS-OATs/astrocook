@@ -568,6 +568,11 @@ def get_selected_cells(grid):
 def str_to_dict(str):
     return json.loads(str)
 
+
+def range_str_to_list(range):
+    return [[float(i) for i in r.split('-')] for r in range.split(',')]
+
+
 def class_find(obj, cl, up=[]):
     if hasattr(obj, '__dict__'):
         for i in obj.__dict__:
