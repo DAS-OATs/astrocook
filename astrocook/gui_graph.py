@@ -102,9 +102,6 @@ class GUIGraphMain(wx.Frame):
         update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
         self.Show()
 
-    #def _on_line_new(self, event):
-    #    print(self._click_xy)
-
 
     def _on_bin_zap(self, event):
         sess = self._gui._sess_sel
