@@ -1,4 +1,4 @@
-from .functions import elem_expand
+from .functions import elem_expand, update_home_limits
 from .graph import Graph
 from .gui_dialog import * #GUIDialogMini
 from .syst_list import SystList
@@ -71,6 +71,7 @@ class GUIGraphMain(wx.Frame):
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
+        self._home_limits = {}
         #self._graph._toolbar.wx_ids['Home'] = self._home
 
         #self._gui._statusbar = self.CreateStatusBar()
@@ -86,6 +87,20 @@ class GUIGraphMain(wx.Frame):
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self._refreshed = True
+        
+        update_xlim = self._gui._graph_main._graph._ax.get_xlim()
+        update_ylim = self._gui._graph_main._graph._ax.get_ylim()
+        
+        stack_elems = self._gui._graph_main._graph._toolbar._nav_stack._elements
+        if self._gui._sess_item_sel == []:
+            sess_id = 0
+        else:
+            sess_id = self._gui._sess_item_sel[0]
+
+        if not self._gui._graph_main._graph._zoom:
+            self._home_limits[sess_id] = (update_xlim, update_ylim)
+
+        update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
         self.Show()
 
     #def _on_line_new(self, event):
