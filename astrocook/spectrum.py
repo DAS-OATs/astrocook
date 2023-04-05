@@ -109,111 +109,50 @@ class Spectrum(Frame):
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
+        dv_orig = (self._t['xmax']-self._t['xmin'])/spec_x*aconst.c.to(au.km/au.s).value
         xmean = 0.5*(xmin+xmax)
         v_shift = np.arange(vstart, vend+dv, dv)
-        #v_shift = np.sort(v_shift)
+
         x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
         xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
-        #print(x_shift[0], x_shift[-1], xstart, xend)
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
-        #print(xmin+xstart, xmax+xend, dx)
+        scale = int(np.rint(np.nanmedian(dv_orig)/dv))
+
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
         dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
         dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
-        #print(y1_osampl)
-        #print(y2_osampl)
-        #print(len(x_shift))
+
         pan = len(x_shift)//2
-        #print(np.abs(xend-xstart))
         pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
             int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
-        #print(pan, pan_l, pan_r)
         ccf = []
-        #print(v_shift[0], v_shift[-1], v_shift[pan], len(v_shift), pan)
-        #print(x_shift[0], x_shift[-1], x_shift[pan], len(x_shift), pan)
+        chi2 = []
+        chi2r = []
         for i, xs in enumerate(x_shift):
-            #print(v_shift[i])
             x = x_osampl+xs
-            #digitized = np.digitize(x, spec_x)
-            #print(len(digitized))
-            #ym = [y2_osampl[digitized == i].mean() \
-            #      for i in range(0, len(spec_x))]
-            #print(x, x_osampl[pan])
-            #y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
-            #y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
-            y1 = y1_osampl[pan_l:-pan_r-1]-np.nanmean(y1_osampl)
-            y2 = y2_osampl[i:-pan_l-pan_r+i-1]-np.nanmean(y2_osampl)
-            #print(pan, pan_l, pan_r, len(y1), len(y2))
-            #dy1 = dy1_osampl[pan:-pan-1]
-            #dy2 = dy2_osampl[i:-2*pan+i-1]
-            #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
-            #y2 = y2_osampl[i:-2*pan+i-1]+dy2-np.nanmean(y2_osampl)
-            #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
-            ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
-            #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
 
-        #ccf = ccf/np.max(ccf)
-        #plt.plot(v_shift, ccf)
-        #plt.show()
-        #print(np.min(ccf), np.mean(ccf), np.max(ccf))
-        #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
-        #             % (np.min(ccf), np.max(ccf), np.mean(ccf)))
-        return np.array(v_shift), np.array(ccf)
-        """
-        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
-        eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
-        ccf = []
+            y1 = y1_osampl[pan_l:-pan_r-1]
+            y2 = y2_osampl[i:-pan_l-pan_r+i-1]
+            
+            dy = dy1_osampl[pan_l:-pan_r-1]
 
-        y = (1-mod._yf)
-        if weight:
-            #w = np.abs(np.gradient(eval_osampl))
-            #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
-            y = y*mod._wf
+            y1 = y1[::scale]
+            y2 = y2[::scale]
+            dy = dy[::scale]
 
-        #y = (1-mod._yf)#*grad/np.sum(grad)
+            y1m = y1-np.nanmedian(y1)
+            y2m = y2-np.nanmedian(y2)
 
-        for i, xs in enumerate(x_shift):
-            plot = False
-            x = x_osampl+xs
-            digitized = np.digitize(x, mod._xf)
-            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(mod._xf))]
-            ccf1 = self._mod_ccf(mod, ym, y, verbose=False, plot=plot)
-            if plot:
-                plt.scatter(xmean+xs, ccf1)
+            ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
+            chi2.append(np.nansum((y1-y2)**2/dy**2))
+            chi2r.append(np.nansum((y1-y2)**2/dy**2)/len(y1))
 
-            ccf.append(ccf1)
+        return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
-        #plt.plot(mod._xf, y, linewidth=4)
-        if weight:
-            color = 'r'
-        else:
-            color = 'g'
-        #plt.scatter(xmean+x_shift, ccf/np.max(ccf), c=color)
-        try:
-            p0 = [np.max(ccf), xmean, 5e-4]
-            coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
-            fit = gauss(xmean+x_shift, *coeff)
-            ccf_max = coeff[0]
-            deltax = coeff[1]-xmean
-            deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
-            #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
-        except:
-            amax = np.argmax(ccf)
-            ccf_max = ccf[amax]
-            deltax = x_shift[amax]
-            deltav = v_shift[amax]
-            #plt.scatter(xmean+x_shift[amax], 1)
-
-        if verbose:
-            logging.info(("I maximized the data model CCF with a shift of "
-                          "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
-                          % (deltax, deltav))
-        return ccf_max, deltax, deltav
-        """
 
     def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
                         verb=True):

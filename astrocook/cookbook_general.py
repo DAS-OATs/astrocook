@@ -228,13 +228,15 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return 0
 
-        v_shift, ccf = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
-                                                vend, dv)
+        v_shift, ccf, chi2, chi2r = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2,
+                                                             vstart, vend, dv)
         logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
                      % (np.min(ccf), np.max(ccf), np.mean(ccf)))
         with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
+            np.save(f, chi2)
+            np.save(f, chi2r)
 
         return 0
 
@@ -288,8 +290,8 @@ class CookbookGeneral(object):
             #sel = np.unique(rint)
             spec._t = spec._t[sel]
             #plt.plot(spec._t['x'], spec._t['y'])
-            v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
-                                          vend, dv)
+            v_shift, ccf, _, _ = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
+                                                vend, dv)
 
 
             v_shiftmax = v_shift[np.argmax(ccf)]
@@ -300,6 +302,7 @@ class CookbookGeneral(object):
                 #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
+                #plt.plot(v_shift[fit_sel], fit, linestyle='-')
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
                 #print(peak, shift)
@@ -314,7 +317,7 @@ class CookbookGeneral(object):
 
         logging.info("Peak: %3.4f±%3.4f; shift: %3.4f±%3.4f" \
             % (np.nanmean(peaks), np.nanstd(peaks), np.nanmean(shifts), np.nanstd(shifts)))
-        #plt.show()
+        plt.show()
         with open(self.sess.name+'_ccf_stats.npy', 'wb') as f:
             np.save(f, peaks)
             np.save(f, shifts)
