@@ -1,4 +1,4 @@
-from .functions import elem_expand, update_home_limits
+from .functions import elem_expand, compute_axis_lim, update_home_limits
 from .graph import Graph
 from .gui_dialog import * #GUIDialogMini
 from .syst_list import SystList
@@ -90,14 +90,18 @@ class GUIGraphMain(wx.Frame):
         
         update_xlim = self._gui._graph_main._graph._ax.get_xlim()
         update_ylim = self._gui._graph_main._graph._ax.get_ylim()
+        # only manually compute limits if zoom is True
+        # bypasses the need for the check below, since we are manually recomputing
+        # the limits only for this case
+        if self._gui._graph_main._graph._zoom:
+            update_xlim, update_ylim = compute_axis_lim(self._gui._sess_sel)
         
         stack_elems = self._gui._graph_main._graph._toolbar._nav_stack._elements
         if self._gui._sess_item_sel == []:
             sess_id = 0
         else:
             sess_id = self._gui._sess_item_sel[0]
-        if not self._gui._graph_main._graph._zoom:
-            self._home_limits[sess_id] = (update_xlim, update_ylim)
+        self._home_limits[sess_id] = (update_xlim, update_ylim)
 
         update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
         self.Show()

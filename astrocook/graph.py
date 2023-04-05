@@ -143,9 +143,6 @@ class Graph(object):
 
 
     def _on_zoom(self, event):
-        from pprint import pprint
-        pprint(event.__dict__)
-        pprint(self._zoom)
         if event._navigate_mode == 'ZOOM':
             self._zoom = True
         else:

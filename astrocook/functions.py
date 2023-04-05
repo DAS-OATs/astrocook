@@ -639,6 +639,16 @@ def update_home_limits(stack_elements, xlim = None, ylim = None):
         # Replace in the stack
         stack_elements[0][key] = tuple(home_update_list)
 
+def compute_axis_lim(sess):
+    _x_min, _x_max = np.nanmin(sess.spec.x).value, np.nanmax(sess.spec.x).value
+    _y_min, _y_max = np.nanmin(sess.spec.y).value, np.nanmax(sess.spec.y).value
+    x_marg = (_x_max - _x_min) * plt.margins()[0]
+    y_marg = (_y_max - _y_min) * plt.margins()[1]
+    update_xlim = (_x_min - x_marg, _x_max + x_marg)
+    update_ylim = (_y_min - y_marg, _y_max + y_marg)
+    return update_xlim, update_ylim
+        
+
 """
 @decorator
 class arg_fix:
