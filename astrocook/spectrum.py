@@ -237,7 +237,7 @@ class Spectrum(Frame):
         len_conv = len(conv)
         conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
         conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
-        
+
         safe = np.array(self._safe(conv), dtype=float)
         mode = 'same'
         try:
