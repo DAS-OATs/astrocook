@@ -1,5 +1,6 @@
 from .vars import *
-from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
+from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, \
+    trans_parse, x_convert
 from .message import msg_output_fail
 from astropy import table as at
 from astropy import units as au
@@ -340,7 +341,7 @@ class SystList(object):
         return 0
 
 
-    def _region_extract(self, xmin, xmax):
+    def _region_extract(self, xmin, xmax, zem=None):
         """ @brief Extract a spectral region as a new syst_list.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
@@ -348,14 +349,13 @@ class SystList(object):
         """
 
         reg = dc(self)
-        #reg_x = np.array([to_x(z, series_d[s][0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
-        reg_x = np.array([to_x(z, trans_parse(s)[0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
-        where = np.full(len(reg_x), True)
-        s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
+        x = np.array([to_x(z, trans_parse(s)[0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
+        x = x_convert(x, zem=zem, xunit=au.nm)
+        where = np.full(len(x), True)
+        s = np.where(np.logical_and(x[~np.isnan(x)] > xmin, x[~np.isnan(x)] < xmax))
         where[s] = False
         reg._t.remove_rows(where)
         if len(reg.t) == 0:
-            #logging.error(msg_output_fail)
             return None
         else:
             return reg

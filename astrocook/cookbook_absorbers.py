@@ -370,7 +370,6 @@ class CookbookAbsorbers(object):
                 mod_sel = np.array([], dtype=int)
                 for w in mod_w:
                     mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
-
         # When a model has been added
         elif mod_new is not None:
             mod_sel = np.array([], dtype=int)
@@ -421,6 +420,12 @@ class CookbookAbsorbers(object):
         if hasattr(systs, '_N_tot_specs'):
             N_tot_specs_d = systs._N_tot_specs
 
+        # Convert spectrum to nm
+        if hasattr(self.sess.spec, '_zem'):
+            old_unit = self.sess.spec._t['x'].unit
+            self.sess.spec._t['x'] = \
+                x_convert(self.sess.spec._t['x'], self.sess.spec._zem, au.nm)
+                
         if not fast:
 
             systs._mods_t.remove_rows(mod_w)
@@ -464,6 +469,7 @@ class CookbookAbsorbers(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
+
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
@@ -480,6 +486,13 @@ class CookbookAbsorbers(object):
                                 "to %i." % (w, c))
         else:
             systs._id = np.max(systs._t['id'])+1
+
+        # Convert spectrum to old units
+        if hasattr(self.sess.spec, '_zem'):
+            self.sess.spec._t['x'] = \
+                x_convert(self.sess.spec._t['x'], self.sess.spec._zem, old_unit)
+
+
 
         spec.t['fit_mask'] = False
         active_c = 0

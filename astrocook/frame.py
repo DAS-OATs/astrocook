@@ -294,18 +294,28 @@ class Frame():
 
         return corr
 
-    def _region_extract(self, xmin, xmax, verbose=True):
+    def _region_extract(self, xmin, xmax, zem=None, verbose=True):
         """ @brief Extract a spectral region as a new frame.
         @param xmin Minimum wavelength (nm)
         @param xmax Maximum wavelength (nm)
         @return Spectral region
         """
 
+        """
         reg = dc(self)
         reg.x.unit.to(au.nm)
         where = np.full(len(reg.x), True)
         s = np.where(np.logical_and(self._safe(reg.x) > xmin,
                                     self._safe(reg.x) < xmax))
+        """
+        reg = dc(self)
+        x = reg._t['x'][:]
+        if zem is not None:
+            x = x_convert(x, zem=zem, xunit=au.nm)
+        where = np.full(len(x), True)
+        s = np.where(np.logical_and(x[~np.isnan(x)] > xmin,
+                                    x[~np.isnan(x)] < xmax))
+
         where[s] = False
         reg._t.remove_rows(where)
 
@@ -368,7 +378,7 @@ class Frame():
             mask = np.logical_or(mask,
                        np.logical_and(self._t['x'].to(au.nm).value>r[0],
                                       self._t['x'].to(au.nm).value<r[1]))
-        
+
         if col not in self._t.colnames:
             logging.info("I'm adding column %s." % col)
         else:

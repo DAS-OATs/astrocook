@@ -548,9 +548,14 @@ class CookbookGeneral(object):
             logging.warning(msg_param_swap)
 
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
+        if hasattr(self.sess.spec, '_zem'):
+            zem = self.sess.spec._zem
+        else:
+            zem = None
+
         for s in self.sess.seq:
             try:
-                struct = getattr(self.sess, s)._region_extract(xmin, xmax)
+                struct = getattr(self.sess, s)._region_extract(xmin, xmax, zem)
                 if struct is None:
                     logging.warning(msg_empty(s))
                 else:
@@ -563,12 +568,14 @@ class CookbookGeneral(object):
                 except:
                     logging.debug(msg_attr_miss(s))
                     kwargs[s] = None
+
         if kwargs['spec'] != None:
             from .session import Session
             new = Session(**kwargs)
             new._gui = self.sess._gui
         else:
             new = None
+        
         if 'systs' in self.sess.seq and self.sess.systs != None \
             and new.systs != None:
 
