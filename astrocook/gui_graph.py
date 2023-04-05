@@ -82,6 +82,7 @@ class GUIGraphMain(wx.Frame):
 
 
     def _refresh(self, sess, **kwargs):
+        print("Refreshing plot window!")
         if self._closed:
             self._init()
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
@@ -96,11 +97,11 @@ class GUIGraphMain(wx.Frame):
             sess_id = 0
         else:
             sess_id = self._gui._sess_item_sel[0]
-
+        print(self._home_limits)
         if not self._gui._graph_main._graph._zoom:
             self._home_limits[sess_id] = (update_xlim, update_ylim)
 
-        update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
+        #update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
         self.Show()
 
     #def _on_line_new(self, event):
