@@ -101,7 +101,7 @@ class GUIGraphMain(wx.Frame):
         if not self._gui._graph_main._graph._zoom:
             self._home_limits[sess_id] = (update_xlim, update_ylim)
 
-        #update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
+        update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
         self.Show()
 
     #def _on_line_new(self, event):
