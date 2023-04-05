@@ -49,6 +49,7 @@ class GUIGraphMain(wx.Frame):
         self._legend = False
         self._closed = False
         self._refreshed = False
+        self._home_limits = {}
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
@@ -71,7 +72,6 @@ class GUIGraphMain(wx.Frame):
         self._panel.SetSizer(self._box)
         self.Centre()
         self.Bind(wx.EVT_CLOSE, self._on_close)
-        self._home_limits = {}
         #self._graph._toolbar.wx_ids['Home'] = self._home
 
         #self._gui._statusbar = self.CreateStatusBar()
@@ -359,6 +359,14 @@ class GUIGraphDetail(GUIGraphMain):
                 xlim=(-hwin,hwin), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
+    
+    def _refresh(self, sess, **kwargs):
+        if self._closed:
+            self._init()
+        self._graph._refresh(sess, self._logx, self._logy, self._norm,
+                             self._legend, **kwargs)
+        self._refreshed = True
+        self.Show()
 
 class GUIGraphHistogram(GUIGraphMain):
 
