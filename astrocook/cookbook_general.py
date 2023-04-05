@@ -343,8 +343,8 @@ class CookbookGeneral(object):
         self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
 
-    def mask(self, col='mask', cond='', new_sess=True, masked_col='x'):
-        """ @brief Mask the spectrum
+    def mask_cond(self, col='mask', cond='', new_sess=True, masked_col='x'):
+        """ @brief Mask from condition
         @details Create a mask applying a specified condition to the spectrum
         bins.
 
@@ -755,4 +755,28 @@ class CookbookGeneral(object):
         if apply:
             spec._t['y'][np.where(np.array(tell==1, dtype=bool))] = np.nan
 
+        return 0
+
+
+    def x_mask(self, col='mask', ranges=''):
+        """ @brief Mask wavelengths
+        @details Create a mask applying a specified condition to the spectrum
+        bins.
+
+        The expression in `lim` is translated into a set of wavelength ranges
+        in nm. Expressions like "450.-455.2,580.5-590" are supported.
+
+        A new column `col` is populated with the results. The column `y`, `dy`,
+        and optionally `cont` are set to `numpy.nan` in all masked bins.
+        @param col Column with the mask
+        @param ranges Wavelength ranges
+        @return Session with masked spectrum
+        """
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._x_mask(col, ranges)
+            except:
+                logging.debug("Attribute %s does not support region "
+                              "extraction." % s)
         return 0
