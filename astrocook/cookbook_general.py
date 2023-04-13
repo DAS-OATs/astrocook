@@ -1,8 +1,10 @@
-from .functions import _gauss, expr_eval, running_mean, running_rms, x_convert
+from .functions import _gauss, expr_eval, running_mean, running_median, \
+    running_rms, x_convert
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
+from astropy.stats import sigma_clip
 from astropy.units import Unit
 from copy import deepcopy as dc
 import matplotlib.pyplot as plt
@@ -662,6 +664,43 @@ class CookbookGeneral(object):
                 getattr(self.sess, s)._rfz_man = z
             except:
                 logging.debug(msg_attr_miss(s))
+
+        return 0
+
+
+    def outliers_clean(self, hwindow=100, sigma=5, use_dy=False):
+        """ @brief Clean outliers
+        @details Clean outliers (spikes and other reduction residuals) with
+        sigma clipping.
+
+        The clipping is done on `y` values  after subtracting a running median
+        computed within a window. If `dy` is defined, it can be used to enhance
+        the prominence of the outliers. Clipped values are substituted by
+        `np.nan` in the `y` column.
+        @param hwindow Half-size in pixels of the running window
+        @param sigma Number of sigma used for clipping
+        @param use_dy Use `dy` to enance the prominence of the outliers
+        @return 0
+        """
+
+        try:
+            hwindow = int(hwindow)
+            sigma = int(sigma)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+
+        y_rm = running_median(spec._t['y'], h=hwindow)
+        y = spec._t['y']-y_rm
+        if use_dy:
+            valid = ~np.isnan(spec._t['dy'])
+            y[valid] = y[valid]*spec._t['dy'][valid]**2
+        yclip = sigma_clip(y, sigma=sigma, masked=False, axis=0)
+        if use_dy:
+            yclip[valid] = yclip[valid]/spec._t['dy'][valid]**2
+        spec._t['y'] = yclip+y_rm
 
         return 0
 

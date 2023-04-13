@@ -10,6 +10,7 @@ import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+from scipy.ndimage import median_filter
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -476,7 +477,12 @@ def running_mean(x, h=1):
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 
+def running_median(x, h=1):
+    return median_filter(x, h)
+
+
 def running_rms(x, xm, h=1):
+    """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
     n = 2*h+1
     rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
