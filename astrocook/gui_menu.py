@@ -596,6 +596,8 @@ class GUIMenuGeneral(GUIMenu):
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
                      '--',
+                     {'targ': 'outliers_clean', 'append': 'spec'},
+                     '--',
                      {'targ': 'x_mask', 'append': 'spec'},
                      {'targ': 'mask_cond', 'append': 'spec'},
                      {'targ': 'telluric_mask', 'append': 'spec'},
