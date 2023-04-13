@@ -105,7 +105,7 @@ class Spectrum(Frame):
         vend = vend.to(au.km/au.s).value
         dv = dv.to(au.km/au.s).value
         sd = -1*int(np.floor(np.log10(dv)))-1
-        spec_x = self.x.value
+        spec_x = self.x.value[:]
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
@@ -137,7 +137,7 @@ class Spectrum(Frame):
 
             y1 = y1_osampl[pan_l:-pan_r-1]
             y2 = y2_osampl[i:-pan_l-pan_r+i-1]
-            
+
             dy = dy1_osampl[pan_l:-pan_r-1]
 
             y1 = y1[::scale]
@@ -148,8 +148,16 @@ class Spectrum(Frame):
             y2m = y2-np.nanmedian(y2)
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
-            chi2.append(np.nansum((y1-y2)**2/dy**2))
+            chi2i = (y1-y2)**2/dy**2
+            #print(np.nansum(chi2i), 'before')
+            #if np.nansum(chi2i)<2.95e4:
+            #    plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='black')
+            #chi2i[chi2i>70] = np.nan
+            #print(np.nansum(chi2i), 'after')
+            #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='red')
+            chi2.append(np.nansum(chi2i))
             chi2r.append(np.nansum((y1-y2)**2/dy**2)/len(y1))
+        #plt.show()
 
         return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
