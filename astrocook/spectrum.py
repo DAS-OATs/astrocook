@@ -149,14 +149,17 @@ class Spectrum(Frame):
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
             chi2i = (y1-y2)**2/dy**2
+            chi2i_sum = np.nansum(chi2i)
+            #chi2i_sum = np.median(chi2i)*len(y1)
             #print(np.nansum(chi2i), 'before')
-            #if np.nansum(chi2i)<2.95e4:
-            #    plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='black')
+            #if np.nansum(chi2i)<2.6e4:
+                #print(np.nansum(chi2i))
+                #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='black')
             #chi2i[chi2i>70] = np.nan
             #print(np.nansum(chi2i), 'after')
             #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='red')
-            chi2.append(np.nansum(chi2i))
-            chi2r.append(np.nansum((y1-y2)**2/dy**2)/len(y1))
+            chi2.append(chi2i_sum)
+            chi2r.append(chi2i_sum/len(y1))
         #plt.show()
 
         return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
