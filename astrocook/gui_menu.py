@@ -394,6 +394,7 @@ class GUIMenuAbsorbers(GUIMenu):
         self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
                      {'targ': 'systs_new_from_lines', 'append': 'lines'},
                      {'targ': 'systs_complete_from_z', 'append': ['z0']},
+                     {'targ': 'lya_fit', 'append': 'cont'},
                      '> Other',
                      {'targ': 'cands_find', 'append': 'z0'},
                      {'targ': 'systs_improve', 'append': 'z0'},
