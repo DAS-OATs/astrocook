@@ -154,11 +154,14 @@ class Spectrum(Frame):
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
             chi2i = (y1-y2)**2/dy**2
             g2 = np.gradient(y2)
-            g2n = g2/np.nanmean(g2)
-            bf = g2n**2   # Factor adapted from Bouchy+01
+            #g2n = g2/np.nanmean(g2)
+            bf = g2**2   # Factor adapted from Bouchy+01
+            bf = bf * len(chi2i[~np.isnan(chi2i)])/np.sum(bf)
+            #print(np.sum(bf), len(chi2i[~np.isnan(chi2i)]))
             chi2bfi = chi2i * bf
             chi2i_sum = np.nansum(chi2i)
             chi2bfi_sum = np.nansum(chi2bfi)
+            #print(chi2i_sum, chi2bfi_sum)
             #chi2i_sum = np.median(chi2i)*len(y1)
             #print(np.nansum(chi2i), 'before')
             #if np.nansum(chi2i)<2.6e4:
@@ -172,7 +175,8 @@ class Spectrum(Frame):
             chi2r.append(chi2i_sum/len(y1))
         #plt.show()
 
-        chi2 = np.asarray(chi2bf)*np.nanmin(chi2)/np.nanmin(chi2bf)
+        #chi2 = np.asarray(chi2bf)*np.nanmin(chi2)/np.nanmin(chi2bf)
+        chi2 = chi2bf
 
         return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
