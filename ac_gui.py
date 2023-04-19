@@ -14,15 +14,15 @@ def main():
         fw = np.where([a[0]=='-' for a in sys.argv[1:]])
         paths = list(np.array(sys.argv[1:])[pw])
         flags = list(np.array(sys.argv[1:])[fw])
-        raise Exception(gui = GUI(paths, flags))
-        ok = gui._ok
-    except Exception as e:
+        gui = GUI(paths, flags)
+        tb = None
+    except:
         logging.error("I found some problems loading this session. Here's the "\
                       "traceback:\n")
-        print(traceback.format_exc())
-        ok = False
+        tb = traceback.format_exc()
 
-    if not ok:
+    if tb is not None:
+        print(tb)
         logging.warning("Re-starting with an empty session.")
         gui = GUI()
     app.MainLoop()
