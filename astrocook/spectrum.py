@@ -106,6 +106,7 @@ class Spectrum(Frame):
         dv = dv.to(au.km/au.s).value
         sd = -1*int(np.floor(np.log10(dv)))-1
         spec_x = self.x.value[:]
+        #spec_x_2 = self.x.value[:]*(1+0.063/aconst.c.to(au.km/au.s).value)
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
@@ -123,14 +124,17 @@ class Spectrum(Frame):
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
+        #y2_osampl = np.interp(x_osampl, spec_x_2, self._t[col2])
         dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
         dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
+        #dy2_osampl = np.interp(x_osampl, spec_x_2, self._t[dcol2])
 
         pan = len(x_shift)//2
         pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
             int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
         ccf = []
         chi2 = []
+        chi2bf = []
         chi2r = []
         for i, xs in enumerate(x_shift):
             x = x_osampl+xs
@@ -149,18 +153,26 @@ class Spectrum(Frame):
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
             chi2i = (y1-y2)**2/dy**2
+            g2 = np.gradient(y2)
+            g2n = g2/np.nanmean(g2)
+            bf = g2n**2   # Factor adapted from Bouchy+01
+            chi2bfi = chi2i * bf
             chi2i_sum = np.nansum(chi2i)
+            chi2bfi_sum = np.nansum(chi2bfi)
             #chi2i_sum = np.median(chi2i)*len(y1)
             #print(np.nansum(chi2i), 'before')
             #if np.nansum(chi2i)<2.6e4:
                 #print(np.nansum(chi2i))
-                #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='black')
+                #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2bfi, s=1, color='black')
             #chi2i[chi2i>70] = np.nan
             #print(np.nansum(chi2i), 'after')
             #plt.scatter(x[pan_l:-pan_r-1][::scale], chi2i, s=1, color='red')
             chi2.append(chi2i_sum)
+            chi2bf.append(chi2bfi_sum)
             chi2r.append(chi2i_sum/len(y1))
         #plt.show()
+
+        chi2 = np.asarray(chi2bf)*np.nanmin(chi2)/np.nanmin(chi2bf)
 
         return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
