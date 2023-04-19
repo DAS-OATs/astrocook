@@ -17,6 +17,7 @@ def main():
         ok = gui._ok
     except:
         logging.error("I found some problems loading this session.")
+        raise
         ok = False
 
     if not ok:
