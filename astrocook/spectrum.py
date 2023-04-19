@@ -155,7 +155,7 @@ class Spectrum(Frame):
             chi2i = (y1-y2)**2/dy**2
             g2 = np.gradient(y2)
             #g2n = g2/np.nanmean(g2)
-            bf = g2**2   # Factor adapted from Bouchy+01
+            bf = np.abs(g2)#**2   # Factor adapted from Bouchy+01
             bf = bf * len(chi2i[~np.isnan(chi2i)])/np.sum(bf)
             #print(np.sum(bf), len(chi2i[~np.isnan(chi2i)]))
             chi2bfi = chi2i * bf
