@@ -82,6 +82,7 @@ graph_sel = [#'spec_x_y',
              ]
 graph_cols_sel = ''
 
+"""
 graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,dy,None,step,-,1,C1,0.5\n"\
            "lines,x,y,None,scatter,+,1.5,C2,1\n"\
@@ -91,6 +92,15 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
            "feats,x,model,None,scatter,|,5,C9,0.5\n"\
            "systs,z,None,None,axvline,--,0.8,C2,1.0"
+"""
+graph_elem="spec,x,y,None,step,-,0.5,black,1\n"\
+           "spec,x,dy,None,step,-,0.5,red,0.5\n"\
+           "nodes,x,y,None,scatter,o,0.5,blue,1\n"\
+           "spec,x,cont,None,plot,-,1,blue,1\n"\
+           "spec,x,model,None,plot,-,0.5,green,1\n"\
+           "spec,x,model,fit_mask,plot,-,1.5,green,1\n"\
+           "feats,x,model,None,scatter,|,5,green,1\n"\
+           "systs,z,None,None,axvline,--,0.5,green,1"
 
 graph_lim_def = 'xlim=auto\nylim=auto'
 

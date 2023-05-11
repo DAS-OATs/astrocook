@@ -288,7 +288,8 @@ class CookbookGeneral(object):
             rint = rng.integers(0, len(spec.t), size=len(spec.t))
             sel = np.sort(np.unique(rint))
             #sel = np.unique(rint)
-            spec._t = spec._t[sel]
+            #spec._t = spec._t[sel
+            spec._t[col1][np.logical_not(np.isin(range(len(spec.t)), sel))] = np.nan
             #plt.plot(spec._t['x'], spec._t['y'])
             v_shift, ccf, _, _ = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
                                                 vend, dv)
@@ -305,7 +306,7 @@ class CookbookGeneral(object):
                 #plt.plot(v_shift[fit_sel], fit, linestyle='-')
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
-                #print(peak, shift)
+                #print(peak, shift, ccf[fit_sel][np.argmax(ccf[fit_sel])],v_shift[fit_sel][np.argmax(ccf[fit_sel])])
             except:
                 peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
@@ -569,6 +570,7 @@ class CookbookGeneral(object):
             new._gui = self.sess._gui
         else:
             new = None
+
         if 'systs' in self.sess.seq and self.sess.systs != None \
             and new.systs != None:
 

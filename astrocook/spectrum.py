@@ -100,12 +100,14 @@ class Spectrum(Frame):
         return 0
 
 
-    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv):
+    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv,
+                  weighted=False):
         vstart = vstart.to(au.km/au.s).value
         vend = vend.to(au.km/au.s).value
         dv = dv.to(au.km/au.s).value
         sd = -1*int(np.floor(np.log10(dv)))-1
-        spec_x = self.x.value
+        spec_x = self.x.value[:]
+        #spec_x_2 = self.x.value[:]*(1+0.063/aconst.c.to(au.km/au.s).value)
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
@@ -123,8 +125,10 @@ class Spectrum(Frame):
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
+        #y2_osampl = np.interp(x_osampl, spec_x_2, self._t[col2])
         dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
         dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
+        #dy2_osampl = np.interp(x_osampl, spec_x_2, self._t[dcol2])
 
         pan = len(x_shift)//2
         pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
@@ -132,12 +136,13 @@ class Spectrum(Frame):
         ccf = []
         chi2 = []
         chi2r = []
+        check = np.inf
         for i, xs in enumerate(x_shift):
             x = x_osampl+xs
 
             y1 = y1_osampl[pan_l:-pan_r-1]
             y2 = y2_osampl[i:-pan_l-pan_r+i-1]
-            
+
             dy = dy1_osampl[pan_l:-pan_r-1]
 
             y1 = y1[::scale]
@@ -148,8 +153,37 @@ class Spectrum(Frame):
             y2m = y2-np.nanmedian(y2)
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
-            chi2.append(np.nansum((y1-y2)**2/dy**2))
-            chi2r.append(np.nansum((y1-y2)**2/dy**2)/len(y1))
+            chi2i = (y1-y2)**2/dy**2
+
+            if weighted:
+                bf = np.abs(np.gradient(y2))
+                bf = bf * len(chi2i)/np.sum(bf)
+                chi2i = chi2i * bf
+
+            chi2i_sum = np.nansum(chi2i)
+
+            chi2_plot = False
+            if chi2_plot:
+                chi2ran = np.arange(0,50,0.5)
+                from scipy.stats import chi2 as scipychi2
+                #max_chi2 = np.argmin(np.abs(scipychi2.pdf(chi2ran, 1)-1/len(chi2i)))
+                plt.hist(chi2i, bins=chi2ran, density=True)
+                plt.plot(chi2ran, scipychi2.pdf(chi2ran, 1), color='red')
+                plt.xlim(0,50)
+                plt.yscale('log')
+                plt.show()
+
+            resid_plot = False
+            if resid_plot:
+                if chi2i_sum < check:
+                    check = chi2i_sum
+                else:
+                    sss = chi2i>-np.inf
+                    plt.scatter(x[pan_l:-pan_r-1][::scale][sss], chi2bfi[sss], s=1, color='black')
+                    plt.show()
+
+            chi2.append(chi2i_sum)
+            chi2r.append(chi2i_sum/len(y1))
 
         return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
 
