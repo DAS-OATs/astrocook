@@ -612,6 +612,7 @@ class CookbookAbsorbers(object):
             #print(fit_kws)
             #print(self.sess.defs.dict['fit'])
             if mod._active:
+                print(mod)
                 frozen = mod._fit(fit_kws=fit_kws)
             else:
                 frozen = 1
@@ -744,7 +745,6 @@ class CookbookAbsorbers(object):
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
-
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):

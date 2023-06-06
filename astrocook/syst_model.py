@@ -143,6 +143,13 @@ class SystModel(LMComposite):
                 self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
 
 
+    def _make_defs_xos(self):
+        spec = self._spec
+        self._xos = np.repeat(np.array(spec._safe(spec.x).to(au.nm)), 2)
+        self._xos[1:-1:2] = 0.5*(self._xos[:-2:2]+self._xos[2::2])
+        self._defs['xos'] = self._xos
+
+
     def _make_group(self, thres=thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
@@ -252,6 +259,7 @@ class SystModel(LMComposite):
         d = self._defs
 
         self._xs = np.array(spec._safe(spec.x).to(au.nm))
+
         if d['x_lim'] is None:
             self._xl = np.array(spec._safe(spec.x).to(au.nm))
         else:
@@ -419,10 +427,12 @@ class SystModel(LMComposite):
         #print(mods_t['id'])
         #return True
 
+        #print(self)
+
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=self._series, xos=self._xos)
         d = self._defs
         self._pars = line.make_params()
         #print(d['z'])
@@ -453,11 +463,11 @@ class SystModel(LMComposite):
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
         line = LMModel(lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=self._series, xos=self._xos)
         if time_check:
             print('b %.4f' % (time.time()-tt))
             tt = time.time()
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec, xos=self._xos)
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
@@ -480,7 +490,6 @@ class SystModel(LMComposite):
 
         self._pars = line_psf.make_params()
         self._pars.add_many(
-            #(self._lines_pref+'z', d['z'], d['z_vary'], 0, 10,
             (self._lines_pref+'z', d['z'], d['z_vary'], d['z']-d['z_min'],
              d['z']+d['z_max'], d['z_expr']),
             (self._lines_pref+'logN', d['logN'], d['logN_vary'], d['logN_min'],
@@ -549,7 +558,7 @@ class SystModel(LMComposite):
             d['resol'] = self._resol
 
         self._psf_pref = self._psf_func.__name__+'_0_'
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec, xos=self._xos)
         self._psf = psf
         self._pars.update(psf.make_params())
         self._pars.add_many(
@@ -676,6 +685,7 @@ class SystModel(LMComposite):
                 self._vars[l] = v
 
         self._make_defs(defs)
+        self._make_defs_xos()
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()

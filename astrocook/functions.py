@@ -176,7 +176,7 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
     return J.T
     #"""
 
-def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
+def lines_voigt(x, z, logN, b, btur, series='Ly_a', xos=None):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 
@@ -192,17 +192,19 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """
 
     #x = x[0] * au.nm
+    xos = x
     x = x * au.nm
+    xos = xos * au.nm
     z = z * au.dimensionless_unscaled
     N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
-    model = np.ones(np.size(np.array(x)))
+    model = np.ones(np.size(np.array(xos)))
     #print('voigt', z, N, b)
     for t in trans_parse(series):
-        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+        tau0, a, u = _voigt_par_convert_new(xos.value, z.value, N.value, b.value,
                                             btur.value, t)
-        dtau0, da, du = _voigt_par_convert_new(x.value, z.value, N.value+10, b.value,
+        dtau0, da, du = _voigt_par_convert_new(xos.value, z.value, N.value+10, b.value,
                                               btur.value, t)
         F = _fadd(a, u)
         dF = _fadd(da, du)
@@ -431,8 +433,9 @@ def psf_gauss_wrong(x, #center, resol):
     ret = psf
     return ret
 
-def psf_gauss(x, resol, spec=None):
-    c = x[len(x)//2]
+def psf_gauss(x, resol, spec=None, xos=None):
+    xos = x
+    c = xos[len(xos)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     #resol = 40000
     sigma = c / resol * 4.246609001e-1
