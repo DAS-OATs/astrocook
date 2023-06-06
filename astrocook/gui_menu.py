@@ -392,10 +392,9 @@ class GUIMenuAbsorbers(GUIMenu):
         self._menu = wx.Menu()
 
         self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
-                     {'targ': 'systs_complete_from_like', 'append': 'z0'},
-                     '--',
                      {'targ': 'systs_new_from_lines', 'append': 'lines'},
-                     {'targ': 'systs_complete', 'append': ['z0', 'lines']},
+                     {'targ': 'systs_complete_from_z', 'append': ['z0']},
+                     {'targ': 'lya_fit', 'append': 'cont'},
                      '> Other',
                      {'targ': 'cands_find', 'append': 'z0'},
                      {'targ': 'systs_improve', 'append': 'z0'},
@@ -595,6 +594,8 @@ class GUIMenuGeneral(GUIMenu):
                      '--',
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
+                     '--',
+                     {'targ': 'outliers_clean', 'append': 'spec'},
                      '--',
                      {'targ': 'x_mask', 'append': 'spec'},
                      {'targ': 'mask_cond', 'append': 'spec'},
