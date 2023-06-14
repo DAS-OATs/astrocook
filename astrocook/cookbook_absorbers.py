@@ -612,7 +612,6 @@ class CookbookAbsorbers(object):
             #print(fit_kws)
             #print(self.sess.defs.dict['fit'])
             if mod._active:
-                print(mod)
                 frozen = mod._fit(fit_kws=fit_kws)
             else:
                 frozen = 1

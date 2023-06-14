@@ -92,10 +92,6 @@ class SystModel(LMComposite):
             self._pars = fit.params
             self._ys = self.eval(x=self._xs, params=self._pars)
             prova = np.where(self._xs<1000)[0]
-            #plt.plot(self._xs, self._ys)
-            #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))
-            #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
-            #plt.show()
             self._chi2r = fit.redchi
             self._aic = fit.aic
             self._bic = fit.bic
@@ -108,10 +104,6 @@ class SystModel(LMComposite):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)
         #self._pars.pretty_print()
 
-    """
-    def _zero(self, x):
-        return 0*x
-    """
 
     def _make_comp2(self):
 #        super(SystModel, self).__init__(self._group, LMModel(self._zero), operator.add)
@@ -141,13 +133,6 @@ class SystModel(LMComposite):
             else:
                 xl = defs['x_lim']
                 self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
-
-
-    def _make_defs_xos(self):
-        spec = self._spec
-        self._xos = np.repeat(np.array(spec._safe(spec.x).to(au.nm)), 2)
-        self._xos[1:-1:2] = 0.5*(self._xos[:-2:2]+self._xos[2::2])
-        self._defs['xos'] = self._xos
 
 
     def _make_group(self, thres=thres):
@@ -429,10 +414,11 @@ class SystModel(LMComposite):
 
         #print(self)
 
+
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series, xos=self._xos)
+                       series=self._series)
         d = self._defs
         self._pars = line.make_params()
         #print(d['z'])
@@ -454,39 +440,39 @@ class SystModel(LMComposite):
             lines_func = lines_voigt_N_tot
         else:
             lines_func = self._lines_func
-        time_check = False
-        if time_check:
-            tt = time.time()
+
+        self._lines_psf_func = globals()\
+            [self._lines_func.__name__+'_'+self._psf_func.__name__]
+
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
-        if time_check:
-            print('a %.4f' % (time.time()-tt))
-            tt = time.time()
+
+        self._lines_psf_pref = self._lines_psf_func.__name__+'_'+str(self._id)+'_'
+        self._lines_pref = self._lines_psf_pref
+        self._psf_pref = self._lines_psf_pref
+
         line = LMModel(lines_func, prefix=self._lines_pref,
-                       series=self._series, xos=self._xos)
-        if time_check:
-            print('b %.4f' % (time.time()-tt))
-            tt = time.time()
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec, xos=self._xos)
-        if time_check:
-            print('c %.4f' % (time.time()-tt))
-            tt = time.time()
+                       series=self._series)
+
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+
+        line_psf = LMModel(self._lines_psf_func, prefix=self._lines_psf_pref,
+                           series=self._series, spec=self._spec)
+
         line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
-        if time_check:
-            print('d %.4f' % (time.time()-tt))
-            tt = time.time()
+        #print(line_psf)
+
 
         d = self._defs
 
         if self._resol == None or np.isnan(self._resol):
-            #c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
-            #d['resol'] = self._spec.t['resol'][c][0]
             x = to_x(d['z'], trans_parse(self._series)[0])
             c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
             d['resol'] = self._spec.t['resol'][c]
             self._resol = d['resol']
         else:
             d['resol'] = self._resol
+
 
         self._pars = line_psf.make_params()
         self._pars.add_many(
@@ -507,26 +493,7 @@ class SystModel(LMComposite):
                  10**d['logN_min'], 10**d['logN_max'], ''),
                 (self._lines_pref+'N_other', 10**d['logN_min'], True,
                  10**d['logN_min'], 10**d['logN_max'], ''))
-        """
-                (self._lines_pref+'logN_tot', d['logN_min'], d['logN_vary'],
-                 d['logN_min'], d['logN_max'], ''),
-                (self._lines_pref+'logN_other', d['logN_min'], True,
-                 d['logN_min'], d['logN_max'], ''))
-        """
-
         self._lines = line_psf
-
-        """
-        x = np.array(self._spec._safe(self._spec.x).to(au.nm))
-        self._lines_jac = globals()[self._lines_func.__name__+'_jac']\
-            (x, d['z'], d['logN'], d['b'], d['btur'])
-
-        print(self._lines_jac)
-        print(self._lines_jac.shape)
-        """
-        if time_check:
-            print('e %.4f' % (time.time()-tt))
-            tt = time.time()
 
 
     def _make_psf(self):
@@ -558,13 +525,14 @@ class SystModel(LMComposite):
             d['resol'] = self._resol
 
         self._psf_pref = self._psf_func.__name__+'_0_'
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec, xos=self._xos)
+        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
         self._psf = psf
         self._pars.update(psf.make_params())
         self._pars.add_many(
             (self._psf_pref+'resol', d['resol'], d['resol_vary'],
              d['resol_min'], d['resol_max'], d['resol_expr']))
         #"""
+
 
     def _make_regions(self, mod, xs, thres=thres, eval=False):
         spec = mod._spec
@@ -607,7 +575,6 @@ class SystModel(LMComposite):
         return xr, yr, wr
 
 
-
     def _make_regs(self, thres=thres):
         spec = self._spec
 
@@ -630,6 +597,7 @@ class SystModel(LMComposite):
                                       for x in self._xr])
         except:
             self._xm = np.array([])
+
 
     def _make_N_tot(self, N_tot_specs=(None, None, None)):
         lines_pref, N_tot, N_other_expr = N_tot_specs
@@ -685,7 +653,6 @@ class SystModel(LMComposite):
                 self._vars[l] = v
 
         self._make_defs(defs)
-        self._make_defs_xos()
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
@@ -693,6 +660,7 @@ class SystModel(LMComposite):
         #N_tot = '47' == str(self._id)
 
         #self._make_lines()
+        #self._make_lines_psf_old(N_tot)
         self._make_lines_psf(N_tot)
         if time_check:
             print('b %.4f' % (time.time()-tt))
