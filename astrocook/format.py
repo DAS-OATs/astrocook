@@ -131,7 +131,7 @@ class Format(object):
                     if 'id' in out._t.colnames and hdr[id_check] in out._t['id']:
                         if 'ID' in ks: id = int(hdr[k])
                         if 'PAR' in ks: par = hdr[k]
-                        if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
+                        if 'VAL' in ks: out._constr['lines_voigt_psf_gauss_%i_%s' % (id,par)] \
                             = (id, par, hdr[k])
         return out
 

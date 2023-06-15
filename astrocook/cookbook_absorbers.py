@@ -676,7 +676,7 @@ class CookbookAbsorbers(object):
                 self._systs_update(mod)
                 id_list.append(mod._id)
                 if k is not None:
-                    self.sess.systs._constr['lines_voigt_%i_z' % mod._id] \
+                    self.sess.systs._constr['lines_voigt_psf_gauss_%i_z' % mod._id] \
                         = (mod._id, 'z', k)
 
 
@@ -938,7 +938,7 @@ class CookbookAbsorbers(object):
         for i in ids:
             try:
                 iw = np.where(systs._t['id']==i)[0][0]
-                pref = 'lines_voigt_'+str(i)
+                pref = 'lines_voigt_psf_gauss_'+str(i)
                 systs._t[iw]['z'] = mod._pars[pref+'_z'].value
                 systs._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
                 if pref+'_N_tot' in mod._pars:
@@ -1691,12 +1691,12 @@ class CookbookAbsorbers(object):
             # Link z and b
             if i==0:
                 mass_r = mass_d[trans_parse(s)[0]]
-                kz = 'lines_voigt_%i_z' % mod._id
-                kb = 'lines_voigt_%i_b' % mod._id
+                kz = 'lines_voigt_psf_gauss_%i_z' % mod._id
+                kb = 'lines_voigt_psf_gauss_%i_b' % mod._id
             else:
                 mass = mass_d[trans_parse(s)[0]]
-                self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', kz)
-                self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
+                self.sess.systs._constr['lines_voigt_psf_gauss_%i_z' % mod._id] = (mod._id, 'z', kz)
+                self.sess.systs._constr['lines_voigt_psf_gauss_%i_b' % mod._id] = \
                     (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))
 
             if self._refit_n == 0:
@@ -1870,7 +1870,7 @@ class CookbookAbsorbers(object):
             id_list = list(systs._t['id'])
 
 
-        k_list = ['lines_voigt_%i_z' % id for id in id_list]
+        k_list = ['lines_voigt_psf_gauss_%i_z' % id for id in id_list]
         #print(z_list, id_list, k_list)
         for s in series.split(';'):
             s_list = [s]*len(z_list)
@@ -2518,7 +2518,7 @@ class CookbookAbsorbers(object):
             else:
                 id_list = []
             if i == 0:
-                k_list = ['lines_voigt_%i_z' % id for id in id_list]
+                k_list = ['lines_voigt_psf_gauss_%i_z' % id for id in id_list]
                 #print(k_list)
         #plt.show()
         if compressed:
