@@ -479,14 +479,14 @@ class GUITableSystList(GUITable):
             mod = self._mod_extract(row)
             if label == 'series':
                 z0 = float(self._tab.GetCellValue(row, 3))
-                z = mod._pars['lines_voigt_psf_gauss_%i_z' % id].value
+                z = mod._pars['lines_voigt_%i_z' % id].value
                 z0_new = to_z(to_x(z0, trans_parse(mod._series)[0]),
                              trans_parse(value)[0])
                 z_new = to_z(to_x(z, trans_parse(mod._series)[0]),
                              trans_parse(value)[0])
-                vary = mod._pars['lines_voigt_psf_gauss_%i_z' % id].vary
-                expr = mod._pars['lines_voigt_psf_gauss_%i_z' % id].expr
-                mod._pars['lines_voigt_psf_gauss_%i_z' % id].set(
+                vary = mod._pars['lines_voigt_%i_z' % id].vary
+                expr = mod._pars['lines_voigt_%i_z' % id].expr
+                mod._pars['lines_voigt_%i_z' % id].set(
                     value=z_new, vary=vary, expr=expr)
                 self._tab.SetCellValue(row, 2, "%.7f" % z0_new)
                 self._tab.SetCellValue(row, 3, "%.7f" % z_new)
@@ -496,9 +496,9 @@ class GUITableSystList(GUITable):
                 self._gui._sess_sel.cb._mods_recreate2()
             else:
                 try:
-                    vary = mod._pars['lines_voigt_psf_gauss_%i_%s' % (id, label)].vary
-                    expr = mod._pars['lines_voigt_psf_gauss_%i_%s' % (id, label)].expr
-                    mod._pars['lines_voigt_psf_gauss_%i_%s' % (id, label)].set(
+                    vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
+                    expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
+                    mod._pars['lines_voigt_%i_%s' % (id, label)].set(
                         value=value, vary=vary, expr=expr)
                 except:
                     vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary

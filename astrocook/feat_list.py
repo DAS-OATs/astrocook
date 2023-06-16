@@ -212,7 +212,7 @@ class FeatList(object):
                 if set_specs:
                     if len(f._systs.keys())>1:
                         if s not in done:
-                            lines_pref = 'lines_voigt_psf_gauss_%s_' % str(s)
+                            lines_pref = 'lines_voigt_%s_' % str(s)
                             pars = dc(syst._mod._pars)
                             pdel = []
                             for p in pars:
@@ -229,9 +229,9 @@ class FeatList(object):
                             #pars.pretty_print()
                 else:
                     try:
-                        f._N_tot_par = syst._mod._pars['lines_voigt_psf_gauss_%s_N_tot' % str(s)]
+                        f._N_tot_par = syst._mod._pars['lines_voigt_%s_N_tot' % str(s)]
                     except:
-                        f._logN_tot_par = syst._mod._pars['lines_voigt_psf_gauss_%s_logN' % str(s)]
+                        f._logN_tot_par = syst._mod._pars['lines_voigt_%s_logN' % str(s)]
                     f._systs_logN_tot()
 
 
