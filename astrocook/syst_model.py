@@ -447,7 +447,7 @@ class SystModel(LMComposite):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
 
-        self._lines_psf_pref = self._lines_psf_func.__name__+'_'+str(self._id)+'_'
+        self._lines_psf_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._lines_pref = self._lines_psf_pref
         self._psf_pref = self._lines_psf_pref
 
