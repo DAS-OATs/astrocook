@@ -119,12 +119,40 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
 
 def lines_voigt_psf_gauss(x, z, logN, b, btur, resol, series='Lya', spec=None):
 
-    from scipy.signal import resample, decimate
-    x_os = resample(x, len(x)*10)
-    psf = psf_gauss(x_os, resol, spec)
+    from scipy.interpolate import interp1d
+    os_factor = 10
+
+    os_range = np.arange(0, len(x)-(os_factor-1)/os_factor, 1/os_factor)
+    f_x_os = interp1d(range(len(x)), x, assume_sorted=True)
+    x_os = f_x_os(os_range)
+
+    spec_x = spec.x.to(xunit_def).value
+    spec_os_range = np.arange(0, len(spec_x)-(os_factor-1)/os_factor, 1/os_factor)
+    f_spec_x_os = interp1d(range(len(spec_x)), spec_x, assume_sorted=True)
+    spec_x_os = f_spec_x_os(spec_os_range)
+    psf = psf_gauss_mod(x_os, resol, spec_x_os)
+    #print(len(x), len(x_os))
+    #x_os = np.repeat(x, os_factor)
+    #x_os[1:-1:2] = 0.5*(x_os[:-2:2]+x_os[2::2])
+
+    #plt.scatter(os_range, x_os)
+    #plt.scatter(range(len(x)), x)
+    #plt.show()
+    """
+    hl_os = len(x_os)//2
+    xr_os = x_os[hl_os-50:hl_os+50]
+    psf = psf_gauss_mod2(xr_os, resol)
+    #plt.plot(xr_os, psf)
+    #plt.plot(x, psf_gauss_mod(x, resol, spec))
+    #plt.show()
+    """
     lines = lines_voigt(x_os, z, logN, b, btur, series)
     model_os = convolve_simple(lines, psf)
-    model = resample(model_os, len(x))
+    #model_os = np.convolve(lines, psf, mode='same')
+    #model = resample(model_os, len(x))
+    model = model_os[::os_factor]
+
+
     return model
 
 
@@ -415,6 +443,24 @@ def meta_parse(meta):
         if m not in forbidden_keywords and m[:5] not in forbidden_keywords:
             s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
     return s[:-2]
+
+def psf_gauss_mod2(x, resol):
+    c = x[len(x)//2]
+    sigma = c / resol * 4.246609001e-1
+    psf = np.exp(-0.5*((x-c) / sigma)**2)
+    return psf
+
+
+def psf_gauss_mod(x, resol, spec_x):
+    c = x[len(x)//2]
+    sigma = c / resol * 4.246609001e-1
+    psf = np.exp(-0.5*((spec_x-c) / sigma)**2)
+    psf = psf[np.where(psf > 1e-6)]
+    if len(psf)==0:
+        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
+    else:
+        ret = psf
+        return ret
 
 
 def psf_gauss(x, resol, spec=None):

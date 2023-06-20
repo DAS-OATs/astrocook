@@ -459,7 +459,7 @@ class SystModel(LMComposite):
         line_psf = LMModel(self._lines_psf_func, prefix=self._lines_psf_pref,
                            series=self._series, spec=self._spec)
 
-        line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
+        #line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
         #print(line_psf)
 
 
