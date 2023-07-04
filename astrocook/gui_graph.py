@@ -337,8 +337,7 @@ class GUIGraphDetail(GUIGraphMain):
                                                    sharey=graph._ax)
 
             lens = len(series)
-            if i < lens-cols \
-                and i != idxs[-1]:
+            if i < lens-cols and i != idxs[-1]:
                 graph._ax.tick_params(labelbottom=False)
             if i%cols !=0:
                 graph._ax.tick_params(labelleft=False)
