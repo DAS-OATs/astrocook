@@ -335,7 +335,9 @@ class GUIGraphDetail(GUIGraphMain):
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1,
                                                    sharex=graph._ax,
                                                    sharey=graph._ax)
-            if i < len(series)-cols:
+
+            lens = len(series)
+            if i < lens-cols and i != idxs[-1]:
                 graph._ax.tick_params(labelbottom=False)
             if i%cols !=0:
                 graph._ax.tick_params(labelleft=False)
