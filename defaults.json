@@ -9,7 +9,7 @@
   ],
   "voigt": {
     "z_min": 1e-3,
-    "logN_min": 10,
+    "logN_min": 7,
     "b_min": 1.0,
     "btur_min": 0.0,
     "resol_min": 0,
