@@ -786,3 +786,21 @@ class CookbookContinuum(object):
         if print_stats:
             ps.sort_stats('cumtime').print_stats()
         return 0
+
+    def pl_cont(self, regions="[500,550],[600,650]"):
+        """ @brief Power-law continuum
+        @details Estimate a continuum by fitting a power law to selected
+        spectral regions redwards from the Lyman $$\alpha$$ emission.
+
+        @param regions Regions to fit the power law (nm)
+        @return 0
+        """
+
+        try:
+            regions = str(regions)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        
+        return 0

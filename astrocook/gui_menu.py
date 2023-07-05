@@ -434,6 +434,8 @@ class GUIMenuContinuum(GUIMenu):
 
         self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
                      '--',
+                     {'targ': 'pl_cont', 'append': 'spec'},
+                     '--',
                      {'targ': 'lines_find', 'append': 'spec'},
                      {'targ': 'nodes_cont', 'append': 'spec'},
                      {'targ': 'lines_update', 'append': 'z0'},
