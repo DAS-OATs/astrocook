@@ -133,6 +133,9 @@ class SystModel(LMComposite):
             else:
                 xl = defs['x_lim']
                 self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
+        if 'psf_oversampl' in defs:
+            self._defs['psf_oversampl'] = defs['psf_oversampl']
+
 
 
     def _make_group(self, thres=thres):
@@ -451,19 +454,21 @@ class SystModel(LMComposite):
         self._lines_pref = self._lines_psf_pref
         self._psf_pref = self._lines_psf_pref
 
-        line = LMModel(lines_func, prefix=self._lines_pref,
-                       series=self._series)
+        #line = LMModel(lines_func, prefix=self._lines_pref,
+        #               series=self._series)
 
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+        #psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
 
         line_psf = LMModel(self._lines_psf_func, prefix=self._lines_psf_pref,
-                           series=self._series, spec=self._spec)
+                           series=self._series, spec=self._spec,
+                           psf_oversampl=self._defs['psf_oversampl'])
 
         #line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
         #print(line_psf)
 
 
         d = self._defs
+
 
         if self._resol == None or np.isnan(self._resol):
             x = to_x(d['z'], trans_parse(self._series)[0])
