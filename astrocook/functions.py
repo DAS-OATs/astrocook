@@ -117,10 +117,10 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
         return tau0, a, u
 
 
-def lines_voigt_psf_gauss(x, z, logN, b, btur, resol, series='Lya', spec=None):
+def lines_voigt_psf_gauss(x, z, logN, b, btur, resol, series='Lya', spec=None, psf_oversampl=None):
 
     from scipy.interpolate import interp1d
-    os_factor = 10
+    os_factor = psf_oversampl
 
     os_range = np.arange(0, len(x)-(os_factor-1)/os_factor, 1/os_factor)
     f_x_os = interp1d(range(len(x)), x, assume_sorted=True)
