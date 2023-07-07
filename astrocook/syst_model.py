@@ -454,16 +454,18 @@ class SystModel(LMComposite):
         self._lines_pref = self._lines_psf_pref
         self._psf_pref = self._lines_psf_pref
 
-        #line = LMModel(lines_func, prefix=self._lines_pref,
-        #               series=self._series)
+        if self._defs['psf_oversampl']==1:
+            line = LMModel(lines_func, prefix=self._lines_pref,
+                           series=self._series)
 
-        #psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+            psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
+            line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
 
-        line_psf = LMModel(self._lines_psf_func, prefix=self._lines_psf_pref,
-                           series=self._series, spec=self._spec,
-                           psf_oversampl=self._defs['psf_oversampl'])
+        else:
+            line_psf = LMModel(self._lines_psf_func, prefix=self._lines_psf_pref,
+                               series=self._series, spec=self._spec,
+                               psf_oversampl=self._defs['psf_oversampl'])
 
-        #line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
         #print(line_psf)
 
 
