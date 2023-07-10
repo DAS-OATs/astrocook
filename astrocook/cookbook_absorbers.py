@@ -380,7 +380,7 @@ class CookbookAbsorbers(object):
                 mod = s['mod']
                 ys_s = mod._ys
                 ymax = np.maximum(ys, ys_s)
-                thres = 1e-2
+                thres = 1e-3
                 y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
                 pars_cond = False
                 for p,v in mod_new._constr.items():
@@ -492,7 +492,7 @@ class CookbookAbsorbers(object):
             if active:
                 active_c += 1
                 c = []
-                t = 1e-2
+                t = 1e-3
                 j = 0
                 while len(c)==0 and j<1000:
                     try:

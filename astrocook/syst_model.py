@@ -13,7 +13,7 @@ import time
 import warnings
 warnings.filterwarnings("ignore")
 
-thres = 1e-2
+thres = 1e-3
 
 class SystModel(LMComposite):
 
