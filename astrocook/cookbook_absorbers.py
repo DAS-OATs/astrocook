@@ -958,7 +958,10 @@ class CookbookAbsorbers(object):
                 try:
                     systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:
-                    systs._t[iw]['resol'] = np.nan
+                    try:
+                        systs._t[iw]['resol'] = mod._pars['lines_voigt_%i_resol' % i].value
+                    except:
+                        systs._t[iw]['resol'] = np.nan
                 try:
                     systs._t[iw]['chi2r'] = mod._chi2r
                 except:

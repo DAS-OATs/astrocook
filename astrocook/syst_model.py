@@ -471,7 +471,6 @@ class SystModel(LMComposite):
 
         d = self._defs
 
-        print('before', self._resol)
         if self._resol == None or np.isnan(self._resol):
             x = to_x(d['z'], trans_parse(self._series)[0])
             c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
@@ -479,7 +478,6 @@ class SystModel(LMComposite):
             self._resol = d['resol']
         else:
             d['resol'] = self._resol
-        print('after', self._resol)
 
 
         self._pars = line_psf.make_params()
