@@ -505,6 +505,9 @@ class Graph(object):
                     self._systs_x = x
                     self._systs_id = id_flat
 
+                    #for sss, xxx in zip(self._systs_series, self._systs_x):
+                    #    print(sss,xxx.value)
+
                     if hasattr(self._gui._graph_main, '_z_sel'):
                         z_sel = self._gui._graph_main._z_sel
                         series_sel = self._gui._graph_main._series_sel
