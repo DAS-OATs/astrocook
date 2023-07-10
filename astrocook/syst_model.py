@@ -471,7 +471,6 @@ class SystModel(LMComposite):
 
         d = self._defs
 
-
         if self._resol == None or np.isnan(self._resol):
             x = to_x(d['z'], trans_parse(self._series)[0])
             c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
