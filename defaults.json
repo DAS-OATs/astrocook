@@ -18,7 +18,8 @@
     "b_max": 400.0,
     "btur_max": 400.0,
     "resol_max": 1e6,
-    "x_lim": null
+    "x_lim": null,
+    "psf_oversampl": 1
   },
   "fit": {
     "use_jac": false,
