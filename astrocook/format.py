@@ -535,7 +535,7 @@ class Format(object):
 
             # De-normalize
             norm_check = np.median(y)*np.max(y)
-            if norm_check > 0.7 and norm_check < 1.3:
+            if norm_check > 0.7 and norm_check < 1.3 and not all(np.isnan(cont)):
                 y = y*cont
                 dy = dy*cont
 
