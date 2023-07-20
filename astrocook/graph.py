@@ -77,6 +77,7 @@ class Graph(object):
 
     def _on_click(self, event):
         if not event.inaxes: return
+        self._click_3 = False
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
@@ -94,14 +95,15 @@ class Graph(object):
         if event.button == 1:
             sess._clicks = [(x,y)]
             self._click_1 = True
+            return
+
         if event.button == 3:
             if self._click_1:
                 sess._clicks.append((x,y))
             else:
                 sess._clicks = [(x,y)]
-            sess._click_1 = False
-
-        if event.button == 3:
+                self._click_1 = False
+            self._click_3 = True
             title.append('Zap bin')
             attr.append('bin_zap')
             if focus == self._gui._graph_main:
@@ -137,10 +139,9 @@ class Graph(object):
             if sess.systs is not None and sess.systs._t is not None:
                 title.append('Fit system')
                 attr.append('syst_fit')
-
+        if self._click_1 and not self._click_3: return
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event, title, attr))
-
 
     def _on_zoom(self, event):
         self._zoom = True
