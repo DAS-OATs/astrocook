@@ -363,18 +363,22 @@ class Format(object):
 
         span = 0
         if row is None and slice is None:
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
+            #x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
+            x = np.ravel(hdul['WAVEDATA_AIR_BARY'].data[:,span:-span-1])
             y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
         elif row is None:
-            r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
+            #r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
+            #x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
+            r = range(slice, hdul['WAVEDATA_AIR_BARY'].data.shape[0], 2)
+            x = np.ravel(hdul['WAVEDATA_AIR_BARY'].data[r,span:-span-1])
             y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
         else:
-            x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
+            #x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
+            x = hdul['WAVEDATA_AIR_BARY'].data[row,span:-span-1]
             y = hdul['SCIDATA'].data[row,span:-span-1]
             dy = hdul['ERRDATA'].data[row,span:-span-1]
             q = hdul['QUALDATA'].data[row,span:-span-1]
