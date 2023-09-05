@@ -280,6 +280,10 @@ class Session(object):
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
             return 0
 
+        # STIS spectrum
+        if instr == 'STIS' and orig == 'undefined' and catg == 'undefined':
+            self.spec = format.stis_spectrum(hdul)
+
         # generic
         if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:

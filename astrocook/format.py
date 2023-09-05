@@ -697,6 +697,20 @@ class Format(object):
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def stis_spectrum(self, hdul):
+        logging.info(msg_format('STIS'))
+
+        hdr = hdul[1].header
+        data = hdul[1].data
+        x = data['WAVE'][0]
+        xmin, xmax = self._create_xmin_xmax(x)
+        y = data['FLUX'][0]
+        dy = data['ERROR'][0]
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.nm
+        meta = hdr #{'instr': 'X-shooter'}
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
 
     def xqr30_spectrum(self, hdul, corr=True):
         logging.info(msg_format('xqr30'))
