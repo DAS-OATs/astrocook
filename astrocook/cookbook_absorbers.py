@@ -1693,12 +1693,12 @@ class CookbookAbsorbers(object):
             if i==0:
                 mass_r = mass_d[trans_parse(s)[0]]
                 kz = 'lines_voigt_%i_z' % mod._id
-                kb = 'lines_voigt_%i_b' % mod._id
+                #kb = 'lines_voigt_%i_b' % mod._id  # Not b for now
             else:
                 mass = mass_d[trans_parse(s)[0]]
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', kz)
-                self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
-                    (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))
+                #self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
+                #    (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))  # Not b for now
 
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)
