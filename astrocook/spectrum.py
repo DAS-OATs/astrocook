@@ -539,7 +539,10 @@ class Spectrum(Frame):
             # Optional kappa-sigma clipping of outliers
             if kappa is not None:
                 yclip = sigma_clip(ysel, sigma=kappa, masked=True)
-                w = np.where(np.logical_and(frac>0, yclip.mask==False))
+                if len(yclip)>0:
+                    w = np.where(np.logical_and(frac>0, yclip.mask==False))
+                else:
+                    w = np.where(frac>0)
             else:
                 w = np.where(frac>0)
 
