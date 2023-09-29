@@ -449,7 +449,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, xstart, xend, dx, xunit, y, dy, filling=np.nan):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy, kappa=5, filling=np.nan):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -534,7 +534,14 @@ class Spectrum(Frame):
             #    frac = frac[~mask]
             #    ysel = ysel[~mask]
             #    dysel = dysel[~mask]
-            w = np.where(frac>0)
+            from astropy.stats import sigma_clip
+
+            # Optional kappa-sigma clipping of outliers
+            if kappa is not None:
+                yclip = sigma_clip(ysel, sigma=kappa, masked=True)
+                w = np.where(np.logical_and(frac>0, yclip.mask==False))
+            else:
+                w = np.where(frac>0)
 
             if print_time:
                 t2 = time()
