@@ -105,14 +105,17 @@ class Frame():
         self._meta[key] = val
 
 
-    def _append(self, frame):
+    def _append(self, frame, unique=True):
         if self._xunit != frame._xunit:
             frame._t['x'] = frame._t['x'].to(self._xunit)
             frame._t['xmin'] = frame._t['xmin'].to(self._xunit)
             frame._t['xmax'] = frame._t['xmax'].to(self._xunit)
         vstack = at.vstack([self._t, frame._t])
         if len(self._t) > 0:
-            self._t = at.unique(vstack, keys=['x'])
+            if unique:
+                self._t = at.unique(vstack, keys=['x'])
+            else:
+                self._t = vstack
         return 0
 
 
@@ -368,7 +371,7 @@ class Frame():
             mask = np.logical_or(mask,
                        np.logical_and(self._t['x'].to(au.nm).value>r[0],
                                       self._t['x'].to(au.nm).value<r[1]))
-        
+
         if col not in self._t.colnames:
             logging.info("I'm adding column %s." % col)
         else:
