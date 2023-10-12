@@ -10,6 +10,7 @@ from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.signal import fftconvolve
 import sys
 from tqdm import tqdm
 
@@ -761,7 +762,7 @@ class CookbookGeneral(object):
 
         return 0
 
-    def sky_mask(self, shift=0, thres=50, hwindow=10, reverse=False,
+    def sky_mask(self, shift=0, thres=50, std=0.05, reverse=False,
         apply=True, remove=False):
         """ @brief Mask sky emission lines
         @details Mask spectral regions affected by sky emission lines.
@@ -776,7 +777,7 @@ class CookbookGeneral(object):
         `sky` is 1.
         @param shift Shift to the heliocentric frame (km/s)
         @param thres Threshold to cut sky lines in the model (ph/s/m2/micron/arcsec2)
-        @param hwindow Half window for smoothing
+        @param std Standard deviation for gaussian smoothing (nm)
         @param reverse Compute reverse mask (keeping sky lines instead of
         rejecting them)
         @param apply Apply mask to flux
@@ -787,6 +788,7 @@ class CookbookGeneral(object):
         try:
             shift = float(shift)
             thres = float(thres)
+            std = float(std)
             reverse = str(reverse) == 'True'
             apply = str(apply) == 'True'
             remove = str(remove) == 'True'
@@ -802,7 +804,19 @@ class CookbookGeneral(object):
 
         x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
         sky = np.array(sky_telluric['flux_ael'], dtype=float)
-        sky_smooth = running_mean(sky, h=hwindow)
+
+        mean = np.median(x)
+        prof = np.exp(-((x - mean) / std)**2)
+        if (len(prof) % 2 == 0):
+            prof = prof[:-1]
+        prof = prof / np.sum(prof)
+
+        sky_smooth = fftconvolve(sky, prof, mode='same')
+
+        #plt.plot(x, sky_smooth)
+        #plt.show()
+
+        #sky_smooth = running_mean(sky, h=hwindow)
         sky_interp = np.interp(spec._t['x'].to(au.nm).value, x, sky_smooth)
         if not reverse:
             mask = np.array([t>thres for t in sky_interp], dtype=float)
