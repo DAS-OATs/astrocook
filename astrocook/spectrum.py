@@ -479,6 +479,7 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
+        y_rms_out = np.array([]) * y.unit
         print_time = False
         xmin_value = np.array(self.xmin.value)
         xmax_value = np.array(self.xmax.value)
@@ -563,11 +564,15 @@ class Spectrum(Frame):
                     #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
                 dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
                                                    /np.nansum(weights)*y.unit)
+                y_rms_out = np.append(y_rms_out, np.sqrt(np.nansum(weights*(ysel[w]-y_out[-1])**2))\
+                                                      /np.nansum(weights)*y.unit)
+
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
+                y_rms_out = np.append(y_rms_out, filling)
             if print_time:
                 t3 = time()
                 print(t3, t3-t2)
@@ -575,6 +580,13 @@ class Spectrum(Frame):
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
+
+        if 'y_rms' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_rms'.")
+        else:
+            logging.warning("I'm updating column 'y_rms'.")
+        out._t['y_rms'] = at.Column(y_rms_out, dtype=float)
+
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
         self._xunit_old = self._xunit
