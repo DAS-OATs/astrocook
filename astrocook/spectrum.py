@@ -558,14 +558,14 @@ class Spectrum(Frame):
                 #print(weights)
                 #print(frac[w])
                 if np.any(np.isnan(dysel)) or np.any(dysel==0.0) or np.sum(weights)==0.0:# and False:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
+                    y_out_n = np.average(ysel[w], weights=frac[w])
                 else:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=weights))
-                    #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
+                    y_out_n = np.average(ysel[w], weights=weights)
+                y_out = np.append(y_out, y_out_n)
                 dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
                                                    /np.nansum(weights)*y.unit)
-                y_rms_out = np.append(y_rms_out, np.sqrt(np.nansum(weights*(ysel[w]-y_out[-1])**2))\
-                                                      /np.nansum(weights)*y.unit)
+                y_rms_out = np.append(y_rms_out, np.sqrt(np.nansum(weights*(ysel[w].value-y_out_n.value)**2)\
+                                                   /np.nansum(weights))*y.unit)
 
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
@@ -581,11 +581,8 @@ class Spectrum(Frame):
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
 
-        if 'y_rms' not in spec._t.colnames:
-            logging.info("I'm adding column 'y_rms'.")
-        else:
-            logging.warning("I'm updating column 'y_rms'.")
-        out._t['y_rms'] = at.Column(y_rms_out, dtype=float)
+        logging.info("I'm adding column 'y_rms'.")
+        out._t['y_rms'] = Column(y_rms_out, dtype=float)
 
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
