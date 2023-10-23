@@ -284,7 +284,7 @@ class SystList(object):
         freezes = {}
         for i in self._t['id']:
             if i not in exclude:
-                n = 'lines_voigt_psf_gauss_{}_{}'.format(i,par)
+                n = 'lines_voigt_{}_{}'.format(i,par)
                 s = self._d[i]
                 if not s._check_voigt():
                     logging.error("Only Voigt function is supported for "
@@ -391,8 +391,7 @@ class SystList(object):
             for i in ids:
                 try:
                     iw = np.where(self._t['id']==i)[0][0]
-                    #pref = 'lines_voigt_'+str(i)
-                    pref = mod._lines_psf_func.__name__+'_'+str(i)
+                    pref = 'lines_voigt_'+str(i)
                     self._t[iw]['z'] = mod._pars[pref+'_z'].value
                     self._t[iw]['dz'] = mod._pars[pref+'_z'].stderr
                     if pref+'_N_tot' in mod._pars:

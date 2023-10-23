@@ -91,9 +91,9 @@ class GUIDialog(wx.Dialog):
 
 
     def _get_params(self, method):
-        keys = inspect.getargspec(method)[0][1:]
-        defs = inspect.getargspec(method)[-1]
-        if defs == None:
+        keys = inspect.getfullargspec(method).args[1:]
+        defs = inspect.getfullargspec(method).defaults
+        if defs is None:
             defs = []
         defs_mod = []
         for d in defs:

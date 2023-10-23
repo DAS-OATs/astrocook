@@ -380,7 +380,7 @@ class CookbookAbsorbers(object):
                 mod = s['mod']
                 ys_s = mod._ys
                 ymax = np.maximum(ys, ys_s)
-                thres = 1e-3
+                thres = 1e-2
                 y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
                 pars_cond = False
                 for p,v in mod_new._constr.items():
@@ -492,7 +492,7 @@ class CookbookAbsorbers(object):
             if active:
                 active_c += 1
                 c = []
-                t = 1e-3
+                t = 1e-2
                 j = 0
                 while len(c)==0 and j<1000:
                     try:
@@ -744,6 +744,7 @@ class CookbookAbsorbers(object):
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
+
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
@@ -958,10 +959,7 @@ class CookbookAbsorbers(object):
                 try:
                     systs._t[iw]['resol'] = mod._pars['psf_gauss_%i_resol' % i].value
                 except:
-                    try:
-                        systs._t[iw]['resol'] = mod._pars['lines_voigt_%i_resol' % i].value
-                    except:
-                        systs._t[iw]['resol'] = np.nan
+                    systs._t[iw]['resol'] = np.nan
                 try:
                     systs._t[iw]['chi2r'] = mod._chi2r
                 except:
@@ -1695,12 +1693,12 @@ class CookbookAbsorbers(object):
             if i==0:
                 mass_r = mass_d[trans_parse(s)[0]]
                 kz = 'lines_voigt_%i_z' % mod._id
-                kb = 'lines_voigt_%i_b' % mod._id
+                #kb = 'lines_voigt_%i_b' % mod._id  # Not b for now
             else:
                 mass = mass_d[trans_parse(s)[0]]
                 self.sess.systs._constr['lines_voigt_%i_z' % mod._id] = (mod._id, 'z', kz)
-                self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
-                    (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))
+                #self.sess.systs._constr['lines_voigt_%i_b' % mod._id] = \
+                #    (mod._id, 'b', kb+'*%.14f' % (np.sqrt(mass_r/mass)))  # Not b for now
 
             if self._refit_n == 0:
                 self._mods_recreate(mod_new=mod)

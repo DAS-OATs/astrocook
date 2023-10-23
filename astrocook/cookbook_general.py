@@ -430,7 +430,7 @@ class CookbookGeneral(object):
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=False, filling=np.nan):
+              kappa=None, norm=False, filling=np.nan):
         """ @brief Re-bin spectrum
         @details Apply a new binning to a spectrum, with a constant bin size.
 
@@ -460,6 +460,7 @@ class CookbookGeneral(object):
         @param xend End wavelength (nm)
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
+        @param kappa Number of sigma to clip outliers
         @param norm Return normalized spectrum, if continuum exists
         @param filling Value to fill region without data
         @return Session with rebinned spectrum
@@ -470,6 +471,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            kappa = None if kappa in [None, 'None'] else float(kappa)
             norm = str(norm) == 'True'
             filling = float(filling)
         except ValueError:
@@ -504,7 +506,7 @@ class CookbookGeneral(object):
             y = spec_in.y/spec_in.t['cont']
             dy = spec_in.dy/spec_in.t['cont']
 
-        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, kappa, filling)
         if cont:
             if not norm:
                 try:  # x-axis in wavelengths

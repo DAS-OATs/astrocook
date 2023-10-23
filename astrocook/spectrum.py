@@ -178,8 +178,8 @@ class Spectrum(Frame):
                 if chi2i_sum < check:
                     check = chi2i_sum
                 else:
-                    sss = chi2i>-np.inf
-                    plt.scatter(x[pan_l:-pan_r-1][::scale][sss], chi2bfi[sss], s=1, color='black')
+                    sss = chi2i>20
+                    plt.scatter(x[pan_l:-pan_r-1][::scale][sss], chi2i[sss], s=1, color='black')
                     plt.show()
 
             chi2.append(chi2i_sum)
@@ -449,7 +449,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, xstart, xend, dx, xunit, y, dy, filling=np.nan):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy, kappa=5, filling=np.nan):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -534,7 +534,17 @@ class Spectrum(Frame):
             #    frac = frac[~mask]
             #    ysel = ysel[~mask]
             #    dysel = dysel[~mask]
-            w = np.where(frac>0)
+            from astropy.stats import sigma_clip
+
+            # Optional kappa-sigma clipping of outliers
+            if kappa is not None:
+                yclip = sigma_clip(ysel, sigma=kappa, masked=True)
+                if len(yclip)>0:
+                    w = np.where(np.logical_and(frac>0, yclip.mask==False))
+                else:
+                    w = np.where(frac>0)
+            else:
+                w = np.where(frac>0)
 
             if print_time:
                 t2 = time()

@@ -9,7 +9,7 @@
   ],
   "voigt": {
     "z_min": 1e-3,
-    "logN_min": 7,
+    "logN_min": 10,
     "b_min": 1.0,
     "btur_min": 0.0,
     "resol_min": 0,
@@ -18,8 +18,7 @@
     "b_max": 400.0,
     "btur_max": 400.0,
     "resol_max": 1e6,
-    "x_lim": null,
-    "psf_oversampl": 1
+    "x_lim": null
   },
   "fit": {
     "use_jac": false,

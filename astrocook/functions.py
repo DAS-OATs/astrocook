@@ -118,46 +118,6 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
         return tau0, a, u
 
 
-def lines_voigt_psf_gauss(x, z, logN, b, btur, resol, series='Lya', spec=None, psf_oversampl=None):
-
-    from scipy.interpolate import interp1d
-    os_factor = psf_oversampl
-
-    os_range = np.arange(0, len(x)-(os_factor-1)/os_factor, 1/os_factor)
-    f_x_os = interp1d(range(len(x)), x, assume_sorted=True)
-    x_os = f_x_os(os_range)
-
-    spec_x = spec.x.to(xunit_def).value
-    spec_os_range = np.arange(0, len(spec_x)-(os_factor-1)/os_factor, 1/os_factor)
-    f_spec_x_os = interp1d(range(len(spec_x)), spec_x, assume_sorted=True)
-    spec_x_os = f_spec_x_os(spec_os_range)
-    psf = psf_gauss_mod(x_os, resol, spec_x_os)
-    #print(len(x), len(x_os))
-    #x_os = np.repeat(x, os_factor)
-    #x_os[1:-1:2] = 0.5*(x_os[:-2:2]+x_os[2::2])
-
-    #plt.scatter(os_range, x_os)
-    #plt.scatter(range(len(x)), x)
-    #plt.show()
-    """
-    hl_os = len(x_os)//2
-    xr_os = x_os[hl_os-50:hl_os+50]
-    psf = psf_gauss_mod2(xr_os, resol)
-    #plt.plot(xr_os, psf)
-    #plt.plot(x, psf_gauss_mod(x, resol, spec))
-    #plt.show()
-    """
-    lines = lines_voigt(x_os, z, logN, b, btur, series)
-    model_os = convolve_simple(lines, psf)
-    #model_os = np.convolve(lines, psf, mode='same')
-    #model = resample(model_os, len(x))
-    model = model_os[::os_factor]
-
-
-    return model
-
-
-
 def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_transformation=True):
     for i in range(0, len(x0), 3):
         z, logN, b = x0[i], x0[i+1], x0[i+2]
@@ -216,7 +176,6 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
     #print(J)
     return J.T
     #"""
-
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a
@@ -445,24 +404,33 @@ def meta_parse(meta):
             s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
     return s[:-2]
 
-def psf_gauss_mod2(x, resol):
-    c = x[len(x)//2]
+
+def psf_gauss_wrong(x, #center, resol):
+              resol, reg=None):
+    """ @brief Gaussian PSF
+
+    The function returns a gaussian array for each element of a selected region
+    in the wavelength domain
+
+    @param x Wavelength domain (in nm)
+    @param c_min Starting pixel of the region
+    @param c_max Ending pixel of the region
+    @param center Center wavelength of the region
+    @param resol Resolution
+    @return Gaussian PSF over x
+    """
+
+    _, inds, _ = np.intersect1d(x, reg, return_indices=True)
+    c = np.nanmedian(reg)
     sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-0.5*((x-c) / sigma)**2)
-    return psf
-
-
-def psf_gauss_mod(x, resol, spec_x):
-    c = x[len(x)//2]
-    sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-0.5*((spec_x-c) / sigma)**2)
-    psf = psf[np.where(psf > 1e-6)]
-    if len(psf)==0:
-        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
-    else:
-        ret = psf
-        return ret
-
+    psf = np.exp(-0.5*((x[inds]-c) / sigma)**2)
+    #psf[np.where(psf < 1e-4)] = 0.0
+    #psf = np.zeros(len(x))
+    #psf[len(x)//2] = 1
+    ret = [np.array(psf)]
+    #plt.plot(x, psf)
+    ret = psf
+    return ret
 
 def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]

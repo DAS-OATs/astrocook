@@ -363,22 +363,18 @@ class Format(object):
 
         span = 0
         if row is None and slice is None:
-            #x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
-            x = np.ravel(hdul['WAVEDATA_AIR_BARY'].data[:,span:-span-1])
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
             y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
         elif row is None:
-            #r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            #x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
-            r = range(slice, hdul['WAVEDATA_AIR_BARY'].data.shape[0], 2)
-            x = np.ravel(hdul['WAVEDATA_AIR_BARY'].data[r,span:-span-1])
+            r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
             y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
         else:
-            #x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
-            x = hdul['WAVEDATA_AIR_BARY'].data[row,span:-span-1]
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
             y = hdul['SCIDATA'].data[row,span:-span-1]
             dy = hdul['ERRDATA'].data[row,span:-span-1]
             q = hdul['QUALDATA'].data[row,span:-span-1]
@@ -539,7 +535,7 @@ class Format(object):
 
             # De-normalize
             norm_check = np.median(y)*np.max(y)
-            if norm_check > 0.7 and norm_check < 1.3:
+            if norm_check > 0.7 and norm_check < 1.3 and not all(np.isnan(cont)):
                 y = y*cont
                 dy = dy*cont
 
@@ -695,20 +691,6 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-
-    def stis_spectrum(self, hdul):
-        logging.info(msg_format('STIS'))
-
-        hdr = hdul[1].header
-        data = hdul[1].data
-        x = data['WAVE'][0]
-        xmin, xmax = self._create_xmin_xmax(x)
-        y = data['FLUX'][0]
-        dy = data['ERROR'][0]
-        xunit = au.Angstrom
-        yunit = au.erg/au.cm**2/au.s/au.nm
-        meta = hdr #{'instr': 'X-shooter'}
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 

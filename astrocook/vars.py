@@ -95,7 +95,8 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
 """
 graph_elem="spec,x,y,None,step,-,0.5,black,1\n"\
            "spec,x,dy,None,step,-,0.5,red,0.5\n"\
-           "nodes,x,y,None,scatter,o,0.5,blue,1\n"\
+           "lines,x,y,None,scatter,+,1,green,1\n"\
+           "nodes,x,y,None,scatter,o,1,blue,1\n"\
            "spec,x,cont,None,plot,-,1,blue,1\n"\
            "spec,x,model,None,plot,-,0.5,green,1\n"\
            "spec,x,model,fit_mask,plot,-,1.5,green,1\n"\
