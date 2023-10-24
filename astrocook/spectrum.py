@@ -169,8 +169,11 @@ class Spectrum(Frame):
                 #max_chi2 = np.argmin(np.abs(scipychi2.pdf(chi2ran, 1)-1/len(chi2i)))
                 plt.hist(chi2i, bins=chi2ran, density=True)
                 plt.plot(chi2ran, scipychi2.pdf(chi2ran, 1), color='red')
-                plt.xlim(0,50)
+                plt.xlim(0,20)
+                plt.ylim(1e-5,1)
                 plt.yscale('log')
+                plt.xlabel(r'$\chi_r^2$')
+                plt.ylabel('Frequency')
                 plt.show()
 
             resid_plot = False
@@ -178,7 +181,23 @@ class Spectrum(Frame):
                 if chi2i_sum < check:
                     check = chi2i_sum
                 else:
-                    sss = chi2i>20
+                    sss = chi2i>15
+                    """
+                    from astropy.table import Table
+                    t = Table([x[pan_l:-pan_r-1][::scale][sss]])
+                    t['g'] = np.floor(100*t['col0'])/100
+                    t['g2'] = np.floor(100*t['col0'])/100+0.01
+                    #t.pprint(max_lines=375)
+                    t2 = Table([np.unique(t['g'])])
+                    t2['t'] = np.floor(100*t2['g']+1)/100
+                    rem = []
+                    for i in range(len(t2)-1,0,-1):
+                        if t2['g'][i]-t2['g'][i-1]<0.015:
+                            t2['t'][i-1]=t2['t'][i]
+                            rem.append(i)
+                    t2.remove_rows(rem)
+                    t2.pprint(max_lines=1000)
+                    """
                     plt.scatter(x[pan_l:-pan_r-1][::scale][sss], chi2i[sss], s=1, color='black')
                     plt.show()
 
