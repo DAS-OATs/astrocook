@@ -133,11 +133,21 @@ class Spectrum(Frame):
         pan = len(x_shift)//2
         pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
             int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
+
+        #print(scale, pan, pan_l, pan_r)
         ccf = []
         chi2 = []
         chi2r = []
         check = np.inf
         for i, xs in enumerate(x_shift):
+            """
+            y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
+            y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
+            dy = dy1_osampl[pan:-pan-1]
+
+            ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
+            """
+
             x = x_osampl+xs
 
             y1 = y1_osampl[pan_l:-pan_r-1]
@@ -153,6 +163,7 @@ class Spectrum(Frame):
             y2m = y2-np.nanmedian(y2)
 
             ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
+            #"""
             chi2i = (y1-y2)**2/dy**2
 
             if weighted:
