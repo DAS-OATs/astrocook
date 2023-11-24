@@ -298,7 +298,7 @@ class CookbookGeneral(object):
 
 
             v_shiftmax = v_shift[np.argmax(ccf)]
-            plt.plot(v_shift, ccf)
+            #plt.plot(v_shift, ccf)
             try:
                 p0 = [1., v_shiftmax, 1.]
                 fit_sel = np.logical_and(v_shift>v_shiftmax-fit_hw.value,
