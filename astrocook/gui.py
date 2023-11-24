@@ -195,7 +195,9 @@ class GUI(object):
         """ Refresh the GUI after an action """
         self._defs = self._sess_sel.defs
 
-        if self._mute: return
+        if self._mute:
+            self._panel_sess._on_close(None)
+            return
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh(init_bar=init_bar)
