@@ -23,9 +23,10 @@ import wx.lib.mixins.listctrl as listmix
 class GUI(object):
     """ Class for the GUI. """
 
-    def __init__(self, paths=None, flags=None):
+    def __init__(self, paths=None, flags=None, mute=False):
         """ Constructor """
 
+        self._mute = mute
         self._flags = flags
         try:
             banner = 'ASTROCOOK 🍪 v'
@@ -54,18 +55,19 @@ class GUI(object):
         self._menu_feats_id = []
         self._menu_tab_id = []
         self._defs = Defaults(self)
-        self._panel_sess = GUIPanelSession(self)
+        self._panel_sess = GUIPanelSession(self, mute=self._mute)
         self._id_zoom = 9
         self._data_lim = None
         self._tag = ""
         self._ok = True
-        GUIGraphMain(self)
-        GUITableSpectrum(self)
-        GUITableLineList(self)
-        GUITableSystList(self)
-        GUITableModelList(self)
-        GUIImageCompleteness(self)
-        GUIImageCorrectness(self)
+        if not self._mute:
+            GUIGraphMain(self)
+            GUITableSpectrum(self)
+            GUITableLineList(self)
+            GUITableSystList(self)
+            GUITableModelList(self)
+            GUIImageCompleteness(self)
+            GUIImageCorrectness(self)
         if paths == None:
             logging.info("Welcome! Try Session > Open...")
         else:
@@ -192,6 +194,8 @@ class GUI(object):
                  autolim=True, autosort=True, _xlim=None, _ylim=None):
         """ Refresh the GUI after an action """
         self._defs = self._sess_sel.defs
+
+        if self._mute: return
 
         self._panel_sess._refresh()
         self._panel_sess._menu._refresh(init_bar=init_bar)
@@ -408,7 +412,8 @@ class GUIPanelSession(wx.Frame):
                  gui,
                  title="Sessions",
                  size_x=wx.DisplaySize()[0]*0.6,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_y=wx.DisplaySize()[1]*0.2,
+                 mute=False):
         """ Constructor """
 
         super(GUIPanelSession, self).__init__(parent=None, title=title,
@@ -422,26 +427,28 @@ class GUIPanelSession(wx.Frame):
         self._gui._panel_sess = self
 
         # Create table
-        panel = wx.Panel(self)
-        self._tab = GUIControlList(panel, 0)
-        self._tab.InsertColumn(0, "name", width=330)
-        self._tab.InsertColumn(1, "id", width=30)
-        self._tab.InsertColumn(2, "active range", width=200)
-        self._tab.InsertColumn(3, "# rows", width=100)
-        self._tab.InsertColumn(4, "# lines", width=100)
-        self._tab.InsertColumn(5, "# systems", width=100)
-        self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
-        self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
-        self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
-        self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_deselect)
-        self._tab.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_right_click)
-        self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._tab, 1, wx.EXPAND)
-        panel.SetSizer(self._box)
-        self._menu = GUIMenu(self._gui)
-        self.SetMenuBar(self._menu.bar())
-        self.Show()
-        self.Bind(wx.EVT_CLOSE, self._on_close)
+        self._mute = mute
+        if not mute:
+            panel = wx.Panel(self)
+            self._tab = GUIControlList(panel, 0)
+            self._tab.InsertColumn(0, "name", width=330)
+            self._tab.InsertColumn(1, "id", width=30)
+            self._tab.InsertColumn(2, "active range", width=200)
+            self._tab.InsertColumn(3, "# rows", width=100)
+            self._tab.InsertColumn(4, "# lines", width=100)
+            self._tab.InsertColumn(5, "# systems", width=100)
+            self._tab.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_veto)
+            self._tab.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_edit)
+            self._tab.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_select)
+            self._tab.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_deselect)
+            self._tab.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_right_click)
+            self._box = wx.BoxSizer(wx.VERTICAL)
+            self._box.Add(self._tab, 1, wx.EXPAND)
+            panel.SetSizer(self._box)
+            self._menu = GUIMenu(self._gui)
+            self.SetMenuBar(self._menu.bar())
+            self.Show()
+            self.Bind(wx.EVT_CLOSE, self._on_close)
 
 
     def _on_add(self, sess, open=True):
@@ -451,14 +458,21 @@ class GUIPanelSession(wx.Frame):
         self._gui._defs = sess.defs
 
         missing = []
-        for i in range(self._tab.GetItemCount()+1):
-            if i not in self._gui._sess_item_list:
-                missing.append(i)
+        if not self._mute:
+            for i in range(self._tab.GetItemCount()+1):
+                if i not in self._gui._sess_item_list:
+                    missing.append(i)
+            self._sel = missing[0]
+        else:
+            if hasattr(self, '_sel'):
+                self._sel += 1
+            else:
+                self._sel = 0
 
-        self._sel = missing[0]
         self._items = [self._sel]
-        self._tab._insert_string_item(self._sel, "%s" % sess.name)
-        self._tab.SetItem(self._tab.GetItemCount()-1, 1, "%s" % str(self._sel))
+        if not self._mute:
+            self._tab._insert_string_item(self._sel, "%s" % sess.name)
+            self._tab.SetItem(self._tab.GetItemCount()-1, 1, "%s" % str(self._sel))
         self._gui._sess_list.append(sess)
         self._gui._sess_item_list.append(self._sel)
 
@@ -481,14 +495,15 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
             self._gui._sess_sel._graph_lim = graph_lim_def
 
-            self._gui._refresh(init_tab=False, autolim=False)
+            if not self._mute:
+                self._gui._refresh(init_tab=False, autolim=False)
 
-            # Enable import from depending on how many sessions are present
-            for menu in [self._menu._edit, self._menu._cb_general]:
-                menu_dict = menu._menu.__dict__
-                for m in menu_dict:
-                    menu._menu.Enable(menu_dict[m]['start_id'],
-                    menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
+                # Enable import from depending on how many sessions are present
+                for menu in [self._menu._edit, self._menu._cb_general]:
+                    menu_dict = menu._menu.__dict__
+                    for m in menu_dict:
+                        menu._menu.Enable(menu_dict[m]['start_id'],
+                        menu._enable(menu_dict[m]['func'], menu_dict[m]['value']))
         self._gui._ok = not ko
 
 
@@ -674,7 +689,6 @@ class GUIPanelSession(wx.Frame):
         """
 
         logging.info("I'm loading JSON file %s..." % path)
-
         with open(path) as json_file:
             log = json_file.read()
             log = log.replace('“', '"')
