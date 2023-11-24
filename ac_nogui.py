@@ -7,7 +7,7 @@ import wx
 def main():
 
     # Must be extended path
-    app = wx.App(False)
+    #app = wx.App(False)
     from astrocook.gui import GUI
     try:
         pw = np.where([a[0]!='-' for a in sys.argv[1:]])
@@ -21,11 +21,8 @@ def main():
                       "traceback:\n")
         tb = traceback.format_exc()
 
-    if tb is not None:
-        print(tb)
-        logging.warning("Re-starting with an empty session.")
-        gui = GUI()
-    app.MainLoop()
+    print(tb)
+    #app.MainLoop()
 
 
 if __name__ == '__main__':

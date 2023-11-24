@@ -1,11 +1,6 @@
 from . import *
 from .defaults import *
 from .functions import expr_eval, x_convert
-from .gui_graph import *
-from .gui_image import *
-from .gui_log import *
-from .gui_menu import *
-from .gui_table import *
 from .message import *
 from astropy import table as at
 from astropy import constants as ac
@@ -61,6 +56,11 @@ class GUI(object):
         self._tag = ""
         self._ok = True
         if not self._mute:
+            from .gui_graph import GUIGraphMain
+            from .gui_image import GUIImageCompleteness, GUIImageCorrectness
+            #from .gui_menu import *
+            from .gui_table import GUITableSpectrum, GUITableLineList, GUITableModelList
+
             GUIGraphMain(self)
             GUITableSpectrum(self)
             GUITableLineList(self)
@@ -196,7 +196,7 @@ class GUI(object):
         self._defs = self._sess_sel.defs
 
         if self._mute:
-            self._panel_sess._on_close(None)
+            #self._panel_sess._on_close(None)
             return
 
         self._panel_sess._refresh()
@@ -413,14 +413,19 @@ class GUIPanelSession(wx.Frame):
     def __init__(self,
                  gui,
                  title="Sessions",
-                 size_x=wx.DisplaySize()[0]*0.6,
-                 size_y=wx.DisplaySize()[1]*0.2,
+                 size_x=None,
+                 size_y=None,
                  mute=False):
         """ Constructor """
 
-        super(GUIPanelSession, self).__init__(parent=None, title=title,
-                                             size=(size_x, size_y))
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
+        self._mute = mute
+        if not self._mute:
+            size_x = wx.DisplaySize()[0]*0.6
+            size_y = wx.DisplaySize()[1]*0.2
+
+            super(GUIPanelSession, self).__init__(parent=None, title=title,
+                                                  size=(size_x, size_y))
+            self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
 
         self._tag = "_panel_sess"
 
@@ -429,7 +434,7 @@ class GUIPanelSession(wx.Frame):
         self._gui._panel_sess = self
 
         # Create table
-        self._mute = mute
+
         if not mute:
             panel = wx.Panel(self)
             self._tab = GUIControlList(panel, 0)
@@ -455,7 +460,10 @@ class GUIPanelSession(wx.Frame):
 
     def _on_add(self, sess, open=True):
         # _sel is the last selection; _items is the list of all selections.
-        sess.log = GUILog(self._gui)
+
+        if not self._mute:
+            from .gui_log import GUILog
+            sess.log = GUILog(self._gui)
         sess.defs = Defaults(self._gui)
         self._gui._defs = sess.defs
 
@@ -494,10 +502,10 @@ class GUIPanelSession(wx.Frame):
 
         if not ko:
             x = sess.spec._safe(sess.spec.x)
-            self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
-            self._gui._sess_sel._graph_lim = graph_lim_def
-
             if not self._mute:
+                self._gui._sess_sel._graph_elem = elem_expand(graph_elem, self._sel)
+                self._gui._sess_sel._graph_lim = graph_lim_def
+
                 self._gui._refresh(init_tab=False, autolim=False)
 
                 # Enable import from depending on how many sessions are present
