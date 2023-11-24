@@ -1,7 +1,8 @@
 from . import *
 from .defaults import *
-from .functions import expr_eval, x_convert
+from .functions import expr_eval, x_convert, elem_expand
 from .message import *
+from .vars import *
 from astropy import table as at
 from astropy import constants as ac
 from collections import OrderedDict
@@ -58,8 +59,7 @@ class GUI(object):
         if not self._mute:
             from .gui_graph import GUIGraphMain
             from .gui_image import GUIImageCompleteness, GUIImageCorrectness
-            #from .gui_menu import *
-            from .gui_table import GUITableSpectrum, GUITableLineList, GUITableModelList
+            from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList, GUITableModelList
 
             GUIGraphMain(self)
             GUITableSpectrum(self)
@@ -436,6 +436,8 @@ class GUIPanelSession(wx.Frame):
         # Create table
 
         if not mute:
+            from .gui_menu import GUIMenu
+
             panel = wx.Panel(self)
             self._tab = GUIControlList(panel, 0)
             self._tab.InsertColumn(0, "name", width=330)
@@ -536,7 +538,6 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         logging.info("I'm loading file %s into a new session..." % path)
-        from .session import Session
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         sess.log.append_full('_panel_sess', '_on_open',

@@ -6,7 +6,6 @@ from astropy import constants as aconst
 from copy import deepcopy as dc
 import logging
 import matplotlib
-matplotlib.use('WxAgg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -33,7 +32,8 @@ class ScalarFormatterForceFormat(mticker.ScalarFormatter):
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True):
+    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True, mute=False):
+        if not mute: matplotlib.use('WxAgg')
         self._panel = panel
         self._gui = gui
         self._sel = sel

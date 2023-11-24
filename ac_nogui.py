@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import sys
 import traceback
-import wx
+#import wx
 
 def main():
 
@@ -15,13 +15,11 @@ def main():
         paths = list(np.array(sys.argv[1:])[pw])
         flags = list(np.array(sys.argv[1:])[fw])
         gui = GUI(paths, flags, mute=True)
-        tb = None
     except:
         logging.error("I found some problems loading this session. Here's the "\
                       "traceback:\n")
         tb = traceback.format_exc()
-
-    print(tb)
+        print(tb)
     #app.MainLoop()
 
 

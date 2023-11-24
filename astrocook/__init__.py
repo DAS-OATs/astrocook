@@ -5,15 +5,14 @@
 version = "1.5.1"
 current_year = 2023
 
-#from .session import Session
-#from .syst_list import SystList
+from .session import Session
+from .syst_list import SystList
 
-"""
 import logging
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(module)s: %(message)s [deprecated]")
-"""
+
 #from .frame import Frame
 #from .spectrum import Spectrum
 
