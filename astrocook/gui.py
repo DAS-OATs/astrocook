@@ -536,6 +536,7 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         logging.info("I'm loading file %s into a new session..." % path)
+        from .session import Session
         sess = Session(gui=self._gui, path=path, name=name)
         self._gui._panel_sess._on_add(sess, open=True)
         sess.log.append_full('_panel_sess', '_on_open',

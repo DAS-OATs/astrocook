@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import sys
 import traceback
-import wx
+#import wx
 
 def main():
 
