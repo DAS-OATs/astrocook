@@ -539,7 +539,6 @@ class Format(object):
 
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
             if data is not None and hasattr(data, 'colnames'):
-                print('here')
                 for i,c in enumerate(data.colnames):
                     if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
                         spec._t[c] = data[c]
