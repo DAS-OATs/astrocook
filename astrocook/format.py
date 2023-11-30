@@ -471,34 +471,33 @@ class Format(object):
         self._gui = sess._gui
         try:
             if len(hdul)>1:
-                data_s = hdul[1].data
-                data = Table(data_s)
-                """
-                x_col = np.where([c in data.colnames for c in x_col_names])[0]
-                y_col = np.where([c in data.colnames for c in y_col_names])[0]
-                dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
-                try:
-                    dy_col = [dy_col[0]]
-                except:
-                    pass
-                x_name = x_col_names[x_col][0]
-                y_name = y_col_names[y_col][0]
-                dy_name = dy_col_names[dy_col][0]
-                """
-                x_name = self._col_name(data, 'x')
-                y_name = self._col_name(data, 'y')
-                dy_name = self._col_name(data, 'dy')
-                cont_name = self._col_name(data, 'cont')
-                try:
-                    x = np.ravel(data[x_name])
-                    y = np.ravel(data[y_name])
-                    dy = data[dy_name] if dy_name is not None \
-                        else np.full(len(y), np.nan)
-                    cont = data[cont_name] if cont_name is not None \
-                        else np.full(len(y), np.nan)
-                except:
-                    logging.error("I can't recognize columns.")
-                    return 0
+                # MARZ spectra
+                if len(hdul)==4 \
+                    and hdul[1].header['EXTNAME']=='VARIANCE' \
+                    and hdul[2].header['EXTNAME']=='WAVELENGTH' \
+                    and hdul[3].header['EXTNAME']=='FIBRES':
+                    x = hdul[2].data[0]
+                    y = hdul[0].data[0]
+                    dy = hdul[1].data[0]
+                    cont = []
+                    data = None
+                else:
+                    data_s = hdul[1].data
+                    data = Table(data_s)
+                    x_name = self._col_name(data, 'x')
+                    y_name = self._col_name(data, 'y')
+                    dy_name = self._col_name(data, 'dy')
+                    cont_name = self._col_name(data, 'cont')
+                    try:
+                        x = np.ravel(data[x_name])
+                        y = np.ravel(data[y_name])
+                        dy = data[dy_name] if dy_name is not None \
+                            else np.full(len(y), np.nan)
+                        cont = data[cont_name] if cont_name is not None \
+                            else np.full(len(y), np.nan)
+                    except:
+                        logging.error("I can't recognize columns.")
+                        return 0
 
             else:
                 data_s = hdul[0].data
@@ -510,7 +509,6 @@ class Format(object):
                     cont = data[3][:]
                 except:
                     cont = []
-
 
             # Import unit (if present)
             try:
@@ -540,7 +538,8 @@ class Format(object):
                 dy = dy*cont
 
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
-            if hasattr(data, 'colnames'):
+            if data is not None and hasattr(data, 'colnames'):
+                print('here')
                 for i,c in enumerate(data.colnames):
                     if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
                         spec._t[c] = data[c]
