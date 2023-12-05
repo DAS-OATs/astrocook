@@ -80,6 +80,7 @@ class GUIDialog(wx.Dialog):
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
+
     def _get_last(self, method):
         if self._params_last is not None:
             for pls in self._params_last:
@@ -90,31 +91,25 @@ class GUIDialog(wx.Dialog):
 
 
     def _get_params(self, method):
-        keys = inspect.getargspec(method)[0][1:]
-        defs = inspect.getargspec(method)[-1]
-        if defs == None:
+        keys = inspect.getfullargspec(method).args[1:]
+        defs = inspect.getfullargspec(method).defaults
+        if defs is None:
             defs = []
-        defs = [str(d) for d in defs]
-        values = np.append(['']*(len(keys)-len(defs)), defs)
+        defs_mod = []
+        for d in defs:
+            if d is not None:
+                defs_mod.append(str(d))
+            else:
+                defs_mod.append(d)
+        values = np.append(['']*(len(keys)-len(defs_mod)), defs_mod)
         self._params.append(OrderedDict(zip(keys, values)))
+
 
     def _on_cancel(self, e):
         if hasattr(self._gui, '_dlg_mini_systems'):
             self._gui._dlg_mini_systems._cursor_refresh()
-            """
-            # Unfreeze cursors in case they were frozen
-            self._gui._graph_main._graph._cursor_frozen = False
-            self._gui._graph_det._graph._cursor_frozen = False
-
-            # Refresh cursor
-            shown = True if self._gui._dlg_mini_systems._shown else False
-            self._gui._dlg_mini_systems._shown = False
-            self._gui._dlg_mini_systems._on_cancel(e=None)
-            self._gui._dlg_mini_systems._shown = True
-            self._gui._dlg_mini_systems._on_apply(e=None)
-            self._gui._dlg_mini_systems._shown = shown
-            """
         self.Close()
+
 
     def _on_ok(self, e):
         self._update_params()
@@ -134,12 +129,6 @@ class GUIDialog(wx.Dialog):
 
             if '_sel' in p_l:
                 p_l['_sel'] = self._gui._sess_item_sel
-            """
-            try:
-                p_l['_sel'] = self._gui._sess_item_sel
-            except:
-                logging.info('No selected session.')
-            """
 
             start = dt.datetime.now()
             out = m(**p_l)
@@ -151,7 +140,6 @@ class GUIDialog(wx.Dialog):
 
             if out is not None:
                 if out is 0:
-                    #self._gui._refresh()
                     pass
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
@@ -180,19 +168,6 @@ class GUIDialog(wx.Dialog):
             self._gui._refresh()
             if hasattr(self._gui, '_dlg_mini_systems'):
                 self._gui._dlg_mini_systems._cursor_refresh()
-                """
-                # Unfreeze cursors in case they were frozen
-                self._gui._graph_main._graph._cursor_frozen = False
-                self._gui._graph_det._graph._cursor_frozen = False
-
-                # Refresh cursor
-                shown = True if self._gui._dlg_mini_systems._shown else False
-                self._gui._dlg_mini_systems._shown = False
-                self._gui._dlg_mini_systems._on_cancel(e=None)
-                self._gui._dlg_mini_systems._shown = True
-                self._gui._dlg_mini_systems._on_apply(e=None)
-                self._gui._dlg_mini_systems._shown = shown
-                """
 
 
     def _update_params(self):
@@ -312,6 +287,9 @@ class GUIDialogMini(wx.Dialog):
         #self._z = z
         super(GUIDialogMini, self).__init__(parent=None, title=title)
         self._init()
+        self._dlg_id = self._gui._menu_dlg_id
+        self._menu = self._gui._panel_sess._menu._view._menu
+
 
     def _init(self):
         self._panel = wx.Panel(self)
@@ -427,6 +405,8 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[1]).Check(False)
+
 
     def _refresh(self):
         self._ctrl_defs.SetValue(self._defs_str)
@@ -557,6 +537,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[3]).Check(False)
 
 
     def _refresh(self):
@@ -663,7 +644,7 @@ class GUIDialogMiniLog(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
-
+        self._menu.FindItemById(self._dlg_id[2]).Check(False)
 
     def _on_save(self, e=None, path=None):
         if path is None:
@@ -776,6 +757,7 @@ class GUIDialogMiniMeta(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[0]).Check(False)
 
 
     def _refresh(self):
@@ -816,6 +798,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._z = z
         self._hwin = hwin
         super(GUIDialogMiniSystems, self).__init__(gui, title)
+        self.Bind(wx.EVT_CLOSE, self._on_cancel)
         self._shown = False
 
     def _box_ctrl(self):
@@ -852,6 +835,22 @@ class GUIDialogMiniSystems(GUIDialogMini):
         self._bottom.SetSizeHints(self)
 
 
+    def _cursor_delete(self, refresh=False):
+        if hasattr(self._gui, '_cursor'):
+            self._gui._cursor.Check(False)
+            if hasattr(self._gui, '_graph_main') \
+                and hasattr(self._gui._graph_main._graph, '_cursor'):
+                del self._gui._graph_main._graph._cursor
+            if hasattr(self._gui, '_graph_det') \
+                and hasattr(self._gui._graph_det._graph, '_cursor'):
+                del self._gui._graph_det._graph._cursor
+        if hasattr(self._gui._sess_sel, '_series_sel'):
+            del self._gui._sess_sel._series_sel
+        if hasattr(self._gui._sess_sel, '_hwin_sel'):
+            del self._gui._sess_sel._hwin_sel
+        if refresh: self._gui._refresh(init_cursor=True, init_tab=False)
+
+
     def _cursor_refresh(self):
         # Unfreeze cursors in case they were frozen
         self._gui._graph_main._graph._cursor_frozen = False
@@ -861,7 +860,8 @@ class GUIDialogMiniSystems(GUIDialogMini):
         # Refresh cursor
         shown = True if self._shown else False
         self._shown = False
-        self._on_cancel(e=None)
+        #self._on_cancel(e=None)
+        self._cursor_delete()
         self._shown = True
         self._on_apply(e=None)
         self._shown = shown
@@ -891,7 +891,7 @@ class GUIDialogMiniSystems(GUIDialogMini):
             self._cursor_button.SetLabel("Hide cursor")
         else:
             sel.remove(self._gui._cursor.key)
-            self._on_cancel(e)
+            self._cursor_delete(refresh=True)
             self._cursor_button.SetLabel("Show cursor")
         self._shown = not self._shown
 
@@ -899,17 +899,13 @@ class GUIDialogMiniSystems(GUIDialogMini):
     def _on_stick(self, e):
         self._gui._graph_main._on_cursor_stick(e)
 
-
     def _on_cancel(self, e):
-        if hasattr(self._gui, '_cursor'):
-            self._gui._cursor.Check(False)
-            if hasattr(self._gui, '_graph_det') \
-                and hasattr(self._gui._graph_det._graph, '_cursor'):
-                del self._gui._graph_det._graph._cursor
-        if hasattr(self._gui._sess_sel, '_series_sel'):
-            del self._gui._sess_sel._series_sel
-        if hasattr(self._gui._sess_sel, '_hwin_sel'):
-            del self._gui._sess_sel._hwin_sel
+        self._cursor_delete()
+        self._menu.FindItemById(self._dlg_id[4]).Check(False)
+        try:
+            self.Destroy()
+        except:
+            pass
         self._gui._refresh(init_cursor=True, init_tab=False)
 
 

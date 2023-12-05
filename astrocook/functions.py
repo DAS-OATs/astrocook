@@ -4,11 +4,13 @@ import ast
 from astropy import constants as ac
 from copy import deepcopy as dc
 import cProfile
+#from decorator import decorator
 import json
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+from scipy.ndimage import median_filter
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -21,13 +23,20 @@ def _gauss(x, *p):
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def _fadd(a, u):
+def _fadd(a, u, deriv=False):
     """ @brief Real part of the Faddeeva function Re(F)
     @param a First abstract variable
     @param u Second abstrac variable
     @return Re(F(a, u))
     """
-    return np.real(wofz(u + 1j * a))
+    D = wofz(u + 1j * a)
+    F = np.real(D)
+    if deriv:
+        dF_da = 2 * (F*a + np.imag(D)*u - 1/np.sqrt(np.pi))
+        dF_du = 2 * (np.imag(D)*a - F*u)
+        return F, (dF_da, dF_du)
+    else:
+        return F
 
 def _voigt_par_convert(x, z, N, b, btur, trans):
     if trans == 'unknown':
@@ -45,7 +54,7 @@ def _voigt_par_convert(x, z, N, b, btur, trans):
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
     return tau0, a, u
 
-def _voigt_par_convert_new(x, z, N, b, btur, trans):
+def _voigt_par_convert_new(x, z, N, b, btur, trans, deriv=False):
     if trans == 'unknown':
         xem = z #*au.nm
         xobs = z #*au.nm
@@ -56,18 +65,155 @@ def _voigt_par_convert_new(x, z, N, b, btur, trans):
     gamma = gamma_d[trans] #/au.s
     b_qs = np.sqrt(b**2 + btur**2)
     atom = fosc *  844.7972564303736 #* au.Fr**2 * au.s / (au.kg * au.m)
+
     tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
-    #print(z, N, b, btur, fosc, gamma, atom, xem)
     a = 0.25 * gamma * xem / (np.pi * b_qs)
-    #print(b_qs, x, xobs)
     u = 299792458/b_qs * (x/xobs - 1)
-    #tau0 = tau0 * au.Fr**2 * au.nm * au.s**2 / (au.cm**2 * au.kg * au.km * au.m)
-    #a = a * au.nm / au.km
-    #u = u * au.m / au.km
-    tau0 = tau0 * 1e-17
-    a = a * 1e-12
-    u = u * 1e-3
-    return tau0, a, u
+
+    #print('before', a)
+    if deriv:
+        dtau0_dlogN = np.sqrt(np.pi) * atom * xem / b_qs * N * np.log(10)
+        dtau0_db = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * b
+        dtau0_dbtur = -np.sqrt(np.pi) * atom * N * xem/(b_qs**3) * btur
+
+        da_db = 0.25 * gamma * xem / (np.pi * b_qs**3) * b
+        da_dbtur = 0.25 * gamma * xem / (np.pi * b_qs**3) * btur
+
+        du_dz = -299792458/b_qs * x*xem/(xobs**2)
+        du_db = -299792458/(b_qs**3) * b * (x/xobs - 1)
+        du_dbtur = -299792458/(b_qs**3) * btur * (x/xobs - 1)
+
+
+    tau0_f = 1e-17
+    a_f = 1e-12
+    u_f = 1e-3
+
+    tau0_f_mod = 1.35e-1
+    a_f_mod = 2e-8
+    u_f_mod = 6e-2
+
+    tau0 = tau0 * tau0_f
+    #print(N, tau0)
+    #print(N+10, np.sqrt(np.pi) * atom * (N+10) * xem / b_qs * tau0_f)
+    #print((np.sqrt(np.pi) * atom * (N+10) * xem / b_qs * tau0_f-tau0)/10)
+    a = a * a_f
+    u = u * u_f
+    #print(a)
+    if deriv:
+        dtau0_dlogN = dtau0_dlogN * tau0_f #* 60
+        dtau0_db = dtau0_db * tau0_f #* 6e1
+        dtau0_dbtur = dtau0_dbtur * tau0_f
+
+        da_db = da_db * a_f #* 2e4
+        da_dbtur = da_dbtur * a_f
+
+        du_dz = du_dz * u_f * 6e1
+        du_db = du_db * u_f * 5.5e1
+        du_dbtur = du_dbtur * u_f
+
+        return tau0, a, u, \
+            (dtau0_dlogN, dtau0_db, dtau0_dbtur), \
+            (da_db, da_dbtur),  (du_dz, du_db, du_dbtur)
+    else:
+        return tau0, a, u
+
+
+def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_transformation=True):
+    for i in range(0, len(x0), 3):
+        z, logN, b = x0[i], x0[i+1], x0[i+2]
+        btur = 0
+        x = x * au.nm
+        z = z * au.dimensionless_unscaled
+        N = 10**logN / au.cm**2
+        b = b * au.km/au.s
+        btur = btur * au.km/au.s
+
+        dI_dz = np.zeros(len(x))
+        dI_dlogN = np.zeros(len(x))
+        #dI_dlogN_new = np.zeros(len(x))
+        dI_db = np.zeros(len(x))
+        dI_dbtur = np.zeros(len(x))
+        #print('jac', z, N, b)
+
+        #model = lines_voigt(x, z, logN, b, btur, series)
+        for t in trans_parse(series):
+            tau0, a, u, \
+                (dtau0_dlogN, dtau0_db, dtau0_dbtur), \
+                (da_db, da_dbtur),  (du_dz, du_db, du_dbtur) \
+                = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+                                         btur.value, t, deriv=True)
+            F, (dF_da, dF_du) = _fadd(a, u, deriv=True)
+
+            dI_dtau0 = -F * np.exp(-tau0 * F)
+            #print('jac', a)
+            dI_dF = -tau0 * np.exp(-tau0 * F)
+
+            dI_dz += dI_dF*dF_du*du_dz
+            dI_dlogN += dI_dtau0*dtau0_dlogN
+            #dI_dlogN_new += F*dtau0_dlogN
+            dI_db += dI_dtau0*dtau0_db + dI_dF*dF_da*da_db + dI_dF*dF_du*du_db
+            dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
+
+        #dI_dlogN_new = -model*dI_dlogN_new
+        dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
+        dI_dlogN = convolve_simple(dI_dlogN, psf_gauss(x.value, resol, spec))
+        dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
+
+        """
+    print(np.array([dI_dz, dI_dlogN, dI_db]).T)
+    return np.array([dI_dz, dI_dlogN, dI_db]).T#, dI_dbtur])
+        """
+        if i==0:
+            J = np.array([dI_dz, dI_dlogN, dI_db])
+        else:
+            #print(J)
+            J = np.append(J, [dI_dz], axis=0)
+            J = np.append(J, [dI_dlogN], axis=0)
+            J = np.append(J, [dI_db], axis=0)
+            #print(J)
+    #print(J)
+    #J = np.reshape(J, (len(J)//len(x0), len(x0)))
+    #print(J)
+    return J.T
+    #"""
+
+def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
+    """ @brief Voigt function (real part of the Faddeeva function, after a
+    change of variables)
+
+    @param x Wavelength domain (in nm)
+    @param z Redshift
+    @param N Column density (in cm^-2)
+    @param b Doppler broadening (in km s^-1)
+    @param btur Turbulent broadening (in km s^-1)
+    @param series Series of ionic transition
+    @param xem Wavelength of the line (in nm)
+    @param tab Table with the Faddeeva function
+    @return Voigt function over x
+    """
+
+    #x = x[0] * au.nm
+    x = x * au.nm
+    z = z * au.dimensionless_unscaled
+    N = 10**logN / au.cm**2
+    b = b * au.km/au.s
+    btur = btur * au.km/au.s
+    model = np.ones(np.size(np.array(x)))
+    #print('voigt', z, N, b)
+    for t in trans_parse(series):
+        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value,
+                                            btur.value, t)
+        dtau0, da, du = _voigt_par_convert_new(x.value, z.value, N.value+10, b.value,
+                                              btur.value, t)
+        F = _fadd(a, u)
+        dF = _fadd(da, du)
+        #print(tau0, F, np.exp(-tau0 * F))
+        #print(dtau0, dF, np.exp(-dtau0 * dF))
+        #print((np.exp(-dtau0 * dF)-np.exp(-tau0 * F))/10)
+        #print('voigt', a)
+        model *= np.array(np.exp(-tau0 * F))
+
+    return model
 
 def zero(x):
     return 0*x
@@ -226,57 +372,13 @@ def expr_eval(node):
         #raise TypeError(node)
         return expr_check(node)
 
+def lines_voigt_N_tot(x, z, N_tot, N_other, b, btur, series='Ly_a'):
+#def lines_voigt_N_tot(x, z, logN_tot, logN_other, b, btur, series='Ly_a'):
+    logN = np.log10(N_tot-N_other)
+    if logN == -np.inf:
+        logN = pars_std_d['logN']
+    return lines_voigt(x, z, logN, b, btur, series)
 
-def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
-    """ @brief Voigt function (real part of the Faddeeva function, after a
-    change of variables)
-
-    @param x Wavelength domain (in nm)
-    @param z Redshift
-    @param N Column density (in cm^-2)
-    @param b Doppler broadening (in km s^-1)
-    @param btur Turbulent broadening (in km s^-1)
-    @param series Series of ionic transition
-    @param xem Wavelength of the line (in nm)
-    @param tab Table with the Faddeeva function
-    @return Voigt function over x
-    """
-
-    #x = x[0] * au.nm
-    x = x * au.nm
-    z = z * au.dimensionless_unscaled
-    N = 10**logN / au.cm**2
-    b = b * au.km/au.s
-    btur = btur * au.km/au.s
-    model = np.ones(np.size(np.array(x)))
-    #for t in series_d[series]:
-    for t in trans_parse(series):
-        """
-        if series == 'unknown':
-            xem = z*au.nm
-            xobs = z*au.nm
-        else:
-            xem = xem_d[t]
-            xobs = xem*(1+z)
-        fosc = fosc_d[t]
-        gamma = gamma_d[t]/au.s
-        b_qs = np.sqrt(b**2 + btur**2)
-        atom = fosc * ac.e.esu**2 / (ac.m_e * ac.c)
-        tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
-        a = 0.25 * gamma * xem / (np.pi * b_qs)
-        u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
-        """
-        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
-        #print(tau0)#, tau0.to(au.dimensionless_unscaled))
-        #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
-        #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
-        #print(a, u, a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled))
-        model *= np.array(np.exp(-tau0 * _fadd(a, u)))
-        #model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
-        #                  * _fadd(a, u)))
-        #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
-
-    return model
 
 def log2_range(start, end, step):
     start = np.log2(start)
@@ -333,6 +435,7 @@ def psf_gauss_wrong(x, #center, resol):
 def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
+    #resol = 40000
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
     psf = psf[np.where(psf > 1e-6)]
@@ -370,12 +473,16 @@ def running_mean(x, h=1):
     n = 2*h+1
     cs = np.nancumsum(np.insert(x, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
-    #rm = (cs[n:] - cs[:-n]) / float(n)
     rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 
+def running_median(x, h=1):
+    return median_filter(x, h)
+
+
 def running_rms(x, xm, h=1):
+    """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
     n = 2*h+1
     rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
@@ -399,11 +506,11 @@ def to_z(x, trans):
 
 def trans_parse(series):
     trans = []
-    for s in series.replace(';',',').split(','):
+    for s in series.replace(';',',').replace(':',',').split(','):
         if '_' in s:
-            trans.append(s)
+            trans.append(s.strip())
         else:
-            for t in series_d[s]:
+            for t in series_d[s.strip()]:
                 trans.append(t)
     return trans
 
@@ -467,6 +574,11 @@ def get_selected_cells(grid):
 def str_to_dict(str):
     return json.loads(str)
 
+
+def range_str_to_list(range):
+    return [[float(i) for i in r.split('-')] for r in range.split(',')]
+
+
 def class_find(obj, cl, up=[]):
     if hasattr(obj, '__dict__'):
         for i in obj.__dict__:
@@ -503,3 +615,44 @@ def class_unmute(obj, cl, targ):
         for i in obj:
             if obj[i]==str(cl):
                 obj[i] = targ
+
+def x_convert(x, zem=0, xunit=au.km/au.s):
+    xem = (1+zem) * 121.567*au.nm
+    equiv = [(au.nm, au.km/au.s,
+              lambda x: np.log(x/xem.value)*ac.c.to(au.km/au.s),
+              lambda x: np.exp(x/ac.c.to(au.km/au.s).value)*xem.value)]
+    return x.to(xunit, equivalencies=equiv)
+
+import functools
+import warnings
+
+"""
+@decorator
+class arg_fix:
+    #Decorator ensuring backward compatibility when an argument name is
+    #modified in a function definition.
+    #from https://gist.github.com/rfezzani/002181c8667ec4c671421a4d938167eb
+
+    def __init__(self, arg_mapping):
+        #Args:
+        #    arg_mapping (dict): mapping between the function's old argument
+        #        names and the new ones.
+        self.arg_mapping = arg_mapping
+        self.warning_msg = ("'%s' is a deprecated argument name " +
+                            "for the function '%s', use '%s' instead.")
+
+    def __call__(self, f):
+        @functools.wraps(f)
+        def fixed_f(*args, **kwargs):
+            for old_arg, new_arg in self.arg_mapping.items():
+                if old_arg in kwargs:
+                    #  warn that the function interface has changed:
+                    warnings.warn(self.warning_msg %
+                        (old_arg, f.__name__, new_arg), DeprecationWarning)
+                    # Substitute new_arg to old_arg
+                    kwargs[new_arg] = kwargs.pop(old_arg)
+
+            # Call the function with the fixed arguments
+            return f(*args, **kwargs)
+        return fixed_f
+"""

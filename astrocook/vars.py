@@ -63,6 +63,8 @@ max_nfev_def = 1000
 
 hwin_def = 250.0
 
+#classes = {'feats': FeatList}
+
 # Menus
 #menus_def = ['General', 'Continuum', 'Absorbers']
 menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
@@ -70,16 +72,17 @@ menus_assoc = {'Absorbers': '_cb_absorbers', 'Continuum': '_cb_continuum',
                'Synthetic': '_cb_synthetic', 'Templates': '_cb_templates'}
 #menus = {'attr': [menus_assoc[m] for m in menus_def], 'title': menus_def}
 
-seq = ['spec', 'nodes', 'lines', 'systs', 'mods']
+seq = ['spec', 'nodes', 'lines', 'systs', 'mods', 'feats']
 seq_menu = seq + ['y_conv', 'cont', 'z0']
 graph_sel = [#'spec_x_y',
              #'spec_x_y_det',
              #'lines_x_y', 'spec_x_cont', 'spec_x_model', 'spec_x_yfitmask',
              #'systs_z_series',
-             'spec_h2o_reg'
+             'spec_h2o_reg',
              ]
 graph_cols_sel = ''
 
+"""
 graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,dy,None,step,-,1,C1,0.5\n"\
            "lines,x,y,None,scatter,+,1.5,C2,1\n"\
@@ -87,7 +90,18 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
            "spec,x,cont,None,plot,-,1,C8,1\n"\
            "spec,x,model,None,plot,-,1,C9,1\n"\
            "spec,x,model,fit_mask,plot,-,3,C9,0.5\n"\
+           "feats,x,model,None,scatter,|,5,C9,0.5\n"\
            "systs,z,None,None,axvline,--,0.8,C2,1.0"
+"""
+graph_elem="spec,x,y,None,step,-,0.5,black,1\n"\
+           "spec,x,dy,None,step,-,0.5,red,0.5\n"\
+           "lines,x,y,None,scatter,+,1,green,1\n"\
+           "nodes,x,y,None,scatter,o,1,blue,1\n"\
+           "spec,x,cont,None,plot,-,1,blue,1\n"\
+           "spec,x,model,None,plot,-,0.5,green,1\n"\
+           "spec,x,model,fit_mask,plot,-,1.5,green,1\n"\
+           "feats,x,model,None,scatter,|,5,green,1\n"\
+           "systs,z,None,None,axvline,--,0.5,green,1"
 
 graph_lim_def = 'xlim=auto\nylim=auto'
 
@@ -130,9 +144,10 @@ psf_gauss_d = {
 forbidden_keywords = ['XTENSION', 'BITPIX', 'PCOUNT', 'GCOUNT', 'TFIELDS',
                       'NAXIS', 'TTYPE', 'TFORM', 'TUNIT', 'TDISP']
 
-x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength'])
-y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal'])
-dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal', 'sigma'])
+x_col_names = np.array(['x', 'wave', 'WAVE', 'col1', 'lambda', 'wavelength', 'OPT_WAVE'])
+y_col_names = np.array(['y', 'flux', 'FLUX', 'col2', 'flux_cal', 'OPT_COUNTS'])
+dy_col_names = np.array(['dy', 'err', 'ERR', 'fluxerr', 'FLUXERR', 'error', 'ERROR', 'col3', 'error_cal', 'sigma', 'OPT_COUNTS_SIG'])
+cont_col_names = np.array(['cont', 'CONT', 'Continuum', 'col4'])
 
 h2o_reg = np.array([[1350, 1450], [1800, 1950], [2500, 3400]])
 

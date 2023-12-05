@@ -6,6 +6,7 @@ from .vars import *
 from astropy import units as au
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
+from astropy.table import Column
 from astropy.stats import sigma_clip
 import bisect
 #from astropy import constants as aconst
@@ -99,119 +100,98 @@ class Spectrum(Frame):
         return 0
 
 
-    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv):
+    def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv,
+                  weighted=False):
         vstart = vstart.to(au.km/au.s).value
         vend = vend.to(au.km/au.s).value
         dv = dv.to(au.km/au.s).value
         sd = -1*int(np.floor(np.log10(dv)))-1
-        spec_x = self.x.value
+        spec_x = self.x.value[:]
+        #spec_x_2 = self.x.value[:]*(1+0.063/aconst.c.to(au.km/au.s).value)
 
         xmin = spec_x[~np.isnan(spec_x)][0]
         xmax = spec_x[~np.isnan(spec_x)][-1]
+        dv_orig = (self._t['xmax']-self._t['xmin'])/spec_x*aconst.c.to(au.km/au.s).value
         xmean = 0.5*(xmin+xmax)
         v_shift = np.arange(vstart, vend+dv, dv)
-        #v_shift = np.sort(v_shift)
+
         x_shift = xmean * v_shift/aconst.c.to(au.km/au.s).value
         xstart = xmean * vstart/aconst.c.to(au.km/au.s).value
         xend = xmean * vend/aconst.c.to(au.km/au.s).value
         dx = xmean * dv/aconst.c.to(au.km/au.s).value
 
-        #print(xmin+xstart, xmax+xend, dx)
+        scale = int(np.rint(np.nanmedian(dv_orig)/dv))
+
         x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
         y1_osampl = np.interp(x_osampl, spec_x, self._t[col1])
         y2_osampl = np.interp(x_osampl, spec_x, self._t[col2])
+        #y2_osampl = np.interp(x_osampl, spec_x_2, self._t[col2])
         dy1_osampl = np.interp(x_osampl, spec_x, self._t[dcol1])
         dy2_osampl = np.interp(x_osampl, spec_x, self._t[dcol2])
-        #print(y1_osampl)
-        #print(y2_osampl)
-        #print(len(x_shift))
+        #dy2_osampl = np.interp(x_osampl, spec_x_2, self._t[dcol2])
+
         pan = len(x_shift)//2
+        pan_l, pan_r = int(abs(len(x_shift)*xstart/np.abs(xend-xstart))), \
+            int(abs(len(x_shift)*xend/np.abs(xend-xstart)))
         ccf = []
-        #print(v_shift[0], v_shift[-1], v_shift[pan], len(v_shift), pan)
-        #print(x_shift[0], x_shift[-1], x_shift[pan], len(x_shift), pan)
+        chi2 = []
+        chi2r = []
+        check = np.inf
         for i, xs in enumerate(x_shift):
-            #print(v_shift[i])
             x = x_osampl+xs
-            #digitized = np.digitize(x, spec_x)
-            #print(len(digitized))
-            #ym = [y2_osampl[digitized == i].mean() \
-            #      for i in range(0, len(spec_x))]
 
-            y1 = y1_osampl[pan:-pan-1]-np.nanmean(y1_osampl)
-            y2 = y2_osampl[i:-2*pan+i-1]-np.nanmean(y2_osampl)
+            y1 = y1_osampl[pan_l:-pan_r-1]
+            y2 = y2_osampl[i:-pan_l-pan_r+i-1]
 
-            #dy1 = dy1_osampl[pan:-pan-1]
-            #dy2 = dy2_osampl[i:-2*pan+i-1]
-            #y1 = y1_osampl[pan:-pan-1]+dy1-np.nanmean(y1_osampl)
-            #y2 = y2_osampl[i:-2*pan+i-1]+dy2-np.nanmean(y2_osampl)
-            #print(len(y1_osampl), len(y2_osampl), len(y1), len(y2))
-            ccf.append(np.nanmean(y2 * y1)/np.sqrt(np.nanmean(y2**2) * np.nanmean(y1**2)))
-            #ccf.append(np.mean(y2 * y1)/np.sqrt((np.mean(y2**2)-dy2**2) * (np.mean(y1**2)-dy1**2)))
+            dy = dy1_osampl[pan_l:-pan_r-1]
 
-        #ccf = ccf/np.max(ccf)
-        #plt.plot(v_shift, ccf)
-        #plt.show()
-        #print(np.min(ccf), np.mean(ccf), np.max(ccf))
-        #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
-        #             % (np.min(ccf), np.max(ccf), np.mean(ccf)))
-        return np.array(v_shift), np.array(ccf)
-        """
-        x_osampl = np.arange(xmin+xstart, xmax+xend, dx)
-        eval_osampl = 1-mod.eval(x=x_osampl, params=mod._pars)
-        ccf = []
+            y1 = y1[::scale]
+            y2 = y2[::scale]
+            dy = dy[::scale]
 
-        y = (1-mod._yf)
-        if weight:
-            #w = np.abs(np.gradient(eval_osampl))
-            #eval_osampl = eval_osampl * w/np.sum(w)*len(w)
-            y = y*mod._wf
+            y1m = y1-np.nanmedian(y1)
+            y2m = y2-np.nanmedian(y2)
 
-        #y = (1-mod._yf)#*grad/np.sum(grad)
+            ccf.append(np.nanmean(y2m*y1m)/np.sqrt(np.nanmean(y2m**2) * np.nanmean(y1m**2)))
+            chi2i = (y1-y2)**2/dy**2
 
-        for i, xs in enumerate(x_shift):
-            plot = False
-            x = x_osampl+xs
-            digitized = np.digitize(x, mod._xf)
-            ym = [eval_osampl[digitized == i].mean() for i in range(0, len(mod._xf))]
-            ccf1 = self._mod_ccf(mod, ym, y, verbose=False, plot=plot)
-            if plot:
-                plt.scatter(xmean+xs, ccf1)
+            if weighted:
+                bf = np.abs(np.gradient(y2))
+                bf = bf * len(chi2i)/np.sum(bf)
+                chi2i = chi2i * bf
 
-            ccf.append(ccf1)
+            chi2i_sum = np.nansum(chi2i)
 
-        #plt.plot(mod._xf, y, linewidth=4)
-        if weight:
-            color = 'r'
-        else:
-            color = 'g'
-        #plt.scatter(xmean+x_shift, ccf/np.max(ccf), c=color)
-        try:
-            p0 = [np.max(ccf), xmean, 5e-4]
-            coeff, var_matrix = curve_fit(gauss, xmean+x_shift, ccf, p0=p0)
-            fit = gauss(xmean+x_shift, *coeff)
-            ccf_max = coeff[0]
-            deltax = coeff[1]-xmean
-            deltav = deltax/xmean*aconst.c.to(au.km/au.s).value
-            #plt.plot(xmean+x_shift, fit/np.max(fit), c='b')
-        except:
-            amax = np.argmax(ccf)
-            ccf_max = ccf[amax]
-            deltax = x_shift[amax]
-            deltav = v_shift[amax]
-            #plt.scatter(xmean+x_shift[amax], 1)
+            chi2_plot = False
+            if chi2_plot:
+                chi2ran = np.arange(0,50,0.5)
+                from scipy.stats import chi2 as scipychi2
+                #max_chi2 = np.argmin(np.abs(scipychi2.pdf(chi2ran, 1)-1/len(chi2i)))
+                plt.hist(chi2i, bins=chi2ran, density=True)
+                plt.plot(chi2ran, scipychi2.pdf(chi2ran, 1), color='red')
+                plt.xlim(0,50)
+                plt.yscale('log')
+                plt.show()
 
-        if verbose:
-            logging.info(("I maximized the data model CCF with a shift of "
-                          "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
-                          % (deltax, deltav))
-        return ccf_max, deltax, deltav
-        """
+            resid_plot = False
+            if resid_plot:
+                if chi2i_sum < check:
+                    check = chi2i_sum
+                else:
+                    sss = chi2i>-np.inf
+                    plt.scatter(x[pan_l:-pan_r-1][::scale][sss], chi2bfi[sss], s=1, color='black')
+                    plt.show()
+
+            chi2.append(chi2i_sum)
+            chi2r.append(chi2i_sum/len(y1))
+
+        return np.array(v_shift), np.array(ccf), np.array(chi2), np.array(chi2r)
+
 
     def _gauss_convolve(self, std=20, input_col='y', output_col='conv',
                         verb=True):
 
         # Create profile
-        xunit = self.x.unit
         self._x_convert()
         x = self._safe(self.x)
         mean = np.median(x)
@@ -225,14 +205,22 @@ class Spectrum(Frame):
             if output_col not in self._t.colnames:
                 logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
+
+        # Add padding to avoid edge issues
+        len_conv = len(conv)
+        conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
+        conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
+
         safe = np.array(self._safe(conv), dtype=float)
+        mode = 'same'
         try:
-            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')\
+            conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)\
                                                  *self._t[input_col].unit
         except:
-            conv[self._where_safe] = fftconvolve(safe, prof, mode='same')
-        self._t[output_col] = conv
-        self._x_convert(xunit=xunit)
+            conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)
+        self._t[output_col] = conv[len_conv:-len_conv] * self._t[input_col].unit
+        self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
 
         return 0
 
@@ -461,7 +449,7 @@ class Spectrum(Frame):
 
         return lines
 
-    def _rebin(self, xstart, xend, dx, xunit, y, dy, filling=np.nan):
+    def _rebin(self, xstart, xend, dx, xunit, y, dy, kappa=5, filling=np.nan):
 
         # Convert spectrum into chosen unit
         # A deep copy is created, so the original spectrum is preserved
@@ -491,6 +479,7 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
+        y_rms_out = np.array([]) * y.unit
         print_time = False
         xmin_value = np.array(self.xmin.value)
         xmax_value = np.array(self.xmax.value)
@@ -546,7 +535,17 @@ class Spectrum(Frame):
             #    frac = frac[~mask]
             #    ysel = ysel[~mask]
             #    dysel = dysel[~mask]
-            w = np.where(frac>0)
+            from astropy.stats import sigma_clip
+
+            # Optional kappa-sigma clipping of outliers
+            if kappa is not None:
+                yclip = sigma_clip(ysel, sigma=kappa, masked=True)
+                if len(yclip)>0:
+                    w = np.where(np.logical_and(frac>0, yclip.mask==False))
+                else:
+                    w = np.where(frac>0)
+            else:
+                w = np.where(frac>0)
 
             if print_time:
                 t2 = time()
@@ -559,17 +558,21 @@ class Spectrum(Frame):
                 #print(weights)
                 #print(frac[w])
                 if np.any(np.isnan(dysel)) or np.any(dysel==0.0) or np.sum(weights)==0.0:# and False:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
+                    y_out_n = np.average(ysel[w], weights=frac[w])
                 else:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=weights))
-                    #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
+                    y_out_n = np.average(ysel[w], weights=weights)
+                y_out = np.append(y_out, y_out_n)
                 dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
                                                    /np.nansum(weights)*y.unit)
+                y_rms_out = np.append(y_rms_out, np.sqrt(np.nansum(weights*(ysel[w].value-y_out_n.value)**2)\
+                                                   /np.nansum(weights))*y.unit)
+
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
+                y_rms_out = np.append(y_rms_out, filling)
             if print_time:
                 t3 = time()
                 print(t3, t3-t2)
@@ -577,15 +580,24 @@ class Spectrum(Frame):
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
                        meta=self.meta)
+
+        logging.info("I'm adding column 'y_rms'.")
+        out._t['y_rms'] = Column(y_rms_out, dtype=float)
+
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
         return out
 
 
     def _resol_est(self, px, update):
         dx = self.xmax[px-1:].value-self.xmin[:1-px].value
-        dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
-             *self.x.unit
+        if px%2:
+            dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
+                 *self.x.unit
+        else:
+            dx = np.append([dx[0]]*(px//2), dx)*self.x.unit
+
         if update:
             if 'resol' not in self._t.colnames:
                 logging.info("I'm adding column 'resol'.")
@@ -606,14 +618,14 @@ class Spectrum(Frame):
         @return 0
         """
 
-        xunit_orig = self._xunit
         self._x_convert(xunit=xunit)
         x = self._safe(self.x)
         self._t['slice'] = np.empty(len(self.x), dtype=int)
         self._t['slice'][self._where_safe] = np.array(x//delta_x)
         self._slice_range = range(self._t['slice'][self._where_safe][0],
                                   self._t['slice'][self._where_safe][-1])
-        self._x_convert(xunit=xunit_orig)
+        self._x_convert(xunit=self._xunit_old)
+        self._xunit_old = self._xunit
         return 0
 
 
@@ -684,6 +696,16 @@ class Spectrum(Frame):
         if output_col not in self._t.colnames:
             logging.info("I'm adding column '%s'." % output_col)
         self._t[output_col] = pl(self.x)
+
+
+    def _y_scale(self, fact):
+        super(Spectrum, self)._y_scale(fact)
+
+        cols = ['model', 'deabs', 'y_rm', 'cont']
+        for c in cols:
+            if c in self._t.colnames:
+                self._t[c] = self._t[c] * fact
+        return 0
 
 
     def _zap(self, xmin, xmax):

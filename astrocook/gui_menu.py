@@ -40,7 +40,8 @@ class GUIMenu(object):
             setattr(self, a,
                 getattr(sys.modules[__name__], 'GUIMenu%s' % t)(self._gui))
             bar.Append(getattr(self, a)._menu, t)
-        self._key_list = ['spec', 'lines', 'systs', 'legend', 'norm']
+        self._key_list = ['spec', 'lines', 'systs', 'meta', 'defs', 'log',
+                          'graph', 'legend', 'norm']
 
         return bar
 
@@ -124,6 +125,27 @@ class GUIMenu(object):
         return item
 
 
+    def _item(self, menu, id, append, title, event, key=None, enable=True):
+        if key is not None:
+            item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
+            #item.Check(False)
+            item.key = key
+        else:
+            item = wx.MenuItem(menu, id, title)
+
+        self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
+        menu.Append(item)
+        if append is not None:
+            if isinstance(append, list):
+                for a in append:
+                    getattr(self._gui, '_menu_'+a+'_id').append(id)
+            else:
+                getattr(self._gui, '_menu_'+append+'_id').append(id)
+            item.Enable(False)
+        else:
+            item.Enable(enable)
+
+
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
                     dlg_mini=None, targ=None, alt_title=None):
         if alt_title == None: alt_title = title
@@ -191,7 +213,10 @@ class GUIMenu(object):
             sess.log.append_full('_menu', '_on_dialog_mini_graph',
                                  {'event': None, 'title': title, 'targ': targ})
         if hasattr(self._gui, '_dlg_mini_graph'):
-            self._gui._dlg_mini_graph._refresh()
+            try:
+                self._gui._dlg_mini_graph._refresh()
+            except:
+                dlg = GUIDialogMiniGraph(self._gui, title)
         else:
             dlg = GUIDialogMiniGraph(self._gui, title)
 
@@ -258,6 +283,7 @@ class GUIMenu(object):
                        "FITS files (*.fits)|*.fits|" \
                        "JSON files (*.json)|*.json|" \
                        "CSV files (*.csv)|*.csv|" \
+                       "Data files (*.dat)|*.dat|" \
                        "Text files (*.txt)|*.txt"
         with wx.FileDialog(self._gui._panel_sess, "Open file", path,
                            wildcard=wildcard,
@@ -366,10 +392,9 @@ class GUIMenuAbsorbers(GUIMenu):
         self._menu = wx.Menu()
 
         self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
-                     {'targ': 'systs_complete_from_like', 'append': 'z0'},
-                     '--',
                      {'targ': 'systs_new_from_lines', 'append': 'lines'},
-                     {'targ': 'systs_complete', 'append': ['z0', 'lines']},
+                     {'targ': 'systs_complete_from_z', 'append': ['z0']},
+                     {'targ': 'lya_fit', 'append': 'cont'},
                      '> Other',
                      {'targ': 'cands_find', 'append': 'z0'},
                      {'targ': 'systs_improve', 'append': 'z0'},
@@ -384,6 +409,8 @@ class GUIMenuAbsorbers(GUIMenu):
                      {'targ': 'comp_extract', 'append': 'z0'},
                      {'targ': 'systs_merge', 'append': 'z0'},
                      '<',
+                     '--',
+                     {'targ': 'feats', 'append': 'z0'},
                      '--',
                      {'targ': 'mods_ccf_max', 'append': 'z0'},
                      {'targ': 'systs_sigmav', 'append': 'z0'},
@@ -568,12 +595,16 @@ class GUIMenuGeneral(GUIMenu):
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
                      {'targ': 'combine', 'func': '__gt__', 'value': 1},
                      '--',
-                     {'targ': 'mask', 'append': 'spec'},
+                     {'targ': 'outliers_clean', 'append': 'spec'},
+                     '--',
+                     {'targ': 'x_mask', 'append': 'spec'},
+                     {'targ': 'mask_cond', 'append': 'spec'},
                      {'targ': 'telluric_mask', 'append': 'spec'},
                      '--',
                      {'targ': 'snr_est', 'append': 'spec'},
                      {'targ': 'resol_est', 'append': 'spec'},
                      {'targ': 'rms_est', 'append': 'spec'},
+                     {'targ': 'dx_est', 'append': 'spec'},
                      '--',
                      {'targ': 'rebin', 'append': 'spec'},
                      {'targ': 'gauss_convolve', 'append': 'spec'},
@@ -639,9 +670,11 @@ class GUIMenuView(GUIMenu):
         self._menu = wx.Menu()
         self._menu_view = self
         self._gui._menu_view = self
-        tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
+        #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2]
+        dlg_id = [start_id+5, start_id+6, start_id+7, start_id+8, start_id+9]
         self._gui._menu_tab_id = tab_id
+        self._gui._menu_dlg_id = dlg_id
 
         self._rec = [{'type': '_item',
                       'event': lambda e: self._on_tab(e, 'spec'),
@@ -655,14 +688,18 @@ class GUIMenuView(GUIMenu):
                      {'type': '_item', 'event': self._on_compress,
                       'title': "Compress system table", 'append': 'systs'},
                      '--',
-                     {'type': '_item_graph', 'title': "Session metadata",
-                      'append': 'spec', 'dlg_mini': 'meta'},
-                     {'type': '_item_graph', 'title': "Session defaults",
-                      'append': 'spec', 'dlg_mini': 'defs'},
-                     {'type': '_item_graph', 'title': "Session log",
-                      'append': 'spec', 'dlg_mini': 'log'},
-                     {'type': '_item_graph', 'title': "Graph elements",
-                      'append': 'spec', 'dlg_mini': 'graph'},
+                     {'type': '_item', 'title': "Session metadata",
+                      'event': lambda e: self._on_dlg_mini(e, 'meta'),
+                      'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
+                     {'type': '_item', 'title': "Session defaults",
+                      'event': lambda e: self._on_dlg_mini(e, 'defs'),
+                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'},
+                     {'type': '_item', 'title': "Session log",
+                      'event': lambda e: self._on_dlg_mini(e, 'log'),
+                      'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
+                     {'type': '_item', 'title': "Graph elements",
+                      'event': lambda e: self._on_dlg_mini(e, 'graph'),
+                      'key': 'graph', 'append': 'spec', 'dlg_mini': 'graph'},
                      {'type': '_item_graph', 'title': "Redshift cursor",
                       'key': 'cursor_z_series', 'append': 'spec',
                       'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
@@ -678,7 +715,7 @@ class GUIMenuView(GUIMenu):
                      {'type': '_item_graph', 'title': "Saturated H2O regions",
                       'key': 'spec_h2o_reg', 'append': 'spec'},
                      {'type': '_item', 'event': self._on_legend,
-                      'title': "Legend", 'append': 'spec'},
+                      'key': 'legend', 'title': "Legend", 'append': 'spec'},
                      '<',
                      '--',
                      {'targ': 'z_ax', 'append': 'spec'},
@@ -740,12 +777,32 @@ class GUIMenuView(GUIMenu):
                                  {'event': None, 'log': False})
         self._gui._refresh()
 
+    def _on_dlg_mini(self, event, obj, check=None, log=True):
+        index = ['meta', 'defs', 'log', 'graph'].index(obj)
+        title = ['Session metadata', 'Session defaults', 'Session log',
+                 'Graph elements'][index]
+        item = self._menu.FindItemById(self._gui._menu_dlg_id[index])
+
+        if check is not None:
+            view = check
+            item.Check(view)
+        else:
+            view = item.IsChecked()
+
+        sess = self._gui._sess_sel
+        if view:
+            getattr(self, '_on_dialog_mini_'+obj)(event, title, None)
+            setattr(getattr(self._gui, '_dlg_mini_'+obj), '_shown', True)
+        else:
+            setattr(getattr(self._gui, '_dlg_mini_'+obj), '_shown', False)
+            getattr(self._gui, '_dlg_mini_'+obj)._on_cancel(event)
+
+
     def _on_tab(self, event, obj, check=None, log=True):
         method = '_tab_'+obj
         index = ['spec', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
 
-        #print(check)
         if check is not None:
             view = check
             item.Check(view)
@@ -768,6 +825,7 @@ class GUIMenuView(GUIMenu):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+
 
     def _on_z_ax_remove(self, event, log=False):
         try:

@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import sys
+import traceback
 import wx
 
 def main():
@@ -14,8 +15,14 @@ def main():
         paths = list(np.array(sys.argv[1:])[pw])
         flags = list(np.array(sys.argv[1:])[fw])
         gui = GUI(paths, flags)
+        tb = None
     except:
-        logging.exception("I found some problems loading this session.")
+        logging.error("I found some problems loading this session. Here's the "\
+                      "traceback:\n")
+        tb = traceback.format_exc()
+
+    if tb is not None:
+        print(tb)
         logging.warning("Re-starting with an empty session.")
         gui = GUI()
     app.MainLoop()

@@ -13,6 +13,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
+import time
 import wx
 
 class GUIGraphMain(wx.Frame):
@@ -47,6 +48,7 @@ class GUIGraphMain(wx.Frame):
         self._norm = False
         self._legend = False
         self._closed = False
+        self._refreshed = False
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
@@ -83,6 +85,7 @@ class GUIGraphMain(wx.Frame):
             self._init()
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
+        self._refreshed = True
         self.Show()
 
     #def _on_line_new(self, event):
@@ -194,6 +197,17 @@ class GUIGraphMain(wx.Frame):
         sess._stats = False
         sess._shade = False
         self._gui._refresh()
+
+
+    def _on_syst_fit(self, event):
+        id = self._gui._graph_main._graph._systs_id_argmin
+
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system...', 'syst_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
 
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
@@ -321,7 +335,9 @@ class GUIGraphDetail(GUIGraphMain):
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1,
                                                    sharex=graph._ax,
                                                    sharey=graph._ax)
-            if i < len(series)-cols:
+
+            lens = len(series)
+            if i < lens-cols and i != idxs[-1]:
                 graph._ax.tick_params(labelbottom=False)
             if i%cols !=0:
                 graph._ax.tick_params(labelleft=False)
