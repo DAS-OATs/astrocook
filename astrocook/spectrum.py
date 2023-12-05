@@ -480,6 +480,8 @@ class Spectrum(Frame):
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
         y_rms_out = np.array([]) * y.unit
+        N_out = np.array([])
+        frac_out = np.array([])
         print_time = False
         xmin_value = np.array(self.xmin.value)
         xmax_value = np.array(self.xmax.value)
@@ -565,14 +567,20 @@ class Spectrum(Frame):
                 dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
                                                    /np.nansum(weights)*y.unit)
                 y_rms_out = np.append(y_rms_out, np.sqrt(np.nansum(weights*(ysel[w].value-y_out_n.value)**2)\
-                                                   /np.nansum(weights))*y.unit)
+                                                   /(np.nansum(weights) * (np.sum(frac[w]) - 1)))*y.unit)
 
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
+                #                                   /np.sum(frac/dysel**2))
+                N_out = np.append(N_out, len(ysel[w]))
+                frac_out = np.append(frac_out, np.sum(frac[w]))
+                # dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
                 y_rms_out = np.append(y_rms_out, filling)
+                N_out = np.append(N_out, filling)
+                frac_out = np.append(frac_out, filling)
             if print_time:
                 t3 = time()
                 print(t3, t3-t2)
@@ -583,6 +591,10 @@ class Spectrum(Frame):
 
         logging.info("I'm adding column 'y_rms'.")
         out._t['y_rms'] = Column(y_rms_out, dtype=float)
+        #logging.info("I'm adding column 'N'.")
+        #out._t['N'] = Column(N_out, dtype=int)
+        logging.info("I'm adding column 'sum_frac'.")
+        out._t['sum_frac'] = Column(frac_out, dtype=int)
 
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
