@@ -18,6 +18,10 @@ from scipy.special import erf, erfc, erfinv
 import sys
 import time
 
+from line_profiler import LineProfiler
+from memory_profiler import profile
+from filprofiler.api import profile
+
 prefix = "[INFO] cookbook_absorbers:"
 
 def gauss(x, *p):
@@ -48,7 +52,7 @@ class CookbookAbsorbers(object):
         ynorm_list = []
         logN_list = np.arange(12, 14, 0.1)
         for logN in logN_list:
-            mod = SystModel(spec, systs, z0=z)
+            mod = SystModel(spec, systs, z0=z, psf_func = spec._psf_gauss)
             mod._new_voigt(series, z, logN, b, resol,
                            defs=self.sess.defs.dict['voigt'])
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
@@ -332,7 +336,7 @@ class CookbookAbsorbers(object):
                         constr[k] = v[2]
                     else:
                         vars[k.split('_')[-1]+'_vary'] = False
-            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec._psf_gauss)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'],
                            defs=self.sess.defs.dict['voigt'])
@@ -451,7 +455,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
-                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec._psf_gauss)
                     if any([mod._id in i for i in systs._mods_t['id']]):
                         wrong_id.append(mod._id)
                         corr_id.append(np.max(systs_t['id'])+1)
@@ -464,6 +468,7 @@ class CookbookAbsorbers(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
+                       
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
@@ -574,7 +579,6 @@ class CookbookAbsorbers(object):
             deabs[s] = np.array(cont[s]) + np.array(y[s]) - np.array(model[s])
         return 0
 
-
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
@@ -589,7 +593,7 @@ class CookbookAbsorbers(object):
                           None, 0.0, None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
-        mod = SystModel(spec, systs, z0=z)
+        mod = SystModel(spec, systs, z0=z, psf_func = spec._psf_gauss)
         #print(self.sess.defs.dict['voigt'])
         mod._new_voigt(series, z, logN, b, resol,
                        defs=self.sess.defs.dict['voigt'])
@@ -1637,8 +1641,29 @@ class CookbookAbsorbers(object):
 
         return 0
 
-
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
+                resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
+                refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+        """ @brief New system
+        @details Add and fit a Voigt model for a system.
+        @param series Series of transitions
+        @param z Guess redshift
+        @param logN Guess (logarithmic) column density
+        @param b Guess Doppler broadening
+        @param resol Resolution
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+
+        return profile(lambda: self.tmp_syst_new(series=series, z=z, logN=logN, b=b,
+                resol=resol, chi2r_thres=chi2r_thres, dlogN_thres=dlogN_thres,
+                refit_n=refit_n, chi2rav_thres=chi2rav_thres, max_nfev=max_nfev), "/tmp/fil-result")
+
+    def tmp_syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
                  refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief New system
@@ -2756,6 +2781,7 @@ class CookbookAbsorbers(object):
         if iter_n > 0:
             self.systs_fit(refit_n=1)
         #plt.show()
+        return 0
 
 
     def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
