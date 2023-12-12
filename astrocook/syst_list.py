@@ -308,6 +308,7 @@ class SystList(object):
         """
 
         self._t_backup = dc(self._t)
+#        print(self._t_backup)
         r = [np.where(self._t_backup['id'] == e)[0][0] for e in exclude]
         self._t_backup.remove_rows(r)
         for p in ['z', 'logN', 'b']:

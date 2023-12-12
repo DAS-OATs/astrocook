@@ -767,3 +767,26 @@ class Spectrum(Frame):
                 self._t['x'][r] = np.nan
 
         return 0
+
+    def _psf_gauss(self, x, resol):
+        if x is None:
+            x = self.x
+
+        c = x[len(x)//2]
+
+        sigma = c / resol * 4.246609001e-1
+
+        # print("blablabla")
+        # print(x)
+        # print(c)
+        # print(sigma)
+        # print("blablabla")
+
+        psf = np.exp(-0.5*((x-c) / sigma)**2)
+        psf = psf[np.where(psf > 1e-6)]
+
+        if len(psf)==0:
+            return self._psf_gauss(self.x.to(xunit_def).value, resol)
+        else:
+            ret = psf
+            return ret

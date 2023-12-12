@@ -342,6 +342,7 @@ def expr_eval(node):
         return node.value
 
     elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        print("Passed here for some reason")
         return py_ops[type(node.op)](expr_check(node.left),
                                      expr_check(node.right))
 
