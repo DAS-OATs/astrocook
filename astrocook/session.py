@@ -11,6 +11,7 @@ from .message import *
 from .spectrum import Spectrum
 from .syst_list import SystList
 from .syst_model import SystModel
+from .feat_list import FeatList
 #from .model_list import ModelList
 from .vars import *
 #from astropy import constants as ac
@@ -19,6 +20,7 @@ from astropy.io import ascii, fits
 from astropy.table import Column, Table
 from collections import OrderedDict
 from copy import deepcopy as dc
+import glob
 import json
 from lmfit.model import Model
 import logging
@@ -31,7 +33,7 @@ import os
 import pickle
 #import dill as pickle
 from scipy.signal import argrelmin
-import shelve
+import shutil
 import tarfile
 import time
 
@@ -53,7 +55,8 @@ class Session(object):
                  mods=None,
                  twin=False,
                  row=None,
-                 slice=None):
+                 slice=None,
+                 feats=None):
         self._gui = gui
         self.path = path
         self.name = name
@@ -73,6 +76,10 @@ class Session(object):
         self._clicks = []
         self._stats = False
         self._shade = False
+        self.feats = feats
+
+        self._classes = {'spec': Spectrum, 'lines': LineList, 'systs':
+                         SystList, 'mods': SystModel, 'feats': FeatList}
 
 
     def _append(self, frame, append=True):
@@ -99,6 +106,10 @@ class Session(object):
             telesc = hdr['TELESCOP']
         except:
             telesc = 'undefined'
+
+        # Impose generic format to Astrocook-processed data
+        if orig=='Astrocook':
+            catg = 'undefined'
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -138,6 +149,7 @@ class Session(object):
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
 
+
         self._instr, self._catg, self._orig, self._telesc = instr, catg, orig, telesc
 
     def _other_open(self, hdul, hdr):
@@ -148,19 +160,28 @@ class Session(object):
         # ESO ADP spectrum
         if orig == 'ESO' and hdr['ARCFILE'][:3]=='ADP':
             self.spec = format.eso_adp(hdul)
+            return 0
+
+        # SDSS (should work for all release till 17)
+        if telesc == "SDSS 2.5-M":
+            self.spec = format.sdss_spectrum(hdul)
+            return 0
 
         # ESO-MIDAS spectrum
         if orig == 'ESO-MIDAS' and telesc != 'ESO-NTT':
             if len(hdul) == 1:
                 #self.spec = format.eso_midas_image(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
             else:
                 #self.spec = format.eso_midas_table(hdul)
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
 
         # NTT spectra are parsed incorrectly, temp fix while Guido fixes the issue
         if instr in ['EFOSC', 'LDSS3-'] or orig == 'ESO-MIDAS' and telesc == 'ESO-NTT':
             self.spec = format.efosc2_spectrum(hdul)
+            return 0
 
         # ESPRESSO S1D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
@@ -168,6 +189,7 @@ class Session(object):
             p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read(p+'espr_spec_form.dat'))
+            return 0
 
         # ESPRESSO S2D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S2D':
@@ -184,6 +206,7 @@ class Session(object):
                 self._row = None
             self._order = np.append(np.repeat(range(161,116,-1), 2),
                                     np.repeat(range(117,77,-1), 2))
+            return 0
 
         # ESPRESSO DAS spectrum
         if instr in ('ESPRESSO', 'UVES') and catg[1:5] == 'SPEC':
@@ -191,22 +214,27 @@ class Session(object):
             p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/../'
             self.spec_form = format.espresso_spectrum_format(
                 ascii.read(p+'espr_spec_form.dat'))
+            return 0
 
         # FIRE spectrum
         if instr == 'FIRE':
-            self.spec = format.firehose_spectrum(hdul)
+            #self.spec = format.firehose_spectrum(hdul)
+            self.spec = format.generic_spectrum(self, hdul)
 
         # FIRE spectrum
         if instr == 'MagE':
             self.spec = format.mage_spectrum(hdul)
+            return 0
 
         # QUBRICS spectrum
         if orig == 'QUBRICS':
             self.spec = format.qubrics_spectrum(hdul)
+            return 0
 
         # TNG LRS spectrum
         if instr == 'LRS' and orig == 'ESO-MIDAS':
             self.spec = format.lrs_spectrum(hdul)
+            return 0
 
         # UVES Spectrum
         if instr == 'UVES':
@@ -214,50 +242,71 @@ class Session(object):
                 hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
                                                        'FLUXCAL_ERRORBAR_SCI'))
                 self.spec = format.uves_spectrum(hdul, hdul_err)
+                return 0
 
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
+            return 0
 
         # WFCCD Spectrum
         if instr[:5] == 'WFCCD':
             self.spec = format.wfccd_spectrum(hdul)
+            return 0
 
         # XSHOOTER MERGE1D spectrum
         if instr == 'XSHOOTER' and 'MERGE1D' in catg.split('_'):
             if hdul[0].header['NAXIS'] == 0:
                 self.spec = format.xshooter_vacbary_spectrum(hdul)
+                return 0
             else:
                 self.spec = format.xshooter_merge1d_spectrum(hdul)
+                return 0
 
         # XQR-30 spectrum
         if instr == 'XSHOOTER' and orig == 'XQR-30':
             self.spec = format.xqr30_spectrum(hdul, corr=self._open_twin)
             self._open_twin = not self._open_twin
+            return 0
 
         # XSHOOTER DAS spectrum
         if instr == 'XSHOOTER' and catg[1:5] == 'SPEC':
             self.spec = format.xshooter_das_spectrum(hdul)
+            return 0
 
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
+            return 0
 
         # generic
         if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
+                return 0
             else:
                 self.spec = format.generic_spectrum(self, hdul)
+                return 0
+
+        # Astrocook spectrum-only
+        if orig == 'Astrocook':
+            self.spec = format.generic_spectrum(self, hdul)
+            return 0
 
 
     def open(self):
 
         dat = False
+
+        path = self.path
+        parts = pathlib.PurePath(path[:-4]).parts
+        stem = parts[-1]
+        dir = parts[0].join(parts[0:-1])[1:]
+
+
         if self.path[-3:] == 'acs':
             root = '/'.join(self.path.split('/')[:-1])
-            #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 def is_within_directory(directory, target):
                     
@@ -280,7 +329,21 @@ class Session(object):
                 
                 safe_extract(arch, path=root)
                 try:
-                    hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    try:
+                        hdul = fits.open(self.path[:-4]+'_spec.fits')
+                    except:
+                        try:
+                            hdul = fits.open(root+'/'+\
+                                             glob.glob('*_spec.fits')[0])
+                            #logging.warning("I didn't find %s in %s. I took "\
+                            #                "the first *_spec.fits frame in "\
+                            #                "the archive." \
+                            #                % (stem+'_spec.fits', stem+'.acs'))
+                        except:
+                            logging.error("I didn't find any *_spec.fits "
+                                            "frame in the archive.")
+                            return True
+
                     hdr = hdul[1].header
                 except:
                     dat = True
@@ -294,14 +357,19 @@ class Session(object):
             hdr = hdul[0].header
 
         self._data_iden(hdul, hdr)
-        #print(self._orig, self._catg, self._instr)
 
         # Astrocook structures
         format = Format()
         only_constr = False
         fast = False
+
         if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
             for s in self.seq:
+                if s == 'feats':
+                    try:
+                        self._load(s, dir, stem, systs=self.systs)
+                    except:
+                        pass
                 try:
                     hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
@@ -309,11 +377,21 @@ class Session(object):
                     os.remove(self.path[:-4]+'_'+s+'.dat')
                 except:
                     try:
-                        data = ascii.read(self.path[:-4]+'_'+s+'.dat')
-                        setattr(self, s, format.astrocook(data, s))
-                        #os.remove(self.path[:-4]+'_'+s+'.dat')
+                        p = root+'/'+glob.glob('*_%s.fits' % s)[0]
+                        hdul = fits.open(p)
+                        setattr(self, s, format.astrocook(hdul, s))
+                        os.remove(p)
+                        os.remove(p[:-5]+'.dat')
+                        logging.warning("I didn't find %s in %s. I took "\
+                                        "the first *_%s.fits frame in "\
+                                        "the archive." \
+                                        % (stem+'_'+s+'.fits', stem+'.acs', s))
                     except:
-                        pass
+                        try:
+                            data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                            setattr(self, s, format.astrocook(data, s))
+                        except:
+                            pass
                 if s == 'systs':
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -323,65 +401,25 @@ class Session(object):
                         systs = getattr(self, 'systs')
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
                         os.remove(self.path[:-4]+'_'+s+'_mods.dat')
-                        #print(data.info)
-                        #data['id'] = object
-                        #for i,id in enumerate(data['id']):
-                        #    data['id'][i] = np.array(list(map(int, id[1:-1].split(','))))
-                        #print(data.info)
                         setattr(systs, '_mods_t', data['z0', 'chi2r'])
                         systs._mods_t.remove_column('chi2r')
-
-                        #systs._mods_t['mod'] = None
                         systs._mods_t['mod'] = np.empty(len(data), dtype=object)
                         systs._mods_t['chi2r'] = data['chi2r']
                         systs._mods_t['id'] = np.empty(len(data), dtype=object)
                         for i in range(len(data)):
-                            #print(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
-                            #print(type(np.array(list(map(int, data['id'][i][1:-1].split(','))))))
-                            #systs._mods_t['id'][i] = list(np.array(list(map(int, data['id'][i][1:-1].split(',')))))
                             systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
                         mods_t_ok = self._model_open(systs)
-                        """
-                        mods_t_ok = False
-                        for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
-                                             "session: Opening models"):
-                        #for m in systs._mods_t:
-                            try:
-                                name_mod_dat = self.path[:-4]+'_'+s+'_mods_%i.dat' % m['id'][0]
-                                with open(name_mod_dat, 'rb') as f:
-                                    mod = pickle.load(f)
-                            #setattr(mod.__init__, '_tmp', mod.func)
-
-                                for attr in ['_lines', '_group', 'left', 'right']:
-                                    name_attr_dat = self.path[:-4]+'_'+s\
-                                        +'_mods_%i_%s.dat' % (m['id'][0], attr)
-                                    setattr(mod, attr, load_model(name_attr_dat,
-                                            funcdefs=funcdefs))
-                                    os.remove(name_attr_dat)
-                                super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
-                                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
-                                class_unmute(mod, Spectrum, self.spec)
-                                m['mod'] = mod
-                                os.remove(name_mod_dat)
-                                mods_t_ok = True
-                            except:
-                                pass
-                        #"""
-
                         if mods_t_ok:
                             for m in systs._mods_t['mod']:
                                 for attr in ['_mods_t']:
                                     setattr(m, attr, getattr(systs, attr))
-
-
-                            #print(m.func)
-
                             only_constr = True
                             fast = True
             if self.spec is not None and self.systs is not None:
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
+                self.systs._dict_update(mods=True)
             try:
                 os.remove(self.path[:-4]+'.json')
             except:
@@ -390,20 +428,13 @@ class Session(object):
         else:
             self._other_open(hdul, hdr)
 
-        #if self._gui._flags is not None \
-        #    and '--systs' in [f[:7] for f in self._gui._flags]:
         if self._gui._flags_cond('--systs'):
-            #paths = [f.split('=')[-1] for f in self._gui._flags if f[:7]=='--systs']
-            #if len(paths)>1:
-            #    logging.warning("You gave me too many system lists! I will "\
-            #                    "load the first one.")
             path = self._gui._flags_extr('--systs')
 
             try:
                 mode = self._gui._flags_extr('--mode')
             except:
                 mode = 'std'
-
 
             # Only ascii for now
             logging.info("I'm using line list %s." % path)
@@ -442,7 +473,6 @@ class Session(object):
             out._t['z0'] = z
             self.spec._t['cont'] = 1
             setattr(self, 'systs', out)
-            #print(out._t)
             self.cb._mods_recreate()
             self.cb._spec_update()
 
@@ -453,15 +483,12 @@ class Session(object):
                     'zero': zero}
 
         mods_t_ok = True
-        #systs = systs
         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                              "session: Opening models"):
-        #for m in systs._mods_t:
             try:
                 name_mod_dat = self.path[:-4]+'_systs_mods_%i.dat' % m['id'][0]
                 with open(name_mod_dat, 'rb') as f:
                     mod = pickle.load(f)
-            #setattr(mod.__init__, '_tmp', mod.func)
 
                 for attr in ['_lines', '_group', 'left', 'right']:
                     name_attr_dat = self.path[:-4]+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
@@ -469,7 +496,6 @@ class Session(object):
                             funcdefs=funcdefs))
                     os.remove(name_attr_dat)
                 super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
-                #super(SystModel, mod).__init__(mod.left, mod.right, mod.op)
                 class_unmute(mod, Spectrum, self.spec)
                 m['mod'] = mod
                 os.remove(name_mod_dat)
@@ -477,17 +503,93 @@ class Session(object):
                 mods_t_ok = False
         return mods_t_ok
 
+
+    def _load(self, struct, dir, stem, **kwargs):
+
+        new_dir = dir+'/'+stem+'_'+struct+'/'
+
+        s = self._classes[struct]()
+        """
+        for file in os.listdir(new_dir):
+            with open(new_dir+file, 'rb') as f:
+                feats._l.append(pickle.load(f))
+        """
+        s._load(new_dir, **kwargs)
+        setattr(self, struct, s)
+        shutil.rmtree(new_dir, ignore_errors=True)
+        logging.info("I loaded %s from %s.acs." % (struct, stem))
+
+
+    def _save(self, struct, dir, stem, arch):
+        if not hasattr(self, struct) or getattr(self, struct) is None:
+            return None
+
+        new_dir = dir+'/'+stem+'_'+struct+'/'
+        try:
+            shutil.rmtree(new_dir, ignore_errors=True)
+            os.mkdir(new_dir)
+        except:
+            os.mkdir(new_dir)
+
+        """
+        l = self.feats._l
+
+        for i, o in enumerate(l):
+            with open(new_dir+'%04i.dat' % i, 'wb') as f:
+                #for a in m.__dict__:
+                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+        """
+        getattr(self, struct)._save(new_dir)
+
+        arch.add(new_dir, arcname=stem+'_'+struct+'/')
+        shutil.rmtree(new_dir, ignore_errors=True)
+        logging.info("I've saved %s in %s.acs." % (struct, stem))
+
+
+    def _save(self, struct, dir, stem, arch):
+        if not hasattr(self, struct) or getattr(self, struct) is None:
+            return None
+
+        if dir!='':
+            new_dir = dir+'/'+stem+'_'+struct+'/'
+        else:
+            new_dir = stem+'_'+struct+'/'
+        try:
+            shutil.rmtree(new_dir, ignore_errors=True)
+            os.mkdir(new_dir)
+        except:
+            os.mkdir(new_dir)
+
+        """
+        l = self.feats._l
+
+        for i, o in enumerate(l):
+            with open(new_dir+'%04i.dat' % i, 'wb') as f:
+                #for a in m.__dict__:
+                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
+        """
+        getattr(self, struct)._save(new_dir)
+
+        arch.add(new_dir, arcname=stem+'_'+struct+'/')
+        shutil.rmtree(new_dir, ignore_errors=True)
+        logging.info("I've saved %s in %s.acs." % (struct, stem))
+
+
     def save(self, path):
 
         root = path[:-4]
-        stem = pathlib.PurePath(path[:-4]).parts[-1]
+        parts = pathlib.PurePath(path[:-4]).parts
+        stem = parts[-1]
+        dir = parts[0].join(parts[0:-1])[1:]
 
         import warnings
         warnings.filterwarnings("ignore")
 
         with tarfile.open(root+'.acs', 'w:gz') as arch:
             for s in self.seq:
-                if hasattr(self, s) and getattr(self, s) is not None:
+                if s is 'feats':
+                    self._save(s, dir, stem, arch)
+                elif hasattr(self, s) and getattr(self, s) is not None:
                     if s=='systs':
                         try:
                             np.savetxt(root+'_compl.dat', self.compl, fmt='%s')
@@ -503,7 +605,26 @@ class Session(object):
                             pass
                     name = root+'_'+s+'.fits'
                     name_dat = root+'_'+s+'.dat'
-                    obj = dc(getattr(self, s))
+                    #print(getattr(self, s).__dict__)
+                    """
+                    try:
+                        mods = getattr(self, s)._mods_t
+                        w = []
+                        for m in mods:
+                            w.append(744 in m['id'])
+
+                        print(w)
+                        mod = mods[w]
+                        print(mod['id'][0])
+                        print(mod['mod'][0].__dict__)
+                        mod['mod'][0]._pars.pretty_print()
+                    except:
+                        pass
+                    """
+                    try:
+                        obj = dc(getattr(self, s))
+                    except:
+                        obj = getattr(self, s)
                     t = dc(obj._t)
                     if s == 'systs':
                         name_mods_dat = root+'_'+s+'_mods.dat'
@@ -547,32 +668,36 @@ class Session(object):
                             t['xmin'] = t['xmin'].to(au.km/au.s)
                             t['xmax'] = t['xmax'].to(au.km/au.s)
                     del_list = []
-                    for i, k in enumerate(obj._meta):
-                        if k in forbidden_keywords or k[:5] in forbidden_keywords:
-                            del_list.append(i)
-                    for i in del_list[::-1]:
-                        del obj._meta[i]
-                    t.meta = dc(obj._meta)
-                    #print(t.meta.comments)
-                    t.meta['ORIGIN'] = 'Astrocook'
-                    #t.meta['HIERARCH ASTROCOOK VERSION'] = version
-                    #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
-                    if s == 'systs':
-                        for i,(k,v) in enumerate(obj._constr.items()):
-                            if v[0] in t['id']:
-                                t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
-                                t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
-                                t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
-                    for c in t.colnames:
-                        t[c].unit = au.dimensionless_unscaled
-                    #print(t)
-                    #t.write(name, format='fits', overwrite=True)
-                    hdr = fits.Header(t.meta)
-                    for c in t.meta:
-                        try:
-                            hdr.comments[c] = t.meta.comments[c]
-                        except:
-                            pass
+                    if hasattr(obj, '_meta'):
+                        for i, k in enumerate(obj._meta):
+                            if k in forbidden_keywords or k[:5] in forbidden_keywords:
+                                del_list.append(i)
+                        for i in del_list[::-1]:
+                            del obj._meta[i]
+                        t.meta = dc(obj._meta)
+                        #print(t.meta.comments)
+                        t.meta['ORIGIN'] = 'Astrocook'
+                        #t.meta['HIERARCH ASTROCOOK VERSION'] = version
+                        #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+                        if s == 'systs':
+                            for i,(k,v) in enumerate(obj._constr.items()):
+                                if v[0] in t['id']:
+                                    t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                                    t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                                    t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+                        for c in t.colnames:
+                            t[c].unit = au.dimensionless_unscaled
+                        #print(t)
+                        #t.write(name, format='fits', overwrite=True)
+                        hdr = fits.Header(t.meta)
+                        for c in t.meta:
+                            try:
+                                hdr.comments[c] = t.meta.comments[c]
+                            except:
+                                pass
+                    else:
+                        hdr = fits.Header()
+
                     phdu = fits.PrimaryHDU(header=hdr)
                     #print([Column(t[c]) for c in t.colnames])
                     #cols = fits.ColDefs([Column(c) for c in t.columns])
@@ -585,7 +710,7 @@ class Session(object):
                     #print([t[c].format for c in t.colnames] )
                     try:
                         ascii.write(t, name_dat, names=t.colnames,
-                        	        format='commented_header', overwrite=True)
+                                    format='commented_header', overwrite=True)
                         arch.add(name, arcname=stem+'_'+s+'.fits')
                         arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                         os.remove(name)
@@ -614,7 +739,11 @@ class Session(object):
                             id = r['id']
                             m = r['mod']
                             try:
-                                class_mute(m, Spectrum)
+                                try:
+                                    class_mute(m, Spectrum)
+                                except:
+                                    self.cb._mods_recreate(verbose=False)
+                                    class_mute(m, Spectrum)
                                 for attr in ['_lines', '_group', 'left', 'right']:
                                     name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
                                     save_model(getattr(m, attr), name_attr_dat)
@@ -688,7 +817,6 @@ class Session(object):
                     try:
                         if (i+1)%panel_n == 0:
                             ax.text(0.48,-0.5, j+1, size=13, transform=ax.transAxes)
-
                         sel = np.where(np.logical_and(x>xran[i], x<xran[i+1]))
                         #ymin = np.floor(np.nanmin(y[sel]))
                         if main._norm:
