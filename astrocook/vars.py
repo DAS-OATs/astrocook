@@ -330,3 +330,5 @@ gamma_d_old = {'Ly_a': 6.265e+08,
 
 
 log_seed = {'set_menu': []}
+
+gaus_psf_cache = {}
