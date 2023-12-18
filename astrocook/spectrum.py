@@ -769,18 +769,11 @@ class Spectrum(Frame):
         return 0
 
     def _psf_gauss(self, x, resol):
-        if x is None:
-            x = self.x
-
         c = x[len(x)//2]
+        if c in gaus_psf_cache.keys():
+            return gaus_psf_cache[c]
 
         sigma = c / resol * 4.246609001e-1
-
-        # print("blablabla")
-        # print(x)
-        # print(c)
-        # print(sigma)
-        # print("blablabla")
 
         psf = np.exp(-0.5*((x-c) / sigma)**2)
         psf = psf[np.where(psf > 1e-6)]
@@ -789,4 +782,5 @@ class Spectrum(Frame):
             return self._psf_gauss(self.x.to(xunit_def).value, resol)
         else:
             ret = psf
+            gaus_psf_cache[c] = ret
             return ret
