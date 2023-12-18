@@ -760,7 +760,7 @@ class Spectrum(Frame):
 
         sigma = c / resol * 4.246609001e-1
 
-        psf = np.exp(-0.5*((x-c) / sigma)**2)
+        psf = np.exp(-0.5*((self.x.to(xunit_def).value-c) / sigma)**2)
         psf = psf[np.where(psf > 1e-6)]
 
         if len(psf)==0:
