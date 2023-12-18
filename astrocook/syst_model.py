@@ -84,7 +84,6 @@ class SystModel(LMComposite):
                     del fit_kws_c['jac']
                     use_jac = False
             if not use_jac:
-                #print( self._pars)
                 fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                                  weights=self._wf,
                                                  max_nfev=max_nfev,
@@ -267,14 +266,6 @@ class SystModel(LMComposite):
             w = np.unique(w)
             self._xl = x[w]
 
-        #print(self.__dict__)
-        # print()
-        # print(self._lines)
-        # print()
-        # print(self._pars)
-        # print()
-        # print(self._lines.opts)
-        # print()
         ys = self._lines.eval(x=self._xs, params=self._pars)
         yl = self._lines.eval(x=self._xl, params=self._pars)
         if np.abs(np.min(ys)-np.min(yl))>thres and np.min(yl) > 1-thres:
@@ -469,22 +460,11 @@ class SystModel(LMComposite):
         if time_check:
             print('b %.4f' % (time.time()-tt))
             tt = time.time()
-        psf = LMModel(self._psf_func, prefix=self._psf_pref) #, spec=self._spec)
+        psf = LMModel(self._psf_func, prefix=self._psf_pref)
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
         line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
-        #line_psf.right.opts = None
-        #from pprint import pprint
-        #pprint(line_psf.opts)
-        #print("Right")
-        #pprint(line_psf.right.opts)
-        #print("One passage\n")
-        #print()
-        #line_psf.right.opts = None
-        #pprint(line_psf.right.__dict__)
-        #print()
-
 
         if time_check:
             print('d %.4f' % (time.time()-tt))
@@ -685,13 +665,7 @@ class SystModel(LMComposite):
     def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
                    defs=None, N_tot=False, N_tot_specs=(None, None, None)):
 
-#       curframe = inspect.currentframe()
-#       calframe = inspect.getouterframes(curframe, 2)
-#       print('caller name:', calframe[1][3])
 
-        #if resol == None:
-        #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
-        #else:
         self._resol = resol
         self._series = series
 

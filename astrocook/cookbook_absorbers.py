@@ -1644,28 +1644,7 @@ class CookbookAbsorbers(object):
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
                 resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
-        """ @brief New system
-        @details Add and fit a Voigt model for a system.
-        @param series Series of transitions
-        @param z Guess redshift
-        @param logN Guess (logarithmic) column density
-        @param b Guess Doppler broadening
-        @param resol Resolution
-        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
-        @param dlogN_thres Column density error threshold to accept the fitted model
-        @param refit_n Number of refit cycles
-        @param chi2rav_thres Average chi2r variation threshold between cycles
-        @param max_nfev Maximum number of function evaluation
-        @return 0
-        """
 
-        return profile(lambda: self.tmp_syst_new(series=series, z=z, logN=logN, b=b,
-                resol=resol, chi2r_thres=chi2r_thres, dlogN_thres=dlogN_thres,
-                refit_n=refit_n, chi2rav_thres=chi2rav_thres, max_nfev=max_nfev), "/tmp/fil-result")
-
-    def tmp_syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
-                 resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
         """ @brief New system
         @details Add and fit a Voigt model for a system.
         @param series Series of transitions
