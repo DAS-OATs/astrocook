@@ -95,7 +95,6 @@ class SystModel(LMComposite):
             time_end = datetime.datetime.now()
             self._pars = fit.params
             self._ys = self.eval(x=self._xs, params=self._pars)
-            prova = np.where(self._xs<1000)[0]
             #plt.plot(self._xs, self._ys)
             #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))
             #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
