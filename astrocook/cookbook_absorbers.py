@@ -1293,7 +1293,7 @@ class CookbookAbsorbers(object):
         #self._systs_fit()
         self._systs_cycle(mod=_mod, verbose=False)
         self._spec_update()
-        
+
         return 0
 
     def systs_supersede(self, dv=5, series='Ly-a'):
