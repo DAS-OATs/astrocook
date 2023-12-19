@@ -46,7 +46,7 @@ v0.3 – Transition to Python 3; complete makeover of classes and methods
 
 v0.2 - First release with a DOI; GUI available; tools for finding lines, determining continuum, and fitting systems
 
-v0.1 - Start of the project
+v0.1 - Start of the project 
 
 ## License
 
@@ -55,3 +55,5 @@ Astrocook is licensed under the [GNU General Public License (GPLv3)](https://www
 ## Acknowledgments
 
 The project is carried out at [INAF-OATs](http://www.oats.inaf.it/index.php/en/) with the contributions of Valentina D'Odorico, Stefano Cristiani, and Giuliano Taffoni.
+
+Just a small change to make sure the pull command is working correctly!
