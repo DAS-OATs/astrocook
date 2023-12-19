@@ -465,7 +465,6 @@ class SystModel(LMComposite):
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
         line_psf = LMComposite(line, psf, convolve_simple)  # Time consuming
-
         if time_check:
             print('d %.4f' % (time.time()-tt))
             tt = time.time()
@@ -685,7 +684,6 @@ class SystModel(LMComposite):
 
         #self._make_lines()
         self._make_lines_psf(N_tot)
-        
         if time_check:
             print('b %.4f' % (time.time()-tt))
             tt = time.time()
