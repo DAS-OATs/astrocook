@@ -219,10 +219,8 @@ class GUIGraphMain(wx.Frame):
             self._gui._graph_det._graph._cursor_frozen = True
 
         params = [{'series': sess._series_sel, 'z': self._graph._cursor._z, 'refit_n': 0}]
-        GUIDialogMethod(self._gui, 'New system', 'syst_new',params_last = params)
-        
-        #dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
-        #                      params_last = params)
+        dlg = GUIDialogMethod(self._gui, 'New system', 'syst_new',
+                              params_last = params)
         self._gui._refresh(init_cursor=True)
 
         """
