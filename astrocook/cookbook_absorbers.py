@@ -467,7 +467,6 @@ class CookbookAbsorbers(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
-                       
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs.dict['voigt'],
@@ -1668,8 +1667,8 @@ class CookbookAbsorbers(object):
         return 0
 
     def syst_new(self, series='Ly-a', z=2.0, logN=logN_def, b=b_def,
-                resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+                 resol=resol_def, chi2r_thres=np.inf, dlogN_thres=np.inf,
+                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
 
         """ @brief New system
         @details Add and fit a Voigt model for a system.
