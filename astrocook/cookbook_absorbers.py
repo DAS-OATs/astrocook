@@ -19,7 +19,6 @@ import sys
 import time
 
 from line_profiler import LineProfiler
-from memory_profiler import profile
 from filprofiler.api import profile
 
 prefix = "[INFO] cookbook_absorbers:"
