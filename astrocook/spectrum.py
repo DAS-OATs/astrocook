@@ -754,10 +754,10 @@ class Spectrum(Frame):
         return 0
 
     def _psf_gauss(self, x, resol):
-        c = x[len(x)//2]
-        if c in self.gauss_psf_cache.keys():
-            return self.gauss_psf_cache[c]
+        if resol in self.gauss_psf_cache:
+            return self.gauss_psf_cache[resol]
 
+        c = x[len(x)//2]
         sigma = c / resol * 4.246609001e-1
 
         psf = np.exp(-0.5*((self.x.to(xunit_def).value-c) / sigma)**2)
@@ -767,5 +767,5 @@ class Spectrum(Frame):
             return self._psf_gauss(self.x.to(xunit_def).value, resol)
         else:
             ret = psf
-            self.gauss_psf_cache[c] = ret
+            self.gauss_psf_cache[resol] = ret
             return ret
