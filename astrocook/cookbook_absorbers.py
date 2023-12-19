@@ -51,7 +51,7 @@ class CookbookAbsorbers(object):
         ynorm_list = []
         logN_list = np.arange(12, 14, 0.1)
         for logN in logN_list:
-            mod = SystModel(spec, systs, z0=z, psf_func = spec._psf_gauss)
+            mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
             mod._new_voigt(series, z, logN, b, resol,
                            defs=self.sess.defs.dict['voigt'])
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
@@ -335,7 +335,7 @@ class CookbookAbsorbers(object):
                         constr[k] = v[2]
                     else:
                         vars[k.split('_')[-1]+'_vary'] = False
-            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec._psf_gauss)
+            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'],
                            defs=self.sess.defs.dict['voigt'])
@@ -454,7 +454,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
-                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec._psf_gauss)
+                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
                     if any([mod._id in i for i in systs._mods_t['id']]):
                         wrong_id.append(mod._id)
                         corr_id.append(np.max(systs_t['id'])+1)
@@ -592,7 +592,7 @@ class CookbookAbsorbers(object):
                           None, 0.0, None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
-        mod = SystModel(spec, systs, z0=z, psf_func = spec._psf_gauss)
+        mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
         #print(self.sess.defs.dict['voigt'])
         mod._new_voigt(series, z, logN, b, resol,
                        defs=self.sess.defs.dict['voigt'])
