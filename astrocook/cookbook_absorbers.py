@@ -578,6 +578,7 @@ class CookbookAbsorbers(object):
             deabs[s] = np.array(cont[s]) + np.array(y[s]) - np.array(model[s])
         return 0
 
+
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
