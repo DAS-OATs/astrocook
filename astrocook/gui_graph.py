@@ -15,7 +15,6 @@ import numpy as np
 from scipy.stats import norm
 import time
 import wx
-from filprofiler.api import profile
 
 class GUIGraphMain(wx.Frame):
     """ Class for the GUI spectrum graph frame """
