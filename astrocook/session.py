@@ -373,6 +373,7 @@ class Session(object):
                             setattr(self, s, format.astrocook(data, s))
                         except:
                             pass
+
                 if s == 'systs':
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')

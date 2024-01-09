@@ -422,7 +422,6 @@ class CookbookAbsorbers(object):
             N_tot_specs_d = systs._N_tot_specs
 
         if not fast:
-
             systs._mods_t.remove_rows(mod_w)
 
             systs_t.sort('id')
@@ -439,6 +438,7 @@ class CookbookAbsorbers(object):
                 #for s in systs_t[np.where(systs_t['id']==m)[0]]:
                     vars = {}
                     constr = {}
+
                     for k, v in systs._constr.items():
                         if v[0]==systs._id:
                             try:
@@ -517,6 +517,7 @@ class CookbookAbsorbers(object):
                 logging.info("Only %i model%s %s active and eligible for "
                              "fitting." % (active_c, '' if active_c==1 else 's',
                              'is' if active_c==1 else 'are'))
+
 
         return 0
 
