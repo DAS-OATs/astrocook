@@ -1,5 +1,5 @@
 from .vars import *
-from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
+from .functions import convolve, lines_voigt, running_mean, to_x, trans_parse
 from .message import msg_output_fail
 from astropy import table as at
 from astropy import units as au

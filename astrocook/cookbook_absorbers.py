@@ -18,8 +18,8 @@ from scipy.special import erf, erfc, erfinv
 import sys
 import time
 
-from line_profiler import LineProfiler
-from filprofiler.api import profile
+# from line_profiler import LineProfiler
+# from filprofiler.api import profile
 
 prefix = "[INFO] cookbook_absorbers:"
 
