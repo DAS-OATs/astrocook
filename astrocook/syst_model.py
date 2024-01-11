@@ -13,9 +13,8 @@ import time
 import warnings
 warnings.filterwarnings("ignore")
 
-from line_profiler import LineProfiler
-from filprofiler.api import profile
-import inspect
+# from line_profiler import LineProfiler
+# from filprofiler.api import profile
 
 thres = 1e-2
 
@@ -23,7 +22,7 @@ class SystModel(LMComposite):
 
     def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
-                 psf_func=psf_gauss,
+                 psf_func=None,
                  cont_func=None):
         self._spec = spec
         try:

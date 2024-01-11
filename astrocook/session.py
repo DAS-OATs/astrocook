@@ -484,7 +484,7 @@ class Session(object):
     def _model_open(self, systs):
         funcdefs = {'convolve_simple': convolve_simple,
                     'lines_voigt': lines_voigt,
-                    'psf_gauss': psf_gauss,
+                    'psf_gauss': self.spec.psf_gauss,
                     'zero': zero}
 
         mods_t_ok = True

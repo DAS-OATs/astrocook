@@ -156,9 +156,9 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
             dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
 
         #dI_dlogN_new = -model*dI_dlogN_new
-        dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
-        dI_dlogN = convolve_simple(dI_dlogN, psf_gauss(x.value, resol, spec))
-        dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
+        dI_dz = convolve_simple(dI_dz, deprecated_psf_gauss(x.value, resol, spec))
+        dI_dlogN = convolve_simple(dI_dlogN, deprecated_psf_gauss(x.value, resol, spec))
+        dI_db = convolve_simple(dI_db, deprecated_psf_gauss(x.value, resol, spec))
 
         """
     print(np.array([dI_dz, dI_dlogN, dI_db]).T)
@@ -433,7 +433,7 @@ def psf_gauss_wrong(x, #center, resol):
     ret = psf
     return ret
 
-def psf_gauss(x, resol, spec=None):
+def deprecated_psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     #resol = 40000
@@ -452,7 +452,7 @@ def psf_gauss(x, resol, spec=None):
     """
     if len(psf)==0:
         #print(x, spec.x.to(xunit_def).value)
-        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
+        return deprecated_psf_gauss(spec.x.to(xunit_def).value, resol, spec)
     else:
         ret = psf
         return ret
