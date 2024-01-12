@@ -864,25 +864,25 @@ class Format(object):
         meta = hdr
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
-def sdss_spectrum(self, hdul):
-    """SDSS spectrum"""
-    logging.info(msg_format('SDSS'))
+    def sdss_spectrum(self, hdul):
+        """SDSS spectrum"""
+        logging.info(msg_format('SDSS'))
 
-    def revIVar(x, m):
-        if x == 0:
-            return m
-        return np.sqrt(1 / x)
-    vectRevIVar = np.vectorize(revIVar)
+        def revIVar(x, m):
+            if x == 0:
+                return m
+            return np.sqrt(1 / x)
+        vectRevIVar = np.vectorize(revIVar)
 
-    hdr = hdul[1].header
-    data = np.array([np.array(i) for i in hdul[1].data])
+        hdr = hdul[1].header
+        data = np.array([np.array(i) for i in hdul[1].data])
 
-    y = data[:, 0]
-    x = (10 ** data[:, 1])
-    xmin, xmax = self._create_xmin_xmax(x)
-    dy = vectRevIVar(data[:, 2], max(y))
+        y = data[:, 0]
+        x = (10 ** data[:, 1])
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = vectRevIVar(data[:, 2], max(y))
 
-    xunit = au.Angstrom
-    yunit = au.erg/au.cm**2/au.s/au.Angstrom
-    meta = hdr
-    return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = hdr
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)

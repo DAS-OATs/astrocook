@@ -279,13 +279,14 @@ class Session(object):
 
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
+            # Should be fine with respect to the tmp_dir
             hdul_e = fits.open(self.path[:-5]+'e.fits')
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
             return 0
 
         # generic
         if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
-            if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
+            if self.path.endswith('txt') and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
                 return 0
             else:
@@ -381,7 +382,7 @@ class Session(object):
                             for i in range(len(data)):
                                 systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
-                            mods_t_ok = self._model_open(systs)
+                            mods_t_ok = self._model_open(systs, tmpdir_p_stem)
                             if mods_t_ok:
                                 for m in systs._mods_t['mod']:
                                     for attr in ['_mods_t']:
@@ -394,7 +395,7 @@ class Session(object):
                     self.systs._dict_update(mods=True)
 
             else:
-                # TODO: check this other open
+                # TODO: check this other open -> Seems to be ok, I don't see any use for the root
                 self._other_open(hdul, hdr)
 
         if self._gui._flags_cond('--systs'):
@@ -445,7 +446,7 @@ class Session(object):
             self.cb._mods_recreate()
             self.cb._spec_update()
 
-    def _model_open(self, systs):
+    def _model_open(self, systs, path):
         funcdefs = {'convolve_simple': convolve_simple,
                     'lines_voigt': lines_voigt,
                     'psf_gauss': psf_gauss,
@@ -455,12 +456,13 @@ class Session(object):
         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                              "session: Opening models"):
             try:
-                name_mod_dat = self.path[:-4]+'_systs_mods_%i.dat' % m['id'][0]
+                name_mod_dat = path+'_systs_mods_%i.dat' % m['id'][0]
+                print(name_mod_dat)
                 with open(name_mod_dat, 'rb') as f:
                     mod = pickle.load(f)
 
                 for attr in ['_lines', '_group', 'left', 'right']:
-                    name_attr_dat = self.path[:-4]+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
+                    name_attr_dat = path+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
                     setattr(mod, attr, load_model(name_attr_dat,
                             funcdefs=funcdefs))
                     os.remove(name_attr_dat)
@@ -470,6 +472,7 @@ class Session(object):
                 os.remove(name_mod_dat)
             except:
                 mods_t_ok = False
+        print(mods_t_ok)
         return mods_t_ok
 
 
@@ -485,7 +488,6 @@ class Session(object):
         """
         s._load(new_dir, **kwargs)
         setattr(self, struct, s)
-        shutil.rmtree(new_dir, ignore_errors=True)
         logging.info("I loaded %s from %s.acs." % (struct, stem))
 
 
