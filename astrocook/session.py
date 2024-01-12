@@ -301,17 +301,13 @@ class Session(object):
     def open(self):
 
         dat = False
-
-        path = self.path
-        parts = pathlib.PurePath(path[:-4]).parts
-        stem = parts[-1]
-        dir = parts[0].join(parts[0:-1])[1:]
+        stem = pathlib.PurePath(self.path[:-4]).parts[-1]
 
         with TemporaryDirectory() as tmp_extract_dir:
             tmpdir_p_stem = tmp_extract_dir + '/' + stem
-            if self.path[-3:] == 'acs':
+            if self.path.endswith('acs'):
                 with tarfile.open(self.path) as arch:
-                    arch.extractall(path=tmp_extract_dir, filter='data')
+                    arch.extractall(path=tmp_extract_dir)
                     try:
                         try:
                             hdul = fits.open(tmpdir_p_stem + '_spec.fits')
@@ -327,7 +323,7 @@ class Session(object):
                         hdr = hdul[1].header
                     except:
                         dat = True
-            elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
+            elif self.path.endswith('fits') or self.path.endswith('fits.gz'):
                 hdul = fits.open(self.path)
                 hdr = hdul[0].header
             else:
@@ -343,25 +339,22 @@ class Session(object):
             only_constr = False
             fast = False
 
-            if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
+            if (self._orig[:9] == 'Astrocook' and self.path.endswith('acs')) or dat:
                 for s in self.seq:
                     if s == 'feats':
                         try:
+                            # TODO: Check this load function to make sure I have not broken anything
                             self._load(s, tmp_extract_dir, stem, systs=self.systs)
                         except:
                             pass
                     try:
                         hdul = fits.open(tmpdir_p_stem + '_' + s + '.fits')
                         setattr(self, s, format.astrocook(hdul, s))
-                        #os.remove(self.path[:-4]+'_'+s+'.fits')
-                        #os.remove(self.path[:-4]+'_'+s+'.dat')
                     except:
                         try:
                             p = tmp_extract_dir + '/' + glob.glob('*_%s.fits' % s)[0]
                             hdul = fits.open(p)
                             setattr(self, s, format.astrocook(hdul, s))
-                            #os.remove(p)
-                            #os.remove(p[:-5]+'.dat')
                             logging.warning("I didn't find %s in %s. I took "\
                                             "the first *_%s.fits frame in "\
                                             "the archive." \
@@ -380,7 +373,6 @@ class Session(object):
                         if data is not None:
                             systs = getattr(self, 'systs')
                             data = ascii.read(tmpdir_p_stem + '_' + s + '_mods.dat')
-                            #os.remove(self.path[:-4]+'_'+s+'_mods.dat')
                             setattr(systs, '_mods_t', data['z0', 'chi2r'])
                             systs._mods_t.remove_column('chi2r')
                             systs._mods_t['mod'] = np.empty(len(data), dtype=object)
@@ -400,12 +392,9 @@ class Session(object):
                     self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                     self.cb._spec_update()
                     self.systs._dict_update(mods=True)
-                #try:
-                    #os.remove(self.path[:-4]+'.json')
-                #except:
-                #    pass
 
             else:
+                # TODO: check this other open
                 self._other_open(hdul, hdr)
 
         if self._gui._flags_cond('--systs'):
