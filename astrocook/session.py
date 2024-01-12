@@ -501,8 +501,6 @@ class Session(object):
 
 
     def save(self, path):
-
-        root = path[:-4]
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
@@ -510,206 +508,178 @@ class Session(object):
         import warnings
         warnings.filterwarnings("ignore")
 
-        with tarfile.open(root+'.acs', 'w:gz') as arch:
-            for s in self.seq:
-                if s is 'feats':
-                    self._save(s, dir, stem, arch)
-                elif hasattr(self, s) and getattr(self, s) is not None:
-                    if s=='systs':
-                        try:
-                            np.savetxt(root+'_compl.dat', self.compl, fmt='%s')
-                        except:
-                            pass
-                        try:
-                            np.savetxt(root+'_corr.dat', self.corr, fmt='%s')
-                        except:
-                            pass
-                        try:
-                            np.savetxt(root+'_merge.dat', self.merge, fmt='%s')
-                        except:
-                            pass
-                    name = root+'_'+s+'.fits'
-                    name_dat = root+'_'+s+'.dat'
-                    #print(getattr(self, s).__dict__)
-                    """
-                    try:
-                        mods = getattr(self, s)._mods_t
-                        w = []
-                        for m in mods:
-                            w.append(744 in m['id'])
+        with TemporaryDirectory() as tmp_extract_dir:
+            tmpdir_p_stem = tmp_extract_dir + '/' + stem
 
-                        print(w)
-                        mod = mods[w]
-                        print(mod['id'][0])
-                        print(mod['mod'][0].__dict__)
-                        mod['mod'][0]._pars.pretty_print()
-                    except:
-                        pass
-                    """
-                    try:
-                        obj = dc(getattr(self, s))
-                    except:
-                        obj = getattr(self, s)
-                    t = dc(obj._t)
-                    if s == 'systs':
-                        name_mods_dat = root+'_'+s+'_mods.dat'
-                        mods_t = dc(obj._mods_t['z0', 'chi2r', 'id'])
-                        ids = []
-                        for id in obj._mods_t['id']:
-                            id_list = [int(i) for i in id]
-                            ids.append(json.dumps(id_list))
-                        mods_t['id'] = ids
-
-
-                    for c in t.colnames:
-                        if type(t[c][0]) == np.int64:
-                            pass
-                        elif type(t[c][0]) == str or type(t[c][0]) == np.str_:
-                            pass
-                        elif type(t[c][0]) == OrderedDict:
-                            pass
-                        elif type(t[c][0]) == dict:
-                            pass
-                        else:
-                            if c in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
-                            'snr']:
-                                format = '%3.3'
-                            else:
-                                format = '%3.7'
-                            if np.abs(np.nanmedian(t[c]))<1e-7:# and t[c][0]!=0:
-                                format += 'e'
-                            else:
-                                format += 'f'
-                            t[c].info.format = format
-                        #print(c, type(t[c][0]), np.abs(np.median(t[c])), format)
-
-                    if s!='systs':
-                        try:
-                            t['x'] = t['x'].to(au.nm)
-                            t['xmin'] = t['xmin'].to(au.nm)
-                            t['xmax'] = t['xmax'].to(au.nm)
-                        except:
-                            t['x'] = t['x'].to(au.km/au.s)
-                            t['xmin'] = t['xmin'].to(au.km/au.s)
-                            t['xmax'] = t['xmax'].to(au.km/au.s)
-                    del_list = []
-                    if hasattr(obj, '_meta'):
-                        for i, k in enumerate(obj._meta):
-                            if k in forbidden_keywords or k[:5] in forbidden_keywords:
-                                del_list.append(i)
-                        for i in del_list[::-1]:
-                            del obj._meta[i]
-                        t.meta = dc(obj._meta)
-                        #print(t.meta.comments)
-                        t.meta['ORIGIN'] = 'Astrocook'
-                        #t.meta['HIERARCH ASTROCOOK VERSION'] = version
-                        #t.meta['HIERARCH ASTROCOOK STRUCT'] = s
+            with tarfile.open(tmpdir_p_stem + '.acs', 'w:gz') as arch:
+                for s in self.seq:
+                    if s == 'feats':
+                        self._save(s, dir, stem, arch) # TODO: Fix this
+                    elif hasattr(self, s) and getattr(self, s) is not None:
                         if s == 'systs':
-                            for i,(k,v) in enumerate(obj._constr.items()):
-                                if v[0] in t['id']:
-                                    t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
-                                    t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
-                                    t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
-                        for c in t.colnames:
-                            t[c].unit = au.dimensionless_unscaled
-                        #print(t)
-                        #t.write(name, format='fits', overwrite=True)
-                        hdr = fits.Header(t.meta)
-                        for c in t.meta:
                             try:
-                                hdr.comments[c] = t.meta.comments[c]
+                                np.savetxt(tmpdir_p_stem+'_compl.dat', self.compl, fmt='%s')
                             except:
                                 pass
-                    else:
-                        hdr = fits.Header()
-
-                    phdu = fits.PrimaryHDU(header=hdr)
-                    #print([Column(t[c]) for c in t.colnames])
-                    #cols = fits.ColDefs([Column(c) for c in t.columns])
-                    #cols = []
-                    #for c in colnames:
-                    #    cols.append(Columns)
-                    thdu = fits.BinTableHDU(data=t, header=hdr)
-                    hdul = fits.HDUList([phdu, thdu])
-                    hdul.writeto(name, overwrite=True)
-                    #print([t[c].format for c in t.colnames] )
-                    try:
-                        ascii.write(t, name_dat, names=t.colnames,
-                                    format='commented_header', overwrite=True)
-                        arch.add(name, arcname=stem+'_'+s+'.fits')
-                        arch.add(name_dat, arcname=stem+'_'+s+'.dat')
-                        os.remove(name)
-                        os.remove(name_dat)
-                        logging.info("I've saved frame %s as %s."
-                                     % (s, stem+'_'+s+'.fits/.dat'))
-                    except:
-                        logging.warning("I cannot save structure %s in ASCII "
-                                        "format." % s)
-                        arch.add(name, arcname=stem+'_'+s+'.fits')
-                        os.remove(name)
-                        logging.info("I've saved frame %s as %s."
-                                     % (s, stem+'_'+s+'.fits'))
-                    if s == 'systs':
-                        ascii.write(mods_t, name_mods_dat,
-                                    names=['z0', 'chi2r', 'id'],
-                                    format='commented_header', overwrite=True)
-                        arch.add(name_mods_dat, arcname=stem+'_'+s+'_mods.dat')
-                        os.remove(name_mods_dat)
-
-                        #name_mods_db = '%s.db' % (name_mods_dat[:-4])
-                        #db = shelve.open(name_mods_db)
-                        fail = []
-                        for i, r in enum_tqdm(obj._mods_t, len(obj._mods_t),
-                                                "session: Saving models"):
-                            id = r['id']
-                            m = r['mod']
                             try:
-                                try:
-                                    class_mute(m, Spectrum)
-                                except:
-                                    self.cb._mods_recreate(verbose=False)
-                                    class_mute(m, Spectrum)
-                                for attr in ['_lines', '_group', 'left', 'right']:
-                                    name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
-                                    save_model(getattr(m, attr), name_attr_dat)
-                                    arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%i_%s.dat' % (id[0], attr))
-                                    os.remove(name_attr_dat)
-
-                                for attr in ['_mods_t']:
-                                    setattr(m, attr, attr)
-
-                                attr_save = {}
-                                for attr in ['_lines', '_group', 'left',
-                                             'right', 'func']:
-                                    attr_save[attr] = dc(getattr(m, attr))
-                                    setattr(m, attr, None)
-                                name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
-                                with open(name_mod_dat, 'wb') as f:
-                                    #for a in m.__dict__:
-                                    pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
-
-                                for attr in ['_lines', '_group', 'left',
-                                             'right', 'func']:
-                                    setattr(m, attr, attr_save[attr])
-                                class_unmute(m, Spectrum, self.spec)
-
-                                arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
-                                os.remove(name_mod_dat)
-
+                                np.savetxt(tmpdir_p_stem+'_corr.dat', self.corr, fmt='%s')
                             except:
-                                fail.append(id)
+                                pass
+                            try:
+                                np.savetxt(tmpdir_p_stem+'_merge.dat', self.merge, fmt='%s')
+                            except:
+                                pass
+                        name = tmpdir_p_stem + '_' + s + '.fits'
+                        name_dat = tmpdir_p_stem +'_' + s + '.dat'
 
-                        if fail != []:
-                            logging.warning("I could not serialize %i out of %i "
-                                            "models. They were not saved." \
-                                            % (len(fail), len(obj._mods_t)))
+                        try:
+                            obj = dc(getattr(self, s))
+                        except:
+                            obj = getattr(self, s)
+                        t = dc(obj._t)
+                        if s == 'systs':
+                            name_mods_dat = tmpdir_p_stem+'_'+s+'_mods.dat'
+                            mods_t = dc(obj._mods_t['z0', 'chi2r', 'id'])
+                            ids = []
+                            for id in obj._mods_t['id']:
+                                id_list = [int(i) for i in id]
+                                ids.append(json.dumps(id_list))
+                            mods_t['id'] = ids
 
 
-            file = open(root+'.json', "w")
-            n = file.write(self.log.str)
-            file.close()
-            arch.add(root+'.json', arcname=stem+'.json')
-            os.remove(root+'.json')
+                        for c in t.colnames:
+                            if isinstance(t[c][0], np.int64):
+                                pass
+                            elif isinstance(t[c][0], str) or isinstance(t[c][0], np.str_):
+                                pass
+                            elif isinstance(t[c][0], OrderedDict):
+                                pass
+                            elif isinstance(t[c][0], dict):
+                                pass
+                            else:
+                                if c in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                                'snr']:
+                                    format = '%3.3'
+                                else:
+                                    format = '%3.7'
+                                if np.abs(np.nanmedian(t[c]))<1e-7:
+                                    format += 'e'
+                                else:
+                                    format += 'f'
+                                t[c].info.format = format
+
+                        if s!='systs':
+                            try:
+                                t['x'] = t['x'].to(au.nm)
+                                t['xmin'] = t['xmin'].to(au.nm)
+                                t['xmax'] = t['xmax'].to(au.nm)
+                            except:
+                                t['x'] = t['x'].to(au.km/au.s)
+                                t['xmin'] = t['xmin'].to(au.km/au.s)
+                                t['xmax'] = t['xmax'].to(au.km/au.s)
+                        del_list = []
+                        if hasattr(obj, '_meta'):
+                            for i, k in enumerate(obj._meta):
+                                if k in forbidden_keywords or k[:5] in forbidden_keywords:
+                                    del_list.append(i)
+                            for i in del_list[::-1]:
+                                del obj._meta[i]
+                            t.meta = dc(obj._meta)
+                            t.meta['ORIGIN'] = 'Astrocook'
+                            if s == 'systs':
+                                for i,(k,v) in enumerate(obj._constr.items()):
+                                    if v[0] in t['id']:
+                                        t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
+                                        t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
+                                        t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+                            for c in t.colnames:
+                                t[c].unit = au.dimensionless_unscaled
+                            hdr = fits.Header(t.meta)
+                            for c in t.meta:
+                                try:
+                                    hdr.comments[c] = t.meta.comments[c]
+                                except:
+                                    pass
+                        else:
+                            hdr = fits.Header()
+
+                        phdu = fits.PrimaryHDU(header=hdr)
+                        thdu = fits.BinTableHDU(data=t, header=hdr)
+                        hdul = fits.HDUList([phdu, thdu])
+                        hdul.writeto(name, overwrite=True)
+                        try:
+                            ascii.write(t, name_dat, names=t.colnames,
+                                        format='commented_header', overwrite=True)
+                            arch.add(name, arcname=stem+'_'+s+'.fits')
+                            arch.add(name_dat, arcname=stem+'_'+s+'.dat')
+                            logging.info("I've saved frame %s as %s."
+                                        % (s, stem+'_'+s+'.fits/.dat'))
+                        except:
+                            logging.warning("I cannot save structure %s in ASCII "
+                                            "format." % s)
+                            arch.add(name, arcname=stem+'_'+s+'.fits')
+                            logging.info("I've saved frame %s as %s."
+                                        % (s, stem+'_'+s+'.fits'))
+                        if s == 'systs':
+                            ascii.write(mods_t, name_mods_dat,
+                                        names=['z0', 'chi2r', 'id'],
+                                        format='commented_header', overwrite=True)
+                            arch.add(name_mods_dat, arcname=stem+'_'+s+'_mods.dat')
+
+                            fail = []
+                            for i, r in enum_tqdm(obj._mods_t, len(obj._mods_t),
+                                                    "session: Saving models"):
+                                id = r['id']
+                                m = r['mod']
+                                try:
+                                    try:
+                                        class_mute(m, Spectrum)
+                                    except:
+                                        self.cb._mods_recreate(verbose=False)
+                                        class_mute(m, Spectrum)
+                                    for attr in ['_lines', '_group', 'left', 'right']:
+                                        name_attr_dat = '%s_%i_%s.dat' % (name_mods_dat[:-4], id[0], attr)
+                                        save_model(getattr(m, attr), name_attr_dat)
+                                        arch.add(name_attr_dat, arcname=stem+'_'+s+'_mods_%i_%s.dat' % (id[0], attr))
+
+                                    for attr in ['_mods_t']:
+                                        setattr(m, attr, attr)
+
+                                    attr_save = {}
+                                    for attr in ['_lines', '_group', 'left',
+                                                'right', 'func']:
+                                        attr_save[attr] = dc(getattr(m, attr))
+                                        setattr(m, attr, None)
+                                    name_mod_dat = '%s_%i.dat' % (name_mods_dat[:-4], id[0])
+                                    with open(name_mod_dat, 'wb') as f:
+                                        pickle.dump(m, f, pickle.HIGHEST_PROTOCOL)
+
+                                    for attr in ['_lines', '_group', 'left',
+                                                'right', 'func']:
+                                        setattr(m, attr, attr_save[attr])
+                                    class_unmute(m, Spectrum, self.spec)
+
+                                    arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
+
+                                except:
+                                    fail.append(id)
+
+                            if fail != []:
+                                logging.warning("I could not serialize %i out of %i "
+                                                "models. They were not saved." \
+                                                % (len(fail), len(obj._mods_t)))
+
+
+                with open(tmpdir_p_stem + '.json', "w") as file:
+                    file.write(self.log.str)
+                arch.add(tmpdir_p_stem + '.json', arcname = stem + '.json')
+            
+            try:
+                shutil.move(tmpdir_p_stem + '.acs', path)
+                logging.info("Save complete in %s.acs." % (path[:-4]))
+            except:
+                print("Error out")
+                pass
 
     def save_pdf(self, path):
 
