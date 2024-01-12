@@ -344,7 +344,6 @@ class Session(object):
                 for s in self.seq:
                     if s == 'feats':
                         try:
-                            # TODO: Check this load function to make sure I have not broken anything
                             self._load(s, tmp_extract_dir, stem, systs=self.systs)
                         except:
                             pass
@@ -382,7 +381,7 @@ class Session(object):
                             for i in range(len(data)):
                                 systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
-                            mods_t_ok = self._model_open(systs, tmpdir_p_stem)
+                            mods_t_ok = self._model_open(systs, tmpdir_p_stem) # -> Needs more review
                             if mods_t_ok:
                                 for m in systs._mods_t['mod']:
                                     for attr in ['_mods_t']:
@@ -395,7 +394,6 @@ class Session(object):
                     self.systs._dict_update(mods=True)
 
             else:
-                # TODO: check this other open -> Seems to be ok, I don't see any use for the root
                 self._other_open(hdul, hdr)
 
         if self._gui._flags_cond('--systs'):
@@ -467,51 +465,18 @@ class Session(object):
                 super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
                 class_unmute(mod, Spectrum, self.spec)
                 m['mod'] = mod
-                os.remove(name_mod_dat)
             except:
                 mods_t_ok = False
         return mods_t_ok
 
 
     def _load(self, struct, dir, stem, **kwargs):
-
         new_dir = dir+'/'+stem+'_'+struct+'/'
-
         s = self._classes[struct]()
-        """
-        for file in os.listdir(new_dir):
-            with open(new_dir+file, 'rb') as f:
-                feats._l.append(pickle.load(f))
-        """
+ 
         s._load(new_dir, **kwargs)
         setattr(self, struct, s)
         logging.info("I loaded %s from %s.acs." % (struct, stem))
-
-
-    def _save(self, struct, dir, stem, arch):
-        if not hasattr(self, struct) or getattr(self, struct) is None:
-            return None
-
-        new_dir = dir+'/'+stem+'_'+struct+'/'
-        try:
-            shutil.rmtree(new_dir, ignore_errors=True)
-            os.mkdir(new_dir)
-        except:
-            os.mkdir(new_dir)
-
-        """
-        l = self.feats._l
-
-        for i, o in enumerate(l):
-            with open(new_dir+'%04i.dat' % i, 'wb') as f:
-                #for a in m.__dict__:
-                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
-        """
-        getattr(self, struct)._save(new_dir)
-
-        arch.add(new_dir, arcname=stem+'_'+struct+'/')
-        shutil.rmtree(new_dir, ignore_errors=True)
-        logging.info("I've saved %s in %s.acs." % (struct, stem))
 
 
     def _save(self, struct, dir, stem, arch):
@@ -528,14 +493,6 @@ class Session(object):
         except:
             os.mkdir(new_dir)
 
-        """
-        l = self.feats._l
-
-        for i, o in enumerate(l):
-            with open(new_dir+'%04i.dat' % i, 'wb') as f:
-                #for a in m.__dict__:
-                pickle.dump(o, f, pickle.HIGHEST_PROTOCOL)
-        """
         getattr(self, struct)._save(new_dir)
 
         arch.add(new_dir, arcname=stem+'_'+struct+'/')
