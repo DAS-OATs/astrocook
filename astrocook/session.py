@@ -482,7 +482,6 @@ class Session(object):
     def _save(self, struct, dir, stem, arch):
         if not hasattr(self, struct) or getattr(self, struct) is None:
             return None
-
         if dir!='':
             new_dir = dir+'/'+stem+'_'+struct+'/'
         else:
@@ -501,9 +500,7 @@ class Session(object):
 
 
     def save(self, path):
-        parts = pathlib.PurePath(path[:-4]).parts
-        stem = parts[-1]
-        dir = parts[0].join(parts[0:-1])[1:]
+        stem = pathlib.PurePath(path[:-4]).parts[-1]
 
         import warnings
         warnings.filterwarnings("ignore")
@@ -514,7 +511,7 @@ class Session(object):
             with tarfile.open(tmpdir_p_stem + '.acs', 'w:gz') as arch:
                 for s in self.seq:
                     if s == 'feats':
-                        self._save(s, dir, stem, arch) # TODO: Fix this
+                        self._save(s, tmp_extract_dir, stem, arch)
                     elif hasattr(self, s) and getattr(self, s) is not None:
                         if s == 'systs':
                             try:
@@ -678,7 +675,6 @@ class Session(object):
                 shutil.move(tmpdir_p_stem + '.acs', path)
                 logging.info("Save complete in %s.acs." % (path[:-4]))
             except:
-                print("Error out")
                 pass
 
     def save_pdf(self, path):
