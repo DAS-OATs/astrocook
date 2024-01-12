@@ -311,7 +311,7 @@ class Session(object):
             tmpdir_p_stem = tmp_extract_dir + '/' + stem
             if self.path[-3:] == 'acs':
                 with tarfile.open(self.path) as arch:
-                    arch.extractall(path=tmp_extract_dir)
+                    arch.extractall(path=tmp_extract_dir, filter='data')
                     try:
                         try:
                             hdul = fits.open(tmpdir_p_stem + '_spec.fits')
