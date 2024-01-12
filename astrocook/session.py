@@ -37,6 +37,9 @@ import shutil
 import tarfile
 import time
 
+# We don't want to accidentally overwrite files
+from tempfile import TemporaryDirectory, tempdir
+
 
 class Session(object):
     """ Class for sessions.
@@ -304,110 +307,106 @@ class Session(object):
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
 
-
-        if self.path[-3:] == 'acs':
-            root = '/'.join(self.path.split('/')[:-1])
-            with tarfile.open(self.path) as arch:
-                arch.extractall(path=root)
-                try:
+        with TemporaryDirectory() as tmp_extract_dir:
+            tmpdir_p_stem = tmp_extract_dir + '/' + stem
+            if self.path[-3:] == 'acs':
+                with tarfile.open(self.path) as arch:
+                    arch.extractall(path=tmp_extract_dir)
                     try:
-                        hdul = fits.open(self.path[:-4]+'_spec.fits')
-                    except:
                         try:
-                            hdul = fits.open(root+'/'+\
-                                             glob.glob('*_spec.fits')[0])
-                            #logging.warning("I didn't find %s in %s. I took "\
-                            #                "the first *_spec.fits frame in "\
-                            #                "the archive." \
-                            #                % (stem+'_spec.fits', stem+'.acs'))
+                            hdul = fits.open(tmpdir_p_stem + '_spec.fits')
                         except:
-                            logging.error("I didn't find any *_spec.fits "
-                                            "frame in the archive.")
-                            return True
+                            try:
+                                hdul = fits.open(tmp_extract_dir + '/' + \
+                                                glob.glob('*_spec.fits')[0])
+                            except:
+                                logging.error("I didn't find any *_spec.fits "
+                                                "frame in the archive.")
+                                return True
 
-                    hdr = hdul[1].header
-                except:
-                    dat = True
-        elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
-            hdul = fits.open(self.path)
-            hdr = hdul[0].header
-        else:
-            t = Table(ascii.read(self.path))
-            hdul = fits.HDUList([fits.PrimaryHDU(),
-                                 fits.BinTableHDU.from_columns(np.array(t))])
-            hdr = hdul[0].header
-
-        self._data_iden(hdul, hdr)
-
-        # Astrocook structures
-        format = Format()
-        only_constr = False
-        fast = False
-
-        if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
-            for s in self.seq:
-                if s == 'feats':
-                    try:
-                        self._load(s, dir, stem, systs=self.systs)
+                        hdr = hdul[1].header
                     except:
-                        pass
-                try:
-                    hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
-                    setattr(self, s, format.astrocook(hdul, s))
-                    os.remove(self.path[:-4]+'_'+s+'.fits')
-                    os.remove(self.path[:-4]+'_'+s+'.dat')
-                except:
-                    try:
-                        p = root+'/'+glob.glob('*_%s.fits' % s)[0]
-                        hdul = fits.open(p)
-                        setattr(self, s, format.astrocook(hdul, s))
-                        os.remove(p)
-                        os.remove(p[:-5]+'.dat')
-                        logging.warning("I didn't find %s in %s. I took "\
-                                        "the first *_%s.fits frame in "\
-                                        "the archive." \
-                                        % (stem+'_'+s+'.fits', stem+'.acs', s))
-                    except:
+                        dat = True
+            elif self.path[-4:] == 'fits' or self.path[-7:] == 'fits.gz':
+                hdul = fits.open(self.path)
+                hdr = hdul[0].header
+            else:
+                t = Table(ascii.read(self.path))
+                hdul = fits.HDUList([fits.PrimaryHDU(),
+                                    fits.BinTableHDU.from_columns(np.array(t))])
+                hdr = hdul[0].header
+
+            self._data_iden(hdul, hdr)
+
+            # Astrocook structures
+            format = Format()
+            only_constr = False
+            fast = False
+
+            if (self._orig[:9] == 'Astrocook' and self.path[-3:] == 'acs') or dat:
+                for s in self.seq:
+                    if s == 'feats':
                         try:
-                            data = ascii.read(self.path[:-4]+'_'+s+'.dat')
-                            setattr(self, s, format.astrocook(data, s))
+                            self._load(s, tmp_extract_dir, stem, systs=self.systs)
                         except:
                             pass
-                if s == 'systs':
                     try:
-                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
+                        hdul = fits.open(tmpdir_p_stem + '_' + s + '.fits')
+                        setattr(self, s, format.astrocook(hdul, s))
+                        #os.remove(self.path[:-4]+'_'+s+'.fits')
+                        #os.remove(self.path[:-4]+'_'+s+'.dat')
                     except:
-                        data = None
-                    if data is not None:
-                        systs = getattr(self, 'systs')
-                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
-                        os.remove(self.path[:-4]+'_'+s+'_mods.dat')
-                        setattr(systs, '_mods_t', data['z0', 'chi2r'])
-                        systs._mods_t.remove_column('chi2r')
-                        systs._mods_t['mod'] = np.empty(len(data), dtype=object)
-                        systs._mods_t['chi2r'] = data['chi2r']
-                        systs._mods_t['id'] = np.empty(len(data), dtype=object)
-                        for i in range(len(data)):
-                            systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
+                        try:
+                            p = tmp_extract_dir + '/' + glob.glob('*_%s.fits' % s)[0]
+                            hdul = fits.open(p)
+                            setattr(self, s, format.astrocook(hdul, s))
+                            #os.remove(p)
+                            #os.remove(p[:-5]+'.dat')
+                            logging.warning("I didn't find %s in %s. I took "\
+                                            "the first *_%s.fits frame in "\
+                                            "the archive." \
+                                            % (stem+'_'+s+'.fits', stem+'.acs', s))
+                        except:
+                            try:
+                                data = ascii.read(tmpdir_p_stem + '_' + s + '.dat')
+                                setattr(self, s, format.astrocook(data, s))
+                            except:
+                                pass
+                    if s == 'systs':
+                        try:
+                            data = ascii.read(tmpdir_p_stem + '_' + s + '_mods.dat')
+                        except:
+                            data = None
+                        if data is not None:
+                            systs = getattr(self, 'systs')
+                            data = ascii.read(tmpdir_p_stem + '_' + s + '_mods.dat')
+                            #os.remove(self.path[:-4]+'_'+s+'_mods.dat')
+                            setattr(systs, '_mods_t', data['z0', 'chi2r'])
+                            systs._mods_t.remove_column('chi2r')
+                            systs._mods_t['mod'] = np.empty(len(data), dtype=object)
+                            systs._mods_t['chi2r'] = data['chi2r']
+                            systs._mods_t['id'] = np.empty(len(data), dtype=object)
+                            for i in range(len(data)):
+                                systs._mods_t['id'][i] = list(map(int, data['id'][i][1:-1].split(',')))
 
-                        mods_t_ok = self._model_open(systs)
-                        if mods_t_ok:
-                            for m in systs._mods_t['mod']:
-                                for attr in ['_mods_t']:
-                                    setattr(m, attr, getattr(systs, attr))
-                            only_constr = True
-                            fast = True
-            if self.spec is not None and self.systs is not None:
-                self.cb._mods_recreate(only_constr=only_constr, fast=fast)
-                self.cb._spec_update()
-                self.systs._dict_update(mods=True)
-            try:
-                os.remove(self.path[:-4]+'.json')
-            except:
-                pass
+                            mods_t_ok = self._model_open(systs)
+                            if mods_t_ok:
+                                for m in systs._mods_t['mod']:
+                                    for attr in ['_mods_t']:
+                                        setattr(m, attr, getattr(systs, attr))
+                                only_constr = True
+                                fast = True
+                if self.spec is not None and self.systs is not None:
+                    self.cb._mods_recreate(only_constr=only_constr, fast=fast)
+                    self.cb._spec_update()
+                    self.systs._dict_update(mods=True)
+                #try:
+                    #os.remove(self.path[:-4]+'.json')
+                #except:
+                #    pass
 
-        else:
-            self._other_open(hdul, hdr)
+            else:
+                self._other_open(hdul, hdr)
 
         if self._gui._flags_cond('--systs'):
             path = self._gui._flags_extr('--systs')
