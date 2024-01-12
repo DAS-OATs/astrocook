@@ -457,7 +457,6 @@ class Session(object):
                              "session: Opening models"):
             try:
                 name_mod_dat = path+'_systs_mods_%i.dat' % m['id'][0]
-                print(name_mod_dat)
                 with open(name_mod_dat, 'rb') as f:
                     mod = pickle.load(f)
 
@@ -465,14 +464,12 @@ class Session(object):
                     name_attr_dat = path+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
                     setattr(mod, attr, load_model(name_attr_dat,
                             funcdefs=funcdefs))
-                    os.remove(name_attr_dat)
                 super(SystModel, mod).__init__(mod._group, Model(zero), operator.add)
                 class_unmute(mod, Spectrum, self.spec)
                 m['mod'] = mod
                 os.remove(name_mod_dat)
             except:
                 mods_t_ok = False
-        print(mods_t_ok)
         return mods_t_ok
 
 
