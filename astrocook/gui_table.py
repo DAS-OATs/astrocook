@@ -274,6 +274,10 @@ class GUITable(wx.Frame):
     def _view(self, event=None, from_scratch=True, autosort=False):
         self._data_init(from_scratch, autosort)
         self._box = wx.BoxSizer(wx.VERTICAL)
+        # Thanks ChatGPT
+        if self._tab.GetContainingSizer():
+            self._tab.GetContainingSizer().Detach(self._tab)
+
         self._box.Add(self._tab, 1, wx.EXPAND)
         self._panel.SetSizer(self._box)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self._on_edit)
