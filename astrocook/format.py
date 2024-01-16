@@ -138,7 +138,10 @@ class Format(object):
                         if 'VAL' in ks:
                             # Why are there duplicates in the saved file though?
                             new_key = 'lines_voigt_%i_%s' % (id, par)
-                            if new_key not in out._constr:
+                            # we don't know what is the right key saved unfortunately
+                            #  so we update with anything that is not None
+                            # or, worse case scenario, with None
+                            if (new_key not in out._constr) or (hdr[k] is not None):
                                 out._constr[new_key] = (id, par, hdr[k])
         return out
 
