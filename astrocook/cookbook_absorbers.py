@@ -350,8 +350,6 @@ class CookbookAbsorbers(object):
         spec.t['fit_mask'] = False
         systs = self.sess.systs
 
-        print(only_constr, fast)
-
         # When constraints have been added
         if only_constr:
             mod_sel = np.array([], dtype=int)
@@ -453,7 +451,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
-                    print(constr)
+
                     mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                     if any([mod._id in i for i in systs._mods_t['id']]):
                         wrong_id.append(mod._id)
