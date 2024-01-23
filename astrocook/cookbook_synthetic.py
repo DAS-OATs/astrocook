@@ -15,7 +15,7 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
-    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,y'):
+    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,dy'):
         """@brief Synthetic spectrum from structures
         @details Create a synthetic spectrum from existing structures (a
         wavelenght-like array and a flux-like array). The structure expressions
