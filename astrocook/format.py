@@ -129,10 +129,20 @@ class Format(object):
                 if 'CONSTR' in ks:
                     id_check = 'AC CONSTR ID '+ks[-1]
                     if 'id' in out._t.colnames and hdr[id_check] in out._t['id']:
-                        if 'ID' in ks: id = int(hdr[k])
-                        if 'PAR' in ks: par = hdr[k]
-                        if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
-                            = (id, par, hdr[k])
+                        if 'ID' in ks:
+                            id = int(hdr[k])
+
+                        if 'PAR' in ks:
+                            par = hdr[k]
+
+                        if 'VAL' in ks:
+                            # Why are there duplicates in the saved file though?
+                            new_key = 'lines_voigt_%i_%s' % (id, par)
+                            # we don't know what is the right key saved unfortunately
+                            #  so we update with anything that is not None
+                            # or, worse case scenario, with None
+                            if (new_key not in out._constr) or (hdr[k] is not None):
+                                out._constr[new_key] = (id, par, hdr[k])
         return out
 
 

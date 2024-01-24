@@ -682,6 +682,12 @@ class Session(object):
                                     t.meta['HIERARCH AC CONSTR ID %i' % i] = v[0]
                                     t.meta['HIERARCH AC CONSTR PAR %i' % i] = v[1]
                                     t.meta['HIERARCH AC CONSTR VAL %i' % i] = v[2]
+
+                        # Make sure that for each id there is only one constrain
+                        # Can't do this: the same redshift, say, can be tied to multiple different things
+                        #  so this might actually erase some constraints previously set
+                        # Question remains as to why there were two sets of equivalent constraints, one with 
+                        #  something, the other with just `None`s
                         for c in t.colnames:
                             t[c].unit = au.dimensionless_unscaled
                         #print(t)

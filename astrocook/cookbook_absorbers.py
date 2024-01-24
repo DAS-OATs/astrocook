@@ -447,7 +447,7 @@ class CookbookAbsorbers(object):
                                 id_check = ''
                             ids = [str(id) for id in systs_t['id']]+['']
 
-                            if v[2]!=None and id_check in ids:
+                            if v[2] is not None and id_check in ids:
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
