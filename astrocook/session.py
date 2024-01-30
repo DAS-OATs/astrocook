@@ -226,6 +226,11 @@ class Session(object):
             self.spec = format.mage_spectrum(hdul)
             return 0
 
+        # HARPN spectrum
+        if instr == 'HARPN':
+            self.spec = format.harpn_spectrum(hdul)
+            return 0
+
         # QUBRICS spectrum
         if orig == 'QUBRICS':
             self.spec = format.qubrics_spectrum(hdul)
