@@ -2832,18 +2832,91 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def syst_complete(self, x=[]):
+    def syst_complete(self, x, l1, l2):
         """ @brief Complete systems
-        @details Bla bla bla
+        @details The recipe tries to identify unknown absorption lines.
         @return 0
         """
 
         try:
             x = np.array(x)
+            l1 = np.float(l1)
+            l2 = np.float(l2)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        print(atom_par)
+        print('\n\n-----------------------------------------------------\nATOM_PAR TABLE\n-----------------------------------------------------\n',atom_par[0:226])
+        wl = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col2']]))
+        labels = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col1']]))
         t = self.sess.systs._t
-        print(t)
+        print('\n\n-----------------------------------------------------\nSYSTEM TABLE\n-----------------------------------------------------\n',t)
+        z_systs = np.ravel(np.array([d for d in t['z']]))
+        corr = np.ravel(np.array([d for d in t['series']]))
+
+        x.sort()
+
+        print('\n\n------------------------------------------------\nMATCH UNKOWN LINES TO KNOWN SYSTEMS\n------------------------------------------------\n')
+        for l in x:
+            print(f'\n------------- line @ {l} -------------')
+            print('Ion\t\tref\t\tz')
+
+            z = l/wl-1
+            eps = 1e-4 
+
+            for i, lab in enumerate(labels):
+                for j,z_ref in enumerate(z_systs):
+                    dz = z[i]-z_ref
+
+                    if (np.abs(dz)<eps) and (corr[j]!='Ly_a'):
+                        print(f'{lab}\t{corr[j]}\t{z_ref}')
+                    
+        print('\n\n------------------------------------------------\nDO TWO UNIDENTIFIED LINES HAVE A SIMILAR SHAPE?\n------------------------------------------------\n')
+        ratio = l1/l2
+        eps = 1e-5
+        for i in range(len(wl)):
+            for j in range(i, len(wl)):
+                ratio_i = wl[i]/wl[j]
+
+                z = l1/wl[i]-1
+                if (np.abs(ratio_i-ratio)<=eps):
+                    print('----------------------------')
+                    print(labels[i],'\t',wl[i])
+                    print(labels[j],'\t',wl[j])
+                    print(f'proposed z = {l1/wl[i]-1}')
+
+        print('\n\n------------------------------------------------\nWAVELENGTH RATIOS BETWEEN ALL THE UNKNOWN LINES\n------------------------------------------------\n')
+        eps = 1e-5
+        zmin, zmax = -1e-4, 4
+
+        skip = np.array(['H','Ly','D'])
+
+        for i in range(len(x)):
+            for j in range(i+1,len(x)):
+                ratio = x[i]/x[j]
+                for k in range(len(wl)):
+                    for l in range(k+1, len(wl)):
+                        ratio_em = wl[k]/wl[l]
+                        z1 = x[i]/wl[k]-1
+                        z2 = x[j]/wl[l]-1
+                        if ((np.abs(ratio_em-ratio)<=eps) and (np.abs(z1-z2)<=eps) and (z1<=zmax) and (z1>=zmin)):
+                            if np.array([N not in labels[k] for N in skip]).all and np.array([N not in labels[l] for N in skip]).all():
+                                print('----------------------------------------')
+                                print(f'line 1: {x[i]:.2f}, {labels[k]}')
+                                print(f'line 2: {x[j]:.2f}, {labels[l]}')
+                                print(f'proposed z = {z1:.4f}')
+
+        ###
+
+        print('\n\n--------------------------------------------\nANY GALACTIC TRANSITIONS?\n--------------------------------------------\n')
+
+        for i, l in enumerate(x):
+            print(f'\n------------- line @ {l} -------------')
+            print('Ion\t\tz')
+
+            z = l/wl-1
+            eps = 1e-2
+            for j, lab in enumerate(labels):
+                if abs(z[j])<eps:
+                    print(f'{lab}\t{z[j]:.4f}')
+
