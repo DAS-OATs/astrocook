@@ -598,8 +598,7 @@ def class_mute(obj, cl):
         for i in obj.__dict__:
             if isinstance(obj.__dict__[i], cl):
                 obj.__dict__[i] = str(cl)
-            #elif not isinstance(obj.__dict__[i], Table):
-            else:
+            elif not isinstance(obj.__dict__[i], Table):
                 class_mute(obj.__dict__[i], cl)
     elif isinstance(obj, dict):
         for i in obj:

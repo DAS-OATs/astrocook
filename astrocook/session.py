@@ -101,7 +101,7 @@ class Session(object):
                     systs._constr[p] = (i, k, v.expr)
                 if k in ['z', 'logN', 'b'] and not v.vary and v.expr==None:
                     systs._constr[p] = (i, k, None)
-
+        
 
     def _data_iden(self, hdul, hdr):
 
