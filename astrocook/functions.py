@@ -2,6 +2,7 @@ from .message import *
 from .vars import *
 import ast
 from astropy import constants as ac
+from astropy.table import Table
 from copy import deepcopy as dc
 import cProfile
 #from decorator import decorator
@@ -597,6 +598,7 @@ def class_mute(obj, cl):
         for i in obj.__dict__:
             if isinstance(obj.__dict__[i], cl):
                 obj.__dict__[i] = str(cl)
+            #elif not isinstance(obj.__dict__[i], Table):
             else:
                 class_mute(obj.__dict__[i], cl)
     elif isinstance(obj, dict):

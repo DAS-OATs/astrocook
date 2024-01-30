@@ -34,6 +34,7 @@ import pickle
 #import dill as pickle
 from scipy.signal import argrelmin
 import shutil
+import sys
 import tarfile
 import time
 
@@ -743,6 +744,7 @@ class Session(object):
                             try:
                                 try:
                                     class_mute(m, Spectrum)
+
                                 except:
                                     self.cb._mods_recreate(verbose=False)
                                     class_mute(m, Spectrum)
