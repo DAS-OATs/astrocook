@@ -10,6 +10,7 @@ from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.signal import fftconvolve
 import sys
 from tqdm import tqdm
 
@@ -29,7 +30,7 @@ class CookbookGeneral(object):
 
 
 
-    def combine(self, name='*_combined', _sel=''):
+    def combine(self, name='*_combined', unique=True, _sel=''):
         """ @brief Combine two or more sessions
         @details Create a new session combining the spectra from two or more
         other sessions.
@@ -47,6 +48,9 @@ class CookbookGeneral(object):
         @param name Name of the output session
         @return Combined session
         """
+
+        unique = str(unique) == 'True'
+
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self.sess._gui._sess_item_sel
@@ -83,9 +87,10 @@ class CookbookGeneral(object):
                 if getattr(sess_list[s], struct) != None:
                     if struct_out[struct] != None:
                         struct_out[struct]._append(
-                            getattr(sess_list[s], struct))
+                            getattr(sess_list[s], struct), unique=unique)
                     else:
                         struct_out[struct] = dc(getattr(sess_list[s], struct))
+
 
             if name_in[0] == '*':
                 name += '_' + sess_list[s].name
@@ -758,15 +763,85 @@ class CookbookGeneral(object):
 
         return 0
 
+    def sky_mask(self, shift=0, thres=50, std=0.05, reverse=False,
+        apply=True, remove=False):
+        """ @brief Mask sky emission lines
+        @details Mask spectral regions affected by sky emission lines.
+
+        The regions are determined from SkyCorr models (saved in
+        sky_telluric.fits), smoothed with a running window to ensure a better
+        masking. The regions are resampled into the current `x` grid and used to
+        populate a `sky` column, which is set to `1` inside the regions and to
+        `0` elsewhere (the opposite if `reverse` is `True`).
+
+        If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
+        `sky` is 1.
+        @param shift Shift to the heliocentric frame (km/s)
+        @param thres Threshold to cut sky lines in the model (ph/s/m2/micron/arcsec2)
+        @param std Standard deviation for gaussian smoothing (nm)
+        @param reverse Compute reverse mask (keeping sky lines instead of
+        rejecting them)
+        @param apply Apply mask to flux
+        @param remove Remove masked rows from table
+        @return 0
+        """
+
+        try:
+            shift = float(shift)
+            thres = float(thres)
+            std = float(std)
+            reverse = str(reverse) == 'True'
+            apply = str(apply) == 'True'
+            remove = str(remove) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        if 'sky' not in spec._t.colnames:
+            logging.info("I'm adding column 'sky'.")
+        else:
+            logging.info("I'm updating column 'sky'.")
+
+        x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        sky = np.array(sky_telluric['flux_ael'], dtype=float)
+
+        mean = np.median(x)
+        prof = np.exp(-((x - mean) / std)**2)
+        if (len(prof) % 2 == 0):
+            prof = prof[:-1]
+        prof = prof / np.sum(prof)
+
+        sky_smooth = fftconvolve(sky, prof, mode='same')
+
+        #plt.plot(x, sky_smooth)
+        #plt.show()
+
+        #sky_smooth = running_mean(sky, h=hwindow)
+        sky_interp = np.interp(spec._t['x'].to(au.nm).value, x, sky_smooth)
+        if not reverse:
+            mask = np.array([t>thres for t in sky_interp], dtype=float)
+        else:
+            mask = np.array([t<thres for t in sky_interp], dtype=float)
+        #sky = np.interp(spec._t['x'].to(au.nm).value, x, mask)
+        spec._t['sky'] = np.array(mask!=1, dtype=bool)
+
+        if apply:
+            spec._t['y'][np.where(np.array(mask==1, dtype=bool))] = np.nan
+        if remove:
+            spec._t.remove_rows(np.where(np.array(mask==1, dtype=bool)))
+
+        return 0
+
 
     def telluric_mask(self, shift=0, thres=0.99, apply=True):
         """ @brief Mask telluric absorption
         @details Mask spectral regions affected by telluric absorptions.
 
-        The regions were determined by Tobias M. Schmidt from ESPRESSO data and
-        are saved in `telluric.dat`. They are resampled into the current `x`
-        grid and used to populate a `telluric` column, which is set to `1`
-        inside the regions and to `0` elsewhere.
+        The regions are determined from SkyCorr models (saved in
+        sky_telluric.fits). They are resampled into the current `x` grid and
+        used to populate a `telluric` column, which is set to `1` inside the
+        regions and to `0` elsewhere.
 
         If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
         `telluric` is 1.
@@ -794,8 +869,8 @@ class CookbookGeneral(object):
         #p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
-        x = np.array(telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t<thres for t in telluric['trans_ma']], dtype=float)
+        x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell!=1, dtype=bool)
 
