@@ -419,6 +419,7 @@ class SystModel(LMComposite):
         #print(mods_t['id'])
         #return True
 
+
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
@@ -518,7 +519,6 @@ class SystModel(LMComposite):
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
-
 
     def _make_psf(self):
         d = self._defs
@@ -679,6 +679,7 @@ class SystModel(LMComposite):
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
+        #print(self._defs)
 
         #N_tot = '47' == str(self._id)
 

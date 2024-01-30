@@ -88,6 +88,20 @@ class Session(object):
         else:
             setattr(self, frame.__name__, frame)
 
+
+    def _constr_from_mods(self):
+        systs = self.systs
+        systs._constr = {}
+        for m in systs._mods_t['mod']:
+            for p,v in m._pars.items():
+                i, k = p.split('_')[-2:]
+                i = int(i)
+                if v.expr != None:
+                    systs._constr[p] = (i, k, v.expr)
+                if k in ['z', 'logN', 'b'] and not v.vary and v.expr==None:
+                    systs._constr[p] = (i, k, None)
+
+
     def _data_iden(self, hdul, hdr):
 
         try:
@@ -378,6 +392,7 @@ class Session(object):
                             setattr(self, s, format.astrocook(data, s))
                         except:
                             pass
+
                 if s == 'systs':
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -400,6 +415,7 @@ class Session(object):
                             for m in systs._mods_t['mod']:
                                 for attr in ['_mods_t']:
                                     setattr(m, attr, getattr(systs, attr))
+                            self._constr_from_mods()
                             only_constr = True
                             fast = True
             if self.spec is not None and self.systs is not None:

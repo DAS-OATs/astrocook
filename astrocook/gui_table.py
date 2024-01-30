@@ -523,7 +523,6 @@ class GUITableSystList(GUITable):
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-
         for v in self._freezes_d:
             if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
                 self._freezes_d[v] = (self._freezes_d[v][0],
