@@ -101,7 +101,7 @@ class Session(object):
                     systs._constr[p] = (i, k, v.expr)
                 if k in ['z', 'logN', 'b'] and not v.vary and v.expr==None:
                     systs._constr[p] = (i, k, None)
-        
+
 
     def _data_iden(self, hdul, hdr):
 
@@ -780,9 +780,11 @@ class Session(object):
 
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
-                                            "models. They were not saved." \
+                                            "models. They were not saved:" \
                                             % (len(fail), len(obj._mods_t)))
-
+                            logging.warning("Here's the list of system IDs for "
+                                            "the models that weren't saved:")
+                            logging.warning(fail)
 
             file = open(root+'.json', "w")
             n = file.write(self.log.str)
