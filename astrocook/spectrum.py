@@ -1,4 +1,5 @@
 from .frame import Frame
+from .functions import x_convert
 from .line_list import LineList
 #from .syst_list import SystList
 from .message import *
@@ -659,11 +660,20 @@ class Spectrum(Frame):
         sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
                                       self.x.to(au.nm).value < xmax))
         x = self.x[sel]
+        dx = self.xmax[sel]-self.xmin[sel]
+        dxv = x_convert(self.xmax[sel], xunit=au.km/au.s) \
+              -x_convert(self.xmin[sel], xunit=au.km/au.s)
         y = self.y[sel]
         dy = self.dy[sel]
         self._stats = {'min_x': np.nanmin(x),
                        'max_x': np.nanmax(x),
                        'mean_x': np.nanmean(x),
+                       'min_dx': np.nanmin(dx),
+                       'max_dx': np.nanmax(dx),
+                       'mean_dx': np.nanmean(dx),
+                       'min_dxv': np.nanmin(dxv),
+                       'max_dxv': np.nanmax(dxv),
+                       'mean_dxv': np.nanmean(dxv),
                        'min_y': np.nanmin(y),
                        'max_y': np.nanmax(y),
                        'mean_y': np.nanmean(y),
@@ -678,6 +688,12 @@ class Spectrum(Frame):
                            " Minimum x: %3.4f %s\n" \
                            " Maximum x: %3.4f %s\n" \
                            " Mean x: %3.4f %s\n" \
+                           " Minimum dx: %3.4f %s\n" \
+                           " Maximum dx: %3.4f %s\n" \
+                           " Mean dx: %3.4f %s\n" \
+                           " Minimum dx (velocity): %3.4f %s\n" \
+                           " Maximum dx (velocity): %3.4f %s\n" \
+                           " Mean dx (velocity): %3.4f %s\n" \
                            " Minimum y: %3.4e %s\n" \
                            " Maximum y: %3.4e %s\n" \
                            " Mean y: %3.4e %s\n" \
@@ -692,7 +708,7 @@ class Spectrum(Frame):
             temp = (self._stats['min_x'].value, self._stats['max_x'].value,
                     self._stats['min_x'].unit)
             region = ("REGION: %3.4f-%3.4f %s" % temp,)
-        red = region+self._stats_tup[10:16]
+        red = region+self._stats_tup[16:22]
         self._stats_text_red = "%s\n" \
                                "Mean y: %3.4e %s\n" \
                                "Median y: %3.4e %s\n" \
