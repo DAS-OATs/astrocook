@@ -695,8 +695,9 @@ class GUITableSystList(GUITable):
                 title += ['Fit all systems...', 'Remove all']
                 attr += ['syst_fit', 'remove']
             else:
-                title += ['Fit system...', 'Fit group...', 'Remove']
-                attr += ['syst_fit', 'group_fit', 'remove']
+                title += ['Fit system...', 'Fit group...', 'Extract group...',
+                          'Remove']
+                attr += ['syst_fit', 'group_fit', 'group_extract', 'remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
@@ -750,6 +751,15 @@ class GUITableSystList(GUITable):
         sess.log.append_full('_tab_systs', '_data_fit', {'row': row})
         self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_group_extract(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id}]
+        dlg = GUIDialogMethod(self._gui, 'Extract group', 'group_extract',
+                              params_last=params)
         self._gui._refresh(init_cursor=True)
 
 
