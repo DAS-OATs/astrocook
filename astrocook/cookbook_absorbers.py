@@ -1174,10 +1174,37 @@ class CookbookAbsorbers(object):
 
         return 0
 
+    def group_extract(self, id=1):
+        """ @brief Extract a group of systems
+        @details Extract all system grouped to the selected system and remove
+        all the others.
+        @param id System id
+        @return 0
+        """
+
+        try:
+            id = int(id)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        out = self.sess.systs
+        t_sel = []
+        mods_t_sel = []
+        for i, m in enumerate(out._mods_t):
+            if id not in m['id']:
+                for mid in m['id']:
+                    t_sel.append(np.where(out._t['id'] == mid)[0][0])
+                mods_t_sel.append(i)
+        out._t.remove_rows(t_sel)
+        out._mods_t.remove_rows(mods_t_sel)
+
+        return 0
+
 
     def group_fit(self, id=1, refit_n=0, chi2rav_thres=1e-2,
                   max_nfev=max_nfev_def):
-        """ @brief Fit a group systems
+        """ @brief Fit a group of systems
         @details Fit together all systems that are grouped to the selected system.
         @param id System id
         @param refit_n Number of refit cycles
