@@ -34,6 +34,7 @@ import pickle
 #import dill as pickle
 from scipy.signal import argrelmin
 import shutil
+import sys
 import tarfile
 import time
 
@@ -743,6 +744,7 @@ class Session(object):
                             try:
                                 try:
                                     class_mute(m, Spectrum)
+
                                 except:
                                     self.cb._mods_recreate(verbose=False)
                                     class_mute(m, Spectrum)
@@ -778,9 +780,11 @@ class Session(object):
 
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
-                                            "models. They were not saved." \
+                                            "models. They were not saved:" \
                                             % (len(fail), len(obj._mods_t)))
-
+                            logging.warning("Here's the list of system IDs for "
+                                            "the models that weren't saved:")
+                            logging.warning(fail)
 
             file = open(root+'.json', "w")
             n = file.write(self.log.str)
