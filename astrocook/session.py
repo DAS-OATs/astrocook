@@ -28,6 +28,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 import numpy as np
+from objbrowser import browse
 import operator
 import os
 import pickle
@@ -581,7 +582,6 @@ class Session(object):
 
 
     def save(self, path):
-
         root = path[:-4]
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
@@ -610,26 +610,11 @@ class Session(object):
                             pass
                     name = root+'_'+s+'.fits'
                     name_dat = root+'_'+s+'.dat'
-                    #print(getattr(self, s).__dict__)
-                    """
-                    try:
-                        mods = getattr(self, s)._mods_t
-                        w = []
-                        for m in mods:
-                            w.append(744 in m['id'])
-
-                        print(w)
-                        mod = mods[w]
-                        print(mod['id'][0])
-                        print(mod['mod'][0].__dict__)
-                        mod['mod'][0]._pars.pretty_print()
-                    except:
-                        pass
-                    """
                     try:
                         obj = dc(getattr(self, s))
                     except:
                         obj = getattr(self, s)
+
                     t = dc(obj._t)
                     if s == 'systs':
                         name_mods_dat = root+'_'+s+'_mods.dat'
@@ -713,22 +698,24 @@ class Session(object):
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
                     #print([t[c].format for c in t.colnames] )
-                    try:
-                        ascii.write(t, name_dat, names=t.colnames,
-                                    format='commented_header', overwrite=True)
-                        arch.add(name, arcname=stem+'_'+s+'.fits')
-                        arch.add(name_dat, arcname=stem+'_'+s+'.dat')
-                        os.remove(name)
-                        os.remove(name_dat)
-                        logging.info("I've saved frame %s as %s."
-                                     % (s, stem+'_'+s+'.fits/.dat'))
-                    except:
-                        logging.warning("I cannot save structure %s in ASCII "
-                                        "format." % s)
-                        arch.add(name, arcname=stem+'_'+s+'.fits')
-                        os.remove(name)
-                        logging.info("I've saved frame %s as %s."
-                                     % (s, stem+'_'+s+'.fits'))
+                    if s != 'spec':
+                        try:
+                            ascii.write(t, name_dat, names=t.colnames,
+                                        format='commented_header', overwrite=True)
+                            arch.add(name, arcname=stem+'_'+s+'.fits')
+                            arch.add(name_dat, arcname=stem+'_'+s+'.dat')
+                            os.remove(name)
+                            os.remove(name_dat)
+                            logging.info("I've saved frame %s as %s."
+                                        % (s, stem+'_'+s+'.fits/.dat'))
+                        except:
+                            logging.warning("I cannot save structure %s in ASCII "
+                                            "format." % s)
+                            arch.add(name, arcname=stem+'_'+s+'.fits')
+                            os.remove(name)
+                            logging.info("I've saved frame %s as %s."
+                                        % (s, stem+'_'+s+'.fits'))
+
                     if s == 'systs':
                         ascii.write(mods_t, name_mods_dat,
                                     names=['z0', 'chi2r', 'id'],
