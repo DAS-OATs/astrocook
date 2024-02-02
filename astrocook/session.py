@@ -742,9 +742,9 @@ class Session(object):
                             id = r['id']
                             m = r['mod']
                             try:
+                                sys.setrecursionlimit(10000)
                                 try:
                                     class_mute(m, Spectrum)
-
                                 except:
                                     self.cb._mods_recreate(verbose=False)
                                     class_mute(m, Spectrum)
@@ -774,6 +774,7 @@ class Session(object):
 
                                 arch.add(name_mod_dat, arcname=stem+'_'+s+'_mods_%i.dat' % id[0])
                                 os.remove(name_mod_dat)
+                                sys.setrecursionlimit(1000)
 
                             except:
                                 fail.append(id)
