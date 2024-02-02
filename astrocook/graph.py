@@ -100,46 +100,51 @@ class Graph(object):
         if event.button == 3:
             if self._click_1:
                 sess._clicks.append((x,y))
+                self._reg_shade()
             else:
                 sess._clicks = [(x,y)]
                 self._click_1 = False
+                self._reg_unshade()
             self._click_3 = True
-            title.append('Zap bin')
-            attr.append('bin_zap')
-            if focus == self._gui._graph_main:
-                title.append('Show stats')
-                attr.append('stats_show')
-            if sess._stats and focus == self._gui._graph_main:
-                title.append('Hide stats')
-                attr.append('stats_hide')
-            if len(sess._clicks) > 1 and focus == self._gui._graph_main:
-                title.append('Extract region')
-                attr.append('region_extract')
-                title.append('Zap feature')
-                attr.append('spec_zap')
-                self._reg_shade()
-            if hasattr(self._gui._sess_sel, 'nodes') \
-                and hasattr(self._gui._sess_sel.nodes, 'x') \
-                and focus == self._gui._graph_main:
-                nodes = self._gui._sess_sel.nodes
-                dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
-                dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
-                title.append('Add node')
-                attr.append('node_add')
-                if dist_x < 0.1*dist_mean:
-                    title.append('Remove node')
-                    attr.append('node_remove')
-            if 'cursor_z_series' in self._sel:
-                title.append('Stick cursor')
-                attr.append('cursor_stick')
-            if 'cont' in sess.spec._t.colnames \
-                and 'cursor_z_series' in self._sel:
-                title.append('New system')
-                attr.append('syst_new')
-            if sess.systs is not None and sess.systs._t is not None:
-                title.append('Fit system')
-                attr.append('syst_fit')
-        if self._click_1 and not self._click_3: return
+            if not sess._shade and not self._click_1:
+                title.append('Zap bin')
+                attr.append('bin_zap')
+                if not sess._stats and focus == self._gui._graph_main:
+                    title.append('Show stats')
+                    attr.append('stats_show')
+                if sess._stats and focus == self._gui._graph_main:
+                    title.append('Hide stats')
+                    attr.append('stats_hide')
+                if len(sess._clicks) > 1 and focus == self._gui._graph_main:
+                    title.append('Extract region')
+                    attr.append('region_extract')
+                    title.append('Zap feature')
+                    attr.append('spec_zap')
+                    #self._reg_shade()
+                if hasattr(self._gui._sess_sel, 'nodes') \
+                    and hasattr(self._gui._sess_sel.nodes, 'x') \
+                    and focus == self._gui._graph_main:
+                    nodes = self._gui._sess_sel.nodes
+                    dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
+                    dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
+                    title.append('Add node')
+                    attr.append('node_add')
+                    if dist_x < 0.1*dist_mean:
+                        title.append('Remove node')
+                        attr.append('node_remove')
+                if 'cursor_z_series' in self._sel:
+                    title.append('Stick cursor')
+                    attr.append('cursor_stick')
+                if 'cont' in sess.spec._t.colnames \
+                    and 'cursor_z_series' in self._sel:
+                    title.append('New system')
+                    attr.append('syst_new')
+                if sess.systs is not None and sess.systs._t is not None:
+                    title.append('Fit system')
+                    attr.append('syst_fit')
+            if self._click_1 and not self._click_3: return
+        #print(sess._clicks)
+
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event, title, attr))
 
@@ -389,11 +394,13 @@ class Graph(object):
         trans = transforms.blended_transform_factory(
                     self._ax.transData, self._ax.transAxes)
 
-        shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
+        self._shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
                                       transform=trans, color='C1', alpha=0.2)
 
         self._canvas.draw()
-        shade.remove()
+
+    def _reg_unshade(self):
+        self._shade.remove()
 
 
     def _seq(self, sess, norm, init_cursor=True):
