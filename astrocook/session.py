@@ -315,6 +315,14 @@ class Session(object):
             return 0
 
 
+    def _rm_ac_temp(self, root):
+        try:
+            os.rmdir(root)
+        except:
+            logging.warning("I could not remove directory ac_temp/ (it was "\
+                            "not empty).")
+
+
     def open(self):
 
         dat = False
@@ -348,6 +356,7 @@ class Session(object):
                         except:
                             logging.error("I didn't find any *_spec.fits "
                                             "frame in the archive.")
+                            self._rm_ac_temp(root)
                             return True
 
                     hdr = hdul[1].header
@@ -382,19 +391,6 @@ class Session(object):
                     os.remove(self._root_stem+'_'+s+'.fits')
                     os.remove(self._root_stem+'_'+s+'.dat')
                 except:
-                        """
-                    try:
-                        p = root+'/'+glob.glob('ac_temp/*_%s.fits' % s)[0]
-                        hdul = fits.open(p)
-                        setattr(self, s, format.astrocook(hdul, s))
-                        os.remove(p)
-                        os.remove(p[:-5]+'.dat')
-                        logging.warning("I didn't find %s in %s. I took "\
-                                        "the first *_%s.fits frame in "\
-                                        "the archive." \
-                                        % (stem+'_'+s+'.fits', stem+'.acs', s))
-                    except:
-                        """
                         try:
                             data = ascii.read(self._root_stem+'_'+s+'.dat')
                             setattr(self, s, format.astrocook(data, s))
@@ -432,7 +428,7 @@ class Session(object):
                 self.systs._dict_update(mods=True)
 
             os.remove(self._root_stem+'.json')
-            os.rmdir(root)
+            self._rm_ac_temp(root)
 
         else:
             self._other_open(hdul, hdr)
