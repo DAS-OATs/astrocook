@@ -315,6 +315,14 @@ class Session(object):
             return 0
 
 
+    def _rm_ac_temp(self, root):
+        try:
+            os.rmdir(root)
+        except:
+            logging.warning("I could not remove directory ac_temp/ (it was "\
+                            "not empty).")
+
+
     def open(self):
 
         dat = False
@@ -326,23 +334,29 @@ class Session(object):
 
 
         if self.path[-3:] == 'acs':
-            root = '/'.join(self.path.split('/')[:-1])
+            root_super = '/'.join(self.path.split('/')[:-1])
+            root = root_super+'/ac_temp/'
             with tarfile.open(self.path) as arch:
+                #arch.extractall(path=root)
                 arch.extractall(path=root)
                 try:
                     try:
-                        hdul = fits.open(self.path[:-4]+'_spec.fits')
+                        self._root_stem = root+stem
+                        hdul = fits.open(self._root_stem+'_spec.fits')
                     except:
                         try:
-                            hdul = fits.open(root+'/'+\
-                                             glob.glob('*_spec.fits')[0])
-                            #logging.warning("I didn't find %s in %s. I took "\
-                            #                "the first *_spec.fits frame in "\
-                            #                "the archive." \
-                            #                % (stem+'_spec.fits', stem+'.acs'))
+                            g = glob.glob('ac_temp/*_spec.fits')[0]
+                            s = root_super+'/'+g
+                            hdul = fits.open(s)
+                            self._root_stem = s[:-10]
+                            logging.warning(
+                                "The names of files within the .acs archive "\
+                                "are different than expected: %s* instead of "\
+                                "%s*." % (self._root_stem.split('/')[-1], stem))
                         except:
                             logging.error("I didn't find any *_spec.fits "
                                             "frame in the archive.")
+                            self._rm_ac_temp(root)
                             return True
 
                     hdr = hdul[1].header
@@ -372,37 +386,26 @@ class Session(object):
                     except:
                         pass
                 try:
-                    hdul = fits.open(self.path[:-4]+'_'+s+'.fits')
+                    hdul = fits.open(self._root_stem+'_'+s+'.fits')
                     setattr(self, s, format.astrocook(hdul, s))
-                    os.remove(self.path[:-4]+'_'+s+'.fits')
-                    os.remove(self.path[:-4]+'_'+s+'.dat')
+                    os.remove(self._root_stem+'_'+s+'.fits')
+                    os.remove(self._root_stem+'_'+s+'.dat')
                 except:
-                    try:
-                        p = root+'/'+glob.glob('*_%s.fits' % s)[0]
-                        hdul = fits.open(p)
-                        setattr(self, s, format.astrocook(hdul, s))
-                        os.remove(p)
-                        os.remove(p[:-5]+'.dat')
-                        logging.warning("I didn't find %s in %s. I took "\
-                                        "the first *_%s.fits frame in "\
-                                        "the archive." \
-                                        % (stem+'_'+s+'.fits', stem+'.acs', s))
-                    except:
                         try:
-                            data = ascii.read(self.path[:-4]+'_'+s+'.dat')
+                            data = ascii.read(self._root_stem+'_'+s+'.dat')
                             setattr(self, s, format.astrocook(data, s))
                         except:
                             pass
 
                 if s == 'systs':
                     try:
-                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
+                        data = ascii.read(self._root_stem+'_'+s+'_mods.dat')
                     except:
                         data = None
                     if data is not None:
                         systs = getattr(self, 'systs')
-                        data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
-                        os.remove(self.path[:-4]+'_'+s+'_mods.dat')
+                        data = ascii.read(self._root_stem+'_'+s+'_mods.dat')
+                        os.remove(self._root_stem+'_'+s+'_mods.dat')
                         setattr(systs, '_mods_t', data['z0', 'chi2r'])
                         systs._mods_t.remove_column('chi2r')
                         systs._mods_t['mod'] = np.empty(len(data), dtype=object)
@@ -423,10 +426,9 @@ class Session(object):
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
                 self.systs._dict_update(mods=True)
-            try:
-                os.remove(self.path[:-4]+'.json')
-            except:
-                pass
+
+            os.remove(self._root_stem+'.json')
+            self._rm_ac_temp(root)
 
         else:
             self._other_open(hdul, hdr)
@@ -489,12 +491,12 @@ class Session(object):
         for i,m in enum_tqdm(systs._mods_t, len(systs._mods_t),
                              "session: Opening models"):
             try:
-                name_mod_dat = self.path[:-4]+'_systs_mods_%i.dat' % m['id'][0]
+                name_mod_dat = self._root_stem+'_systs_mods_%i.dat' % m['id'][0]
                 with open(name_mod_dat, 'rb') as f:
                     mod = pickle.load(f)
 
                 for attr in ['_lines', '_group', 'left', 'right']:
-                    name_attr_dat = self.path[:-4]+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
+                    name_attr_dat = self._root_stem+'_systs_mods_%i_%s.dat' % (m['id'][0], attr)
                     setattr(mod, attr, load_model(name_attr_dat,
                             funcdefs=funcdefs))
                     os.remove(name_attr_dat)
