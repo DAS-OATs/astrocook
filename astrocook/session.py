@@ -329,10 +329,12 @@ class Session(object):
         dat = False
 
         path = self.path
+        root, stem, dir = self._set_paths(path)
+        """
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
-
+        """
 
         if self.path[-3:] == 'acs':
             root_super = '/'.join(self.path.split('/')[:-1])
@@ -581,11 +583,21 @@ class Session(object):
         logging.info("I've saved %s in %s.acs." % (struct, stem))
 
 
-    def save(self, path):
+    def _set_paths(self, path):
         root = path[:-4]
         parts = pathlib.PurePath(path[:-4]).parts
         stem = parts[-1]
         dir = parts[0].join(parts[0:-1])[1:]
+        return root, stem, dir
+
+    def save(self, path):
+        """
+        root = path[:-4]
+        parts = pathlib.PurePath(path[:-4]).parts
+        stem = parts[-1]
+        dir = parts[0].join(parts[0:-1])[1:]
+        """
+        root, stem, dir = self._set_paths(path)
 
         import warnings
         warnings.filterwarnings("ignore")
@@ -609,7 +621,6 @@ class Session(object):
                         except:
                             pass
                     name = root+'_'+s+'.fits'
-                    name_dat = root+'_'+s+'.dat'
                     try:
                         obj = dc(getattr(self, s))
                     except:
@@ -698,11 +709,17 @@ class Session(object):
                     hdul = fits.HDUList([phdu, thdu])
                     hdul.writeto(name, overwrite=True)
                     #print([t[c].format for c in t.colnames] )
+
+                    arch.add(name, arcname=stem+'_'+s+'.fits')
+                    os.remove(name)
+                    logging.info("I've saved frame %s as %s."
+                                % (s, stem+'_'+s+'.fits'))
+                    """
                     if s != 'spec':
                         try:
                             ascii.write(t, name_dat, names=t.colnames,
                                         format='commented_header', overwrite=True)
-                            arch.add(name, arcname=stem+'_'+s+'.fits')
+
                             arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                             os.remove(name)
                             os.remove(name_dat)
@@ -715,6 +732,7 @@ class Session(object):
                             os.remove(name)
                             logging.info("I've saved frame %s as %s."
                                         % (s, stem+'_'+s+'.fits'))
+                    """
 
                     if s == 'systs':
                         ascii.write(mods_t, name_mods_dat,
@@ -843,3 +861,37 @@ class Session(object):
             #plt.show()
                 pdf.savefig()  # saves the current figure into a pdf page
                 plt.close()
+
+    def save_ascii_lines(self, path):
+        self._save_ascii(path, 'lines')
+
+
+    def save_ascii_spec(self, path):
+        self._save_ascii(path, 'spec')
+
+
+    def save_ascii_systs(self, path):
+        self._save_ascii(path, 'systs')
+
+
+    def _save_ascii(self, path, s):
+        n = {'spec': 'spectrum', 'lines': 'line list', 'systs': 'system list'}
+
+
+        root, stem, dir = self._set_paths(path)
+        name = root+'.dat'
+
+        try:
+            obj = dc(getattr(self, s))
+        except:
+            obj = getattr(self, s)
+
+        t = dc(obj._t)
+        try:
+            ascii.write(t, name, names=t.colnames,
+                        format='commented_header', overwrite=True)
+            logging.info("I've saved %s as %s."
+                        % (n[s], stem+'.dat'))
+        except:
+            logging.warning("I cannot save structure %s in ASCII "
+                            "format." % s)

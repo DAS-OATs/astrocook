@@ -313,6 +313,14 @@ class GUIMenu(object):
                 except:
                     pass
 
+        file = self._file
+        item = file._menu.FindItemById(file._start_id+201)
+        if sess.spec == None: item.Enable(False)
+        item = file._menu.FindItemById(file._start_id+202)
+        if sess.lines == None: item.Enable(False)
+        item = file._menu.FindItemById(file._start_id+203)
+        if sess.systs == None: item.Enable(False)
+
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
                 for m in ['_edit', '_view']+self._menus_togg['attr']:
@@ -500,7 +508,19 @@ class GUIMenuFile(GUIMenu):
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
-        self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
+
+        # Use these lines if you want to put the next items in a submenu
+        # - just change 'self._menu' into 'submenu' in the calls
+        submenu = wx.Menu()
+        self._menu.AppendSubMenu(submenu, 'Save ASCII')
+        self._item(submenu, start_id+201, None, "Spectrum...",
+                   lambda e: self._on_save_ascii(e, 'spec', **kwargs))
+        self._item(submenu, start_id+202, None, "Line list...",
+                   lambda e: self._on_save_ascii(e, 'lines', **kwargs))
+        self._item(submenu, start_id+203, None, "System list...",
+                   lambda e: self._on_save_ascii(e, 'systs', **kwargs))
+
+        self._item(self._menu, start_id+301, None, "Save graph as PDF...",
                    lambda e: self._on_save_pdf(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
@@ -538,7 +558,7 @@ class GUIMenuFile(GUIMenu):
             else:
                 path='.'
         name = self._gui._sess_sel.name
-        with wx.FileDialog(self._gui._panel_sess, "Save spectrum as PDF", path, name,
+        with wx.FileDialog(self._gui._panel_sess, "Save graph as PDF", path, name,
                            wildcard="PDF (*.pdf)|*.pdf",
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
                            as fileDialog:
@@ -549,6 +569,29 @@ class GUIMenuFile(GUIMenu):
             dir = fileDialog.GetDirectory()
             self._gui._sess_sel.save_pdf(path)
 
+    def _on_save_ascii(self, event, struct, path=None):
+        """ Behaviour for Session > Save """
+
+        n = {'spec': 'spectrum', 'lines': 'line list', 'systs': 'system list'}
+
+        if path is None:
+            if hasattr(self._gui, '_path'):
+                path=os.path.basename(self._gui._path)
+            else:
+                path='.'
+        name = self._gui._sess_sel.name
+        with wx.FileDialog(self._gui._panel_sess, "Save %s in ASCII "\
+                           "format" % n[struct], path, name,
+                           wildcard="ASCII file (*.dat)|*.dat",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) \
+                           as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+
+            path = fileDialog.GetPath()
+            dir = fileDialog.GetDirectory()
+            #logging.info("I'm saving %s %s..." % (n[struct], path))
+            getattr(self._gui._sess_sel, 'save_ascii_%s' % struct)(path)
 
 
 
