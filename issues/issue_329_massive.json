@@ -1,0 +1,29 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive-110625037481089626894/My Drive/GitHub/astrocook/issues/test_massive.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "lyab_chunk_fit",
+      "params": {
+          "z_start": 3.7,
+          "z_end": 3.9,
+          "dv": 1000,
+          "ol": 100
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

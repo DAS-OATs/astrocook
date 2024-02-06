@@ -705,7 +705,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_cycle(self, mod=None, verbose=True):
+    def _systs_cycle(self, mod=None, verbose=True, recreate=True):
         chi2rav = np.inf
         chi2rav_old = 0
         chi2r_list, z_list = [], []
@@ -725,7 +725,7 @@ class CookbookAbsorbers(object):
         fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
 
         self._systs_reject(mod=mod, verbose=verbose)
-        self._mods_recreate(mod_new=mod, verbose=verbose)
+        if recreate: self._mods_recreate(mod_new=mod, verbose=verbose)
         if verbose and z_list != []:
             logging.info("I've fitted %i model%s." \
                          % (np.sum(fit_list), msg_z_range(z_list)))
@@ -1139,6 +1139,56 @@ class CookbookAbsorbers(object):
         self.sess.systs._collapse()
         return 0
 
+
+    def chunk_fit(self, #xmin, xmax,
+                  chunks, refit_n=0, chi2rav_thres=1e-2,
+                  max_nfev=max_nfev_def, recreate=True):
+        """ @brief Fit systems in a spectrum chunk
+        @details Fit one or more system in a spectrum chunk, freezing the
+        components of all other systems.
+        @param chunks Wavelength range of the chunks (nm), e.g. 500-501;502-503
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+        try:
+            #xmin = float(xmin) * au.nm
+            #xmax = float(xmax) * au.nm
+            #chunks = chunk_parse(chunks)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = int(max_nfev)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        chunks = chunk_parse(chunks)
+
+        t = self.sess.systs._t
+        x = np.array([[to_x(z, trans).value for trans in trans_parse(s)]
+                      for (z,s) in t['z', 'series']])
+        w_all = np.array([], dtype=int)
+        for c in chunks:
+            w = np.where([np.any(np.logical_and(xi>c[0],xi<c[1])) for xi in x])[0]
+            w_all = np.append(w_all, w)
+        ids = t['id'][w_all]
+        self.sess.systs._freeze_pars(exclude=ids)
+
+        # Select model
+        mods_t = self.sess.systs._mods_t
+
+        self.systs_fit(refit_n, recreate=recreate)
+        logging.info("I've fitted %i system%s." \
+                     % (len(ids), 's' if len(ids)>1 else ''))
+
+        self.sess.systs._unfreeze_pars(exclude=ids)
+        self._spec_update()
+
+        return 0
+
+
+
     def syst_fit(self, ids=[1], refit_n=0, chi2rav_thres=1e-2,
                  max_nfev=max_nfev_def):
         """ @brief Fit individual systems
@@ -1299,7 +1349,7 @@ class CookbookAbsorbers(object):
 
 
     def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
-                  sel_fit=False, _mod=None):
+                  sel_fit=False, _mod=None, recreate=True):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
@@ -1319,7 +1369,7 @@ class CookbookAbsorbers(object):
             return 0
 
         #self._systs_fit()
-        self._systs_cycle(mod=_mod, verbose=False)
+        self._systs_cycle(mod=_mod, verbose=False, recreate=recreate)
         self._spec_update()
 
         return 0
@@ -2819,6 +2869,46 @@ class CookbookAbsorbers(object):
 
         self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
         #plt.show()
+        return 0
+
+
+    def lyab_chunk_fit(self, z_start, z_end, dv=1000, ol=100):
+        """ @brief Fit the Lyman-alpha and Lyman-beta forest by chunks
+        @details The recipe fits previously detected Lyman-alpha and Lyman-beta
+        absorbers by chunks. The chunks span from `z_start` to `z_end` with a
+        width `dv` and an overlap `ol`.
+        @param z_start Start redshift
+        @param z_end End redshift
+        @param dv Width of the chunk (km/s)
+        @param ol Overlap of adjacent chunks (km/s)
+        @return 0
+        """
+
+        try:
+            z_start = float(z_start)
+            z_end = float(z_end)
+            dv = float(dv)
+            ol = float(ol)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        z_range = []
+        z = z_start
+        while z<z_end:
+            dz = dv/aconst.c.to(au.km/au.s).value*(1+z)
+            dzo = (dv-ol)/aconst.c.to(au.km/au.s).value*(1+z)
+            z_range.append((z,z+dz))
+            z += dzo
+
+        chunks = [(i, i+1) for i in range(571,583)]
+        for z_c in z_range:
+            c_lyb = (1+np.array(z_c)) * xem_d['Ly_b'].value
+            c_lya = (1+np.array(z_c)) * xem_d['Ly_a'].value
+            chunks = "%s-%s;%s-%s" % (c_lyb[0], c_lyb[1], c_lya[0], c_lya[1])
+            self.chunk_fit(chunks, recreate=False)
+        self._mods_recreate()
+
         return 0
 
 

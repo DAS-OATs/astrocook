@@ -1,0 +1,132 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test_issue_234.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_cells_desel",
+      "params": {
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_cells_sel",
+      "params": {
+        "row": 6,
+        "col": 1,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_cells_sel",
+      "params": {
+        "row": 7,
+        "col": 1,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_cells_sel",
+      "params": {
+        "row": 8,
+        "col": 1,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_cells_sel",
+      "params": {
+        "row": 9,
+        "col": 1,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab",
+      "recipe": "_data_init",
+      "params": {
+        "attr": "systs",
+        "from_scratch": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "_systs_remove",
+      "params": {
+        "rem": [
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

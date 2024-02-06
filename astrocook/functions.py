@@ -505,6 +505,13 @@ def to_z(x, trans):
         return (x.to(au.nm)/xem_d[trans].to(au.nm)).value-1
 
 
+def chunk_parse(chunks):
+    chunk = []
+    for c in chunks.split(';'):
+        x = c.split('-')
+        chunk.append((float(x[0]), float(x[1])))
+    return chunk
+
 def trans_parse(series):
     trans = []
     for s in series.replace(';',',').replace(':',',').split(','):
