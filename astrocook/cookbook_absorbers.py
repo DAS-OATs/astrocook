@@ -1166,7 +1166,7 @@ class CookbookAbsorbers(object):
         chunks = chunk_parse(chunks)
 
         t = self.sess.systs._t
-        x = np.array([[to_x(z, trans).value for trans in trans_parse(s)]
+        x = np.array([np.array([to_x(z, trans).value for trans in trans_parse(s)])
                       for (z,s) in t['z', 'series']])
         w_all = np.array([], dtype=int)
         for c in chunks:
