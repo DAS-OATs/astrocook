@@ -679,28 +679,54 @@ class Spectrum(Frame):
                        'mean_y': np.nanmean(y),
                        'median_y': np.nanmedian(y),
                        'std_y': np.nanstd(y),
+                       'min_dy': np.nanmin(dy),
+                       'max_dy': np.nanmax(dy),
                        'mean_dy': np.nanmean(dy),
                        'median_dy': np.nanmedian(dy.value)*dy.unit}
-        self._stats_tup = tuple(np.ravel([(self._stats[s].value,
-                                          self._stats[s].unit) \
-                                          for s in self._stats]))
+        #self._stats_tup = tuple(np.ravel([(self._stats[s].value,
+        #                                  self._stats[s].unit) \
+        #                                  for s in self._stats]))
+        self._stats_tup = (self._stats['min_x'].value,
+                           self._stats['max_x'].value,
+                           self._stats['min_x'].unit,
+                           self._stats['mean_x'].value,
+                           self._stats['mean_x'].unit,
+                           self._stats['min_dx'].value,
+                           self._stats['max_dx'].value,
+                           self._stats['min_dx'].unit,
+                           self._stats['min_dxv'].value,
+                           self._stats['max_dxv'].value,
+                           self._stats['min_dxv'].unit,
+                           self._stats['mean_dx'].value,
+                           self._stats['mean_dx'].unit,
+                           self._stats['mean_dxv'].value,
+                           self._stats['mean_dxv'].unit,
+                           self._stats['min_y'].value,
+                           self._stats['max_y'].value,
+                           self._stats['min_y'].unit,
+                           self._stats['mean_y'].value,
+                           self._stats['mean_y'].unit,
+                           self._stats['median_y'].value,
+                           self._stats['median_y'].unit,
+                           self._stats['std_y'].value,
+                           self._stats['std_y'].unit,
+                           self._stats['min_dy'].value,
+                           self._stats['max_dy'].value,
+                           self._stats['min_dy'].unit,
+                           self._stats['mean_dy'].value,
+                           self._stats['mean_dy'].unit)
+        print(self._stats_tup[:2])
         self._stats_text = "Statistics in the selected region:\n" \
-                           " Minimum x: %3.4f %s\n" \
-                           " Maximum x: %3.4f %s\n" \
-                           " Mean x: %3.4f %s\n" \
-                           " Minimum dx: %3.4f %s\n" \
-                           " Maximum dx: %3.4f %s\n" \
-                           " Mean dx: %3.4f %s\n" \
-                           " Minimum dx (velocity): %3.4f %s\n" \
-                           " Maximum dx (velocity): %3.4f %s\n" \
-                           " Mean dx (velocity): %3.4f %s\n" \
-                           " Minimum y: %3.4e %s\n" \
-                           " Maximum y: %3.4e %s\n" \
-                           " Mean y: %3.4e %s\n" \
-                           " Median y: %3.4e %s\n" \
-                           " St. dev. y: %3.4e %s\n" \
-                           " Mean dy: %3.4e %s\n" \
-                           " Median dy: %3.4e %s" \
+                           " x range:        %3.4f - %3.4f %s\n" \
+                           " x mean:         %3.4f %s\n" \
+                           " bin size range: %3.4f - %3.4f %s (%3.4f - %3.4f %s)\n" \
+                           " bin size mean:  %3.4f %s (%3.4f %s)\n" \
+                           " y range:        %3.4e - %3.4e %s\n" \
+                           " y mean:         %3.4e %s\n" \
+                           " y median:       %3.4e %s\n" \
+                           " y stdev:        %3.4e %s\n" \
+                           " dy range:       %3.4e - %3.4e %s\n" \
+                           " dy mean:        %3.4e %s" \
                            % self._stats_tup
         if xmin == 0.0 and np.isinf(xmax):
             region = ("ALL SPECTRUM",)
@@ -708,11 +734,16 @@ class Spectrum(Frame):
             temp = (self._stats['min_x'].value, self._stats['max_x'].value,
                     self._stats['min_x'].unit)
             region = ("REGION: %3.4f-%3.4f %s" % temp,)
-        red = region+self._stats_tup[16:22]
+        red = region+(self._stats['mean_y'].value,
+                      self._stats['mean_y'].unit,
+                      self._stats['median_y'].value,
+                      self._stats['median_y'].unit,
+                      self._stats['std_y'].value,
+                      self._stats['std_y'].unit)
         self._stats_text_red = "%s\n" \
-                               "Mean y: %3.4e %s\n" \
-                               "Median y: %3.4e %s\n" \
-                               "St. dev. y: %3.4e %s" \
+                               "y mean: %3.4e %s\n" \
+                               "y median: %3.4e %s\n" \
+                               "y stdev: %3.4e %s" \
                                % red
         for s in self._stats_text.split('\n'):
             logging.info(s)
