@@ -116,7 +116,6 @@ class Graph(object):
             self._reg_unshade()
         if self._click_3 and len(sess._clicks)==2:
             self._reg_shade()
-            clicks_check = False
         #print(self._click_1, self._click_3, sess._clicks)
 
         if self._click_3:
