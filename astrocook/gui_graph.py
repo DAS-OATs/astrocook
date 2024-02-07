@@ -177,7 +177,7 @@ class GUIGraphMain(wx.Frame):
         xmin = (np.min(x)*xunit).to(au.nm).value
         xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = True
         #self._graph._stats = True
         self._gui._refresh()
@@ -185,7 +185,7 @@ class GUIGraphMain(wx.Frame):
     def _on_stats_hide(self, event):
         sess = self._gui._sess_sel
         del sess.spec._stats_text_red
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = False
         sess._shade = False
         self._gui._refresh()
