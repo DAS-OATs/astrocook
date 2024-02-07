@@ -715,7 +715,6 @@ class Spectrum(Frame):
                            self._stats['min_dy'].unit,
                            self._stats['mean_dy'].value,
                            self._stats['mean_dy'].unit)
-        print(self._stats_tup[:2])
         self._stats_text = "Statistics in the selected region:\n" \
                            " x range:        %3.4f - %3.4f %s\n" \
                            " x mean:         %3.4f %s\n" \
