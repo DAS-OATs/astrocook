@@ -330,17 +330,21 @@ class Format(object):
         logging.info(msg_format('ESPRESSO DRS S1D'))
 
         hdr = hdul[0].header
-        data = hdul[1].data
-        x = data['wavelength']
+        data = Table(hdul[1].data)
+        x = data['WAVE'][0]
         xmin, xmax = self._create_xmin_xmax(x)
-        try:
-            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.electron #erg/au.cm**2/au.s/au.nm
-        except:
-            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        if 'FLUX_CAL' in data.colnames:
+            y = data['FLUX_CAL'][0]/(xmax-xmin)
+            dy = data['ERR_CAL'][0]/(xmax-xmin)
+            yunit = au.erg/au.cm**2/au.s/au.nm
+        elif 'FLUX_EL' in data.colnames:
+            y = data['FLUX_EL'][0]/(xmax-xmin)
+            dy = data['ERR_EL'][0]/(xmax-xmin)
+            yunit = au.electron
+        else:
+            y = data['FLUX'][0]/(xmax-xmin)
+            dy = data['ERR'][0]/(xmax-xmin)
+            yunit = None
         resol = []*len(x)
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
