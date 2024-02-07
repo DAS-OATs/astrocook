@@ -95,17 +95,29 @@ class Graph(object):
         if event.button == 1:
             sess._clicks = [(x,y)]
             self._click_1 = True
-            return
+            self._click_3 = False
 
         if event.button == 3:
-            if self._click_1:
+            if len(sess._clicks)<3:
                 sess._clicks.append((x,y))
-                self._reg_shade()
             else:
-                sess._clicks = [(x,y)]
-                self._click_1 = False
-                self._reg_unshade()
+                sess._clicks[2] = (x,y)
+            self._click_1 = False
             self._click_3 = True
+
+        clicks_check = True
+        if len(sess._clicks)==3:
+            clicks_check = np.logical_and(
+                sess._clicks[2][0]>np.min([c[0] for c in sess._clicks[:2]]),
+                sess._clicks[2][0]<np.max([c[0] for c in sess._clicks[:2]]))
+            #print(clicks_check, np.min(sess._clicks[:2]), np.max(sess._clicks[:2]))
+
+        if self._click_3 and len(sess._clicks)==2:
+            self._reg_shade()
+        if (self._click_1 or not clicks_check) and sess._shade:
+            self._reg_unshade()
+        #print(self._click_1, self._click_3, sess._clicks)
+        """
             if not sess._shade and not self._click_1:
                 title.append('Zap bin')
                 attr.append('bin_zap')
@@ -143,6 +155,7 @@ class Graph(object):
                     title.append('Fit system')
                     attr.append('syst_fit')
             if self._click_1 and not self._click_3: return
+        """
         #print(sess._clicks)
 
         focus.PopupMenu(
@@ -401,7 +414,8 @@ class Graph(object):
 
     def _reg_unshade(self):
         self._shade.remove()
-
+        self._gui._sess_sel._shade = False
+        self._canvas.draw()
 
     def _seq(self, sess, norm, init_cursor=True):
         detail = self._panel != self._gui._graph_main._panel
