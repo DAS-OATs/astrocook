@@ -28,7 +28,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 import numpy as np
-from objbrowser import browse
+#from objbrowser import browse
 import operator
 import os
 import pickle
