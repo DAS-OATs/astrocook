@@ -600,6 +600,7 @@ class GUIMenuGeneral(GUIMenu):
                      '--',
                      {'targ': 'x_mask', 'append': 'spec'},
                      {'targ': 'mask_cond', 'append': 'spec'},
+                     {'targ': 'sky_mask', 'append': 'spec'},
                      {'targ': 'telluric_mask', 'append': 'spec'},
                      '--',
                      {'targ': 'snr_est', 'append': 'spec'},

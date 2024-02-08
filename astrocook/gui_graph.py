@@ -102,7 +102,6 @@ class GUIGraphMain(wx.Frame):
 
     def _on_cursor_stick(self, event=None, cursor_z=None):
         sess = self._gui._sess_sel
-        #print(self._graph._cursor._z * sess.spec._rfz)
         z = "%2.6f" % (self._graph._cursor._z*(1+sess.spec._rfz))
 
         if not hasattr(sess, '_cursors'):
@@ -115,11 +114,7 @@ class GUIGraphMain(wx.Frame):
         self._elem = sess._graph_elem
 
         self._gui._refresh()
-        """
-        if hasattr(self._gui, '_dlg_mini_graph'):
-            self._gui._dlg_mini_graph._refresh()
-        self._refresh(sess)
-        """
+
         if hasattr(self._gui, '_dlg_mini_systems'):
             # Unfreeze cursors in case they were frozen
             self._gui._graph_main._graph._cursor_frozen = False
@@ -127,10 +122,7 @@ class GUIGraphMain(wx.Frame):
                 self._gui._graph_det._graph._cursor_frozen = False
 
             # Refresh cursor
-            self._gui._dlg_mini_systems._shown = False
-            self._gui._dlg_mini_systems._on_cancel(e=None)
-            self._gui._dlg_mini_systems._shown = True
-            self._gui._dlg_mini_systems._on_apply(e=None)
+            self._gui._dlg_mini_systems._cursor_refresh()
 
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
@@ -185,7 +177,7 @@ class GUIGraphMain(wx.Frame):
         xmin = (np.min(x)*xunit).to(au.nm).value
         xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = True
         #self._graph._stats = True
         self._gui._refresh()
@@ -193,7 +185,7 @@ class GUIGraphMain(wx.Frame):
     def _on_stats_hide(self, event):
         sess = self._gui._sess_sel
         del sess.spec._stats_text_red
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = False
         sess._shade = False
         self._gui._refresh()

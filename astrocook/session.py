@@ -34,6 +34,7 @@ import pickle
 #import dill as pickle
 from scipy.signal import argrelmin
 import shutil
+import sys
 import tarfile
 import time
 
@@ -87,6 +88,20 @@ class Session(object):
             getattr(self, frame.__name__)._append(frame)
         else:
             setattr(self, frame.__name__, frame)
+
+
+    def _constr_from_mods(self):
+        systs = self.systs
+        systs._constr = {}
+        for m in systs._mods_t['mod']:
+            for p,v in m._pars.items():
+                i, k = p.split('_')[-2:]
+                i = int(i)
+                if v.expr != None:
+                    systs._constr[p] = (i, k, v.expr)
+                if k in ['z', 'logN', 'b'] and not v.vary and v.expr==None:
+                    systs._constr[p] = (i, k, None)
+
 
     def _data_iden(self, hdul, hdr):
 
@@ -224,6 +239,11 @@ class Session(object):
         # FIRE spectrum
         if instr == 'MagE':
             self.spec = format.mage_spectrum(hdul)
+            return 0
+
+        # HARPN spectrum
+        if instr == 'HARPN':
+            self.spec = format.harpn_spectrum(hdul)
             return 0
 
         # QUBRICS spectrum
@@ -373,6 +393,7 @@ class Session(object):
                             setattr(self, s, format.astrocook(data, s))
                         except:
                             pass
+
                 if s == 'systs':
                     try:
                         data = ascii.read(self.path[:-4]+'_'+s+'_mods.dat')
@@ -395,6 +416,7 @@ class Session(object):
                             for m in systs._mods_t['mod']:
                                 for attr in ['_mods_t']:
                                     setattr(m, attr, getattr(systs, attr))
+                            self._constr_from_mods()
                             only_constr = True
                             fast = True
             if self.spec is not None and self.systs is not None:
@@ -722,6 +744,7 @@ class Session(object):
                             try:
                                 try:
                                     class_mute(m, Spectrum)
+
                                 except:
                                     self.cb._mods_recreate(verbose=False)
                                     class_mute(m, Spectrum)
@@ -757,9 +780,11 @@ class Session(object):
 
                         if fail != []:
                             logging.warning("I could not serialize %i out of %i "
-                                            "models. They were not saved." \
+                                            "models. They were not saved:" \
                                             % (len(fail), len(obj._mods_t)))
-
+                            logging.warning("Here's the list of system IDs for "
+                                            "the models that weren't saved:")
+                            logging.warning(fail)
 
             file = open(root+'.json', "w")
             n = file.write(self.log.str)

@@ -164,7 +164,7 @@ fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
 
-telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
+sky_telluric = fits.open(pathlib.Path(p+'/sky_telluric.fits'))[1].data
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
