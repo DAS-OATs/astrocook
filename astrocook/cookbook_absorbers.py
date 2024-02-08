@@ -2832,9 +2832,13 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def syst_complete(self, x, l1, l2):
-        """ @brief Complete systems
-        @details The recipe tries to identify unknown absorption lines.
+    def systs_coincidence(self, x, l1, l2):
+        """ @brief Complete systems from redshift coincidence
+        @details Associate unknown lines to known systems by finding possible
+        redshift coincidences (using a reference list of transitions)
+        @param x TBD
+        @param l1 TBD
+        @param l2 TBD
         @return 0
         """
 
@@ -2862,7 +2866,7 @@ class CookbookAbsorbers(object):
             print('Ion\t\tref\t\tz')
 
             z = l/wl-1
-            eps = 1e-4 
+            eps = 1e-4
 
             for i, lab in enumerate(labels):
                 for j,z_ref in enumerate(z_systs):
@@ -2870,7 +2874,7 @@ class CookbookAbsorbers(object):
 
                     if (np.abs(dz)<eps) and (corr[j]!='Ly_a'):
                         print(f'{lab}\t{corr[j]}\t{z_ref}')
-                    
+
         print('\n\n------------------------------------------------\nDO TWO UNIDENTIFIED LINES HAVE A SIMILAR SHAPE?\n------------------------------------------------\n')
         ratio = l1/l2
         eps = 1e-5
@@ -2919,4 +2923,3 @@ class CookbookAbsorbers(object):
             for j, lab in enumerate(labels):
                 if abs(z[j])<eps:
                     print(f'{lab}\t{z[j]:.4f}')
-
