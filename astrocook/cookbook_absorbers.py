@@ -2860,49 +2860,66 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_coincidence(self, x, l1, l2):
-        """ @brief Complete systems from redshift coincidence
+    def systs_assoc(self, x, dz=1e-4):
+        """ @brief Associate lines to systems
         @details Associate unknown lines to known systems by finding possible
         redshift coincidences (using a reference list of transitions)
-        @param x TBD
-        @param l1 TBD
-        @param l2 TBD
+        @param x List of line wavelengths (nm)
+        @param dz Threshold for redshift coincidence
         @return 0
         """
 
         try:
             x = np.array(x)
-            l1 = np.float(l1)
-            l2 = np.float(l2)
+            eps = float(dz)
+            #l1 = np.float(xstart)
+            #l2 = np.float(xend)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        print('\n\n-----------------------------------------------------\nATOM_PAR TABLE\n-----------------------------------------------------\n',atom_par[0:226])
+        #print('\n\n-----------------------------------------------------\nATOM_PAR TABLE\n-----------------------------------------------------\n',atom_par[0:226])
         wl = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col2']]))
         labels = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col1']]))
         t = self.sess.systs._t
-        print('\n\n-----------------------------------------------------\nSYSTEM TABLE\n-----------------------------------------------------\n',t)
+        #print('\n\n-----------------------------------------------------\nSYSTEM TABLE\n-----------------------------------------------------\n',t)
         z_systs = np.ravel(np.array([d for d in t['z']]))
         corr = np.ravel(np.array([d for d in t['series']]))
 
         x.sort()
 
-        print('\n\n------------------------------------------------\nMATCH UNKOWN LINES TO KNOWN SYSTEMS\n------------------------------------------------\n')
+        #print('\n\n------------------------------------------------\nMATCH UNKOWN LINES TO KNOWN SYSTEMS\n------------------------------------------------\n')
+        logging.info('Matching lines with known systems...')
         for l in x:
-            print(f'\n------------- line @ {l} -------------')
-            print('Ion\t\tref\t\tz')
+            #print(f'\n------------- line @ {l} -------------')
+            #print('Ion\t\tref\t\tz')
 
             z = l/wl-1
-            eps = 1e-4
+            #eps = 1e-4
 
+            lab_l = []
+            corr_l = []
+            z_ref_l = []
             for i, lab in enumerate(labels):
                 for j,z_ref in enumerate(z_systs):
                     dz = z[i]-z_ref
 
                     if (np.abs(dz)<eps) and (corr[j]!='Ly_a'):
-                        print(f'{lab}\t{corr[j]}\t{z_ref}')
+                        lab_l.append(lab)
+                        corr_l.append(corr[j])
+                        z_ref_l.append(z_ref)
+                        #print(f'{lab}\t{corr[j]}\t{z_ref}')
+            lab_lu = np.unique(lab_l)
+            if len(lab_lu)>0:
+                logging.info("Line at %3.4f has %i possible association%s:" \
+                            % (l, len(lab_lu), 's' if len(lab_lu)>1 else ''))
+                #print(lab_lu, lab_l, corr_l, z_ref_l)
+                for u in lab_lu:
+                    w = np.where(np.array(lab_l)==u)[0]
+                    logging.info(" %s at z=%3.4f (as %s)" \
+                                 % (', '.join(np.array(corr_l)[w]), np.mean(np.array(z_ref_l)[w]), u))
 
+        """ Maybe put in a different recipe
         print('\n\n------------------------------------------------\nDO TWO UNIDENTIFIED LINES HAVE A SIMILAR SHAPE?\n------------------------------------------------\n')
         ratio = l1/l2
         eps = 1e-5
@@ -2916,7 +2933,9 @@ class CookbookAbsorbers(object):
                     print(labels[i],'\t',wl[i])
                     print(labels[j],'\t',wl[j])
                     print(f'proposed z = {l1/wl[i]-1}')
+        """
 
+        """
         print('\n\n------------------------------------------------\nWAVELENGTH RATIOS BETWEEN ALL THE UNKNOWN LINES\n------------------------------------------------\n')
         eps = 1e-5
         zmin, zmax = -1e-4, 4
@@ -2951,3 +2970,4 @@ class CookbookAbsorbers(object):
             for j, lab in enumerate(labels):
                 if abs(z[j])<eps:
                     print(f'{lab}\t{z[j]:.4f}')
+        """
