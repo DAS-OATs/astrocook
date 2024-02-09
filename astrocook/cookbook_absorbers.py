@@ -8,6 +8,7 @@ from astropy import constants as aconst
 from astropy import table as at
 from astropy import units as au
 from copy import deepcopy as dc
+import datetime as dt
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
@@ -1155,7 +1156,7 @@ class CookbookAbsorbers(object):
         try:
             #xmin = float(xmin) * au.nm
             #xmax = float(xmax) * au.nm
-            #chunks = chunk_parse(chunks)
+            chunks = chunk_parse(chunks)
             self._refit_n = int(refit_n)
             self._chi2rav_thres = float(chi2rav_thres)
             self._max_nfev = int(max_nfev)
@@ -1163,7 +1164,9 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        chunks = chunk_parse(chunks)
+        start = dt.datetime.now()
+
+        #chunks = chunk_parse(chunks)
 
         t = self.sess.systs._t
         x = np.array([np.array([to_x(z, trans).value for trans in trans_parse(s)])
@@ -1179,8 +1182,14 @@ class CookbookAbsorbers(object):
         mods_t = self.sess.systs._mods_t
 
         self.systs_fit(refit_n, recreate=recreate)
-        logging.info("I've fitted %i system%s." \
-                     % (len(ids), 's' if len(ids)>1 else ''))
+        end = dt.datetime.now()
+
+        chunks_s = '['
+        chunks_s += '] nm, ['.join(['%3.3f-%3.3f' % (c[0], c[1]) for c in chunks])
+        chunks_s += '] nm'
+        logging.info("I've fitted %i system%s in %s in %3.3f seconds." \
+                     % (len(ids), 's' if len(ids)>1 else '', chunks_s,
+                        (end-start).total_seconds()))
 
         self.sess.systs._unfreeze_pars(exclude=ids)
         self._spec_update()
