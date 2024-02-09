@@ -2860,7 +2860,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_assoc(self, x, dz=1e-4):
+    def _systs_assoc(self, x, dz=1e-4):
         """ @brief Associate lines to systems
         @details Associate unknown lines to known systems by finding possible
         redshift coincidences (using a reference list of transitions)
@@ -2872,8 +2872,6 @@ class CookbookAbsorbers(object):
         try:
             x = np.array(x)
             eps = float(dz)
-            #l1 = np.float(xstart)
-            #l2 = np.float(xend)
         except:
             logging.error(msg_param_fail)
             return 0
@@ -2889,7 +2887,6 @@ class CookbookAbsorbers(object):
         x.sort()
 
         #print('\n\n------------------------------------------------\nMATCH UNKOWN LINES TO KNOWN SYSTEMS\n------------------------------------------------\n')
-        logging.info('Matching lines with known systems...')
         for l in x:
             #print(f'\n------------- line @ {l} -------------')
             #print('Ion\t\tref\t\tz')
@@ -2919,30 +2916,89 @@ class CookbookAbsorbers(object):
                     logging.info(" %s at z=%3.4f (as %s)" \
                                  % (', '.join(np.array(corr_l)[w]), np.mean(np.array(z_ref_l)[w]), u))
 
-        """ Maybe put in a different recipe
-        print('\n\n------------------------------------------------\nDO TWO UNIDENTIFIED LINES HAVE A SIMILAR SHAPE?\n------------------------------------------------\n')
-        ratio = l1/l2
-        eps = 1e-5
-        for i in range(len(wl)):
-            for j in range(i, len(wl)):
-                ratio_i = wl[i]/wl[j]
 
-                z = l1/wl[i]-1
-                if (np.abs(ratio_i-ratio)<=eps):
-                    print('----------------------------')
-                    print(labels[i],'\t',wl[i])
-                    print(labels[j],'\t',wl[j])
-                    print(f'proposed z = {l1/wl[i]-1}')
+    def _doublet_iden(self, x, dz=1e-5):
+        """ @brief Identify doublet
+        @details Identify doublets from their wavelength ratio (using a reference
+        list of transitions)
+        @param x Test wavelengths of the doublets (nm; e.g. 500,501;600-601)
+        @param dz Threshold for redshift coincidence
+        @return 0
         """
 
+        try:
+            x = doublet_parse(x)
+            eps = float
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #print('\n\n-----------------------------------------------------\nATOM_PAR TABLE\n-----------------------------------------------------\n',atom_par[0:226])
+        wl = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col2']]))
+        labels = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col1']]))
+        t = self.sess.systs._t
+        #print('\n\n-----------------------------------------------------\nSYSTEM TABLE\n-----------------------------------------------------\n',t)
+        z_systs = np.ravel(np.array([d for d in t['z']]))
+        corr = np.ravel(np.array([d for d in t['series']]))
+
+        for (l1, l2) in x:
+            if l1 > l2:
+                l1, l2 = l2, l1
+            #print('\n\n------------------------------------------------\nDO TWO UNIDENTIFIED LINES HAVE A SIMILAR SHAPE?\n------------------------------------------------\n')
+            ratio = l1/l2
+            eps = 1e-5
+            for i in range(len(wl)):
+                for j in range(i, len(wl)):
+                    ratio_i = wl[i]/wl[j]
+
+                    z = l1/wl[i]-1
+                    if (np.abs(ratio_i-ratio)<=eps):
+                        #print('----------------------------')
+                        #print(labels[i],'\t',wl[i])
+                        #print(labels[j],'\t',wl[j])
+                        #print(f'proposed z = {l1/wl[i]-1}')
+                        logging.info("Doublet at %3.4f-%3.4f nm is compatible "\
+                                     "with %s-%s at z=%3.4f."
+                                     % (l1,l2,labels[i],labels[j],l1/wl[i]-1))
+
+
+    def _unknown_iden(self, x, dz=1e-5):
+        """ @brief Associate lines to systems
+        @details Associate unknown lines to known systems by finding possible
+        redshift coincidences (using a reference list of transitions)
+        @param x List of line wavelengths (nm)
+        @param dz Threshold for redshift coincidence
+        @return 0
         """
-        print('\n\n------------------------------------------------\nWAVELENGTH RATIOS BETWEEN ALL THE UNKNOWN LINES\n------------------------------------------------\n')
+
+        try:
+            x = np.array(x)
+            eps = float(dz)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        #print('\n\n-----------------------------------------------------\nATOM_PAR TABLE\n-----------------------------------------------------\n',atom_par[0:226])
+        wl = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col2']]))
+        labels = np.ravel(np.array([d2 for d2 in atom_par[0:226]['col1']]))
+        t = self.sess.systs._t
+        #print('\n\n-----------------------------------------------------\nSYSTEM TABLE\n-----------------------------------------------------\n',t)
+        z_systs = np.ravel(np.array([d for d in t['z']]))
+        corr = np.ravel(np.array([d for d in t['series']]))
+
+        x.sort()
+
+        #print('\n\n------------------------------------------------\nWAVELENGTH RATIOS BETWEEN ALL THE UNKNOWN LINES\n------------------------------------------------\n')
         eps = 1e-5
         zmin, zmax = -1e-4, 4
 
         skip = np.array(['H','Ly','D'])
 
-        for i in range(len(x)):
+        iden_l = []
+        lab_l = []
+        z_l = []
+        for i,_ in enum_tqdm(range(len(x)), len(x),
+                           "cookbook_absorbers: Identifying unknown lines"):
             for j in range(i+1,len(x)):
                 ratio = x[i]/x[j]
                 for k in range(len(wl)):
@@ -2952,13 +3008,29 @@ class CookbookAbsorbers(object):
                         z2 = x[j]/wl[l]-1
                         if ((np.abs(ratio_em-ratio)<=eps) and (np.abs(z1-z2)<=eps) and (z1<=zmax) and (z1>=zmin)):
                             if np.array([N not in labels[k] for N in skip]).all and np.array([N not in labels[l] for N in skip]).all():
-                                print('----------------------------------------')
-                                print(f'line 1: {x[i]:.2f}, {labels[k]}')
-                                print(f'line 2: {x[j]:.2f}, {labels[l]}')
-                                print(f'proposed z = {z1:.4f}')
+                                #print('----------------------------------------')
+                                #print(f'line 1: {x[i]:.2f}, {labels[k]}')
+                                #print(f'line 2: {x[j]:.2f}, {labels[l]}')
+                                #print(f'proposed z = {z1:.4f}')
+                                iden_l.append(x[i])
+                                iden_l.append(x[j])
+                                lab_l.append(labels[k])
+                                lab_l.append(labels[l])
+                                z_l.append(z1)
+                                z_l.append(z1)
 
-        ###
-
+        iden_lu = np.unique(iden_l)
+        for i in iden_lu:
+            w = np.where(np.array(iden_l)==i)[0]
+            logging.info("Line at %3.4f has %i possible redshift%s:" \
+                        % (i, len(w), 's' if len(w)>1 else ''))
+            z = np.array(z_l)[w]
+            lab = np.array(lab_l)[w]
+            zs = z[np.argsort(z)]
+            labs = lab[np.argsort(z)]
+            for (zsi, labsi) in zip(zs, labs):
+                logging.info(" z=%3.4f (as %s)" % (zsi, labsi))
+        """
         print('\n\n--------------------------------------------\nANY GALACTIC TRANSITIONS?\n--------------------------------------------\n')
 
         for i, l in enumerate(x):
