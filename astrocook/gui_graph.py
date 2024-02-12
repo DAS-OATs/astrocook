@@ -124,6 +124,7 @@ class GUIGraphMain(wx.Frame):
             # Refresh cursor
             self._gui._dlg_mini_systems._cursor_refresh()
 
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
@@ -132,6 +133,7 @@ class GUIGraphMain(wx.Frame):
         sess.spec._node_add(sess.nodes, x, y)
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
+
 
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
@@ -142,6 +144,7 @@ class GUIGraphMain(wx.Frame):
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
 
+
     def _on_region_extract(self, event):
         sess = self._gui._sess_sel
         x = [sess._clicks[0][0], sess._clicks[1][0]]
@@ -149,13 +152,15 @@ class GUIGraphMain(wx.Frame):
         xmax = np.max(x)
         sel_old = self._gui._sess_list.index(sess)
         reg = sess.cb.region_extract(xmin, xmax)
-        #self._gui._refresh()
+        sess._clicks = []
+        sess._shade = False
         self._gui._panel_sess._on_add(reg, open=False)
 
         sess = self._gui._sess_sel
         sess_list = [self._gui._sess_list[sel_old]]
         sess.log.merge_full('cb', 'region_extract',
                              {'xmin': xmin, 'xmax': xmax}, sess_list, sess)
+
 
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
@@ -164,7 +169,10 @@ class GUIGraphMain(wx.Frame):
         xmax = np.max(x)
         sess.log.append_full('cb', 'feature_zap', {'xmin': xmin, 'xmax': xmax})
         sess.spec._zap(xmin, xmax)
+        sess._clicks = []
+        sess._shade = False
         self._gui._refresh()
+
 
     def _on_stats_show(self, event):
         sess = self._gui._sess_sel
@@ -177,15 +185,15 @@ class GUIGraphMain(wx.Frame):
         xmin = (np.min(x)*xunit).to(au.nm).value
         xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = True
-        #self._graph._stats = True
         self._gui._refresh()
+
 
     def _on_stats_hide(self, event):
         sess = self._gui._sess_sel
         del sess.spec._stats_text_red
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = False
         sess._shade = False
         self._gui._refresh()
