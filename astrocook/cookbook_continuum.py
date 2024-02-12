@@ -443,7 +443,7 @@ class CookbookContinuum(object):
         deviation `std`, and the result is saved in column `cont` of the
         spectrum as the current estimate of the emission continuum.
         @param hwindow Half-window size in pixels for running mean
-        @param kappa Number of standar deviations for clipping
+        @param kappa Number of standard deviations for clipping
         @param iter Number of iterations
         @param std Standard deviation for gaussian convolution (km/s)
         @return 0
