@@ -407,7 +407,7 @@ class CookbookContinuum(object):
 ### Advanced
 
 
-    def flux_clip(self, hwindow=100, kappa=5, iter=100, std=500):
+    def flux_clip(self, hwindow=100, kappa=3, iter=100, std=500, delta_x=1000):
         """ @brief Clip flux in spectrum
         @details Discriminate absorbed spectrum bins by applying a kappa-sigma
         clipping within a running window.
@@ -427,7 +427,7 @@ class CookbookContinuum(object):
 
         In practice, a bin is regarded as an outlier if it has either
         $$\Delta y < -$$`k` $$\\times$$ `dy` or
-        $$\Delta y > 2$$`k` $$\\times$$ `dy`. Notice the two in the second
+        $$\Delta y > $$`k` $$\\times$$ `dy`. Notice the two in the second
         formula, meaning that a bin must deviate twice as much in the upper
         direction than in the lower direction to be considered as an outlier.
 
@@ -446,6 +446,7 @@ class CookbookContinuum(object):
         @param kappa Number of standard deviations for clipping
         @param iter Number of iterations
         @param std Standard deviation for gaussian convolution (km/s)
+        @param delta_x Spacing of nodes (km/s)
         @return 0
         """
 
@@ -454,6 +455,7 @@ class CookbookContinuum(object):
             kappa = float(kappa)
             iter = int(iter)
             std = float(std)
+            delta_x = float(delta_x)
         except:
             logging.error(msg_param_fail)
             return 0
@@ -516,6 +518,8 @@ class CookbookContinuum(object):
             lines._t['y_cont'] = np.interp(lines._t['x'], x_rm, y_rm)*lines._t['y'].unit
 
         spec._gauss_convolve(std=std, input_col='y_cont', output_col='cont')
+
+        self.nodes_extract(delta_x=delta_x, mode='cont')
 
         return 0
 
