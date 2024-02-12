@@ -125,6 +125,28 @@ class GUIGraphMain(wx.Frame):
             self._gui._dlg_mini_systems._cursor_refresh()
 
 
+    def _on_ew_compute(self, event):
+        sess = self._gui._sess_sel
+
+        x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        if x2<x1:
+            x1, x2 = x2, x1
+        x = 0.5*(x1+x2)
+        if sess.spec._t['x'].unit == au.Angstrom: x = 0.1*x
+        sess.cb.syst_new(series='Ly_a', z=x/xem_d['Ly_a'].value-1, resol=200000, refit_n=0)
+
+        sel = np.logical_and(sess.spec._t['x'].value>x1, sess.spec._t['x'].value<x2)
+        t = sess.spec._t[sel]
+        dx = (t['xmax']-t['xmin']).to(au.nm)
+        ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
+        logging.info("EW: %3.4f %s" \
+                     % (ew.value, ew.unit))
+
+        sess._clicks = []
+        sess._shade = False
+        self._gui._refresh()
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]

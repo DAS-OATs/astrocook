@@ -143,6 +143,9 @@ class Graph(object):
                     title.append('Fit system')
                     attr.append('syst_fit')
             if len(sess._clicks)==3:
+                if focus == self._gui._graph_main:
+                    title.append('Compute EW')
+                    attr.append('ew_compute')
                 if not sess._stats and focus == self._gui._graph_main:
                     title.append('Show stats')
                     attr.append('stats_show')
@@ -201,12 +204,10 @@ class Graph(object):
                 if self._systs_x.si.unit == au.m: thres = 0.5
                 if self._systs_x.si.unit == au.m/au.s: thres = 5
                 if xdiff[argmin] < thres:
-                    self._tag = ax.text(x,y, "System %s\n%s\nx = %1.3f %s\nz = %1.7f" \
+                    self._tag = ax.text(x,y, "Line %s\nx = %1.3f %s" \
                                         % (self._systs_id[argmin],
-                                           self._systs_series[argmin],
                                            self._systs_l[argmin].value,
-                                           self._systs_l[argmin].unit,
-                                           self._systs_z[argmin]),
+                                           self._systs_l[argmin].unit),
                                         color=self._systs_color)
                     self._systs_id_argmin = self._systs_id[argmin]
         except:

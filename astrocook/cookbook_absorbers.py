@@ -979,7 +979,10 @@ class CookbookAbsorbers(object):
 
     def _z_off(self, trans, z):
         for t in trans:
-            x = xem_d[t]*(1+z)
+            if t=='unknown':
+                x = z*au.nm
+            else:
+                x = xem_d[t]*(1+z)
             if x < self.sess.spec.x[0] or x > self.sess.spec.x[-1]:
                 logging.warning("%s transition at redshift %3.2f is outside "
                                 "the spectral range! Please choose a different "
