@@ -125,6 +125,21 @@ class GUIGraphMain(wx.Frame):
             self._gui._dlg_mini_systems._cursor_refresh()
 
 
+    def _ew_compute(self, x1, x2, id):
+        sess = self._gui._sess_sel
+
+        unit = sess.spec._t['x'].unit
+        sel = np.logical_and(sess.spec._t['x'].value>x1, sess.spec._t['x'].value<x2)
+        t = sess.spec._t[sel]
+        dx = (t['xmax']-t['xmin']).to(unit)
+        ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
+        last_syst = np.where(sess.systs._t['id']==id)
+        sess.systs._t['btur'][last_syst] = ew.value
+        xl = (1+sess.systs._t['z'][last_syst])*xem_d['Ly_a'].to(unit)
+        logging.info("EW at %3.4f %s: %3.3e %s." \
+                     % (xl.value, xl.unit, ew.value, ew.unit))
+
+
     def _on_ew_compute(self, event):
         sess = self._gui._sess_sel
 
@@ -135,16 +150,8 @@ class GUIGraphMain(wx.Frame):
         unit = sess.spec._t['x'].unit
         if unit == au.Angstrom: x = 0.1*x
         sess.cb.syst_new(series='Ly_a', z=x/xem_d['Ly_a'].value-1, resol=200000, refit_n=0)
-        sel = np.logical_and(sess.spec._t['x'].value>x1, sess.spec._t['x'].value<x2)
-        t = sess.spec._t[sel]
-        dx = (t['xmax']-t['xmin']).to(unit)
-        ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
-        last_syst = np.where(sess.systs._t['id']==np.max(sess.systs._t['id']))
-        sess.systs._t['btur'][last_syst] = ew.value
-        xl = (1+sess.systs._t['z'][last_syst])*xem_d['Ly_a'].to(unit)
-        logging.info("EW at %3.4f %s: %3.3e %s." \
-                     % (xl.value, xl.unit, ew.value, ew.unit))
-
+        id = np.max(sess.systs._t['id'])
+        self._ew_compute(x1, x2, id)
         sess._clicks = []
         sess._shade = False
         self._gui._refresh()
@@ -227,10 +234,19 @@ class GUIGraphMain(wx.Frame):
     def _on_syst_fit(self, event):
         id = self._gui._graph_main._graph._systs_id_argmin
 
-        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
-                   'max_nfev': max_nfev_def}]
-        dlg = GUIDialogMethod(self._gui, 'Fit system...', 'syst_fit',
-                              params_last = params)
+        #params = [{'ids': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+        #           'max_nfev': max_nfev_def}]
+        #dlg = GUIDialogMethod(self._gui, 'Fit system...', 'syst_fit',
+        #                      params_last = params)
+        sess = self._gui._sess_sel
+        sess.cb.syst_fit(ids="[%s]" % id, refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def)
+
+        last_syst = np.where(sess.systs._t['id']==int(id))
+        unit = sess.spec._t['x'].unit
+        xl = (1+sess.systs._t['z'][last_syst])*xem_d['Ly_a'].to(unit)
+        x1, x2 = (xl-1*au.Angstrom).value, (xl+1*au.Angstrom).value
+        self._ew_compute(x1, x2, int(id))
+
         self._gui._refresh(init_cursor=True)
 
 
