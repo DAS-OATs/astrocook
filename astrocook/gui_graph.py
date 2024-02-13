@@ -132,15 +132,18 @@ class GUIGraphMain(wx.Frame):
         if x2<x1:
             x1, x2 = x2, x1
         x = 0.5*(x1+x2)
-        if sess.spec._t['x'].unit == au.Angstrom: x = 0.1*x
+        unit = sess.spec._t['x'].unit
+        if unit == au.Angstrom: x = 0.1*x
         sess.cb.syst_new(series='Ly_a', z=x/xem_d['Ly_a'].value-1, resol=200000, refit_n=0)
-
         sel = np.logical_and(sess.spec._t['x'].value>x1, sess.spec._t['x'].value<x2)
         t = sess.spec._t[sel]
-        dx = (t['xmax']-t['xmin']).to(au.nm)
+        dx = (t['xmax']-t['xmin']).to(unit)
         ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
-        logging.info("EW: %3.4f %s" \
-                     % (ew.value, ew.unit))
+        last_syst = np.where(sess.systs._t['id']==np.max(sess.systs._t['id']))
+        sess.systs._t['btur'][last_syst] = ew.value
+        xl = (1+sess.systs._t['z'][last_syst])*xem_d['Ly_a'].to(unit)
+        logging.info("EW at %3.4f %s: %3.3e %s." \
+                     % (xl.value, xl.unit, ew.value, ew.unit))
 
         sess._clicks = []
         sess._shade = False

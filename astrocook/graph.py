@@ -204,9 +204,11 @@ class Graph(object):
                 if self._systs_x.si.unit == au.m: thres = 0.5
                 if self._systs_x.si.unit == au.m/au.s: thres = 5
                 if xdiff[argmin] < thres:
-                    self._tag = ax.text(x,y, "Line %s\nx = %1.3f %s" \
+                    self._tag = ax.text(x,y, "Line %s\nx = %3.4f %s\nEW = %3.3e %s" \
                                         % (self._systs_id[argmin],
                                            self._systs_l[argmin].value,
+                                           self._systs_l[argmin].unit,
+                                           self._systs_ew[argmin],
                                            self._systs_l[argmin].unit),
                                         color=self._systs_color)
                     self._systs_id_argmin = self._systs_id[argmin]
@@ -484,18 +486,22 @@ class Graph(object):
                     if xcol == 'z' :
                         z = sess.systs.z
                         series = sess.systs.series
+                        ew = sess.systs._t['btur']
                         id = sess.systs.id
                         z_list = [[zf]*len(trans_parse(s)) for zf,s in zip(z,series)]
                         series_list = [trans_parse(s) for s in series]
+                        ew_list = [[ewf]*len(trans_parse(s)) for ewf,s in zip(ew,series)]
                         id_list = [[idf]*len(trans_parse(s)) for idf,s in zip(id,series)]
                         z_flat = np.array([z for zl in z_list for z in zl])
                         series_flat = np.array([s for sl in series_list for s in sl])
+                        ew_flat = np.array([ew for ewl in ew_list for ew in ewl])
                         id_flat = np.array([id for idl in id_list for id in idl])
                     else:
                         z = float(xcol)
                         series = sess._cursors[xcol]._series
                         z_flat = np.array([z]*len(trans_parse(series)))
                         series_flat = trans_parse(series)
+                        ew_flat = np.array([None]*len(trans_parse(series)))
                         id_flat = np.array(['']*len(trans_parse(series)))
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
@@ -529,6 +535,7 @@ class Graph(object):
                     self._systs_series = series_flat
                     self._systs_z = z_flat
                     self._systs_x = x
+                    self._systs_ew = ew_flat
                     self._systs_id = id_flat
 
                     if hasattr(self._gui._graph_main, '_z_sel'):
