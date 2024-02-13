@@ -402,14 +402,15 @@ class Graph(object):
         sess = self._gui._sess_sel
         x = sess.spec.x.value
 
-        sess._shade_where = np.logical_and(x>sess._clicks[0][0],
-                                           x<sess._clicks[1][0])
+        x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        if x2<x1: x1, x2 = x2, x1
+        sess._shade_where = np.logical_and(x>x1, x<x2)
         sess._shade = True
         trans = transforms.blended_transform_factory(
                     self._ax.transData, self._ax.transAxes)
 
         self._shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
-                                      transform=trans, color='C1', alpha=0.2)
+                                      transform=trans, color='C0', alpha=0.2)
 
         self._canvas.draw()
         logging.info("A region has been activated. Right-click inside to call "\
