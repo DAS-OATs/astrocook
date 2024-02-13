@@ -140,7 +140,7 @@ class Graph(object):
                     title.append('New system')
                     attr.append('syst_new')
                 if sess.systs is not None and sess.systs._t is not None:
-                    title.append('Fit system')
+                    title.append('Fit line')
                     attr.append('syst_fit')
             if len(sess._clicks)==3:
                 if focus == self._gui._graph_main:
