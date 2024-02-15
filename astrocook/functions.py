@@ -312,6 +312,14 @@ def detect_local_minima(arr):
     #return np.where(detected_minima)
     return detected_minima
 
+def doublet_parse(doublets):
+    doublet = []
+    for c in doublets.split(';'):
+        x = c.split(',')
+        doublet.append((float(x[0]), float(x[1])))
+    return doublet
+
+
 def expr_check(node):
     if isinstance(node, list):
         iter = node
