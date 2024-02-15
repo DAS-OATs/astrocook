@@ -2880,7 +2880,8 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            x = np.array(x)
+            x = np.array(x[1:-1].split(','), dtype=float) if type(x)==str \
+                else np.array(x)
             dz_systs = float(dz_systs)
             dz_doublet = float(dz_doublet)
             dz_unknown = float(dz_unknown)
@@ -2890,7 +2891,6 @@ class CookbookAbsorbers(object):
         except:
             logging.error(msg_param_fail)
             return 0
-
 
         self._systs_assoc(x, dz_systs)
         if x_doublet not in [None, ""]: self._doublet_iden(x_doublet, dz_doublet)
@@ -2910,7 +2910,8 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            x = np.array(x)
+            x = np.array(x[1:-1].split(','), dtype=float) if type(x)==str \
+                else np.array(x)
             eps = float(dz)
         except:
             logging.error(msg_param_fail)
@@ -3013,7 +3014,8 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            x = np.array(x)
+            x = np.array(x[1:-1].split(','), dtype=float) if type(x)==str \
+                else np.array(x)
             eps = float(dz)
             z_min = float(z_min)
             z_max = float(z_max)
@@ -3089,7 +3091,8 @@ class CookbookAbsorbers(object):
         """
 
         try:
-            x = np.array(x)
+            x = np.array(x[1:-1].split(','), dtype=float) if type(x)==str \
+                else np.array(x)
             eps = float(dz)
         except:
             logging.error(msg_param_fail)
