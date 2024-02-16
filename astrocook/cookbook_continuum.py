@@ -408,7 +408,7 @@ class CookbookContinuum(object):
 
 
     def flux_clip(self, xmin, xmax, hwindow=100, kappa_hi=6, kappa_lo=3,
-                  iter=100, std=500, fudge=1, delta_x=5000):
+                  iter=100, fudge=1, std=500, delta_x=5000):
         """ @brief Clip flux in spectrum
         @details Discriminate absorbed spectrum bins by applying a kappa-sigma
         clipping within a running window.
@@ -451,8 +451,8 @@ class CookbookContinuum(object):
         @param kappa_hi Number of standard deviations for clipping above
         @param kappa_lo Number of standard deviations for clipping below
         @param iter Number of iterations
-        @param std Standard deviation for gaussian convolution (km/s)
         @param fudge Fudge factor to scale the continuum
+        @param std Standard deviation for gaussian convolution (km/s)
         @param delta_x Spacing of nodes (km/s)
         @return 0
         """
@@ -464,8 +464,8 @@ class CookbookContinuum(object):
             kappa_hi = float(kappa_hi)
             kappa_lo = float(kappa_lo)
             iter = int(iter)
-            std = float(std)
             fudge = float(fudge)
+            std = float(std)
             delta_x = float(delta_x)
         except:
             logging.error(msg_param_fail)
