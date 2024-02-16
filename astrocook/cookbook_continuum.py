@@ -407,7 +407,8 @@ class CookbookContinuum(object):
 ### Advanced
 
 
-    def flux_clip(self, hwindow=100, kappa=3, iter=100, std=500, delta_x=1000):
+    def flux_clip(self, hwindow=100, kappa_hi=6, kappa_lo=3, iter=100, std=500,
+                  fudge=1, delta_x=5000):
         """ @brief Clip flux in spectrum
         @details Discriminate absorbed spectrum bins by applying a kappa-sigma
         clipping within a running window.
@@ -426,10 +427,8 @@ class CookbookContinuum(object):
         residuals of sky line or cosmic ray hit subtraction).
 
         In practice, a bin is regarded as an outlier if it has either
-        $$\Delta y < -$$`k` $$\\times$$ `dy` or
-        $$\Delta y > $$`k` $$\\times$$ `dy`. Notice the two in the second
-        formula, meaning that a bin must deviate twice as much in the upper
-        direction than in the lower direction to be considered as an outlier.
+        $$\Delta y < -$$`kappa_hi` $$\\times$$ `dy` or
+        $$\Delta y > $$`kappa_lo` $$\\times$$ `dy`.
 
         The clipping is iterated several times, always removing the outliers
         and re-computing `y_rm`, until no more outliers are found or a maximum
@@ -440,21 +439,26 @@ class CookbookContinuum(object):
         created for the upper outliers (“emitted” bins) and a column `y_cont`
         is created for the remaining bins (continuum bins). The latter is
         smoothed in the velocity space with a gaussian filter with standard
-        deviation `std`, and the result is saved in column `cont` of the
-        spectrum as the current estimate of the emission continuum.
+        deviation `std`, and multiplied for a `fudge` factor. The result is
+        saved in column `cont` of the spectrum as the current estimate of the
+        emission continuum.
         @param hwindow Half-window size in pixels for running mean
-        @param kappa Number of standard deviations for clipping
+        @param kappa_hi Number of standard deviations for clipping above
+        @param kappa_lo Number of standard deviations for clipping below
         @param iter Number of iterations
         @param std Standard deviation for gaussian convolution (km/s)
+        @param fudge Fudge factor to scale the continuum
         @param delta_x Spacing of nodes (km/s)
         @return 0
         """
 
         try:
             hwindow = int(hwindow)
-            kappa = float(kappa)
+            kappa_hi = float(kappa_hi)
+            kappa_lo = float(kappa_lo)
             iter = int(iter)
             std = float(std)
+            fudge = float(fudge)
             delta_x = float(delta_x)
         except:
             logging.error(msg_param_fail)
@@ -487,8 +491,8 @@ class CookbookContinuum(object):
 
         sum_sel = len(spec._t)
         for i in range(iter):
-            sel = spec._t['y']-spec._t['y_rm']<-kappa*spec._t['dy']
-            sel = np.logical_or(sel, spec._t['y']-spec._t['y_rm']>kappa*2*spec._t['dy'])
+            sel = spec._t['y']-spec._t['y_rm']<-kappa_lo*spec._t['dy']
+            sel = np.logical_or(sel, spec._t['y']-spec._t['y_rm']>kappa_hi*spec._t['dy'])
             spec._t['y_em'][sel] = 0
             spec._t['y_abs'][sel] = 1
             x_rm = spec._t['x'][~sel]
@@ -518,7 +522,7 @@ class CookbookContinuum(object):
             lines._t['y_cont'] = np.interp(lines._t['x'], x_rm, y_rm)*lines._t['y'].unit
 
         spec._gauss_convolve(std=std, input_col='y_cont', output_col='cont')
-
+        spec._t['cont'] *= fudge
         self.nodes_extract(delta_x=delta_x, mode='cont')
 
         return 0
