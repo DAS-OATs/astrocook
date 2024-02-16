@@ -83,12 +83,15 @@ class SystModel(LMComposite):
                     del fit_kws_c['jac']
                     use_jac = False
             if not use_jac:
+                spec_temp = dc(self._spec)
+                self._spec = None
                 fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                                  weights=self._wf,
                                                  max_nfev=max_nfev,
                                                  fit_kws=fit_kws_c,
                                                  nan_policy='omit',
                                                  method='least_squares')
+                self._spec = spec_temp
                 if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='blue')
             if plot_jac: plt.show()
             time_end = datetime.datetime.now()

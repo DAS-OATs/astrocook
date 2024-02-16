@@ -10,12 +10,9 @@
     },
     {
       "cookbook": "cb",
-      "recipe": "lyab_chunk_fit",
+      "recipe": "systs_fit",
       "params": {
-          "z_start": 3.7,
-          "z_end": 3.9,
-          "dv": 1000,
-          "ol": 100
+          "refit_n": 0
       }
     },
     {
