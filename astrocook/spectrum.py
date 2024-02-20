@@ -770,6 +770,8 @@ class Spectrum(Frame):
         return 0
 
     def psf_gauss(self, x, resol):
+        if len(x)==0:
+            return []
         c = x[len(x)//2]
         sigma = c / resol * 4.246609001e-1
 

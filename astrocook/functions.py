@@ -262,7 +262,10 @@ def convolve_simple(dat, kernel):
     pad = np.ones(npts)
     #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
     tmp = np.pad(dat, (npts, npts), 'edge')
-    out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
+    if len(kernel)==0:
+        out = tmp
+    else:
+        out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
     noff = int((len(out) - npts) * 0.5)
     #ret = (out[noff:])[:npts]
     ret = out[noff:noff+npts]
