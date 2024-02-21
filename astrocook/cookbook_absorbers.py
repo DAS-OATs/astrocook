@@ -596,8 +596,7 @@ class CookbookAbsorbers(object):
         from .syst_model import SystModel
         mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
         #print(self.sess.defs.dict['voigt'])
-        mod._new_voigt(series, z, logN, b, resol,
-                       defs=self.sess.defs.dict['voigt'])
+        mod._new_voigt(series, z, logN, b, resol, defs=self.sess.defs)
 
         # When a single system is added, it is stored only on the model table
         self._mods_update(mod, incr=False)
