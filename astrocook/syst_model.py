@@ -17,8 +17,6 @@ warnings.filterwarnings("ignore")
 # from line_profiler import LineProfiler
 # from filprofiler.api import profile
 
-thres = 1e-1
-
 class SystModel(LMComposite):
 
     def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
@@ -147,106 +145,10 @@ class SystModel(LMComposite):
                 self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
 
 
-    def _make_group(self, thres=thres):
+    def _make_groups(self, thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
-        spec = self._spec
-
-        mods_t = self._mods_t
-        self._xs = np.array(spec._safe(spec.x).to(au.nm))
-        #ys = self._lines.eval(x=self._xs, params=self._pars)
-
-        ys = self._lines.eval(x=self._xs, params=self._pars)
-        #self._pars.pretty_print()
-
-        self._group = self._lines
-        self._group_list = []
-        #plt.plot(self._xs, ys)
-
-        for i, s in enumerate(mods_t):
-            mod = s['mod']
-            #ys_s = mod.eval(x=self._xs, params=mod._pars)
-            ys_s = mod._ys
-            ymax = np.maximum(ys, ys_s)
-            #print(np.amin(ymax))
-            y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
-            pars_cond = False
-            #for p,v in self._pars.items():
-            for p,v in self._constr.items():
-                for mod_p,mod_v in mod._pars.items():
-                    pars_cond = pars_cond or v==mod_p
-            #print(s['id'],pars_cond)
-            if y_cond or pars_cond:
-                """
-                print('mod')
-                mod._pars.pretty_print()
-                print('self')
-                self._pars.pretty_print()
-                """
-                self._group *= mod._group
-                mod = s['mod']
-                for p,v in mod._pars.items():
-                    if v.expr != None:
-                        self._constr[p] = v.expr
-                        v.expr = ''
-
-                """
-                print('mod cleaned')
-                mod._pars.pretty_print()
-                """
-                self._pars.update(mod._pars)
-                """
-                print('combine')
-                self._pars.pretty_print()
-                """
-                #self._pars.pretty_print()
-                #print(self._constr)
-                if pars_cond or self._constr != {}:
-                    for p,v in self._constr.items():
-                        #print(s['id'], pars_cond, self._constr != {}, self._constr, p, v)
-                        #print(self._pars[p])
-                        #print(self._pars[v])
-                        self._pars[p].expr = v
-                        if v != '':
-                            #print(self._pars[v])
-                            try:
-                                self._pars[p].min = self._pars[v].min
-                                self._pars[p].max = self._pars[v].max
-                                self._pars[p].value = self._pars[v].value
-                            except:
-                                self._pars[p].expr = ''
-                        #print(self._pars[p])
-                """
-                print('constrained')
-                self._pars.pretty_print()
-                """
-                self._group_list.append(i)
-                #self._pars.pretty_print()
-
-                ##
-                mod._ys = self._group.eval(x=self._xs, params=self._pars)
-                ##
-        #print(self._group_list)
-        #print('final')
-        #self._pars.pretty_print()
-        if len(self._group_list) > 1:
-            ids = [i for il in mods_t['id'][self._group_list[1:]] for i in il]
-            mods_t.remove_rows(self._group_list[1:])
-            for i in ids:
-                mods_t['id'][self._group_list[0]].append(i)
-        if self._group_list == []:
-            self._group_sel = -1
-        else:
-            self._group_sel = self._group_list[0]
-        self._ys = self._group.eval(x=self._xs, params=self._pars)
-        #plt.plot(self._xs, self._ys, linestyle='--')
-        #plt.show()
-
-
-    def _make_group2(self, thres=thres):
-        """ @brief Group lines that must be fitted together into a single model.
-        """
         time_check = False
         #T = time.time()
         #tt = time.time()
@@ -560,12 +462,11 @@ class SystModel(LMComposite):
              d['resol_min'], d['resol_max'], d['resol_expr']))
         #"""
 
-    def _make_regions(self, mod, xs, thres=thres, eval=False):
+    def _make_regions(self, mod, xs, thres, eval=False):
         spec = mod._spec
         if 'fit_mask' not in spec.t.colnames:
             #logging.info("I'm adding column 'fit_mask' to spectrum.")
             spec.t['fit_mask'] = np.zeros(len(spec.x), dtype=bool)
-
 
         #self._pars.pretty_print()
         #print(xs)
@@ -601,29 +502,6 @@ class SystModel(LMComposite):
         return xr, yr, wr
 
 
-
-    def _make_regs(self, thres=thres):
-        spec = self._spec
-
-        #ys = self._group.eval(x=self._xs, params=self._pars)
-        #c = np.where(ys<1-thres)[0]
-        c = []
-        t = thres
-        while len(c)==0:
-            c = np.where(self._ys<1-t)[0]
-            t = t*0.5
-
-        self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
-
-        self._xf = np.concatenate([np.array(x) for  x in self._xr])
-        self._yf = np.array(spec.y[c]/spec._t['cont'][c])
-        #self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
-        self._wf = np.array(np.power(spec._t['cont'][c]/spec.dy[c], 2))
-        try:
-            self._xm = np.concatenate([np.arange(x[0], x[-1], 1e-5) \
-                                      for x in self._xr])
-        except:
-            self._xm = np.array([])
 
     def _make_N_tot(self, N_tot_specs=(None, None, None)):
         lines_pref, N_tot, N_other_expr = N_tot_specs
@@ -668,6 +546,8 @@ class SystModel(LMComposite):
         self._resol = resol
         self._series = series
 
+        thres = defs.dict['group']['thres']
+
         time_check = False
         if time_check:
             tt = time.time()
@@ -675,7 +555,7 @@ class SystModel(LMComposite):
             if l not in self._vars:
                 self._vars[l] = v
 
-        self._make_defs(defs)
+        self._make_defs(defs.dict['voigt'])
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
@@ -690,7 +570,7 @@ class SystModel(LMComposite):
             tt = time.time()
 
         #self._make_group()
-        self._make_group2()
+        self._make_groups(thres=thres)
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
@@ -701,7 +581,8 @@ class SystModel(LMComposite):
             tt = time.time()
 
         ys = dc(self._ys)
-        self._xr, self._yr, self._wr = self._make_regions(self, self._xs)
+        self._xr, self._yr, self._wr = \
+            self._make_regions(self, self._xs, thres=thres)
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()

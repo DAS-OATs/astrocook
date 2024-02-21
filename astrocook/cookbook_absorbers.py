@@ -54,7 +54,7 @@ class CookbookAbsorbers(object):
         for logN in logN_list:
             mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
             mod._new_voigt(series, z, logN, b, resol,
-                           defs=self.sess.defs.dict['voigt'])
+                           defs=self.sess.defs)
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
@@ -339,7 +339,7 @@ class CookbookAbsorbers(object):
             mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'],
-                           defs=self.sess.defs.dict['voigt'])
+                           defs=self.sess.defs)
             self._mods_update(mod)
         mods_n = len(self.sess.systs._mods_t)
         if verbose:
@@ -470,7 +470,7 @@ class CookbookAbsorbers(object):
                         N_tot_specs = (None, None, None)
                     mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs.dict['voigt'],
+                                   defs=self.sess.defs,
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
                     self._mods_update(mod)
 
