@@ -427,7 +427,7 @@ class Session(object):
                 self.cb._spec_update()
                 self.systs._dict_update(mods=True)
 
-            os.remove(self._root_stem+'.json')
+            if os.path.exists(self._root_stem+'.json'): os.remove(self._root_stem+'.json')
             self._rm_ac_temp(root)
 
         else:
