@@ -52,8 +52,8 @@ class CookbookAbsorbers(object):
         ynorm_list = []
         logN_list = np.arange(12, 14, 0.1)
         for logN in logN_list:
-            mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
-            mod._new_voigt(series, z, logN, b, resol,
+            mod = SystModel(systs, z0=z, psf_func = spec.psf_gauss)
+            mod._new_voigt(spec, series, z, logN, b, resol,
                            defs=self.sess.defs)
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
@@ -336,8 +336,8 @@ class CookbookAbsorbers(object):
                         constr[k] = v[2]
                     else:
                         vars[k.split('_')[-1]+'_vary'] = False
-            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
-            mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+            mod = SystModel(systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
+            mod._new_voigt(spec, series=s['series'], z=s['z'], logN=s['logN'],
                            b=s['b'], resol=s['resol'],
                            defs=self.sess.defs)
             self._mods_update(mod)
@@ -455,7 +455,7 @@ class CookbookAbsorbers(object):
                                 constr[k] = v[2]
                             else:
                                 vars[k.split('_')[-1]+'_vary'] = False
-                    mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
+                    mod = SystModel(systs, z0=s['z0'], vars=vars, constr=constr, psf_func = spec.psf_gauss)
                     if any([mod._id in i for i in systs._mods_t['id']]):
                         wrong_id.append(mod._id)
                         corr_id.append(np.max(systs_t['id'])+1)
@@ -468,7 +468,7 @@ class CookbookAbsorbers(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
-                    mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+                    mod._new_voigt(spec, series=s['series'], z=s['z'], logN=s['logN'],
                                    b=s['b'], resol=s['resol'],
                                    defs=self.sess.defs,
                                    N_tot=N_tot, N_tot_specs=N_tot_specs)
@@ -594,9 +594,9 @@ class CookbookAbsorbers(object):
                           None, 0.0, None, resol, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         from .syst_model import SystModel
-        mod = SystModel(spec, systs, z0=z, psf_func = spec.psf_gauss)
+        mod = SystModel(systs, z0=z, psf_func = spec.psf_gauss)
         #print(self.sess.defs.dict['voigt'])
-        mod._new_voigt(series, z, logN, b, resol, defs=self.sess.defs)
+        mod._new_voigt(spec, series, z, logN, b, resol, defs=self.sess.defs)
 
         # When a single system is added, it is stored only on the model table
         self._mods_update(mod, incr=False)

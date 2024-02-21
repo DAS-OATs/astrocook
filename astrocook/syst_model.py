@@ -19,11 +19,11 @@ warnings.filterwarnings("ignore")
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
+    def __init__(self, systs, series=[], vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=None,
                  cont_func=None):
-        self._spec = spec
+        #self._spec = spec
         try:
             self._mods_t = systs._mods_t
         except:
@@ -145,14 +145,14 @@ class SystModel(LMComposite):
                 self._defs['x_lim'] = [[float(i) for i in x.split('-')] for x in xl.split(',')]
 
 
-    def _make_groups(self, thres):
+    def _make_groups(self, spec, thres):
         """ @brief Group lines that must be fitted together into a single model.
         """
 
         time_check = False
         #T = time.time()
         #tt = time.time()
-        spec = self._spec
+        #spec = self._spec
 
         mods_t = self._mods_t
         d = self._defs
@@ -345,7 +345,7 @@ class SystModel(LMComposite):
         self._lines = line
 
 
-    def _make_lines_psf(self, N_tot=False):
+    def _make_lines_psf(self, spec, N_tot=False):
         if N_tot:
             lines_func = lines_voigt_N_tot
         else:
@@ -375,11 +375,9 @@ class SystModel(LMComposite):
         d = self._defs
 
         if self._resol == None or np.isnan(self._resol):
-            #c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
-            #d['resol'] = self._spec.t['resol'][c][0]
             x = to_x(d['z'], trans_parse(self._series)[0])
-            c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
-            d['resol'] = self._spec.t['resol'][c]
+            c = np.argmin(np.abs(spec.x.to(au.nm).value-x.to(au.nm).value))
+            d['resol'] = spec.t['resol'][c]
             self._resol = d['resol']
         else:
             d['resol'] = self._resol
@@ -404,66 +402,15 @@ class SystModel(LMComposite):
                  10**d['logN_min'], 10**d['logN_max'], ''),
                 (self._lines_pref+'N_other', 10**d['logN_min'], True,
                  10**d['logN_min'], 10**d['logN_max'], ''))
-        """
-                (self._lines_pref+'logN_tot', d['logN_min'], d['logN_vary'],
-                 d['logN_min'], d['logN_max'], ''),
-                (self._lines_pref+'logN_other', d['logN_min'], True,
-                 d['logN_min'], d['logN_max'], ''))
-        """
 
         self._lines = line_psf
 
-        """
-        x = np.array(self._spec._safe(self._spec.x).to(au.nm))
-        self._lines_jac = globals()[self._lines_func.__name__+'_jac']\
-            (x, d['z'], d['logN'], d['b'], d['btur'])
-
-        print(self._lines_jac)
-        print(self._lines_jac.shape)
-        """
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
 
-    def _make_psf(self):
-        d = self._defs
-        """
-        for i, r in enumerate(self._xr):
-            if self._resol == None:
-                c = np.where(self._spec.x.to(au.nm).value==r[len(r)//2])
-                d['resol'] = self._spec.t['resol'][c][0]
-            self._psf_pref = self._psf_func.__name__+'_'+str(i)+'_'
-            psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=r)
-            if i == 0:
-                self._psf = psf
-            else:
-                self._psf += psf
-            self._pars.update(psf.make_params())
-            self._pars.add_many(
-                (self._psf_pref+'resol', d['resol'], d['resol_vary'],
-                 d['resol_min'], d['resol_max'], d['resol_expr']))
-        """
-
-        if self._resol == None:
-            #c = np.where(self._spec.x.to(au.nm).value==self._xs[len(self._xs)//2])
-            #d['resol'] = self._spec.t['resol'][c][0]
-            x = to_x(d['z'], trans_parse(self._series)[0])
-            c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
-            d['resol'] = self._spec.t['resol'][c]
-        else:
-            d['resol'] = self._resol
-
-        self._psf_pref = self._psf_func.__name__+'_0_'
-        psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
-        self._psf = psf
-        self._pars.update(psf.make_params())
-        self._pars.add_many(
-            (self._psf_pref+'resol', d['resol'], d['resol_vary'],
-             d['resol_min'], d['resol_max'], d['resol_expr']))
-        #"""
-
-    def _make_regions(self, mod, xs, thres, eval=False):
-        spec = mod._spec
+    def _make_regions(self, mod, spec, xs, thres, eval=False):
+        #spec = mod._spec
         if 'fit_mask' not in spec.t.colnames:
             #logging.info("I'm adding column 'fit_mask' to spectrum.")
             spec.t['fit_mask'] = np.zeros(len(spec.x), dtype=bool)
@@ -539,7 +486,7 @@ class SystModel(LMComposite):
                 -0.5*10**self._pars[lines_pref+'logN']
 
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
+    def _new_voigt(self, spec, series='Ly-a', z=2.0, logN=13, b=10, resol=None,
                    defs=None, N_tot=False, N_tot_specs=(None, None, None)):
 
 
@@ -564,13 +511,13 @@ class SystModel(LMComposite):
         #N_tot = '47' == str(self._id)
 
         #self._make_lines()
-        self._make_lines_psf(N_tot)
+        self._make_lines_psf(spec, N_tot)
         if time_check:
             print('b %.4f' % (time.time()-tt))
             tt = time.time()
 
         #self._make_group()
-        self._make_groups(thres=thres)
+        self._make_groups(spec, thres=thres)
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
@@ -582,7 +529,7 @@ class SystModel(LMComposite):
 
         ys = dc(self._ys)
         self._xr, self._yr, self._wr = \
-            self._make_regions(self, self._xs, thres=thres)
+            self._make_regions(self, spec, self._xs, thres=thres)
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
@@ -590,3 +537,5 @@ class SystModel(LMComposite):
 
         if N_tot:
             self._make_N_tot(N_tot_specs)
+
+        #class_mute(self, Spectrum)
