@@ -20,6 +20,12 @@
     "resol_max": 1e6,
     "x_lim": null
   },
+  "systs": {
+    "chi2r_thres": 1e10,
+    "chi2rav_thres": 1e-2,
+    "dlogN_thres": 1e10,
+    "max_nfev": 1000
+  },
   "fit": {
     "use_jac": false,
     "ftol": 1e-2,
