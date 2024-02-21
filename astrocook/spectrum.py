@@ -510,6 +510,8 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
+        if 'sky' in self._t.colnames: sky_out = np.array([])
+        if 'telluric' in self._t.colnames: telluric_out = np.array([])
         print_time = False
         xmin_value = np.array(self.xmin.value)
         xmax_value = np.array(self.xmax.value)
@@ -554,11 +556,15 @@ class Spectrum(Frame):
 
             #print(frac[w],frac)
             dysel = dy[im:iM]
+            if 'sky' in self._t.colnames: ssel = self._t['sky'][im:iM]
+            if 'telluric' in self._t.colnames: tsel = self._t['telluric'][im:iM]
 
             nw = np.where(~np.isnan(ysel))
             ysel = ysel[nw]
             dysel = dysel[nw]
             frac = frac[nw]
+            if 'sky' in self._t.colnames: ssel = ssel[nw]
+            if 'telluric' in self._t.colnames: tsel = tsel[nw]
             #print(dysel)
             #mask = sigma_clip(ysel, masked=True).mask
             #if np.sum(~mask)>0:
@@ -596,9 +602,17 @@ class Spectrum(Frame):
                                                    /np.nansum(weights)*y.unit)
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
+                if 'sky' in self._t.colnames:
+                    sky_out = np.append(sky_out, np.sum(ssel[w]))
+                if 'telluric' in self._t.colnames:
+                    telluric_out = np.append(telluric_out, np.sum(tsel[w]))
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
+                if 'sky' in self._t.colnames:
+                    sky_out = np.append(sky_out, filling)
+                if 'telluric' in self._t.colnames:
+                    telluric_out = np.append(telluric_out, filling)
             if print_time:
                 t3 = time()
                 print(t3, t3-t2)
@@ -609,6 +623,8 @@ class Spectrum(Frame):
         out._x_convert(xunit=self._xunit_old)
         self._x_convert(xunit=self._xunit_old)
         self._xunit_old = self._xunit
+        if 'sky' in self._t.colnames: out._t['sky'] = sky_out
+        if 'telluric' in self._t.colnames: out._t['telluric'] = telluric_out
         return out
 
 

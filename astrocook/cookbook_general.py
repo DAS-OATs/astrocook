@@ -827,7 +827,7 @@ class CookbookGeneral(object):
         else:
             mask = np.array([t<thres for t in sky_interp], dtype=float)
         #sky = np.interp(spec._t['x'].to(au.nm).value, x, mask)
-        spec._t['sky'] = np.array(mask!=1, dtype=bool)
+        spec._t['sky'] = np.array(mask, dtype=int)
 
         if apply:
             spec._t['y'][np.where(np.array(mask==1, dtype=bool))] = np.nan
@@ -837,14 +837,14 @@ class CookbookGeneral(object):
         return 0
 
 
-    def telluric_mask(self, shift=0, thres=0.99, apply=True):
+    def telluric_mask(self, shift=0, thres=0.99, reverse=False, apply=True):
         """ @brief Mask telluric absorption
         @details Mask spectral regions affected by telluric absorptions.
 
         The regions are determined from SkyCorr models (saved in
         sky_telluric.fits). They are resampled into the current `x` grid and
         used to populate a `telluric` column, which is set to `1` inside the
-        regions and to `0` elsewhere.
+        regions and to `0` elsewhere (the opposite if `reverse` is `True`).
 
         If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
         `telluric` is 1.
@@ -873,9 +873,12 @@ class CookbookGeneral(object):
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
         x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=float)
+        if not reverse:
+            mask = np.array([t>thres for t in sky_telluric['trans_ma']], dtype=float)
+        else:
+            mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
-        spec._t['telluric'] = np.array(tell!=1, dtype=bool)
+        spec._t['telluric'] = np.array(tell, dtype=int)
 
         if apply:
             spec._t['y'][np.where(np.array(tell==1, dtype=bool))] = np.nan
