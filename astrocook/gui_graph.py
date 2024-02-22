@@ -129,7 +129,8 @@ class GUIGraphMain(wx.Frame):
         sess = self._gui._sess_sel
 
         unit = sess.spec._t['x'].unit
-        sel = np.logical_and(sess.spec._t['x'].value>x1, sess.spec._t['x'].value<x2)
+        sel = np.logical_and(np.array(sess.spec._t['x'])>x1,
+                             np.array(sess.spec._t['x'])<x2)
         t = sess.spec._t[sel]
         dx = (t['xmax']-t['xmin']).to(unit)
         ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
