@@ -81,7 +81,7 @@ class Graph(object):
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
-        x = x/(1+sess.spec._rfz)
+        #x = x/(1+sess.spec._rfz)
         from .gui_table import GUITablePopup
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
@@ -185,7 +185,7 @@ class Graph(object):
 
 
         sess = self._gui._sess_sel
-        x = x/(1+sess.spec._rfz)
+        #x = x/(1+sess.spec._rfz)
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
         if hasattr(self._gui, '_graph_det'):
@@ -506,10 +506,10 @@ class Graph(object):
                         id_flat = np.array(['']*len(trans_parse(series)))
                     xem = np.array([xem_d[sf].to(au.nm).value \
                                     for sf in series_flat]) * au.nm
-                    if hasattr(self._gui._sess_sel.spec, '_rfz'):
-                        x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
-                    else:
-                        x = xem*(1+z_flat)
+                    #if hasattr(self._gui._sess_sel.spec, '_rfz'):
+                    #    x = xem*(1+z_flat/(1+self._gui._sess_sel.spec._rfz))
+                    #else:
+                    x = xem*(1+z_flat)
 
                     if detail:
                         self._x_iswave = True

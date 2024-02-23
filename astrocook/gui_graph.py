@@ -145,6 +145,7 @@ class GUIGraphMain(wx.Frame):
         sess = self._gui._sess_sel
 
         x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        print(x1, x2)
         if x2<x1:
             x1, x2 = x2, x1
         x = 0.5*(x1+x2)
