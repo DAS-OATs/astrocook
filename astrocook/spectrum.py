@@ -247,9 +247,10 @@ class Spectrum(Frame):
         try:
             conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)\
                                                  *self._t[input_col].unit
+            self._t[output_col] = conv[len_conv:-len_conv] * self._t[input_col].unit
         except:
             conv[self._where_safe] = fftconvolve(safe, prof, mode=mode)
-        self._t[output_col] = conv[len_conv:-len_conv] * self._t[input_col].unit
+            self._t[output_col] = conv[len_conv:-len_conv]
         self._x_convert(xunit=self._xunit_old)
         self._xunit_old = self._xunit
 
