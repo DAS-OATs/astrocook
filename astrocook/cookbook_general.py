@@ -823,9 +823,9 @@ class CookbookGeneral(object):
         #sky_smooth = running_mean(sky, h=hwindow)
         sky_interp = np.interp(spec._t['x'].to(au.nm).value, x, sky_smooth)
         if not reverse:
-            mask = np.array([t>thres for t in sky_interp], dtype=float)
+            mask = np.array([t>thres for t in sky_interp], dtype=int)
         else:
-            mask = np.array([t<thres for t in sky_interp], dtype=float)
+            mask = np.array([t<thres for t in sky_interp], dtype=int)
         #sky = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['sky'] = np.array(mask, dtype=int)
 
@@ -874,9 +874,9 @@ class CookbookGeneral(object):
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
         x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
         if not reverse:
-            mask = np.array([t>thres for t in sky_telluric['trans_ma']], dtype=float)
+            mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=int)
         else:
-            mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=float)
+            mask = np.array([t>thres for t in sky_telluric['trans_ma']], dtype=int)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell, dtype=int)
 
