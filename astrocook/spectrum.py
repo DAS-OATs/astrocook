@@ -604,9 +604,9 @@ class Spectrum(Frame):
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
                 if 'sky' in self._t.colnames:
-                    sky_out = np.append(sky_out, len(ssel[w]))
+                    sky_out = np.append(sky_out, np.sum(ssel[w]))
                 if 'telluric' in self._t.colnames:
-                    telluric_out = np.append(telluric_out, len(tsel[w]))
+                    telluric_out = np.append(telluric_out, np.sum(tsel[w]))
             else:
                 y_out = np.append(y_out, filling)
                 dy_out = np.append(dy_out, filling)
