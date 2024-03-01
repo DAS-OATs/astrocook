@@ -20,6 +20,9 @@
     "resol_max": 1e6,
     "x_lim": null
   },
+  "group": {
+    "thres": 5e-2
+  },
   "fit": {
     "use_jac": false,
     "ftol": 1e-2,

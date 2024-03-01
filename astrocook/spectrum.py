@@ -46,6 +46,7 @@ class Spectrum(Frame):
         if resol != []:
             self._t['resol'] = resol
 
+        self.gauss_psf_cache = {}
 
     def _copy(self, sel=None):
         copy = super(Spectrum, self)._copy(sel)
@@ -798,3 +799,21 @@ class Spectrum(Frame):
                 self._t['x'][r] = np.nan
 
         return 0
+
+    def psf_gauss(self, x, resol):
+        if len(x)==0:
+            return []
+        c = x[len(x)//2]
+        sigma = c / resol * 4.246609001e-1
+
+        if sigma in self.gauss_psf_cache:
+            return self.gauss_psf_cache[sigma]
+
+        psf = np.exp(-0.5*((self.x.to(xunit_def).value-c) / sigma)**2)
+        psf = psf[np.where(psf > 1e-6)]
+
+        if len(psf)==0:
+            return self.psf_gauss(self.x.to(xunit_def).value, resol)
+        else:
+            self.gauss_psf_cache[sigma] = psf
+            return psf

@@ -1,0 +1,167 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive-110625037481089626894/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "region_extract",
+      "params": {
+        "xmin": "578",
+        "xmax": "580",
+        "verbose": "True"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "mods_recreate",
+      "params": {}
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "0.1",
+        "xunit": "km / s",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "struct_import",
+      "params": {
+        "struct": "1,systs",
+        "mode": "replace"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_select",
+      "params": {
+        "_sel": "1"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "5.0",
+        "xunit": "km / s",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "struct_import",
+      "params": {
+        "struct": "1,systs",
+        "mode": "replace"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_select",
+      "params": {
+        "_sel": "1"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "10.0",
+        "xunit": "km / s",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "struct_import",
+      "params": {
+        "struct": "1,systs",
+        "mode": "replace"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_select",
+      "params": {
+        "_sel": "1"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "20.0",
+        "xunit": "km / s",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "struct_import",
+      "params": {
+        "struct": "1,systs",
+        "mode": "replace"
+      }
+    },
+    {
+      "cookbook": "_menu",
+      "recipe": "_on_dialog_mini_graph",
+      "params": {
+        "event": null,
+        "title": "Graph elements",
+        "targ": null
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_elem",
+      "params": {
+        "value": "1,spec,x,model,None,plot,-,1,black,1\n2,spec,x,model,None,scatter,o,1,black,1\n3,spec,x,model,None,scatter,o,1,red,1\n4,spec,x,model,None,scatter,o,1,blue,1\nSESS_SEL,spec,x,model,None,scatter,o,1,green,1\n",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_lim",
+      "params": {
+        "value": "xlim=auto\nylim=auto",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_on_apply",
+      "params": {
+        "e": null,
+        "refresh": true
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

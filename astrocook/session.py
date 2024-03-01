@@ -428,6 +428,7 @@ class Session(object):
                 self.systs._dict_update(mods=True)
 
             if os.path.exists(self._root_stem+'.json'): os.remove(self._root_stem+'.json')
+
             self._rm_ac_temp(root)
 
         else:
@@ -484,7 +485,7 @@ class Session(object):
     def _model_open(self, systs):
         funcdefs = {'convolve_simple': convolve_simple,
                     'lines_voigt': lines_voigt,
-                    'psf_gauss': psf_gauss,
+                    'psf_gauss': self.spec.psf_gauss,
                     'zero': zero}
 
         mods_t_ok = True
