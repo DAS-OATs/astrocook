@@ -713,20 +713,22 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rms_est(self, hwindow=100):
+    def rms_est(self, hwindow=10000, std=20.0):
         """ @brief Estimate error from RMS
         @details Estimate flux error by computing the root-mean-square (RMS) of
         the flux within a running window.
 
-        The RMS is computed over `y` values and is saved in `y_rms`. It may be
-        useful to compare the latter with `dy` to check that the formal error is
-        consistent with the actual dispersion of `y` values.
+        The RMS is computed over `y` values and is saved in `y_rms`. It is then
+        convolved with a gaussian of standard deviation `std` and the result
+        is saved in `dy`.
         @param hwindow Half-size in pixels of the running window
+        @param std Standard deviation of the gaussian (km/s)
         @return 0
         """
 
         try:
             hwindow = int(hwindow)
+            std = float(std) * au.km/au.s
         except:
             logging.error(msg_param_fail)
             return 0
@@ -739,7 +741,8 @@ class CookbookGeneral(object):
             logging.info("I'm adding column 'y_rms'.")
         else:
             logging.warning("I'm updating column 'y_rms'.")
-        spec._t['y_rms'] = at.Column(y_rms, dtype=float)
+        spec._t['y_rms'] = at.Column(y_rms, dtype=float)*spec._t['dy'].unit
+        self.sess.spec._gauss_convolve(std, 'y_rms', 'dy')
 
         return 0
 

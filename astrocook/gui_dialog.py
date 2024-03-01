@@ -9,6 +9,7 @@ import json
 import numpy as np
 import datetime as dt
 import wx
+import os
 
 class GUIDialog(wx.Dialog):
 
