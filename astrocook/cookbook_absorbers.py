@@ -992,6 +992,28 @@ class CookbookAbsorbers(object):
 ### Basic
 
 
+    def series_replace(self, series_from='Ly_a', series_to='Ly_a,Ly_b'):
+        """ @brief Replace series
+        @details Replace all given series in a table with a different series
+        @param series_from Replace series
+        @param series_to with
+        @return 0
+        """
+
+        try:
+            series_from = str(series_from)
+            series_to = str(series_to)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        systs = self.sess.systs
+        w = systs._t['series']==series_from
+        systs._t['series'][w] = series_to
+        self._mods_recreate()
+        self._spec_update()
+
+
     def comp_extract(self, num=1):
         """ @brief Extract systems based on components
         @details Extract systems with less than a given number of components
