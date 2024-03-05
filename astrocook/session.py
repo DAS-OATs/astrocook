@@ -581,7 +581,7 @@ class Session(object):
         logging.info("I've saved %s in %s.acs." % (struct, stem))
 
 
-    def save(self, path):
+    def save(self, path, models=False):
 
         root = path[:-4]
         parts = pathlib.PurePath(path[:-4]).parts
@@ -739,6 +739,8 @@ class Session(object):
 
                         #name_mods_db = '%s.db' % (name_mods_dat[:-4])
                         #db = shelve.open(name_mods_db)
+                        if not models: break
+
                         fail = []
                         for i, r in enum_tqdm(obj._mods_t, len(obj._mods_t),
                                                 "session: Saving models"):
