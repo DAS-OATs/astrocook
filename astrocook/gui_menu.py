@@ -122,28 +122,6 @@ class GUIMenu(object):
             item.Enable(False)
         else:
             item.Enable(enable)
-        return item
-
-
-    def _item(self, menu, id, append, title, event, key=None, enable=True):
-        if key is not None:
-            item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
-            #item.Check(False)
-            item.key = key
-        else:
-            item = wx.MenuItem(menu, id, title)
-
-        self._gui._panel_sess.Bind(wx.EVT_MENU, event, item)
-        menu.Append(item)
-        if append is not None:
-            if isinstance(append, list):
-                for a in append:
-                    getattr(self._gui, '_menu_'+a+'_id').append(id)
-            else:
-                getattr(self._gui, '_menu_'+append+'_id').append(id)
-            item.Enable(False)
-        else:
-            item.Enable(enable)
 
 
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
@@ -315,7 +293,7 @@ class GUIMenu(object):
 
         for a in seq_menu:  # from .vars
             for i in getattr(self._gui, '_menu_'+a+'_id'):
-                for m in ['_edit', '_view']+self._menus_togg['attr']:
+                for m in ['_file', '_edit', '_view']+self._menus_togg['attr']:
                     try:
                         item = getattr(self, m)._menu.FindItemById(i)
                         if m == '_view' and item.IsCheckable() \
@@ -501,7 +479,9 @@ class GUIMenuFile(GUIMenu):
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
-        self._item(self._menu, start_id+102, None, "Save spectrum as PDF...\tCtrl+S",
+        self._item(self._menu, start_id+102, 'systs', "Save session with models...\tCtrl+S",
+                   lambda e: self._on_save(e, models=True, **kwargs))
+        self._item(self._menu, start_id+103, None, "Save spectrum as PDF...\tCtrl+S",
                    lambda e: self._on_save_pdf(e, **kwargs))
         self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
@@ -511,7 +491,7 @@ class GUIMenuFile(GUIMenu):
         self._gui._panel_sess._combine()
 
 
-    def _on_save(self, event, path=None):
+    def _on_save(self, event, path=None, models=False):
         """ Behaviour for Session > Save """
 
         if path is None:
@@ -530,7 +510,7 @@ class GUIMenuFile(GUIMenu):
             path = fileDialog.GetPath()
             dir = fileDialog.GetDirectory()
             logging.info("I'm saving session %s..." % path)
-            self._gui._sess_sel.save(path)
+            self._gui._sess_sel.save(path, models)
 
     def _on_save_pdf(self, event, path=None):
         if path is None:

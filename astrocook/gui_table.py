@@ -246,7 +246,7 @@ class GUITable(wx.Frame):
         cb = self._gui._sess_sel.cb
         dlg = GUIDialogMethod(self._gui, 'Replace series', 'series_replace')
         self._gui._refresh(init_cursor=True)
-        
+
 
     def _on_sort(self, event):
         labels = self._labels_extract()
@@ -845,7 +845,7 @@ class GUITableSystList(GUITable):
             title = ['Sort ascending', 'Sort descending']
             attr = ['sort', 'sort_reverse']
             if col==1:
-                title += ['sep', 'Replace']
+                title += ['sep', 'Replace...']
                 attr += [None, 'replace']
             if col > 1:
                 title += ['sep', 'Histogram']

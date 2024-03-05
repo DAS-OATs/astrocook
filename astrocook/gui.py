@@ -81,6 +81,7 @@ class GUI(object):
                     self._panel_sess._open_rec = '_on_open'
                     self._panel_sess._on_open(os.path.realpath(p))
 
+
     def _flags_cond(self, flag):
         return self._flags is not None \
             and flag in [f[:len(flag)] for f in self._flags]
