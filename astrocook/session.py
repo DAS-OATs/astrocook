@@ -301,7 +301,7 @@ class Session(object):
             return 0
 
         # generic
-        if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
+        if orig == 'undefined' and catg == 'undefined':
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
                 return 0

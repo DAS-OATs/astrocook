@@ -497,6 +497,8 @@ class Format(object):
                         y = np.ravel(data[y_name])
                         dy = data[dy_name] if dy_name is not None \
                             else np.full(len(y), np.nan)
+                        if dy_name=='ivar':
+                            dy = dy**(-0.5)
                         cont = data[cont_name] if cont_name is not None \
                             else np.full(len(y), np.nan)
                     except:
