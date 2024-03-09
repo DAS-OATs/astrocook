@@ -450,8 +450,8 @@ class GUIMenuEdit(GUIMenu):
                      {'targ': 'shift_to_rf', 'append': 'spec'},
                      {'targ': 'shift_from_rf', 'append': 'spec'},
                      '--',
-                     {'targ': 'struct_import', 'func': '__gt__', 'value': 0},
-                     {'targ': 'struct_modify', 'func': '__gt__', 'value': 0},
+                     {'targ': 'struct_import', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                     {'targ': 'struct_modify', 'append': 'spec'},#'func': '__gt__', 'value': 0},
                      ]
 
 
