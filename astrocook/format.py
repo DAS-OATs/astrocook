@@ -331,7 +331,9 @@ class Format(object):
 
         hdr = hdul[0].header
         data = Table(hdul[1].data)
-        x = data['WAVE'][0]
+        if 'WAVE' in data.colnames: x = data['WAVE'][0]
+        if 'WAVELENGTH' in data.colnames: x = data['WAVELENGTH'][0]
+        if 'wavelength' in data.colnames: x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
         if 'FLUX_CAL' in data.colnames:
             y = data['FLUX_CAL'][0]/(xmax-xmin)
@@ -342,8 +344,12 @@ class Format(object):
             dy = data['ERR_EL'][0]/(xmax-xmin)
             yunit = au.electron
         else:
-            y = data['FLUX'][0]/(xmax-xmin)
-            dy = data['ERR'][0]/(xmax-xmin)
+            if 'FLUX' in data.colnames:
+                y = data['FLUX'][0]/(xmax-xmin)
+                dy = data['ERR'][0]/(xmax-xmin)
+            if 'flux' in data.colnames:
+                y = data['flux']/(xmax-xmin)
+                dy = data['error']/(xmax-xmin)
             yunit = None
         resol = []*len(x)
         xunit = au.Angstrom
