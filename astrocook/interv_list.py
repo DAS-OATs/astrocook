@@ -1,6 +1,6 @@
 from astropy import units as au
 from astropy import table as at
-
+import numpy as np
 
 class Interv(object):
     """ Class for intervals """
@@ -15,7 +15,7 @@ class IntervList(object):
     """ Class for interval lists """
 
 
-    def __init__(self, xmin=[], xmax=[], xunit=au.nm):
+    def __init__(self, xmin=[], xmax=[], xunit=au.nm, dtype=float):
         self._xmin = xmin
         self._xmax = xmax
         self._xunit = xunit

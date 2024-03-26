@@ -653,7 +653,7 @@ class GUIMenuView(GUIMenu):
         self._menu_view = self
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
-        tab_id = [start_id+0, start_id+1, start_id+2]
+        tab_id = [start_id+0, start_id+1, start_id+2, start_id+3]
         dlg_id = [start_id+5, start_id+6, start_id+7, start_id+8, start_id+9]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
@@ -661,6 +661,9 @@ class GUIMenuView(GUIMenu):
         self._rec = [{'type': '_item',
                       'event': lambda e: self._on_tab(e, 'spec'),
                       'title': "Spectrum table", 'append': 'spec', 'key': 'spec'},
+                     {'type': '_item',
+                      'event': lambda e: self._on_tab(e, 'interv'),
+                      'title': "Interval table", 'append': 'interv', 'key': 'interv'},
                      {'type': '_item',
                       'event': lambda e: self._on_tab(e, 'lines'),
                       'title': "Line table", 'append': 'lines', 'key': 'lines'},

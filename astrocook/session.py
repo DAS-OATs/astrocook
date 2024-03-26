@@ -4,6 +4,7 @@ from .defaults import Defaults
 from .format import Format
 from .functions import *
 from .gui_log import GUILog
+from .interv_list import IntervList
 from .line_list import LineList
 from .lmfit_model import load_model, save_model
 from .message import *
@@ -50,6 +51,7 @@ class Session(object):
                  name=None,
                  spec=None,
                  spec_form=None,
+                 intervs=None,
                  nodes=None,
                  lines=None,
                  systs=None,
@@ -63,6 +65,7 @@ class Session(object):
         self.name = name
         self.spec = spec
         self.spec_form = spec_form
+        self.intervs = intervs
         self.nodes = nodes
         self.lines = lines
         self.systs = systs
@@ -79,8 +82,9 @@ class Session(object):
         self._shade = False
         self.feats = feats
 
-        self._classes = {'spec': Spectrum, 'lines': LineList, 'systs':
-                         SystList, 'mods': SystModel, 'feats': FeatList}
+        self._classes = {'spec': Spectrum, 'intervs': IntervList,
+                         'lines': LineList, 'systs': SystList,
+                         'mods': SystModel, 'feats': FeatList}
 
 
     def _append(self, frame, append=True):
@@ -434,6 +438,10 @@ class Session(object):
         else:
             self._other_open(hdul, hdr)
 
+        self.intervs = IntervList(xunit=self.spec._xunit)
+        x = self.spec._safe(self.spec.x)
+        self.intervs._add(x[0], x[-1])
+
         if self._gui._flags_cond('--systs'):
             path = self._gui._flags_extr('--systs')
 
@@ -481,6 +489,8 @@ class Session(object):
             setattr(self, 'systs', out)
             self.cb._mods_recreate()
             self.cb._spec_update()
+
+
 
     def _model_open(self, systs):
         funcdefs = {'convolve_simple': convolve_simple,

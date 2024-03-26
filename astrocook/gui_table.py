@@ -293,6 +293,31 @@ class GUITable(wx.Frame):
         self._shown = True
 
 
+class GUITableIntervList(GUITable):
+    """ Class for the GUI interval list """
+
+    def __init__(self,
+                 gui,
+                 title="Interval table",
+                 size_x=wx.DisplaySize()[0]*0.5,
+                 size_y=wx.DisplaySize()[1]*0.2):
+
+        super(GUITableLineList, self).__init__(gui, 'interv', title, size_x,
+                                               size_y)
+
+        self._gui = gui
+        self._gui._tab_lines = self
+
+
+    def _on_close(self, event, **kwargs):
+        super(GUITableLineList, self)._on_close(event, **kwargs)
+        self._menu.FindItemById(self._tab_id[1]).Check(False)
+
+
+    def _on_view(self, event, **kwargs):
+        super(GUITableLineList, self)._on_view(event, **kwargs)
+
+
 class GUITableLineList(GUITable):
     """ Class for the GUI line list """
 
@@ -311,7 +336,7 @@ class GUITableLineList(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableLineList, self)._on_close(event, **kwargs)
-        self._menu.FindItemById(self._tab_id[1]).Check(False)
+        self._menu.FindItemById(self._tab_id[2]).Check(False)
 
 
     def _on_view(self, event, **kwargs):
@@ -710,7 +735,7 @@ class GUITableSystList(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableSystList, self)._on_close(event, **kwargs)
-        self._menu.FindItemById(self._tab_id[2]).Check(False)
+        self._menu.FindItemById(self._tab_id[3]).Check(False)
 
 
     def _on_detail(self, event, span=30, log=True):
