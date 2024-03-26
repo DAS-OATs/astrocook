@@ -603,7 +603,7 @@ class CookbookAbsorbers(object):
         return mod
 
 
-    def _syst_fit(self, mod, verbose=True):
+    def _mod_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
             try:
                 if 'max_nfev' in self.sess.defs.dict['fit']:
@@ -762,7 +762,7 @@ class CookbookAbsorbers(object):
                 """
                 if fit_list[i]:
                     z_list.append(m['z0'])
-                    frozen = self._syst_fit(m['mod'], verbose=False)
+                    frozen = self._mod_fit(m['mod'], verbose=False)
                     if frozen:
                         fit_list[i] = False
                     else:
@@ -846,7 +846,7 @@ class CookbookAbsorbers(object):
                     mod_list.append(m['mod'])
             for i,m in enum_tqdm(mod_list, len(mod_list),
                                  "cookbook_absorbers: Refitting"):
-                self._syst_fit(m, max_nfev, verbose=False)
+                self._mod_fit(m, max_nfev, verbose=False)
                 #chi2r_list.append(m._chi2r)
             #print(chi2r_list)
             logging.info("I've refitted %i model%s." \
@@ -1344,7 +1344,7 @@ class CookbookAbsorbers(object):
 
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
-        #self._syst_fit(mod)
+        #self._mod_fit(mod)
         self._systs_cycle(mod)
         self._spec_update()
 
