@@ -337,32 +337,6 @@ class SystList(object):
             return reg
 
 
-
-    def _unfreeze_pars(self, exclude=[]):
-        """ Unfreeze values of z, logN, and b
-        """
-
-        for p in ['z', 'logN', 'b']:
-            self._freeze_par(p, exclude, reverse=True)
-        if hasattr(self, '_t_backup'):
-            rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
-            for r in rows:
-                self._t_backup.add_row(self._t[r])
-            removes = []
-            adds = []
-            for ri, r in enumerate(self._t):
-                rb = np.where(self._t_backup['id'] == r['id'])[0]
-                if len(rb)>0:
-                    removes.append(ri)
-                    adds.append(self._t_backup[rb[0]])
-            self._t.remove_rows(removes)
-            for a in adds:
-                self._t.add_row(a)
-            self._t.sort(['z','id'])
-
-        return 0
-
-
     def _region_extract(self, xmin, xmax):
         """ @brief Extract a spectral region as a new syst_list.
         @param xmin Minimum wavelength (nm)
@@ -389,6 +363,31 @@ class SystList(object):
 
         self._t = t
         self._mods_t = mods_t
+
+
+    def _unfreeze_pars(self, exclude=[]):
+        """ Unfreeze values of z, logN, and b
+        """
+
+        for p in ['z', 'logN', 'b']:
+            self._freeze_par(p, exclude, reverse=True)
+        if hasattr(self, '_t_backup'):
+            rows = [np.where(self._t['id'] == e)[0][0] for e in exclude]
+            for r in rows:
+                self._t_backup.add_row(self._t[r])
+            removes = []
+            adds = []
+            for ri, r in enumerate(self._t):
+                rb = np.where(self._t_backup['id'] == r['id'])[0]
+                if len(rb)>0:
+                    removes.append(ri)
+                    adds.append(self._t_backup[rb[0]])
+            self._t.remove_rows(removes)
+            for a in adds:
+                self._t.add_row(a)
+            self._t.sort(['z','id'])
+
+        return 0
 
 
     def _update(self, mod, mod_t=True, t=True):
