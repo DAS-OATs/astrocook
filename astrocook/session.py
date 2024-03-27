@@ -438,10 +438,6 @@ class Session(object):
         else:
             self._other_open(hdul, hdr)
 
-        self.intervs = IntervList(xunit=self.spec._xunit)
-        x = self.spec._safe(self.spec.x)
-        self.intervs._add(x[0], x[-1])
-
         if self._gui._flags_cond('--systs'):
             path = self._gui._flags_extr('--systs')
 

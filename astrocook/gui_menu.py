@@ -40,8 +40,8 @@ class GUIMenu(object):
             setattr(self, a,
                 getattr(sys.modules[__name__], 'GUIMenu%s' % t)(self._gui))
             bar.Append(getattr(self, a)._menu, t)
-        self._key_list = ['spec', 'lines', 'systs', 'meta', 'defs', 'log',
-                          'graph', 'legend', 'norm']
+        self._key_list = ['spec', 'intervs', 'lines', 'systs', 'meta', 'defs',
+                          'log', 'graph', 'legend', 'norm']
 
         return bar
 
@@ -662,8 +662,8 @@ class GUIMenuView(GUIMenu):
                       'event': lambda e: self._on_tab(e, 'spec'),
                       'title': "Spectrum table", 'append': 'spec', 'key': 'spec'},
                      {'type': '_item',
-                      'event': lambda e: self._on_tab(e, 'interv'),
-                      'title': "Interval table", 'append': 'interv', 'key': 'interv'},
+                      'event': lambda e: self._on_tab(e, 'intervs'),
+                      'title': "Interval table", 'append': 'intervs', 'key': 'intervs'},
                      {'type': '_item',
                       'event': lambda e: self._on_tab(e, 'lines'),
                       'title': "Line table", 'append': 'lines', 'key': 'lines'},
@@ -785,9 +785,9 @@ class GUIMenuView(GUIMenu):
 
     def _on_tab(self, event, obj, check=None, log=True):
         method = '_tab_'+obj
-        index = ['spec', 'lines', 'systs'].index(obj)
+        index = ['spec', 'intervs', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
-
+        
         if check is not None:
             view = check
             item.Check(view)

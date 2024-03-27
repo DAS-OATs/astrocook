@@ -302,20 +302,20 @@ class GUITableIntervList(GUITable):
                  size_x=wx.DisplaySize()[0]*0.5,
                  size_y=wx.DisplaySize()[1]*0.2):
 
-        super(GUITableLineList, self).__init__(gui, 'interv', title, size_x,
+        super(GUITableIntervList, self).__init__(gui, 'intervs', title, size_x,
                                                size_y)
 
         self._gui = gui
-        self._gui._tab_lines = self
+        self._gui._tab_intervs = self
 
 
     def _on_close(self, event, **kwargs):
-        super(GUITableLineList, self)._on_close(event, **kwargs)
+        super(GUITableIntervList, self)._on_close(event, **kwargs)
         self._menu.FindItemById(self._tab_id[1]).Check(False)
 
 
     def _on_view(self, event, **kwargs):
-        super(GUITableLineList, self)._on_view(event, **kwargs)
+        super(GUITableIntervList, self)._on_view(event, **kwargs)
 
 
 class GUITableLineList(GUITable):

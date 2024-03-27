@@ -42,7 +42,7 @@ class GUI(object):
         self._sess_item_sel = []
         self._menu_spec_id = []
         self._menu_y_conv_id = []
-        self._menu_interv_id = []
+        self._menu_intervs_id = []
         self._menu_lines_id = []
         self._menu_cont_id = []
         self._menu_nodes_id = []
@@ -60,10 +60,12 @@ class GUI(object):
         if not self._mute:
             from .gui_graph import GUIGraphMain
             from .gui_image import GUIImageCompleteness, GUIImageCorrectness
-            from .gui_table import GUITableSpectrum, GUITableLineList, GUITableSystList, GUITableModelList
+            from .gui_table import GUITableSpectrum, GUITableIntervList,\
+                GUITableLineList, GUITableSystList, GUITableModelList
 
             GUIGraphMain(self)
             GUITableSpectrum(self)
+            GUITableIntervList(self)
             GUITableLineList(self)
             GUITableSystList(self)
             GUITableModelList(self)
@@ -312,11 +314,11 @@ class GUI(object):
                     else:
                         self._graph_det._refresh(self._sess_items,
                                                  init_cursor=init_cursor)
-        for s in ['spec', 'lines', 'systs']:
+        for s in ['spec', 'intervs', 'lines', 'systs']:
             if hasattr(self, '_tab_'+s) and init_tab:
                 if hasattr(getattr(self, '_tab_'+s), '_data'):
                     if hasattr(getattr(self._sess_sel, s), '_t'):
-                        index = ['spec', 'lines', 'systs'].index(s)
+                        index = ['spec', 'intervs', 'lines', 'systs'].index(s)
                         item = self._menu_view._menu.FindItemById(self._menu_tab_id[index])
                         view = item.IsChecked()
                         if view:
