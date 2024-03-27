@@ -1,5 +1,6 @@
-from .functions import _gauss, expr_eval, running_mean, running_median, \
-    running_rms, x_convert
+from .functions import _gauss, chunk_parse, expr_eval, running_mean, \
+    running_median, running_rms, x_convert
+from .interv_list import IntervList
 from .message import *
 from .vars import *
 import ast
@@ -26,8 +27,6 @@ class CookbookGeneral(object):
 
     def bin_zap(self, x):
         self.sess.spec._zap(xmin=x, xmax=None)
-
-
 
 
     def combine(self, name='*_combined', unique=True, _sel=''):
@@ -354,6 +353,31 @@ class CookbookGeneral(object):
 
         self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
+
+
+    def intervs_add(self, intervs):
+        """@brief Add intervals
+        @details Add wavelength intervals that can be used to extract portions
+        of the Spectrum
+        @param intervs Wavelength range of the intervals (nm), e.g. 500-501;502-503
+        @return 0
+        """
+
+        try:
+            intervs = chunk_parse(intervs)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        sess = self.sess
+        if sess.intervs is None:
+            sess.intervs = IntervList(xunit=sess.spec._xunit)
+
+        for interv in intervs:
+            sess.intervs._add(interv[0], interv[1])
+
+        return 0
+
 
     def mask_cond(self, col='mask', cond='', new_sess=True, masked_col='x'):
         """ @brief Mask from condition

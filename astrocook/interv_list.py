@@ -32,6 +32,7 @@ class IntervList(object):
 
 
     def _add(self, xmin, xmax, xunit=au.nm):
+        if xmin > xmax: xmin, xmax = xmax, xmin
         interv = Interv(xmin, xmax, xunit)
         self._t.add_row([xmin, xmax])
         self._l.append(interv)

@@ -570,7 +570,9 @@ class GUIMenuGeneral(GUIMenu):
         self._menu = wx.Menu()
 
 
-        self._rec = [{'targ': 'region_extract', 'append': 'spec'},
+        self._rec = [{'targ': 'intervs_add', 'append': 'spec'},
+                     '--',
+                     {'targ': 'region_extract', 'append': 'spec'},
                      {'targ': 'part_extract', 'append': 'spec'},
                      '--',
                      {'targ': 'equalize', 'func': '__eq__', 'value': 2},
@@ -787,7 +789,7 @@ class GUIMenuView(GUIMenu):
         method = '_tab_'+obj
         index = ['spec', 'intervs', 'lines', 'systs'].index(obj)
         item = self._menu.FindItemById(self._gui._menu_tab_id[index])
-        
+
         if check is not None:
             view = check
             item.Check(view)
