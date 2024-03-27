@@ -25,6 +25,16 @@ class CookbookGeneral(object):
     def __init__(self):
         super(CookbookGeneral, self).__init__()
 
+    def _interv_add(self, xmin, xmax):
+
+        sess = self.sess
+        if sess.intervs is None:
+            sess.intervs = IntervList(xunit=sess.spec._xunit)
+        sess.intervs._add(xmin, xmax)
+
+        return 0
+
+
     def bin_zap(self, x):
         self.sess.spec._zap(xmin=x, xmax=None)
 
@@ -369,12 +379,8 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return 0
 
-        sess = self.sess
-        if sess.intervs is None:
-            sess.intervs = IntervList(xunit=sess.spec._xunit)
-
         for interv in intervs:
-            sess.intervs._add(interv[0], interv[1])
+            self._interv_add(interv[0], interv[1])
 
         return 0
 

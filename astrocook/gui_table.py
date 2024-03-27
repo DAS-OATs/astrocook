@@ -35,6 +35,7 @@ class GUITable(wx.Frame):
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
         self._shown = False
+        self._cells_sel = []
 
 
     def _data_edit(self, row, label, value, attr=None):
@@ -215,8 +216,8 @@ class GUITable(wx.Frame):
             self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
             title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
             attr = ['sort', 'sort_reverse', None, 'histogram']
-            self.PopupMenu(GUITablePopup(self._gui, self, event, title,
-                                         attr), event.GetPosition())
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                                         event.GetPosition())
         if col == -1:
             self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove',
                                          'remove'), event.GetPosition())
@@ -316,6 +317,32 @@ class GUITableIntervList(GUITable):
 
     def _on_view(self, event, **kwargs):
         super(GUITableIntervList, self)._on_view(event, **kwargs)
+
+
+    def _on_label_right_click(self, event):
+        row, col = event.GetRow(), event.GetCol()
+        if row == -1:
+            self._gui._col_sel = col
+            self._gui._col_tab = self._tab
+            self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
+                                     self._data.t[self._labels_extract()[col]][i] \
+                                     for i in range(self._tab.GetNumberRows())]
+            self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
+            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
+            attr = ['sort', 'sort_reverse', None, 'histogram']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                                         event.GetPosition())
+        if col == -1:
+            title = ['Remove', 'Add...']
+            attr = ['remove', 'add']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                                         event.GetPosition())
+
+
+    def _on_add(self, event):
+        sess = self._gui._sess_sel
+        dlg = GUIDialogMethod(self._gui, 'Add intervals', 'intervs_add')
+        self._gui._refresh(init_cursor=True)
 
 
 class GUITableLineList(GUITable):
@@ -427,6 +454,7 @@ class GUITableSystList(GUITable):
         self._colourc = 0
         self._links_c = {}
         self._cells_sel = []
+
 
     def _data_cell_right_click(self, row, col):
         sel = get_selected_cells(self._tab)

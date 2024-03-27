@@ -150,6 +150,8 @@ class Graph(object):
                     title.append('Hide stats')
                     attr.append('stats_hide')
                 if focus == self._gui._graph_main:
+                    title.append('Add interval')
+                    attr.append('interv_add')
                     title.append('Extract region')
                     attr.append('region_extract')
                     title.append('Zap feature')

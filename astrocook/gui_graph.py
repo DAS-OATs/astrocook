@@ -125,6 +125,16 @@ class GUIGraphMain(wx.Frame):
             self._gui._dlg_mini_systems._cursor_refresh()
 
 
+    def _on_interv_add(self, event):
+        sess = self._gui._sess_sel
+        xmin, xmax = sess._clicks[0][0], sess._clicks[1][0]
+        sess.log.append_full('cb', '_interv_add', {'xmin': xmin, 'xmax': xmax})
+        sess.cb._interv_add(xmin, xmax)
+        sess._clicks = []
+        sess._shade = False
+        self._gui._refresh()
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
@@ -167,11 +177,6 @@ class GUIGraphMain(wx.Frame):
         x = [sess._clicks[0][0], sess._clicks[1][0]]
         xmin = np.min(x)
         xmax = np.max(x)
-        sess.log.append_full('cb', 'feature_zap', {'xmin': xmin, 'xmax': xmax})
-        sess.spec._zap(xmin, xmax)
-        sess._clicks = []
-        sess._shade = False
-        self._gui._refresh()
 
 
     def _on_stats_show(self, event):
