@@ -571,6 +571,7 @@ class GUIMenuGeneral(GUIMenu):
 
 
         self._rec = [{'targ': 'intervs_add', 'append': 'spec'},
+                     {'targ': 'intervs_extract', 'append': 'intervs'},
                      '--',
                      {'targ': 'region_extract', 'append': 'spec'},
                      {'targ': 'part_extract', 'append': 'spec'},
@@ -656,7 +657,7 @@ class GUIMenuView(GUIMenu):
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2, start_id+3]
-        dlg_id = [start_id+5, start_id+6, start_id+7, start_id+8, start_id+9]
+        dlg_id = [start_id+6, start_id+7, start_id+8, start_id+9, start_id+10]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
 

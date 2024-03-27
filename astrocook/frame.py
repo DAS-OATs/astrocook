@@ -137,6 +137,30 @@ class Frame():
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
 
+
+    def _intervs_extract(self, intervs_l, verbose=True):
+        """ @brief Extract spectral regions as a new frame, using a list of
+        intervals.
+        @param intervs_l List of intervals
+        @return Spectral regions
+        """
+
+        reg = dc(self)
+        reg.x.unit.to(au.nm)
+        where = np.full(len(reg.x), True)
+        for i in intervs_l:
+            s = np.where(np.logical_and(self._safe(reg.x) > i._xmin*i._xunit,
+                                        self._safe(reg.x) < i._xmax*i._xunit))
+            where[s] = False
+        reg._t.remove_rows(where)
+
+        if len(reg.t) == 0 and verbose:
+            logging.error(msg_output_fail)
+            return None
+        else:
+            return reg
+
+
     def _lya_corr_basic(self, zem, logN_thres, input_col='y', apply=True,
                         verb=True):
 

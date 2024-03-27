@@ -315,6 +315,29 @@ class SystList(object):
         return 0
 
 
+    def _intervs_extract(self, intervs_l):
+        """ @brief Extract spectral regions as a new frame, using a list of
+        intervals.
+        @param intervs_l List of intervals
+        @return Spectral regions
+        """
+
+        reg = dc(self)
+        reg_x = np.ravel([[to_x(z, p).value for p in trans_parse(s)] for (z, s) in zip(reg._t['z'], reg._t['series'])])*au.nm
+
+        where = np.full(len(reg_x), True)
+        for i in intervs_l:
+            s = np.where(np.logical_and(reg_x > i._xmin*i._xunit,
+                                        reg_x < i._xmax*i._xunit))
+            where[s] = False
+        reg._t.remove_rows(where)
+        if len(reg.t) == 0:
+            return None
+        else:
+            return reg
+
+
+
     def _unfreeze_pars(self, exclude=[]):
         """ Unfreeze values of z, logN, and b
         """
@@ -348,8 +371,7 @@ class SystList(object):
         """
 
         reg = dc(self)
-        #reg_x = np.array([to_x(z, series_d[s][0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
-        reg_x = np.array([to_x(z, trans_parse(s)[0]).value for (z, s) in zip(reg._t['z0'], reg._t['series'])])*au.nm
+        reg_x = np.ravel([[to_x(z, p).value for p in trans_parse(s)] for (z, s) in zip(reg._t['z'], reg._t['series'])])*au.nm
         where = np.full(len(reg_x), True)
         s = np.where(np.logical_and(reg_x > xmin, reg_x < xmax))
         where[s] = False

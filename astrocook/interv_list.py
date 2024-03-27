@@ -1,3 +1,4 @@
+from .message import msg_param_swap
 from astropy import units as au
 from astropy import table as at
 import numpy as np
@@ -32,7 +33,10 @@ class IntervList(object):
 
 
     def _add(self, xmin, xmax, xunit=au.nm):
-        if xmin > xmax: xmin, xmax = xmax, xmin
+        if xmin > xmax:
+            xmin, xmax = xmax, xmin
+            logging.warning(msg_param_swap)
+
         interv = Interv(xmin, xmax, xunit)
         self._t.add_row([xmin, xmax])
         self._l.append(interv)
