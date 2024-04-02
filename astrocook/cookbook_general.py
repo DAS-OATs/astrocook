@@ -408,13 +408,22 @@ class CookbookGeneral(object):
                 else:
                     kwargs[s] = struct
             except:
-                logging.info("Attribute %s does not support interval "
+                logging.debug("Attribute %s does not support interval "
                               "extraction." % s)
                 try:
                     kwargs[s] = getattr(self.sess, s)
                 except:
                     logging.debug(msg_attr_miss(s))
                     kwargs[s] = None
+
+        if hasattr(self.sess.intervs, '_l'):
+            logging.info("I extracted %i interval%s." \
+                % (len(self.sess.intervs._l),
+                   's' if len(self.sess.intervs._l)>1 else ''))
+        else:
+            logging.warning("I didn't find any interval to extract.")
+
+
         if kwargs['spec'] != None:
             from .session import Session
             new = Session(**kwargs)

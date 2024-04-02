@@ -705,7 +705,7 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_cycle(self, mod=None, verbose=True, recreate=True):
+    def _systs_cycle(self, mod=None, verbose=True, recreate=True, _systs=None):
         chi2rav = np.inf
         chi2rav_old = 0
         chi2r_list, z_list = [], []
@@ -713,7 +713,8 @@ class CookbookAbsorbers(object):
                               'cookbook_absorbers: Cycling'):
             if chi2rav > self._chi2rav_thres and chi2rav != chi2rav_old:
                 if chi2rav < np.inf: chi2rav_old = chi2rav
-                fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+                fit_list, chi2r_list, z_list = \
+                    self._systs_fit(verbose=False, _systs=_systs)
                 if i > 1 and len(chi2r_list)==len(chi2r_list_old):
                     chi2rav = np.mean(np.abs(np.array(chi2r_list)\
                                              -np.array(chi2r_list_old)))
@@ -734,8 +735,11 @@ class CookbookAbsorbers(object):
                              % chi2rav)
 
 
-    def _systs_fit(self, verbose=True):
-        systs = self.sess.systs
+    def _systs_fit(self, _systs=None, verbose=True):
+        if _systs is not None:
+            systs = _systs
+        else:
+            systs = self.sess.systs
         mods_t = systs._mods_t
         z_list = []
         chi2r_list = []
@@ -748,7 +752,7 @@ class CookbookAbsorbers(object):
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
-
+            print(len(mods_t), fit_list)
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
@@ -937,7 +941,6 @@ class CookbookAbsorbers(object):
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
-        #print(systs._mods_t['mod'])
         modw = np.where(mod == systs._mods_t['mod'])[0][0]
         ids = systs._mods_t['id'][modw]
         for i in ids:
@@ -1379,13 +1382,14 @@ class CookbookAbsorbers(object):
 
 
     def systs_fit(self, refit_n=3, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
-                  sel_fit=False, _mod=None, recreate=True):
+                  sel_fit=False, intervs=False, _mod=None, recreate=True):
         """ @brief Fit systems
         @details Fit all Voigt model from a list of systems.
         @param refit_n Number of refit cycles
         @param chi2rav_thres Average chi2r variation threshold between cycles
         @param max_nfev Maximum number of function evaluation
         @param sel_fit Selective fit (only new systems will be fitted)
+        @param intervs Fit only in the regions defined in the interval table
         @return 0
         """
 
@@ -1399,7 +1403,14 @@ class CookbookAbsorbers(object):
             return 0
 
         #self._systs_fit()
-        self._systs_cycle(mod=_mod, verbose=False, recreate=recreate)
+        if intervs:
+            new = self.sess.cb.intervs_extract()
+            systs = new.systs
+        else:
+            systs = self.sess.systs
+        print(systs.t)
+        self._systs_cycle(mod=_mod, verbose=False, recreate=recreate,
+                          _systs=systs)
         self._spec_update()
 
         return 0

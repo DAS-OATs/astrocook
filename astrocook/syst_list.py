@@ -324,13 +324,18 @@ class SystList(object):
 
         reg = dc(self)
         reg_x = np.ravel([[to_x(z, p).value for p in trans_parse(s)] for (z, s) in zip(reg._t['z'], reg._t['series'])])*au.nm
+        reg_xid = np.ravel([[to_x(z, p).value, i) for p in trans_parse(s)] for (i, z, s) in zip(reg._t['id'], reg._t['z'], reg._t['series'])])*au.nm
 
-        where = np.full(len(reg_x), True)
+        print(reg_x, reg_xid)
+        where = np.arange(len(reg_x), dtype=int)
+        print(reg_x)
         for i in intervs_l:
             s = np.where(np.logical_and(reg_x > i._xmin*i._xunit,
                                         reg_x < i._xmax*i._xunit))
-            where[s] = False
+            where = np.setdiff1d(where, s)
+        print(where)
         reg._t.remove_rows(where)
+        print(reg._t)
         if len(reg.t) == 0:
             return None
         else:
