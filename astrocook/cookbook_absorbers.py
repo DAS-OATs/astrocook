@@ -720,9 +720,7 @@ class CookbookAbsorbers(object):
                                              -np.array(chi2r_list_old)))
                 chi2r_list_old = chi2r_list
                 self._systs_reject(mod=mod, verbose=verbose)
-                #self._mods_recreate(verbose=False)
                 self._mods_recreate(mod_new=mod, verbose=verbose)
-            #print(chi2rav, chi2rav_old)
         fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
 
         self._systs_reject(mod=mod, verbose=verbose)
@@ -752,7 +750,6 @@ class CookbookAbsorbers(object):
                     fit_list.append(np.isnan(dz).any())
                 else:
                     fit_list.append(True)
-            print(len(mods_t), fit_list)
             for i,m in enum_tqdm(mods_t, np.sum(fit_list),
                                  "cookbook_absorbers: Fitting"):
             #for i,m in enumerate(mods_t):
@@ -1408,7 +1405,11 @@ class CookbookAbsorbers(object):
             systs = new.systs
         else:
             systs = self.sess.systs
-        print(systs.t)
+
+        if systs is None:
+            logging.warning("I didn't find any systems to fit in the intervals.")
+            return 0
+
         self._systs_cycle(mod=_mod, verbose=False, recreate=recreate,
                           _systs=systs)
         self._spec_update()
