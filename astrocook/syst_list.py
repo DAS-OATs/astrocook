@@ -323,6 +323,7 @@ class SystList(object):
         """
 
         reg = dc(self)
+        reg_compl = dc(self)
         reg_x = np.transpose([[to_x(z, p).value for p in trans_parse(s)] \
                               for (z, s) in zip(reg._t['z'], reg._t['series'])])
         stot = np.zeros(len(reg_x[0]), dtype=bool)
@@ -333,8 +334,8 @@ class SystList(object):
                                 reg_x[1]*au.nm < i._xmax*i._xunit)
             s = np.logical_or(s0, s1)
             stot = np.logical_or(stot, s)
-        where = np.where(np.logical_not(stot))[0]
-        reg._t.remove_rows(where)
+        where_not = np.where(np.logical_not(stot))[0]
+        reg._t.remove_rows(where_not)
         if len(reg.t) == 0:
             return None
         else:

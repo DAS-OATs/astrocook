@@ -603,7 +603,7 @@ class CookbookAbsorbers(object):
         return mod
 
 
-    def _mod_fit(self, mod, verbose=True):
+    def _mod_fit(self, mod, verbose=True, _systs=None):
         if self._max_nfev > 0:
             try:
                 if 'max_nfev' in self.sess.defs.dict['fit']:
@@ -637,7 +637,7 @@ class CookbookAbsorbers(object):
                          "max_nfev=0.")
 
         # When a single system is fitted, it is stored also the system table
-        if not frozen: self._systs_update(mod)
+        if not frozen: self._systs_update(mod, _systs=_systs)
         return frozen
 
 
@@ -721,7 +721,8 @@ class CookbookAbsorbers(object):
                 chi2r_list_old = chi2r_list
                 self._systs_reject(mod=mod, verbose=verbose)
                 self._mods_recreate(mod_new=mod, verbose=verbose)
-        fit_list, chi2r_list, z_list = self._systs_fit(verbose=False)
+        fit_list, chi2r_list, z_list = \
+            self._systs_fit(verbose=False, _systs=_systs)
 
         self._systs_reject(mod=mod, verbose=verbose)
         if recreate: self._mods_recreate(mod_new=mod, verbose=verbose)
@@ -731,6 +732,8 @@ class CookbookAbsorbers(object):
             if chi2rav < np.inf:
                 logging.info("Average chi2r variation after last cycle: %2.4e."\
                              % chi2rav)
+
+        return 0
 
 
     def _systs_fit(self, _systs=None, verbose=True):
@@ -763,12 +766,13 @@ class CookbookAbsorbers(object):
                 """
                 if fit_list[i]:
                     z_list.append(m['z0'])
-                    frozen = self._mod_fit(m['mod'], verbose=False)
+                    frozen = self._mod_fit(m['mod'], verbose=False,
+                                           _systs=_systs)
                     if frozen:
                         fit_list[i] = False
                     else:
                         chi2r_list.append(m['mod']._chi2r)
-            if verbose:
+            if verbose or True:
                 logging.info("I've fitted %i model%s." \
                              % (np.sum(fit_list), msg_z_range(z_list)))
         else:
@@ -936,9 +940,10 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def _systs_update(self, mod, incr=True):
+    def _systs_update(self, mod, incr=True, _systs=None):
         systs = self.sess.systs
-        modw = np.where(mod == systs._mods_t['mod'])[0][0]
+        z0 = [m._z0 for m in systs._mods_t['mod']]
+        modw = np.where(mod._z0 == z0)[0][0]
         ids = systs._mods_t['id'][modw]
         for i in ids:
             try:
@@ -977,6 +982,8 @@ class CookbookAbsorbers(object):
 
         if incr and False:
             systs._id += 1
+
+        return 0
 
 
     def _z_off(self, trans, z):
@@ -1344,7 +1351,6 @@ class CookbookAbsorbers(object):
 
         mods_t = self.sess.systs._mods_t
         mod = mods_t['mod'][num in mods_t['id']]
-        #self._mod_fit(mod)
         self._systs_cycle(mod)
         self._spec_update()
 
@@ -1405,13 +1411,15 @@ class CookbookAbsorbers(object):
             systs = new.systs
         else:
             systs = self.sess.systs
+            systs_compl = None
 
         if systs is None:
             logging.warning("I didn't find any systems to fit in the intervals.")
             return 0
 
-        self._systs_cycle(mod=_mod, verbose=False, recreate=recreate,
-                          _systs=systs)
+        self._systs_cycle(mod=_mod, verbose=False, recreate=recreate, _systs=systs)
+
+        print(self.sess.systs._t)
         self._spec_update()
 
         return 0

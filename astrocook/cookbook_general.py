@@ -399,6 +399,7 @@ class CookbookGeneral(object):
 
         kwargs = {'path': self.sess.path, 'name': self.sess.name}
         gen = (s for s in self.sess.seq if s not in ['intervs'])
+        compl = None
         for s in gen:
             try:
                 struct = getattr(self.sess, s)\
@@ -455,6 +456,7 @@ class CookbookGeneral(object):
             self.sess = new
             self._mods_recreate()
             self.sess = old
+
 
         return new
 
