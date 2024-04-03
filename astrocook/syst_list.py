@@ -323,19 +323,18 @@ class SystList(object):
         """
 
         reg = dc(self)
-        reg_x = np.ravel([[to_x(z, p).value for p in trans_parse(s)] for (z, s) in zip(reg._t['z'], reg._t['series'])])*au.nm
-        reg_xid = np.ravel([[to_x(z, p).value, i) for p in trans_parse(s)] for (i, z, s) in zip(reg._t['id'], reg._t['z'], reg._t['series'])])*au.nm
-
-        print(reg_x, reg_xid)
-        where = np.arange(len(reg_x), dtype=int)
-        print(reg_x)
+        reg_x = np.transpose([[to_x(z, p).value for p in trans_parse(s)] \
+                              for (z, s) in zip(reg._t['z'], reg._t['series'])])
+        stot = np.zeros(len(reg_x[0]), dtype=bool)
         for i in intervs_l:
-            s = np.where(np.logical_and(reg_x > i._xmin*i._xunit,
-                                        reg_x < i._xmax*i._xunit))
-            where = np.setdiff1d(where, s)
-        print(where)
+            s0 = np.logical_and(reg_x[0]*au.nm > i._xmin*i._xunit,
+                                reg_x[0]*au.nm < i._xmax*i._xunit)
+            s1 = np.logical_and(reg_x[1]*au.nm > i._xmin*i._xunit,
+                                reg_x[1]*au.nm < i._xmax*i._xunit)
+            s = np.logical_or(s0, s1)
+            stot = np.logical_or(stot, s)
+        where = np.where(np.logical_not(stot))[0]
         reg._t.remove_rows(where)
-        print(reg._t)
         if len(reg.t) == 0:
             return None
         else:
