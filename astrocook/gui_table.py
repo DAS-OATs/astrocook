@@ -38,6 +38,12 @@ class GUITable(wx.Frame):
         self._cells_sel = []
 
 
+    def _data_clear(self, sess, attr):
+        setattr(sess, attr, None)
+        self._on_close(None)
+        self._gui._menu._refresh()
+
+
     def _data_edit(self, row, label, value, attr=None):
         if attr is None: attr = self._attr
         tab = getattr(self._gui, '_tab_'+attr)
@@ -70,6 +76,10 @@ class GUITable(wx.Frame):
         else:
             tab = getattr(self._gui, '_tab_'+attr)
             tab._data.t.remove_rows(rows)
+
+
+        if len(tab._data.t)==0:
+            self._data_clear(sess, attr)
 
 
     def _data_sort(self, label, reverse=False, attr=None, log=True):

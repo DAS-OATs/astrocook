@@ -392,6 +392,7 @@ class CookbookGeneral(object):
         """
 
         self.sess.intervs._clear()
+        self.sess._gui._tab._data_clear(self.sess, 'intervs')
 
         return 0
 
