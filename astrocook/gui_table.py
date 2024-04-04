@@ -79,10 +79,8 @@ class GUITable(wx.Frame):
         else:
             tab = getattr(self._gui, '_tab_'+attr)
             tab._data.t.remove_rows(rows)
-
-
-        if len(tab._data.t)==0:
-            self._data_clear(sess, attr)
+            if len(tab._data.t)==0:
+                self._data_clear(sess, attr)
 
 
     def _data_sort(self, label, reverse=False, attr=None, log=True):
