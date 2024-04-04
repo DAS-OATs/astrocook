@@ -40,7 +40,10 @@ class GUITable(wx.Frame):
 
     def _data_clear(self, sess, attr):
         setattr(sess, attr, None)
-        self._on_close(None)
+        try:
+            self._on_close(None)
+        except:
+            pass
         self._gui._menu._refresh()
 
 
