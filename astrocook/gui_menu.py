@@ -572,6 +572,7 @@ class GUIMenuGeneral(GUIMenu):
 
         self._rec = [{'targ': 'intervs_add', 'append': 'spec'},
                      {'targ': 'intervs_extract', 'append': 'intervs'},
+                     {'targ': 'intervs_clear', 'append': 'intervs'},
                      '--',
                      {'targ': 'region_extract', 'append': 'spec'},
                      {'targ': 'part_extract', 'append': 'spec'},

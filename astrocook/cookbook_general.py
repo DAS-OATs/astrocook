@@ -385,6 +385,17 @@ class CookbookGeneral(object):
         return 0
 
 
+    def intervs_clear(self):
+        """@brief Clear intervals
+        @details Remove all intervals from the intervals table
+        @return 0
+        """
+
+        self.sess.intervs._clear()
+
+        return 0
+
+
     def intervs_extract(self):
         """ @brief Extract intervals
         @details Extract spectral regions defined in the intervals table and

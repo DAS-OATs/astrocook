@@ -26,6 +26,10 @@ class IntervList(object):
         t['xmax'] = at.Column(np.array(xmax, ndmin=1), dtype=dtype, unit=xunit)
         self._t = t
         self._l = []
+        for m, M in zip(xmin, xmax):
+            interv = Interv(xmin, xmax, xunit)
+            self._l.append(interv)
+
 
     @property
     def t(self):
@@ -41,3 +45,7 @@ class IntervList(object):
         self._t.add_row([xmin, xmax])
         self._l.append(interv)
         return 0
+
+
+    def _clear(self):
+        self.__init__()
