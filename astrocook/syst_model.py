@@ -66,7 +66,6 @@ class SystModel(LMComposite):
                     or 'logN' in p or 'b' in p and 'btur' not in p]
             if plot_jac: plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
-            #plt.plot(self._xf, self._yf)
             if use_jac:
                 fit_kws_c['jac'] = _jac
 

@@ -772,7 +772,7 @@ class CookbookAbsorbers(object):
                         fit_list[i] = False
                     else:
                         chi2r_list.append(m['mod']._chi2r)
-            if verbose or True:
+            if verbose:
                 logging.info("I've fitted %i model%s." \
                              % (np.sum(fit_list), msg_z_range(z_list)))
         else:
@@ -1408,11 +1408,11 @@ class CookbookAbsorbers(object):
         if intervs:
             new = self.sess.cb.intervs_extract()
             systs = new.systs
-            self.sess._gui._sess_list.append(self.sess)
+            self.sess._gui._sess_list[-1] = self.sess
             self.sess._gui._sess_sel = self.sess
+            self.sess._gui._sess_items = [self.sess]
         else:
             systs = self.sess.systs
-        self.sess._gui._sess_sel = self.sess
 
         if systs is None:
             logging.warning("I didn't find any systems to fit in the intervals.")
