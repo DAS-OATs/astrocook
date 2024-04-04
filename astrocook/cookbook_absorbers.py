@@ -1405,21 +1405,20 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-        #self._systs_fit()
         if intervs:
             new = self.sess.cb.intervs_extract()
             systs = new.systs
+            self.sess._gui._sess_list.append(self.sess)
+            self.sess._gui._sess_sel = self.sess
         else:
             systs = self.sess.systs
-            systs_compl = None
+        self.sess._gui._sess_sel = self.sess
 
         if systs is None:
             logging.warning("I didn't find any systems to fit in the intervals.")
             return 0
 
         self._systs_cycle(mod=_mod, verbose=False, recreate=recreate, _systs=systs)
-
-        print(self.sess.systs._t)
         self._spec_update()
 
         return 0
