@@ -301,7 +301,8 @@ class Session(object):
             return 0
 
         # generic
-        if orig == 'undefined' and catg == 'undefined':
+        if orig in ['undefined', 'Space Telescope Science Institute'] \
+            and catg == 'undefined':
             if self.path[-3:]=='txt' and len(Table(hdul[1].data).colnames)==9:
                 self.spec = format.xqr30_bosman(hdul)
                 return 0
@@ -372,6 +373,7 @@ class Session(object):
             hdr = hdul[0].header
 
         self._data_iden(hdul, hdr)
+        #print(self._instr, self._catg, self._orig, self._telesc)
 
         # Astrocook structures
         format = Format()

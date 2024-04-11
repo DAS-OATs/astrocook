@@ -498,10 +498,11 @@ class Format(object):
                     y_name = self._col_name(data, 'y')
                     dy_name = self._col_name(data, 'dy')
                     cont_name = self._col_name(data, 'cont')
+
                     try:
                         x = np.ravel(data[x_name])
                         y = np.ravel(data[y_name])
-                        dy = data[dy_name] if dy_name is not None \
+                        dy = np.ravel(data[dy_name]) if dy_name is not None \
                             else np.full(len(y), np.nan)
                         if dy_name=='ivar':
                             dy = dy**(-0.5)
