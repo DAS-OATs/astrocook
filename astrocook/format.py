@@ -554,7 +554,7 @@ class Format(object):
             if data is not None and hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
                     if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
-                        spec._t[c] = data[c]
+                        spec._t[c] = np.ravel(data[c])
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
         except:
