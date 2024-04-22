@@ -444,6 +444,7 @@ class CookbookGeneral(object):
         else:
             new = None
 
+        sys.setrecursionlimit(10000)
         if 'systs' in self.sess.seq and self.sess.systs != None \
             and new.systs != None:
 
@@ -453,7 +454,6 @@ class CookbookGeneral(object):
             old = Session(self.sess._gui)
             for d in self.sess.__dict__:
                 if d != '_gui' and d != 'cb' and d != 'log' and d != 'defs':
-                    print(d)
                     old.__dict__[d] = dc(self.sess.__dict__[d])
                 if d == 'defs':
                     setattr(old, d, getattr(self.sess, d))
@@ -469,7 +469,7 @@ class CookbookGeneral(object):
             self.sess = new
             self._mods_recreate()
             self.sess = old
-
+        sys.setrecursionlimit(1000)
 
         return new
 
