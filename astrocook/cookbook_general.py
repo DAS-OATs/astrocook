@@ -453,6 +453,7 @@ class CookbookGeneral(object):
             old = Session(self.sess._gui)
             for d in self.sess.__dict__:
                 if d != '_gui' and d != 'cb' and d != 'log' and d != 'defs':
+                    print(d)
                     old.__dict__[d] = dc(self.sess.__dict__[d])
                 if d == 'defs':
                     setattr(old, d, getattr(self.sess, d))
