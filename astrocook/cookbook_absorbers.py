@@ -616,7 +616,9 @@ class CookbookAbsorbers(object):
             #print(fit_kws)
             #print(self.sess.defs.dict['fit'])
             if mod._active:
+                sys.setrecursionlimit(10000)
                 frozen = mod._fit(fit_kws=fit_kws)
+                sys.setrecursionlimit(1000)
             else:
                 frozen = 1
             #mod._pars.pretty_print()
