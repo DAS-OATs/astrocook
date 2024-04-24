@@ -99,7 +99,7 @@ class SystList(object):
             self._t['snr'] = np.empty(len(self.z), dtype=dtype)
             self._t['snr'] = np.nan
         if len(id)==len(self.z) and len(id)>0:
-            self._t['id'] = id
+            self._t['id'] = np.array(id, dtype=int)
         else:
             self._t['id'] = np.empty(len(self.z), dtype=int)
         mods_t = at.Table()
