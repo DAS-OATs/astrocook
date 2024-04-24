@@ -353,11 +353,12 @@ class SystModel(LMComposite):
         time_check = False
         if time_check:
             tt = time.time()
-        self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
-        self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
+        self._lines_pref = self._lines_func.__name__+'_'+str(int(self._id))+'_'
+        self._psf_pref = self._psf_func.__name__+'_'+str(int(self._id))+'_'
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
+        print(self._lines_pref)
         line = LMModel(lines_func, prefix=self._lines_pref,
                        series=self._series)
         if time_check:
