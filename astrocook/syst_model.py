@@ -358,7 +358,6 @@ class SystModel(LMComposite):
         if time_check:
             print('a %.4f' % (time.time()-tt))
             tt = time.time()
-        print(self._lines_pref)
         line = LMModel(lines_func, prefix=self._lines_pref,
                        series=self._series)
         if time_check:
