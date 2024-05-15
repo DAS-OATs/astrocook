@@ -749,6 +749,13 @@ class Spectrum(Frame):
         for s in self._stats_text.split('\n'):
             logging.info(s)
 
+        if 'model' in self._t.colnames:
+            t = self._t
+            dx = (t['xmax']-t['xmin']).to(au.nm)
+            ew = np.nansum(dx[sel]*(1-np.array(t['model'][sel]/t['cont'][sel])))
+            logging.info(" ew:             %3.4e %s" % (ew.value, ew.unit))
+
+
 
     def _template_bb(self, temp=6000, scale=1.0):
         bb = BlackBody(temperature=temp*au.K, scale=scale*au.erg/(self._xunit*au.cm**2*au.s*au.sr))

@@ -177,7 +177,7 @@ class GUIGraphMain(wx.Frame):
     def _on_stats_show(self, event):
         sess = self._gui._sess_sel
         try:
-            x = [sess._clicks[-2][0], sess._clicks[-1][0]]
+            x = [sess._clicks[-3][0], sess._clicks[-2][0]]
         except:
             x = (0, np.inf)
             sess._shade = False

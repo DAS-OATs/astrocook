@@ -82,25 +82,33 @@ class SystModel(LMComposite):
                     del fit_kws_c['jac']
                     use_jac = False
             if not use_jac:
-                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                try:
+                    fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                                  weights=self._wf,
                                                  max_nfev=max_nfev,
                                                  fit_kws=fit_kws_c,
                                                  nan_policy='omit',
                                                  method='least_squares')
+                except:
+                    logging.warning("I couldn't complete the fit!")
                 #class_unmute(self, Spectrum)
                 if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='blue')
             if plot_jac: plt.show()
             time_end = datetime.datetime.now()
-            self._pars = fit.params
             self._ys = self.eval(x=self._xs, params=self._pars)
             #plt.plot(self._xs, self._ys)
             #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))
             #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
             #plt.show()
-            self._chi2r = fit.redchi
-            self._aic = fit.aic
-            self._bic = fit.bic
+            try:
+                self._pars = fit.params
+                self._chi2r = fit.redchi
+                self._aic = fit.aic
+                self._bic = fit.bic
+            except:
+                self._chi2r = np.nan
+                self._aic = np.nan
+                self._bic = np.nan
             return 0
         else:
             return 1
