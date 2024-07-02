@@ -395,7 +395,7 @@ class GUIMenuAbsorbers(GUIMenu):
                      {'targ': 'systs_sigmav', 'append': 'z0'},
                     ]
 
-        from .cookbook_absorbers import CookbookAbsorbers as cbc
+        from .cookbook_absorbers_old import CookbookAbsorbersOld as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
