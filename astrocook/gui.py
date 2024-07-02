@@ -12,7 +12,7 @@ import json
 import logging
 from matplotlib import pyplot as plt
 import numpy as np
-from sphinx.util import docstrings as ds
+#from sphinx.util import docstrings as ds
 import wx
 import wx.lib.mixins.listctrl as listmix
 

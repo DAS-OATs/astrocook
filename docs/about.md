@@ -6,7 +6,7 @@ nav_order: 10
 
 # About
 
-Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by **Guido Cupani**, **Giorgio Calderone**, and **Stefano Russo**, with contributions from **Valentina D'Odorico**, **Stefano Cristiani**, and **Giuliano Taffoni**.
+Astrocook is developed at INAF-Osservatorio Astronomico di Trieste by **Guido Cupani**, **Giorgio Calderone**, **Stefano Russo**, and **Francesco Guarneri**, with contributions from **Valentina D'Odorico**, **Stefano Cristiani**, and **Giuliano Taffoni**.
 
 ## Cite Astrocook
 
