@@ -57,7 +57,6 @@ class GUIGraphMain(wx.Frame):
 
 
     def _init(self, **kwargs):
-        print(self._size_x, self._size_y)
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
                                            #size=(self._size_x, self._size_y))
                                            size=(1843, 540))
@@ -235,7 +234,8 @@ class GUIGraphMain(wx.Frame):
     def _on_close(self, event=None):
         self._closed = True
         self.Destroy()
-        del self._gui._graph_det
+        if hasattr(self._gui, '_graph_det'):
+            del self._gui._graph_det
 
 
 class GUIGraphDetail(GUIGraphMain):
