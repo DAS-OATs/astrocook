@@ -21,8 +21,8 @@ class GUITable(wx.Frame):
                  gui,
                  attr,
                  title="Table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         self._gui = gui
         self._attr = attr
@@ -136,7 +136,7 @@ class GUITable(wx.Frame):
             tab._panel = wx.Panel(tab)
             tab._tab = gridlib.Grid(tab._panel)
             tab._tab.CreateGrid(0, 0)
-            tab.SetPosition((0, wx.DisplaySize()[1]*0.5))
+            tab.SetPosition((0, int(wx.DisplaySize()[1]*0.5)))
 
         coln = len(tab._data.t.colnames)
         rown = len(tab._data.t)-tab._tab.GetNumberRows()
@@ -164,8 +164,8 @@ class GUITable(wx.Frame):
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
-        size_x = wx.DisplaySize()[0]*0.4
-        size_y = wx.DisplaySize()[1]*0.4
+        size_x = int(wx.DisplaySize()[0]*0.4)
+        size_y = int(wx.DisplaySize()[1]*0.4)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
         self._gui._graph_det._graph._init_ax(111)
         row = self._data.t[event.GetRow()]
@@ -288,7 +288,8 @@ class GUITable(wx.Frame):
                        self._on_label_right_click)
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
+                          int(wx.DisplaySize()[1]*0.23)))
         self.Show()
         self._shown = True
 
@@ -299,8 +300,8 @@ class GUITableLineList(GUITable):
     def __init__(self,
                  gui,
                  title="Line table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
                                                size_y)
@@ -324,8 +325,8 @@ class GUITableModelList(GUITable):
     def __init__(self,
                  gui,
                  title="Model table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableModelList, self).__init__(gui, 'mods', title,
                                                 size_x, size_y)
@@ -363,8 +364,8 @@ class GUITableSpectrum(GUITable):
     def __init__(self,
                  gui,
                  title="Spectrum table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSpectrum, self).__init__(gui, 'spec', title, size_x,
                                                size_y)
@@ -388,8 +389,8 @@ class GUITableSystList(GUITable):
     def __init__(self,
                  gui,
                  title="System table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSystList, self).__init__(gui, 'systs', title, size_x,
                                                size_y)

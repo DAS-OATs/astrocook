@@ -23,8 +23,8 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.96, #0.87
-                 size_y=wx.DisplaySize()[1]*0.5,  #0.4
+                 size_x=int(wx.DisplaySize()[0]*0.96), #0.87
+                 size_y=int(wx.DisplaySize()[1]*0.5),  #0.4
                  main=True,
                  **kwargs):
         """ Constructor """
@@ -52,12 +52,15 @@ class GUIGraphMain(wx.Frame):
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.40))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
+                          int(wx.DisplaySize()[1]*0.40)))
 
 
     def _init(self, **kwargs):
+        print(self._size_x, self._size_y)
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
-                                           size=(self._size_x, self._size_y))
+                                           #size=(self._size_x, self._size_y))
+                                           size=(1843, 540))
 
         self._panel = wx.Panel(self)
         self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
@@ -241,8 +244,8 @@ class GUIGraphDetail(GUIGraphMain):
                  gui,
                  #sess,
                  title="Spectrum detail",
-                 size_x=wx.DisplaySize()[0]*0.4,
-                 size_y=wx.DisplaySize()[1]*0.4,
+                 size_x=int(wx.DisplaySize()[0]*0.4),
+                 size_y=int(wx.DisplaySize()[1]*0.4),
                  **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False, **kwargs)
@@ -285,12 +288,12 @@ class GUIGraphDetail(GUIGraphMain):
         rows = min(5, n)
         cols = (n-1)//5+1
         idxs = np.ravel(np.reshape(range(rows*cols), (rows, cols)).T)[:n]
-        size_x = min(wx.DisplaySize()[0]*0.5, wx.DisplaySize()[0]*0.4*cols)
-        size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
+        size_x = min(int(wx.DisplaySize()[0]*0.5), int(wx.DisplaySize()[0]*0.4*cols))
+        size_y = min(int(wx.DisplaySize()[1]*0.9), int(wx.DisplaySize()[1]*0.3*rows))
         self.SetSize(wx.Size(size_x, size_y))
-        self.SetPosition((min(wx.DisplaySize()[0]*0.98-size_x,
-                              wx.DisplaySize()[0]*0.58),
-                         wx.DisplaySize()[1]*0.02))
+        self.SetPosition((min(int(wx.DisplaySize()[0]*0.98-size_x),
+                              int(wx.DisplaySize()[0]*0.58)),
+                         int(wx.DisplaySize()[1]*0.02)))
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph
@@ -355,14 +358,15 @@ class GUIGraphHistogram(GUIGraphMain):
     def __init__(self,
                  gui,
                  title="Column histogram",
-                 size_x=wx.DisplaySize()[0]*0.6,
-                 size_y=wx.DisplaySize()[1]*0.6,
+                 size_x=int(wx.DisplaySize()[0]*0.6),
+                 size_y=int(wx.DisplaySize()[1]*0.6),
                  **kwargs):
         #self._col_values = col_values
         super(GUIGraphHistogram, self).__init__(gui, title, size_x, size_y,
                                                 main=False, **kwargs)
         self._gui._graph_hist = self
-        self.SetPosition((wx.DisplaySize()[0]*0.48, wx.DisplaySize()[1]*0.02))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.48),
+                          int(wx.DisplaySize()[1]*0.02)))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,

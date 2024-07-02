@@ -382,7 +382,7 @@ class Graph(object):
 
 
     def _refresh_canvas_lists(self):
-        cmc = plt.cm.get_cmap('tab10').colors
+        cmc = plt.colormaps.get_cmap('tab10').colors
         self._canvas_dict = {'cursor_z_series': (GraphCursorZSeries,3,0.5),
                              'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)
                              }

@@ -421,12 +421,13 @@ class GUIPanelSession(wx.Frame):
 
         self._mute = mute
         if not self._mute:
-            size_x = wx.DisplaySize()[0]*0.6
-            size_y = wx.DisplaySize()[1]*0.2
+            size_x = int(wx.DisplaySize()[0]*0.6)
+            size_y = int(wx.DisplaySize()[1]*0.2)
 
             super(GUIPanelSession, self).__init__(parent=None, title=title,
                                                   size=(size_x, size_y))
-            self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
+            self.SetPosition((int(wx.DisplaySize()[0]*0.02), 
+                              int(wx.DisplaySize()[0]*0.02)))
 
         self._tag = "_panel_sess"
 
