@@ -33,6 +33,7 @@ For all other information, please refer to the [Astrocook GitHub pages](https://
 * **[Guido Cupani](https://github.com/gcupani)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 * **[Giorgio Calderone](https://github.com/gcalderone)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 * **[Stefano Alberto Russo](https://github.com/sarusso)** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
+* **[Francesco Guarneri]** - [INAF-OATs](http://www.oats.inaf.it/index.php/en/)
 
 If you publish scientific results obtained with Astrocook, please cite this article in the references:
 
