@@ -16,9 +16,9 @@ class CookbookAbsorbers(object):
 
         @details Find absorption or emission lines, based on their prominence.
 
-        @param kind Kind of lines (`abs` or `em`)
-        @param prominence Prominence of lines (as in `scipy.signal.find_peaks`)
-        @param append Append lines to existing line list
+        @param kind Kind
+        @param prominence Prominence
+        @param append Append to existing line list
         @return 0
         """
 
