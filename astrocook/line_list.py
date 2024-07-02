@@ -15,14 +15,17 @@ class LineList(Frame):
                  xmax=[],
                  y=[],
                  dy=[],
-                 source=[],
+                 cont=None,
+                 source=None,
                  xunit=au.nm,
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
                  dtype=float):
         super(LineList, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
-        if source != []:
+        if cont is not None:
+            self._t['cont'] = cont
+        if source is not None:
             self._t['source'] = source
 
 
