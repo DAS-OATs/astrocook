@@ -412,7 +412,7 @@ class CookbookContinuum(object):
         @details Discriminate absorbed spectrum bins by applying a kappa-sigma
         clipping within a running window.
 
-        The recipes computes the mean of `y` in a runniung window across the
+        The recipes computes the mean of `y` in a running window across the
         spectrum and saves it in column `y_rm`. It then computes the deviation
         $$\Delta y =$$ `y` $$-$$ `y_rm` for all spectral bins and finds the
         outliers in this distribution.
