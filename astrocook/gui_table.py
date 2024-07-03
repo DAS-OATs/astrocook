@@ -89,8 +89,9 @@ class GUITable(wx.Frame):
 
         tab = getattr(self._gui, '_tab_'+attr)
         if len(tab._data.t)>max_rows:
-            logging.warning("I displayed only the first {} rows. To display "\
-                            "a different range, extract it first.".format(max_rows))
+            logging.warning("The table is too long! I displayed only the first "
+                            "{} rows. To display a different range, extract it "
+                            "first.".format(max_rows))
             t = tab._data.t[:max_rows]
         else:
             t = tab._data.t
