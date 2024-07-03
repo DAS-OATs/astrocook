@@ -1,5 +1,6 @@
 from .vars import *
 from .cookbook_absorbers import CookbookAbsorbers
+from .cookbook_absorbers_old import CookbookAbsorbersOld
 from .cookbook_continuum import CookbookContinuum
 from .cookbook_edit import CookbookEdit
 from .cookbook_flux import CookbookFlux
@@ -27,6 +28,7 @@ class Cookbook(CookbookEdit,
                CookbookGeneral,
                CookbookContinuum,
                CookbookAbsorbers,
+               CookbookAbsorbersOld,
                CookbookFlux,
                CookbookGraph,
                CookbookSynthetic,

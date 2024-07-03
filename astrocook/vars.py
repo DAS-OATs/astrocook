@@ -8,6 +8,9 @@ import operator as op
 import pathlib
  #c, e, m_e
 
+
+docs_url = 'https://das-oats.github.io/astrocook/docs/'
+
 """
 ac_ops = {'>': operator.gt,
           '<': operator.lt,
