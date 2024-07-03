@@ -38,13 +38,13 @@ class Spectrum(Frame):
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
                  dtype=float,
-                 cont=[],
-                 resol=[]):
+                 cont=None,
+                 resol=None):
         super(Spectrum, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
-        if cont != []:
+        if cont is not None:
             self._t['cont'] = cont*self._yunit
-        if resol != []:
+        if resol is not None:
             self._t['resol'] = resol
 
         self.gauss_psf_cache = {}
