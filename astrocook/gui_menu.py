@@ -391,6 +391,24 @@ class GUIMenuAbsorbers(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
+        self._rec = [{'targ': 'find_lines', 'append': 'spec'}]
+
+        from .cookbook_absorbers import CookbookAbsorbers as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuAbsorbersOld(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=7000,
+                 **kwargs):
+        super(GUIMenuAbsorbers, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
         self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
                      {'targ': 'systs_complete_from_like', 'append': 'z0'},
                      '--',

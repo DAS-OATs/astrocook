@@ -4,6 +4,7 @@ from .vars import *
 from astropy import units as au
 import numpy as np
 
+
 class LineList(Frame):
     """Class for line lists
 
@@ -20,13 +21,23 @@ class LineList(Frame):
                  xunit=au.nm,
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
-                 dtype=float):
-        super(LineList, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
-                                       dtype)
+                 dtype=float,
+                 row=None,
+                 kind=None):
+        if row is not None:
+            super(LineList, self).__init__(
+                row['x'], row['xmin'], row['xmax'], row['y'], row['dy'],
+                xunit, yunit, meta, dtype)
+        else:
+            super(LineList, self).__init__(
+                x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
+
         if cont is not None:
             self._t['cont'] = cont
         if source is not None:
             self._t['source'] = source
+        if kind is not None:
+            self._t['kind'] = kind
 
 
     def _add(self, x, xmin, xmax, y, dy, source=None):
@@ -285,4 +296,11 @@ class LineList(Frame):
         if logN:
             return z_range, logN_range
         else:
-            return z_range
+            return
+
+    def append_replace(self, append, sess):
+        if append and sess.lines is not None and len(sess.lines.t)>0:
+            sess.lines._append(self)
+            sess.lines._clean()
+        else:
+            sess.lines = self
