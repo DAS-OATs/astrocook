@@ -5,6 +5,7 @@ from .line_list import LineList
 from .message import *
 from .vars import *
 from astropy import units as au
+import astropy.constants as ac
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
 from astropy.table import Column
@@ -101,6 +102,10 @@ class Spectrum(Frame):
 
         return 0
 
+    def _dv(self):
+        dv = (self._t['xmax']-self._t['xmin'])/self._t['x'] \
+            * ac.c.to(au.km/au.s)
+        return dv.value
 
     def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv,
                   weighted=False):

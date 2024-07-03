@@ -1,11 +1,20 @@
+from .functions import running_mean
+from .message import *
+from .utils import parse_range
+
+import astropy.constants as ac
+import astropy.table as at
+import astropy.units as au
+import logging
+
 class CookbookContinuum(object):
 
     def __init__(self):
         super(CookbookContinuum, self).__init__()
 
 
-    def clip_flux(self, xmin, xmax, hwindow=100, kappa_hi=6, kappa_lo=3,
-                  iter=100, fudge=1, std=500, delta_x=5000):
+    def clip_flux(self, ran='all', smooth_len=200, kappa_hi=6, kappa_lo=3,
+                  iter=100, fudge=1, delta_x=5000):
         """ @brief Clip flux
         @details Discriminate absorbed spectrum bins by applying a kappa-sigma
         clipping within a running window.
@@ -42,100 +51,88 @@ class CookbookContinuum(object):
         `cont` of the spectrum as the current estimate of the emission
         continuum. A set of `delta_x`-spaced nodes is superimposed to the final
         continuum
-        @param xmin Minimum wavelength (nm)
-        @param xmax Maximum wavelength (nm)
-        @param hwindow Half-window size in pixels for running mean
+        @param ran Wavelength range (nm)
+        @param smooth_len Smoothing length (km/s)
         @param kappa_hi Number of standard deviations for clipping above
         @param kappa_lo Number of standard deviations for clipping below
-        @param iter Number of iterations
         @param fudge Fudge factor to scale the continuum
-        @param std Standard deviation for gaussian convolution (km/s)
         @param delta_x Spacing of nodes (km/s)
         @return 0
         """
 
         try:
-            xmin = 0*au.nm if xmin in ["", "None", None] else float(xmin) * au.nm
-            xmax = 1e4*au.nm if xmax in ["", "None", None] else float(xmax) * au.nm
-            hwindow = int(hwindow)
+            xmin, xmax = parse_range(ran)
+            smooth_len = float(smooth_len)
             kappa_hi = float(kappa_hi)
             kappa_lo = float(kappa_lo)
-            iter = int(iter)
             fudge = float(fudge)
-            std = float(std)
             delta_x = float(delta_x)
         except:
             logging.error(msg_param_fail)
             return 0
 
-        spec = self.sess.spec
-        lines = self.sess.lines
+        maxiter = 1000
 
+        spec = self.sess.spec
+        dv = spec._dv()
+
+        # Prepare columns
+        if 'mask_abs' not in spec._t.colnames:
+            spec._t['mask_abs'] = at.Column(np.zeros(len(spec._t)), dtype=int)
+        if 'cont' not in spec._t.colnames:
+            spec._t['cont'] = at.Column(np.array(None, ndmin=1), dtype=float)
+
+
+        # Extract range
         xsel = np.logical_and(spec._t['x']>xmin, spec._t['x']<xmax)
+        xsels = np.where(xsel==1)[0][0]
         spec_t = spec._t[xsel]
 
+        # Compute running median
+        hwindow = int(smooth_len/np.min(dv[xsel]))//8
         y_rm = running_mean(spec_t['y'], h=hwindow)
 
-        if 'y_rm' not in spec._t.colnames:
-            logging.info("I'm adding column 'y_rm'.")
-        else:
-            logging.warning("I'm updating column 'y_rm'.")
-        spec_t['y_rm'] = at.Column(y_rm, dtype=float)
-
-        if 'y_em' not in spec_t.colnames:
-            logging.info("I'm adding column 'y_em'.")
-        spec_t['y_em'] = at.Column(np.ones(len(spec_t)), dtype=int)
-        if 'y_abs' not in spec_t.colnames:
-            logging.info("I'm adding column 'y_abs'.")
-        spec_t['y_abs'] = at.Column(np.zeros(len(spec_t)), dtype=int)
-        if 'y_cont' not in spec_t.colnames:
-            logging.info("I'm adding column 'y_cont'.")
-        spec_t['y_cont'] = spec_t['y']
-        if 'cont' not in spec_t.colnames:
-            logging.info("I'm adding column 'cont'.")
-        spec_t['cont'] = at.Column(np.array(None, ndmin=1), dtype=float)
-        #spec_t['cont'].unit = spec_t['y'].unit
-
+        # Clip flux
         sum_sel = len(spec_t)
-        for i in range(iter):
-            sel = spec_t['y']-spec_t['y_rm']<-kappa_lo*spec_t['dy']
-            sel = np.logical_or(sel, spec_t['y']-spec_t['y_rm']>kappa_hi*spec_t['dy'])
-            spec_t['y_em'][sel] = 0
-            spec_t['y_abs'][sel] = 1
-            x_rm = spec_t['x'][~sel]
-            if 2*hwindow+1>len(spec_t['y'][~sel]):
-                logging.warning("Too many outliers to compute a running "
-                                "median at iteration %i! Try increasing sigma."
-                                % i)
-                y_rm = np.ones(len(spec_t['y'][~sel])) \
-                       * np.median(spec_t['y'][~sel])
-            else:
-                y_rm = running_mean(spec_t['y'][~sel], h=hwindow)
+        sel = np.zeros(len(spec_t), dtype=bool)
+        for i in range(maxiter):
 
-            if i == iter-1 and sum_sel != np.sum(sel):
-                logging.warning("Clipping not converged after %i iterations! "
-                                "Try iterating more." % (i+1))
+            sel[~sel] = spec_t['y'][~sel]-y_rm<-kappa_lo*spec_t['dy'][~sel]
+            selw = np.where(sel==1)[0]+xsels
+            spec._t['mask_abs'][selw] = np.ones(len(selw))
+            x_rm = spec_t['x'][~sel]
+            y_rm = running_mean(spec_t['y'][~sel], h=hwindow)
+
+            if i == maxiter-1 and sum_sel != np.sum(sel):
+                logging.warning("Clipping not converged after {} iterations! "\
+                                .format(i+1))
             if sum_sel != np.sum(sel):
                 sum_sel = np.sum(sel)
             else:
                 logging.info("Clipping converged after %i iterations." % (i+1))
                 break
 
-            spec_t['y_rm'] = np.interp(spec_t['x'], x_rm, y_rm)
-        x_cont = spec_t['x'][np.where(spec_t['y_em'])]
-        y_cont = spec_t['y'][np.where(spec_t['y_em'])]
-        spec_t['y_cont'] = np.interp(spec_t['x'], x_rm, y_rm)*spec_t['y'].unit
-        if lines is not None:
-            lines._t['y_cont'] = np.interp(lines._t['x'], x_rm, y_rm)*lines._t['y'].unit
+        spec._t['mask_abs']
+        cont_temp = np.interp(spec._t['x'][xsel], x_rm, y_rm)*spec_t['y'].unit
 
-        spec_t['y_cont'] *= fudge
+        # Apply fudge
+        cont_temp *= fudge
+
+        # Merge with old continuum
         if 'cont' in spec._t.colnames:
-            spec._t['y_cont'] = spec._t['cont']
+            cont_old = spec._t['cont']
         else:
-            spec._t['y_cont'] = np.nan
-        spec._t['y_cont'][xsel] = spec_t['y_cont']
+            cont_old = [np.nan]*len(spec._t)
+        cont_old[xsel] = cont_temp
+        spec._t['cont_old'] = cont_old
+        spec._gauss_convolve(std=smooth_len, input_col='cont_old',
+                             output_col='cont')
+        spec._t.remove_column('cont_old')
 
-        spec._gauss_convolve(std=std, input_col='y_cont', output_col='cont')
-        self.nodes_extract(delta_x=delta_x, mode='cont')
+        # Propagate to lines
+        lines = self.sess.lines
+        if lines is not None:
+            lines._t['cont'] = np.interp(lines._t['x'], spec._t['x'],
+                                         spec._t['cont'])
 
         return 0
