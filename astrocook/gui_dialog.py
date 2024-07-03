@@ -124,7 +124,6 @@ class GUIDialog(wx.Dialog):
 
 
     def _on_docs(self, e):
-        print(self._url)
         wx.LaunchDefaultBrowser(self._url[0])
 
 
