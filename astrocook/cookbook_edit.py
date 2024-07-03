@@ -169,8 +169,11 @@ class CookbookEdit(object):
                     mod = m['mod']
                     mod._spec = self.sess._gui._sess_sel.spec
                     mod._xf, mod._yf, mod._wf = \
-                        mod._make_regions(mod, mod._spec._safe(mod._spec.x)\
-                                               .to(au.nm).value, eval=True)
+                        mod._make_regions(
+                            mod, self.sess.spec,
+                            mod._xs,
+                            thres=self.sess.defs.dict['group']['thres'],
+                            eval=True)
             setattr(self.sess._gui._sess_sel, attrn, attr)
 
         if mode=='append':
@@ -217,7 +220,7 @@ class CookbookEdit(object):
                 except:
                     pass
             return 0
-            
+
         if ',all,' in col and ',all,' in expr:
             for st in seq:
                 try:

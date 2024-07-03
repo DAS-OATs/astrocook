@@ -34,7 +34,7 @@ class Feat():
         dx = (t['xmax']-t['xmin']).to(au.nm)
         self._ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
         self._dew = np.sqrt(np.nansum((dx*np.array(t['dy']/t['cont']))**2))
-        #print(self._ew, self._dew)
+        #print(np.average(t['x']), self._ew, self._dew)
 
 
     def _fwhm_compute(self):

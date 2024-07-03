@@ -1,0 +1,25 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test.fits",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "y_scale_med",
+      "params": {
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

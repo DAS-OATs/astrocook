@@ -3,35 +3,12 @@ from .line_list import LineList
 
 import logging
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.optimize import curve_fit
-from scipy.signal import argrelmin, argrelmax, find_peaks
-from scipy.special import erf, erfc, erfinv
-import sys
-import time
-
-prefix = "[INFO] cookbook_absorbers:"
-
-def gauss(x, *p):
-    A, mu, sigma = p
-    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
-
+from scipy.signal import find_peaks
 
 class CookbookAbsorbers(object):
-    """ Cookbook of utilities for modeling absorbers
-    """
 
     def __init__(self):
         super(CookbookAbsorbers, self).__init__()
-        self._refit_n = 3
-        self._chi2rav_thres = 1e-2
-        self._chi2r_thres = np.inf
-        self._dlogN_thres = np.inf
-        self._max_nfev = max_nfev_def
-        self._sel_fit = False
-
-    def _lines_cands_find(self, series, z_start, z_end, dz):
-        return self.sess.lines._cands_find(series, z_start, z_end, dz)
 
 
     def find_lines(self, kind='abs', prominence=None, append=True):
@@ -39,9 +16,11 @@ class CookbookAbsorbers(object):
 
         @details Find absorption or emission lines, based on their prominence.
 
-        @param kind Kind of lines (`abs` or `em`)
-        @param prominence Prominence of lines (as in `scipy.signal.find_peaks`)
-        @param append Append lines to existing line list
+        @url absorbers_cb.html#find-lines
+
+        @param kind Kind
+        @param prominence Prominence
+        @param append Append to existing line list
         @return 0
         """
 

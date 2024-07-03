@@ -14,6 +14,8 @@ import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.colourdb as cdb
 
+max_rows = 2000
+
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
 
@@ -21,8 +23,8 @@ class GUITable(wx.Frame):
                  gui,
                  attr,
                  title="Table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         self._gui = gui
         self._attr = attr
@@ -89,7 +91,13 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
-        for j, r in enumerate(tab._data.t):
+        if len(tab._data.t)>max_rows:
+            logging.warning("I displayed only the first {} rows. To display "\
+                            "a different range, extract it first.".format(max_rows))
+            t = tab._data.t[:max_rows]
+        else:
+            t = tab._data.t
+        for j, r in enumerate(t):
             for i, n in enumerate(tab._data.t.colnames):
 
                 if j == 0:
@@ -136,10 +144,10 @@ class GUITable(wx.Frame):
             tab._panel = wx.Panel(tab)
             tab._tab = gridlib.Grid(tab._panel)
             tab._tab.CreateGrid(0, 0)
-            tab.SetPosition((0, wx.DisplaySize()[1]*0.5))
+            tab.SetPosition((0, int(wx.DisplaySize()[1]*0.5)))
 
         coln = len(tab._data.t.colnames)
-        rown = len(tab._data.t)-tab._tab.GetNumberRows()
+        rown = min(len(tab._data.t)-tab._tab.GetNumberRows(), max_rows)
         tab._tab.AppendCols(coln)
         tab._tab.AppendRows(rown)
 
@@ -164,8 +172,8 @@ class GUITable(wx.Frame):
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
-        size_x = wx.DisplaySize()[0]*0.4
-        size_y = wx.DisplaySize()[1]*0.4
+        size_x = int(wx.DisplaySize()[0]*0.4)
+        size_y = int(wx.DisplaySize()[1]*0.4)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
         self._gui._graph_det._graph._init_ax(111)
         row = self._data.t[event.GetRow()]
@@ -242,6 +250,12 @@ class GUITable(wx.Frame):
         self._gui._refresh(init_cursor=True)
 
 
+    def _on_replace(self, event):
+        cb = self._gui._sess_sel.cb
+        dlg = GUIDialogMethod(self._gui, 'Replace series', 'series_replace')
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_sort(self, event):
         labels = self._labels_extract()
 
@@ -282,7 +296,8 @@ class GUITable(wx.Frame):
                        self._on_label_right_click)
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
+                          int(wx.DisplaySize()[1]*0.23)))
         self.Show()
         self._shown = True
 
@@ -293,8 +308,8 @@ class GUITableLineList(GUITable):
     def __init__(self,
                  gui,
                  title="Line table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
                                                size_y)
@@ -318,8 +333,8 @@ class GUITableModelList(GUITable):
     def __init__(self,
                  gui,
                  title="Model table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableModelList, self).__init__(gui, 'mods', title,
                                                 size_x, size_y)
@@ -357,8 +372,8 @@ class GUITableSpectrum(GUITable):
     def __init__(self,
                  gui,
                  title="Spectrum table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSpectrum, self).__init__(gui, 'spec', title, size_x,
                                                size_y)
@@ -382,8 +397,8 @@ class GUITableSystList(GUITable):
     def __init__(self,
                  gui,
                  title="System table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSystList, self).__init__(gui, 'systs', title, size_x,
                                                size_y)
@@ -523,7 +538,6 @@ class GUITableSystList(GUITable):
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-
         for v in self._freezes_d:
             if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
                 self._freezes_d[v] = (self._freezes_d[v][0],
@@ -696,8 +710,9 @@ class GUITableSystList(GUITable):
                 title += ['Fit all systems...', 'Remove all']
                 attr += ['syst_fit', 'remove']
             else:
-                title += ['Fit system...', 'Fit group...', 'Remove']
-                attr += ['syst_fit', 'group_fit', 'remove']
+                title += ['Fit system...', 'Fit group...', 'Extract group...',
+                          'Remove']
+                attr += ['syst_fit', 'group_fit', 'group_extract', 'remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
@@ -751,6 +766,15 @@ class GUITableSystList(GUITable):
         sess.log.append_full('_tab_systs', '_data_fit', {'row': row})
         self._data_init(from_scratch=False, attr='systs')
         self._data_fit(row)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_group_extract(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id}]
+        dlg = GUIDialogMethod(self._gui, 'Extract group', 'group_extract',
+                              params_last=params)
         self._gui._refresh(init_cursor=True)
 
 
@@ -829,6 +853,9 @@ class GUITableSystList(GUITable):
             self._data_top_label_right_click(col)
             title = ['Sort ascending', 'Sort descending']
             attr = ['sort', 'sort_reverse']
+            if col==1:
+                title += ['sep', 'Replace...']
+                attr += [None, 'replace']
             if col > 1:
                 title += ['sep', 'Histogram']
                 attr += [None, 'histogram']

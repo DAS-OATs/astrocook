@@ -1,7 +1,7 @@
 import astropy.units as au
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
-from .vars import graph_elem, graph_lim_def, hwin_def, xem_d
+from .vars import docs_url, graph_elem, graph_lim_def, hwin_def, xem_d
 from collections import OrderedDict
 from copy import deepcopy as dc
 import inspect
@@ -9,6 +9,7 @@ import json
 import numpy as np
 import datetime as dt
 import wx
+import os
 
 class GUIDialog(wx.Dialog):
 
@@ -26,6 +27,7 @@ class GUIDialog(wx.Dialog):
         self._params = []
         self._brief = []
         self._details = []
+        self._url = []
         self._doc = []
         self._ctrl = []
 
@@ -49,6 +51,8 @@ class GUIDialog(wx.Dialog):
 
     def _box_buttons(self, cancel_run=True):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
+        docs_button = wx.Button(self, label='Documentation')
+        docs_button.Bind(wx.EVT_BUTTON, self._on_docs)
         if cancel_run:
             cancel_button = wx.Button(self, label='Cancel')
             cancel_button.Bind(wx.EVT_BUTTON, self._on_cancel)
@@ -56,11 +60,14 @@ class GUIDialog(wx.Dialog):
             run_button.Bind(wx.EVT_BUTTON, self._on_run)
             run_button.SetDefault()
             buttons.Add(cancel_button, 0, wx.RIGHT, border=5)
+            buttons.Add(docs_button, 0, wx.RIGHT, border=5)
             buttons.Add(run_button, 0)
         else:
+            docs_button = wx.Button(self, label='Documentation')
             ok_button = wx.Button(self, label='OK')
             ok_button.Bind(wx.EVT_BUTTON, self._on_ok)
             ok_button.SetDefault()
+            buttons.Add(docs_button, 0, wx.RIGHT, border=5)
             buttons.Add(ok_button, 0, border=5)
 
         self._bottom.Add(self._panel, 0, wx.EXPAND|wx.ALL, border=10)
@@ -77,6 +84,11 @@ class GUIDialog(wx.Dialog):
         #                      if s[0:7]=='details'][0].replace('\n', ' '))
         self._details.append([s.split('\n\n')[0][8:] for s in split \
                               if s[0:7]=='details'][0].replace('\n', ' '))
+        try:
+            self._url.append([docs_url+s.split('\n\n')[0][4:] \
+                              for s in split if s[0:3]=='url'][0])
+        except:
+            self._url.append(docs_url)
         self._doc.append([s[6:-1].split(' ', 1)[1] \
                           for s in split if s[0:5]=='param'])
 
@@ -91,12 +103,17 @@ class GUIDialog(wx.Dialog):
 
 
     def _get_params(self, method):
-        keys = inspect.getargspec(method)[0][1:]
-        defs = inspect.getargspec(method)[-1]
-        if defs == None:
+        keys = inspect.getfullargspec(method).args[1:]
+        defs = inspect.getfullargspec(method).defaults
+        if defs is None:
             defs = []
-        defs = [str(d) for d in defs]
-        values = np.append(['']*(len(keys)-len(defs)), defs)
+        defs_mod = []
+        for d in defs:
+            if d is not None:
+                defs_mod.append(str(d))
+            else:
+                defs_mod.append(d)
+        values = np.append(['']*(len(keys)-len(defs_mod)), defs_mod)
         self._params.append(OrderedDict(zip(keys, values)))
 
 
@@ -104,6 +121,11 @@ class GUIDialog(wx.Dialog):
         if hasattr(self._gui, '_dlg_mini_systems'):
             self._gui._dlg_mini_systems._cursor_refresh()
         self.Close()
+
+
+    def _on_docs(self, e):
+        print(self._url)
+        wx.LaunchDefaultBrowser(self._url[0])
 
 
     def _on_ok(self, e):
@@ -192,7 +214,7 @@ class GUIDialogMethod(GUIDialog):
         self._box_buttons(self._cancel_run)
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
         self.Show()
 
 
@@ -251,7 +273,7 @@ class GUIDialogMethods(GUIDialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
         self.Show()
 
     def _box_methods(self):
@@ -294,7 +316,7 @@ class GUIDialogMini(wx.Dialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], wx.DisplaySize()[1]*0.25))
+        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
         self.Show()
 
 

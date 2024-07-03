@@ -9,8 +9,8 @@ class GUIImage(wx.Frame):
                  gui,
                  attr,
                  title="Image",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.5):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.5)):
 
         super(GUIImage, self).__init__(parent=None, title=title,
                                        size=(size_x, size_y))
@@ -37,8 +37,8 @@ class GUIImageCompleteness(GUIImage):
     def __init__(self,
                  gui,
                  title="System completeness",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.5):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.5)):
 
         super(GUIImageCompleteness, self).__init__(gui, 'compl', title, size_x,
                                                   size_y)
@@ -53,8 +53,8 @@ class GUIImageCorrectness(GUIImage):
     def __init__(self,
                  gui,
                  title="System correctness",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.5):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.5)):
 
         super(GUIImageCorrectness, self).__init__(gui, 'corr', title, size_x,
                                                   size_y)

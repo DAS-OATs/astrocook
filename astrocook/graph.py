@@ -6,7 +6,6 @@ from astropy import constants as aconst
 from copy import deepcopy as dc
 import logging
 import matplotlib
-matplotlib.use('WxAgg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -33,7 +32,8 @@ class ScalarFormatterForceFormat(mticker.ScalarFormatter):
 
 class Graph(object):
 
-    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True):
+    def __init__(self, panel, gui, sel, init_canvas=True, init_ax=True, mute=False):
+        if not mute: matplotlib.use('WxAgg')
         self._panel = panel
         self._gui = gui
         self._sel = sel
@@ -77,6 +77,7 @@ class Graph(object):
 
     def _on_click(self, event):
         if not event.inaxes: return
+        self._click_3 = False
         x = float(event.xdata)
         y = float(event.ydata)
         sess = self._gui._sess_sel
@@ -94,49 +95,65 @@ class Graph(object):
         if event.button == 1:
             sess._clicks = [(x,y)]
             self._click_1 = True
+            self._click_3 = False
+
         if event.button == 3:
-            if self._click_1:
+            try:
+                check = np.logical_and(
+                    x>np.min([c[0] for c in sess._clicks]),
+                    x<np.max([c[0] for c in sess._clicks]))
+            except:
+                check = False
+            if self._click_1 or check:
                 sess._clicks.append((x,y))
             else:
                 sess._clicks = [(x,y)]
-            sess._click_1 = False
+            self._click_1 = False
+            self._click_3 = True
+        #print(self._click_1, self._click_3, sess._clicks)
 
-        if event.button == 3:
-            title.append('Zap bin')
-            attr.append('bin_zap')
-            if focus == self._gui._graph_main:
-                title.append('Show stats')
-                attr.append('stats_show')
-            if sess._stats and focus == self._gui._graph_main:
-                title.append('Hide stats')
-                attr.append('stats_hide')
-            if len(sess._clicks) > 1 and focus == self._gui._graph_main:
-                title.append('Extract region')
-                attr.append('region_extract')
-                title.append('Zap feature')
-                attr.append('spec_zap')
-                self._reg_shade()
-            if hasattr(self._gui._sess_sel, 'nodes') \
-                and hasattr(self._gui._sess_sel.nodes, 'x') \
-                and focus == self._gui._graph_main:
-                nodes = self._gui._sess_sel.nodes
-                dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
-                dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
-                title.append('Add node')
-                attr.append('node_add')
-                if dist_x < 0.1*dist_mean:
-                    title.append('Remove node')
-                    attr.append('node_remove')
-            if 'cursor_z_series' in self._sel:
-                title.append('Stick cursor')
-                attr.append('cursor_stick')
-            if 'cont' in sess.spec._t.colnames \
-                and 'cursor_z_series' in self._sel:
-                title.append('New system')
-                attr.append('syst_new')
-            if sess.systs is not None and sess.systs._t is not None:
-                title.append('Fit system')
-                attr.append('syst_fit')
+        if len(sess._clicks)==1 and sess._shade:
+            self._reg_unshade()
+        if self._click_3 and len(sess._clicks)==2:
+            self._reg_shade()
+
+        if self._click_3:
+            if len(sess._clicks)==1:
+                title.append('Zap bin')
+                attr.append('bin_zap')
+                if hasattr(self._gui._sess_sel, 'nodes') \
+                    and hasattr(self._gui._sess_sel.nodes, 'x') \
+                    and focus == self._gui._graph_main:
+                    nodes = self._gui._sess_sel.nodes
+                    dist_x = np.abs(nodes.x.to(nodes._xunit).value-x).min()
+                    dist_mean = np.mean(nodes.x[1:]-nodes.x[:-1]).to(nodes._xunit).value
+                    title.append('Add node')
+                    attr.append('node_add')
+                    if dist_x < 0.1*dist_mean:
+                        title.append('Remove node')
+                        attr.append('node_remove')
+                if 'cursor_z_series' in self._sel:
+                    title.append('Stick cursor')
+                    attr.append('cursor_stick')
+                if 'cont' in sess.spec._t.colnames \
+                    and 'cursor_z_series' in self._sel:
+                    title.append('New system')
+                    attr.append('syst_new')
+                if sess.systs is not None and sess.systs._t is not None:
+                    title.append('Fit system')
+                    attr.append('syst_fit')
+            if len(sess._clicks)==3:
+                if not sess._stats and focus == self._gui._graph_main:
+                    title.append('Show stats')
+                    attr.append('stats_show')
+                if sess._stats and focus == self._gui._graph_main:
+                    title.append('Hide stats')
+                    attr.append('stats_hide')
+                if focus == self._gui._graph_main:
+                    title.append('Extract region')
+                    attr.append('region_extract')
+                    title.append('Zap feature')
+                    attr.append('spec_zap')
 
         focus.PopupMenu(
             GUITablePopup(self._gui, focus, event, title, attr))
@@ -198,40 +215,38 @@ class Graph(object):
         if not hasattr(self, '_cursor') and 'cursor_z_series' in self._sel:
             self._refresh_canvas_lists()
             self._seq_addons(sess, ax)
-        if 'cursor_z_series' in self._sel and self._cursor_frozen == False:
+        if 'cursor_z_series' in self._sel and not self._cursor_frozen:
             if hasattr(self, '_xs'):
                 for l, key in zip(self._cursor_lines, self._xs):
-                    if self._text != None:
+                    if self._text is not None:
                         z = self._z+(1+self._z)*x/aconst.c.to(au.km/au.s).value
-                        self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
+                        self._cursor._x = x_convert(self._cursor._xem*(1+z)*au.nm, sess.spec._zem, sess.spec._xunit)
                         xem = self._xs[key]
                         self._cursor._x = (np.log(self._cursor._x/xem))*aconst.c.to(au.km/au.s)
                     else:
-                        z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
-                        self._cursor._x = (self._cursor._xem*(1+z)*au.nm).to(sess.spec._xunit)
+                        z = x/x_convert(self._cursor._xmean, sess.spec._zem, sess.spec._xunit).value-1
+                        self._cursor._x = x_convert(self._cursor._xem*(1+z)*au.nm, sess.spec._zem, sess.spec._xunit)
                     for c, xi in zip(l, self._cursor._x):
-                        c.set_xdata(xi)
+                        c.set_xdata(xi.value)
                         c.set_alpha(0.5)
                     z_obs = z*(1+sess.spec._rfz)
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
                                             % (x, y, self._cursor._series, z_obs))
             else:
 
-                try:  # X-axis in wavelengths
-                    z = x/self._cursor._xmean.to(sess.spec._xunit).value-1
-                    xzs = [xem*au.nm.to(sess.spec._xunit)*(1+z)
+                if sess.spec._xunit.is_equivalent(au.nm):  # X-axis in wavelengths
+                    z = x/x_convert(self._cursor._xmean, sess.spec._zem, sess.spec._xunit).value-1
+                    xzs = [x_convert(xem*au.nm, sess.spec._zem, sess.spec._xunit)*(1+z)
                             for xem in self._cursor._xem]
-                except:  # X-axis in velocities
+                else:  # X-axis in velocities
                     xc = x_convert(x*sess.spec._xunit, sess.spec._zem,
                                    au.nm).value
-                    z = xc/self._cursor._xmean.to(au.nm).value-1
-                    xzs = [x_convert(xem*au.nm*(1+z), sess.spec._zem,
-                                      sess.spec._xunit)
+                    z = xc/x_convert(self._cursor._xmean, sess.spec._zem, au.nm).value-1
+                    xzs = [x_convert(xem*au.nm*(1+z), sess.spec._zem, sess.spec._xunit)
                            for xem in self._cursor._xem]
-
                 for c, xz in zip(self._cursor_line, xzs):
                     #c.set_xdata((xem*(1+z)*au.nm).to(sess.spec._xunit))
-                    c.set_xdata(xz)
+                    c.set_xdata(xz.value)
                     c.set_alpha(0.5)
                 z_obs = z*(1+sess.spec._rfz)
                 focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
@@ -242,7 +257,6 @@ class Graph(object):
         for l in self._cursor_lines:
             for b in l:
                 self._ax.draw_artist(b)
-
         # Copied from https://matplotlib.org/_modules/matplotlib/backends/backend_wxagg.html
         self._canvas.draw_idle()
 
@@ -368,7 +382,7 @@ class Graph(object):
 
 
     def _refresh_canvas_lists(self):
-        cmc = plt.cm.get_cmap('tab10').colors
+        cmc = plt.colormaps.get_cmap('tab10').colors
         self._canvas_dict = {'cursor_z_series': (GraphCursorZSeries,3,0.5),
                              'spec_h2o_reg': (GraphSpectrumH2ORegion,4,0.15)
                              }
@@ -385,17 +399,29 @@ class Graph(object):
         sess = self._gui._sess_sel
         x = sess.spec.x.value
 
-        sess._shade_where = np.logical_and(x>sess._clicks[0][0],
-                                           x<sess._clicks[1][0])
+        x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        if x2<x1: x1, x2 = x2, x1
+        sess._shade_where = np.logical_and(x>x1, x<x2)
         sess._shade = True
         trans = transforms.blended_transform_factory(
                     self._ax.transData, self._ax.transAxes)
 
-        shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
-                                      transform=trans, color='C1', alpha=0.2)
+        self._shade = self._ax.fill_between(x, 0, 1, where=sess._shade_where,
+                                      transform=trans, color='C0', alpha=0.2)
 
         self._canvas.draw()
-        shade.remove()
+        logging.info("A region has been activated. Right-click inside to call "\
+                     "recipes on it. Click outside to deactivate.")
+
+    def _reg_unshade(self):
+        self._shade.remove()
+        try:
+            self._gui._graph_main._on_stats_hide(None)
+        except:
+            pass
+        self._gui._sess_sel._shade = False
+        self._canvas.draw()
+        logging.info("Region has been deactivated.")
 
 
     def _seq(self, sess, norm, init_cursor=True):

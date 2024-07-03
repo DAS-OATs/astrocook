@@ -1,5 +1,5 @@
 from .vars import *
-from .functions import convolve, lines_voigt, psf_gauss, running_mean, to_x, trans_parse
+from .functions import convolve, lines_voigt, running_mean, to_x, trans_parse
 from .message import msg_output_fail
 from astropy import table as at
 from astropy import units as au
@@ -99,7 +99,7 @@ class SystList(object):
             self._t['snr'] = np.empty(len(self.z), dtype=dtype)
             self._t['snr'] = np.nan
         if len(id)==len(self.z) and len(id)>0:
-            self._t['id'] = id
+            self._t['id'] = np.array(id, dtype=int)
         else:
             self._t['id'] = np.empty(len(self.z), dtype=int)
         mods_t = at.Table()

@@ -2,6 +2,7 @@ from .message import *
 from .vars import *
 import ast
 from astropy import constants as ac
+from astropy.table import Table
 from copy import deepcopy as dc
 import cProfile
 #from decorator import decorator
@@ -10,6 +11,7 @@ import logging
 from matplotlib import pyplot as plt
 import numpy as np
 import pstats
+from scipy.ndimage import median_filter
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy.special import wofz
@@ -154,9 +156,9 @@ def lines_voigt_jac(x0, x, series='CIV', resol=70000, spec=None, apply_bounds_tr
             dI_dbtur += dI_dtau0*dtau0_dbtur + dI_dF*dF_da*da_dbtur + dI_dF*dF_du*du_dbtur
 
         #dI_dlogN_new = -model*dI_dlogN_new
-        dI_dz = convolve_simple(dI_dz, psf_gauss(x.value, resol, spec))
-        dI_dlogN = convolve_simple(dI_dlogN, psf_gauss(x.value, resol, spec))
-        dI_db = convolve_simple(dI_db, psf_gauss(x.value, resol, spec))
+        dI_dz = convolve_simple(dI_dz, deprecated_psf_gauss(x.value, resol, spec))
+        dI_dlogN = convolve_simple(dI_dlogN, deprecated_psf_gauss(x.value, resol, spec))
+        dI_db = convolve_simple(dI_db, deprecated_psf_gauss(x.value, resol, spec))
 
         """
     print(np.array([dI_dz, dI_dlogN, dI_db]).T)
@@ -260,7 +262,10 @@ def convolve_simple(dat, kernel):
     pad = np.ones(npts)
     #tmp = np.concatenate((pad*dat[0], dat, pad*dat[-1]))
     tmp = np.pad(dat, (npts, npts), 'edge')
-    out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
+    if len(kernel)==0:
+        out = tmp
+    else:
+        out = np.convolve(tmp, kernel/np.sum(kernel), mode='valid')
     noff = int((len(out) - npts) * 0.5)
     #ret = (out[noff:])[:npts]
     ret = out[noff:noff+npts]
@@ -309,6 +314,14 @@ def detect_local_minima(arr):
     detected_minima = local_min #- eroded_background
     #return np.where(detected_minima)
     return detected_minima
+
+def doublet_parse(doublets):
+    doublet = []
+    for c in doublets.split(';'):
+        x = c.split(',')
+        doublet.append((float(x[0]), float(x[1])))
+    return doublet
+
 
 def expr_check(node):
     if isinstance(node, list):
@@ -431,7 +444,7 @@ def psf_gauss_wrong(x, #center, resol):
     ret = psf
     return ret
 
-def psf_gauss(x, resol, spec=None):
+def deprecated_psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     #resol = 40000
@@ -450,7 +463,7 @@ def psf_gauss(x, resol, spec=None):
     """
     if len(psf)==0:
         #print(x, spec.x.to(xunit_def).value)
-        return psf_gauss(spec.x.to(xunit_def).value, resol, spec)
+        return deprecated_psf_gauss(spec.x.to(xunit_def).value, resol, spec)
     else:
         ret = psf
         return ret
@@ -476,13 +489,19 @@ def running_mean(x, h=1):
     return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
 
 
+def running_median(x, h=1):
+    return median_filter(x, h)
+
+
 def running_rms(x, xm, h=1):
+    """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
     n = 2*h+1
     rs = np.nancumsum(np.insert((x-xm)**2, 0, 0))
     norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
     #rm = (cs[n:] - cs[:-n]) / float(n)
     rms = np.sqrt((rs[n:] - rs[:-n]) / (norm[n:]-norm[:-n]))
     return np.concatenate((h*[rms[0]], rms, h*[rms[-1]]))
+
 
 
 def to_x(z, trans):
@@ -497,6 +516,13 @@ def to_z(x, trans):
     else:
         return (x.to(au.nm)/xem_d[trans].to(au.nm)).value-1
 
+
+def chunk_parse(chunks):
+    chunk = []
+    for c in chunks.split(';'):
+        x = c.split('-')
+        chunk.append((float(x[0]), float(x[1])))
+    return chunk
 
 def trans_parse(series):
     trans = []
@@ -568,6 +594,11 @@ def get_selected_cells(grid):
 def str_to_dict(str):
     return json.loads(str)
 
+
+def range_str_to_list(range):
+    return [[float(i) for i in r.split('-')] for r in range.split(',')]
+
+
 def class_find(obj, cl, up=[]):
     if hasattr(obj, '__dict__'):
         for i in obj.__dict__:
@@ -586,7 +617,8 @@ def class_mute(obj, cl):
         for i in obj.__dict__:
             if isinstance(obj.__dict__[i], cl):
                 obj.__dict__[i] = str(cl)
-            else:
+            elif not isinstance(obj.__dict__[i], Table):
+            #else:
                 class_mute(obj.__dict__[i], cl)
     elif isinstance(obj, dict):
         for i in obj:

@@ -330,17 +330,27 @@ class Format(object):
         logging.info(msg_format('ESPRESSO DRS S1D'))
 
         hdr = hdul[0].header
-        data = hdul[1].data
-        x = data['wavelength']
+        data = Table(hdul[1].data)
+        if 'WAVE' in data.colnames: x = data['WAVE'][0]
+        if 'WAVELENGTH' in data.colnames: x = data['WAVELENGTH'][0]
+        if 'wavelength' in data.colnames: x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
-        try:
-            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.electron #erg/au.cm**2/au.s/au.nm
-        except:
-            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        if 'FLUX_CAL' in data.colnames:
+            y = data['FLUX_CAL'][0]/(xmax-xmin)
+            dy = data['ERR_CAL'][0]/(xmax-xmin)
+            yunit = au.erg/au.cm**2/au.s/au.nm
+        elif 'FLUX_EL' in data.colnames:
+            y = data['FLUX_EL'][0]/(xmax-xmin)
+            dy = data['ERR_EL'][0]/(xmax-xmin)
+            yunit = au.electron
+        else:
+            if 'FLUX' in data.colnames:
+                y = data['FLUX'][0]/(xmax-xmin)
+                dy = data['ERR'][0]/(xmax-xmin)
+            if 'flux' in data.colnames:
+                y = data['flux']/(xmax-xmin)
+                dy = data['error']/(xmax-xmin)
+            yunit = None
         resol = []*len(x)
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
@@ -471,34 +481,36 @@ class Format(object):
         self._gui = sess._gui
         try:
             if len(hdul)>1:
-                data_s = hdul[1].data
-                data = Table(data_s)
-                """
-                x_col = np.where([c in data.colnames for c in x_col_names])[0]
-                y_col = np.where([c in data.colnames for c in y_col_names])[0]
-                dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
-                try:
-                    dy_col = [dy_col[0]]
-                except:
-                    pass
-                x_name = x_col_names[x_col][0]
-                y_name = y_col_names[y_col][0]
-                dy_name = dy_col_names[dy_col][0]
-                """
-                x_name = self._col_name(data, 'x')
-                y_name = self._col_name(data, 'y')
-                dy_name = self._col_name(data, 'dy')
-                cont_name = self._col_name(data, 'cont')
-                try:
-                    x = np.ravel(data[x_name])
-                    y = np.ravel(data[y_name])
-                    dy = data[dy_name] if dy_name is not None \
-                        else np.full(len(y), np.nan)
-                    cont = data[cont_name] if cont_name is not None \
-                        else np.full(len(y), np.nan)
-                except:
-                    logging.error("I can't recognize columns.")
-                    return 0
+                # MARZ spectra
+                if len(hdul)==4 \
+                    and hdul[1].header['EXTNAME']=='VARIANCE' \
+                    and hdul[2].header['EXTNAME']=='WAVELENGTH' \
+                    and hdul[3].header['EXTNAME']=='FIBRES':
+                    x = hdul[2].data[0]
+                    y = hdul[0].data[0]
+                    dy = hdul[1].data[0]
+                    cont = []
+                    data = None
+                else:
+                    data_s = hdul[1].data
+                    data = Table(data_s)
+                    x_name = self._col_name(data, 'x')
+                    y_name = self._col_name(data, 'y')
+                    dy_name = self._col_name(data, 'dy')
+                    cont_name = self._col_name(data, 'cont')
+
+                    try:
+                        x = np.ravel(data[x_name])
+                        y = np.ravel(data[y_name])
+                        dy = np.ravel(data[dy_name]) if dy_name is not None \
+                            else np.full(len(y), np.nan)
+                        if dy_name=='ivar':
+                            dy = dy**(-0.5)
+                        cont = data[cont_name] if cont_name is not None \
+                            else np.full(len(y), np.nan)
+                    except:
+                        logging.error("I can't recognize columns.")
+                        return 0
 
             else:
                 data_s = hdul[0].data
@@ -510,7 +522,6 @@ class Format(object):
                     cont = data[3][:]
                 except:
                     cont = []
-
 
             # Import unit (if present)
             try:
@@ -535,19 +546,37 @@ class Format(object):
 
             # De-normalize
             norm_check = np.median(y)*np.max(y)
-            if norm_check > 0.7 and norm_check < 1.3:
+            if norm_check > 0.7 and norm_check < 1.3 and not all(np.isnan(cont)):
                 y = y*cont
                 dy = dy*cont
 
             spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
-            if hasattr(data, 'colnames'):
+            if data is not None and hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
                     if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
-                        spec._t[c] = data[c]
+                        spec._t[c] = np.ravel(data[c])
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
         except:
             return None
+
+
+    def harpn_spectrum(self, hdul):
+        """ HARPN spectrum """
+        logging.info(msg_format('HARPN'))
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = hdr #{}
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
     def mage_spectrum(self, hdul):
