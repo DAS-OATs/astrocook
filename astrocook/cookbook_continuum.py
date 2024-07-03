@@ -13,10 +13,12 @@ class CookbookContinuum(object):
         super(CookbookContinuum, self).__init__()
 
 
-    def clip_flux(self, ran='all', smooth_len=200, kappa=2, fudge='auto',
+    def clip_flux(self, ran='all', smooth_len=400, kappa=2, fudge='auto',
                   knots_dist=2000, mode='update'):
         """ @brief Clip flux
         @details Estimate the continuum by clipping absorbers.
+
+        @url continuum_cb.html#clip-flux
 
         @param ran Wavelength range (nm)
         @param smooth_len Smoothing length (km/s)
