@@ -12,12 +12,12 @@
       "cookbook": "cb",
       "recipe": "clip_flux",
       "params": {
-        "ran": "[385,550]",
-        "smooth_len": "300",
-        "kappa_hi": "6",
-        "kappa_lo": "2",
-        "fudge": "1",
-        "delta_x": "5000"
+        "ran": "[500,550]",
+        "smooth_len": "400",
+        "kappa": 2,
+        "fudge": "auto",
+        "knots_dist": "5000",
+        "mode": "replace"
       }
     },
     {
@@ -41,7 +41,7 @@
       "cookbook": "_dlg_mini_graph",
       "recipe": "_set_elem",
       "params": {
-        "value": "SESS_SEL,spec,x,y,None,step,-,0.5,black,1\nSESS_SEL,spec,x,y,mask_abs,step,-,2,red,1\nSESS_SEL,spec,x,cont,None,plot,-,1,blue,1\n",
+        "value": "SESS_SEL,spec,x,y,None,step,-,0.5,black,1\nSESS_SEL,spec,x,y,mask_abs,step,-,2,red,1\nSESS_SEL,spec,x,cont,None,plot,-,1,blue,1\nSESS_SEL,nodes,x,y,None,scatter,o,1,blue,1\n",
         "log": false
       }
     },

@@ -11,7 +11,7 @@ def parse_range(string, spec=None):
     elif string[0]=='[' and string[-1]==']':
         xmin, xmax = tuple([float(s) for s in string[1:-1].split(',')])
     else:
-        logging.error('I cannot parse the range. The syntax is `[•,•]`.')
+        logging.error("I cannot parse the range. The syntax is `[•,•]`.")
         return 0
 
     return xmin, xmax
