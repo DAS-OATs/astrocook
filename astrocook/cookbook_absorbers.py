@@ -11,7 +11,7 @@ class CookbookAbsorbers(object):
         super(CookbookAbsorbers, self).__init__()
 
 
-    def lines(self, kind='abs', prominence=None, append=True):
+    def find_lines(self, kind='abs', prominence=None, append=True):
         """ @brief Find lines
 
         @details Find absorption or emission lines, based on their prominence.
@@ -24,7 +24,8 @@ class CookbookAbsorbers(object):
 
         try:
             kind = str(kind)
-            prominence = None if prominence in [None, 'None'] else float(prominence)
+            prominence = None if prominence in [None, 'None'] \
+                else float(prominence)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -38,23 +39,11 @@ class CookbookAbsorbers(object):
         fact = -1 if kind=='abs' else 1
 
         ynorm = fact*(spec._t['y'])
-        if prominence is None:
-            prominence = 5*(spec._t['dy'])
+        if prominence is None: prominence = 5*(spec._t['dy'])
+
         peaks, properties = find_peaks(ynorm, prominence=prominence)
-        lines = LineList(spec._t['x'][peaks],
-                         spec._t['xmin'][peaks],
-                         spec._t['xmax'][peaks],
-                         spec._t['y'][peaks],
-                         spec._t['dy'][peaks],
-                         spec._t['cont'][peaks],
-                         ['y']*len(peaks),
-                         spec._xunit, spec._yunit,
-                         meta=spec._meta)
-        if append and self.sess.lines is not None \
-            and len(self.sess.lines.t) > 0:
-            self.sess.lines._append(lines)
-            self.sess.lines._clean()
-        else:
-            self.sess.lines = lines
+        lines = LineList(row=spec._t[peaks], source='y', kind=kind,
+                         xunit=spec._xunit, yunit=spec._yunit, meta=spec._meta)
+        lines.append_replace(append, self.sess)
 
         return 0

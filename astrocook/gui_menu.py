@@ -369,7 +369,7 @@ class GUIMenuAbsorbers(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'lines', 'append': 'spec'}]
+        self._rec = [{'targ': 'find_lines', 'append': 'spec'}]
 
         from .cookbook_absorbers import CookbookAbsorbers as cbc
         self._cb = cbc()
