@@ -62,7 +62,7 @@ This cookbook contains utilities to detect absorption features in the spectrum a
 
 Continuum is estimated by computing a running mean on `y` and iteratively rejecting negative outliers, defined by the following condition:
 `y`$$ _\mathrm{running median} - $$`y`$$ _\mathrm{outlier} $$ > $$`kappa` $$ \\times $$ `dy`.
-The continuum is then smoothed with a gaussian filter of length `smooth_len`.
+The continuum is further adjusted by a `fudge` factor which is either provided by the user or computed by minimizing the cumulative residuals in a running window. Finally, the continuum is smoothed with a gaussian filter of length `smooth_len` and saved in column `cont` of the spectrum.
 
 Decrease `kappa` if the continuum follows too much the absorption systems. Decrease `smooth_len` if the continuum cuts out the emission lines. The continuum can be manually refined by adding/removing knots on the graph. `knots_dist` controls the distance of knots that are placed automatically over the continuum curve.
 
