@@ -16,6 +16,8 @@ class CookbookAbsorbers(object):
 
         @details Find absorption or emission lines, based on their prominence.
 
+        @url absorbers_cb.html#find-lines
+
         @param kind Kind
         @param prominence Prominence
         @param append Append to existing line list
