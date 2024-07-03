@@ -137,6 +137,7 @@ class Frame():
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
 
+
     def _lya_corr_basic(self, zem, logN_thres, input_col='y', apply=True,
                         verb=True):
 
