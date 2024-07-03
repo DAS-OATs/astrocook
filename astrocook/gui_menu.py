@@ -369,7 +369,8 @@ class GUIMenuAbsorbers(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'find_lines', 'append': 'spec'}]
+        self._rec = [{'targ': 'find_lines', 'append': 'spec'}
+                    ]
 
         from .cookbook_absorbers import CookbookAbsorbers as cbc
         self._cb = cbc()
@@ -429,6 +430,25 @@ class GUIMenuContinuum(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
+        self._rec = [{'targ': 'clip_flux', 'append': 'spec'},
+                    ]
+
+        from .cookbook_continuum import CookbookContinuum as cbc
+        self._cb = cbc()
+
+        self._create(self._menu, self._rec, self._cb, start_id)
+
+
+class GUIMenuContinuumOld(GUIMenu):
+
+    def __init__(self,
+                 gui,
+                 start_id=6000,
+                 **kwargs):
+        super(GUIMenuContinuum, self).__init__(gui)
+        self._gui = gui
+        self._menu = wx.Menu()
+
         self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
                      '--',
                      {'targ': 'lines_find', 'append': 'spec'},
@@ -445,7 +465,7 @@ class GUIMenuContinuum(GUIMenu):
                      {'targ': 'abs_cont', 'append': 'spec'},
                      ]
 
-        from .cookbook_continuum import CookbookContinuum as cbc
+        from .cookbook_continuum_old import CookbookContinuumOld as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
