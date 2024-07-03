@@ -14,6 +14,8 @@ import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.colourdb as cdb
 
+max_rows = 2000
+
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
 
@@ -86,7 +88,13 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
-        for j, r in enumerate(tab._data.t):
+        if len(tab._data.t)>max_rows:
+            logging.warning("I displayed only the first {} rows. To display "\
+                            "a different range, extract it first.".format(max_rows))
+            t = tab._data.t[:max_rows]
+        else:
+            t = tab._data.t
+        for j, r in enumerate(t):
             for i, n in enumerate(tab._data.t.colnames):
 
                 if j == 0:
@@ -136,7 +144,7 @@ class GUITable(wx.Frame):
             tab.SetPosition((0, int(wx.DisplaySize()[1]*0.5)))
 
         coln = len(tab._data.t.colnames)
-        rown = len(tab._data.t)-tab._tab.GetNumberRows()
+        rown = min(len(tab._data.t)-tab._tab.GetNumberRows(), max_rows)
         tab._tab.AppendCols(coln)
         tab._tab.AppendRows(rown)
 
