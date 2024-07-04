@@ -5,7 +5,7 @@ parent: Cookbooks
 nav_order: 0
 ---
 
-# Other cookbook
+# General utilities
 {: .no_toc}
 
 ## Table of contents
