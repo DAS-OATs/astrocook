@@ -371,52 +371,40 @@ class GUIMenuAbsorbers(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'find_lines', 'append': 'spec'}
-                    ]
+        self._rec = [{'targ': 'find_lines', 'append': 'spec'},
+                     '--',
+                     {'targ': 'model_lya', 'append': 'cont'},
+                     {'targ': 'model_metals', 'append': 'cont'},
+                     '--',
+                     {'targ': 'identify_unknown', 'append': ['z0']},
+                     {'targ': 'check_systs', 'append': 'z0'},
+                     ]
+
+        if show_all:
+            self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
+                         {'targ': 'systs_new_from_lines', 'append': 'lines'},
+                         '> Other',
+                         {'targ': 'cands_find', 'append': 'z0'},
+                         {'targ': 'systs_improve', 'append': 'z0'},
+                         '<',
+                         '--',
+                         {'targ': 'systs_fit', 'append': 'z0'},
+                         {'targ': 'systs_clean', 'append': 'z0'},
+                         {'targ': 'mods_recreate', 'append': 'z0'},
+                         '> Other',
+                         {'targ': 'systs_snr', 'append': 'z0'},
+                         {'targ': 'systs_select', 'append': 'z0'},
+                         {'targ': 'comp_extract', 'append': 'z0'},
+                         {'targ': 'systs_merge', 'append': 'z0'},
+                         '<',
+                         '--',
+                         {'targ': 'feats', 'append': 'z0'},
+                         '--',
+                         {'targ': 'mods_ccf_max', 'append': 'z0'},
+                         {'targ': 'systs_sigmav', 'append': 'z0'},
+                        ]
 
         from .cookbook_absorbers import CookbookAbsorbers as cbc
-        self._cb = cbc()
-
-        self._create(self._menu, self._rec, self._cb, start_id)
-
-
-class GUIMenuAbsorbersOld(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=7000,
-                 **kwargs):
-        super(GUIMenuAbsorbers, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
-                     {'targ': 'systs_new_from_lines', 'append': 'lines'},
-                     {'targ': 'systs_complete', 'append': ['z0']},
-                     {'targ': 'systs_complete_from_z', 'append': ['z0']},
-                     {'targ': 'lya_fit', 'append': 'cont'},
-                     '> Other',
-                     {'targ': 'cands_find', 'append': 'z0'},
-                     {'targ': 'systs_improve', 'append': 'z0'},
-                     '<',
-                     '--',
-                     {'targ': 'systs_fit', 'append': 'z0'},
-                     {'targ': 'systs_clean', 'append': 'z0'},
-                     {'targ': 'mods_recreate', 'append': 'z0'},
-                     '> Other',
-                     {'targ': 'systs_snr', 'append': 'z0'},
-                     {'targ': 'systs_select', 'append': 'z0'},
-                     {'targ': 'comp_extract', 'append': 'z0'},
-                     {'targ': 'systs_merge', 'append': 'z0'},
-                     '<',
-                     '--',
-                     {'targ': 'feats', 'append': 'z0'},
-                     '--',
-                     {'targ': 'mods_ccf_max', 'append': 'z0'},
-                     {'targ': 'systs_sigmav', 'append': 'z0'},
-                    ]
-
-        from .cookbook_absorbers_old import CookbookAbsorbersOld as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
@@ -433,41 +421,26 @@ class GUIMenuContinuum(GUIMenu):
         self._menu = wx.Menu()
 
         self._rec = [{'targ': 'clip_flux', 'append': 'spec'},
-                    ]
+                     {'targ': 'fit_pl', 'append': 'spec'},
+                     '--',
+                     {'targ': 'correct_lya', 'append': 'spec'}]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'lines_find', 'append': 'spec'},
+                          {'targ': 'nodes_cont', 'append': 'spec'},
+                          {'targ': 'lines_update', 'append': 'z0'},
+                          '> Other',
+                          {'targ': 'peaks_find', 'append': 'spec'},
+                          {'targ': 'nodes_extract', 'append': 'cont'},
+                          {'targ': 'nodes_clean', 'append': 'lines'},
+                          {'targ': 'nodes_interp', 'append': 'nodes'},
+                          '<',
+                          '--',
+                          {'targ': 'abs_cont', 'append': 'spec'},
+                          ]
 
         from .cookbook_continuum import CookbookContinuum as cbc
-        self._cb = cbc()
-
-        self._create(self._menu, self._rec, self._cb, start_id)
-
-
-class GUIMenuContinuumOld(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=6000,
-                 **kwargs):
-        super(GUIMenuContinuum, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
-                     '--',
-                     {'targ': 'lines_find', 'append': 'spec'},
-                     {'targ': 'nodes_cont', 'append': 'spec'},
-                     {'targ': 'lines_update', 'append': 'z0'},
-                     '> Other',
-                     {'targ': 'peaks_find', 'append': 'spec'},
-                     {'targ': 'nodes_extract', 'append': 'cont'},
-                     {'targ': 'nodes_clean', 'append': 'lines'},
-                     {'targ': 'nodes_interp', 'append': 'nodes'},
-                     '<',
-                     '--',
-                     {'targ': 'lya_corr', 'append': 'spec'},
-                     {'targ': 'abs_cont', 'append': 'spec'},
-                     ]
-
-        from .cookbook_continuum_old import CookbookContinuumOld as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)

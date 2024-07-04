@@ -51,3 +51,19 @@ nav_order: 3
 *Find absorption or emission lines, based on their prominence.*
 
 Lines are found in column `y` of the spectrum. `kind` is either `abs` or `em`, to find absorption or emission lines respectively. `prominence` is defined as in `scipy.signal.find_peaks`; if the user does not specify it, it is defined as 5 times the value in column `dy` of the spectrum.
+
+###  Model Ly-a forest
+
+🚧
+
+###  Model metals
+
+🚧
+
+###  Identify unknown lines
+
+🚧
+
+###  Check system list
+
+🚧

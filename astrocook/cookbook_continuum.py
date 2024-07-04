@@ -1,3 +1,4 @@
+from .cookbook_continuum_old import CookbookContinuumOld
 from .functions import running_mean
 from .message import *
 from .utils import parse_range
@@ -7,7 +8,7 @@ import astropy.table as at
 import astropy.units as au
 import logging
 
-class CookbookContinuum(object):
+class CookbookContinuum(CookbookContinuumOld):
 
     def __init__(self):
         super(CookbookContinuum, self).__init__()
@@ -116,4 +117,79 @@ class CookbookContinuum(object):
         # Extract nodes
         self.nodes_extract(delta_x=knots_dist, mode='cont')
 
+        return 0
+
+
+    def fit_pl(self):
+        """@brief Fit power law 🚧
+        @details 🚧
+        @url continuum_cb.html#fit-power-law
+        """
+
+        return 0
+
+
+    def correct_lya(self, zem, input_col='y', mode='basic', logN_thres=100,
+                 percentile=100):
+        """ @brief Correct for Ly-a opacity
+        @details Correct the spectrum flux for the effective Lyman-alpha opacity.
+        @url continuum_cb.html#correct-for-ly-a-opacity
+        @param zem Emisson redshift
+        @param input_col Column to correct
+        @param mode Correction mode ('basic' or 'inoue')
+        @param logN_col Threshold for logarithmic column density
+        @param percentile Percentile to compute the threshold from the column
+        density distribution (only if logN_col is None)
+        @return 0
+        """
+
+        try:
+            zem = float(zem)
+            logN_thres = None if logN_thres in [None, 'None'] else float(logN_thres)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        systs = self.sess.systs
+
+        if logN_thres is None:
+            try:
+                #logN_thres = np.median(self.sess.systs._t['logN'])
+                logN_thres = np.percentile(self.sess.systs._t['logN'], percentile)
+                logging.info("I estimated the threshold column density from "
+                             "the system table: logN_thres = %2.2f." \
+                             % logN_thres)
+            except:
+                logN_thres = 100
+                logging.warning("No systems: I couldn't estimate the threshold "
+                                "column density. I am using logN_thres = "\
+                                "%2.2f." % logN_thres)
+        if mode == 'inoue':
+            inoue_all = getattr(spec, '_lya_corr_inoue')(zem, input_col,
+                                                         apply=False)
+            basic_all = getattr(spec, '_lya_corr_basic')(zem, 100, input_col,
+                                                         apply=False)
+        else:
+            inoue_all = np.zeros(len(spec.x))
+            basic_all = np.zeros(len(spec.x))
+        basic = getattr(spec, '_lya_corr_basic')(zem, logN_thres, input_col,
+                                                 apply=False)
+
+
+        self._lya_corr = 1+(inoue_all-1)*(basic-1)/(basic_all-1)
+        """
+        plt.plot(spec.x, inoue_all)
+        plt.plot(spec.x, basic_all)
+        plt.plot(spec.x, basic)
+        plt.plot(spec.x, self._lya_corr, linewidth=3)
+        """
+        #plt.show()
+        taucorr = dc(spec._t[input_col])
+        taucorr *= self._lya_corr
+        spec._t[input_col+'_taucorr'] = taucorr
+
+        w = spec.x.value > (1+zem)*xem_d['Ly_lim'].value
+        logging.info("Mean correction bluewards from Lyman limit: %3.2f." \
+                     % np.mean(self._lya_corr[w]))
         return 0

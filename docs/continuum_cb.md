@@ -71,3 +71,11 @@ The continuum is further adjusted by a `fudge` factor which is either provided b
 Decrease `kappa` if the continuum follows too much the absorption systems. Decrease `smooth_len` if the continuum cuts out the emission lines. The continuum can be manually refined by adding/removing knots on the graph. `knots_dist` controls the distance of knots that are placed automatically over the continuum curve.
 
 You can use `ran` to limit the continuum estimation to a specific wavelength range. If `mode` is `update`, the new continuum will be merged with the existing estimate (if present). If `mode` is `replace`, the existing estimate is deleted.
+
+###  Fit power law
+
+🚧
+
+###  Correct for Ly-a opacity
+
+🚧
