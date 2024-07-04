@@ -1,7 +1,6 @@
 ---
 layout: default
 title: General cookbook
-parent: Cookbooks
 nav_order: 0
 math: mathjax2
 ---
@@ -457,4 +456,3 @@ The CCF is saved in a NumPy binary file `SESS_ccf.npy`, with `SESS` the name of 
 Realizations are created by selecting entries at random, preserving wavelength order and rejecting duplicates (compare with Peterson et al. 1998).
 
 The recipe computes the CCF between the original flux and the flux of each realization. A gaussian is fit to the CCF within a window around 0 (in velocity space) to determine the position of the peak. The distribution of peak positions is saved in a NumPy binary file `SESS_ccf_stats.npy`, with `SESS` the name of the session.
-

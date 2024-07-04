@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Flux cookbook
-parent: Cookbooks
 nav_order: 1
 math: mathjax2
 ---
@@ -155,6 +154,3 @@ The scaling is done in place, without creating a new session.
 *Correct the spectrum flux for reddening due to extinction.*
 
 The extinction is modeled with the parametrization of O'Donnell (1994), depending on the spectrum color excess $$E(B-V)$$ and ratio of total selective extinction $$R(V)=A(V)/E(B-V)$$. Column `y` of the spectrum is updated with de-reddened values.
-
-
-

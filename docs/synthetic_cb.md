@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Synthetic cookbook
-parent: Cookbooks
 nav_order: 4
 ---
 
@@ -16,7 +15,7 @@ nav_order: 4
 ---
 
 ###  Synthetic spectrum from structures
-        
+
 <table>
   <tbody>
     <tr>
@@ -52,7 +51,7 @@ nav_order: 4
 Create a synthetic spectrum from existing structures (a wavelenght-like array and a flux-like array). The structure expressions must be parsable by AST, with columns described by a string with the session number, the structure tag (spec, lines, systs), and the column name separated by a comma (e.g. 0,spec,x, meaning "column x of spectrum from session 0"). A gaussian noise is added to the spectrum to match a given signal-to-noise ratio. A new session is created with the synthetic spectrum.
 
 ###  Synthetic spectrum from systems
-        
+
 <table>
   <tbody>
     <tr>
@@ -90,7 +89,7 @@ Create a synthetic spectrum from existing structures (a wavelenght-like array an
 Create a synthetic spectrum from a list of systems taken from an existing session.
 
 ###  Synthetic spectrum from random systems
-        
+
 <table>
   <tbody>
     <tr>
@@ -146,4 +145,3 @@ Create a synthetic spectrum from a list of systems taken from an existing sessio
 </table>
 
 Create a synthetic spectrum from a list of systems with random redshifts, column density, and Doppler broadening.
-
