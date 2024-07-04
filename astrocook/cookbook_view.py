@@ -1,4 +1,6 @@
-class CookbookView(object):
+from .cookbook_view_old import CookbookViewOld
+
+class CookbookView(CookbookViewOld):
     """ Cookbook of utilities for editing data
     """
 
@@ -6,13 +8,10 @@ class CookbookView(object):
         super(CookbookView, self).__init__()
 
 
-    def z_ax(self, trans='Ly_a'):
-        """ @brief Show redshift axis
-        @details Show an additional axis on the plot with wavelength converted
-        into redshift for a given transition
-        @param trans Transition
-        @return 0
+    def toggle_log_axes(self):
+        """@brief Toggle log axes  🚧
+        @details 🚧
+        @url other_cb.html#toggle-log-axes
         """
-        self.sess._ztrans = trans
 
         return 0

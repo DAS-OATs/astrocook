@@ -15,8 +15,8 @@ class CookbookEdit(CookbookEditOld):
 
 
     def modify_columns(self):
-        """@brief Modify columns
-        @details TBD
+        """@brief Modify columns 🚧
+        @details 🚧
         @url other_cb.html#modify-columns
         """
 
@@ -24,8 +24,8 @@ class CookbookEdit(CookbookEditOld):
 
 
     def import_systs(self):
-        """@brief Import system list
-        @details TBD
+        """@brief Import system list 🚧
+        @details 🚧
         @url other_cb.html#import-system-list
         """
 
@@ -33,8 +33,8 @@ class CookbookEdit(CookbookEditOld):
 
 
     def extract(self):
-        """@brief Extract
-        @details TBD
+        """@brief Extract 🚧
+        @details 🚧
         @url other_cb.html#extract
         """
 
@@ -42,8 +42,8 @@ class CookbookEdit(CookbookEditOld):
 
 
     def mask(self):
-        """@brief Mask
-        @details TBD
+        """@brief Mask 🚧
+        @details 🚧
         @url other_cb.html#mask
         """
 

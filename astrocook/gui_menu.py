@@ -595,14 +595,29 @@ class GUIMenuFlux(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'y_scale', 'append': 'spec'},
-                     {'targ': 'y_scale_med', 'append': 'spec'},
-                     {'targ': 'y_scale_x', 'append': 'spec'},
+        self._rec = [{'targ': 'rebin', 'append': 'spec'},
+                     {'targ': 'smooth', 'append': 'spec'},
                      '--',
+                     {'targ': 'rescale', 'append': 'spec'},
                      {'targ': 'deredden', 'append': 'spec'},
+                     {'targ': 'adjust_mags', 'append': 'spec'},
                      '--',
-                     {'targ': 'mags_adjust', 'append': 'spec'},
+                     {'targ': 'estimate_snr', 'append': 'spec'},
+                     {'targ': 'estimate_rms', 'append': 'spec'},
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'y_scale', 'append': 'spec'},
+                          {'targ': 'y_scale_med', 'append': 'spec'},
+                          {'targ': 'y_scale_x', 'append': 'spec'},
+                          '--',
+                          {'targ': 'deredden', 'append': 'spec'},
+                          {'targ': 'mags_adjust', 'append': 'spec'},
+                          '--',
+                          {'targ': 'estimate_snr', 'append': 'spec'},
+                          {'targ': 'estimate_rms', 'append': 'spec'},
+                          ]
 
         from .cookbook_flux import CookbookFlux as cbc
         self._cb = cbc()
@@ -726,8 +741,7 @@ class GUIMenuView(GUIMenu):
                       'key': 'cursor_z_series', 'append': 'spec',
                       'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
                       'alt_title': "System controls"},
-                     {'type': '_item', 'event': self._on_logx,
-                      'title': "Toggle log x axis", 'append': 'spec'},
+                     {'targ': 'toggle_log_axes', 'append': 'spec'},
                      {'type': '_item', 'event': self._on_logy,
                       'title': "Toggle log y axis", 'append': 'spec'},
                      {'type': '_item', 'event': self._on_norm,
@@ -740,6 +754,31 @@ class GUIMenuView(GUIMenu):
                       'event': lambda e: self._on_dlg_mini(e, 'defs'),
                       'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'}
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'type': '_item', 'event': self._on_compress,
+                          'title': "Compress system table", 'append': 'systs'},
+                          '--',
+                          {'type': '_item', 'event': self._on_logx,
+                          'title': "Toggle log x axis", 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_logy,
+                          'title': "Toggle log y axis", 'append': 'spec'},
+'--',
+                          {'type': '_item', 'title': "Session metadata",
+                          'event': lambda e: self._on_dlg_mini(e, 'meta'),
+                          'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
+                          '> Toggle graph add-ons',
+                          {'type': '_item_graph', 'title': "Saturated H2O regions",
+                          'key': 'spec_h2o_reg', 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_legend,
+                          'key': 'legend', 'title': "Legend", 'append': 'spec'},
+                          '<',
+                          '--',
+                          {'targ': 'z_ax', 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_z_ax_remove,
+                          'title': "Hide redshift axis", 'append': 'spec'}
+                          ]
 
         from .cookbook_view import CookbookView as cbc
         self._cb = cbc()
