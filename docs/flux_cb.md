@@ -9,7 +9,7 @@ math: mathjax2
 # Flux cookbook
 {: .no_toc}
 
-Cookbook of utilities for flux calibration
+Cookbook of utilities to manipulate flux
 
 
 ## Table of contents
@@ -19,18 +19,23 @@ Cookbook of utilities for flux calibration
 {:toc}
 ---
 
-###  Scale y axis
+###  Re-bin spectrum
 <table>
   <tbody>
     <tr>
       <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookFlux.y_scale</code></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.rebin</code></td>
     </tr>
     <tr>
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>fact</code>: Multiplicative factor</li>
+          <li><code>xstart</code>: Start wavelength (nm)</li>
+          <li><code>xend</code>: End wavelength (nm)</li>
+          <li><code>dx</code>: Step in x</li>
+          <li><code>xunit</code>: Unit of wavelength or velocity</li>
+          <li><code>norm</code>: Return normalized spectrum, if continuum exists</li>
+          <li><code>filling</code>: Value to fill region without data</li>
         </ul>
       </td>
     </tr>
@@ -39,87 +44,31 @@ Cookbook of utilities for flux calibration
       <td style="vertical-align:top"><pre>
 {
   "cookbook": "cb",
-  "recipe": "y_scale",
+  "recipe": "rebin",
   "params": {
-    "fact": "1.0"
+    "xstart": "null",
+    "xend": "null",
+    "dx": "10.0",
+    "xunit": "km / s",
+    "norm": "true",
+    "filling": "nan"
   }
 }    </pre></td>
     </tr>
   </tbody>
 </table>
 
-*Scale the y axis by a constant factor.*
+*Apply a new binning to a spectrum, with a constant bin size.*
 
-The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by `fact`.
+🚧
 
-The scaling is done in place, without creating a new session.
+###  Smooth spectrum
 
-###  Scale y axis by median
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookFlux.y_scale_med</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        –
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><pre>
-{
-  "cookbook": "cb",
-  "recipe": "y_scale_med",
-  "params": {
-  }
-}    </pre></td>
-    </tr>
-  </tbody>
-</table>
+🚧
 
-*Scale the y axis by its median.*
+###  Rescale spectrum
 
-The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by the median of the spectrum `y`.
-
-The scaling is done in place, without creating a new session.
-
-###  Scale y axis by its value at a given point
-<table>
-  <tbody>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
-      <td style="vertical-align:top"><code>CookbookFlux.y_scale_x</code></td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top"><strong>Parameters</strong></td>
-      <td style="vertical-align:top">
-        <ul>
-          <li><code>x</code>: x (nm)</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
-      <td style="vertical-align:top"><pre>
-{
-  "cookbook": "cb",
-  "recipe": "y_scale_x",
-  "params": {
-    "x": "x"
-  }
-}    </pre></td>
-    </tr>
-  </tbody>
-</table>
-
-*Scale the y axis by its value at a given point.*
-
-The `y` and `dy` columns of the spectrum and the line list (if present) are multiplied by the value of the spectrum `y` at a given `x`, computed with [`numpy.interp`](https://numpy.org/doc/stable/reference/generated/numpy.interp.html?highlight=interp#numpy.interp).
-
-The scaling is done in place, without creating a new session.
+🚧
 
 ###  De-redden spectrum
 <table>
@@ -156,5 +105,71 @@ The scaling is done in place, without creating a new session.
 
 The extinction is modeled with the parametrization of O'Donnell (1994), depending on the spectrum color excess $$E(B-V)$$ and ratio of total selective extinction $$R(V)=A(V)/E(B-V)$$. Column `y` of the spectrum is updated with de-reddened values.
 
+🚧
 
+###  Adjust magnitudes
 
+🚧
+
+###  Estimate SNR
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.snr_est</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        –
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "snr_est",
+  "params": {
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Estimate the signal-to-noise ratio per pixel.*
+
+A `snr` column is populated with `y`/`dy` ratios computed for all spectrum bins.
+
+###  Estimate RMS
+<table>
+  <tbody>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>Method</strong></td>
+      <td style="vertical-align:top"><code>CookbookGeneral.rms_est</code></td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top"><strong>Parameters</strong></td>
+      <td style="vertical-align:top">
+        <ul>
+          <li><code>hwindow</code>: Half-size in pixels of the running window</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;width:200px"><strong>JSON template</strong></td>
+      <td style="vertical-align:top"><pre>
+{
+  "cookbook": "cb",
+  "recipe": "rms_est",
+  "params": {
+    "hwindow": "100"
+  }
+}    </pre></td>
+    </tr>
+  </tbody>
+</table>
+
+*Estimate flux error by computing the root-mean-square (RMS) of the flux within a running window.*
+
+The RMS is computed over `y` values and is saved in `y_rms`. It may be useful to compare the latter with `dy` to check that the formal error is consistent with the actual dispersion of `y` values.

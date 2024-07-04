@@ -1,14 +1,9 @@
-from .message import *
-from .vars import filt_x_skymap, zero_point_skymap
-from astropy import units as au
-from astropy.io import fits
-from copy import deepcopy as dc
-import logging
-from matplotlib import pyplot as plt
-import numpy as np
-import os
+from .cookbook_flux_old import CookbookFluxOld
 
-class CookbookFlux(object):
+from astropy import units as au
+import numpy as np
+
+class CookbookFlux(CookbookFluxOld):
     """ Cookbook of utilities for flux calibration
     @details This cookbook contains utilities to rescale the flux, correct
     it for reddening and Lyman-alpha opacity, and computing the flux
@@ -18,89 +13,106 @@ class CookbookFlux(object):
     def __init__(self):
         super(CookbookFlux, self).__init__()
 
-        p = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) \
-            + '/../filtskymap/'
-        self._filt_name = p+'filt%sskymap.fits'
-        self._filt_x = filt_x_skymap
-        self._filt_xunit = au.Angstrom
-        self._filt_yunit = 1e17*au.erg/au.s/au.cm**2/au.Angstrom
-        self._zero_point = zero_point_skymap
 
-
-    def _mags_compute(self, bands):
-        """ @brief Compute magnitudes
-        @details Compute the AB magnitudes of the spectrum using the SkyMapper
-        bands.
-
-        The magnitudes filters are saved in astrocook/filtskymap. For all
-        chosen `bands`, the spectrum is rebinned into the wavelength grid of the
-        filter and the `y` column is convolved with the filter itself. The
-        integrated flux from the convolution is converted into AB magnitudes.
-
-        N.B. Zero-point flux in u band is ~6.87e-06 erg/s/cm2/A.
-        @param bands List of bands ('u', 'v', 'g', 'r', 'i', or 'z')
-        @return Magnitudes
+    def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
+              kappa=None, norm=False, filling=np.nan):
+        """ @brief Re-bin spectrum
+        @details Apply a new binning to a spectrum, with a constant bin size.
+        @url flux_cb.html#re-bin-spectrum
+        @param xstart Start wavelength (nm)
+        @param xend End wavelength (nm)
+        @param dx Step in x
+        @param xunit Unit of wavelength or velocity
+        @param kappa Number of sigma to clip outliers
+        @param norm Return normalized spectrum, if continuum exists
+        @param filling Value to fill region without data
+        @return Session with rebinned spectrum
         """
 
-        mags = {}
-        for band in bands:
+        try:
+            xstart = None if xstart in [None, 'None'] else float(xstart)
+            xend = None if xend in [None, 'None'] else float(xend)
+            dx = float(dx)
+            xunit = au.Unit(xunit)
+            kappa = None if kappa in [None, 'None'] else float(kappa)
+            norm = str(norm) == 'True'
+            filling = float(filling)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
 
-            spec = dc(self.sess.spec)
+        """
+        sel = self.sess._gui._sess_item_sel
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+        if sel == [] or len(sel)>1:
+            sel = [self.sess._gui._panel_sess._tab.GetItemCount()-1]
+        self.sess._gui._sess_item_sel = sel
+        """
 
-            f = fits.open(self._filt_name % band)
-            hdr = f[0].header
-            data = f[0].data
-            crval1 = hdr['CRVAL1']
-            cdelt1 = hdr['CDELT1']
-            naxis1 = hdr['NAXIS1']
-            y = data * self._filt_yunit
-            x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        #print(self.sess)
+        # A deep copy is created, so the original spectrum is preserved
+        spec_in = dc(self.sess.spec)
 
-            xmin, xmax = np.min(x), np.max(x)
-            spec_xmin, spec_xmax = np.min(spec.x.to(self._filt_xunit).value), \
-                                   np.max(spec.x.to(self._filt_xunit).value)
-            sel = np.where(np.logical_and(x>spec_xmin, x<spec_xmax))[0]
-            xsel = x[sel]
-            ysel = y[sel]
-            if spec_xmin>xmin and spec_xmin<xmax:
-                logging.warning("The red end of the %s filter falls outside the "
-                "spectrum." % band)
-            elif spec_xmax<xmax and spec_xmax>xmin:
-                logging.warning("The blue end of the %s filter falls outside the "
-                "spectrum." % band)
-            elif len(sel)==0:
-                logging.error("The %s filter does not overlap the spectrum."
-                              % band)
-            try:
-                spec_r  = spec._rebin(xsel[0]*self._filt_xunit/spec.x.unit,
-                                     (xsel[-1]+cdelt1)*self._filt_xunit/spec.x.unit,
-                                     cdelt1, self._filt_xunit, spec.y, spec.dy)
-                corr = np.sum(ysel)/np.sum(y)
-                #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y*ysel/corr)
-                #plt.plot(spec_r.x.to(self._filt_xunit).value, spec_r.y)
-                #plt.plot(spec.x, spec.y)
-                #plt.plot(xsel, ysel.value)
-                #print("%3.8e" % np.median(spec_r.y.value))
-                mag = -2.5 * np.log10(np.sum(spec_r.y.value*ysel.value)/corr) + self._zero_point[band]
-                logging.info("AB magnitude in the %s filter: %3.2f."
-                             % (band, mag))
-                mags[band] = mag
-            except:
-                pass
-        #plt.show()
+        cont = 'cont' in spec_in.t.colnames
+        if not norm or (norm and not cont):
+            if not cont:
+                logging.warning("I can't find continuum to normalize the "
+                                "spectrum. Using non-normalized y column "
+                                "instead.")
+            y = spec_in.y
+            dy = spec_in.dy
+        else:
+            y = spec_in.y/spec_in.t['cont']
+            dy = spec_in.dy/spec_in.t['cont']
 
-        return mags
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, kappa, filling)
+        if cont:
+            if not norm:
+                try:  # x-axis in wavelengths
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.nm).value, spec_in.x.to(au.nm).value,
+                        spec_in.t['cont']) * spec_out.y.unit
+                except:  # x-axis in velocities
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.km/au.s).value,
+                        spec_in.x.to(au.km/au.s).value,
+                        spec_in.t['cont']) * spec_out.y.unit
+            else:
+                spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
+
+        # Create a new session
+        from .session import Session
+        new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned',
+                      spec=spec_out)
+        return new
+
+
+    def smooth(self):
+        """@brief Smooth spectrum 🚧
+        @details 🚧
+        @url flux_cb.html#smooth-spectrum
+        """
+
+        return 0
+
+
+    def rescale(self):
+        """@brief Rescale spectrum 🚧
+        @details 🚧
+        @url flux_cb.html#rescale-spectrum
+        """
+
+        return 0
 
 
     def deredden(self, ebv=0.03, rv=3.1):
         """@brief De-redden spectrum
         @details Correct the spectrum flux for reddening due to extinction.
-
-        The extinction is modeled with the parametrization of O'Donnell (1994),
-        depending on the spectrum color excess $$E(B-V)$$ and ratio of total
-        selective extinction $$R(V)=A(V)/E(B-V)$$. Column `y` of the spectrum is
-        updated with de-reddened values.
-
+        @url flux_cb.html#de-redden-spectrum
         @param ebv Color excess
         @param rv Ratio of total selective extinction
         @return 0
@@ -117,18 +129,10 @@ class CookbookFlux(object):
         return 0
 
 
-    def mags_adjust(self, bands, refs, deg=1):
+    def adjust_mags(self, bands, refs, deg=1):
         """ @brief Adjust magnitudes
         @details Adjust the flux of the spectrum to its AB magnitudes.
-
-        The spectrum `y` column is convolved with the SkyMapper filters
-        (in astrocook/filtskymap) for the chosen `bands`. The recipe computes the
-        factors to rescale the integrated flux to the provided magnitudes
-        `refs`, and interpolate them with a polynomial of degree `deg` using
-        [`numpy.polyfit`](https://numpy.org/doc/stable/reference/generated/numpy.polyfit.html?highlight=polyfit#numpy.polyfit).
-        `y` and `dy` are then multiplied by the best-fitting polynomial.
-
-        N.B. `deg` must be less than the number of magnitudes in `refs`.
+        @url flux_cb.html#adjust-magnitudes
         @param bands List of bands ('u', 'v', 'g', 'r', 'i', or 'z')
         @param refs List of reference magnitudes
         @param deg Degree of polynomial regression
@@ -152,75 +156,50 @@ class CookbookFlux(object):
         return 0
 
 
-    def y_scale(self, fact=1.0):
-        """ @brief Scale y axis
-        @details Scale the y axis by a constant factor.
-
-        The `y` and `dy` columns of the spectrum and the line list (if present)
-        are multiplied by `fact`.
-
-        The scaling is done in place, without creating a new session.
-        @param fact Multiplicative factor
+    def estimate_snr(self):
+        """ @brief Estimate SNR
+        @details Estimate the signal-to-noise ratio per pixel.
+        @url flux_cb.html#estimate-snr
         @return 0
         """
 
-        fact = float(fact)
+        spec = self.sess.spec
+        if 'snr' not in spec._t.colnames:
+            logging.info("I'm adding column 'snr'.")
+        else:
+            logging.info("I'm updating column 'snr'.")
 
-        for s in self.sess.seq:
-            try:
-                struct = getattr(self.sess, s)
-            except:
-                logging.debug(msg_attr_miss(s))
-
-            try:
-                struct._y_scale(fact)
-            except:
-                logging.debug("I couldn't scale structure %s!" % s)
-        return 0
-
-
-    def y_scale_med(self):
-        """ @brief Scale y axis by median
-        @details Scale the y axis by its median.
-
-        The `y` and `dy` columns of the spectrum and the line list (if present)
-        are multiplied by the median of the spectrum `y`.
-
-        The scaling is done in place, without creating a new session.
-        @return 0
-        """
-
-        fact = 1/np.nanmedian(self.sess.spec.y).value
-        self.y_scale(fact)
+        spec._t['snr'] = spec.y/spec.dy
 
         return 0
 
 
-    def y_scale_x(self, x):
-        """ @brief Scale y axis by its value at a given point
-        @details Scale the y axis by its value at a given point.
-
-        The `y` and `dy` columns of the spectrum and the line list (if present)
-        are multiplied by the value of the spectrum `y` at a given `x`, computed
-        with [`numpy.interp`](https://numpy.org/doc/stable/reference/generated/numpy.interp.html?highlight=interp#numpy.interp).
-
-        The scaling is done in place, without creating a new session.
-        @param x x (nm)
+    def estimate_rms(self, hwindow=10000, std=20.0):
+        """ @brief Estimate RMS
+        @details Estimate flux error by computing the root-mean-square (RMS) of
+        the flux within a running window.
+        @url flux_cb.html#estimate-rms
+        @param hwindow Half-size in pixels of the running window
+        @param std Standard deviation of the gaussian (km/s)
         @return 0
         """
 
         try:
-            x = float(x)
-        except ValueError:
+            hwindow = int(hwindow)
+            std = float(std) * au.km/au.s
+        except:
             logging.error(msg_param_fail)
             return 0
 
-        fact = 1/np.interp(x, self.sess.spec.x.to(au.nm).value, self.sess.spec.y)
+        spec = self.sess.spec
 
-        for s in self.sess.seq:
-            try:
-                struct = getattr(self.sess, s)
-                struct._y_scale(fact)
-            except:
-                logging.debug(msg_attr_miss(s))
+        y_rm = running_mean(spec._t['y'], h=5)
+        y_rms = running_rms(spec._t['y'], y_rm, h=hwindow)
+        if 'y_rms' not in spec._t.colnames:
+            logging.info("I'm adding column 'y_rms'.")
+        else:
+            logging.warning("I'm updating column 'y_rms'.")
+        spec._t['y_rms'] = at.Column(y_rms, dtype=float)*spec._t['dy'].unit
+        self.sess.spec._gauss_convolve(std, 'y_rms', 'dy')
+
         return 0

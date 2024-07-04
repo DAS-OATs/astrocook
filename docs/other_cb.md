@@ -17,16 +17,20 @@ nav_order: 6
 
 ###  Modify columns
 
- 🚧
+🚧
 
 ###  Import system lists
 
- 🚧
+🚧
 
-### extract
+### Extract
 
- 🚧
+🚧
 
-### mask
+### Mask
 
- 🚧
+🚧
+
+### Toggle log axes
+
+🚧

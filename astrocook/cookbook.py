@@ -6,12 +6,14 @@ from .cookbook_continuum_old import CookbookContinuumOld
 from .cookbook_edit import CookbookEdit
 from .cookbook_edit_old import CookbookEditOld
 from .cookbook_flux import CookbookFlux
+from .cookbook_flux_old import CookbookFluxOld
 from .cookbook_general import CookbookGeneral
 from .cookbook_graph import CookbookGraph
 from .cookbook_sandbox import CookbookSandbox
 from .cookbook_synthetic import CookbookSynthetic
 from .cookbook_templates import CookbookTemplates
 from .cookbook_view import CookbookView
+from .cookbook_view_old import CookbookViewOld
 from .format import Format
 from .spectrum import Spectrum
 from .syst_list import SystList
@@ -34,6 +36,7 @@ class Cookbook(CookbookEdit,
                CookbookAbsorbers,
                CookbookAbsorbersOld,
                CookbookFlux,
+               CookbookFluxOld,
                CookbookGraph,
                CookbookSynthetic,
                CookbookTemplates):
