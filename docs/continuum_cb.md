@@ -62,7 +62,9 @@ This cookbook contains utilities to detect absorption features in the spectrum a
 
 Continuum is estimated by computing a running mean on `y` and iteratively rejecting negative outliers, defined by the following condition:
 
-$$y_\mathrm{running median} - y_\mathrm{outlier} > \kappa\times dy.$$
+```math
+y_\mathrm{running median} - y_\mathrm{outlier} > \kappa\times dy.
+```
 
 The continuum is further adjusted by a `fudge` factor which is either provided by the user or computed by minimizing the cumulative residuals in a running window. Finally, the continuum is smoothed with a gaussian filter of length `smooth_len` and saved in column `cont` of the spectrum.
 
