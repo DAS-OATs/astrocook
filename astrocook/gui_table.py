@@ -39,6 +39,15 @@ class GUITable(wx.Frame):
         self._shown = False
 
 
+    def _col_remove(self, cols, attr=None, log=True):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+
+        tab = getattr(self._gui, '_tab_'+attr)
+        coln = [self._data._t.colnames[c] for c in cols]
+        tab._data.t.remove_columns(coln)
+
+
     def _data_edit(self, row, label, value, attr=None):
         if attr is None: attr = self._attr
         tab = getattr(self._gui, '_tab_'+attr)
@@ -61,18 +70,6 @@ class GUITable(wx.Frame):
         self._fill(attr)
 
 
-    def _data_remove(self, rows, attr=None, log=True):
-        sess = self._gui._sess_sel
-        if attr is None: attr = self._attr
-
-        if self._attr == 'systs':
-            rem_id = sess.cb._systs_remove(rows)
-            sess.cb._spec_update()
-        else:
-            tab = getattr(self._gui, '_tab_'+attr)
-            tab._data.t.remove_rows(rows)
-
-
     def _data_sort(self, label, reverse=False, attr=None, log=True):
         if attr is None: attr = self._attr
         tab = getattr(self._gui, '_tab_'+attr)
@@ -92,8 +89,9 @@ class GUITable(wx.Frame):
 
         tab = getattr(self._gui, '_tab_'+attr)
         if len(tab._data.t)>max_rows:
-            logging.warning("I displayed only the first {} rows. To display "\
-                            "a different range, extract it first.".format(max_rows))
+            logging.warning("The table is too long! I displayed only the first "
+                            "{} rows. To display a different range, extract it "
+                            "first.".format(max_rows))
             t = tab._data.t[:max_rows]
         else:
             t = tab._data.t
@@ -164,6 +162,20 @@ class GUITable(wx.Frame):
         self.Destroy()
 
 
+    def _on_col_remove(self, event):
+        cols = [self._gui._tab_popup._event.GetCol()]
+
+        sess = self._gui._sess_sel
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
+        sess.log.append_full('_tab', '_col_remove',
+                             {'col': cols, 'attr': self._attr})
+        sess.log.append_full('cb', '_spec_update', {})
+
+        self._col_remove(cols, self._attr)
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_detail(self, event):
         if self._attr != 'systs': return
         if event.GetRow() == -1: return
@@ -221,16 +233,19 @@ class GUITable(wx.Frame):
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
             self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
-            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
-            attr = ['sort', 'sort_reverse', None, 'histogram']
+            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram', 'sep', 'Remove column']
+            attr = ['sort', 'sort_reverse', None, 'histogram', None, 'col_remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title,
                                          attr), event.GetPosition())
         if col == -1:
-            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove',
-                                         'remove'), event.GetPosition())
+            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove row',
+                                         'row_remove'), event.GetPosition())
 
-    def _on_remove(self, event):
-        rows = [c[0] for c in self._cells_sel]
+    def _on_row_remove(self, event):
+        if hasattr(self, '_cells_sel'):
+            rows = [c[0] for c in self._cells_sel]
+        else:
+            rows = []
         if rows == []:
             rows = [self._gui._tab_popup._event.GetRow()]
 
@@ -242,11 +257,11 @@ class GUITable(wx.Frame):
         else:
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
-            sess.log.append_full('_tab', '_data_remove',
+            sess.log.append_full('_tab', '_row_remove',
                                  {'row': rows, 'attr': self._attr})
         sess.log.append_full('cb', '_spec_update', {})
 
-        self._data_remove(rows, self._attr)
+        self._row_remove(rows, self._attr)
         self._gui._refresh(init_cursor=True)
 
 
@@ -285,10 +300,24 @@ class GUITable(wx.Frame):
         self._view(event, from_scratch, autosort)
 
 
+    def _row_remove(self, rows, attr=None, log=True):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+
+        if self._attr == 'systs':
+            rem_id = sess.cb._systs_remove(rows)
+            sess.cb._spec_update()
+        else:
+            tab = getattr(self._gui, '_tab_'+attr)
+            tab._data.t.remove_rows(rows)
+
     def _view(self, event=None, from_scratch=True, autosort=False):
         self._data_init(from_scratch, autosort)
         self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._tab, 1, wx.EXPAND)
+        try:
+            self._box.Add(self._tab, 1, wx.EXPAND)
+        except:
+            pass
         self._panel.SetSizer(self._box)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self._on_edit)
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self._on_detail)
