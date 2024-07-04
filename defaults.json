@@ -1,11 +1,8 @@
 {
   "menus": [
-    "General",
     "Flux",
     "Continuum",
-    "Absorbers",
-    "Synthetic",
-    "Templates"
+    "Absorbers"
   ],
   "voigt": {
     "z_min": 1e-3,

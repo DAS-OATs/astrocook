@@ -12,6 +12,8 @@ import os
 import sys
 import wx
 
+show_all = False
+
 class GUIMenu(object):
 
     def __init__(self,
@@ -481,19 +483,29 @@ class GUIMenuEdit(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'x_convert', 'append': 'spec'},
-                     {'targ': 'y_convert', 'append': 'spec'},
+        self._rec = [{'targ': 'modify_columns', 'append': 'spec'},
+                     {'targ': 'import_systs', 'append': 'spec'},
                      '--',
-                     {'targ': 'shift_bary', 'append': 'spec'},
-                     {'targ': 'shift_to_rf', 'append': 'spec'},
-                     {'targ': 'shift_from_rf', 'append': 'spec'},
-                     '--',
-                     {'targ': 'struct_import', 'append': 'spec'},#'func': '__gt__', 'value': 0},
-                     {'targ': 'struct_modify', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                     {'targ': 'extract', 'append': 'spec'},
+                     {'targ': 'mask', 'append': 'spec'}
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'x_convert', 'append': 'spec'},
+                          {'targ': 'y_convert', 'append': 'spec'},
+                          '--',
+                          {'targ': 'shift_bary', 'append': 'spec'},
+                          {'targ': 'shift_to_rf', 'append': 'spec'},
+                          {'targ': 'shift_from_rf', 'append': 'spec'},
+                          '--',
+                          {'targ': 'struct_import', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                          {'targ': 'struct_modify', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                          ]
 
 
         from .cookbook_edit import CookbookEdit as cbc
+        #from .cookbook_general import CookbookGeneral as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
@@ -514,16 +526,17 @@ class GUIMenuFile(GUIMenu):
         # Add items to File menu here
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
-        self._menu.AppendSeparator()
+        #self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
-        self._item(self._menu, start_id+102, 'systs', "Save session with models...\tCtrl+S",
-                   lambda e: self._on_save(e, models=True, **kwargs))
-        self._item(self._menu, start_id+103, None, "Save spectrum as PDF...\tCtrl+S",
-                   lambda e: self._on_save_pdf(e, **kwargs))
-        self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
+        if show_all:
+            self._menu.AppendSeparator()
+            self._item(self._menu, start_id+102, 'systs', "Save session with models...\tCtrl+S",
+                       lambda e: self._on_save(e, models=True, **kwargs))
+            self._item(self._menu, start_id+103, None, "Save spectrum as PDF...\tCtrl+S",
+                       lambda e: self._on_save_pdf(e, **kwargs))
 
     def _on_combine(self, event):
         self._gui._panel_sess._combine()
@@ -705,18 +718,7 @@ class GUIMenuView(GUIMenu):
                      {'type': '_item',
                       'event': lambda e: self._on_tab(e, 'systs'),
                       'title': "System table", 'append': 'systs', 'key': 'systs'},
-                     {'type': '_item', 'event': self._on_compress,
-                      'title': "Compress system table", 'append': 'systs'},
                      '--',
-                     {'type': '_item', 'title': "Session metadata",
-                      'event': lambda e: self._on_dlg_mini(e, 'meta'),
-                      'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
-                     {'type': '_item', 'title': "Session defaults",
-                      'event': lambda e: self._on_dlg_mini(e, 'defs'),
-                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'},
-                     {'type': '_item', 'title': "Session log",
-                      'event': lambda e: self._on_dlg_mini(e, 'log'),
-                      'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
                      {'type': '_item', 'title': "Graph elements",
                       'event': lambda e: self._on_dlg_mini(e, 'graph'),
                       'key': 'graph', 'append': 'spec', 'dlg_mini': 'graph'},
@@ -724,24 +726,19 @@ class GUIMenuView(GUIMenu):
                       'key': 'cursor_z_series', 'append': 'spec',
                       'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
                       'alt_title': "System controls"},
-                     '--',
                      {'type': '_item', 'event': self._on_logx,
                       'title': "Toggle log x axis", 'append': 'spec'},
                      {'type': '_item', 'event': self._on_logy,
                       'title': "Toggle log y axis", 'append': 'spec'},
                      {'type': '_item', 'event': self._on_norm,
                       'title': "Toggle normalization", 'append': 'cont'},
-                     '> Toggle graph add-ons',
-                     {'type': '_item_graph', 'title': "Saturated H2O regions",
-                      'key': 'spec_h2o_reg', 'append': 'spec'},
-                     {'type': '_item', 'event': self._on_legend,
-                      'key': 'legend', 'title': "Legend", 'append': 'spec'},
-                     '<',
                      '--',
-                     {'targ': 'z_ax', 'append': 'spec'},
-                     {'type': '_item', 'event': self._on_z_ax_remove,
-                      'title': "Hide redshift axis", 'append': 'spec'},
-                     '--',
+                     {'type': '_item', 'title': "Session log",
+                     'event': lambda e: self._on_dlg_mini(e, 'log'),
+                     'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
+                     {'type': '_item', 'title': "Session defaults",
+                      'event': lambda e: self._on_dlg_mini(e, 'defs'),
+                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'}
                      ]
 
         from .cookbook_view import CookbookView as cbc

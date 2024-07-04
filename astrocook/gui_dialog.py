@@ -85,7 +85,7 @@ class GUIDialog(wx.Dialog):
         self._details.append([s.split('\n\n')[0][8:] for s in split \
                               if s[0:7]=='details'][0].replace('\n', ' '))
         try:
-            self._url.append([docs_url+s.split('\n\n')[0][4:] \
+            self._url.append([docs_url+s.split('\n')[0][4:] \
                               for s in split if s[0:3]=='url'][0])
         except:
             self._url.append(docs_url)
