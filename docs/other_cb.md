@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Other cookbook
+title: General utilities
 parent: Cookbooks
-nav_order: 6
+nav_order: 0
 ---
 
 # Other cookbook
