@@ -17,9 +17,7 @@ class CookbookContinuum(object):
                   knots_dist=2000, mode='update'):
         """ @brief Clip flux
         @details Estimate the continuum by clipping absorbers.
-
         @url continuum_cb.html#clip-flux
-
         @param ran Wavelength range (nm)
         @param smooth_len Smoothing length (km/s)
         @param kappa Number of sigma to reject absorber

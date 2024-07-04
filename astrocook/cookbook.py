@@ -4,6 +4,7 @@ from .cookbook_absorbers_old import CookbookAbsorbersOld
 from .cookbook_continuum import CookbookContinuum
 from .cookbook_continuum_old import CookbookContinuumOld
 from .cookbook_edit import CookbookEdit
+from .cookbook_edit_old import CookbookEditOld
 from .cookbook_flux import CookbookFlux
 from .cookbook_general import CookbookGeneral
 from .cookbook_graph import CookbookGraph
@@ -25,6 +26,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 class Cookbook(CookbookEdit,
+               CookbookEditOld,
                CookbookView,
                CookbookGeneral,
                CookbookContinuum,
