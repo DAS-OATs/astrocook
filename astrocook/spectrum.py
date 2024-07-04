@@ -245,8 +245,8 @@ class Spectrum(Frame):
 
         # Add padding to avoid edge issues
         len_conv = len(conv)
-        conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
-        conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
+        conv = Column(np.append(np.ones(len_conv)*conv[~np.isnan(conv)][0], conv))
+        conv = Column(np.append(conv, np.ones(len_conv)*conv[~np.isnan(conv)][-1]))
 
         safe = np.array(self._safe(conv), dtype=float)
         mode = 'same'
