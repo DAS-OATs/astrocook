@@ -146,12 +146,13 @@ class SystList(object):
 
     def _group(self, dv_max=100):
         d = self._d
-        xls = np.array([d[s]._xl for s in d])
-        dv = np.subtract.outer(xls, xls)/xls * ac.c.to(au.km/au.s).value
-        check = np.max(np.max(np.abs(dv)<dv_max, axis=1), axis=2)
-        k = np.array(list(d.keys()))
-        for s,c in zip(d,check):
-            setattr(d[s], '_group', k[c])
+        for s in d:
+            dv = ac.c.to(au.km/au.s).value \
+                * (self._t['z']-d[s]._pars['z'])/(1+self._t['z'])
+
+            setattr(d[s], '_group', np.array(self._t['id'][np.abs(dv)<dv_max]))
+            print(s, d[s]._group)
+
 
 
     def _dict_update(self, mods=False):
