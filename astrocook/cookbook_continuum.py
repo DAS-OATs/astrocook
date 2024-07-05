@@ -129,6 +129,15 @@ class CookbookContinuum(CookbookContinuumOld):
         return 0
 
 
+    def update_deabs(self):
+        """@brief Update after de-absorbing 🚧
+        @details 🚧
+        @url continuum_cb.html#update-after-de-absorbing
+        """
+
+        return 0
+
+
     def correct_lya(self, zem, input_col='y', mode='basic', logN_thres=100,
                  percentile=100):
         """ @brief Correct for Ly-a opacity

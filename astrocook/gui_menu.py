@@ -423,6 +423,8 @@ class GUIMenuContinuum(GUIMenu):
         self._rec = [{'targ': 'clip_flux', 'append': 'spec'},
                      {'targ': 'fit_pl', 'append': 'spec'},
                      '--',
+                     {'targ': 'update_deabs', 'append': 'systs'},
+                     '--',
                      {'targ': 'correct_lya', 'append': 'spec'}]
 
         if show_all:

@@ -22,6 +22,17 @@ import wx
 import matplotlib.style as mplstyle
 mplstyle.use('fast')
 
+"""
+try:
+    import scienceplots
+    from cycler import cycler
+    plt.style.use('science')
+    plt.rcParams.update({"font.family": "sans-serif", "font.size":14})
+    cc = cycler(plt.style.library['std-colors']['axes.prop_cycle'])
+    cmap = [d['color'] for d in cc]
+except:
+    cmap = plt.get_cmap('Dark2').colors
+"""
 #plt.rcParams["path.simplify_threshold"] = 1.0
 
 # Force a given format in axis - currently not uses

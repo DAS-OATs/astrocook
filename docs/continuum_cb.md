@@ -76,6 +76,10 @@ You can use `ran` to limit the continuum estimation to a specific wavelength ran
 
 🚧
 
+###  Update after de-absorbing
+
+🚧
+
 ###  Correct for Ly-a opacity
 
 🚧
