@@ -42,8 +42,8 @@ class SystList(object):
                  id_start=0,
                  func=[],
                  series=[],
-                 z0=[],
-                 z=[],
+                 z0=None,
+                 z=None,
                  dz=[],
                  logN=[],
                  dlogN=[],
@@ -65,12 +65,14 @@ class SystList(object):
         self._constr = {}
 
         t = at.Table()
+
+
         zunit = au.dimensionless_unscaled
         logNunit = au.dimensionless_unscaled
         bunit = au.km/au.s
         t['func'] = at.Column(np.array(func, ndmin=1), dtype='S5')
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
-        if z0==[] and z!=[]:
+        if z0 is None and z is not None:
             t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         else:
             t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)
@@ -85,6 +87,7 @@ class SystList(object):
         t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
         t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
+
         if len(resol)==len(self.z) and len(resol)>0:
             self._t['resol'] = resol
         else:
