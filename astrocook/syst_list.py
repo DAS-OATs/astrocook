@@ -2,6 +2,7 @@ from .vars import *
 from .functions import convolve, lines_voigt, running_mean, to_x, trans_parse
 from .message import msg_output_fail
 from astropy import table as at
+from astropy import constants as ac
 from astropy import units as au
 #from matplotlib import pyplot as plt
 from copy import deepcopy as dc
@@ -19,6 +20,7 @@ class Syst(object):
         self._series = series
         self._pars = pars
         self._mod = mod
+        self._group = None
         self._x = {}
         for t in trans_parse(self._series):
             self._x[t] = to_x(self._pars['z'], t)
@@ -57,7 +59,8 @@ class SystList(object):
                  snr=[],
                  id=[],
                  meta={},
-                 dtype=float):
+                 dtype=float,
+                 group_dv_max=100):
 
         self._d = {}
 
@@ -124,7 +127,20 @@ class SystList(object):
 
         self._compressed = False
 
+
         self._dict_update()
+        self._group(group_dv_max)
+
+
+    def _group(self, dv_max=100):
+        d = self._d
+        for s in d:
+            dv = ac.c.to(au.km/au.s).value \
+                * (self._t['z']-d[s]._pars['z'])/(1+self._t['z'])
+
+            setattr(d[s], '_group', np.array(self._t['id'][np.abs(dv)<dv_max]))
+            print(s, d[s]._group)
+
 
 
     def _dict_update(self, mods=False):
