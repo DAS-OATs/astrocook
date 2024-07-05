@@ -14,6 +14,15 @@ import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.colourdb as cdb
 
+"""
+import scienceplots
+from cycler import cycler
+#plt.style.use('science')
+#plt.rcParams.update({"font.family": "sans-serif", "font.size":14})
+cc = cycler(plt.style.library['light']['axes.prop_cycle'])
+cmap = [d['color'] for d in cc]
+"""
+
 max_rows = 2000
 
 class GUITable(wx.Frame):
@@ -504,6 +513,7 @@ class GUITableSystList(GUITable):
         dlg_mini_systems = self._gui._dlg_mini_systems
         dlg_mini_systems._menu.FindItemById(dlg_mini_systems._dlg_id[0]).Check(True)
 
+        """
         # Color background of systems in the same group
         mods_sel = np.where([row_id in i \
                              for i in self._gui._sess_sel.systs._mods_t['id']])
@@ -513,6 +523,16 @@ class GUITableSystList(GUITable):
                     self._tab.SetCellBackgroundColour(j, i, 'cyan')
                 else:
                     self._tab.SetCellBackgroundColour(j, i, None)
+        """
+        s = self._gui._sess_sel.systs._d[row_id]
+        for j, r in enumerate(self._data.t):
+            if r['id']==row_id:
+                self._tab.SetCellBackgroundColour(j, 3, 'spring green')
+            elif r['id'] in np.array(s._group):
+                self._tab.SetCellBackgroundColour(j, 3, 'yellow')
+            else:
+                self._tab.SetCellBackgroundColour(j, 3, None)
+
         self._tab.ForceRefresh()
 
 

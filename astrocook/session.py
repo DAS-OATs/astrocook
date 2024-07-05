@@ -447,6 +447,7 @@ class Session(object):
                 self.cb._mods_recreate(only_constr=only_constr, fast=fast)
                 self.cb._spec_update()
                 self.systs._dict_update(mods=True)
+                self.systs._group()
 
             if os.path.exists(self._root_stem+'.json'): os.remove(self._root_stem+'.json')
 
