@@ -237,8 +237,8 @@ class Graph(object):
                     else:
                         z = x/x_convert(self._cursor._xmean, sess.spec._zem, sess.spec._xunit).value-1
                         self._cursor._x = x_convert(self._cursor._xem*(1+z)*au.nm, sess.spec._zem, sess.spec._xunit)
-                    for c, xi in zip(l, self._cursor._x):
-                        c.set_xdata(xi.value)
+                    for c, xi in zip(l, self._cursor._x.value):
+                        c.set_xdata([xi])
                         c.set_alpha(0.5)
                     z_obs = z*(1+sess.spec._rfz)
                     focus._textbar.SetLabel("x=%2.4f, y=%2.4e; z[%s]=%2.5f" \
@@ -247,7 +247,7 @@ class Graph(object):
                 if sess.spec._xunit.is_equivalent(au.nm):  # X-axis in wavelengths
                     z = x/x_convert(self._cursor._xmean, sess.spec._zem, sess.spec._xunit).value-1
                     xzs = [x_convert(xem*au.nm, sess.spec._zem, sess.spec._xunit).value*(1+z)
-                            for xem in self._cursor._xem]
+                            for xem in self._cursor._xem].value
                 else:  # X-axis in velocities
                     xc = x_convert(x*sess.spec._xunit, sess.spec._zem,
                                    au.nm).value

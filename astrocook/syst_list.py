@@ -2,6 +2,7 @@ from .vars import *
 from .functions import convolve, lines_voigt, running_mean, to_x, trans_parse
 from .message import msg_output_fail
 from astropy import table as at
+from astropy import constants as ac
 from astropy import units as au
 #from matplotlib import pyplot as plt
 from copy import deepcopy as dc
@@ -19,9 +20,12 @@ class Syst(object):
         self._series = series
         self._pars = pars
         self._mod = mod
-        self._x = {}
+        self._group = None
+        #self._x = {}
+        self._xl = np.array([])
         for t in trans_parse(self._series):
-            self._x[t] = to_x(self._pars['z'], t)
+            #self._x[t] = to_x(self._pars['z'], t)
+            self._xl = np.append(self._xl, to_x(self._pars['z'], t).to(au.nm).value)
 
 
     def _check_voigt(self):
@@ -57,7 +61,8 @@ class SystList(object):
                  snr=[],
                  id=[],
                  meta={},
-                 dtype=float):
+                 dtype=float,
+                 group_dv_max=100):
 
         self._d = {}
 
@@ -124,8 +129,20 @@ class SystList(object):
 
         self._compressed = False
 
-        self._dict_update()
 
+        self._dict_update()
+        self._group(group_dv_max)
+
+
+    def _group(self, dv_max=100):
+        d = self._d
+        xls = np.array([d[s]._xl for s in d])
+        dv = np.subtract.outer(xls, xls)/xls * ac.c.to(au.km/au.s).value
+        check = np.max(np.max(np.abs(dv)<dv_max, axis=1), axis=2)
+        k = np.array(list(d.keys()))
+        for s,c in zip(d,check):
+            setattr(d[s], '_group', k[c])
+            
 
     def _dict_update(self, mods=False):
         self._t.sort('id')
