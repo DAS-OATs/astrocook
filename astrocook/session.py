@@ -485,7 +485,8 @@ class Session(object):
             logging.info("I'm using line list %s." % path)
             data = ascii.read(path)
             if mode == 'std':
-                z = data['col1']
+                series = data['col1']
+                z = data['col2']
                 dz = data['col3']
                 logN = data['col4']
                 dlogN = data['col5']
@@ -505,18 +506,22 @@ class Session(object):
                 except:
                     db = [np.nan]*len(data)
 
-            # Only Ly_a for now
-            series = ['Ly_a']*len(data)
+                # Only Ly_a for now
+                series = ['Ly_a']*len(data)
+
             func = ['voigt']*len(data)
             self.cb.resol_est()
             resol = [np.nanmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
             id = range(len(data))
+            btur = np.zeros(len(data))
+            dbtur = [np.nan]*len(data)
             out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
-                           id=id)
+                           dlogN=dlogN, b=b, db=db, btur=btur, dbtur=dbtur,
+                           resol=resol, chi2r=chi2r, id=id)
             out._t['z0'] = z
-            self.spec._t['cont'] = 1
+            if 'cont' not in self.spec._t.colnames:
+                self.spec._t['cont'] = 1
             setattr(self, 'systs', out)
             self.cb._mods_recreate()
             self.cb._spec_update()
