@@ -613,6 +613,7 @@ class GUIMenuSynthetic(GUIMenu):
         self._rec = [{'targ': 'spec_from_struct', 'append': 'spec'},
                      {'targ': 'spec_from_systs', 'append': 'systs'},
                      {'targ': 'spec_from_systs_random', 'append': 'systs'},
+                     {'targ': 'systs_random', 'append': 'systs'},
                      ]
 
         from .cookbook_synthetic import CookbookSynthetic as cbc
