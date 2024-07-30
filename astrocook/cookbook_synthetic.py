@@ -128,11 +128,11 @@ class CookbookSynthetic(object):
 
     def spec_from_systs_random(self, n, series='Ly-a',
                                z_min=0, z_max=6, z_seed=None,
-                               logN_min=pars_std_d['logN_min'],
-                               logN_max=pars_std_d['logN_max'], logN_seed=None,
+                               logN_mean=12.5,
+                               logN_std=0.7, logN_seed=None,
                                b_min=pars_std_d['b_min'],
                                b_max=pars_std_d['b_max'], b_seed=None,
-                               resol=resol_def, snr=None, append=True):
+                               resol=resol_def):
         """ @brief Synthetic spectrum from random systems
         @details Create a synthetic spectrum from a list of systems with random
         redshifts, column density, and Doppler broadening.
@@ -141,15 +141,13 @@ class CookbookSynthetic(object):
         @param z_min Minimum redshift
         @param z_max Maximum redshift
         @param z_seed Seed for random sampling in [z_min, z_max]
-        @param logN_min Minimum (logarithmic) column density
-        @param logN_max Maximum (logarithmic) column density
+        @param logN_mean Mean (logarithmic) column density
+        @param logN_std Standard deviation of (logarithmic) column density
         @param logN_seed Seed for random sampling in [logN_min, logN_max]
         @param b_min Minimum Doppler broadening
         @param b_max Maximum Doppler broadening
         @param b_seed Seed for random sampling in [b_min, b_max]
         @param resol Resolution
-        @param snr Signal-to-noise ratio
-        @param append Append systems to existing system list
         @return Session with synthetic spectrum
         """
 
@@ -157,14 +155,15 @@ class CookbookSynthetic(object):
             n = int(n)
             z_min = float(z_min)
             z_max = float(z_max)
-            z_seed = int(z_seed)
-            logN_min = float(logN_min)
-            logN_max = float(logN_max)
-            logN_seed = int(logN_seed)
+            z_seed = None if z_seed in [None, 'None'] else int(z_seed)
+            logN_mean = float(logN_mean)
+            logN_std = float(logN_std)
+            logN_seed = None if logN_seed in [None, 'None'] else int(logN_seed)
             b_min = float(b_min)
             b_max = float(b_max)
-            b_seed = int(b_seed)
+            b_seed = None if b_seed in [None, 'None'] else int(b_seed)
             resol = None if resol in [None, 'None'] else float(resol)
+            """
             if snr in [None, 'None']:
                 snr = None
             elif snr in [np.inf, 'inf']:
@@ -172,6 +171,7 @@ class CookbookSynthetic(object):
             else:
                 snr = float(snr)
             append = str(append) == 'True'
+            """
         except:
             logging.error(msg_param_fail)
             return 0
@@ -192,11 +192,16 @@ class CookbookSynthetic(object):
                 z_list = rng.random(n)*(z_max-z_min)+z_min
             else:
                 z_list = np.full(n, z_min)
+            """
             if logN_max != logN_min:
                 rng = np.random.default_rng(logN_seed)
                 logN_list = rng.random(n)*(logN_max-logN_min)+logN_min
+                logN_list = rng.normal(logN_mean, logN_std, n)
             else:
                 logN_list = np.full(n, logN_min)
+            """
+            rng = np.random.default_rng(logN_seed)
+            logN_list = rng.normal(logN_mean, logN_std, n)
             if b_max != b_min:
                 rng = np.random.default_rng(b_seed)
                 b_list = rng.random(n)*(b_max-b_min)+b_min
@@ -207,7 +212,7 @@ class CookbookSynthetic(object):
             resol_list = [resol]*n
 
 
-            self._systs_prepare(append)
+            self._systs_prepare(False)
             self._systs_add(s_list, z_list, logN_list, b_list,
                             resol_list=resol_list)
             self._systs_cycle()
@@ -215,11 +220,12 @@ class CookbookSynthetic(object):
 
         spec = self.sess.spec
         x, xmin, xmax = spec._t['x'], spec._t['xmin'], spec._t['xmax']
+        """
         if snr is None:
             rng = np.random.default_rng()
             norm = rng.standard_normal(size=x.size)
             dy = spec._t['dy']
-            y = spec._t['model']+dy*norm
+            y = (spec._t['model']+dy*norm)/spec._t['cont']*spec._t['y']
         else:
             y = spec._t['model']
             dy = y/snr
@@ -235,3 +241,7 @@ class CookbookSynthetic(object):
         new._systs = self.sess.systs
 
         return new
+        """
+
+        spec._t['y'] *= spec._t['model']/spec._t['cont']
+        return 0
