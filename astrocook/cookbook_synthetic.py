@@ -243,7 +243,7 @@ class CookbookSynthetic(object):
                      logN_std=0.7, logN_seed=None,
                      b_min=pars_std_d['b_min'],
                      b_max=pars_std_d['b_max'], b_seed=None,
-                     resol=resol_def):
+                     resol=resol_def, append=True):
         """ @brief Add random systems on spectrum
         @details Add a list of systems with random redshifts, column density,
         and Doppler broadening, to a spectrum.
@@ -259,6 +259,7 @@ class CookbookSynthetic(object):
         @param b_max Maximum Doppler broadening
         @param b_seed Seed for random sampling in [b_min, b_max]
         @param resol Resolution
+        @param append Append systems to existing system list
         @return Session with synthetic spectrum
         """
 
@@ -281,8 +282,8 @@ class CookbookSynthetic(object):
                 snr = np.inf
             else:
                 snr = float(snr)
-            append = str(append) == 'True'
             """
+            append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -323,7 +324,7 @@ class CookbookSynthetic(object):
             resol_list = [resol]*n
 
 
-            self._systs_prepare(False)
+            self._systs_prepare(append)
             self._systs_add(s_list, z_list, logN_list, b_list,
                             resol_list=resol_list)
             self._systs_cycle()
