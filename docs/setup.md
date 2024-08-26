@@ -32,7 +32,6 @@ Astrocook is written in Python 3 and requires the following packages:
 * [NumPy 1.17.3](http://www.numpy.org)
 * [Cycler 0.10.0](https://pypi.python.org/pypi/Cycler)
 * [StatsModels 0.10.1](http://www.statsmodels.org/stable/index.html)
-[//]: # * [Sphinx 2.2.0](http://www.sphinx-doc.org/en/master/)
 
 You are suggested to manage the dependencies using [Conda](https://docs.conda.io/projects/conda/en/latest/).
 The quickest way to do it is to get the Miniconda installer (instructions [here](https://docs.conda.io/en/latest/miniconda.html)) and to open an environment dedicated to Astrocook:
