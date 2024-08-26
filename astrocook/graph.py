@@ -247,7 +247,7 @@ class Graph(object):
                 if sess.spec._xunit.is_equivalent(au.nm):  # X-axis in wavelengths
                     z = x/x_convert(self._cursor._xmean, sess.spec._zem, sess.spec._xunit).value-1
                     xzs = [x_convert(xem*au.nm, sess.spec._zem, sess.spec._xunit).value*(1+z)
-                            for xem in self._cursor._xem].value
+                            for xem in self._cursor._xem]#.value
                 else:  # X-axis in velocities
                     xc = x_convert(x*sess.spec._xunit, sess.spec._zem,
                                    au.nm).value

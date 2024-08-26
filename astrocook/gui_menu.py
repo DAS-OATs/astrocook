@@ -246,6 +246,10 @@ class GUIMenu(object):
                     gui_dlg_mini._shown = False
                     gui_dlg_mini._on_cancel(event)
                     if dlg_mini == 'systems':
+                        try:
+                            gui_dlg_mini = GUIDialogMiniSystems(self._gui, title, targ)
+                        except:
+                            pass
                         gui_dlg_mini._cursor_button.SetLabel("Show cursor")
 
 
@@ -695,7 +699,7 @@ class GUIMenuView(GUIMenu):
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2]
-        dlg_id = [start_id+4, start_id+10, start_id+11]
+        dlg_id = [start_id+4, start_id+5, start_id+10, start_id+11]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
 
@@ -809,8 +813,8 @@ class GUIMenuView(GUIMenu):
         self._gui._refresh()
 
     def _on_dlg_mini(self, event, obj, check=None, log=True):
-        index = ['graph', 'log', 'defs'].index(obj)
-        title = ['Graph elements', 'Session log', 'Session defaults'][index]
+        index = ['graph', 'cursor', 'log', 'defs'].index(obj)
+        title = ['Graph elements', '', 'Session log', 'Session defaults'][index]
         item = self._menu.FindItemById(self._gui._menu_dlg_id[index])
 
         if check is not None:
