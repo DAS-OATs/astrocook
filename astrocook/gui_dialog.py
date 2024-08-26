@@ -421,7 +421,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
-        self._menu.FindItemById(self._dlg_id[1]).Check(False)
+        self._menu.FindItemById(self._dlg_id[2]).Check(False)
 
 
     def _refresh(self):
@@ -553,7 +553,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
-        self._menu.FindItemById(self._dlg_id[3]).Check(False)
+        self._menu.FindItemById(self._dlg_id[0]).Check(False)
 
 
     def _refresh(self):
@@ -660,7 +660,7 @@ class GUIDialogMiniLog(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
-        self._menu.FindItemById(self._dlg_id[2]).Check(False)
+        self._menu.FindItemById(self._dlg_id[1]).Check(False)
 
     def _on_save(self, e=None, path=None):
         if path is None:

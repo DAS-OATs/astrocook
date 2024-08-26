@@ -181,7 +181,7 @@ class GUIMenu(object):
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_defs',
                                  {'event': None, 'title': title, 'targ': targ})
-        if hasattr(self._gui, '_dlg_mini_graph'):
+        if hasattr(self._gui, '_dlg_mini_graph') and hasattr(self._gui, '_dlg_mini_defs'):
             self._gui._dlg_mini_defs._refresh()
         else:
             dlg = GUIDialogMiniDefaults(self._gui, title)
@@ -695,7 +695,7 @@ class GUIMenuView(GUIMenu):
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2]
-        dlg_id = [start_id+5, start_id+6, start_id+7, start_id+8, start_id+9]
+        dlg_id = [start_id+4, start_id+10, start_id+11]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
 
@@ -739,7 +739,7 @@ class GUIMenuView(GUIMenu):
                           'title': "Toggle log x axis", 'append': 'spec'},
                           {'type': '_item', 'event': self._on_logy,
                           'title': "Toggle log y axis", 'append': 'spec'},
-'--',
+                          '--',
                           {'type': '_item', 'title': "Session metadata",
                           'event': lambda e: self._on_dlg_mini(e, 'meta'),
                           'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
@@ -809,9 +809,8 @@ class GUIMenuView(GUIMenu):
         self._gui._refresh()
 
     def _on_dlg_mini(self, event, obj, check=None, log=True):
-        index = ['meta', 'defs', 'log', 'graph'].index(obj)
-        title = ['Session metadata', 'Session defaults', 'Session log',
-                 'Graph elements'][index]
+        index = ['graph', 'log', 'defs'].index(obj)
+        title = ['Graph elements', 'Session log', 'Session defaults'][index]
         item = self._menu.FindItemById(self._gui._menu_dlg_id[index])
 
         if check is not None:
