@@ -61,7 +61,9 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
 
     def model_metals(self, series, zem, no_ly=True, use_lines=False):
         """@brief Model metals 🚧
-        @details 🚧
+        @details Model metal absorbers, based on transition and emission
+        redshift.
+        @url absorbers_cb.html#model-metals
         @param series Transitions
         @param zem Emission redshift
         @param no_ly Exclude Lyman forest
