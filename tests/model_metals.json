@@ -10,10 +10,20 @@
     },
     {
       "cookbook": "cb",
+      "recipe": "find_lines",
+      "params": {
+        "kind": "abs",
+        "prominence": "5e3",
+        "append": "False"
+      }
+    },
+    {
+      "cookbook": "cb",
       "recipe": "model_metals",
       "params": {
         "series": "CIV",
-        "zem": 2.725
+        "zem": 2.725,
+        "use_lines": true
       }
     },
     {

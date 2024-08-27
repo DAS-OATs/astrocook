@@ -59,18 +59,20 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         return 0
 
 
-    def model_metals(self, series, zem, no_ly=True):
+    def model_metals(self, series, zem, no_ly=True, use_lines=False):
         """@brief Model metals 🚧
         @details 🚧
         @param series Transitions
         @param zem Emission redshift
         @param no_ly Exclude Lyman forest
+        @param use_lines Use line list to define absorbers
         @url absorbers_cb.html#model-metals
         """
 
         try:
             zem = float(zem)
             no_ly = str(no_ly) == 'True'
+            use_lines = str(use_lines) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -87,11 +89,19 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
             self.sess.spec._resol_est(3, True)
             resol = self.sess.spec._t['resol'][0]
 
-        modul = 10
-        distance = 3
-        self.systs_new_from_like(series=series, col='y', z_start=z_start,
-                                 z_end=z_end, modul=modul, sigma=3,
-                                 distance=distance, resol=resol, append=True)
+        col = 'deabs' if 'deabs' in self.sess.spec._t.colnames else 'y'
+
+        if use_lines and self.sess.lines is None:
+            logging.warning("I didn't find a line list. Ignoring it.")
+            use_lines = False
+
+        if use_lines:
+            self.systs_new_from_lines(series=series, z_start=z_start,
+                                      z_end=z_end, refit_n=0, append=True)
+        else:
+            self.systs_new_from_like(series=series, col=col, z_start=z_start,
+                                     z_end=z_end, modul=10, sigma=3,
+                                     distance=3, resol=resol, append=True)
         self.systs_fit(refit_n=0)
         return 0
 
