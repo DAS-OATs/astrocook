@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Templates cookbook
-parent: Cookbooks
 nav_order: 5
 ---
 
@@ -16,7 +15,7 @@ nav_order: 5
 ---
 
 ###  Blackbody template
-        
+
 <table>
   <tbody>
     <tr>
@@ -50,7 +49,7 @@ nav_order: 5
 Create a blackbody template of a given temperature
 
 ###  Power-law template
-        
+
 <table>
   <tbody>
     <tr>
@@ -84,4 +83,3 @@ Create a blackbody template of a given temperature
 </table>
 
 Create a power-law template of a given amplitude, wavelength reference and index
-

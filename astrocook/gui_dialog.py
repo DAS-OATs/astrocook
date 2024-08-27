@@ -85,7 +85,7 @@ class GUIDialog(wx.Dialog):
         self._details.append([s.split('\n\n')[0][8:] for s in split \
                               if s[0:7]=='details'][0].replace('\n', ' '))
         try:
-            self._url.append([docs_url+s.split('\n\n')[0][4:] \
+            self._url.append([docs_url+s.split('\n')[0][4:] \
                               for s in split if s[0:3]=='url'][0])
         except:
             self._url.append(docs_url)
@@ -124,7 +124,6 @@ class GUIDialog(wx.Dialog):
 
 
     def _on_docs(self, e):
-        print(self._url)
         wx.LaunchDefaultBrowser(self._url[0])
 
 
@@ -422,7 +421,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
     def _on_cancel(self, e=None, refresh=True, log=True):
         self._shown = False
         self.Destroy()
-        self._menu.FindItemById(self._dlg_id[1]).Check(False)
+        self._menu.FindItemById(self._dlg_id[3]).Check(False)
 
 
     def _refresh(self):
@@ -554,7 +553,7 @@ class GUIDialogMiniGraph(GUIDialogMini):
     def _on_cancel(self, e=None):
         self._shown = False
         self.Destroy()
-        self._menu.FindItemById(self._dlg_id[3]).Check(False)
+        self._menu.FindItemById(self._dlg_id[0]).Check(False)
 
 
     def _refresh(self):
@@ -918,12 +917,12 @@ class GUIDialogMiniSystems(GUIDialogMini):
 
     def _on_cancel(self, e):
         self._cursor_delete()
-        self._menu.FindItemById(self._dlg_id[4]).Check(False)
         try:
             self.Destroy()
         except:
             pass
         self._gui._refresh(init_cursor=True, init_tab=False)
+        self._menu.FindItemById(self._dlg_id[1]).Check(False)
 
 
     def _refresh(self, series='CIV', z=2.0):

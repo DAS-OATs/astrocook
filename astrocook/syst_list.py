@@ -2,6 +2,7 @@ from .vars import *
 from .functions import convolve, lines_voigt, running_mean, to_x, trans_parse
 from .message import msg_output_fail
 from astropy import table as at
+from astropy import constants as ac
 from astropy import units as au
 #from matplotlib import pyplot as plt
 from copy import deepcopy as dc
@@ -19,9 +20,12 @@ class Syst(object):
         self._series = series
         self._pars = pars
         self._mod = mod
-        self._x = {}
+        self._group = None
+        #self._x = {}
+        self._xl = np.array([])
         for t in trans_parse(self._series):
-            self._x[t] = to_x(self._pars['z'], t)
+            #self._x[t] = to_x(self._pars['z'], t)
+            self._xl = np.append(self._xl, to_x(self._pars['z'], t).to(au.nm).value)
 
 
     def _check_voigt(self):
@@ -42,8 +46,8 @@ class SystList(object):
                  id_start=0,
                  func=[],
                  series=[],
-                 z0=[],
-                 z=[],
+                 z0=None,
+                 z=None,
                  dz=[],
                  logN=[],
                  dlogN=[],
@@ -57,7 +61,8 @@ class SystList(object):
                  snr=[],
                  id=[],
                  meta={},
-                 dtype=float):
+                 dtype=float,
+                 group_dv_max=100):
 
         self._d = {}
 
@@ -65,12 +70,14 @@ class SystList(object):
         self._constr = {}
 
         t = at.Table()
+
+
         zunit = au.dimensionless_unscaled
         logNunit = au.dimensionless_unscaled
         bunit = au.km/au.s
         t['func'] = at.Column(np.array(func, ndmin=1), dtype='S5')
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
-        if z0==[] and z!=[]:
+        if z0 is None and z is not None:
             t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
         else:
             t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)
@@ -85,6 +92,7 @@ class SystList(object):
         t['btur'] = at.Column(np.array(btur, ndmin=1), dtype=dtype, unit=bunit)
         t['dbtur'] = at.Column(np.array(dbtur, ndmin=1), dtype=dtype, unit=bunit)
         self._t = t
+
         if len(resol)==len(self.z) and len(resol)>0:
             self._t['resol'] = resol
         else:
@@ -121,8 +129,20 @@ class SystList(object):
 
         self._compressed = False
 
-        self._dict_update()
 
+        self._dict_update()
+        self._group(group_dv_max)
+
+
+    def _group(self, dv_max=100):
+        d = self._d
+        xls = np.array([d[s]._xl for s in d])
+        dv = np.subtract.outer(xls, xls)/xls * ac.c.to(au.km/au.s).value
+        check = np.max(np.max(np.abs(dv)<dv_max, axis=1), axis=2)
+        k = np.array(list(d.keys()))
+        for s,c in zip(d,check):
+            setattr(d[s], '_group', k[c])
+            
 
     def _dict_update(self, mods=False):
         self._t.sort('id')

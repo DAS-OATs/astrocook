@@ -5,6 +5,7 @@ from .line_list import LineList
 from .message import *
 from .vars import *
 from astropy import units as au
+import astropy.constants as ac
 from astropy.modeling.models import BlackBody
 from astropy.modeling.powerlaws import PowerLaw1D
 from astropy.table import Column
@@ -37,13 +38,13 @@ class Spectrum(Frame):
                  yunit=au.erg/au.cm**2/au.s/au.nm,
                  meta={},
                  dtype=float,
-                 cont=[],
-                 resol=[]):
+                 cont=None,
+                 resol=None):
         super(Spectrum, self).__init__(x, xmin, xmax, y, dy, xunit, yunit, meta,
                                        dtype)
-        if cont != []:
+        if cont is not None:
             self._t['cont'] = cont*self._yunit
-        if resol != []:
+        if resol is not None:
             self._t['resol'] = resol
 
         self.gauss_psf_cache = {}
@@ -101,6 +102,10 @@ class Spectrum(Frame):
 
         return 0
 
+    def _dv(self):
+        dv = (self._t['xmax']-self._t['xmin'])/self._t['x'] \
+            * ac.c.to(au.km/au.s)
+        return dv.value
 
     def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv,
                   weighted=False):
@@ -240,8 +245,8 @@ class Spectrum(Frame):
 
         # Add padding to avoid edge issues
         len_conv = len(conv)
-        conv = Column(np.append(np.ones(len_conv)*conv[0], conv))
-        conv = Column(np.append(conv, np.ones(len_conv)*conv[-1]))
+        conv = Column(np.append(np.ones(len_conv)*conv[~np.isnan(conv)][0], conv))
+        conv = Column(np.append(conv, np.ones(len_conv)*conv[~np.isnan(conv)][-1]))
 
         safe = np.array(self._safe(conv), dtype=float)
         mode = 'same'

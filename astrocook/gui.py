@@ -426,7 +426,7 @@ class GUIPanelSession(wx.Frame):
 
             super(GUIPanelSession, self).__init__(parent=None, title=title,
                                                   size=(size_x, size_y))
-            self.SetPosition((int(wx.DisplaySize()[0]*0.02), 
+            self.SetPosition((int(wx.DisplaySize()[0]*0.02),
                               int(wx.DisplaySize()[0]*0.02)))
 
         self._tag = "_panel_sess"
@@ -513,7 +513,7 @@ class GUIPanelSession(wx.Frame):
                 self._gui._refresh(init_tab=False, autolim=False)
 
                 # Enable import from depending on how many sessions are present
-                for menu in [self._menu._edit, self._menu._cb_general]:
+                for menu in [self._menu._edit]:#, self._menu._cb_general]:
                     menu_dict = menu._menu.__dict__
                     for m in menu_dict:
                         menu._menu.Enable(menu_dict[m]['start_id'],

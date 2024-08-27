@@ -12,6 +12,8 @@ import os
 import sys
 import wx
 
+show_all = False
+
 class GUIMenu(object):
 
     def __init__(self,
@@ -179,7 +181,7 @@ class GUIMenu(object):
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_defs',
                                  {'event': None, 'title': title, 'targ': targ})
-        if hasattr(self._gui, '_dlg_mini_graph'):
+        if hasattr(self._gui, '_dlg_mini_graph') and hasattr(self._gui, '_dlg_mini_defs'):
             self._gui._dlg_mini_defs._refresh()
         else:
             dlg = GUIDialogMiniDefaults(self._gui, title)
@@ -244,6 +246,10 @@ class GUIMenu(object):
                     gui_dlg_mini._shown = False
                     gui_dlg_mini._on_cancel(event)
                     if dlg_mini == 'systems':
+                        try:
+                            gui_dlg_mini = GUIDialogMiniSystems(self._gui, title, targ)
+                        except:
+                            pass
                         gui_dlg_mini._cursor_button.SetLabel("Show cursor")
 
 
@@ -369,51 +375,40 @@ class GUIMenuAbsorbers(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'find_lines', 'append': 'spec'}]
+        self._rec = [{'targ': 'find_lines', 'append': 'spec'},
+                     '--',
+                     {'targ': 'model_lya', 'append': 'cont'},
+                     {'targ': 'model_metals', 'append': 'cont'},
+                     '--',
+                     {'targ': 'identify_unknown', 'append': ['z0']},
+                     {'targ': 'check_systs', 'append': 'z0'},
+                     ]
+
+        if show_all:
+            self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
+                         {'targ': 'systs_new_from_lines', 'append': 'lines'},
+                         '> Other',
+                         {'targ': 'cands_find', 'append': 'z0'},
+                         {'targ': 'systs_improve', 'append': 'z0'},
+                         '<',
+                         '--',
+                         {'targ': 'systs_fit', 'append': 'z0'},
+                         {'targ': 'systs_clean', 'append': 'z0'},
+                         {'targ': 'mods_recreate', 'append': 'z0'},
+                         '> Other',
+                         {'targ': 'systs_snr', 'append': 'z0'},
+                         {'targ': 'systs_select', 'append': 'z0'},
+                         {'targ': 'comp_extract', 'append': 'z0'},
+                         {'targ': 'systs_merge', 'append': 'z0'},
+                         '<',
+                         '--',
+                         {'targ': 'feats', 'append': 'z0'},
+                         '--',
+                         {'targ': 'mods_ccf_max', 'append': 'z0'},
+                         {'targ': 'systs_sigmav', 'append': 'z0'},
+                        ]
 
         from .cookbook_absorbers import CookbookAbsorbers as cbc
-        self._cb = cbc()
-
-        self._create(self._menu, self._rec, self._cb, start_id)
-
-
-class GUIMenuAbsorbersOld(GUIMenu):
-
-    def __init__(self,
-                 gui,
-                 start_id=7000,
-                 **kwargs):
-        super(GUIMenuAbsorbers, self).__init__(gui)
-        self._gui = gui
-        self._menu = wx.Menu()
-
-        self._rec = [{'targ': 'systs_new_from_like', 'append': 'cont'},
-                     {'targ': 'systs_new_from_lines', 'append': 'lines'},
-                     {'targ': 'systs_complete', 'append': ['z0']},
-                     {'targ': 'systs_complete_from_z', 'append': ['z0']},
-                     {'targ': 'lya_fit', 'append': 'cont'},
-                     '> Other',
-                     {'targ': 'cands_find', 'append': 'z0'},
-                     {'targ': 'systs_improve', 'append': 'z0'},
-                     '<',
-                     '--',
-                     {'targ': 'systs_fit', 'append': 'z0'},
-                     {'targ': 'systs_clean', 'append': 'z0'},
-                     {'targ': 'mods_recreate', 'append': 'z0'},
-                     '> Other',
-                     {'targ': 'systs_snr', 'append': 'z0'},
-                     {'targ': 'systs_select', 'append': 'z0'},
-                     {'targ': 'comp_extract', 'append': 'z0'},
-                     {'targ': 'systs_merge', 'append': 'z0'},
-                     '<',
-                     '--',
-                     {'targ': 'feats', 'append': 'z0'},
-                     '--',
-                     {'targ': 'mods_ccf_max', 'append': 'z0'},
-                     {'targ': 'systs_sigmav', 'append': 'z0'},
-                    ]
-
-        from .cookbook_absorbers_old import CookbookAbsorbersOld as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
@@ -429,21 +424,27 @@ class GUIMenuContinuum(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'flux_clip', 'append': 'spec'},
+        self._rec = [{'targ': 'clip_flux', 'append': 'spec'},
+                     {'targ': 'fit_pl', 'append': 'spec'},
                      '--',
-                     {'targ': 'lines_find', 'append': 'spec'},
-                     {'targ': 'nodes_cont', 'append': 'spec'},
-                     {'targ': 'lines_update', 'append': 'z0'},
-                     '> Other',
-                     {'targ': 'peaks_find', 'append': 'spec'},
-                     {'targ': 'nodes_extract', 'append': 'cont'},
-                     {'targ': 'nodes_clean', 'append': 'lines'},
-                     {'targ': 'nodes_interp', 'append': 'nodes'},
-                     '<',
+                     {'targ': 'update_deabs', 'append': 'systs'},
                      '--',
-                     {'targ': 'lya_corr', 'append': 'spec'},
-                     {'targ': 'abs_cont', 'append': 'spec'},
-                     ]
+                     {'targ': 'correct_lya', 'append': 'spec'}]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'lines_find', 'append': 'spec'},
+                          {'targ': 'nodes_cont', 'append': 'spec'},
+                          {'targ': 'lines_update', 'append': 'z0'},
+                          '> Other',
+                          {'targ': 'peaks_find', 'append': 'spec'},
+                          {'targ': 'nodes_extract', 'append': 'cont'},
+                          {'targ': 'nodes_clean', 'append': 'lines'},
+                          {'targ': 'nodes_interp', 'append': 'nodes'},
+                          '<',
+                          '--',
+                          {'targ': 'abs_cont', 'append': 'spec'},
+                          ]
 
         from .cookbook_continuum import CookbookContinuum as cbc
         self._cb = cbc()
@@ -461,19 +462,29 @@ class GUIMenuEdit(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'x_convert', 'append': 'spec'},
-                     {'targ': 'y_convert', 'append': 'spec'},
+        self._rec = [{'targ': 'modify_columns', 'append': 'spec'},
+                     {'targ': 'import_systs', 'append': 'spec'},
                      '--',
-                     {'targ': 'shift_bary', 'append': 'spec'},
-                     {'targ': 'shift_to_rf', 'append': 'spec'},
-                     {'targ': 'shift_from_rf', 'append': 'spec'},
-                     '--',
-                     {'targ': 'struct_import', 'append': 'spec'},#'func': '__gt__', 'value': 0},
-                     {'targ': 'struct_modify', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                     {'targ': 'extract', 'append': 'spec'},
+                     {'targ': 'mask', 'append': 'spec'}
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'x_convert', 'append': 'spec'},
+                          {'targ': 'y_convert', 'append': 'spec'},
+                          '--',
+                          {'targ': 'shift_bary', 'append': 'spec'},
+                          {'targ': 'shift_to_rf', 'append': 'spec'},
+                          {'targ': 'shift_from_rf', 'append': 'spec'},
+                          '--',
+                          {'targ': 'struct_import', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                          {'targ': 'struct_modify', 'append': 'spec'},#'func': '__gt__', 'value': 0},
+                          ]
 
 
         from .cookbook_edit import CookbookEdit as cbc
+        #from .cookbook_general import CookbookGeneral as cbc
         self._cb = cbc()
 
         self._create(self._menu, self._rec, self._cb, start_id)
@@ -494,16 +505,17 @@ class GUIMenuFile(GUIMenu):
         # Add items to File menu here
         self._item(self._menu, start_id, None, "Open...\tCtrl+O",
                    lambda e: self._on_open(e, **kwargs))
-        self._menu.AppendSeparator()
+        #self._menu.AppendSeparator()
         self._item(self._menu, start_id+101, None, "Save session...\tCtrl+S",
                    lambda e: self._on_save(e, **kwargs))
-        self._item(self._menu, start_id+102, 'systs', "Save session with models...\tCtrl+S",
-                   lambda e: self._on_save(e, models=True, **kwargs))
-        self._item(self._menu, start_id+103, None, "Save spectrum as PDF...\tCtrl+S",
-                   lambda e: self._on_save_pdf(e, **kwargs))
-        self._menu.AppendSeparator()
         self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
+        if show_all:
+            self._menu.AppendSeparator()
+            self._item(self._menu, start_id+102, 'systs', "Save session with models...\tCtrl+S",
+                       lambda e: self._on_save(e, models=True, **kwargs))
+            self._item(self._menu, start_id+103, None, "Save spectrum as PDF...\tCtrl+S",
+                       lambda e: self._on_save_pdf(e, **kwargs))
 
     def _on_combine(self, event):
         self._gui._panel_sess._combine()
@@ -562,14 +574,29 @@ class GUIMenuFlux(GUIMenu):
         self._gui = gui
         self._menu = wx.Menu()
 
-        self._rec = [{'targ': 'y_scale', 'append': 'spec'},
-                     {'targ': 'y_scale_med', 'append': 'spec'},
-                     {'targ': 'y_scale_x', 'append': 'spec'},
+        self._rec = [{'targ': 'rebin', 'append': 'spec'},
+                     {'targ': 'smooth', 'append': 'spec'},
                      '--',
+                     {'targ': 'rescale', 'append': 'spec'},
                      {'targ': 'deredden', 'append': 'spec'},
+                     {'targ': 'adjust_mags', 'append': 'spec'},
                      '--',
-                     {'targ': 'mags_adjust', 'append': 'spec'},
+                     {'targ': 'estimate_snr', 'append': 'spec'},
+                     {'targ': 'estimate_rms', 'append': 'spec'},
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'targ': 'y_scale', 'append': 'spec'},
+                          {'targ': 'y_scale_med', 'append': 'spec'},
+                          {'targ': 'y_scale_x', 'append': 'spec'},
+                          '--',
+                          {'targ': 'deredden', 'append': 'spec'},
+                          {'targ': 'mags_adjust', 'append': 'spec'},
+                          '--',
+                          {'targ': 'estimate_snr', 'append': 'spec'},
+                          {'targ': 'estimate_rms', 'append': 'spec'},
+                          ]
 
         from .cookbook_flux import CookbookFlux as cbc
         self._cb = cbc()
@@ -672,7 +699,7 @@ class GUIMenuView(GUIMenu):
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2]
-        dlg_id = [start_id+5, start_id+6, start_id+7, start_id+8, start_id+9]
+        dlg_id = [start_id+4, start_id+5, start_id+10, start_id+11]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
 
@@ -685,18 +712,7 @@ class GUIMenuView(GUIMenu):
                      {'type': '_item',
                       'event': lambda e: self._on_tab(e, 'systs'),
                       'title': "System table", 'append': 'systs', 'key': 'systs'},
-                     {'type': '_item', 'event': self._on_compress,
-                      'title': "Compress system table", 'append': 'systs'},
                      '--',
-                     {'type': '_item', 'title': "Session metadata",
-                      'event': lambda e: self._on_dlg_mini(e, 'meta'),
-                      'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
-                     {'type': '_item', 'title': "Session defaults",
-                      'event': lambda e: self._on_dlg_mini(e, 'defs'),
-                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'},
-                     {'type': '_item', 'title': "Session log",
-                      'event': lambda e: self._on_dlg_mini(e, 'log'),
-                      'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
                      {'type': '_item', 'title': "Graph elements",
                       'event': lambda e: self._on_dlg_mini(e, 'graph'),
                       'key': 'graph', 'append': 'spec', 'dlg_mini': 'graph'},
@@ -704,25 +720,44 @@ class GUIMenuView(GUIMenu):
                       'key': 'cursor_z_series', 'append': 'spec',
                       'dlg_mini': 'systems', 'targ': GraphCursorZSeries,
                       'alt_title': "System controls"},
-                     '--',
-                     {'type': '_item', 'event': self._on_logx,
-                      'title': "Toggle log x axis", 'append': 'spec'},
+                     {'targ': 'toggle_log_axes', 'append': 'spec'},
                      {'type': '_item', 'event': self._on_logy,
                       'title': "Toggle log y axis", 'append': 'spec'},
                      {'type': '_item', 'event': self._on_norm,
                       'title': "Toggle normalization", 'append': 'cont'},
-                     '> Toggle graph add-ons',
-                     {'type': '_item_graph', 'title': "Saturated H2O regions",
-                      'key': 'spec_h2o_reg', 'append': 'spec'},
-                     {'type': '_item', 'event': self._on_legend,
-                      'key': 'legend', 'title': "Legend", 'append': 'spec'},
-                     '<',
                      '--',
-                     {'targ': 'z_ax', 'append': 'spec'},
-                     {'type': '_item', 'event': self._on_z_ax_remove,
-                      'title': "Hide redshift axis", 'append': 'spec'},
-                     '--',
+                     {'type': '_item', 'title': "Session log",
+                     'event': lambda e: self._on_dlg_mini(e, 'log'),
+                     'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
+                     {'type': '_item', 'title': "Session defaults",
+                      'event': lambda e: self._on_dlg_mini(e, 'defs'),
+                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'}
                      ]
+
+        if show_all:
+            self._rec += ['--',
+                          {'type': '_item', 'event': self._on_compress,
+                          'title': "Compress system table", 'append': 'systs'},
+                          '--',
+                          {'type': '_item', 'event': self._on_logx,
+                          'title': "Toggle log x axis", 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_logy,
+                          'title': "Toggle log y axis", 'append': 'spec'},
+                          '--',
+                          {'type': '_item', 'title': "Session metadata",
+                          'event': lambda e: self._on_dlg_mini(e, 'meta'),
+                          'key': 'meta', 'append': 'spec', 'dlg_mini': 'meta'},
+                          '> Toggle graph add-ons',
+                          {'type': '_item_graph', 'title': "Saturated H2O regions",
+                          'key': 'spec_h2o_reg', 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_legend,
+                          'key': 'legend', 'title': "Legend", 'append': 'spec'},
+                          '<',
+                          '--',
+                          {'targ': 'z_ax', 'append': 'spec'},
+                          {'type': '_item', 'event': self._on_z_ax_remove,
+                          'title': "Hide redshift axis", 'append': 'spec'}
+                          ]
 
         from .cookbook_view import CookbookView as cbc
         self._cb = cbc()
@@ -778,9 +813,8 @@ class GUIMenuView(GUIMenu):
         self._gui._refresh()
 
     def _on_dlg_mini(self, event, obj, check=None, log=True):
-        index = ['meta', 'defs', 'log', 'graph'].index(obj)
-        title = ['Session metadata', 'Session defaults', 'Session log',
-                 'Graph elements'][index]
+        index = ['graph', 'cursor', 'log', 'defs'].index(obj)
+        title = ['Graph elements', '', 'Session log', 'Session defaults'][index]
         item = self._menu.FindItemById(self._gui._menu_dlg_id[index])
 
         if check is not None:
