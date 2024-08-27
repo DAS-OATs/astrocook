@@ -1,4 +1,4 @@
-from .functions import create_xmin_xmax, expr_eval, resol_check
+from .functions import create_xmin_xmax, expr_eval, resol_check_old
 from .message import *
 from .spectrum import Spectrum
 from .vars import *
@@ -183,7 +183,7 @@ class CookbookSynthetic(object):
         self._max_nfev = 0 #float(max_nfev)
 
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
 
         for s in series.split(';'):

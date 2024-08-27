@@ -1671,7 +1671,7 @@ class CookbookAbsorbersOld(object):
             logging.error(msg_param_fail)
             return 0
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
 
         refit_n_temp = dc(self._refit_n)
@@ -1790,7 +1790,7 @@ class CookbookAbsorbersOld(object):
             recompress = True
             systs._compress()
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
 
@@ -2160,7 +2160,7 @@ class CookbookAbsorbersOld(object):
             logging.error(msg_param_fail)
             return 0
 
-        #check, resol = resol_check(self.sess.spec, resol)
+        #check, resol = resol_check_old(self.sess.spec, resol)
         #if not check: return 0
 
         if series == 'all':
@@ -2442,7 +2442,7 @@ class CookbookAbsorbersOld(object):
             logging.error(msg_param_fail)
             return 0
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
 
         self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
@@ -2713,7 +2713,7 @@ class CookbookAbsorbersOld(object):
             logging.error(msg_param_fail)
             return 0
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
 
         systs = self.sess.systs

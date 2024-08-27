@@ -244,7 +244,7 @@ class GUIDialogMethod(GUIDialog):
             ctrl_l = []
             for p, d in zip(p_l, d_l):
                 stat = wx.StaticText(self._panel, -1, label=d+':')
-                ctrl = wx.TextCtrl(self._panel, -1, value=str(p_l[p]))
+                ctrl = wx.TextCtrl(self._panel, size=(200,25), value=str(p_l[p]))
                 fgs_add.append((stat, 1, wx.EXPAND))
                 fgs_add.append((ctrl, 1, wx.EXPAND))
                 ctrl_l.append(ctrl)
