@@ -471,7 +471,14 @@ def deprecated_psf_gauss(x, resol, spec=None):
     #ps = pstats.Stats(profile)
     #ps.print_stats()
 
-def resol_check(spec, resol, prefix=prefix):
+def resol_check_old(spec, resol, prefix=prefix):
+    check = resol is not None, 'resol' in spec.t.colnames
+    resol = resol if check[0] else None
+    print(msg_resol_old(check, prefix))
+    return np.logical_or(*check), resol
+
+
+def resol_check(spec, resol=None, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
     resol = resol if check[0] else None
     print(msg_resol(check, prefix))

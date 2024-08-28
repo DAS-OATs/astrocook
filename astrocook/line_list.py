@@ -98,7 +98,7 @@ class LineList(Frame):
         z_int = z_all[np.logical_and(z_all>z_min, z_all<z_max)]
         y_int = y_all[np.logical_and(z_all>z_min, z_all<z_max)]
 
-        if z_int == []: return z_int, y_int
+        if len(z_int) == 0: return z_int, y_int
 
         z_sort = np.sort(np.ravel(z_int))
         y_sort = y_int[np.argsort(np.ravel(z_int))]

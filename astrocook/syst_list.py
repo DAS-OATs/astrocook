@@ -79,9 +79,15 @@ class SystList(object):
         t['series'] = at.Column(np.array(series, ndmin=1), dtype='S100')
         if z0 is None and z is not None:
             t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
-        else:
+        elif z0 is not None:
             t['z0'] = at.Column(np.array(z0, ndmin=1), dtype=dtype, unit=zunit)
-        t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        else:
+            t['z0'] = at.Column(np.array([], ndmin=1), dtype=dtype, unit=zunit)
+        if z is not None:
+            t['z'] = at.Column(np.array(z, ndmin=1), dtype=dtype, unit=zunit)
+        else:
+            t['z'] = at.Column(np.array([], ndmin=1), dtype=dtype, unit=zunit)
+
         t['dz'] = at.Column(np.array(dz, ndmin=1), dtype=dtype, unit=zunit)
         t['logN'] = at.Column(np.array(logN, ndmin=1), dtype=dtype,
                               unit=logNunit)
@@ -111,7 +117,10 @@ class SystList(object):
         else:
             self._t['id'] = np.empty(len(self.z), dtype=int)
         mods_t = at.Table()
-        mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
+        if z is not None:
+            mods_t['z0'] = at.Column(np.array(z, ndmin=1), dtype=dtype)
+        else:
+            mods_t['z0'] = at.Column(np.array([], ndmin=1), dtype=dtype)
 
         # Currently models cannot be saved, so they can't be retrieved from a
         # saved session. This 'try' is meant to skip model definition when a
@@ -131,7 +140,8 @@ class SystList(object):
 
 
         self._dict_update()
-        self._group(group_dv_max)
+        if len(self._t)>0:
+            self._group(group_dv_max)
 
 
     def _group(self, dv_max=100):
@@ -142,7 +152,7 @@ class SystList(object):
         k = np.array(list(d.keys()))
         for s,c in zip(d,check):
             setattr(d[s], '_group', k[c])
-            
+
 
     def _dict_update(self, mods=False):
         self._t.sort('id')

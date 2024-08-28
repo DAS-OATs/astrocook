@@ -28,7 +28,7 @@ def msg_empty(struct):
     return "Structure %s is empty." % struct
 
 
-def msg_resol(check, prefix):
+def msg_resol_old(check, prefix):
     if not np.logical_or(*check):
         return "[ERROR] %s: I couldn't take the resolution either from " \
                "parameter 'resol' or from the spectrum table. Please try " \
@@ -43,6 +43,25 @@ def msg_resol(check, prefix):
         msg = "[INFO] %s: I've taken the resolution from the spectrum table." \
               % prefix
     return msg
+
+
+def msg_resol(check, prefix):
+    if not np.logical_or(*check):
+        return "[WARNING] %s: I couldn't take the resolution either from " \
+               "parameter 'resol' or from the spectrum table. I'll estimate " \
+               "it assuming 3 pixels per resolution element." \
+               % prefix
+    if check[0]:
+        msg = "[INFO] %s: I've taken the resolution parameter 'resol'." \
+              % prefix
+        if check[1]:
+            msg = msg + " Ignoring the spectrum table."
+    else:
+        msg = "[INFO] %s: I've taken the resolution from the spectrum table." \
+              % prefix
+    return msg
+
+
 
 def msg_z_range(z_list):
     if len(z_list)==0:
