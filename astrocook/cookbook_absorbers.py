@@ -60,7 +60,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
 
 
     def model_metals(self, series, zem, no_ly=True, use_lines=False):
-        """@brief Model metals 🚧
+        """@brief Model metals
         @details Model metal absorbers, based on transition and emission
         redshift.
         @url absorbers_cb.html#model-metals
@@ -109,7 +109,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
 
 
     def identify_unknown(self):
-        """@brief Identify_unknown_lines 🚧
+        """@brief Identify unknown lines 🚧
         @details 🚧
         @url absorbers_cb.html#identify-unknown-lines
         """
