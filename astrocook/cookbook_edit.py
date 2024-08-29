@@ -63,6 +63,10 @@ class CookbookEdit(CookbookEditOld):
 
         if tell: self.telluric_mask(shift=shift)
         if sky: self.sky_mask(shift=shift)
-        if cond!='': self.mask_cond(cond=cond, new_sess=False)
+        if cond!='':
+            self.mask_cond(cond=cond, new_sess=False)
+            self.sess.spec._t['mask'] = np.logical_not(self.sess.spec._t['mask'])
+            mask = np.where(np.array(self.sess.spec._t['mask']==0, dtype=bool))
+            self.sess.spec._t['y'][mask] = np.nan
 
         return 0
