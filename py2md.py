@@ -9,7 +9,7 @@ from astrocook.cookbook_view import CookbookView as View
 import inspect
 import sys
 
-classes = [General, Flux, Continuum, Absorbers, Synthetic, Templates]
+classes = [Edit, Flux, Continuum, Absorbers, Synthetic, Templates]
 names = [c.__name__ for c in classes]
 if sys.argv[1]=='Other':
     ind = 6

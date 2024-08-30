@@ -44,7 +44,7 @@ class CookbookEdit(CookbookEditOld):
     def mask(self, shift=0, tell=True, sky=True, cond=''):
         """@brief Mask
         @details Mask telluric lines, sky lines, or spectral regions defined by
-        a condition
+        a condition.
         @url edit_cb.html#mask
         @param shift Shift to the barycentric frame (km/s)
         @param tell Mask telluric lines
