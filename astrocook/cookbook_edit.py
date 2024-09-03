@@ -17,7 +17,7 @@ class CookbookEdit(CookbookEditOld):
     def modify_columns(self):
         """@brief Modify columns 🚧
         @details 🚧
-        @url other_cb.html#modify-columns
+        @url edit_cb.html#modify-columns
         """
 
         return 0
@@ -26,7 +26,7 @@ class CookbookEdit(CookbookEditOld):
     def import_systs(self):
         """@brief Import system list 🚧
         @details 🚧
-        @url other_cb.html#import-system-list
+        @url edit_cb.html#import-system-list
         """
 
         return 0
@@ -35,7 +35,7 @@ class CookbookEdit(CookbookEditOld):
     def extract(self):
         """@brief Extract 🚧
         @details 🚧
-        @url other_cb.html#extract
+        @url edit_cb.html#extract
         """
 
         return 0
@@ -44,8 +44,8 @@ class CookbookEdit(CookbookEditOld):
     def mask(self, shift=0, tell=True, sky=True, cond=''):
         """@brief Mask
         @details Mask telluric lines, sky lines, or spectral regions defined by
-        a condition
-        @url other_cb.html#mask
+        a condition.
+        @url edit_cb.html#mask
         @param shift Shift to the barycentric frame (km/s)
         @param tell Mask telluric lines
         @param sky Mask sky lines
