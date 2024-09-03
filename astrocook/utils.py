@@ -5,7 +5,7 @@ def parse_range(string, spec=None):
     if string=='all':
         if spec is None:
             xmin = 0
-            xmax = np.infty
+            xmax = np.inf
         else:
             xmin, xmax = np.min(spec._t['x']), np.max(spec._t['x'])
     elif string[0]=='[' and string[-1]==']':
