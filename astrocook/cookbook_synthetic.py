@@ -175,7 +175,6 @@ class CookbookSynthetic(object):
         except:
             logging.error(msg_param_fail)
             return 0
-
         #self._chi2r_thres = float(chi2r_thres)
         #self._dlogN_thres = float(dlogN_thres)
         self._refit_n = 0
@@ -223,6 +222,9 @@ class CookbookSynthetic(object):
         else:
             y = spec._t['model']
             dy = y/snr
+            rng = np.random.default_rng()
+            norm = rng.standard_normal(size=x.size)
+            y = spec._t['model']+dy*norm
         if 'cont' in spec._t.colnames:
             y, dy = y/spec._t['cont'], dy/spec._t['cont']
         xunit = spec._t['x'].unit
