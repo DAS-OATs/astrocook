@@ -241,6 +241,11 @@ class Session(object):
             self.spec = format.mage_spectrum(hdul)
             return 0
 
+        # GHOST spectrum
+        if instr == 'GHOST':
+            self.spec = format.ghost_spectrum(hdul)
+            return 0
+
         # HARPN spectrum
         if instr == 'HARPN':
             self.spec = format.harpn_spectrum(hdul)

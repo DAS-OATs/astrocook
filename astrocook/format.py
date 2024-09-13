@@ -561,6 +561,35 @@ class Format(object):
             return None
 
 
+    def ghost_spectrum(self, hdul):
+        """ GHOST spectrum format, as produced by the dragons pipeline  """
+        logging.info(msg_format('GHOST'))
+
+
+        hdr0 = hdul[0].header
+        hdr1 = hdul[1].header
+        y = hdul[1].data
+        dy = np.sqrt(hdul[2].data)
+        crval1 = hdr1['CRVAL1']
+        cdelt1 = hdr1['CD1_1']
+        naxis1 = hdr1['NAXIS1']
+
+        #d = cdelt1/crval1
+        #xl = crval1*np.arange(1-0.5*d, 1-naxis1//2*d, -d)
+        #xr = crval1*np.arange(1+0.5*d, 1+naxis1//2*d, d)
+        #x = np.sort(np.append(xl, xr))
+        crval1l = np.log10(crval1)
+        cdelt1l = np.log10(crval1+0.5*cdelt1)-np.log10(crval1-0.5*cdelt1)
+        x = 10**np.arange(crval1l-naxis1//2*cdelt1l, crval1l+naxis1//2*cdelt1l, cdelt1l)
+        y = y[:len(x)]
+        dy = dy[:len(x)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        xunit = au.nm
+        yunit = None
+        meta = hdr0
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
     def harpn_spectrum(self, hdul):
         """ HARPN spectrum """
         logging.info(msg_format('HARPN'))
