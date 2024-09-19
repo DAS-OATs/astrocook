@@ -140,8 +140,8 @@ class SystList(object):
 
 
         self._dict_update()
-        if len(self._t)>0:
-            self._group(group_dv_max)
+        #if len(self._t)>0:
+        #    self._group(group_dv_max)
 
 
     def _group(self, dv_max=100):
