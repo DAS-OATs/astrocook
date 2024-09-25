@@ -594,7 +594,7 @@ class GUIPanelSession(wx.Frame):
             pass
 
         # Enable session equalize/combine depending on how many sessions are selected
-        for menu in [self._menu._edit, self._menu._cb_general]:
+        for menu in [self._menu._edit]:#, self._menu._cb_general]:
             menu_dict = menu._menu.__dict__
             for m in menu_dict:
                 menu._menu.Enable(menu_dict[m]['start_id'],
