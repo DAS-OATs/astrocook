@@ -370,6 +370,8 @@ class Session(object):
                         hdul = fits.open(self._root_stem+'_spec.fits')
                     except:
                         try:
+                            ok
+                        except:
                             g = glob.glob('ac_temp/*_spec.fits')[0]
                             s = root_super+'/'+g
                             hdul = fits.open(s)
@@ -378,11 +380,11 @@ class Session(object):
                                 "The names of files within the .acs archive "\
                                 "are different than expected: %s* instead of "\
                                 "%s*." % (self._root_stem.split('/')[-1], stem))
-                        except:
-                            logging.error("I didn't find any *_spec.fits "
-                                            "frame in the archive.")
-                            self._rm_ac_temp(root)
-                            return True
+                        #except:
+                        #    logging.error("I didn't find any *_spec.fits "
+                        #                    "frame in the archive.")
+                        #    self._rm_ac_temp(root)
+                        #    return True
 
                     hdr = hdul[1].header
                 except:
