@@ -737,11 +737,11 @@ class GUITableSystList(GUITable):
         if col in [1]:
             if len(self._cells_sel) > 1:
                 title += ['Fit all systems...', 'Remove all']
-                attr += ['syst_fit', 'remove']
+                attr += ['syst_fit', 'row_remove']
             else:
                 title += ['Fit system...', 'Fit group...', 'Extract group...',
-                          'Remove']
-                attr += ['syst_fit', 'group_fit', 'group_extract', 'remove']
+                          'Remove row']
+                attr += ['syst_fit', 'group_fit', 'group_extract', 'row_remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
 
