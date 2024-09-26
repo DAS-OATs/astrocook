@@ -152,7 +152,7 @@ class SystList(object):
         k = np.array(list(d.keys()))
         for s,c in zip(d,check):
             setattr(d[s], '_group', k[c])
-            
+
 
     def _dict_update(self, mods=False):
         self._t.sort('id')
