@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(levelname)s] %(module)s: %(message)s")
 from tqdm import tqdm
 
