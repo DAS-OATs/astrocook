@@ -108,13 +108,46 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         return 0
 
 
-    def identify_unknown(self):
-        """@brief Identify unknown lines 🚧
-        @details 🚧
+    def identify_unknown(self, x, x_doublet="", dz_systs=1e-4, dz_doublet=1e-5,
+                       dz_unknown=1e-5, dz_galact=1e-2, z_min=0, z_max=9):
+        """ @brief Identify unknown lines
+        @details Complete system identification by (1) associating unknown lines
+        to known systems; (2) identifying doublets from their wavelength ratio;
+        (3) identifying unknown lines by finding possible redshift coincidences;
+        and (4) identifying possible galactic lines. Identification is done
+        using a reference list of transitions) 🚧
         @url absorbers_cb.html#identify-unknown-lines
+        @param x List of line wavelengths (nm)
+        @param x_doublet Test wavelengths of the doublets (nm; e.g. 500,501;600-601)
+        @param dz_systs Threshold for redshift coincidence with known systems
+        @param dz_doublet Threshold for redshift coincidence between doublet members
+        @param dz_unknown Threshold for redshift coincidence between unknown lines
+        @param dz_galact Threshold for coincidence with redshift 0
+        @param z_min Minimum redshift
+        @param z_max Maximum redshift
+        @return 0
         """
 
+        try:
+            x = np.array(x[1:-1].split(','), dtype=float) if type(x)==str \
+                else np.array(x)
+            dz_systs = float(dz_systs)
+            dz_doublet = float(dz_doublet)
+            dz_unknown = float(dz_unknown)
+            dz_galact = float(dz_galact)
+            z_min = float(z_min)
+            z_max = float(z_max)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self._systs_assoc(x, dz_systs)
+        if x_doublet not in [None, ""]: self._doublet_iden(x_doublet, dz_doublet)
+        self._unknown_iden(x, dz_unknown, z_min, z_max)
+        self._galact_iden(x, dz_galact)
+
         return 0
+
 
 
     def check_systs(self):
