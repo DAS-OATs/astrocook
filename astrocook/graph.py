@@ -171,7 +171,10 @@ class Graph(object):
 
 
     def _on_zoom(self, event):
-        self._zoom = True
+        if event._navigate_mode == 'ZOOM':
+            self._zoom = True
+        else:
+            self._zoom = False
 
 
     def _on_move(self, event):

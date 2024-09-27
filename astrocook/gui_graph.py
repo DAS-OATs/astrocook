@@ -1,4 +1,4 @@
-from .functions import elem_expand
+from .functions import elem_expand, compute_axis_lim, update_home_limits
 from .graph import Graph
 from .gui_dialog import * #GUIDialogMini
 from .syst_list import SystList
@@ -49,6 +49,7 @@ class GUIGraphMain(wx.Frame):
         self._legend = False
         self._closed = False
         self._refreshed = False
+        self._home_limits = {}
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
@@ -88,10 +89,24 @@ class GUIGraphMain(wx.Frame):
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
         self._refreshed = True
-        self.Show()
+        
+        update_xlim = self._gui._graph_main._graph._ax.get_xlim()
+        update_ylim = self._gui._graph_main._graph._ax.get_ylim()
+        # only manually compute limits if zoom is True
+        # bypasses the need for the check below, since we are manually recomputing
+        # the limits only for this case
+        if self._gui._graph_main._graph._zoom:
+            update_xlim, update_ylim = compute_axis_lim(self._gui._sess_sel)
+        
+        stack_elems = self._gui._graph_main._graph._toolbar._nav_stack._elements
+        if self._gui._sess_item_sel == []:
+            sess_id = 0
+        else:
+            sess_id = self._gui._sess_item_sel[0]
+        self._home_limits[sess_id] = (update_xlim, update_ylim)
 
-    #def _on_line_new(self, event):
-    #    print(self._click_xy)
+        update_home_limits(stack_elems, xlim=self._home_limits[sess_id][0], ylim=self._home_limits[sess_id][1])
+        self.Show()
 
 
     def _on_bin_zap(self, event):
@@ -352,6 +367,14 @@ class GUIGraphDetail(GUIGraphMain):
                 xlim=(-hwin,hwin), ylim=ylim)
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
+    
+    def _refresh(self, sess, **kwargs):
+        if self._closed:
+            self._init()
+        self._graph._refresh(sess, self._logx, self._logy, self._norm,
+                             self._legend, **kwargs)
+        self._refreshed = True
+        self.Show()
 
 class GUIGraphHistogram(GUIGraphMain):
 
