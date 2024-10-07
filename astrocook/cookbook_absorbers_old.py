@@ -3248,7 +3248,7 @@ class CookbookAbsorbersOld(object):
         for l in l_lu:
             w = np.where(np.array(l_l)==l)[0]
             logging.info("Line at %3.4f has %i possible galactic identification%s:" \
-                        % (i, len(w), 's' if len(w)>1 else ''))
+                        % (l, len(w), 's' if len(w)>1 else ''))
             lab = np.array(lab_l)[w]
             z = np.array(z_l)[w]
             zs = z[np.argsort(z)]
