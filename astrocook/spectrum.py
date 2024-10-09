@@ -107,6 +107,19 @@ class Spectrum(Frame):
             * ac.c.to(au.km/au.s)
         return dv.value
 
+
+    def _ew_compute(self, x1, x2):
+        unit = self._t['x'].unit
+        sel = np.logical_and(np.array(self._t['x'])>x1,
+                             np.array(self._t['x'])<x2)
+        t = self._t[sel]
+        dx = (t['xmax']-t['xmin']).to(unit)
+        ew = np.nansum(dx*(1-np.array(t['y']/t['cont'])))
+
+        logging.info("EW between %3.4f-%3.4f %s: %3.3e %s." \
+                     % (x1, x2, unit, ew.value, ew.unit))
+
+
     def _flux_ccf(self, col1, col2, dcol1, dcol2, vstart, vend, dv,
                   weighted=False):
         vstart = vstart.to(au.km/au.s).value

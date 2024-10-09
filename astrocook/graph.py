@@ -154,6 +154,9 @@ class Graph(object):
                     title.append('Fit system')
                     attr.append('syst_fit')
             if len(sess._clicks)==3:
+                if focus == self._gui._graph_main:
+                    title.append('Compute EW')
+                    attr.append('ew_compute')
                 if not sess._stats and focus == self._gui._graph_main:
                     title.append('Show stats')
                     attr.append('stats_show')
