@@ -127,6 +127,21 @@ class GUIGraphMain(wx.Frame):
             self._gui._dlg_mini_systems._cursor_refresh()
 
 
+    def _on_ew_compute(self, event):
+        sess = self._gui._sess_sel
+
+        x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        if x2<x1:
+            x1, x2 = x2, x1
+        x = 0.5*(x1+x2)
+        unit = sess.spec._t['x'].unit
+        if unit == au.Angstrom: x = 0.1*x
+        sess.spec._ew_compute(x1, x2)
+        sess._clicks = []
+        sess._shade = False
+        self._gui._refresh()
+
+
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
