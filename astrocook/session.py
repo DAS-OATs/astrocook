@@ -305,6 +305,12 @@ class Session(object):
             self.spec = format.keck_spectrum(hdul, hdul_e)
             return 0
 
+        # STIS spectrum
+        if instr == 'STIS':
+            hdul_e = fits.open(self.path[:-5]+'_err.fits')
+            self.spec = format.stis_spectrum(hdul, hdul_e)
+            return 0
+
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
             hdul_e = fits.open(self.path[:-5]+'e.fits')

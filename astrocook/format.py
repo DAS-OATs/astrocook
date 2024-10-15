@@ -932,6 +932,33 @@ class Format(object):
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def stis_spectrum(self, hdul, hdul_e):
+        logging.info(msg_format('STIS'))
+
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CD1_1']
+        naxis1 = hdr['NAXIS1']
+        data = hdul[0].data
+        data_e = hdul_e[0].data
+        y = data
+        dy = data_e
+        crval1l = np.log10(crval1)
+        cdelt1l = np.log10(crval1+0.5*cdelt1)-np.log10(crval1-0.5*cdelt1)
+        x = 10**np.arange(crval1l-naxis1//2*cdelt1l, crval1l+(naxis1//2+0.5)*cdelt1l, cdelt1l)
+        xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom
+        meta = hdr #{'instr': 'X-shooter'}
+        """
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('OBJECT'))
+        """
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
     def efosc2_spectrum(self, hdul):
         """ NTT EFOSC2 spectrum """
