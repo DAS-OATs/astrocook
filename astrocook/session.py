@@ -299,6 +299,12 @@ class Session(object):
             self.spec = format.xshooter_das_spectrum(hdul)
             return 0
 
+        # KECK spectrum
+        if instr == 'HIRES Spectrograph':
+            hdul_e = fits.open(self.path[:-6]+'e.fits')
+            self.spec = format.keck_spectrum(hdul, hdul_e)
+            return 0
+
         # XSHOOTER_REDUCE spectrum
         if instr == 'XSHOOTER' and orig == 'REDUCE':
             hdul_e = fits.open(self.path[:-5]+'e.fits')
