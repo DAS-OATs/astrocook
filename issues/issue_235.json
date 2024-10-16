@@ -1,0 +1,26 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_sess_sel",
+      "recipe": "save",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test_issue_235.acs"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

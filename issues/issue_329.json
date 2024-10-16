@@ -1,0 +1,29 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive-110625037481089626894/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "chunk_fit",
+      "params": {
+        "chunks": "567-568;579-579.5",
+        "refit_n": "0",
+        "chi2rav_thres": "0.01",
+        "max_nfev": "1000"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

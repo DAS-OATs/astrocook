@@ -1,4 +1,4 @@
-from .functions import create_xmin_xmax, expr_eval, resol_check
+from .functions import create_xmin_xmax, expr_eval, resol_check_old
 from .message import *
 from .spectrum import Spectrum
 from .vars import *
@@ -15,7 +15,7 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
-    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,y'):
+    def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,dy'):
         """@brief Synthetic spectrum from structures
         @details Create a synthetic spectrum from existing structures (a
         wavelenght-like array and a flux-like array). The structure expressions
@@ -175,7 +175,6 @@ class CookbookSynthetic(object):
         except:
             logging.error(msg_param_fail)
             return 0
-
         #self._chi2r_thres = float(chi2r_thres)
         #self._dlogN_thres = float(dlogN_thres)
         self._refit_n = 0
@@ -183,7 +182,7 @@ class CookbookSynthetic(object):
         self._max_nfev = 0 #float(max_nfev)
 
 
-        check, resol = resol_check(self.sess.spec, resol)
+        check, resol = resol_check_old(self.sess.spec, resol)
         if not check: return 0
 
         for s in series.split(';'):
@@ -223,6 +222,9 @@ class CookbookSynthetic(object):
         else:
             y = spec._t['model']
             dy = y/snr
+            rng = np.random.default_rng()
+            norm = rng.standard_normal(size=x.size)
+            y = spec._t['model']+dy*norm
         if 'cont' in spec._t.colnames:
             y, dy = y/spec._t['cont'], dy/spec._t['cont']
         xunit = spec._t['x'].unit

@@ -1,0 +1,38 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_freeze_par_all",
+      "params": {
+        "col": 5,
+        "reverse": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_freeze_par_all",
+      "params": {
+        "col": 5,
+        "reverse": true
+      }
+    }
+  ]
+}

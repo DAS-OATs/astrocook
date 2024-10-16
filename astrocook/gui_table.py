@@ -1,4 +1,4 @@
-from .functions import get_selected_cells, trans_parse
+from .functions import get_selected_cells, to_x, to_z, trans_parse
 from .gui_dialog import *
 from .vars import *
 from collections import OrderedDict
@@ -8,10 +8,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pprint
 import pstats
+import time
 import wx
 import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.colourdb as cdb
+
+"""
+import scienceplots
+from cycler import cycler
+#plt.style.use('science')
+#plt.rcParams.update({"font.family": "sans-serif", "font.size":14})
+cc = cycler(plt.style.library['light']['axes.prop_cycle'])
+cmap = [d['color'] for d in cc]
+"""
+
+max_rows = 2000
 
 class GUITable(wx.Frame):
     """ Class for the GUI table frame """
@@ -20,8 +32,8 @@ class GUITable(wx.Frame):
                  gui,
                  attr,
                  title="Table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         self._gui = gui
         self._attr = attr
@@ -31,10 +43,18 @@ class GUITable(wx.Frame):
         self._tab_id = self._gui._menu_tab_id
         self._gui._tab = self
         self._menu = self._gui._panel_sess._menu._view._menu
-        #self._open = {'spec': False, 'lines': False, 'systs': False}
         super(GUITable, self).__init__(parent=None, title=self._title,
                                        size=(self._size_x, self._size_y))
         self._shown = False
+
+
+    def _col_remove(self, cols, attr=None, log=True):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+
+        tab = getattr(self._gui, '_tab_'+attr)
+        coln = [self._data._t.colnames[c] for c in cols]
+        tab._data.t.remove_columns(coln)
 
 
     def _data_edit(self, row, label, value, attr=None):
@@ -59,19 +79,6 @@ class GUITable(wx.Frame):
         self._fill(attr)
 
 
-    def _data_remove(self, row, attr=None, log=True):
-        sess = self._gui._sess_sel
-        if attr is None: attr = self._attr
-
-        if self._attr == 'systs':
-            sess.cb._systs_remove([row])
-            sess.cb._mods_recreate()
-            sess.cb._spec_update()
-        else:
-            tab = getattr(self._gui, '_tab_'+attr)
-            tab._data.t.remove_row(row)
-
-
     def _data_sort(self, label, reverse=False, attr=None, log=True):
         if attr is None: attr = self._attr
         tab = getattr(self._gui, '_tab_'+attr)
@@ -90,9 +97,16 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
-
-        for j, r in enumerate(tab._data.t):
+        if len(tab._data.t)>max_rows:
+            logging.warning("The table is too long! I displayed only the first "
+                            "{} rows. To display a different range, extract it "
+                            "first.".format(max_rows))
+            t = tab._data.t[:max_rows]
+        else:
+            t = tab._data.t
+        for j, r in enumerate(t):
             for i, n in enumerate(tab._data.t.colnames):
+
                 if j == 0:
                     tab._tab.SetColSize(i, 150)
                     tab._tab.SetColLabelValue(i, "%s\n%s" \
@@ -106,16 +120,14 @@ class GUITable(wx.Frame):
                 elif type(r[n]) == dict:
                     tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
                 else:
-                    if n in ['logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', \
+                    if n in ['logN', 'dlogN', 'b', 'db', 'btur', 'dbtur', 'resol', 'chi2r', \
                              'snr']:
                         format = '%3.3'
                     else:
                         format = '%3.7'
                     if np.abs(r[n])<1e-7 and r[n]!=0:
-                        #tab._tab.SetCellValue(j, i, "%3.7e" % r[n])
                         format += 'e'
                     else:
-                        #tab._tab.SetCellValue(j, i, "%3.7f" % r[n])
                         format += 'f'
                     tab._tab.SetCellValue(j, i, format % r[n])
         tab._tab.AutoSizeColumns(True)
@@ -139,10 +151,10 @@ class GUITable(wx.Frame):
             tab._panel = wx.Panel(tab)
             tab._tab = gridlib.Grid(tab._panel)
             tab._tab.CreateGrid(0, 0)
-            tab.SetPosition((0, wx.DisplaySize()[1]*0.5))
+            tab.SetPosition((0, int(wx.DisplaySize()[1]*0.5)))
 
         coln = len(tab._data.t.colnames)
-        rown = len(tab._data.t)-tab._tab.GetNumberRows()
+        rown = min(len(tab._data.t)-tab._tab.GetNumberRows(), max_rows)
         tab._tab.AppendCols(coln)
         tab._tab.AppendRows(rown)
 
@@ -157,7 +169,20 @@ class GUITable(wx.Frame):
     def _on_close(self, event):
         self._shown = False
         self.Destroy()
-        #self.Close()
+
+
+    def _on_col_remove(self, event):
+        cols = [self._gui._tab_popup._event.GetCol()]
+
+        sess = self._gui._sess_sel
+        sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
+                                                        'from_scratch': False})
+        sess.log.append_full('_tab', '_col_remove',
+                             {'col': cols, 'attr': self._attr})
+        sess.log.append_full('cb', '_spec_update', {})
+
+        self._col_remove(cols, self._attr)
+        self._gui._refresh(init_cursor=True)
 
 
     def _on_detail(self, event):
@@ -168,20 +193,18 @@ class GUITable(wx.Frame):
             GUIGraphDetail(self._gui, init_ax=False)
         elif len(self._gui._graph_det._graph._fig.axes) > 1:
             self._gui._graph_det._graph._fig.clear()
-        size_x = wx.DisplaySize()[0]*0.4
-        size_y = wx.DisplaySize()[1]*0.4
+        size_x = int(wx.DisplaySize()[0]*0.4)
+        size_y = int(wx.DisplaySize()[1]*0.4)
         self._gui._graph_det.SetSize(wx.Size(size_x, size_y))
         self._gui._graph_det._graph._init_ax(111)
-        #row = self._data.t[self._gui._tab_popup._event.GetRow()]
         row = self._data.t[event.GetRow()]
         self._gui._sess_sel._xdet = row['x']
         self._gui._sess_sel._ydet = row['y']
         x = row['x']
         xlim, ylim = self._gui._graph_det._define_lim(x)
         self._gui._graph_split = False
-        #self._gui._graph_det._graph._cursor_lines = []
         self._gui._graph_det._refresh(self._gui._sess_items, xlim=xlim,
-                                      ylim=ylim)#, init_cursor=True)
+                                      ylim=ylim)
 
 
     def _on_edit(self, event):
@@ -190,14 +213,6 @@ class GUITable(wx.Frame):
         label = labels[col]
         value = self._tab.GetCellValue(row, col)
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab", "_data_init",
-                                            {"attr": self._attr})
-        sess.json += self._gui._json_update("_tab", "_data_edit",
-                                            {"row": row, "label": label,
-                                             "value": value,
-                                             "attr": self._attr})
-        """
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                     'from_scratch': False})
         sess.log.append_full('_tab', '_data_edit',
@@ -212,9 +227,8 @@ class GUITable(wx.Frame):
     def _on_histogram(self, event):
         if not hasattr(self._gui, '_graph_hist'):
             from .gui_graph import GUIGraphHistogram
-            GUIGraphHistogram(self._gui)#, self._col_values)
+            GUIGraphHistogram(self._gui)
         else:
-            #self._gui._graph_hist._graph._fig.clear()
             self._gui._graph_hist._fig.clear()
         self._gui._graph_hist._refresh(self._gui._sess_items)
 
@@ -228,66 +242,49 @@ class GUITable(wx.Frame):
                                      self._data.t[self._labels_extract()[col]][i] \
                                      for i in range(self._tab.GetNumberRows())]
             self._gui._col_unit = self._data.t[self._labels_extract()[col]].unit
-            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
-            attr = ['sort', 'sort_reverse', None, 'histogram']
+            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram', 'sep', 'Remove column']
+            attr = ['sort', 'sort_reverse', None, 'histogram', None, 'col_remove']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title,
                                          attr), event.GetPosition())
         if col == -1:
-            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove',
-                                         'remove'), event.GetPosition())
+            self.PopupMenu(GUITablePopup(self._gui, self, event, 'Remove row',
+                                         'row_remove'), event.GetPosition())
 
-    def _on_remove(self, event):
-        row = self._gui._tab_popup._event.GetRow()
+    def _on_row_remove(self, event):
+        if hasattr(self, '_cells_sel'):
+            rows = [c[0] for c in self._cells_sel]
+        else:
+            rows = []
+        if rows == []:
+            rows = [self._gui._tab_popup._event.GetRow()]
 
         sess = self._gui._sess_sel
         if self._attr == 'systs':
-            """
-            sess.json += self._gui._json_update("_tab", "_data_init",
-                                                {"attr": self._attr})
-            sess.json += self._gui._json_update("cb", "_systs_remove",
-                                                {"rem": [row]})
-            sess.json += self._gui._json_update("cb", "_mods_recreate", {})
-            """
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
-            sess.log.append_full('cb', '_systs_remove', {'rem': [row]})
-            sess.log.append_full('cb', '_mods_recreate', {})
+            sess.log.append_full('cb', '_systs_remove', {'rem': rows})
         else:
-            """
-            sess.json += self._gui._json_update("_tab", "_data_init",
-                                                {"attr": self._attr})
-            sess.json += self._gui._json_update("_tab", "_data_remove",
-                                                {"row": row, "attr": self._attr})
-            """
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                         'from_scratch': False})
-            sess.log.append_full('_tab', '_data_remove',
-                                 {'row': row, 'attr': self._attr})
-        """
-        sess.json += self._gui._json_update("cb", "_spec_update", {})
-        """
+            sess.log.append_full('_tab', '_row_remove',
+                                 {'row': rows, 'attr': self._attr})
         sess.log.append_full('cb', '_spec_update', {})
 
-        self._data_remove(row, self._attr)
-        #sess.cb._spec_update()
-        #self._tab.DeleteRows(pos=len(self._data.t), numRows=1)
-        #self._fill()
+        self._row_remove(rows, self._attr)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_replace(self, event):
+        cb = self._gui._sess_sel.cb
+        dlg = GUIDialogMethod(self._gui, 'Replace series', 'series_replace')
         self._gui._refresh(init_cursor=True)
 
 
     def _on_sort(self, event):
         labels = self._labels_extract()
-        #self._data.t.sort([labels[self._gui._col_sel], 'id'])
 
         label = labels[self._gui._col_sel]
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab", "_data_init",
-                                            {"attr": self._attr})
-        sess.json += self._gui._json_update("_tab", "_data_sort",
-                                            {"label": label,
-                                             "attr": self._attr})
-        """
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                     'from_scratch': False})
         sess.log.append_full('_tab', '_data_sort',
@@ -300,14 +297,6 @@ class GUITable(wx.Frame):
         labels = self._labels_extract()
         label = labels[self._gui._col_sel]
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab", "_data_init",
-                                            {"attr": self._attr})
-        sess.json += self._gui._json_update("_tab", "_data_sort",
-                                            {"label": label,
-                                             "attr": self._attr,
-                                             "reverse": True})
-        """
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                     'from_scratch': False})
         sess.log.append_full('_tab', '_data_sort',
@@ -317,19 +306,27 @@ class GUITable(wx.Frame):
 
 
     def _on_view(self, event=None, from_scratch=True, autosort=False):
-        #sess = self._gui._sess_sel
-        #print('on_view')
-        #sess.json += self._gui._json_update("_tab", "_data_init",
-        #                                    {"attr": self._attr})
-        #sess.log.append_full('_tab', '_data_init', {'attr': self._attr})
-        #if hasattr(self, '_dlg_mini_log') and self._dlg_mini_log._shown:
-        #    self._gui._dlg_mini_log._refresh()
         self._view(event, from_scratch, autosort)
+
+
+    def _row_remove(self, rows, attr=None, log=True):
+        sess = self._gui._sess_sel
+        if attr is None: attr = self._attr
+
+        if self._attr == 'systs':
+            rem_id = sess.cb._systs_remove(rows)
+            sess.cb._spec_update()
+        else:
+            tab = getattr(self._gui, '_tab_'+attr)
+            tab._data.t.remove_rows(rows)
 
     def _view(self, event=None, from_scratch=True, autosort=False):
         self._data_init(from_scratch, autosort)
         self._box = wx.BoxSizer(wx.VERTICAL)
-        self._box.Add(self._tab, 1, wx.EXPAND)
+        try:
+            self._box.Add(self._tab, 1, wx.EXPAND)
+        except:
+            pass
         self._panel.SetSizer(self._box)
         self._tab.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self._on_edit)
         self._tab.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self._on_detail)
@@ -337,10 +334,10 @@ class GUITable(wx.Frame):
                        self._on_label_right_click)
         self.Bind(wx.EVT_CLOSE, self._on_close)
         self.Centre()
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.23))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
+                          int(wx.DisplaySize()[1]*0.23)))
         self.Show()
         self._shown = True
-        #print(self, self._shown)
 
 
 class GUITableLineList(GUITable):
@@ -349,8 +346,8 @@ class GUITableLineList(GUITable):
     def __init__(self,
                  gui,
                  title="Line table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableLineList, self).__init__(gui, 'lines', title, size_x,
                                                size_y)
@@ -361,7 +358,6 @@ class GUITableLineList(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableLineList, self)._on_close(event, **kwargs)
-        #del self._gui._tab_lines._data
         self._menu.FindItemById(self._tab_id[1]).Check(False)
 
 
@@ -375,8 +371,8 @@ class GUITableModelList(GUITable):
     def __init__(self,
                  gui,
                  title="Model table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableModelList, self).__init__(gui, 'mods', title,
                                                 size_x, size_y)
@@ -414,8 +410,8 @@ class GUITableSpectrum(GUITable):
     def __init__(self,
                  gui,
                  title="Spectrum table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSpectrum, self).__init__(gui, 'spec', title, size_x,
                                                size_y)
@@ -426,7 +422,6 @@ class GUITableSpectrum(GUITable):
 
     def _on_close(self, event, **kwargs):
         super(GUITableSpectrum, self)._on_close(event, **kwargs)
-        #del self._gui._tab_spec._data
         self._menu.FindItemById(self._tab_id[0]).Check(False)
 
 
@@ -440,8 +435,8 @@ class GUITableSystList(GUITable):
     def __init__(self,
                  gui,
                  title="System table",
-                 size_x=wx.DisplaySize()[0]*0.5,
-                 size_y=wx.DisplaySize()[1]*0.2):
+                 size_x=int(wx.DisplaySize()[0]*0.5),
+                 size_y=int(wx.DisplaySize()[1]*0.2)):
 
         super(GUITableSystList, self).__init__(gui, 'systs', title, size_x,
                                                size_y)
@@ -460,23 +455,15 @@ class GUITableSystList(GUITable):
         if len(sel) == 1:
             self._tab.SetGridCursor(row, col)
             sel = get_selected_cells(self._tab)
-        #self._cells_sel = []
         self._data_cells_desel()
         for s in sel:
-            if s[1] in [3, 5, 7]: #self._cells_sel.append(s)
+            if s[1] in [1, 3, 5, 7, 9]:
                 row = s[0]
                 col = s[1]
                 self._data_cells_sel(row, col)
 
 
     def _data_cells_sel(self, row, col, log=True):
-        """
-        if json:
-            sess = self._gui._sess_sel
-            sess.json += self._gui._json_update("_tab_systs", "_data_cells_sel",
-                                                {"row": row, "col": col,
-                                                 "json": False})
-        """
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
@@ -490,12 +477,6 @@ class GUITableSystList(GUITable):
 
 
     def _data_cells_desel(self, log=True):
-        """
-        if json:
-            sess = self._gui._sess_sel
-            sess.json += self._gui._json_update("_tab_systs", "_data_cells_desel",
-                                                {"json": False})
-        """
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
@@ -509,28 +490,31 @@ class GUITableSystList(GUITable):
 
 
     def _data_detail(self, row_z, row_series, row_id, span=30):
+        tt = time.time()
         if not hasattr(self._gui, '_graph_det'):
             from .gui_graph import GUIGraphDetail
             GUIGraphDetail(self._gui, init_ax=False)
         else:
             self._gui._graph_det._graph._fig.clear()
-
-        z = row_z #row['z']
-        series = trans_parse(row_series) #row['series'])
+        z = row_z
+        series = trans_parse(row_series)
         self._gui._graph_main._z_sel = z
         self._gui._graph_main._series_sel = series
         self._gui._graph_main._refresh(self._gui._sess_sel)
         self._gui._graph_det._update(series, z, hwin_def)
         if not hasattr(self._gui, '_dlg_mini_systems') \
             or self._gui._dlg_mini_systems == None:
-            #GUIDialogMiniSystems(self._gui, "System controls", series=row['series'], z=row['z'])
             GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
         else:
-            #self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
-            self._gui._dlg_mini_systems._refresh(row_series, row_z)
+            try:
+                self._gui._dlg_mini_systems._refresh(row_series, row_z)
+            except:
+                GUIDialogMiniSystems(self._gui, "System controls", series=row_series, z=row_z)
+        dlg_mini_systems = self._gui._dlg_mini_systems
+        dlg_mini_systems._menu.FindItemById(dlg_mini_systems._dlg_id[0]).Check(True)
 
+        """
         # Color background of systems in the same group
-        #mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
         mods_sel = np.where([row_id in i \
                              for i in self._gui._sess_sel.systs._mods_t['id']])
         for j, r in enumerate(self._data.t):
@@ -539,23 +523,52 @@ class GUITableSystList(GUITable):
                     self._tab.SetCellBackgroundColour(j, i, 'cyan')
                 else:
                     self._tab.SetCellBackgroundColour(j, i, None)
+        """
+        s = self._gui._sess_sel.systs._d[row_id]
+        for j, r in enumerate(self._data.t):
+            if r['id']==row_id:
+                self._tab.SetCellBackgroundColour(j, 3, 'spring green')
+            elif r['id'] in np.array(s._group):
+                self._tab.SetCellBackgroundColour(j, 3, 'yellow')
+            else:
+                self._tab.SetCellBackgroundColour(j, 3, None)
+
         self._tab.ForceRefresh()
+
 
     def _data_edit(self, row, label, value, update_mod=True):
         self._data.t[label][row] = value
         if update_mod:
             id = self._id_extract(row)
             mod = self._mod_extract(row)
-            try:
-                vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
-                expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
-                mod._pars['lines_voigt_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
-            except:
-                vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
-                expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
-                mod._pars['psf_gauss_%i_%s' % (id, label)].set(
-                    value=value, vary=vary, expr=expr)
+            if label == 'series':
+                z0 = float(self._tab.GetCellValue(row, 3))
+                z = mod._pars['lines_voigt_%i_z' % id].value
+                z0_new = to_z(to_x(z0, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                z_new = to_z(to_x(z, trans_parse(mod._series)[0]),
+                             trans_parse(value)[0])
+                vary = mod._pars['lines_voigt_%i_z' % id].vary
+                expr = mod._pars['lines_voigt_%i_z' % id].expr
+                mod._pars['lines_voigt_%i_z' % id].set(
+                    value=z_new, vary=vary, expr=expr)
+                self._tab.SetCellValue(row, 2, "%.7f" % z0_new)
+                self._tab.SetCellValue(row, 3, "%.7f" % z_new)
+                self._data.t['z0'][row] = z0_new
+                self._data.t['z'][row] = z_new
+                mod._series = value
+                self._gui._sess_sel.cb._mods_recreate2()
+            else:
+                try:
+                    vary = mod._pars['lines_voigt_%i_%s' % (id, label)].vary
+                    expr = mod._pars['lines_voigt_%i_%s' % (id, label)].expr
+                    mod._pars['lines_voigt_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
+                except:
+                    vary = mod._pars['psf_gauss_%i_%s' % (id, label)].vary
+                    expr = mod._pars['psf_gauss_%i_%s' % (id, label)].expr
+                    mod._pars['psf_gauss_%i_%s' % (id, label)].set(
+                        value=value, vary=vary, expr=expr)
 
 
     def _data_fit(self, row):
@@ -574,7 +587,6 @@ class GUITableSystList(GUITable):
                 self._freezes_d[parn] = (id, 'vary', False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-
         for v in self._freezes_d:
             if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
                 self._freezes_d[v] = (self._freezes_d[v][0],
@@ -583,13 +595,14 @@ class GUITableSystList(GUITable):
         self._text_colours()
 
 
-    def _data_freeze_par_all(self, col):
-        for i in range(self._tab.GetNumberRows()):
-            id, parn = self._key_extract(i, col)
-            self._freezes_d[parn] = (id, 'vary', False)
+    def _data_freeze_par_all(self, col, reverse):
+        par = self._labels_extract()[col]
         self._tab.ForceRefresh()
-        self._gui._sess_sel.systs._constrain(self._freezes_d)
+        self._freezes_d = self._gui._sess_sel.systs._freeze_par(par, [], reverse)
         self._text_colours()
+        if reverse:
+            self._gui._refresh(init_cursor=True)
+
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
         super(GUITableSystList, self)._data_init(from_scratch, autosort, attr)
@@ -650,9 +663,12 @@ class GUITableSystList(GUITable):
                 if parn != val:
                     v = self._tab.GetCellValue(self._cells_sel[ref][0],
                                                self._cells_sel[ref][1])
+                    # Value from data table, to get full precision
+                    vt = self._data.t[parn.split('_')[-1]]\
+                             [self._cells_sel[ref][0]]
                     self._tab.SetCellValue(r, c, v)
                     self._links_d[parn] = (id, 'expr', val)
-                    self._data_edit(r, labels[c], v, update_mod=False)
+                    self._data_edit(r, labels[c], vt, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
@@ -716,9 +732,9 @@ class GUITableSystList(GUITable):
         row = event.GetRow()
         col = event.GetCol()
         self._data_cell_right_click(row, col)
-        if col in [3, 5, 7]:
-            title = []
-            attr = []
+        title = []
+        attr = []
+        if col in [3, 5, 7, 9]:
             if len(self._cells_sel) > 1:
                 if self._tab.GetCellTextColour(row, col) in self._colours:
                     title = ['Unlink']
@@ -738,16 +754,21 @@ class GUITableSystList(GUITable):
             attr += ['freeze_par']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
+        if col in [1]:
+            if len(self._cells_sel) > 1:
+                title += ['Fit all systems...', 'Remove all']
+                attr += ['syst_fit', 'row_remove']
+            else:
+                title += ['Fit system...', 'Fit group...', 'Extract group...',
+                          'Remove row']
+                attr += ['syst_fit', 'group_fit', 'group_extract', 'row_remove']
+            self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
+                           event.GetPosition())
 
 
     def _on_close(self, event, **kwargs):
         super(GUITableSystList, self)._on_close(event, **kwargs)
-        #print(self)
-        #self.Destroy()
-        #self.Close()
-        #del self._gui._tab_systs._data
         self._menu.FindItemById(self._tab_id[2]).Check(False)
-        #self._open['systs'] = False
 
 
     def _on_detail(self, event, span=30, log=True):
@@ -770,13 +791,11 @@ class GUITableSystList(GUITable):
         row, col = event.GetRow(), event.GetCol()
         labels = self._labels_extract()
         label = labels[col]
-        value = float(self._tab.GetCellValue(row, col))
+        if col<=1:
+            value = str(self._tab.GetCellValue(row, col))
+        else:
+            value = float(self._tab.GetCellValue(row, col))
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab_systs", "_data_edit",
-                                            {"row": row, "label": label,
-                                             "value": value})
-        """
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                     'from_scratch': False})
         sess.log.append_full('_tab_systs', '_data_edit',
@@ -788,12 +807,9 @@ class GUITableSystList(GUITable):
 
 
     def _on_fit(self, event):
+        # Deprecated
         row = self._gui._tab_popup._event.GetRow()
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab_systs", "_data_fit",
-                                            {"row": row})
-        """
         sess.log.append_full('_tab', '_data_init', {'attr': self._attr,
                                                     'from_scratch': False})
         sess.log.append_full('_tab_systs', '_data_fit', {'row': row})
@@ -802,11 +818,48 @@ class GUITableSystList(GUITable):
         self._gui._refresh(init_cursor=True)
 
 
+    def _on_group_extract(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id}]
+        dlg = GUIDialogMethod(self._gui, 'Extract group', 'group_extract',
+                              params_last=params)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_group_fit(self, event):
+        row = self._gui._tab_popup._event.GetRow()
+        id = self._id_extract(row)
+        params = [{'id': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit group', 'group_fit',
+                              params_last=params)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_syst_fit(self, event):
+        rows = [c[0] for c in self._cells_sel]
+        if rows == []:
+            rows = [self._gui._tab_popup._event.GetRow()]
+        ids = [self._id_extract(r) for r in rows]
+        params = [{'ids': ids, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
+
+    def _on_systs_fit(self, event):
+        params = [{'refit_n': 0, 'chi2rav_thres': 1e-2, 'max_nfev': max_nfev_def,
+                   'sel_fit': False, '_mod': None}]
+        dlg = GUIDialogMethod(self._gui, 'Fit systems', 'systs_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
+
     def _on_fit_dialog(self, event):
+        # Deprecated
         row = self._data.t[self._gui._tab_popup._event.GetRow()]
-        #print(row._index)
-        #params = [{'series': row['series'], 'z': "%3.7f" % float(row['z']),
-        #           'logN': row['logN'], 'b': row['b'], 'refit_n': 0}]
         dlg = GUIDialogMethod(self._gui, 'Fit system', 'syst_fit',
                               params_last=[{'num': row._index+1}])
 
@@ -818,11 +871,6 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab_systs",
-                                            "_data_freeze_par",
-                                            {"row": row, "col": col})
-        """
         sess.log.append_full('_tab_systs', '_data_freeze_par',
                              {'row': row, 'col': col})
         if hasattr(self._gui, '_dlg_mini_log') \
@@ -831,64 +879,43 @@ class GUITableSystList(GUITable):
         self._data_freeze_par(row, col)
 
 
-    def _on_freeze_par_all(self, event=None, col=None):
+    def _on_freeze_par_all(self, event=None, col=None, reverse=False):
         if event is not None:
             col = self._gui._tab_popup._event.GetCol()
             sess = self._gui._sess_sel
-            """
-            sess.json += self._gui._json_update("_tab_systs",
-                                                "_data_freeze_par_all",
-                                                {"col": col})
-            """
             sess.log.append_full('_tab_systs', '_data_freeze_par_all',
                                  {'col': col})
             if hasattr(self._gui, '_dlg_mini_log') \
                 and self._gui._dlg_mini_log._shown:
                 self._gui._dlg_mini_log._refresh()
-            self._data_freeze_par_all(col)
+            self._data_freeze_par_all(col, reverse)
 
 
     def _on_improve(self, event):
-        #row = self._gui._tab_popup._event.GetRow()
-        #z = float(self._tab.GetCellValue(row, 3))
-        """
-        sess = self._gui._sess_sel
-        sess.json += self._gui._json_update("cb", "systs_improve", {})
-        self._gui._sess_sel.cb.systs_improve()
-        """
         dlg = GUIDialogMethod(self._gui, 'Improve systems', 'systs_improve')
         self._gui._refresh(init_cursor=True)
 
 
     def _on_label_right_click(self, event):
         row, col = event.GetRow(), event.GetCol()
-        if row == -1 and col>1:
-            """
-            self._gui._col_sel = col
-            self._gui._col_tab = self._tab
-            self._gui._col_values = [#float(self._tab.GetCellValue(i, col)) \
-                                     self._data.t[self._labels_extract()[col]][i] \
-                                     for i in range(self._tab.GetNumberRows())]
-            """
+        if row == -1 and col>0:
             self._data_top_label_right_click(col)
-            title = ['Sort ascending', 'Sort descending', 'sep', 'Histogram']
-            attr = ['sort', 'sort_reverse', None, 'histogram']
+            title = ['Sort ascending', 'Sort descending']
+            attr = ['sort', 'sort_reverse']
+            if col==1:
+                title += ['sep', 'Replace...']
+                attr += [None, 'replace']
+            if col > 1:
+                title += ['sep', 'Histogram']
+                attr += [None, 'histogram']
             if col in [3,5,7]:
-                title += ['sep', 'Freeze all']
-                attr += [None, 'freeze_par_all']
+                title += ['sep', 'Freeze all', 'Unfreeze all']
+                attr += [None, 'freeze_par_all', 'unfreeze_par_all']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                            event.GetPosition())
-        if col == -1:
-            if self._gui._sess_sel.systs._compressed:
-                title = ['Fit', 'Fit (open dialog)', 'Remove', 'Merge', 'sep',
-                         'CCF', 'Maximize CCF', 'sep', 'Improve all']
-                attr = ['fit', 'fit_dialog', 'remove', 'merge', None, 'ccf',
-                        'ccf_max', None, 'improve']
-            else:
-                title = ['Fit', 'Fit (open dialog)', 'Remove', 'sep', 'CCF',
-                         'Maximize CCF', 'sep', 'Improve all']
-                attr = ['fit', 'fit_dialog', 'remove', None, 'ccf', 'ccf_max',
-                        None, 'improve']
+        if row == -1 and col == -1:
+            title = ['Fit all systems...']
+            attr = ['systs_fit']
             self.PopupMenu(GUITablePopup(self._gui, self, event, title, attr),
                 event.GetPosition())
 
@@ -898,10 +925,6 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab_systs", "_data_link_bt",
-                                            {"row": row, "col": col})
-        """
         sess.log.append_full('_tab_systs', '_data_link_bt',
                              {'row': row, 'col': col})
         if hasattr(self._gui, '_dlg_mini_log') \
@@ -915,10 +938,6 @@ class GUITableSystList(GUITable):
         row = popup._event.GetRow()
         col = popup._event.GetCol()
         sess = self._gui._sess_sel
-        """
-        sess.json += self._gui._json_update("_tab_systs", "_data_link_par",
-                                            {"row": row, "col": col})
-        """
         sess.log.append_full('_tab_systs', '_data_link_par',
                              {'row': row, 'col': col})
         if hasattr(self._gui, '_dlg_mini_log') \
@@ -934,15 +953,16 @@ class GUITableSystList(GUITable):
 
         self._gui._refresh(init_cursor=True)
 
+
+    def _on_unfreeze_par_all(self, event=None, col=None):
+        self._on_freeze_par_all(event, col, reverse=True)
+
+
     def _on_view(self, event, **kwargs):
         profile = cProfile.Profile()
         profile.enable()
 
         super(GUITableSystList, self)._on_view(event, **kwargs)
-        #self._open['systs'] = True
-        #sess = self._gui._sess_sel
-        #sess.json += self._gui._json_update("_tab", "_data_init",
-        #                                    {"attr": "systs"})
         self._text_colours()
         self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
                        self._on_cell_right_click)
@@ -953,18 +973,9 @@ class GUITableSystList(GUITable):
                 self._links_d[k]=(v[0], 'expr', v[2])
         profile.disable()
         ps = pstats.Stats(profile)
-        #ps.sort_stats('cumtime').print_stats(20)
 
 
     def _row_extract(self, id):
-        """
-        labels = self._labels_extract()
-        ids = np.array([int(float(self._tab.GetCellValue(
-                  i, np.where(labels == 'id')[0][0]))) \
-                  for i in range(self._tab.GetNumberRows())])
-        return np.where(id==ids)[0][0]
-        """
-
         try:
             return np.where(id==self._ids)[0][0]
         except:
@@ -977,32 +988,32 @@ class GUITableSystList(GUITable):
             self._tab.SetCellTextColour(r, c, 'black')
         for i in range(self._tab.GetNumberRows()):
             idi = self._id_extract(i)
-            #print(self._gui._sess_sel.systs)
             for m in self._gui._sess_sel.systs._mods_t:
                 if idi in m['id']:
                     mod = m['mod']
-                    #mod._pars.pretty_print()
-                    #print(id(m))
             for p,v in mod._pars.items():
-                if p.split('_')[-1] in ['z', 'logN', 'b', 'resol']:
+                if p.split('_')[-1] in ['z', 'logN', 'b', 'btur', 'resol']:
                     try:
                         c = np.where(labels==p.split('_')[-1])[0][0]
                     except:
                         c = None
-                    r = i if c == 9 else self._row_extract(int(p.split('_')[-2]))
-                    #if p.split('_')[-2] in ['45','46'] and p.split('_')[-1] == 'z':
-                    #    print(idi, p,v)
-                    if v.vary == False and r != None and c != None:
-                        self._tab.SetCellTextColour(r, c, 'grey')
-                    if v.expr != None and r != None and c != None:
-                        r2 = self._row_extract(int(v.expr.split('_')[-2]))
-                        c2 = np.where(labels==p.split('_')[-1])[0][0]
-                        if v.expr not in self._links_c:
-                            self._links_c[v.expr] = self._colours[self._colourc\
-                                                    %len(self._colours)]
-                            self._colourc += 1
-                        self._tab.SetCellTextColour(r, c, self._links_c[v.expr])
-                        self._tab.SetCellTextColour(r2, c2, self._links_c[v.expr])
+                    r = i if c == 11 else self._row_extract(int(p.split('_')[-2]))
+                    if r!=None and c!=None:
+                        if v.vary==False: # and r != None and c != None:
+                            self._tab.SetCellTextColour(r, c, 'grey')
+                        if v.expr!=None: #and r != None and c != None:
+                            r2 = self._row_extract(int(v.expr.split('_')[-2]))
+                            c2 = np.where(labels==p.split('_')[-1])[0][0]
+                            vs = v.expr.split('*')[0]
+                            if vs not in self._links_c:
+                                self._links_c[vs] = self._colours[self._colourc\
+                                                        %len(self._colours)]
+                                self._colourc += 1
+                            self._tab.SetCellTextColour(r, c, self._links_c[vs])
+                            if r2 != None and c2 != None:
+                                self._tab.SetCellTextColour(r2, c2, self._links_c[vs])
+                        #if v.vary==True and v.expr==None:
+                        #    self._tab.SetCellTextColour(r, c, 'black')
             if not mod._active:
                 cols = self._tab.GetNumberCols()
                 for c in range(cols):

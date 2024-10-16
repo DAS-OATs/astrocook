@@ -1,0 +1,39 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "x_convert",
+      "params": {
+        "zem": "0",
+        "xunit": "km / s"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "50.0",
+        "xunit": "km / s",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

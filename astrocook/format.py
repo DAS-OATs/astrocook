@@ -46,13 +46,6 @@ class Format(object):
                     delete.append(m)
             for d in delete:
                 del meta[d]
-            """
-            try:
-                meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
-            except:
-                meta['object'] = ''
-                logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-            """
             if struct in ['spec', 'nodes']:
                 out = Spectrum(x, xmin, xmax, y, dy, xunit=xunit, yunit=yunit,
                                meta=meta)
@@ -107,21 +100,29 @@ class Format(object):
         if struct in ['systs']:
             series = data['series']
             func = data['func']
+            z0 = data['z0']
             z = data['z']
             dz = data['dz']
             logN = data['logN']
             dlogN = data['dlogN']
             b = data['b']
             db = data['db']
+            try:
+                btur = data['btur']
+                dbtur = data['dbtur']
+            except:
+                btur = np.zeros(len(data))
+                dbtur = [np.nan]*len(data)
             resol = data['resol']
             chi2r = data['chi2r']
             id = data['id']
-            out = SystList(func=func, series=series, z=z, dz=dz, logN=logN,
-                           dlogN=dlogN, b=b, db=db, resol=resol, chi2r=chi2r,
-                           id=id)
-            out._t['z0'] = data['z0']
+            out = SystList(func=func, series=series, z0=z0, z=z, dz=dz,
+                           logN=logN, dlogN=dlogN, b=b, db=db, btur=btur,
+                           dbtur=dbtur, resol=resol, chi2r=chi2r, id=id)
+            out._t.sort('z')
             for c in Table(data).colnames:
-                if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b', 'db', 'resol', 'chi2r', 'id', 'z0']:
+                if c not in ['series', 'func', 'z', 'dz', 'logN', 'dlogN', 'b',
+                             'db', 'resol', 'chi2r', 'id', 'z0']:
                     out._t[c] = data[c]
             for k in hdr:
                 ks = k.split(' ')
@@ -132,8 +133,8 @@ class Format(object):
                         if 'PAR' in ks: par = hdr[k]
                         if 'VAL' in ks: out._constr['lines_voigt_%i_%s' % (id,par)] \
                             = (id, par, hdr[k])
-            #print(out._constr)
         return out
+
 
     def eso_adp(self, hdul):
         logging.info(msg_format('ESO Advanced Data Product'))
@@ -216,7 +217,7 @@ class Format(object):
         y_col_names = np.array(['fluxc', 'flux', 'FLUX'])
         dy_col_names = np.array(['errc', 'err', 'sigma', 'STDEV'])
         wpix_col_names = np.array(['wpix', 'WPIX'])
-        cont_col_names = np.array(['cont', 'CONT'])
+        cont_col_names = np.array(['cont', 'CONT', 'Continuum'])
         norm_col_names = np.array(['normflux', 'NORMFLUX'])
 
         x_col = np.where([c in data.colnames for c in x_col_names])[0]
@@ -329,17 +330,27 @@ class Format(object):
         logging.info(msg_format('ESPRESSO DRS S1D'))
 
         hdr = hdul[0].header
-        data = hdul[1].data
-        x = data['wavelength']
+        data = Table(hdul[1].data)
+        if 'WAVE' in data.colnames: x = data['WAVE'][0]
+        if 'WAVELENGTH' in data.colnames: x = data['WAVELENGTH'][0]
+        if 'wavelength' in data.colnames: x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
-        try:
-            y = data['flux']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.electron #erg/au.cm**2/au.s/au.nm
-        except:
-            y = data['flux_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            dy = data['error_cal']/(xmax-xmin)#*10#au.nm/au.Angstrom
-            yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        if 'FLUX_CAL' in data.colnames:
+            y = data['FLUX_CAL'][0]/(xmax-xmin)
+            dy = data['ERR_CAL'][0]/(xmax-xmin)
+            yunit = au.erg/au.cm**2/au.s/au.nm
+        elif 'FLUX_EL' in data.colnames:
+            y = data['FLUX_EL'][0]/(xmax-xmin)
+            dy = data['ERR_EL'][0]/(xmax-xmin)
+            yunit = au.electron
+        else:
+            if 'FLUX' in data.colnames:
+                y = data['FLUX'][0]/(xmax-xmin)
+                dy = data['ERR'][0]/(xmax-xmin)
+            if 'flux' in data.colnames:
+                y = data['flux']/(xmax-xmin)
+                dy = data['error']/(xmax-xmin)
+            yunit = None
         resol = []*len(x)
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
@@ -359,29 +370,24 @@ class Format(object):
         """ ESPRESSO DRS S2D format """
         logging.info(msg_format('ESPRESSO DRS S2D'))
         hdr = hdul[0].header
-        #print(hdul['WAVEDATA_VAC_BARY'].data)
-        #print(hdul['WAVEDATA_VAC_BARY'].data[:,:-10])
-        """
-        x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,200:-200])
-        y = np.ravel(hdul['SCIDATA'].data[:,200:-200])
-        dy = np.ravel(hdul['ERRDATA'].data[:,200:-200])
-        """
+
+        span = 0
         if row is None and slice is None:
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data)
-            y = np.ravel(hdul['SCIDATA'].data)
-            dy = np.ravel(hdul['ERRDATA'].data)
-            q = np.ravel(hdul['QUALDATA'].data)
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[:,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
         elif row is None:
             r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
-            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,:])
-            y = np.ravel(hdul['SCIDATA'].data[r,:])
-            dy = np.ravel(hdul['ERRDATA'].data[r,:])
-            q = np.ravel(hdul['QUALDATA'].data[r,:])
+            x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
+            y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
+            dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
+            q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
         else:
-            x = hdul['WAVEDATA_VAC_BARY'].data[row,:]
-            y = hdul['SCIDATA'].data[row,:]
-            dy = hdul['ERRDATA'].data[row,:]
-            q = hdul['QUALDATA'].data[row,:]
+            x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
+            y = hdul['SCIDATA'].data[row,span:-span-1]
+            dy = hdul['ERRDATA'].data[row,span:-span-1]
+            q = hdul['QUALDATA'].data[row,span:-span-1]
 
 
 
@@ -397,21 +403,10 @@ class Format(object):
         w = np.where(q<1) #4**7)
         x,xmin,xmax,y,dy,q = x[w],xmin[w],xmax[w],y[w],dy[w],q[w]
 
-        #ww = np.where(np.logical_and(x>6769.5,x<6769.8))
-        #print(y[ww])
-
-
         resol = []*len(x)
         xunit = au.Angstrom
         yunit = au.erg / au.Angstrom / au.cm**2 / au.s
-        meta = hdr #{'instr': 'ESPRESSO'}
-        """
-        try:
-            meta['object'] = hdr['HIERARCH ESO OBS TARG NAME']
-        except:
-            meta['object'] = ''
-            logging.warning(msg_descr_miss('HIERARCH ESO OBS TARG NAME'))
-        """
+        meta = hdr
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
         spec._t['quality'] = q
         return spec
@@ -439,7 +434,6 @@ class Format(object):
 
         hdr = hdul[0].header
         data = hdul[5].data
-        #print(data)
         x = data['WAVE'][0]*0.1
         xmin, xmax = self._create_xmin_xmax(x)
         y = data['FLUX'][0]
@@ -468,6 +462,7 @@ class Format(object):
         if col == 'x': col_names = x_col_names
         if col == 'y': col_names = y_col_names
         if col == 'dy': col_names = dy_col_names
+        if col == 'cont': col_names = cont_col_names
         col_sel = np.where([c in data.colnames for c in col_names])[0]
         try:
             col_sel = [col_sel[0]]
@@ -486,31 +481,36 @@ class Format(object):
         self._gui = sess._gui
         try:
             if len(hdul)>1:
-                data_s = hdul[1].data
-                data = Table(data_s)
-                """
-                x_col = np.where([c in data.colnames for c in x_col_names])[0]
-                y_col = np.where([c in data.colnames for c in y_col_names])[0]
-                dy_col = np.where([c in data.colnames for c in dy_col_names])[0]
-                try:
-                    dy_col = [dy_col[0]]
-                except:
-                    pass
-                x_name = x_col_names[x_col][0]
-                y_name = y_col_names[y_col][0]
-                dy_name = dy_col_names[dy_col][0]
-                """
-                x_name = self._col_name(data, 'x')
-                y_name = self._col_name(data, 'y')
-                dy_name = self._col_name(data, 'dy')
-                try:
-                    x = np.ravel(data[x_name])
-                    y = np.ravel(data[y_name])
-                    dy = data[dy_name] if dy_name is not None \
-                        else np.full(len(y), np.nan)
-                except:
-                    logging.error("I can't recognize columns.")
-                    return 0
+                # MARZ spectra
+                if len(hdul)==4 \
+                    and hdul[1].header['EXTNAME']=='VARIANCE' \
+                    and hdul[2].header['EXTNAME']=='WAVELENGTH' \
+                    and hdul[3].header['EXTNAME']=='FIBRES':
+                    x = hdul[2].data[0]
+                    y = hdul[0].data[0]
+                    dy = hdul[1].data[0]
+                    cont = []
+                    data = None
+                else:
+                    data_s = hdul[1].data
+                    data = Table(data_s)
+                    x_name = self._col_name(data, 'x')
+                    y_name = self._col_name(data, 'y')
+                    dy_name = self._col_name(data, 'dy')
+                    cont_name = self._col_name(data, 'cont')
+
+                    try:
+                        x = np.ravel(data[x_name])
+                        y = np.ravel(data[y_name])
+                        dy = np.ravel(data[dy_name]) if dy_name is not None \
+                            else np.full(len(y), np.nan)
+                        if dy_name=='ivar':
+                            dy = dy**(-0.5)
+                        cont = data[cont_name] if cont_name is not None \
+                            else np.full(len(y), np.nan)
+                    except:
+                        logging.error("I can't recognize columns.")
+                        return 0
 
             else:
                 data_s = hdul[0].data
@@ -518,12 +518,17 @@ class Format(object):
                 x = data[0][:]
                 y = data[1][:]
                 dy = data[2][:]
+                try:
+                    cont = data[3][:]
+                except:
+                    cont = []
 
             # Import unit (if present)
             try:
                 xunit = data_s.__dict__['_coldefs'][x_name]._unit
             except:
                 xunit = None
+
             if xunit == None:
                 xunit = au.nm
                 if np.nanmax(x)>3000:
@@ -535,23 +540,72 @@ class Format(object):
             except:
                 yunit = au.erg/au.cm**2/au.s/au.Angstrom
 
+
             xmin, xmax = self._create_xmin_xmax(x)
             meta = hdr #{}
-            """
-            try:
-                meta['object'] = hdr['OBJECT']
-            except:
-                meta['object'] = ''
-            """
-            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
-            if hasattr(data, 'colnames'):
+
+            # De-normalize
+            norm_check = np.median(y)*np.max(y)
+            if norm_check > 0.7 and norm_check < 1.3 and not all(np.isnan(cont)):
+                y = y*cont
+                dy = dy*cont
+
+            spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta, cont=cont)
+            if data is not None and hasattr(data, 'colnames'):
                 for i,c in enumerate(data.colnames):
-                    if c not in [x_name, y_name, dy_name]:
-                        spec._t[c] = data[c]
+                    if c not in [x_name, y_name, dy_name, 'xmax', 'xmin']:
+                        spec._t[c] = np.ravel(data[c])
                     #spec._t[c].unit = hdr1['TUNIT%i' % (i+1)]
             return spec
         except:
             return None
+
+
+    def ghost_spectrum(self, hdul):
+        """ GHOST spectrum format, as produced by the dragons pipeline  """
+        logging.info(msg_format('GHOST'))
+
+
+        hdr0 = hdul[0].header
+        hdr1 = hdul[1].header
+        y = hdul[1].data
+        dy = np.sqrt(hdul[2].data)
+        crval1 = hdr1['CRVAL1']
+        cdelt1 = hdr1['CD1_1']
+        naxis1 = hdr1['NAXIS1']
+
+        #d = cdelt1/crval1
+        #xl = crval1*np.arange(1-0.5*d, 1-naxis1//2*d, -d)
+        #xr = crval1*np.arange(1+0.5*d, 1+naxis1//2*d, d)
+        #x = np.sort(np.append(xl, xr))
+        crval1l = np.log10(crval1)
+        cdelt1l = np.log10(crval1+0.5*cdelt1)-np.log10(crval1-0.5*cdelt1)
+        x = 10**np.arange(crval1l-naxis1//2*cdelt1l, crval1l+naxis1//2*cdelt1l, cdelt1l)
+        y = y[:len(x)]
+        dy = dy[:len(x)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        xunit = au.nm
+        yunit = None
+        meta = hdr0
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+
+    def harpn_spectrum(self, hdul):
+        """ HARPN spectrum """
+        logging.info(msg_format('HARPN'))
+        hdr = hdul[0].header
+        data = hdul[0].data
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        y = data
+        x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = hdr #{}
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
     def mage_spectrum(self, hdul):
@@ -852,6 +906,60 @@ class Format(object):
         """
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
+    def keck_spectrum(self, hdul, hdul_e):
+        logging.info(msg_format('KECK'))
+
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CDELT1']
+        naxis1 = hdr['NAXIS1']
+        data = hdul[0].data
+        data_e = hdul_e[0].data
+        y = data
+        dy = data_e
+        x = 10**np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)]
+        xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom
+        meta = hdr #{'instr': 'X-shooter'}
+        """
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('OBJECT'))
+        """
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+    def stis_spectrum(self, hdul, hdul_e):
+        logging.info(msg_format('STIS'))
+
+        hdr = hdul[0].header
+        crval1 = hdr['CRVAL1']
+        cdelt1 = hdr['CD1_1']
+        naxis1 = hdr['NAXIS1']
+        data = hdul[0].data
+        data_e = hdul_e[0].data
+        y = data
+        dy = data_e
+        crval1l = np.log10(crval1)
+        cdelt1l = np.log10(crval1+0.5*cdelt1)-np.log10(crval1-0.5*cdelt1)
+        x = 10**np.arange(crval1l-naxis1//2*cdelt1l, crval1l+(naxis1//2+0.5)*cdelt1l, cdelt1l)
+        xmin, xmax = self._create_xmin_xmax(x)
+        resol = []*len(x)
+        xunit = au.Angstrom
+        yunit = au.electron/au.Angstrom
+        meta = hdr #{'instr': 'X-shooter'}
+        """
+        try:
+            meta['object'] = hdr['OBJECT']
+        except:
+            meta['object'] = ''
+            logging.warning(msg_descr_miss('OBJECT'))
+        """
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
     def efosc2_spectrum(self, hdul):
         """ NTT EFOSC2 spectrum """
         logging.info(msg_format('NTT EFOSC2'))
@@ -865,6 +973,29 @@ class Format(object):
         x = np.arange(crval1, crval1+naxis1*cdelt1, cdelt1)[:len(y)] - crpix1*cdelt1
         xmin, xmax = self._create_xmin_xmax(x)
         dy = np.full(len(y), np.nan)
+        xunit = au.Angstrom
+        yunit = au.erg/au.cm**2/au.s/au.Angstrom
+        meta = hdr
+        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+
+    def sdss_spectrum(self, hdul):
+        """SDSS spectrum"""
+        logging.info(msg_format('SDSS'))
+
+        def revIVar(x, m):
+            if x == 0:
+                return m
+            return np.sqrt(1 / x)
+        vectRevIVar = np.vectorize(revIVar)
+
+        hdr = hdul[1].header
+        data = np.array([np.array(i) for i in hdul[1].data])
+
+        y = data[:, 0]
+        x = (10 ** data[:, 1])
+        xmin, xmax = self._create_xmin_xmax(x)
+        dy = vectRevIVar(data[:, 2], max(y))
+
         xunit = au.Angstrom
         yunit = au.erg/au.cm**2/au.s/au.Angstrom
         meta = hdr

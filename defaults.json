@@ -1,11 +1,8 @@
 {
   "menus": [
-    "General",
     "Flux",
     "Continuum",
-    "Absorbers",
-    "Synthetic",
-    "Templates"
+    "Absorbers"
   ],
   "voigt": {
     "z_min": 1e-3,
@@ -20,10 +17,17 @@
     "resol_max": 1e6,
     "x_lim": null
   },
+  "group": {
+    "thres": 5e-2
+  },
   "fit": {
-    "ftol": 1e-3,
+    "use_jac": false,
+    "ftol": 1e-2,
     "xtol": 1e-3,
     "gtol": 1e-3,
     "x_scale": "jac"
+  },
+  "graph": {
+    "fast": true
   }
 }

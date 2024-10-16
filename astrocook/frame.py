@@ -1,3 +1,4 @@
+from .functions import range_str_to_list, x_convert
 from .message import *
 from .vars import inoue, logN_index, logN_lims, tau_index, tau_norm, xem_d
 from astropy import units as au
@@ -104,14 +105,17 @@ class Frame():
         self._meta[key] = val
 
 
-    def _append(self, frame):
+    def _append(self, frame, unique=True):
         if self._xunit != frame._xunit:
             frame._t['x'] = frame._t['x'].to(self._xunit)
             frame._t['xmin'] = frame._t['xmin'].to(self._xunit)
             frame._t['xmax'] = frame._t['xmax'].to(self._xunit)
         vstack = at.vstack([self._t, frame._t])
         if len(self._t) > 0:
-            self._t = at.unique(vstack, keys=['x'])
+            if unique:
+                self._t = at.unique(vstack, keys=['x'])
+            else:
+                self._t = vstack
         return 0
 
 
@@ -132,6 +136,7 @@ class Frame():
         meta = self._meta
         dtype = self._dtype
         return type(self)(x, xmin, xmax, y, dy, xunit, yunit, meta, dtype)
+
 
     def _lya_corr_basic(self, zem, logN_thres, input_col='y', apply=True,
                         verb=True):
@@ -349,19 +354,37 @@ class Frame():
         return 0
 
     def _x_convert(self, zem=0, xunit=au.km/au.s):
-
         self._zem = zem
-        xem = (1+zem) * 121.567*au.nm
-        equiv = [(au.nm, au.km/au.s,
-                  lambda x: np.log(x/xem.value)*aconst.c.to(au.km/au.s),
-                  lambda x: np.exp(x/aconst.c.to(au.km/au.s).value)*xem.value)]
-
         self._xunit = xunit
-        self._xunit_old = self.x.unit
-        self.x = self.x.to(xunit, equivalencies=equiv)
-        self.xmin = self.xmin.to(xunit, equivalencies=equiv)
-        self.xmax = self.xmax.to(xunit, equivalencies=equiv)
+        self._xunit_old = self._t['x'].unit
+        self.x = x_convert(self.x, zem, xunit)
+        self.xmin = x_convert(self.xmin, zem, xunit)
+        self.xmax = x_convert(self.xmax, zem, xunit)
         return 0
+
+
+    def _x_mask(self, col, ranges):
+
+        ranges_l = range_str_to_list(ranges)
+
+        mask = np.zeros(len(self._t['x']), dtype=bool)
+        for r in ranges_l:
+            mask = np.logical_or(mask,
+                       np.logical_and(self._t['x'].to(au.nm).value>r[0],
+                                      self._t['x'].to(au.nm).value<r[1]))
+
+        if col not in self._t.colnames:
+            logging.info("I'm adding column %s." % col)
+        else:
+            logging.info("I'm updating column %s." % col)
+        self._t[col] = mask
+
+        for c in ['y', 'dy', 'cont']:
+            if c in self._t.colnames:
+                self._t[c] = self._t[c].astype(float)
+                self._t[c][~mask] = np.nan
+
+
 
 
     def _y_convert(self, e_to_flux=None, yunit=au.erg/au.cm**2/au.s/au.nm):
@@ -382,6 +405,6 @@ class Frame():
         return 0
 
     def _y_scale(self, fact):
-        self.y = self.y * fact
-        self.dy = self.dy * fact
+        self.y = self.y * fact * self.y.unit
+        self.dy = self.dy * fact * self.dy.unit
         return 0

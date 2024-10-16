@@ -1,12 +1,16 @@
-from .functions import _gauss, expr_eval, running_mean, running_rms
+from .functions import _gauss, expr_eval, running_mean, running_median, \
+    running_rms, x_convert
 from .message import *
 from .vars import *
 import ast
 from astropy import table as at
+from astropy.stats import sigma_clip
+from astropy.units import Unit
 from copy import deepcopy as dc
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.signal import fftconvolve
 import sys
 from tqdm import tqdm
 
@@ -24,7 +28,9 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin=x, xmax=None)
 
 
-    def combine(self, name='*_combined', _sel=''):
+
+
+    def combine(self, name='*_combined', unique=True, _sel=''):
         """ @brief Combine two or more sessions
         @details Create a new session combining the spectra from two or more
         other sessions.
@@ -42,6 +48,9 @@ class CookbookGeneral(object):
         @param name Name of the output session
         @return Combined session
         """
+
+        unique = str(unique) == 'True'
+
         name_in = name
         #sel = self._tab._get_selected_items()
         sel = self.sess._gui._sess_item_sel
@@ -78,9 +87,10 @@ class CookbookGeneral(object):
                 if getattr(sess_list[s], struct) != None:
                     if struct_out[struct] != None:
                         struct_out[struct]._append(
-                            getattr(sess_list[s], struct))
+                            getattr(sess_list[s], struct), unique=unique)
                     else:
                         struct_out[struct] = dc(getattr(sess_list[s], struct))
+
 
             if name_in[0] == '*':
                 name += '_' + sess_list[s].name
@@ -159,6 +169,31 @@ class CookbookGeneral(object):
         return 0
 
 
+    def dx_est(self):
+        """ @brief Estimate bin size in x
+        @details Compute statistics on xmax-xmin, to determine the typical
+        binsize in wavelength and velocity space.
+        @return 0
+        """
+
+        spec = self.sess.spec
+        logging.info("Distribution of dx:")
+        for unit in ['nm', 'km/s']:
+            xmin = x_convert(spec.t['xmin'][1:-1], xunit=Unit(unit))
+            xmax = x_convert(spec.t['xmax'][1:-1], xunit=Unit(unit))
+            dx = xmax-xmin
+            dx_mean = np.mean(dx)
+            dx_std = np.std(dx)
+            if unit == 'nm':
+                logging.info(" in wavelength space: %.5f±%.5f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
+            elif unit == 'km/s':
+                logging.info(" in velocity space:   %.2f±%.2f %s" \
+                         % (dx_mean.value, dx_std.value, unit))
+
+        return 0
+
+
     def feature_zap(self, xmin, xmax):
         self.sess.spec._zap(xmin, xmax)
 
@@ -200,14 +235,15 @@ class CookbookGeneral(object):
             logging.error(msg_param_fail)
             return 0
 
-        v_shift, ccf = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
-                                                vend, dv)
+        v_shift, ccf, chi2, chi2r = self.sess.spec._flux_ccf(col1, col2, dcol1, dcol2,
+                                                             vstart, vend, dv)
         logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, mean %3.4f." \
                      % (np.min(ccf), np.max(ccf), np.mean(ccf)))
         with open(self.sess.name+'_ccf.npy', 'wb') as f:
             np.save(f, v_shift)
             np.save(f, ccf)
-        #plt.show()
+            np.save(f, chi2)
+            np.save(f, chi2r)
 
         return 0
 
@@ -260,36 +296,41 @@ class CookbookGeneral(object):
             sel = np.sort(np.unique(rint))
             #sel = np.unique(rint)
             spec._t = spec._t[sel]
-            v_shift, ccf = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
-                                          vend, dv)
+            #spec._t[col1][np.logical_not(np.isin(range(len(spec.t)), sel))] = np.nan
+            #plt.plot(spec._t['x'], spec._t['y'])
+            v_shift, ccf, _, _ = spec._flux_ccf(col1, col2, dcol1, dcol2, vstart,
+                                                vend, dv)
 
+
+            v_shiftmax = v_shift[np.argmax(ccf)]
+            #plt.plot(v_shift, ccf)
             try:
-            #    ciao
-            #except:
-                p0 = [1., 0., 1.]
-                fit_sel = np.logical_and(v_shift>-fit_hw.value, v_shift<fit_hw.value)
+                p0 = [1., v_shiftmax, 1.]
+                fit_sel = np.logical_and(v_shift>v_shiftmax-fit_hw.value,
+                                         v_shift<v_shiftmax+fit_hw.value)
                 #plt.plot(v_shift[fit_sel], ccf[fit_sel], linestyle=':')
                 coeff, var_matrix = curve_fit(_gauss, v_shift[fit_sel], ccf[fit_sel], p0=p0)
                 fit = _gauss(v_shift[fit_sel], *coeff)
+                #plt.plot(v_shift[fit_sel], fit, linestyle='-')
                 #perr = np.sqrt(np.diag(var_matrix))
                 peak, shift = coeff[:2]
-                #print(peak, shift)
+                #print(peak, shift, ccf[fit_sel][np.argmax(ccf[fit_sel])],v_shift[fit_sel][np.argmax(ccf[fit_sel])])
             except:
                 peak, shift = np.nan, np.nan
             peaks = np.append(peaks, peak)
             shifts = np.append(shifts, shift)
-
+        #print(peaks, shifts)
             #logging.info("CCF statistics: minimum %3.4f, maximum %3.4f, "
             #             "mean %3.4f, shift %3.4f." \
             #             % (np.min(ccf), np.max(ccf), np.mean(ccf), shift))
 
         logging.info("Peak: %3.4f±%3.4f; shift: %3.4f±%3.4f" \
             % (np.nanmean(peaks), np.nanstd(peaks), np.nanmean(shifts), np.nanstd(shifts)))
-        #plt.show()
+        plt.show()
         with open(self.sess.name+'_ccf_stats.npy', 'wb') as f:
             np.save(f, peaks)
             np.save(f, shifts)
-
+        #plt.show()
         return 0
 
 
@@ -314,8 +355,8 @@ class CookbookGeneral(object):
         self.sess.spec._gauss_convolve(std, input_col, output_col)
         return 0
 
-    def mask(self, col='mask', cond='', new_sess=True, masked_col='x'):
-        """ @brief Mask the spectrum
+    def mask_cond(self, col='mask', cond='', new_sess=True, masked_col='x'):
+        """ @brief Mask from condition
         @details Create a mask applying a specified condition to the spectrum
         bins.
 
@@ -395,7 +436,7 @@ class CookbookGeneral(object):
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
-              norm=False, filling=np.nan):
+              kappa=None, norm=False, filling=np.nan):
         """ @brief Re-bin spectrum
         @details Apply a new binning to a spectrum, with a constant bin size.
 
@@ -425,6 +466,7 @@ class CookbookGeneral(object):
         @param xend End wavelength (nm)
         @param dx Step in x
         @param xunit Unit of wavelength or velocity
+        @param kappa Number of sigma to clip outliers
         @param norm Return normalized spectrum, if continuum exists
         @param filling Value to fill region without data
         @return Session with rebinned spectrum
@@ -435,6 +477,7 @@ class CookbookGeneral(object):
             xend = None if xend in [None, 'None'] else float(xend)
             dx = float(dx)
             xunit = au.Unit(xunit)
+            kappa = None if kappa in [None, 'None'] else float(kappa)
             norm = str(norm) == 'True'
             filling = float(filling)
         except ValueError:
@@ -469,12 +512,18 @@ class CookbookGeneral(object):
             y = spec_in.y/spec_in.t['cont']
             dy = spec_in.dy/spec_in.t['cont']
 
-        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, filling)
+        spec_out = spec_in._rebin(xstart, xend, dx, xunit, y, dy, kappa, filling)
         if cont:
             if not norm:
-                spec_out.t['cont'] = np.interp(
-                    spec_out.x.to(au.nm).value,spec_in.x.to(au.nm).value,
-                    spec_in.t['cont']) * spec_out.y.unit
+                try:  # x-axis in wavelengths
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.nm).value, spec_in.x.to(au.nm).value,
+                        spec_in.t['cont']) * spec_out.y.unit
+                except:  # x-axis in velocities
+                    spec_out.t['cont'] = np.interp(
+                        spec_out.x.to(au.km/au.s).value,
+                        spec_in.x.to(au.km/au.s).value,
+                        spec_in.t['cont']) * spec_out.y.unit
             else:
                 spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
@@ -531,6 +580,7 @@ class CookbookGeneral(object):
             new._gui = self.sess._gui
         else:
             new = None
+
         if 'systs' in self.sess.seq and self.sess.systs != None \
             and new.systs != None:
 
@@ -626,20 +676,59 @@ class CookbookGeneral(object):
         return 0
 
 
-    def rms_est(self, hwindow=100):
-        """ @brief Estimate error from RMS
-        @details Estimate flux error by computing the root-mean-square (RMS) of
-        the flux within a running window.
+    def outliers_clean(self, hwindow=100, sigma=5, use_dy=False):
+        """ @brief Clean outliers
+        @details Clean outliers (spikes and other reduction residuals) with
+        sigma clipping.
 
-        The RMS is computed over `y` values and is saved in `y_rms`. It may be
-        useful to compare the latter with `dy` to check that the formal error is
-        consistent with the actual dispersion of `y` values.
+        The clipping is done on `y` values  after subtracting a running median
+        computed within a window. If `dy` is defined, it can be used to enhance
+        the prominence of the outliers. Clipped values are substituted by
+        `np.nan` in the `y` column.
         @param hwindow Half-size in pixels of the running window
+        @param sigma Number of sigma used for clipping
+        @param use_dy Use `dy` to enance the prominence of the outliers
         @return 0
         """
 
         try:
             hwindow = int(hwindow)
+            sigma = int(sigma)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+
+        y_rm = running_median(spec._t['y'], h=hwindow)
+        y = spec._t['y']-y_rm
+        if use_dy:
+            valid = ~np.isnan(spec._t['dy'])
+            y[valid] = y[valid]*spec._t['dy'][valid]**2
+        yclip = sigma_clip(y, sigma=sigma, masked=False, axis=0)
+        if use_dy:
+            yclip[valid] = yclip[valid]/spec._t['dy'][valid]**2
+        spec._t['y'] = yclip+y_rm
+
+        return 0
+
+
+    def rms_est(self, hwindow=10000, std=20.0):
+        """ @brief Estimate error from RMS
+        @details Estimate flux error by computing the root-mean-square (RMS) of
+        the flux within a running window.
+
+        The RMS is computed over `y` values and is saved in `y_rms`. It is then
+        convolved with a gaussian of standard deviation `std` and the result
+        is saved in `dy`.
+        @param hwindow Half-size in pixels of the running window
+        @param std Standard deviation of the gaussian (km/s)
+        @return 0
+        """
+
+        try:
+            hwindow = int(hwindow)
+            std = float(std) * au.km/au.s
         except:
             logging.error(msg_param_fail)
             return 0
@@ -652,7 +741,8 @@ class CookbookGeneral(object):
             logging.info("I'm adding column 'y_rms'.")
         else:
             logging.warning("I'm updating column 'y_rms'.")
-        spec._t['y_rms'] = at.Column(y_rms, dtype=float)
+        spec._t['y_rms'] = at.Column(y_rms, dtype=float)*spec._t['dy'].unit
+        self.sess.spec._gauss_convolve(std, 'y_rms', 'dy')
 
         return 0
 
@@ -676,15 +766,85 @@ class CookbookGeneral(object):
 
         return 0
 
+    def sky_mask(self, shift=0, thres=50, std=0.05, reverse=False,
+        apply=True, remove=False):
+        """ @brief Mask sky emission lines
+        @details Mask spectral regions affected by sky emission lines.
+
+        The regions are determined from SkyCorr models (saved in
+        sky_telluric.fits), smoothed with a running window to ensure a better
+        masking. The regions are resampled into the current `x` grid and used to
+        populate a `sky` column, which is set to `1` inside the regions and to
+        `0` elsewhere (the opposite if `reverse` is `True`).
+
+        If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
+        `sky` is 1.
+        @param shift Shift to the heliocentric frame (km/s)
+        @param thres Threshold to cut sky lines in the model (ph/s/m2/micron/arcsec2)
+        @param std Standard deviation for gaussian smoothing (nm)
+        @param reverse Compute reverse mask (keeping sky lines instead of
+        rejecting them)
+        @param apply Apply mask to flux
+        @param remove Remove masked rows from table
+        @return 0
+        """
+
+        try:
+            shift = float(shift)
+            thres = float(thres)
+            std = float(std)
+            reverse = str(reverse) == 'True'
+            apply = str(apply) == 'True'
+            remove = str(remove) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        spec = self.sess.spec
+        if 'sky' not in spec._t.colnames:
+            logging.info("I'm adding column 'sky'.")
+        else:
+            logging.info("I'm updating column 'sky'.")
+
+        x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        sky = np.array(sky_telluric['flux_ael'], dtype=float)
+
+        mean = np.median(x)
+        prof = np.exp(-((x - mean) / std)**2)
+        if (len(prof) % 2 == 0):
+            prof = prof[:-1]
+        prof = prof / np.sum(prof)
+
+        sky_smooth = fftconvolve(sky, prof, mode='same')
+
+        #plt.plot(x, sky_smooth)
+        #plt.show()
+
+        #sky_smooth = running_mean(sky, h=hwindow)
+        sky_interp = np.interp(spec._t['x'].to(au.nm).value, x, sky_smooth)
+        if not reverse:
+            mask = np.array([t>thres for t in sky_interp], dtype=float)
+        else:
+            mask = np.array([t<thres for t in sky_interp], dtype=float)
+        #sky = np.interp(spec._t['x'].to(au.nm).value, x, mask)
+        spec._t['sky'] = np.array(mask!=1, dtype=bool)
+
+        if apply:
+            spec._t['y'][np.where(np.array(mask==1, dtype=bool))] = np.nan
+        if remove:
+            spec._t.remove_rows(np.where(np.array(mask==1, dtype=bool)))
+
+        return 0
+
 
     def telluric_mask(self, shift=0, thres=0.99, apply=True):
         """ @brief Mask telluric absorption
         @details Mask spectral regions affected by telluric absorptions.
 
-        The regions were determined by Tobias M. Schmidt from ESPRESSO data and
-        are saved in `telluric.dat`. They are resampled into the current `x`
-        grid and used to populate a `telluric` column, which is set to `1`
-        inside the regions and to `0` elsewhere.
+        The regions are determined from SkyCorr models (saved in
+        sky_telluric.fits). They are resampled into the current `x` grid and
+        used to populate a `telluric` column, which is set to `1` inside the
+        regions and to `0` elsewhere.
 
         If `apply` is `True`, `y` is set to `numpy.nan` in all bins where
         `telluric` is 1.
@@ -712,12 +872,36 @@ class CookbookGeneral(object):
         #p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
         #telluric = ascii.read(pathlib.Path(p+'/telluric.dat'))
         #telluric = fits.open(pathlib.Path(p+'/telluric.fits'))[1].data
-        x = np.array(telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
-        mask = np.array([t<thres for t in telluric['trans_ma']], dtype=float)
+        x = np.array(sky_telluric['lam'], dtype=float) * (1+shift/aconst.c.to(au.km/au.s).value)
+        mask = np.array([t<thres for t in sky_telluric['trans_ma']], dtype=float)
         tell = np.interp(spec._t['x'].to(au.nm).value, x, mask)
         spec._t['telluric'] = np.array(tell!=1, dtype=bool)
 
         if apply:
             spec._t['y'][np.where(np.array(tell==1, dtype=bool))] = np.nan
 
+        return 0
+
+
+    def x_mask(self, col='mask', ranges=''):
+        """ @brief Mask wavelengths
+        @details Create a mask applying a specified condition to the spectrum
+        bins.
+
+        The expression in `lim` is translated into a set of wavelength ranges
+        in nm. Expressions like "450.-455.2,580.5-590" are supported.
+
+        A new column `col` is populated with the results. The column `y`, `dy`,
+        and optionally `cont` are set to `numpy.nan` in all masked bins.
+        @param col Column with the mask
+        @param ranges Wavelength ranges
+        @return Session with masked spectrum
+        """
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._x_mask(col, ranges)
+            except:
+                logging.debug("Attribute %s does not support region "
+                              "extraction." % s)
         return 0

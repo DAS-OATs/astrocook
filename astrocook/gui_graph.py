@@ -13,6 +13,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.stats import norm
+import time
 import wx
 
 class GUIGraphMain(wx.Frame):
@@ -22,8 +23,8 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=wx.DisplaySize()[0]*0.96, #0.87
-                 size_y=wx.DisplaySize()[1]*0.5,  #0.4
+                 size_x=int(wx.DisplaySize()[0]*0.96), #0.87
+                 size_y=int(wx.DisplaySize()[1]*0.5),  #0.4
                  main=True,
                  **kwargs):
         """ Constructor """
@@ -47,15 +48,18 @@ class GUIGraphMain(wx.Frame):
         self._norm = False
         self._legend = False
         self._closed = False
+        self._refreshed = False
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
-        self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[1]*0.40))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
+                          int(wx.DisplaySize()[1]*0.40)))
 
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
-                                           size=(self._size_x, self._size_y))
+                                           #size=(self._size_x, self._size_y))
+                                           size=(1843, 540))
 
         self._panel = wx.Panel(self)
         self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
@@ -83,6 +87,7 @@ class GUIGraphMain(wx.Frame):
             self._init()
         self._graph._refresh(sess, self._logx, self._logy, self._norm,
                              self._legend, **kwargs)
+        self._refreshed = True
         self.Show()
 
     #def _on_line_new(self, event):
@@ -99,7 +104,6 @@ class GUIGraphMain(wx.Frame):
 
     def _on_cursor_stick(self, event=None, cursor_z=None):
         sess = self._gui._sess_sel
-        #print(self._graph._cursor._z * sess.spec._rfz)
         z = "%2.6f" % (self._graph._cursor._z*(1+sess.spec._rfz))
 
         if not hasattr(sess, '_cursors'):
@@ -112,11 +116,7 @@ class GUIGraphMain(wx.Frame):
         self._elem = sess._graph_elem
 
         self._gui._refresh()
-        """
-        if hasattr(self._gui, '_dlg_mini_graph'):
-            self._gui._dlg_mini_graph._refresh()
-        self._refresh(sess)
-        """
+
         if hasattr(self._gui, '_dlg_mini_systems'):
             # Unfreeze cursors in case they were frozen
             self._gui._graph_main._graph._cursor_frozen = False
@@ -124,10 +124,23 @@ class GUIGraphMain(wx.Frame):
                 self._gui._graph_det._graph._cursor_frozen = False
 
             # Refresh cursor
-            self._gui._dlg_mini_systems._shown = False
-            self._gui._dlg_mini_systems._on_cancel(e=None)
-            self._gui._dlg_mini_systems._shown = True
-            self._gui._dlg_mini_systems._on_apply(e=None)
+            self._gui._dlg_mini_systems._cursor_refresh()
+
+
+    def _on_ew_compute(self, event):
+        sess = self._gui._sess_sel
+
+        x1, x2 = sess._clicks[0][0], sess._clicks[1][0]
+        if x2<x1:
+            x1, x2 = x2, x1
+        x = 0.5*(x1+x2)
+        unit = sess.spec._t['x'].unit
+        if unit == au.Angstrom: x = 0.1*x
+        sess.spec._ew_compute(x1, x2)
+        sess._clicks = []
+        sess._shade = False
+        self._gui._refresh()
+
 
     def _on_node_add(self, event):
         sess = self._gui._sess_sel
@@ -138,6 +151,7 @@ class GUIGraphMain(wx.Frame):
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
 
+
     def _on_node_remove(self, event):
         sess = self._gui._sess_sel
         x, y = sess._clicks[-1][0], sess._clicks[-1][1]
@@ -147,6 +161,7 @@ class GUIGraphMain(wx.Frame):
         sess.spec._nodes_interp(sess.lines, sess.nodes)
         self._gui._refresh()
 
+
     def _on_region_extract(self, event):
         sess = self._gui._sess_sel
         x = [sess._clicks[0][0], sess._clicks[1][0]]
@@ -154,13 +169,15 @@ class GUIGraphMain(wx.Frame):
         xmax = np.max(x)
         sel_old = self._gui._sess_list.index(sess)
         reg = sess.cb.region_extract(xmin, xmax)
-        #self._gui._refresh()
+        sess._clicks = []
+        sess._shade = False
         self._gui._panel_sess._on_add(reg, open=False)
 
         sess = self._gui._sess_sel
         sess_list = [self._gui._sess_list[sel_old]]
         sess.log.merge_full('cb', 'region_extract',
                              {'xmin': xmin, 'xmax': xmax}, sess_list, sess)
+
 
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
@@ -169,12 +186,15 @@ class GUIGraphMain(wx.Frame):
         xmax = np.max(x)
         sess.log.append_full('cb', 'feature_zap', {'xmin': xmin, 'xmax': xmax})
         sess.spec._zap(xmin, xmax)
+        sess._clicks = []
+        sess._shade = False
         self._gui._refresh()
+
 
     def _on_stats_show(self, event):
         sess = self._gui._sess_sel
         try:
-            x = [sess._clicks[-2][0], sess._clicks[-1][0]]
+            x = [sess._clicks[-3][0], sess._clicks[-2][0]]
         except:
             x = (0, np.inf)
             sess._shade = False
@@ -182,18 +202,28 @@ class GUIGraphMain(wx.Frame):
         xmin = (np.min(x)*xunit).to(au.nm).value
         xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = True
-        #self._graph._stats = True
         self._gui._refresh()
+
 
     def _on_stats_hide(self, event):
         sess = self._gui._sess_sel
         del sess.spec._stats_text_red
-        sess._clicks = []
+        sess._clicks.pop()
         sess._stats = False
         sess._shade = False
         self._gui._refresh()
+
+
+    def _on_syst_fit(self, event):
+        id = '[%i]' % int(self._gui._graph_main._graph._systs_id_argmin)
+        params = [{'ids': id, 'refit_n': 0, 'chi2rav_thres': 1e-2,
+                   'max_nfev': max_nfev_def}]
+        dlg = GUIDialogMethod(self._gui, 'Fit system...', 'syst_fit',
+                              params_last = params)
+        self._gui._refresh(init_cursor=True)
+
 
     def _on_syst_new(self, event):
         sess = self._gui._sess_sel
@@ -219,7 +249,8 @@ class GUIGraphMain(wx.Frame):
     def _on_close(self, event=None):
         self._closed = True
         self.Destroy()
-        del self._gui._graph_det
+        if hasattr(self._gui, '_graph_det'):
+            del self._gui._graph_det
 
 
 class GUIGraphDetail(GUIGraphMain):
@@ -228,8 +259,8 @@ class GUIGraphDetail(GUIGraphMain):
                  gui,
                  #sess,
                  title="Spectrum detail",
-                 size_x=wx.DisplaySize()[0]*0.4,
-                 size_y=wx.DisplaySize()[1]*0.4,
+                 size_x=int(wx.DisplaySize()[0]*0.4),
+                 size_y=int(wx.DisplaySize()[1]*0.4),
                  **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False, **kwargs)
@@ -272,12 +303,12 @@ class GUIGraphDetail(GUIGraphMain):
         rows = min(5, n)
         cols = (n-1)//5+1
         idxs = np.ravel(np.reshape(range(rows*cols), (rows, cols)).T)[:n]
-        size_x = min(wx.DisplaySize()[0]*0.5, wx.DisplaySize()[0]*0.4*cols)
-        size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
+        size_x = min(int(wx.DisplaySize()[0]*0.5), int(wx.DisplaySize()[0]*0.4*cols))
+        size_y = min(int(wx.DisplaySize()[1]*0.9), int(wx.DisplaySize()[1]*0.3*rows))
         self.SetSize(wx.Size(size_x, size_y))
-        self.SetPosition((min(wx.DisplaySize()[0]*0.98-size_x,
-                              wx.DisplaySize()[0]*0.58),
-                         wx.DisplaySize()[1]*0.02))
+        self.SetPosition((min(int(wx.DisplaySize()[0]*0.98-size_x),
+                              int(wx.DisplaySize()[0]*0.58)),
+                         int(wx.DisplaySize()[1]*0.02)))
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph
@@ -321,7 +352,9 @@ class GUIGraphDetail(GUIGraphMain):
                 graph._ax = graph._fig.add_subplot(rows, cols, i+1,
                                                    sharex=graph._ax,
                                                    sharey=graph._ax)
-            if i < len(series)-cols:
+
+            lens = len(series)
+            if i < lens-cols and i != idxs[-1]:
                 graph._ax.tick_params(labelbottom=False)
             if i%cols !=0:
                 graph._ax.tick_params(labelleft=False)
@@ -340,14 +373,15 @@ class GUIGraphHistogram(GUIGraphMain):
     def __init__(self,
                  gui,
                  title="Column histogram",
-                 size_x=wx.DisplaySize()[0]*0.6,
-                 size_y=wx.DisplaySize()[1]*0.6,
+                 size_x=int(wx.DisplaySize()[0]*0.6),
+                 size_y=int(wx.DisplaySize()[1]*0.6),
                  **kwargs):
         #self._col_values = col_values
         super(GUIGraphHistogram, self).__init__(gui, title, size_x, size_y,
                                                 main=False, **kwargs)
         self._gui._graph_hist = self
-        self.SetPosition((wx.DisplaySize()[0]*0.48, wx.DisplaySize()[1]*0.02))
+        self.SetPosition((int(wx.DisplaySize()[0]*0.48),
+                          int(wx.DisplaySize()[1]*0.02)))
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,

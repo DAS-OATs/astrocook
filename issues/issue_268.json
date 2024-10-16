@@ -1,0 +1,94 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_tab_systs",
+      "recipe": "_data_detail",
+      "params": {
+        "row_z": 2.665083279399483,
+        "row_series": "CIV",
+        "row_id": 35,
+        "span": 30
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "group_fit",
+      "params": {
+        "id": "35",
+        "refit_n": "0",
+        "chi2rav_thres": "0.01",
+        "max_nfev": "1000"
+      }
+    },
+    {
+      "cookbook": "_menu",
+      "recipe": "_on_dialog_mini_defs",
+      "params": {
+        "event": null,
+        "title": "Session defaults",
+        "targ": null
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_defs",
+      "recipe": "_set",
+      "params": {
+        "value": "{\n  \"menus\": [\n    \"General\",\n    \"Flux\",\n    \"Continuum\",\n    \"Absorbers\",\n    \"Synthetic\",\n    \"Templates\"\n  ],\n  \"voigt\": {\n    \"z_min\": 1e-3,\n    \"logN_min\": 10,\n    \"b_min\": 1.0,\n    \"btur_min\": 0.0,\n    \"resol_min\": 0,\n    \"z_max\": 1e-3,\n    \"logN_max\": 19,\n    \"b_max\": 400.0,\n    \"btur_max\": 400.0,\n    \"resol_max\": 1e6,\n    \"x_lim\": null\n  },\n  \"fit\": {\n    \"use_jac\": true,\n    \"ftol\": 1e-2,\n    \"xtol\": 1e-3,\n    \"gtol\": 1e-3,\n    \"x_scale\": \"jac\"\n  },\n  \"graph\": {\n    \"fast\": true\n  }\n}\n",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_defs",
+      "recipe": "_on_apply",
+      "params": {
+        "e": null,
+        "refresh": true
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "group_fit",
+      "params": {
+        "id": "35",
+        "refit_n": "0",
+        "chi2rav_thres": "0.01",
+        "max_nfev": "1000"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}
