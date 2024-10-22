@@ -371,17 +371,20 @@ class Format(object):
             y = np.ravel(hdul['SCIDATA'].data[:,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[:,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[:,span:-span-1])
+            t = np.ravel(hdul['TELLURIC_CORRECTION'].data[:,span:-span-1])
         elif row is None:
             r = range(slice, hdul['WAVEDATA_VAC_BARY'].data.shape[0], 2)
             x = np.ravel(hdul['WAVEDATA_VAC_BARY'].data[r,span:-span-1])
             y = np.ravel(hdul['SCIDATA'].data[r,span:-span-1])
             dy = np.ravel(hdul['ERRDATA'].data[r,span:-span-1])
             q = np.ravel(hdul['QUALDATA'].data[r,span:-span-1])
+            t = np.ravel(hdul['TELLURIC_CORRECTION'].data[r,span:-span-1])
         else:
             x = hdul['WAVEDATA_VAC_BARY'].data[row,span:-span-1]
             y = hdul['SCIDATA'].data[row,span:-span-1]
             dy = hdul['ERRDATA'].data[row,span:-span-1]
             q = hdul['QUALDATA'].data[row,span:-span-1]
+            t = hdul['TELLURIC_CORRECTION'].data[row,span:-span-1]
 
 
 
@@ -391,11 +394,12 @@ class Format(object):
         y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
         dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
         q = q[w]
+        t = t[w]
         argsort = np.argsort(x)
-        x,xmin,xmax,y,dy,q = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort],q[argsort]
+        x,xmin,xmax,y,dy,q,t = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort],q[argsort],t[argsort]
 
         w = np.where(q<1) #4**7)
-        x,xmin,xmax,y,dy,q = x[w],xmin[w],xmax[w],y[w],dy[w],q[w]
+        x,xmin,xmax,y,dy,q,t = x[w],xmin[w],xmax[w],y[w],dy[w],q[w],t[w]
 
         resol = []*len(x)
         xunit = au.Angstrom
@@ -403,6 +407,7 @@ class Format(object):
         meta = hdr
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
         spec._t['quality'] = q
+        spec._t['telluric_correction'] = t
         return spec
 
 
