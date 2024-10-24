@@ -23,13 +23,23 @@ class CookbookEdit(CookbookEditOld):
         return 0
 
 
-    def import_systs(self):
-        """@brief Import system list 🚧
-        @details 🚧
+    def import_systs(self, source=0, mode='replace'):
+        """@brief Import system list
+        @details Import the system list into the currently selected session.
         @url edit_cb.html#import-system-list
+        @param source Source session
+        @param mode Mode (replace or append)
+        @return 0
         """
 
-        return 0
+        try:
+            source = str(source)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        struct = source+',systs'
+        return self.struct_import(struct, mode)
 
 
     def extract(self):

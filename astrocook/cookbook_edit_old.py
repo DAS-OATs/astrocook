@@ -141,13 +141,19 @@ class CookbookEditOld(object):
         parse = self._struct_parse(struct)
         if parse is None: return 0
         attrn, attr, _ = parse
-        attr = dc(attr)
+        if attrn == 'systs':
+            from .syst_list import SystList
+            attr = SystList()
+            for i in attr.__dict__:
+                setattr(attr, getattr(attr, i), attr.__dict__[i])
+        else:
+            attr = dc(attr)
+        print(attr.__dict__)
         if attrn == 'systs' \
             and 'cont' not in self.sess._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
-                          "Recipes > Guess continuum before." % attrn)
+                          "Continuum > Clip flux before." % attrn)
             return 0
-
         if mode=='replace':
             if attr is None:
                 logging.warning("I'm replacing structure with None.")
@@ -163,7 +169,7 @@ class CookbookEditOld(object):
                 setattr(self.sess._gui._sess_sel, attrn, attr)
                 return 0
 
-                # Redefine regions from spectrum
+            # Redefine regions from spectrum
             if attrn == 'systs':
                 for i, m in enumerate(attr._mods_t):
                     mod = m['mod']

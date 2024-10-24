@@ -4,8 +4,8 @@ from .message import msg_output_fail
 from astropy import table as at
 from astropy import constants as ac
 from astropy import units as au
-#from matplotlib import pyplot as plt
 from copy import deepcopy as dc
+#from matplotlib import pyplot as plt
 import logging
 import numpy as np
 
