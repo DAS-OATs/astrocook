@@ -151,7 +151,6 @@ class CookbookEditOld(object):
             attr = attr_new
         else:
             attr = dc(attr)
-        print(attr.__dict__)
         if attrn == 'systs' \
             and 'cont' not in self.sess._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
@@ -203,8 +202,6 @@ class CookbookEditOld(object):
             self.sess.systs._d = d
             self.sess._gui._sess_sel.cb._mods_recreate()
             self.sess._gui._sess_sel.cb._spec_update()
-
-        print(self.sess.systs.__dict__)
 
         return 0
 
