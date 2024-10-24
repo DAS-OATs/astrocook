@@ -142,10 +142,13 @@ class CookbookEditOld(object):
         if parse is None: return 0
         attrn, attr, _ = parse
         if attrn == 'systs':
+            d = attr._d
             from .syst_list import SystList
-            attr = SystList()
-            for i in attr.__dict__:
-                setattr(attr, getattr(attr, i), attr.__dict__[i])
+            attr_new = SystList()
+            for i in attr_new.__dict__:
+                if i!='_d' and i!='_mods_t':
+                    setattr(attr_new, i, dc(getattr(attr, i)))
+            attr = attr_new
         else:
             attr = dc(attr)
         print(attr.__dict__)
@@ -197,8 +200,11 @@ class CookbookEditOld(object):
             getattr(self.sess._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
+            self.sess.systs._d = d
             self.sess._gui._sess_sel.cb._mods_recreate()
             self.sess._gui._sess_sel.cb._spec_update()
+
+        print(self.sess.systs.__dict__)
 
         return 0
 
