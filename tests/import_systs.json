@@ -1,0 +1,46 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GitHub/astrocook/tests/systs.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Users/guido/GitHub/astrocook/tests/spec.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "clip_flux",
+      "params": {
+        "ran": "all",
+        "smooth_len": "400",
+        "kappa": "2",
+        "fudge": "auto",
+        "knots_dist": "2000",
+        "mode": "update"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "import_systs",
+      "params": {
+        "source": "0"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}
