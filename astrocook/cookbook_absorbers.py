@@ -13,20 +13,20 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         super(CookbookAbsorbers, self).__init__()
 
 
-    def find_lines(self, kind='abs', prominence=None, append=True):
+    def find_lines(self, kind='abs', sigma=None, append=True):
         """ @brief Find lines
         @details Find absorption or emission lines, based on their prominence.
         @url absorbers_cb.html#find-lines
         @param kind Kind
-        @param prominence Prominence
+        @param sigma Prominence (sigma)
         @param append Append to existing line list
         @return 0
         """
 
         try:
             kind = str(kind)
-            prominence = None if prominence in [None, 'None'] \
-                else float(prominence)
+            sigma = None if sigma in [None, 'None'] \
+                else float(sigma)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
@@ -40,8 +40,11 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         fact = -1 if kind=='abs' else 1
 
         ynorm = fact*(spec._t['y'])
-        if prominence is None: prominence = 5*(spec._t['dy'])
-
+        if sigma is None:
+            prominence = 5*(spec._t['dy'])
+        else:
+            prominence = sigma*(spec._t['dy'])
+        
         peaks, properties = find_peaks(ynorm, prominence=prominence)
         lines = LineList(row=spec._t[peaks], source='y', kind=kind,
                          xunit=spec._xunit, yunit=spec._yunit, meta=spec._meta)

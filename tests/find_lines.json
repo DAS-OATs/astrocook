@@ -13,7 +13,7 @@
       "recipe": "find_lines",
       "params": {
         "kind": "abs",
-        "prominence": 1e4,
+        "sigma": 10,
         "append": "False"
       }
     },
@@ -22,7 +22,7 @@
       "recipe": "find_lines",
       "params": {
         "kind": "em",
-        "prominence": 1e4,
+        "sigma": 10,
         "append": "True"
       }
     },
