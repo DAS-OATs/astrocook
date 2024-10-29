@@ -44,7 +44,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
             prominence = 5*(spec._t['dy'])
         else:
             prominence = sigma*(spec._t['dy'])
-        
+
         peaks, properties = find_peaks(ynorm, prominence=prominence)
         lines = LineList(row=spec._t[peaks], source='y', kind=kind,
                          xunit=spec._xunit, yunit=spec._yunit, meta=spec._meta)

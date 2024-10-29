@@ -13,17 +13,8 @@
       "recipe": "find_lines",
       "params": {
         "kind": "abs",
-        "sigma": 10,
+        "sigma": 5,
         "append": "False"
-      }
-    },
-    {
-      "cookbook": "cb",
-      "recipe": "find_lines",
-      "params": {
-        "kind": "em",
-        "sigma": 10,
-        "append": "True"
       }
     },
     {
