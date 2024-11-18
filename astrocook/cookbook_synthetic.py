@@ -36,11 +36,11 @@ class CookbookSynthetic(object):
                 for c in sorted(s.spec._t.colnames, key=len, reverse=True):
                     xold, yold = dc(x), dc(y)
                     x = x.replace('%i,spec,%s' % (i, c),
-                                  str(list(np.array(s.spec._t[c]))))
+                                  str(np.array(s.spec._t[c]).tolist()))
                     y = y.replace('%i,spec,%s' % (i, c),
-                                  str(list(np.array(s.spec._t[c]))))
+                                  str(np.array(s.spec._t[c]).tolist()))
                     dy = dy.replace('%i,spec,%s' % (i, c),
-                                    str(list(np.array(s.spec._t[c]))))
+                                    str(np.array(s.spec._t[c]).tolist()))
                     if x != xold:
                         xunit = s.spec._t[c].unit
                     if y != yold:
@@ -92,7 +92,6 @@ class CookbookSynthetic(object):
                         xunit = s.spec._t[c].unit
                     if dy != dyold:
                         yunit = s.spec._t[c].unit
-
         x = expr_eval(ast.parse(x, mode='eval').body)
         dy = expr_eval(ast.parse(dy, mode='eval').body)
         xmin, xmax = create_xmin_xmax(x)
