@@ -253,7 +253,7 @@ class CookbookEditOld(object):
                     for c in sorted(struct._t.colnames, key=len, reverse=True):
                         expr = expr.replace('%i,%s,%s' \
                                             % (len(sess_list)-1-i, st, c),
-                                            str(list(np.array(struct._t[c]))))
+                                            str(np.array(struct._t[c]).tolist()))
 
             """
             if s.spec is not None:

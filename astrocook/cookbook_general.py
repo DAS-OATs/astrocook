@@ -381,7 +381,7 @@ class CookbookGeneral(object):
         spec = self.sess.spec
 
         for c in sorted(spec._t.colnames, key=len, reverse=True):
-            cond = cond.replace(c, str(list(np.array(spec._t[c]))))
+            cond = cond.replace(c, str(np.array(spec._t[c]).tolist()))
             #print(c, cond)
         mask = expr_eval(ast.parse(cond, mode='eval').body)
 
