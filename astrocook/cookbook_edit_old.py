@@ -141,13 +141,21 @@ class CookbookEditOld(object):
         parse = self._struct_parse(struct)
         if parse is None: return 0
         attrn, attr, _ = parse
-        attr = dc(attr)
+        if attrn == 'systs':
+            d = attr._d
+            from .syst_list import SystList
+            attr_new = SystList()
+            for i in attr_new.__dict__:
+                if i!='_d' and i!='_mods_t':
+                    setattr(attr_new, i, dc(getattr(attr, i)))
+            attr = attr_new
+        else:
+            attr = dc(attr)
         if attrn == 'systs' \
             and 'cont' not in self.sess._gui._sess_sel.spec.t.colnames:
             logging.error("Attribute %s requires a continuum. Please try "
-                          "Recipes > Guess continuum before." % attrn)
+                          "Continuum > Clip flux before." % attrn)
             return 0
-
         if mode=='replace':
             if attr is None:
                 logging.warning("I'm replacing structure with None.")
@@ -163,7 +171,7 @@ class CookbookEditOld(object):
                 setattr(self.sess._gui._sess_sel, attrn, attr)
                 return 0
 
-                # Redefine regions from spectrum
+            # Redefine regions from spectrum
             if attrn == 'systs':
                 for i, m in enumerate(attr._mods_t):
                     mod = m['mod']
@@ -191,6 +199,7 @@ class CookbookEditOld(object):
             getattr(self.sess._gui._sess_sel, attrn)._append(attr_dc)
 
         if attrn=='systs':
+            self.sess.systs._d = d
             self.sess._gui._sess_sel.cb._mods_recreate()
             self.sess._gui._sess_sel.cb._spec_update()
 
@@ -244,7 +253,7 @@ class CookbookEditOld(object):
                     for c in sorted(struct._t.colnames, key=len, reverse=True):
                         expr = expr.replace('%i,%s,%s' \
                                             % (len(sess_list)-1-i, st, c),
-                                            str(list(np.array(struct._t[c]))))
+                                            str(np.array(struct._t[c]).tolist()))
 
             """
             if s.spec is not None:
