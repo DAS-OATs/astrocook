@@ -15,6 +15,45 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
+    def spec_from_spec_and_systs(self, spec_sess='0', systs_sess='1'):
+        """@brief Synthetic spectrum from existing spectrum and system list
+        @details TBD
+        @param spec_sess Number of the session with the spectrum
+        @param systs_sess Number of the session with the spectrum
+        @return Session with synthetic spectrum
+        """
+
+        parse = self._struct_parse(spec_sess+',systs')
+        if parse is None: return 0
+        _, spec, _ = parse
+
+        parse = self._struct_parse(systs_sess+',systs')
+        if parse is None: return 0
+        _, systs, _ = parse
+
+
+        x, xmin, xmax, dy, cont = spec._t['x'], spec._t['xmin'], \
+            spec._t['xmax'], spec._t['dy'], spec._t['cont']
+        xunit, yunit = spec._t['x'].unit, spec._t['y'].unit
+
+        y = spec._t['y']/spec._t['cont']
+        for i, r in enumerate(systs._mods_t):
+            mod = r['mod']
+            if resol is not None:
+                mod._pars['psf_gauss_%i_resol' % mod._id].value = resol
+            y = mod.eval(x=x, params=mod._pars) * y
+        y = y*spec._t['cont']
+
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, cont=cont)
+        from .session import Session
+        new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
+                      spec=spec)
+
+        new._systs = systs
+
+        return new
+
+
     def spec_from_struct(self, x='0,spec,x', y='0,spec,y', dy='0,spec,dy'):
         """@brief Synthetic spectrum from structures
         @details Create a synthetic spectrum from existing structures (a
