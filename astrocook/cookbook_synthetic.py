@@ -15,22 +15,26 @@ class CookbookSynthetic(object):
     def __init__(self):
         super(CookbookSynthetic, self).__init__()
 
-    def spec_from_spec_and_systs(self, spec_sess='0', systs_sess='1'):
+    def spec_from_spec_and_systs(self, spec_sess='0', systs_sess='1',
+                                 resol=None):
         """@brief Synthetic spectrum from existing spectrum and system list
         @details TBD
         @param spec_sess Number of the session with the spectrum
         @param systs_sess Number of the session with the spectrum
+        @param resol Resolution
         @return Session with synthetic spectrum
         """
 
-        parse = self._struct_parse(spec_sess+',systs')
+        if resol is not None:
+            resol = float(resol)
+
+        parse = self._struct_parse(spec_sess+',spec')
         if parse is None: return 0
         _, spec, _ = parse
 
         parse = self._struct_parse(systs_sess+',systs')
         if parse is None: return 0
         _, systs, _ = parse
-
 
         x, xmin, xmax, dy, cont = spec._t['x'], spec._t['xmin'], \
             spec._t['xmax'], spec._t['dy'], spec._t['cont']
