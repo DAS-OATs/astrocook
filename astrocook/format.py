@@ -714,6 +714,8 @@ class Format(object):
         xmin, xmax = self._create_xmin_xmax(x)
         resol = []*len(x)
         cont = data[:][3]#np.ones(len(x))
+        y *= cont
+        dy *= cont
         sel = np.where(y != 1)
         xunit = au.Angstrom
         yunit = au.electron/au.Angstrom
@@ -725,7 +727,11 @@ class Format(object):
             meta['object'] = ''
             logging.warning(msg_descr_miss('OBJECT'))
         """
-        return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        spec.t['cont'] = cont
+        
+        return spec
+    
 
     def wfccd_spectrum(self, hdul):
         """ WFCCD format """
