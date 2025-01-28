@@ -1,6 +1,7 @@
 from .cookbook_flux_old import CookbookFluxOld
 
 from astropy import units as au
+import logging
 import numpy as np
 
 class CookbookFlux(CookbookFluxOld):
