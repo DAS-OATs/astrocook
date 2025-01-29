@@ -11,6 +11,12 @@ import datetime as dt
 import wx
 import os
 
+ds_y = int(wx.DisplaySize()[1]*0.88)
+do_y = int(wx.DisplaySize()[1]*0.05)
+
+offset_y_dialog = do_y+ds_y//6
+
+
 class GUIDialog(wx.Dialog):
 
     def __init__(self,
@@ -213,7 +219,7 @@ class GUIDialogMethod(GUIDialog):
         self._box_buttons(self._cancel_run)
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
+        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
         self.Show()
 
 
@@ -272,7 +278,7 @@ class GUIDialogMethods(GUIDialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
+        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
         self.Show()
 
     def _box_methods(self):
@@ -315,7 +321,7 @@ class GUIDialogMini(wx.Dialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], int(wx.DisplaySize()[1]*0.25)))
+        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
         self.Show()
 
 

@@ -16,6 +16,23 @@ from scipy.stats import norm
 import time
 import wx
 
+# Windows sizes and offsets
+ds_x = int(wx.DisplaySize()[0]*0.98)
+ds_y = int(wx.DisplaySize()[1]*0.88)
+do_x = int(wx.DisplaySize()[0]*0.01)
+do_y = int(wx.DisplaySize()[1]*0.05)
+
+size_x_main = ds_x
+size_y_main = ds_y//2
+offset_x_main = do_x
+offset_y_main = do_y+ds_y-size_y_main
+
+size_x_detail = ds_x*2//5
+size_y_detail = ds_y*2//3
+offset_x_detail = do_x+ds_x-size_x_detail
+offset_y_detail = do_y
+
+
 class GUIGraphMain(wx.Frame):
     """ Class for the GUI spectrum graph frame """
 
@@ -23,20 +40,18 @@ class GUIGraphMain(wx.Frame):
                  gui,
                  #sess,
                  title="Spectrum",
-                 size_x=int(wx.DisplaySize()[0]*0.96), #0.87
-                 size_y=int(wx.DisplaySize()[1]*0.5),  #0.4
+                 size_x=size_x_main,
+                 size_y=size_y_main,
                  main=True,
                  **kwargs):
         """ Constructor """
-
+        
         self._gui = gui
         self._title = title
         self._size_x = size_x
         self._size_y = size_y
         self._sel = graph_sel
         self._cols_sel = graph_cols_sel
-        #sel = len(self._gui._sess_list)
-        #if sel>0: sel -= 1
         try:
             sel = self._gui._sess_list.index(self._gui._sess_sel)
         except:
@@ -52,14 +67,13 @@ class GUIGraphMain(wx.Frame):
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)
-        self.SetPosition((int(wx.DisplaySize()[0]*0.02),
-                          int(wx.DisplaySize()[1]*0.40)))
+        self.SetPosition((offset_x_main, offset_y_main))
 
 
     def _init(self, **kwargs):
         super(GUIGraphMain, self).__init__(parent=None, title=self._title,
-                                           #size=(self._size_x, self._size_y))
-                                           size=(1843, 540))
+                                           size=(self._size_x, self._size_y))
+                                           #size=(1843, 540))
 
         self._panel = wx.Panel(self)
         self._graph = Graph(self._panel, self._gui, self._sel, **kwargs)
@@ -259,8 +273,8 @@ class GUIGraphDetail(GUIGraphMain):
                  gui,
                  #sess,
                  title="Spectrum detail",
-                 size_x=int(wx.DisplaySize()[0]*0.4),
-                 size_y=int(wx.DisplaySize()[1]*0.4),
+                 size_x=size_x_detail,
+                 size_y=size_y_detail,
                  **kwargs):
         super(GUIGraphDetail, self).__init__(gui, title, size_x, size_y,
                                              main=False, **kwargs)
@@ -274,7 +288,6 @@ class GUIGraphDetail(GUIGraphMain):
         except:
             sel = 0
         self._elem = elem_expand(graph_elem, sel)
-        #self.SetPosition((wx.DisplaySize()[0]*0.58, wx.DisplaySize()[0]*0.02))
 
     def _define_lim(self, x, t=None, xspan=30, ymargin=0.1):#, norm=False):
         if t == None:
@@ -303,12 +316,10 @@ class GUIGraphDetail(GUIGraphMain):
         rows = min(5, n)
         cols = (n-1)//5+1
         idxs = np.ravel(np.reshape(range(rows*cols), (rows, cols)).T)[:n]
-        size_x = min(int(wx.DisplaySize()[0]*0.5), int(wx.DisplaySize()[0]*0.4*cols))
-        size_y = min(int(wx.DisplaySize()[1]*0.9), int(wx.DisplaySize()[1]*0.3*rows))
+        size_x = min(ds_x*2//3, size_x_detail*cols)
+        size_y = min(ds_y*5//6, size_y_detail*rows)
         self.SetSize(wx.Size(size_x, size_y))
-        self.SetPosition((min(int(wx.DisplaySize()[0]*0.98-size_x),
-                              int(wx.DisplaySize()[0]*0.58)),
-                         int(wx.DisplaySize()[1]*0.02)))
+        self.SetPosition((do_x+ds_x-size_x, offset_y_detail))
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph
@@ -368,8 +379,10 @@ class GUIGraphDetail(GUIGraphMain):
 
             self._gui._sess_sel.cb.x_convert(zem=zem, xunit=xunit)
 
-class GUIGraphHistogram(GUIGraphMain):
 
+# DEPRECATED; TO REVISE
+class GUIGraphHistogram(GUIGraphMain):
+    
     def __init__(self,
                  gui,
                  title="Column histogram",
