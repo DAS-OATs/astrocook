@@ -14,7 +14,7 @@ name = "astrocook"
 version = "1.5.1"
 description = "Python package for the analysis of quasar spectra"
 readme = "README.md" # Assumes you have a README.md file
-requires-python = ">=3.12" # Specify the minimum Python version you support
+requires-python = ">=3.7" # Specify the minimum Python version you support
 #license = { file = "LICENSE" } # Assumes you have a LICENSE file in the root
 authors = [
   # !! IMPORTANT: Replace with your actual name and email !!
