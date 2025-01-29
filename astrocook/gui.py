@@ -16,6 +16,17 @@ from sphinx.util import docstrings as ds
 import wx
 import wx.lib.mixins.listctrl as listmix
 
+ds_x = int(wx.DisplaySize()[0]*0.98)
+ds_y = int(wx.DisplaySize()[1]*0.88)
+do_x = int(wx.DisplaySize()[0]*0.01)
+do_y = int(wx.DisplaySize()[1]*0.05)
+
+size_x_sess = ds_x*2//5
+size_y_sess = ds_y//4
+offset_x_sess = do_x
+offset_y_sess = do_y
+
+
 class GUI(object):
     """ Class for the GUI. """
 
@@ -374,6 +385,7 @@ class GUI(object):
                 self._graph_det._refresh(self._sess_items,
                                          init_cursor=init_cursor)
 
+
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """
 
@@ -420,12 +432,12 @@ class GUIPanelSession(wx.Frame):
 
         self._mute = mute
         if not self._mute:
-            size_x = wx.DisplaySize()[0]*0.6
-            size_y = wx.DisplaySize()[1]*0.2
+            size_x = size_x_sess
+            size_y = size_y_sess
 
             super(GUIPanelSession, self).__init__(parent=None, title=title,
                                                   size=(size_x, size_y))
-            self.SetPosition((wx.DisplaySize()[0]*0.02, wx.DisplaySize()[0]*0.02))
+            self.SetPosition((offset_x_sess,offset_y_sess))
 
         self._tag = "_panel_sess"
 
