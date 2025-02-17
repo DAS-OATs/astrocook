@@ -300,7 +300,8 @@ class Session(object):
             return 0
 
         # KECK spectrum
-        if instr == 'HIRES Spectrograph':
+        if instr in ('HIRES Spectrograph', 
+                     'HIRES: High Resolution Echelle Spectrometer'):
             hdul_e = fits.open(self.path[:-6]+'e.fits')
             self.spec = format.keck_spectrum(hdul, hdul_e)
             return 0
