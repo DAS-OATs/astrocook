@@ -25,7 +25,7 @@ class CookbookEdit(CookbookEditOld):
 
     def import_systs(self, source=0, mode='replace'):
         """@brief Import system list
-        @details Import the system list into the currently selected session.
+        @details Import a system list into the currently selected session.
         @url edit_cb.html#import-system-list
         @param source Source session
         @param mode Mode (replace or append)
@@ -40,7 +40,45 @@ class CookbookEdit(CookbookEditOld):
 
         struct = source+',systs'
         return self.struct_import(struct, mode)
+    
+    
+    def import_telluric(self, source=0, col='telluric_model', merge_cont=True):
+        """@brief Import telluric model
+        @details Import a telluric model into the currently selected session 
+        and optionally merge it into the continuum.
+        @url edit_cb.html#import-telluric-model
+        @param source Source session
+        @param col Telluric model column
+        @param merge_cont Merge telluric model into continuum
+        @return 0
+        """
+        
+        try:
+            source = str(source)
+            col = str(col)
+            merge_cont = str(merge_cont) == 'True'
+        except:
+            logging.error(msg_param_fail)
+            return 0
+        
+        struct = source+',spec,'+col
+        
+        _, model, _ = self._struct_parse(struct, length=3)
+        t = self.sess.spec._t
+        
+        
+        if len(t)!=len(model):
+            logging.error("Cannot import the telluric model. The spectrum "
+                          "table has a different length.")
+            return 0
 
+        t['telluric_model'] = model
+        if merge_cont:
+            if 'cont_no_telluric' not in t.colnames:
+                t['cont_no_telluric'] = t['cont']
+            t['cont'] *= t['telluric_model']
+        return 0
+        
 
     def extract(self):
         """@brief Extract 🚧
