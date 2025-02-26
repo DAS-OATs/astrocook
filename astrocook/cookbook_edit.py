@@ -74,6 +74,8 @@ class CookbookEdit(CookbookEditOld):
 
         t['telluric_model'] = model
         if merge_cont:
+            if 'cont_no_telluric' not in t.colnames:
+                t['cont_no_telluric'] = t['cont']
             t['cont'] *= t['telluric_model']
         return 0
         

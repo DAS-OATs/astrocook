@@ -35,7 +35,7 @@ class CookbookContinuum(CookbookContinuumOld):
         @param mode Update or replace
         @return 0
         """
-
+        
         try:
             zem = float(zem)
             xmin, xmax = parse_range(ran)
@@ -53,9 +53,20 @@ class CookbookContinuum(CookbookContinuumOld):
         if mode not in ['update', 'replace']:
             logging.warning("I cannot understand the mode. I will use `update`.")
 
+
         maxiter = 1000
 
         spec = self.sess.spec
+
+        if 'cont_no_telluric' in spec._t.colnames:
+            logging.info("An existing continuum included a telluric model. "
+                         "I'm updating the continuum without changing the "
+                         "telluric model.")
+            spec._t['telluric'] = spec._t['cont']/spec._t['cont_no_telluric']
+            spec._t['cont_telluric'] = spec._t['cont']
+            spec._t['cont'] = spec._t['cont_no_telluric']
+
+
         dv = spec._dv()
 
         prox = 5000 * au.km/au.s
@@ -177,6 +188,12 @@ class CookbookContinuum(CookbookContinuumOld):
 
         # Extract nodes
         self.nodes_extract(delta_x=knots_dist, mode='cont')
+
+ 
+        if 'cont_no_telluric' in spec._t.colnames:
+            spec._t['cont_no_telluric'] = spec._t['cont']
+            spec._t['cont'] = spec._t['cont']*spec._t['telluric']
+            spec._t.remove_columns(['cont_telluric', 'telluric'])
 
         return 0
 
