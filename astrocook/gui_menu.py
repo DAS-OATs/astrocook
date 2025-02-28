@@ -464,6 +464,7 @@ class GUIMenuEdit(GUIMenu):
 
         self._rec = [{'targ': 'modify_columns', 'append': 'spec'},
                      {'targ': 'import_systs', 'append': 'spec'},
+                     {'targ': 'import_telluric', 'append': 'spec'},
                      '--',
                      {'targ': 'extract', 'append': 'spec'},
                      {'targ': 'mask', 'append': 'spec'}

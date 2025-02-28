@@ -68,15 +68,22 @@ class CookbookEdit(CookbookEditOld):
         
         
         if len(t)!=len(model):
-            logging.error("Cannot import the telluric model. The spectrum "
+            logging.error("I cannot import the telluric model. The spectrum "
                           "table has a different length.")
             return 0
 
+        logging.info("Creating column `telluric_model`...")
         t['telluric_model'] = model
-        if merge_cont:
+        if merge_cont and 'cont' in t.colnames:
+            logging.info("Merging the telluric model with the continuum...")
             if 'cont_no_telluric' not in t.colnames:
+                logging.info("Creating column `cont_no_telluric` to store the" 
+                             "existing continuum...")
                 t['cont_no_telluric'] = t['cont']
             t['cont'] *= t['telluric_model']
+        elif merge_cont and 'cont' not in t.colnames:
+            logging.warning("I cannot merge the model with the continuum: "
+                            "continuum not found.")
         return 0
         
 
