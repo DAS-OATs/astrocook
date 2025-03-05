@@ -25,7 +25,7 @@ class CookbookContinuum(CookbookContinuumOld):
         @details Estimate the continuum by clipping absorbers.
         @url continuum_cb.html#clip-flux
         @param zem Emission redshift
-        @param ran Wavelength range (nm)
+        @param ran Wavelength range (nm, e.g. [450,500]; `all` will select all the available range)
         @param smooth_len_lya Smoothing length in the Lyman alpha forest (km/s)
         @param smooth_len_out Smoothing length outside the Lyman alpha forest (km/s)
         @param kappa Number of sigma to reject absorber
