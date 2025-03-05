@@ -30,9 +30,12 @@ This cookbook contains utilities to detect absorption features in the spectrum a
       <td style="vertical-align:top"><strong>Parameters</strong></td>
       <td style="vertical-align:top">
         <ul>
-          <li><code>ran</code>: Wavelength range (nm)</li>
-          <li><code>smooth_len</code>: Smoothing length (km/s)</li>
+          <li><code>zem</code>: Emission redshift</li>
+          <li><code>ran</code>: Wavelength range (nm, e.g. `[450,500]`; `all` will select all the available range)</li>
+          <li><code>smooth_len_lya</code>: Smoothing length in the Lyman alpha forest (km/s)</li>
+          <li><code>smooth_len_out</code>: Smoothing length outside the Lyman alpha forest (km/s)</li>
           <li><code>kappa</code>: Number of sigma to reject absorber</li>
+          <li><code>template</code>: Use a composite spectrum to reduce the Lyman alpha emission peak</li>
           <li><code>fudge</code>: Fudge factor to scale the continuum</li>
           <li><code>knots_dist</code>: Distance between knots (km/s)</li>
           <li><code>mode</code>: Update or replace</li>
@@ -46,9 +49,12 @@ This cookbook contains utilities to detect absorption features in the spectrum a
   "cookbook": "cb",
   "recipe": "clip_flux",
   "params": {
+    "zem": "zem",
     "ran": "'all'",
-    "smooth_len": "400",
+    "smooth_len_lya": "5000",
+    "smooth_len_out": "400",
     "kappa": "2",
+    "template": "false",
     "fudge": "'auto'",
     "knots_dist": "2000",
     "mode": "'update'"
