@@ -7,6 +7,7 @@ from .vars import qso_composite, xem_d
 import astropy.constants as ac
 import astropy.table as at
 import astropy.units as au
+from copy import deepcopy as dc
 from scipy.interpolate import interp1d
 import logging
 
