@@ -189,7 +189,7 @@ class Graph(object):
             for k in self._axes:
                 if self._axes[k] == event.inaxes:
                     ax = self._axes[k]
-                    dx = aconst.c*(xem_d[k]/xem_d[klast]-1)
+                    dx = aconst.c.to(au.km/au.s)*np.log(xem_d[k]/xem_d[klast])
         else:
             ax = self._ax
             dx = 0*au.nm
