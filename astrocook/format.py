@@ -335,14 +335,13 @@ class Format(object):
         if 'WAVELENGTH' in data.colnames: x = data['WAVELENGTH'][0]
         if 'wavelength' in data.colnames: x = data['wavelength']
         xmin, xmax = self._create_xmin_xmax(x)
-        print(data)
         if 'FLUX_CAL' in data.colnames:
             y = data['FLUX_CAL'][0]/(xmax-xmin)
             dy = data['ERR_CAL'][0]/(xmax-xmin)
             yunit = au.erg/au.cm**2/au.s/au.nm
         elif 'flux_cal' in data.colnames:
-            y = data['flux_cal'][0]/(xmax-xmin)
-            dy = data['error_cal'][0]/(xmax-xmin)
+            y = data['flux_cal']/(xmax-xmin)
+            dy = data['error_cal']/(xmax-xmin)
             yunit = au.erg/au.cm**2/au.s/au.nm
         elif 'FLUX_EL' in data.colnames:
             y = data['FLUX_EL'][0]/(xmax-xmin)
@@ -356,7 +355,6 @@ class Format(object):
                 y = data['flux']/(xmax-xmin)
                 dy = data['error']/(xmax-xmin)
             yunit = None
-        print(np.mean(y))
         xunit = au.Angstrom
         meta = hdr #{'instr': 'ESPRESSO'}
         """
