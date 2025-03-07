@@ -384,7 +384,7 @@ class Graph(object):
                 trans = transforms.blended_transform_factory(
                             self._ax.transData, self._ax.transAxes)
                 self._ax.fill_between(x, 0, 1, where=s._shade_where,
-                                      transform=trans, color='C1', alpha=0.2)
+                                      transform=trans, color='C0', alpha=0.2)
 
 
         self._canvas.draw()
