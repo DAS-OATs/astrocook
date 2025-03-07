@@ -1,3 +1,8 @@
+import wx
+app = wx.App(False)
+#from astrocook.gui import GUI
+#gui = GUI()
+
 from astrocook.cookbook_absorbers import CookbookAbsorbers as Absorbers
 from astrocook.cookbook_continuum import CookbookContinuum as Continuum
 from astrocook.cookbook_edit import CookbookEdit as Edit
