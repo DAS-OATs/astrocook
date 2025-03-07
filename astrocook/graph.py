@@ -166,6 +166,8 @@ class Graph(object):
                 if focus == self._gui._graph_main:
                     title.append('Extract region')
                     attr.append('region_extract')
+                    title.append('Mask region')
+                    attr.append('region_mask')
                     title.append('Zap feature')
                     attr.append('spec_zap')
 
