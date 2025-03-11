@@ -275,7 +275,8 @@ class GUI(object):
         except:
             pass
 
-
+        if self._sess_sel._shade:
+            self._graph_main._graph._reg_unshade()
 
 
         goodlim = True

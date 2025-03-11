@@ -193,6 +193,19 @@ class GUIGraphMain(wx.Frame):
                              {'xmin': xmin, 'xmax': xmax}, sess_list, sess)
 
 
+    def _on_region_mask(self, event):
+        sess = self._gui._sess_sel
+        x = [sess._clicks[0][0], sess._clicks[1][0]]
+        xmin = np.min(x)
+        xmax = np.max(x)
+        cond = str(xmin)+'<x<'+str(xmax)
+        sess.log.append_full('cb', 'mask', {'tell': False, 'sky': False, 'cond': cond})
+        sess.cb.mask(tell=False, sky=False, cond=cond)
+        sess._clicks = []
+        sess._shade = False
+        self._gui._refresh()
+
+
     def _on_spec_zap(self, event):
         sess = self._gui._sess_sel
         x = [sess._clicks[0][0], sess._clicks[1][0]]
