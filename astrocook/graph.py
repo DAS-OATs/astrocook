@@ -279,6 +279,8 @@ class Graph(object):
     def _refresh(self, sess, logx=False, logy=False, norm=False, legend=None,
                  xlim=None, ylim=None, title=None, text=None, init_cursor=False):
 
+        xlim_old, ylim_old = self._ax.get_xlim(), self._ax.get_ylim()
+
         sess = np.array(sess, ndmin=1)
         #import datetime as dt
         #start = dt.datetime.now()
@@ -367,6 +369,11 @@ class Graph(object):
                             pass
                 elif ls[-1]!='auto':
                     logging.error(msg_lim(ls[0]))
+
+        
+        if xlim is None and xlim_old != (0,1): xlim = xlim_old
+        if ylim is None and ylim_old != (0,1): ylim = ylim_old
+
 
         if xlim is not None and not autoxlim:
             self._ax.set_xlim(xlim)
