@@ -467,7 +467,10 @@ class GUIMenuEdit(GUIMenu):
                      {'targ': 'import_telluric', 'append': 'spec'},
                      '--',
                      {'targ': 'extract', 'append': 'spec'},
-                     {'targ': 'mask', 'append': 'spec'}
+                     {'targ': 'mask', 'append': 'spec'},
+                     '--',
+                     {'targ': 'equalize', 'func': '__eq__', 'value': 2},
+                     #{'targ': 'combine', 'func': '__gt__', 'value': 1},
                      ]
 
         if show_all:

@@ -125,3 +125,141 @@ class CookbookEdit(CookbookEditOld):
             self.sess.spec._t['y'][mask] = np.nan
 
         return 0
+
+    def combine(self, name='*_combined', unique=True, _sel=''):
+        """ @brief Combine two or more sessions
+        @details Create a new session combining the spectra from two or more
+        other sessions.
+
+        The recipe collects all the bins from the original spectra and puts them
+        all together in the new spectrum. The bins retain their original size
+        (defined by `xmin` and `xmax`), so they may overlap in the final
+        spectrum. By default, they are ordered by ascending `x`.
+
+        All other structures from the original sessions (line lists, etc.) are
+        not propagated to the new one.
+
+        N.B. To select sessions, either click on the session window or provide
+        a list through the hidden parameter `_sel`.
+        @url edit_cb.html#combine
+        @param name Name of the output session
+        @return Combined session
+        """
+
+        unique = str(unique) == 'True'
+
+        name_in = name
+        #sel = self._tab._get_selected_items()
+        sel = self.sess._gui._sess_item_sel
+        sess_list = self.sess._gui._sess_list
+
+        """
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            try:
+                sel = [int(s) \
+                       for s in _sel.replace('[','').replace(']','').split(',')]
+            except:
+                pass
+        if sel == []:
+            sel = range(len(sess_list))
+        self._gui._sess_item_sel = sel
+        """
+        sel = _sel
+
+        struct_out = {}
+        for struct in sess_list[sel[0]].seq:
+            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+
+
+        if name_in[0] == '*':
+            name = sess_list[sel[0]].name
+
+        logging.info("Combining sessions %s..." % ', '.join(str(s) for s in sel))
+        for s in sel[1:]:
+            #spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+
+            for struct in sess_list[s].seq:
+                if getattr(sess_list[s], struct) != None:
+                    if struct_out[struct] != None:
+                        struct_out[struct]._append(
+                            getattr(sess_list[s], struct), unique=unique)
+                    else:
+                        struct_out[struct] = dc(getattr(sess_list[s], struct))
+
+
+            if name_in[0] == '*':
+                name += '_' + sess_list[s].name
+
+        struct_out['spec']._t.sort('x')
+        if name_in[0] == '*':
+            name += name_in[1:]
+        from .session import Session
+        sess = Session(gui=self.sess._gui, name=name, spec=struct_out['spec'],
+                       nodes=struct_out['nodes'], lines=struct_out['lines'],
+                       systs=struct_out['systs'])
+        return sess
+
+    def equalize(self, xmin, xmax, _sel='', cont=True):
+        """ @brief Equalize two sessions
+        @details Equalize the spectrum of two sessions, based on their flux
+        ratio within a wavelength window.
+
+        By default, the last-selected spectrum is equalized to the
+        first-selected one (which is left unchanged). Equalization is done in
+        place, without creating a new session.
+
+        To compute the rescaling factor, the recipe takes the medians of the `y`
+        columns of the two spectra between `xmin` and `xmax`. The `y` and `dy`
+        columns of the second spectrum are then multiplied by $$
+        \\textrm{med}($$`y`$$_1)/\\textrm{med}($$`y`$$_2)$$.
+
+        N.B. To select sessions, either click on the session window or provide
+        a list through the hidden parameter `_sel`.
+        @param xmin Minimum wavelength (nm)
+        @param xmax Maximum wavelength (nm)
+        @return 0
+        """
+
+        try:
+            xmin = float(xmin) * au.nm
+            xmax = float(xmax) * au.nm
+        except ValueError:
+            logging.error(msg_param_fail)
+            return None
+
+        """
+        sel = self._gui._sess_item_sel
+        if isinstance(_sel, list) and _sel != []:
+            sel = _sel
+        if isinstance(_sel, str) and _sel != '':
+            sel = [int(s) \
+                for s in _sel.replace('[','').replace(']','').split(',')]
+        self._gui._sess_item_sel = sel
+        """
+        sel = _sel
+        logging.info("Equalizing session %i to session %i... "
+                     % (sel[1], sel[0]))
+
+        for i,s in enumerate(sel):
+            sess = self.sess._gui._sess_list[s]
+            w = np.where(np.logical_and(sess.spec.x>xmin, sess.spec.x<xmax))[0]
+            if len(w)==0:
+                logging.error("I can't use this wavelength range for "
+                              "equalization. Please choose a range covered by "
+                              "both sessions.")
+                return(0)
+            if i == 0:
+                f = np.nanmedian(sess.spec.y[w]).value
+                #print(np.median(sess.spec.y[w]))
+            else:
+                f = f/np.nanmedian(sess.spec.y[w]).value
+                #print(np.median(sess.spec.y[w]), f)
+                logging.info("Equalization factor: %3.4f." % f)
+                sess.spec.y = f*sess.spec.y
+                sess.spec.dy = f*sess.spec.dy
+                if cont and 'cont' in sess.spec._t.colnames:
+                    sess.spec._t['cont'] = f*sess.spec._t['cont']
+
+        return 0
