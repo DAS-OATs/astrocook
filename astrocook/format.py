@@ -477,7 +477,7 @@ class Format(object):
             return None
 
 
-    def generic_spectrum(self, sess, hdul):
+    def generic_spectrum(self, sess, hdul, extnum=1):
         """ Generic spectrum """
         logging.info(msg_format('generic'))
         hdr = hdul[0].header
@@ -495,12 +495,13 @@ class Format(object):
                     cont = []
                     data = None
                 else:
-                    data_s = hdul[1].data
+                    data_s = hdul[extnum].data
                     data = Table(data_s)
                     x_name = self._col_name(data, 'x')
                     y_name = self._col_name(data, 'y')
                     dy_name = self._col_name(data, 'dy')
                     cont_name = self._col_name(data, 'cont')
+                    print(x_name, y_name, dy_name, cont_name)
 
                     try:
                         x = np.ravel(data[x_name])
