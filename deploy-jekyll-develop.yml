@@ -1,0 +1,79 @@
+name: Deploy Jekyll Site (Develop Branch)
+
+on:
+  # Runs on pushes targeting the 'develop' branch
+  push:
+    branches:
+      - develop
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages-develop" # Use a unique group name if you have other pages workflows
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        # If you use Git submodules in your Jekyll site:
+        # with:
+        #   submodules: recursive
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          # Specify the Ruby version required by your Gemfile or Jekyll setup
+          ruby-version: '3.0' # Adjust this version as needed!
+          # Use bundler caching to speed up dependency installation
+          bundler-cache: true
+
+      # Note: 'bundle install' is usually run automatically by setup-ruby when bundler-cache: true
+      # If you encounter issues, you might uncomment the explicit install step:
+      # - name: Install dependencies
+      #   run: bundle install
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+
+      - name: Build Jekyll site
+        # Use the JEKYLL_ENV environment variable to match GitHub Pages' build environment
+        # This ensures production settings (like excluding drafts) are used.
+        # It builds into the './_site' directory by default.
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+        env:
+          JEKYLL_ENV: production
+
+      - name: Upload artifact
+        # Automatically uploads the built site artifact configured for deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Specifies the directory Jekyll built the site into
+          path: ./_site
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build # Run only after the build job completes successfully
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        # This action automatically downloads the artifact uploaded in the build job
+        # and deploys it to GitHub Pages.
