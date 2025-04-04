@@ -262,13 +262,12 @@ class Session(object):
             return 0
 
         # UVES Spectrum
-        if instr == 'UVES':
-            if 'FLUXCAL_SCI' in self.path:
-                hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
-                                                       'FLUXCAL_ERRORBAR_SCI'))
-                self.spec = format.uves_spectrum(hdul, hdul_err)
-                return 0
-
+        if instr == 'UVES' and 'FLUXCAL_SCI' in self.path:
+            hdul_err = fits.open(self.path.replace('FLUXCAL_SCI',
+                                                   'FLUXCAL_ERRORBAR_SCI'))
+            self.spec = format.uves_spectrum(hdul, hdul_err)
+            return 0
+            
         # UVES POPLER spectrum
         if instr == 'UVES' and orig == 'POPLER':
             self.spec = format.uves_popler_spectrum(hdul)
@@ -318,6 +317,11 @@ class Session(object):
             self.spec = format.xshooter_reduce_spectrum(hdul, hdul_e)
             return 0
 
+        # Molecfit telluric-corrected spectrum
+        if orig == 'ESO' and catg == 'SCIENCE_TELLURIC_CORR':
+            self.spec = format.generic_spectrum(self, hdul, extnum=2)
+            return 0
+        
         # generic
         if orig in ['undefined', 'Space Telescope Science Institute'] \
             and catg == 'undefined':
