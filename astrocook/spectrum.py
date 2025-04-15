@@ -530,98 +530,143 @@ class Spectrum(Frame):
         xmax_in = self.xmax[im].value
         y_out = np.array([]) * y.unit
         dy_out = np.array([]) * y.unit
-        print_time = False
+
+        # --- CHOOSE METHOD ---
+        conserve_flux = False # Set to True for flux conservation, False for IVW Avg Density
+        # ---------------------
+
         xmin_value = np.array(self.xmin.value)
         xmax_value = np.array(self.xmax.value)
         for i, (m, M) \
             in enum_tqdm(zip(xmin.value, xmax.value), len(xmin),
                          "spectrum: Rebinning"):
-            if print_time:
-                print('')
-                t1 = time()
-                print(t1)
-            """
-            while xmin_in < M:
-                iM += 1
-                try:
-                    xmin_in = self.xmin[iM].value
-                    #print(xmin_in)
-                except:
-                    break
-            while xmax_in < m:
-                im += 1
-                try:
-                    xmax_in = self.xmax[im].value
-                    #print(xmax_in)
-                except:
-                    break
-            """
+            dx_out = M - m # Width of the current output bin j
+
             im = bisect.bisect_left(xmax_value, m)
             iM = bisect.bisect_right(xmin_value, M)
-            #print('im  ',im, iM)
-            if print_time:
-                t15 = time()
-                print(t15, t15-t1)
 
-            frac = (np.minimum(M, xmax_value[im:iM])\
-                    -np.maximum(m, xmin_value[im:iM]))/dx
-            if print_time:
-                t17 = time()
-                print(t17, t17-t15)
-            ysel = y[im:iM]
-            #print(m, M, self.xmin[im:iM], self.xmax[im:iM])
-            #print(frac)
+            xmin_in_slice = xmin_value[im:iM]
+            xmax_in_slice = xmax_value[im:iM]
+            ysel_slice = y[im:iM]
+            dysel_slice = dy[im:iM]
 
-            #print(frac[w],frac)
-            dysel = dy[im:iM]
+            overlap_widths = (np.minimum(M, xmax_in_slice) \
+                             - np.maximum(m, xmin_in_slice))
 
-            nw = np.where(~np.isnan(ysel))
-            ysel = ysel[nw]
-            dysel = dysel[nw]
-            frac = frac[nw]
-            #print(dysel)
-            #mask = sigma_clip(ysel, masked=True).mask
-            #if np.sum(~mask)>0:
-            #    frac = frac[~mask]
-            #    ysel = ysel[~mask]
-            #    dysel = dysel[~mask]
-            from astropy.stats import sigma_clip
+            frac = overlap_widths / dx
+            
+            # Initial filter: require positive overlap and non-NaN input flux density
+            # Handle potential NaNs in uncertainty later based on method
+            valid_overlap = (overlap_widths > 0) & (~np.isnan(ysel_slice))
+            ysel_filt = ysel_slice[valid_overlap]
+            dysel_filt = dysel_slice[valid_overlap]
+            overlap_widths_filt = overlap_widths[valid_overlap]
+            
 
-            # Optional kappa-sigma clipping of outliers
-            if kappa is not None:
-                yclip = sigma_clip(ysel, sigma=kappa, masked=True)
-                if len(yclip)>0:
-                    w = np.where(np.logical_and(frac>0, yclip.mask==False))
+            # Optional kappa-sigma clipping
+            if kappa is not None and len(ysel_filt) > 0:
+                # Clip based on flux density values
+                yclip_mask = sigma_clip(ysel_filt, sigma=kappa, masked=True).mask
+                # Keep only unmasked values
+                keep_indices = np.where(~yclip_mask)[0] # Indices relative to filtered arrays
+                ysel_k = ysel_filt[keep_indices]
+                dysel_k = dysel_filt[keep_indices]
+                overlap_widths_k = overlap_widths_filt[keep_indices]
+            else: # No clipping or no data left after initial filter
+                ysel_k = ysel_filt
+                dysel_k = dysel_filt
+                overlap_widths_k = overlap_widths_filt
+            
+            if len(ysel_k) > 0 and dx_out > 0: # Check we have contributions and valid output width
+
+                if conserve_flux:
+                # --- Method 1: Flux Conservation ---
+
+                    # 1. Calculate total flux contribution
+                    total_flux_contribution = np.sum(ysel_k * overlap_widths_k) # y*w preserves units
+
+                    # 2. Calculate output flux density
+                    current_y_out = total_flux_contribution / dx_out
+
+                    # 3. Calculate uncertainty
+                    # Check if uncertainties are usable for variance propagation
+                    usable_dy = (~np.isnan(dysel_k)) & (dysel_k > 0.0)
+                    if np.all(usable_dy):
+                        variance_total_flux = np.sum(dysel_k**2 * overlap_widths_k**2) # dy^2 * w^2
+                        variance_y_out = variance_total_flux / (dx_out**2)
+                        # Ensure non-negative variance before sqrt
+                        current_dy_out = np.sqrt(variance_y_out) if variance_y_out.value >= 0 else np.nan * y.unit
+                    else:
+                         # Cannot calculate variance-based uncertainty if any dy is invalid
+                         current_dy_out = np.nan * y.unit
+
                 else:
-                    w = np.where(frac>0)
-            else:
-                w = np.where(frac>0)
+                    # --- Method 2: Inverse-Variance Weighted Average Flux Density ---
+                    # (This is essentially your original logic)
 
-            if print_time:
-                t2 = time()
-                print(t2, t2-t16)
+                    # Check if uncertainties are usable for weighting
+                    # We need non-NaN, positive uncertainties for weights
+                    usable_dy_for_weighting = (~np.isnan(dysel_k)) & (dysel_k > 0.0)
 
-            if len(frac[w]) > 0:
-                weights = (frac[w]/dysel[w]**2).value
-                #print(frac[w], np.sum(frac[w])/len(frac[w]))
-                #nw = np.where(~np.isnan(ysel[w]))
-                #print(weights)
-                #print(frac[w])
-                if np.any(np.isnan(dysel)) or np.any(dysel==0.0) or np.sum(weights)==0.0:# and False:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
-                else:
-                    y_out = np.append(y_out, np.average(ysel[w], weights=weights))
-                    #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
-                dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
-                                                   /np.nansum(weights)*y.unit)
-                #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
-                #                                   /np.sum(frac/dysel**2))
-            else:
-                y_out = np.append(y_out, filling)
-                dy_out = np.append(dy_out, filling)
-            if print_time:
-                t3 = time()
-                print(t3, t3-t2)
+                    if np.all(usable_dy_for_weighting):
+                        # Calculate weights: overlap_width / dysel**2
+                        # Use .value to avoid potential unit issues inside np.average if units are complex
+                        # np.average handles units correctly if inputs have units and weights are dimensionless
+                        # However, let's compute weights numerically for robustness here.
+                        weights_ivar_val = overlap_widths_k / (dysel_k.value**2)
+
+                        if np.sum(weights_ivar_val) > 0:
+                            # Calculate weighted average flux density
+                            current_y_out = np.average(ysel_k, weights=weights_ivar_val)
+
+                            # Calculate uncertainty of the weighted mean (your original formula was correct for this)
+                            # Variance = Sum( weights_norm^2 * variance_i ), where weights_norm = weights / Sum(weights)
+                            # Variance = Sum( (weights/Sum(w))^2 * dysel^2 )
+                            # d(avg)^2 = Sum(w^2 * dy^2) / (Sum(w))^2
+                            variance_y_out_val = np.sum(weights_ivar_val**2 * dysel_k.value**2) / (np.sum(weights_ivar_val)**2)
+                            current_dy_out = np.sqrt(variance_y_out_val) * y.unit if variance_y_out_val >= 0 else np.nan * y.unit
+                        else: # Sum of weights is zero (e.g., all dysel were infinite)
+                           current_y_out = np.nan * y.unit
+                           current_dy_out = np.nan * y.unit
+
+                    else:
+                        # Cannot use inverse variance weighting, fall back to simple average? Or NaN?
+                        # Option: Simple average weighted only by overlap width
+                        weights_overlap_val = overlap_widths_k
+                        if np.sum(weights_overlap_val) > 0:
+                           current_y_out = np.average(ysel_k, weights=weights_overlap_val)
+                           # Uncertainty for simple overlap-weighted average is complex, maybe return NaN?
+                           # Or approximate as sqrt(Sum((overlap*dy)^2)) / Sum(overlap) ? Needs care.
+                           current_dy_out = np.nan * y.unit # Simplest fallback
+                        else: # Should not happen if len(ysel_k)>0 and overlap_widths_k>0
+                           current_y_out = np.nan * y.unit
+                           current_dy_out = np.nan * y.unit
+
+
+                # Append results
+                y_out = np.append(y_out, current_y_out)
+                dy_out = np.append(dy_out, current_dy_out)
+
+            else: # No contributing input pixels (after filtering/clipping) or zero-width output bin
+                y_out = np.append(y_out, filling * y.unit if not isinstance(filling, u.UnitBase) else filling)
+                dy_out = np.append(dy_out, filling * y.unit if not isinstance(filling, u.UnitBase) else filling)
+                
+
+            #if len(frac[w]) > 0:
+            #    weights = (frac[w]/dysel[w]**2).value
+            #    if np.any(np.isnan(dysel)) or np.any(dysel==0.0) or np.sum(weights)==0.0:# and False:
+            #        y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
+            #    else:
+            #        y_out = np.append(y_out, np.average(ysel[w], weights=weights))
+            #    dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
+            #                                       /np.nansum(weights)*y.unit)
+            #    
+            #else:
+            #    y_out = np.append(y_out, filling)
+            #    dy_out = np.append(dy_out, filling)
+            #if print_time:
+            #    t3 = time()
+            #    print(t3, t3-t2)
 
         # Create a new spectrum and convert it to the units of the original one
         out = Spectrum(x, xmin, xmax, y_out, dy_out, xunit=xunit, yunit=y.unit,
