@@ -169,8 +169,8 @@ class CookbookEdit(CookbookEditOld):
         sel = _sel
 
         struct_out = {}
-        for struct in sess_list[sel[0]].seq:
-            struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
+        #for struct in sess_list[sel[0]].seq:
+        #    struct_out[struct] = dc(getattr(sess_list[sel[0]], struct))
 
 
         if name_in[0] == '*':
