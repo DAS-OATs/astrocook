@@ -161,7 +161,7 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
-        logging.info("Instrument: %s; origin: %s; category: %s."
+        logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
 
 
