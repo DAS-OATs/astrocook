@@ -161,7 +161,7 @@ class Session(object):
         if orig == None:
             logging.warning(msg_descr_miss('ORIGIN'))
 
-        logging.debug("Instrument: %s; origin: %s; category: %s."
+        logging.info("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
 
 
@@ -300,7 +300,8 @@ class Session(object):
 
         # KECK spectrum
         if instr in ('HIRES Spectrograph', 
-                     'HIRES: High Resolution Echelle Spectrometer'):
+                     'HIRES: High Resolution Echelle Spectrometer',
+                     'ESI'):
             hdul_e = fits.open(self.path[:-6]+'e.fits')
             self.spec = format.keck_spectrum(hdul, hdul_e)
             return 0
