@@ -1,0 +1,94 @@
+# pyproject.toml
+
+[build-system]
+# Specifies that setuptools is needed to build the package
+requires = ["setuptools>=61.0"] # Use a reasonably modern version of setuptools
+# Specifies the function setuptools uses to build the package
+build-backend = "setuptools.build_meta"
+
+[project]
+# --- Core Metadata (PEP 621) ---
+name = "astrocook"
+# !! IMPORTANT: Replace "1.9.0" with your actual current version !!
+# Consider using setuptools-scm later to get version from Git tags automatically
+version = "1.9.0"
+description = "Python package for the analysis of quasar spectra"
+readme = "README.md" # Assumes you have a README.md file
+requires-python = ">=3.12" # Specify the minimum Python version you support
+#license = { file = "LICENSE" } # Assumes you have a LICENSE file in the root
+authors = [
+  # !! IMPORTANT: Replace with your actual name and email !!
+  { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
+]
+maintainers = [
+  # !! IMPORTANT: Replace with your actual name and email !!
+  { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
+]
+keywords = ["astronomy", "spectroscopy", "quasar", "science", "spectra"]
+classifiers = [
+    # Choose appropriate classifiers from https://pypi.org/classifiers/
+    "Development Status :: 4 - Beta", # Or 3 - Alpha / 5 - Production/Stable
+    "Intended Audience :: Science/Research",
+    #"License :: OSI Approved :: GNU General Public License v3 (GPLv3)", # Match your LICENSE
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+# --- Dependencies ---
+dependencies = [
+    # !! IMPORTANT: List ALL essential runtime dependencies here !!
+    # Check your imports carefully. This is a starting guess:
+    "wxpython>=4.2",
+    "astropy>=6.1",      # Core astronomy data structures (Table, units)
+    "tqdm>=4.66",
+    "matplotlib>=3.9",
+    "scipy>=1.14",        # Scientific algorithms (fitting, interpolation)
+    "lmfit>=1.3",
+    "scienceplots>=2.1",
+    "specutils>=0.6",
+    "numpy>=1.17.3",       # Core numerical operations
+    "cycler>=0.10",
+    "statsmodels>=0.10.1",   # Plotting library
+    # Add any others you import directly (e.g., requests, emcee, etc.)
+]
+
+# --- Optional Dependencies ---
+[project.optional-dependencies]
+test = [
+    # Dependencies needed only for running tests
+    "pytest",
+    "pytest-mock",
+]
+# You could add other groups like 'docs' or 'bayesian' later
+
+# --- Entry Points (e.g., for command-line scripts) ---
+[project.scripts]
+# If running `astrocook-gui` should launch your GUI:
+#astrocook-gui = "astrocook.gui:main" # Assumes gui.py has a main() function
+
+# --- Project URLs ---
+[project.urls]
+Homepage = "https://github.com/DAS-OATs/astrocook" # Or your specific homepage
+Repository = "https://github.com/DAS-OATs/astrocook"
+# Bug-Tracker = "https://github.com/DAS-OATs/astrocook/issues" # Optional
+
+# --- Setuptools specific configuration ---
+[tool.setuptools.packages.find]
+# Tells setuptools to automatically find packages in the current directory (.)
+# It will find the 'astrocook' directory containing an '__init__.py'.
+where = ["."]
+include = ["astrocook*"] # Include directories starting with 'astrocook'
+exclude = ["tests*"]     # Exclude the tests directory from the package itself
+
+# --- Pytest specific configuration (optional but helpful) ---
+[tool.pytest.ini_options]
+minversion = "6.0"
+# Show summary of all failures/errors/skips/xfails/xpasses at the end (-ra)
+# Use quiet reporting (-q) or verbose (-v)
+addopts = "-ra -q"
+testpaths = [
+    "tests", # Specifies where pytest should look for tests
+]
