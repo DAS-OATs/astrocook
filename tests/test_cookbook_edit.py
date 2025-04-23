@@ -64,10 +64,6 @@ def create_test_spectrum(length=5):
     # spec._meta = {'expr': 'Test Spectrum'} # Example if needed
     return spec
 
-# Fake Session, slightly simpler as cookbook methods access sess.spec directly
-class FakeSession:
-    def __init__(self, active_spectrum):
-        self.spec = active_spectrum # Direct access
 
 @pytest.fixture
 def cookbook_instance(mocker):
@@ -78,10 +74,219 @@ def cookbook_instance(mocker):
     mocker.patch.object(Cookbook, 'mask_cond')
     return Cookbook()
 
+
+# --- Fake Session Object Wrapper ---
+class FakeSessionObject:
+    """ A dummy object to hold data within the fake session list.
+        It mimics having a '.spec' attribute.
+    """
+    def __init__(self, spectrum_object):
+        self.spec = spectrum_object # REQUIRED: Has a .spec attribute
+        # Add other potential attributes if needed by other parsing structures
+        # self.systs = None
+        # self.metadata = {}
+
+# --- Fake GUI & Fake Session (Revised for Wrapper) ---
+class FakeGui:
+    def __init__(self):
+        self._sess_list = [] # Now holds FakeSessionObject instances
+
+class FakeSession:
+    def __init__(self):
+        """ Initializes an empty fake session environment. """
+        self._gui = FakeGui()
+        # This 'active' spec should probably point to the .spec of the active FakeSessionObject
+        self.spec = None # Represents the active Spectrum object
+
+    def add_session_object(self, session_obj_wrapper):
+        """ Adds a mock session object (wrapper) to the list. """
+        self._gui._sess_list.append(session_obj_wrapper)
+        # Update the 'active' spec pointer if this is the first one
+        if self.spec is None and self._gui._sess_list:
+             # Point to the .spec attribute of the first session object wrapper
+             self.spec = self._gui._sess_list[0].spec
+
+    # Helper to add a Spectrum directly by wrapping it
+    def add_spectrum(self, spectrum_object):
+        """ Convenience method to wrap a Spectrum in a FakeSessionObject and add it. """
+        wrapper = FakeSessionObject(spectrum_object=spectrum_object)
+        self.add_session_object(wrapper)
+
+
+# --- Fixture for mask/systs/general tests (Revised) ---
 @pytest.fixture
-def fake_session():
-    """ Fixture to provide a basic FakeSession with a Spectrum. """
-    return FakeSession(create_test_spectrum())
+def fake_session(mocker):
+    """ Fixture providing a FakeSession with one default Spectrum wrapped in a FakeSessionObject. """
+    # mocker.patch('logging.error') # Mock logging if needed by mask/systs
+    session = FakeSession()
+    # Use the helper to wrap and add the default spectrum
+    session.add_spectrum(create_test_spectrum())
+    return session
+
+# --- Fixture for telluric tests (Revised) ---
+@pytest.fixture
+def session_for_telluric(mocker):
+    """ Creates a FakeSession with a spectrum (in a wrapper) prepared for telluric tests. """
+    mocker.patch('logging.error')
+    mocker.patch('logging.info')
+    mocker.patch('logging.warning')
+
+    # Create the specific spectrum needed
+    length = 10
+    x = np.arange(length, dtype=float)
+    xmin, xmax = create_xmin_xmax(x)
+    y = np.ones(length) * 5.0
+    dy = np.ones(length) * 0.1
+    cont = np.ones(length) * 4.0
+    spec = Spectrum(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy)
+    if hasattr(spec, '_t') and isinstance(spec._t, Table):
+         spec._t['cont'] = cont
+         if 'mask' not in spec._t.colnames:
+              spec._t['mask'] = np.zeros(len(spec.x), dtype=bool)
+    else:
+         raise AttributeError("Spectrum setup failed in fixture")
+
+    # Create empty session and add the wrapped spectrum
+    session = FakeSession()
+    session.add_spectrum(spec) # Use helper
+    return session
+
+# --- Fixture for parsing tests (Revised) ---
+@pytest.fixture
+def session_for_parsing(mocker):
+    """ Creates an enhanced FakeSession for parsing tests, mocks logging """
+    mocker.patch('logging.error')
+    mocker.patch('logging.warning')
+    mocker.patch('logging.info')
+    session = FakeSession() # Create empty session
+    return session # Tests will add FakeSessionObjects as needed
+
+
+# --- Tests for _struct_parse ---
+
+def test_struct_parse_success_len2(cookbook_instance, session_for_parsing):
+    """ Test successful parsing for length 2 (attribute '.spec'). """
+    mock_spec = create_test_spectrum(length=5)
+    # Use the add_spectrum helper which creates the wrapper
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    struct = "0,spec" # Ask for the .spec attribute of the object at index 0
+    result = cookbook_instance._struct_parse(struct, length=2)
+
+    assert result is not None
+    attr_name, attr_obj, parse_list = result
+    assert attr_name == 'spec'
+    # Check it returned the *actual Spectrum object* held within the wrapper
+    assert attr_obj is mock_spec
+    assert parse_list == [0, 'spec']
+
+def test_struct_parse_success_len3(cookbook_instance, session_for_parsing):
+    """ Test successful parsing for length 3 (column within '.spec'). """
+    mock_spec = create_test_spectrum(length=5)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    struct = "0,spec,y" # Ask for column 'y' from the .spec attribute of object 0
+    result = cookbook_instance._struct_parse(struct, length=3)
+
+    assert result is not None
+    col_name, col_data, parse_list = result
+    assert col_name == 'y'
+    np.testing.assert_allclose(col_data, np.linspace(1.0, 5.0, 5))
+    assert parse_list == [0, 'spec', 'y']
+
+def test_struct_parse_fail_short_string(cookbook_instance, session_for_parsing):
+    """ Test failure when struct string is too short. """
+    cookbook_instance.sess = session_for_parsing
+    result = cookbook_instance._struct_parse("0", length=2)
+    assert result is None
+    logging.error.assert_called_once()
+
+def test_struct_parse_fail_non_integer_session(cookbook_instance, session_for_parsing):
+    """ Test failure with non-integer session index. """
+    cookbook_instance.sess = session_for_parsing
+    result = cookbook_instance._struct_parse("abc,spec", length=2)
+    assert result is None
+    logging.error.assert_called_once() # Checks if the ValueError except block logs
+
+def test_struct_parse_fail_session_out_of_range(cookbook_instance, session_for_parsing):
+    """ Test failure when session index is out of range. """
+    # Setup: Add only one object (index 0)
+    session_for_parsing.add_spectrum(create_test_spectrum())
+    cookbook_instance.sess = session_for_parsing
+
+    result = cookbook_instance._struct_parse("1,spec", length=2) # Ask for index 1
+    assert result is None
+    logging.error.assert_called_once()
+
+def test_struct_parse_fail_attribute_not_found(cookbook_instance, session_for_parsing):
+    """ Test failure when the attribute doesn't exist on the session object wrapper. """
+    mock_spec = create_test_spectrum()
+    # Add the spectrum normally (it gets wrapped with a .spec attribute)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    # Ask for an attribute that doesn't exist on the FakeSessionObject wrapper
+    result = cookbook_instance._struct_parse("0,nonexistent_attr", length=2)
+    assert result is None
+    logging.error.assert_called_once()
+
+
+def test_struct_parse_fail_column_not_found(cookbook_instance, session_for_parsing):
+    """ Test failure for length 3 when column doesn't exist in the .spec attribute. """
+    mock_spec = create_test_spectrum(length=5)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    # Ask for column in .spec that doesn't exist
+    result = cookbook_instance._struct_parse("0,spec,nonexistent_col", length=3)
+    assert result is None
+    logging.error.assert_called_once()
+
+# --- Mock Object for testing missing _t ---
+class MockSessionObjectWithSpecNoT:
+     """ Represents an object in the session list.
+         It has a .spec attribute, but that attribute lacks '_t'.
+     """
+     def __init__(self):
+         self.spec = "This is the spec attribute, but it's just a string"
+
+
+# --- Mock Object for testing wrong type of _t ---
+class MockSessionObjectWithSpecWrongT:
+     """ Represents an object in the session list.
+         It has a .spec attribute, and spec._t exists, but it's not a Table.
+     """
+     def __init__(self):
+         # Create a dummy object with a _t that is a list
+         dummy_spec_attr = type('DummySpecAttr', (object,), {'_t': [10, 20, 30]})()
+         self.spec = dummy_spec_attr
+
+def test_struct_parse_fail_attr_no_table(cookbook_instance, session_for_parsing):
+     """ Test failure for len 3 when attribute doesn't have _t table. """
+     # Create an object that doesn't have _t for its relevant attribute
+     mock_obj_wrapper = MockSessionObjectWithSpecNoT() # This IS the session object
+     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
+     cookbook_instance.sess = session_for_parsing
+
+     # Ask for a column within the .some_attr attribute (which doesn't have _t)
+     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
+     assert result is None
+     logging.error.assert_called_once()
+     logging.warning.assert_not_called()
+
+def test_struct_parse_fail_attr_t_not_table(cookbook_instance, session_for_parsing):
+     """ Test failure for len 3 when attribute._t is not an Astropy Table. """
+     mock_obj_wrapper = MockSessionObjectWithSpecWrongT() # This wrapper has .spec, but spec._t is wrong
+     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
+     cookbook_instance.sess = session_for_parsing
+
+     # Ask for a column within the .spec attribute (whose _t is not a Table)
+     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
+     assert result is None
+     logging.error.assert_called_once()
+     logging.warning.assert_not_called()
 
 
 # --- Tests for import_systs ---
@@ -140,36 +345,6 @@ def test_import_systs_param_conversion(cookbook_instance, fake_session, mocker):
 
 
 # --- Tests for import_telluric ---
-
-# Helper to setup session/spectrum for telluric tests
-@pytest.fixture
-def session_for_telluric(mocker):
-    """ Creates a FakeSession with a spectrum, mocking logging """
-    # Mock logging functions used by import_telluric
-    mocker.patch('logging.error')
-    mocker.patch('logging.info')
-    mocker.patch('logging.warning')
-
-    # Create a spectrum with some standard columns + a 'cont' column
-    length = 10
-    x = np.arange(length, dtype=float)
-    xmin, xmax = create_xmin_xmax(x) # Assuming this helper is available
-    y = np.ones(length) * 5.0 # Flux = 5.0
-    dy = np.ones(length) * 0.1
-    cont = np.ones(length) * 4.0 # Continuum = 4.0
-
-    spec = Spectrum(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy)
-    # Add 'cont' column to the internal table
-    if hasattr(spec, '_t') and isinstance(spec._t, Table):
-         spec._t['cont'] = cont
-         # Ensure mask column also exists from previous tests' needs
-         if 'mask' not in spec._t.colnames:
-              spec._t['mask'] = np.zeros(len(spec.x), dtype=bool)
-    else:
-         raise AttributeError("Spectrum setup failed in fixture")
-
-    return FakeSession(active_spectrum=spec)
-
 
 def test_import_telluric_success_no_merge(cookbook_instance, session_for_telluric, mocker):
     """ Test successful import without merging continuum. """

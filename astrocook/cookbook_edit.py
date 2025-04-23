@@ -13,7 +13,78 @@ class CookbookEdit(CookbookEditOld):
     def __init__(self):
         super(CookbookEdit, self).__init__()
 
+    def _struct_parse(self, struct, length=2):
+        """ Parses a structure string like 'session_idx,attr_name[,col_name]' """
 
+        # TODO: --- Refactoring Point 1: Access session list directly ---
+        # GUESSING session list name - *ADJUST IF INCORRECT*
+        # Possibilities: self.sess.session_list, self.sess.spec_list, self.sess.data_objects
+        #if not hasattr(self.sess, 'spec_list'): # Check if our guess exists
+        #     logging.error("Session object does not have expected list 'spec_list'")
+        #     return None
+        #session_list = self.sess.spec_list # USE DIRECT ACCESS
+        # --- End Refactoring Point 1 ---
+        session_list = self.sess._gui._sess_list
+
+        parse = struct.split(',')
+
+        if len(parse) < length:
+            logging.error(f"Cannot parse structure string '{struct}': Not enough parts (expected {length}).")
+            return None
+
+        # Session Index
+        sessn_str = parse[0]
+        try:
+            sessn = int(sessn_str)
+            # Keep original parse list with string index if needed later?
+            # parse_orig = list(parse) # Keep original if needed
+            parse[0] = sessn # Modify list with integer index
+        except ValueError: # --- Refactoring Point 2: Specific Exception ---
+            logging.error(f"Invalid session index '{sessn_str}': Must be an integer.")
+            # logging.error(msg_param_fail) # Keep if msg_param_fail is very specific
+            return None
+
+        if not (0 <= sessn < len(session_list)): # Pythonic index check
+            logging.error(f"Session index {sessn} out of range (found {len(session_list)} sessions).")
+            return None
+        sess_obj = session_list[sessn] # Get the target session/data object
+
+        # Attribute Name
+        attrn = parse[1]
+        if not hasattr(sess_obj, attrn):
+            # logging.error(msg_attr_miss % attrn) # Old way
+            logging.error(f"Attribute '{attrn}' not found in session {sessn} object.") # --- Refactoring Point 4: f-string ---
+            return None
+
+        attr = getattr(sess_obj, attrn)
+        if attr is None:
+            # Returning the parse list might be confusing, maybe return None or specific tuple?
+            logging.warning(f"Attribute '{attrn}' in session {sessn} is None.")
+            # return attrn, attr, parse # Original return
+            return None # Let's be consistent: None means failure/not found here
+
+
+        if length == 3:
+            # Column Name
+            coln = parse[2]
+
+            # --- Refactoring Point 5: Check for table structure ---
+            if not hasattr(attr, '_t') or not isinstance(attr._t, Table):
+                 logging.error(f"Attribute '{attrn}' in session {sessn} does not have an '_t' Astropy Table.")
+                 return None
+            # --- End Refactoring Point 5 ---
+
+            if coln not in attr._t.colnames:
+                # logging.error(msg_col_miss % coln) # Old way
+                logging.error(f"Column '{coln}' not found in table for attribute '{attrn}' in session {sessn}.") # f-string
+                return None
+            col_data = attr._t[coln]
+            # Return consistently: name, data, original_parse (or modified parse?)
+            return coln, col_data, parse
+        else: # length == 2
+             # Return consistently: name, data, original_parse (or modified parse?)
+            return attrn, attr, parse
+        
     def modify_columns(self):
         """@brief Modify columns 🚧
         @details 🚧
@@ -34,10 +105,10 @@ class CookbookEdit(CookbookEditOld):
 
         try:
             source = str(source)
-        except:
+        except Exception as e:
             # TODO: Testing this specific except block is currently problematic
             #       due to issues mocking builtins.str in the test env.
-            logging.error(msg_param_fail)
+            logging.error(logging.error(f"Parameter conversion failed (details: {e})"))
             return 0
 
         struct = source+',systs'
@@ -59,32 +130,39 @@ class CookbookEdit(CookbookEditOld):
             source = str(source)
             col = str(col)
             merge_cont = str(merge_cont) == 'True'
-        except:
-            logging.error(msg_param_fail)
+        except Exception as e:
+            logging.error(logging.error(f"Parameter conversion failed (details: {e})"))
             return 0
         
         struct = source+',spec,'+col
         
         _, model, _ = self._struct_parse(struct, length=3)
-        t = self.sess.spec._t
         
-        
-        if len(t)!=len(model):
-            logging.error("I cannot import the telluric model. The spectrum "
-                          "table has a different length.")
+        if not hasattr(self, 'sess') or self.sess is None:
+            logging.error("Internal error: Session object not found.")
+            return 0
+        if not hasattr(self.sess, 'spec') or self.sess.spec is None:
+            logging.error("No active spectrum found in the session.")
             return 0
 
-        logging.info("Creating column `telluric_model`...")
+        t = self.sess.spec._t
+
+        if len(t)!=len(model):
+            logging.error(f"Cannot import telluric model: Spectrum length ({len(t)}) "
+                          f"does not match imported model length ({len(model)}).")
+            return 0
+
+        logging.info(f"Creating column `telluric_model`...")
         t['telluric_model'] = model
         if merge_cont and 'cont' in t.colnames:
-            logging.info("Merging the telluric model with the continuum...")
+            logging.info(f"Merging the telluric model with the continuum...")
             if 'cont_no_telluric' not in t.colnames:
-                logging.info("Creating column `cont_no_telluric` to store the" 
+                logging.info(f"Creating column `cont_no_telluric` to store the" 
                              "existing continuum...")
                 t['cont_no_telluric'] = t['cont']
             t['cont'] *= t['telluric_model']
         elif merge_cont and 'cont' not in t.colnames:
-            logging.warning("I cannot merge the model with the continuum: "
+            logging.warning(f"I cannot merge the model with the continuum: "
                             "continuum not found.")
         return 0
         
