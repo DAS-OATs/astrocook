@@ -11,11 +11,28 @@ import datetime as dt
 import wx
 import os
 
-ds_y = int(wx.DisplaySize()[1]*0.88)
-do_y = int(wx.DisplaySize()[1]*0.05)
+_cached_offset_y = None
 
-offset_y_dialog = do_y+ds_y//6
-
+def get_offset_y(offset_factor=0.05, size_factor=0.88, default_height=600):
+    """
+    Calculates and caches an adjusted display height.
+    Only calls wx.DisplaySize() on the first call.
+    """
+    global _cached_offset_y
+    if _cached_offset_y is None:
+        try:
+            # This code now runs only when a dialog actually asks for the value
+            offset_y = int(wx.DisplaySize()[1]*offset_factor)
+            size_y = int(wx.DisplaySize()[1]*size_factor)
+            # Add any constraints if needed (e.g., min/max size)
+            _cached_offset_y = offset_y+size_y//6
+            logging.debug(f"Calculated adjusted display height: {_cached_offset_y}")
+        except Exception as e:
+            # Fallback if wx.DisplaySize fails (e.g., no display, testing)
+            # or if wx.App hasn't been created yet (though it should be by now)
+            logging.warning(f"Failed to get wx.DisplaySize ({e}), using default height {default_height}")
+            _cached_offset_y = default_height
+    return _cached_offset_y
 
 class GUIDialog(wx.Dialog):
 
@@ -219,7 +236,7 @@ class GUIDialogMethod(GUIDialog):
         self._box_buttons(self._cancel_run)
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
+        self.SetPosition((self.GetPosition()[0], get_offset_y()))
         self.Show()
 
 
@@ -278,7 +295,7 @@ class GUIDialogMethods(GUIDialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
+        self.SetPosition((self.GetPosition()[0], get_offset()))
         self.Show()
 
     def _box_methods(self):
@@ -321,7 +338,7 @@ class GUIDialogMini(wx.Dialog):
         self._box_buttons()
         self.SetSizer(self._bottom)
         self.Centre()
-        self.SetPosition((self.GetPosition()[0], offset_y_dialog))
+        self.SetPosition((self.GetPosition()[0], get_offset_y()))
         self.Show()
 
 
