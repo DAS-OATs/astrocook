@@ -3,7 +3,7 @@
 #import wx
 #wx.Locale(wx.LANGUAGE_DEFAULT)
 version = "1.9"
-current_year = 2024
+current_year = 2025
 
 from .session import Session
 from .syst_list import SystList

@@ -35,6 +35,8 @@ class CookbookEdit(CookbookEditOld):
         try:
             source = str(source)
         except:
+            # TODO: Testing this specific except block is currently problematic
+            #       due to issues mocking builtins.str in the test env.
             logging.error(msg_param_fail)
             return 0
 
