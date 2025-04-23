@@ -83,6 +83,22 @@ class Session(object):
                          SystList, 'mods': SystModel, 'feats': FeatList}
 
 
+    @property
+    def session_list(self):
+        """Provides access to the list of session data objects."""
+        # Encapsulates the knowledge of where the list is stored
+        if hasattr(self, '_gui') and self._gui is not None and hasattr(self._gui, '_sess_list'):
+             # Maybe add type checking? isinstance(self._gui._sess_list, list)
+             return self._gui._sess_list
+        else:
+             # Fallback or error? What should happen if GUI isn't there?
+             # Option 1: Return an empty list
+             # logging.warning("Session access requested, but GUI or _sess_list not found.")
+             # return []
+             # Option 2: Raise an error
+             raise AttributeError("Session object cannot provide session_list (missing _gui or _sess_list)")
+
+
     def _append(self, frame, append=True):
         if append and hasattr(self, frame.__name__):
             getattr(self, frame.__name__)._append(frame)

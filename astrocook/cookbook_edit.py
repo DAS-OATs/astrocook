@@ -19,12 +19,13 @@ class CookbookEdit(CookbookEditOld):
         # TODO: --- Refactoring Point 1: Access session list directly ---
         # GUESSING session list name - *ADJUST IF INCORRECT*
         # Possibilities: self.sess.session_list, self.sess.spec_list, self.sess.data_objects
-        #if not hasattr(self.sess, 'spec_list'): # Check if our guess exists
-        #     logging.error("Session object does not have expected list 'spec_list'")
-        #     return None
-        #session_list = self.sess.spec_list # USE DIRECT ACCESS
-        # --- End Refactoring Point 1 ---
-        session_list = self.sess._gui._sess_list
+        try:
+             # Use the new property:
+             session_list = self.sess.session_list
+        except AttributeError as e:
+             # Handle case where Session couldn't provide the list
+             logging.error(f"Failed to get session list from Session object: {e}")
+             return None
 
         parse = struct.split(',')
 

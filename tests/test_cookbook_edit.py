@@ -112,6 +112,17 @@ class FakeSession:
         wrapper = FakeSessionObject(spectrum_object=spectrum_object)
         self.add_session_object(wrapper)
 
+    @property
+    def session_list(self):
+        """ Provides access to the list in the fake GUI object. """
+        # Mirrors the structure of the real Session property
+        if hasattr(self, '_gui') and self._gui is not None and hasattr(self._gui, '_sess_list'):
+             return self._gui._sess_list
+        else:
+             # Match the error/fallback behavior of the real property
+             raise AttributeError("FakeSession object cannot provide session_list")
+             # Or return [] if the real one does
+
 
 # --- Fixture for mask/systs/general tests (Revised) ---
 @pytest.fixture
