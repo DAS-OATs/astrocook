@@ -97,6 +97,10 @@ class FakeSession:
         self._gui = FakeGui()
         # This 'active' spec should probably point to the .spec of the active FakeSessionObject
         self.spec = None # Represents the active Spectrum object
+        self.path = "fake/path/for/testing" # Default path attribute
+        self.name = "fake_session_name"     # Default name attribute
+        self.seq = "fake_session_seq"     # Default name attribute
+
 
     def add_session_object(self, session_obj_wrapper):
         """ Adds a mock session object (wrapper) to the list. """
@@ -171,133 +175,6 @@ def session_for_parsing(mocker):
     mocker.patch('logging.info')
     session = FakeSession() # Create empty session
     return session # Tests will add FakeSessionObjects as needed
-
-
-# --- Tests for _struct_parse ---
-
-def test_struct_parse_success_len2(cookbook_instance, session_for_parsing):
-    """ Test successful parsing for length 2 (attribute '.spec'). """
-    mock_spec = create_test_spectrum(length=5)
-    # Use the add_spectrum helper which creates the wrapper
-    session_for_parsing.add_spectrum(mock_spec)
-    cookbook_instance.sess = session_for_parsing
-
-    struct = "0,spec" # Ask for the .spec attribute of the object at index 0
-    result = cookbook_instance._struct_parse(struct, length=2)
-
-    assert result is not None
-    attr_name, attr_obj, parse_list = result
-    assert attr_name == 'spec'
-    # Check it returned the *actual Spectrum object* held within the wrapper
-    assert attr_obj is mock_spec
-    assert parse_list == [0, 'spec']
-
-def test_struct_parse_success_len3(cookbook_instance, session_for_parsing):
-    """ Test successful parsing for length 3 (column within '.spec'). """
-    mock_spec = create_test_spectrum(length=5)
-    session_for_parsing.add_spectrum(mock_spec)
-    cookbook_instance.sess = session_for_parsing
-
-    struct = "0,spec,y" # Ask for column 'y' from the .spec attribute of object 0
-    result = cookbook_instance._struct_parse(struct, length=3)
-
-    assert result is not None
-    col_name, col_data, parse_list = result
-    assert col_name == 'y'
-    np.testing.assert_allclose(col_data, np.linspace(1.0, 5.0, 5))
-    assert parse_list == [0, 'spec', 'y']
-
-def test_struct_parse_fail_short_string(cookbook_instance, session_for_parsing):
-    """ Test failure when struct string is too short. """
-    cookbook_instance.sess = session_for_parsing
-    result = cookbook_instance._struct_parse("0", length=2)
-    assert result is None
-    logging.error.assert_called_once()
-
-def test_struct_parse_fail_non_integer_session(cookbook_instance, session_for_parsing):
-    """ Test failure with non-integer session index. """
-    cookbook_instance.sess = session_for_parsing
-    result = cookbook_instance._struct_parse("abc,spec", length=2)
-    assert result is None
-    logging.error.assert_called_once() # Checks if the ValueError except block logs
-
-def test_struct_parse_fail_session_out_of_range(cookbook_instance, session_for_parsing):
-    """ Test failure when session index is out of range. """
-    # Setup: Add only one object (index 0)
-    session_for_parsing.add_spectrum(create_test_spectrum())
-    cookbook_instance.sess = session_for_parsing
-
-    result = cookbook_instance._struct_parse("1,spec", length=2) # Ask for index 1
-    assert result is None
-    logging.error.assert_called_once()
-
-def test_struct_parse_fail_attribute_not_found(cookbook_instance, session_for_parsing):
-    """ Test failure when the attribute doesn't exist on the session object wrapper. """
-    mock_spec = create_test_spectrum()
-    # Add the spectrum normally (it gets wrapped with a .spec attribute)
-    session_for_parsing.add_spectrum(mock_spec)
-    cookbook_instance.sess = session_for_parsing
-
-    # Ask for an attribute that doesn't exist on the FakeSessionObject wrapper
-    result = cookbook_instance._struct_parse("0,nonexistent_attr", length=2)
-    assert result is None
-    logging.error.assert_called_once()
-
-
-def test_struct_parse_fail_column_not_found(cookbook_instance, session_for_parsing):
-    """ Test failure for length 3 when column doesn't exist in the .spec attribute. """
-    mock_spec = create_test_spectrum(length=5)
-    session_for_parsing.add_spectrum(mock_spec)
-    cookbook_instance.sess = session_for_parsing
-
-    # Ask for column in .spec that doesn't exist
-    result = cookbook_instance._struct_parse("0,spec,nonexistent_col", length=3)
-    assert result is None
-    logging.error.assert_called_once()
-
-# --- Mock Object for testing missing _t ---
-class MockSessionObjectWithSpecNoT:
-     """ Represents an object in the session list.
-         It has a .spec attribute, but that attribute lacks '_t'.
-     """
-     def __init__(self):
-         self.spec = "This is the spec attribute, but it's just a string"
-
-
-# --- Mock Object for testing wrong type of _t ---
-class MockSessionObjectWithSpecWrongT:
-     """ Represents an object in the session list.
-         It has a .spec attribute, and spec._t exists, but it's not a Table.
-     """
-     def __init__(self):
-         # Create a dummy object with a _t that is a list
-         dummy_spec_attr = type('DummySpecAttr', (object,), {'_t': [10, 20, 30]})()
-         self.spec = dummy_spec_attr
-
-def test_struct_parse_fail_attr_no_table(cookbook_instance, session_for_parsing):
-     """ Test failure for len 3 when attribute doesn't have _t table. """
-     # Create an object that doesn't have _t for its relevant attribute
-     mock_obj_wrapper = MockSessionObjectWithSpecNoT() # This IS the session object
-     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
-     cookbook_instance.sess = session_for_parsing
-
-     # Ask for a column within the .some_attr attribute (which doesn't have _t)
-     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
-     assert result is None
-     logging.error.assert_called_once()
-     logging.warning.assert_not_called()
-
-def test_struct_parse_fail_attr_t_not_table(cookbook_instance, session_for_parsing):
-     """ Test failure for len 3 when attribute._t is not an Astropy Table. """
-     mock_obj_wrapper = MockSessionObjectWithSpecWrongT() # This wrapper has .spec, but spec._t is wrong
-     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
-     cookbook_instance.sess = session_for_parsing
-
-     # Ask for a column within the .spec attribute (whose _t is not a Table)
-     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
-     assert result is None
-     logging.error.assert_called_once()
-     logging.warning.assert_not_called()
 
 
 # --- Tests for import_systs ---
@@ -481,6 +358,112 @@ def test_import_telluric_length_mismatch(cookbook_instance, session_for_telluric
     assert 'telluric_model' not in spec_table.colnames
 
 
+# --- Tests for the public extract dispatcher ---
+
+def test_extract_dispatch_to_region(cookbook_instance, mocker):
+    """ Verify extract calls _extract_region with xmin/max. """
+    # Mock the private methods
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region', return_value="SessionFromRegion")
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mocker.patch('logging.error') # Mock logger
+
+    result = cookbook_instance.extract(xmin=4000.0, xmax=5000.0)
+
+    mock_region.assert_called_once_with(xmin=4000.0, xmax=5000.0)
+    mock_part.assert_not_called()
+    logging.error.assert_not_called()
+    assert result == "SessionFromRegion" # Check it returns the mocked value
+
+def test_extract_dispatch_to_part(cookbook_instance, mocker):
+    """ Verify extract calls _extract_part with zem/part. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part', return_value="SessionFromPart")
+    mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(zem=3.0, part='red')
+
+    mock_part.assert_called_once_with(zem=3.0, part='red')
+    mock_region.assert_not_called()
+    logging.error.assert_not_called()
+    assert result == "SessionFromPart"
+
+def test_extract_dispatch_ambiguous_input(cookbook_instance, mocker):
+    """ Verify extract handles ambiguous input. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(xmin=4000, xmax=5000, zem=3.0)
+
+    mock_log_error.assert_called_once()
+    mock_region.assert_not_called()
+    mock_part.assert_not_called()
+    assert result is None
+
+def test_extract_dispatch_insufficient_input(cookbook_instance, mocker):
+    """ Verify extract handles insufficient input. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract() # No args
+
+    mock_log_error.assert_called_once()
+    mock_region.assert_not_called()
+    mock_part.assert_not_called()
+    assert result is None
+
+def test_extract_dispatch_invalid_region_input(cookbook_instance, mocker):
+    """ Verify extract handles non-numeric xmin/max. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(xmin='abc', xmax=5000)
+
+    mock_log_error.assert_called_once()
+    mock_region.assert_not_called() # Fails before calling
+    mock_part.assert_not_called()
+    assert result is None
+
+def test_extract_dispatch_invalid_part_input(cookbook_instance, mocker):
+    """ Verify extract handles non-numeric zem. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(zem='xyz')
+
+    mock_log_error.assert_called_once()
+    mock_region.assert_not_called()
+    mock_part.assert_not_called() # Fails before calling
+    assert result is None
+
+def test_extract_dispatch_handles_region_exception(cookbook_instance, mocker):
+    """ Verify extract handles exceptions from _extract_region. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region', side_effect=RuntimeError("Region failed"))
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part')
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(xmin=4000, xmax=5000)
+
+    mock_region.assert_called_once()
+    mock_log_error.assert_called_once() # Should log the exception
+    assert result is None # Should return None on error
+
+def test_extract_dispatch_handles_part_exception(cookbook_instance, mocker):
+    """ Verify extract handles exceptions from _extract_part. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_part = mocker.patch.object(cookbook_instance, '_extract_part', side_effect=RuntimeError("Part failed"))
+    mock_log_error = mocker.patch('logging.error')
+
+    result = cookbook_instance.extract(zem=3.0)
+
+    mock_part.assert_called_once()
+    mock_log_error.assert_called_once() # Should log the exception
+    assert result is None # Should return None on error
+
+
 # --- Tests for mask ---
 
 def test_mask_param_valid(cookbook_instance, fake_session):
@@ -600,3 +583,217 @@ def test_mask_telluric_and_condition(cookbook_instance, fake_session):
     # Check that y at these indices is NaN
     expected_y = np.array([np.nan, np.nan, 3.0, 4.0, np.nan]) # Original y: [1, 2, 3, 4, 5]
     np.testing.assert_allclose(fake_session.spec._t['y'], expected_y, equal_nan=True)
+
+
+# Define Lyman-alpha constant for tests
+LYA_REST_NM = 121.567
+
+# --- Tests for _extract_part ---
+
+def test_extract_part_blue(cookbook_instance, fake_session, mocker):
+    """ Test _extract_part correctly calculates range for 'blue' and calls _extract_region. """
+    # Mock the underlying method it calls
+    cookbook_instance.sess = fake_session
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region', return_value="MockedSessionBlue")
+    mocker.patch('logging.error') # Mock logger for assert_not_called
+
+    input_zem = 3.0
+    expected_lya_wave = (1 + input_zem) * LYA_REST_NM # Calculate expected cutoff
+
+    # Action
+    result = cookbook_instance._extract_part(zem=input_zem, part='blue')
+
+    # Assertions
+    logging.error.assert_not_called()
+    # Verify _extract_region was called once with the correct range (0 to lya)
+    mock_region.assert_called_once_with(wave_min=0.0, wave_max=expected_lya_wave)
+    # Verify the result from _extract_region is returned
+    assert result == "MockedSessionBlue"
+
+def test_extract_part_red(cookbook_instance, fake_session, mocker):
+    """ Test _extract_part correctly calculates range for 'red' and calls _extract_region. """
+    cookbook_instance.sess = fake_session
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region', return_value="MockedSessionRed")
+    mocker.patch('logging.error')
+
+    input_zem = 2.5
+    expected_lya_wave = (1 + input_zem) * LYA_REST_NM
+
+    # Action
+    result = cookbook_instance._extract_part(zem=input_zem, part='red')
+
+    # Assertions
+    logging.error.assert_not_called()
+    # Verify _extract_region was called once with the correct range (lya to infinity)
+    mock_region.assert_called_once_with(wave_min=expected_lya_wave, wave_max=np.inf)
+    assert result == "MockedSessionRed"
+
+def test_extract_part_default_is_blue(cookbook_instance, fake_session, mocker):
+    """ Test _extract_part defaults to 'blue' when part is omitted. """
+    cookbook_instance.sess = fake_session
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region', return_value="MockedSessionDefaultBlue")
+    mocker.patch('logging.error')
+
+    input_zem = 4.0
+    expected_lya_wave = (1 + input_zem) * LYA_REST_NM
+
+    # Action - omit 'part' argument
+    result = cookbook_instance._extract_part(zem=input_zem)
+
+    # Assertions
+    logging.error.assert_not_called()
+    # Verify _extract_region was called once with the 'blue' range
+    mock_region.assert_called_once_with(wave_min=0.0, wave_max=expected_lya_wave)
+    assert result == "MockedSessionDefaultBlue"
+
+
+def test_extract_part_invalid_zem(cookbook_instance, mocker):
+    """ Test _extract_part validation for non-numeric zem. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_log_error = mocker.patch('logging.error')
+
+    # Action
+    result = cookbook_instance._extract_part(zem='not_a_number', part='blue')
+
+    # Assertions
+    mock_log_error.assert_called_once() # Check error logged
+    mock_region.assert_not_called() # Check _extract_region not called
+    assert result is None # Assuming it returns None on validation error
+
+def test_extract_part_invalid_part(cookbook_instance, mocker):
+    """ Test _extract_part validation for invalid 'part' string. """
+    mock_region = mocker.patch.object(cookbook_instance, '_extract_region')
+    mock_log_error = mocker.patch('logging.error')
+
+    # Action
+    result = cookbook_instance._extract_part(zem=3.0, part='far_side') # Invalid part
+
+    # Assertions
+    mock_log_error.assert_called_once()
+    mock_region.assert_not_called()
+    assert result is None
+
+# --- Tests for _struct_parse ---
+
+def test_struct_parse_success_len2(cookbook_instance, session_for_parsing):
+    """ Test successful parsing for length 2 (attribute '.spec'). """
+    mock_spec = create_test_spectrum(length=5)
+    # Use the add_spectrum helper which creates the wrapper
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    struct = "0,spec" # Ask for the .spec attribute of the object at index 0
+    result = cookbook_instance._struct_parse(struct, length=2)
+
+    assert result is not None
+    attr_name, attr_obj, parse_list = result
+    assert attr_name == 'spec'
+    # Check it returned the *actual Spectrum object* held within the wrapper
+    assert attr_obj is mock_spec
+    assert parse_list == [0, 'spec']
+
+def test_struct_parse_success_len3(cookbook_instance, session_for_parsing):
+    """ Test successful parsing for length 3 (column within '.spec'). """
+    mock_spec = create_test_spectrum(length=5)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    struct = "0,spec,y" # Ask for column 'y' from the .spec attribute of object 0
+    result = cookbook_instance._struct_parse(struct, length=3)
+
+    assert result is not None
+    col_name, col_data, parse_list = result
+    assert col_name == 'y'
+    np.testing.assert_allclose(col_data, np.linspace(1.0, 5.0, 5))
+    assert parse_list == [0, 'spec', 'y']
+
+def test_struct_parse_fail_short_string(cookbook_instance, session_for_parsing):
+    """ Test failure when struct string is too short. """
+    cookbook_instance.sess = session_for_parsing
+    result = cookbook_instance._struct_parse("0", length=2)
+    assert result is None
+    logging.error.assert_called_once()
+
+def test_struct_parse_fail_non_integer_session(cookbook_instance, session_for_parsing):
+    """ Test failure with non-integer session index. """
+    cookbook_instance.sess = session_for_parsing
+    result = cookbook_instance._struct_parse("abc,spec", length=2)
+    assert result is None
+    logging.error.assert_called_once() # Checks if the ValueError except block logs
+
+def test_struct_parse_fail_session_out_of_range(cookbook_instance, session_for_parsing):
+    """ Test failure when session index is out of range. """
+    # Setup: Add only one object (index 0)
+    session_for_parsing.add_spectrum(create_test_spectrum())
+    cookbook_instance.sess = session_for_parsing
+
+    result = cookbook_instance._struct_parse("1,spec", length=2) # Ask for index 1
+    assert result is None
+    logging.error.assert_called_once()
+
+def test_struct_parse_fail_attribute_not_found(cookbook_instance, session_for_parsing):
+    """ Test failure when the attribute doesn't exist on the session object wrapper. """
+    mock_spec = create_test_spectrum()
+    # Add the spectrum normally (it gets wrapped with a .spec attribute)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    # Ask for an attribute that doesn't exist on the FakeSessionObject wrapper
+    result = cookbook_instance._struct_parse("0,nonexistent_attr", length=2)
+    assert result is None
+    logging.error.assert_called_once()
+
+def test_struct_parse_fail_column_not_found(cookbook_instance, session_for_parsing):
+    """ Test failure for length 3 when column doesn't exist in the .spec attribute. """
+    mock_spec = create_test_spectrum(length=5)
+    session_for_parsing.add_spectrum(mock_spec)
+    cookbook_instance.sess = session_for_parsing
+
+    # Ask for column in .spec that doesn't exist
+    result = cookbook_instance._struct_parse("0,spec,nonexistent_col", length=3)
+    assert result is None
+    logging.error.assert_called_once()
+
+# --- Mock Object for testing missing _t ---
+class MockSessionObjectWithSpecNoT:
+     """ Represents an object in the session list.
+         It has a .spec attribute, but that attribute lacks '_t'.
+     """
+     def __init__(self):
+         self.spec = "This is the spec attribute, but it's just a string"
+
+
+# --- Mock Object for testing wrong type of _t ---
+class MockSessionObjectWithSpecWrongT:
+     """ Represents an object in the session list.
+         It has a .spec attribute, and spec._t exists, but it's not a Table.
+     """
+     def __init__(self):
+         # Create a dummy object with a _t that is a list
+         dummy_spec_attr = type('DummySpecAttr', (object,), {'_t': [10, 20, 30]})()
+         self.spec = dummy_spec_attr
+
+def test_struct_parse_fail_attr_no_table(cookbook_instance, session_for_parsing):
+     """ Test failure for len 3 when attribute doesn't have _t table. """
+     # Create an object that doesn't have _t for its relevant attribute
+     mock_obj_wrapper = MockSessionObjectWithSpecNoT() # This IS the session object
+     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
+     cookbook_instance.sess = session_for_parsing
+
+     # Ask for a column within the .some_attr attribute (which doesn't have _t)
+     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
+     assert result is None
+     logging.error.assert_called_once()
+     logging.warning.assert_not_called()
+
+def test_struct_parse_fail_attr_t_not_table(cookbook_instance, session_for_parsing):
+     """ Test failure for len 3 when attribute._t is not an Astropy Table. """
+     mock_obj_wrapper = MockSessionObjectWithSpecWrongT() # This wrapper has .spec, but spec._t is wrong
+     session_for_parsing.add_session_object(mock_obj_wrapper) # Add it directly
+     cookbook_instance.sess = session_for_parsing
+
+     # Ask for a column within the .spec attribute (whose _t is not a Table)
+     result = cookbook_instance._struct_parse("0,spec,any_col", length=3)
+     assert result is None
+     logging.error.assert_called_once()
+     logging.warning.assert_not_called()

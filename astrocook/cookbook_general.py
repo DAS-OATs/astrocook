@@ -432,7 +432,7 @@ class CookbookGeneral(object):
         if part == 'blue':
             return self.region_extract(0, (1+zem)*121.567)
         else:
-            return self.region_extract((1+zem)*121.567, np.infty)
+            return self.region_extract((1+zem)*121.567, np.inf)
 
 
     def rebin(self, xstart=None, xend=None, dx=10.0, xunit=au.km/au.s,
