@@ -47,3 +47,4 @@ astrocook.egg-info/SOURCES.txt
 astrocook.egg-info/dependency_links.txt
 astrocook.egg-info/requires.txt
 astrocook.egg-info/top_level.txt
+tests/test_cookbook_edit.py
