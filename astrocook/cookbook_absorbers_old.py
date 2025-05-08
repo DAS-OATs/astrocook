@@ -401,14 +401,41 @@ class CookbookAbsorbersOld(object):
                         mod_sel = np.append(mod_sel, np.array([systs._mods_t['id'][w]]))
 
         #When a system has been removed
-        elif rem_id is not None:
-            mod_sel = np.array([], dtype=int)
-            t_id = systs._t['id']
-            mods_t_id = systs._mods_t['id']
-            for r in rem_id:
-                mod_w = [r in m for m in mods_t_id]
-            mod_sel = np.append(mod_sel, mods_t_id[mod_w][0])
+        #elif rem_id is not None:
+        #    mod_sel = np.array([], dtype=int)
+        #    t_id = systs._t['id']
+        #    mods_t_id = systs._mods_t['id']
+        #    for r in rem_id:
+        #        mod_w = [r in m for m in mods_t_id]
+        #    mod_sel = np.append(mod_sel, mods_t_id[mod_w][0])
 
+        elif rem_id is not None: # rem_id is a list of system IDs that were removed from systs._t
+            # Get the current set of valid system IDs from systs._t (which has already been updated)
+            current_systs_t_ids = set(systs._t['id'])
+            
+            # Get the 'id' column from _mods_t *before* any modifications in this method
+            # (Make a list copy to avoid issues if the table structure is complex)
+            old_mods_t_id_lists = list(systs._mods_t['id']) 
+
+            indices_of_models_to_rebuild = set()
+            # Identify all models in _mods_t that contained any of the removed IDs
+            for r_id_val in rem_id: # For each ID that was actually removed from systs._t
+                for model_idx, id_list_in_model in enumerate(old_mods_t_id_lists):
+                    if r_id_val in id_list_in_model:
+                        indices_of_models_to_rebuild.add(model_idx)
+            
+            # mod_w will be the list of row indices to remove from _mods_t
+            mod_w = list(indices_of_models_to_rebuild)
+
+            # mod_sel should contain all system IDs that were part of these affected models
+            # AND are still present in the (updated) systs._t. These are the systems
+            # for which models need to be rebuilt.
+            ids_for_reprocessing_models = set()
+            for model_idx in mod_w: # Iterate over indices of models identified for rebuild
+                for id_val_in_affected_model in old_mods_t_id_lists[model_idx]:
+                    if id_val_in_affected_model in current_systs_t_ids: # Check against current valid IDs
+                        ids_for_reprocessing_models.add(id_val_in_affected_model)
+            mod_sel = np.array(list(ids_for_reprocessing_models), dtype=int)
 
         else:
             mod_w = range(len(systs._mods_t))
