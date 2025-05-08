@@ -354,6 +354,48 @@ class CookbookAbsorbersOld(object):
         spec.t['fit_mask'] = False
         systs = self.sess.systs
 
+        # --- Start: Ensure systs._t has unique IDs ---
+        if systs is not None and len(systs._t) > 0:
+            original_ids = np.array(systs._t['id'])
+            unique_ids, counts = np.unique(original_ids, return_counts=True)
+            duplicate_ids_in_t = unique_ids[counts > 1]
+
+            if len(duplicate_ids_in_t) > 0:
+                logging.warning(f"I found duplicate system IDs in systs._t: {list(duplicate_ids_in_t)}. Attempting to re-ID them...")
+                max_current_id = np.max(original_ids) if len(original_ids) > 0 else -1
+                
+                # Create a temporary copy of the table to modify IDs
+                # Or modify in place if careful
+                # This example modifies in place, iterate carefully
+                
+                # Keep track of IDs already processed to handle multiple duplicates of the same ID
+                processed_indices_for_duplicates = set()
+
+                for dup_id_val in duplicate_ids_in_t:
+                    indices_of_this_dup = np.where(systs._t['id'] == dup_id_val)[0]
+                    # Keep the first instance with its original ID, re-ID subsequent ones
+                    for i, syst_idx in enumerate(indices_of_this_dup):
+                        if i == 0: # Keep first one as is
+                            processed_indices_for_duplicates.add(syst_idx)
+                            continue
+                        
+                        if syst_idx in processed_indices_for_duplicates: # Should not happen if iterating correctly
+                            continue
+
+                        max_current_id += 1
+                        new_id_for_duplicate = max_current_id
+                        logging.warning(f"Re-IDing systs._t row at index {syst_idx} from ID {dup_id_val} to {new_id_for_duplicate}...")
+                        systs._t['id'][syst_idx] = new_id_for_duplicate
+                        processed_indices_for_duplicates.add(syst_idx)
+                
+                # Verify uniqueness after re-IDing
+                final_ids_in_t, final_counts = np.unique(systs._t['id'], return_counts=True)
+                if np.any(final_counts > 1):
+                    logging.error(f"Failed to fully resolve duplicate IDs in systs._t. Duplicates still exist: {final_ids_in_t[final_counts > 1]}")
+                else:
+                    logging.info(f"Successfully resolved duplicate IDs in systs._t.")
+        # --- End: Ensure systs._t has unique IDs ---
+
         # When constraints have been added
         if only_constr:
             mod_sel = np.array([], dtype=int)
@@ -764,41 +806,117 @@ class CookbookAbsorbersOld(object):
     def _systs_fit(self, verbose=True):
         systs = self.sess.systs
         mods_t = systs._mods_t
+        
+        # --- Start Instrumentation ---
+        logging.debug(f"--- Entering _systs_fit ---")
+        logging.debug(f"Number of systems in systs._t: {len(systs._t)}")
+        current_systs_t_ids_list = sorted(list(systs._t['id'])) if len(systs._t) > 0 else []
+        logging.debug(f"IDs in systs._t: {current_systs_t_ids_list if current_systs_t_ids_list else 'Empty'}")
+        logging.debug(f"Number of models in systs._mods_t: {len(mods_t)}")
+        
+        valid_systs_t_ids_set = set(systs._t['id']) # Use a set for efficient lookup
+        # --- End Instrumentation ---
+
         z_list = []
         chi2r_list = []
         if self._max_nfev > 0:
             fit_list = []
-            for i,m in enumerate(mods_t):
+            for i, m_row in enumerate(mods_t): # m_row is a row from mods_t
+                model_system_ids_in_m_row = m_row['id']
+                logging.debug(f"Processing model index {i}, z0={m_row['z0']}, model_ids={model_system_ids_in_m_row}")
+                #if self._sel_fit:
+                #    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
+                #          for id in m['id']]
+                #    fit_list.append(np.isnan(dz).any())
+                #else:
+                #    fit_list.append(True)
                 if self._sel_fit:
-                    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
-                          for id in m['id']]
-                    fit_list.append(np.isnan(dz).any())
-                else:
-                    fit_list.append(True)
+                    logging.debug(f"  _sel_fit is True. Checking dz for model_ids: {model_system_ids_in_m_row}")
+                    dz_components_for_model = []
+                    error_in_this_model_check = False
+                    for id_val_in_model in model_system_ids_in_m_row:
+                        if id_val_in_model not in valid_systs_t_ids_set:
+                            logging.error(f"  CRITICAL ERROR: ID {id_val_in_model} from model (z0={m_row['z0']}, model_ids={model_system_ids_in_m_row}) IS NOT FOUND in systs._t['id']!")
+                            logging.error(f"  Current systs._t IDs for reference: {current_systs_t_ids_list}")
+                            # This is where your IndexError would occur.
+                            # We must stop processing this model for dz calculation.
+                            error_in_this_model_check = True
+                            break # Stop checking IDs for this model
 
-            for i,m in enum_tqdm(mods_t, np.sum(fit_list),
-                                 "cookbook_absorbers: Fitting"):
-            #for i,m in enumerate(mods_t):
-                """
-                if self._sel_fit:
-                    dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
-                          for id in m['id']]
-                    fit = np.isnan(dz).any()
-                else:
-                    fit = True
-                """
-                if fit_list[i]:
-                    z_list.append(m['z0'])
-                    frozen = self._syst_fit(m['mod'], verbose=False)
-                    if frozen:
-                        fit_list[i] = False
+                        # If ID is valid, get its dz value
+                        # np.where returns a tuple of arrays; we need the first array of indices.
+                        systs_t_indices_for_id = np.where(systs._t['id'] == id_val_in_model)[0]
+                        # This check should ideally not be needed if id_val_in_model is in valid_systs_t_ids_set
+                        # but as a safeguard:
+                        if len(systs_t_indices_for_id) == 0:
+                             logging.error(f"  LOGIC ERROR: ID {id_val_in_model} was in valid_systs_t_ids_set but np.where found no matching row in systs._t.")
+                             error_in_this_model_check = True
+                             break
+                        
+                        idx_in_systs_t = systs_t_indices_for_id[0]
+                        dz_val = systs._t['dz'][idx_in_systs_t]
+                        dz_components_for_model.append(dz_val)
+                        logging.debug(f"    For id_val {id_val_in_model}, found dz: {dz_val} at systs._t index {idx_in_systs_t}")
+                    
+                    if error_in_this_model_check:
+                        # Cannot reliably determine np.isnan(dz).any().
+                        # Mark this model as not fittable in this pass.
+                        fit_list.append(False)
+                        logging.debug(f"  Skipping model index {i} for fitting due to ID inconsistency during dz check.")
                     else:
-                        chi2r_list.append(m['mod']._chi2r)
-            if verbose:
-                logging.info("I've fitted %i model%s." \
-                             % (np.sum(fit_list), msg_z_range(z_list)))
-        else:
-            fit_list = []
+                        # dz is successfully populated for this model
+                        fit_list.append(np.isnan(dz_components_for_model).any())
+                        logging.debug(f"  Calculated dz_components: {dz_components_for_model}. np.isnan().any() is {np.isnan(dz_components_for_model).any()}. Appending to fit_list.")
+
+                else: # if not self._sel_fit
+                    fit_list.append(True)
+                    logging.debug(f"  _sel_fit is False. Marking model index {i} for fitting.")
+            
+            logging.debug(f"Final fit_list determination: {fit_list}")
+
+
+            #for i,m in enum_tqdm(mods_t, np.sum(fit_list),
+            #                     "cookbook_absorbers: Fitting"):
+            ##for i,m in enumerate(mods_t):
+            #    """
+            #    if self._sel_fit:
+            #        dz = [systs._t['dz'][np.where(systs._t['id']==id)[0][0]] \
+            #              for id in m['id']]
+            #        fit = np.isnan(dz).any()
+            #    else:
+            #        fit = True
+            #    """
+            #    if fit_list[i]:
+            #        z_list.append(m['z0'])
+            #        frozen = self._syst_fit(m['mod'], verbose=False)
+            #        if frozen:
+            #            fit_list[i] = False
+            #        else:
+            #            chi2r_list.append(m['mod']._chi2r)
+            #if verbose:
+            #    logging.info("I've fitted %i model%s." \
+            #                 % (np.sum(fit_list), msg_z_range(z_list)))
+        
+        #else:
+        #    fit_list = []
+
+            # Fitting loop
+            for i, m_row_to_fit in enum_tqdm(mods_t, np.sum(fit_list),
+                                 "cookbook_absorbers: Fitting"):
+                if fit_list[i]: # Check against the fit_list populated above
+                    logging.debug(f"Attempting to fit model index {i} (z0={m_row_to_fit['z0']})")
+                    z_list.append(m_row_to_fit['z0'])
+                    frozen = self._syst_fit(m_row_to_fit['mod'], verbose=False) # Fit the actual SystModel object
+                    if frozen:
+                        fit_list[i] = False # Update fit_list if it was frozen (though this fit_list isn't reused later in this exact way)
+                        logging.debug(f"  Fit was frozen for model index {i}.")
+                    else:
+                        chi2r_list.append(m_row_to_fit['mod']._chi2r)
+                        logging.debug(f"  Fit successful for model index {i}, chi2r={m_row_to_fit['mod']._chi2r}.")
+                else:
+                    logging.debug(f"Skipping actual fit for model index {i} as per fit_list.")
+        else: # if self._max_nfev <= 0
+            fit_list = [False] * len(mods_t) # Create a list of Falses
             for i,m in enumerate(mods_t):
                 z_list.append(m['z0'])
                 fit_list.append(False)
@@ -965,9 +1083,36 @@ class CookbookAbsorbersOld(object):
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
         #print(systs._mods_t['mod'])
-        modw = np.where(mod == systs._mods_t['mod'])[0][0]
-        ids = systs._mods_t['id'][modw]
-        for i in ids:
+        modw_arr = np.where(mod == systs._mods_t['mod'])[0]
+        if len(modw_arr) == 0:
+            logging.error(f"SystModel object (z0={mod._z0 if hasattr(mod, '_z0') else 'N/A'}) not found in systs._mods_t['mod'] during _systs_update. Skipping update.")
+            return
+
+        modw = modw_arr[0]
+        ids_in_model_group = systs._mods_t['id'][modw]
+        
+        current_systs_t_ids_set = set(systs._t['id'])
+
+        for i_id in ids_in_model_group:
+            if i_id not in current_systs_t_ids_set:
+                logging.warning(f"In _systs_update for model (z0={mod._z0}), system ID {i_id} from model group not found in systs._t. Skipping update for this ID.")
+                continue
+
+            try:
+                # Proceed with finding iw using np.where, now that we know i_id exists
+                iw_arr = np.where(systs._t['id'] == i_id)[0]
+                if len(iw_arr) == 0: # Should not happen if check above passed
+                    logging.error(f"Logic error in _systs_update: ID {i_id} was in set but not found by np.where.")
+                    continue
+                iw = iw_arr[0]
+                
+                pref = 'lines_voigt_'+str(i_id)
+                # ... (rest of your update logic)
+            except Exception as e: # Broader catch for unexpected issues during update
+                logging.error(f"Error updating system ID {i_id} in _systs_update: {e}", exc_info=True)
+                pass # Or handle more specifically
+
+        for i in ids_in_model_group:
             try:
                 iw = np.where(systs._t['id']==i)[0][0]
                 pref = 'lines_voigt_'+str(i)
