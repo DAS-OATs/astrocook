@@ -10,7 +10,7 @@ from .syst_list import SystList
 
 import logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(levelname)s] %(module)s: %(message)s [deprecated]")
 
 #from .frame import Frame
