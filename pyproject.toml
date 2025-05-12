@@ -76,6 +76,10 @@ Repository = "https://github.com/DAS-OATs/astrocook"
 # Bug-Tracker = "https://github.com/DAS-OATs/astrocook/issues" # Optional
 
 # --- Setuptools specific configuration ---
+[tool.setuptools]
+# This is where include-package-data belongs:
+include-package-data = true
+
 [tool.setuptools.packages.find]
 # Tells setuptools to automatically find packages in the current directory (.)
 # It will find the 'astrocook' directory containing an '__init__.py'.

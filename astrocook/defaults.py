@@ -19,7 +19,7 @@ class Defaults(object):
 
         if path is None:
             path = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
-                   + '/../' + file
+                   + '/data/' + file
         with open(path) as json_file:
             self.str = json_file.read()
             self.str = self.str.replace('“', '"')
