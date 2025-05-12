@@ -3,7 +3,6 @@ README.md
 atom_par.dat
 defaults.json
 pyproject.toml
-qso_composite.dat
 sky_telluric.fits
 astrocook/__init__.py
 astrocook/cookbook.py
@@ -57,4 +56,3 @@ astrocook/data/telluric.dat
 astrocook/data/telluric.fits
 astrocook/data/telluric.fits.bck
 astrocook/data/telluric_old.fits
-tests/test_cookbook_edit.py

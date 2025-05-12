@@ -1,0 +1,37 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive-110625037481089626894/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "_menu_view",
+      "recipe": "_on_tab",
+      "params": {
+        "event": null,
+        "obj": "systs",
+        "check": true,
+        "log": false
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "series_replace",
+      "params": {
+        "series_from": "CIV",
+        "series_to": "Ly_a"
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}

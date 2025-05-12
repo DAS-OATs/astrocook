@@ -1,0 +1,87 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/Volumes/GoogleDrive-110625037481089626894/My Drive/GitHub/astrocook/issues/test.acs",
+        "_flags": []
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "sky_mask",
+      "params": {
+        "shift": "0",
+        "thres": "50",
+        "std": "0.05",
+        "reverse": "False",
+        "apply": "True",
+        "remove": "False"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "telluric_mask",
+      "params": {
+        "shift": "0",
+        "thres": "0.99",
+        "reverse": "False",
+        "apply": "True"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "rebin",
+      "params": {
+        "xstart": "None",
+        "xend": "None",
+        "dx": "10.0",
+        "xunit": "km / s",
+        "kappa": "None",
+        "norm": "False",
+        "filling": "nan"
+      }
+    },
+    {
+      "cookbook": "_menu",
+      "recipe": "_on_dialog_mini_graph",
+      "params": {
+        "event": null,
+        "title": "Graph elements",
+        "targ": null
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_elem",
+      "params": {
+        "value": "SESS_SEL,spec,x,sky,None,step,-,0.5,black,1\nSESS_SEL,spec,x,telluric,None,step,-,0.5,red,1",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_set_lim",
+      "params": {
+        "value": "xlim=auto\nylim=auto",
+        "log": false
+      }
+    },
+    {
+      "cookbook": "_dlg_mini_graph",
+      "recipe": "_on_apply",
+      "params": {
+        "e": null,
+        "refresh": true
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}
