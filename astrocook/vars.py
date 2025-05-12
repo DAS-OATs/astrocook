@@ -8,6 +8,18 @@ import operator as op
 import pathlib
  #c, e, m_e
 
+import pathlib
+from astropy.io import ascii
+try:
+    # Python 3.9+
+    from importlib.resources import files
+except ImportError:
+    # Python < 3.9 (requires 'importlib_resources' backport in dependencies)
+    from importlib_resources import files
+
+
+docs_url = 'https://das-oats.github.io/astrocook/docs/'
+
 """
 ac_ops = {'>': operator.gt,
           '<': operator.lt,
@@ -157,14 +169,23 @@ zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
                      'r': 29.0143769, 'i': 28.4342476, 'z': 27.9522006}
 
 p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
-atom_par = ascii.read(pathlib.Path(p+'/atom_par.dat'))
-inoue = ascii.read(pathlib.Path(p+'/table2_inoue.dat'))
+
+# Assuming atom_par.dat is now in astrocook/data/atom_par.dat
+#data_file_path = files('astrocook').joinpath('data', 'atom_par.dat')
+
+#with data_file_path.open('rt') as f:
+#    atom_par = ascii.read(f)
+
+atom_par = ascii.read(pathlib.Path(p+'/astrocook/data/atom_par.dat'))
+
+qso_composite = ascii.read(pathlib.Path(p+'/astrocook/data/qso_composite.dat'))
+inoue = ascii.read(pathlib.Path(p+'/astrocook/data/table2_inoue.dat'))
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
 
-sky_telluric = fits.open(pathlib.Path(p+'/sky_telluric.fits'))[1].data
+sky_telluric = fits.open(pathlib.Path(p+'/astrocook/data/sky_telluric.fits'))[1].data
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}

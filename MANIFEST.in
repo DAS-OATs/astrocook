@@ -1,0 +1,12 @@
+# Include the license file if you have one
+include LICENSE
+# Include the README
+include README.md
+
+# Include all files in the astrocook/data directory
+graft astrocook/data
+# OR, more explicitly:
+# recursive-include astrocook/data *
+
+# If you have other global patterns:
+# global-exclude *.py[cod] __pycache__ .DS_Store

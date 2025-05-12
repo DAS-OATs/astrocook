@@ -1,5 +1,10 @@
+MANIFEST.in
 README.md
+atom_par.dat
+defaults.json
 pyproject.toml
+qso_composite.dat
+sky_telluric.fits
 astrocook/__init__.py
 astrocook/cookbook.py
 astrocook/cookbook_absorbers.py
@@ -41,3 +46,15 @@ astrocook.egg-info/SOURCES.txt
 astrocook.egg-info/dependency_links.txt
 astrocook.egg-info/requires.txt
 astrocook.egg-info/top_level.txt
+astrocook/data/atom_par.dat
+astrocook/data/atom_par_backup.dat
+astrocook/data/defaults.json
+astrocook/data/espr_spec_form.dat
+astrocook/data/qso_composite.dat
+astrocook/data/sky_telluric.fits
+astrocook/data/table2_inoue.dat
+astrocook/data/telluric.dat
+astrocook/data/telluric.fits
+astrocook/data/telluric.fits.bck
+astrocook/data/telluric_old.fits
+tests/test_cookbook_edit.py
