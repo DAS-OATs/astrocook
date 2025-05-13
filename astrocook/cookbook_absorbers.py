@@ -59,13 +59,14 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         return 0
 
 
-    def model_metals(self, series, zem, no_ly=True, use_lines=False):
+    def model_metals(self, series, zem, resol=None, no_ly=True, use_lines=False):
         """@brief Model metals
         @details Model metal absorbers, based on transition and emission
         redshift.
         @url absorbers_cb.html#model-metals
         @param series Transitions
         @param zem Emission redshift
+        @param resol Resolution
         @param no_ly Exclude Lyman forest
         @param use_lines Use line list to define absorbers
         @url absorbers_cb.html#model-metals
@@ -73,6 +74,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
 
         try:
             zem = float(zem)
+            resol = None if resol in [None, 'None'] else float(resol)
             no_ly = str(no_ly) == 'True'
             use_lines = str(use_lines) == 'True'
         except:
@@ -86,10 +88,15 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
             z_start = 0
         z_end = zem
 
-        check, resol = resol_check(self.sess.spec)
+        print(resol)
+
+        if resol is None:
+            check, resol = resol_check(self.sess.spec)
+        print(resol)
         if resol is None:
             self.sess.spec._resol_est(3, True)
             resol = self.sess.spec._t['resol'][0]
+        print(resol)
 
         col = 'deabs' if 'deabs' in self.sess.spec._t.colnames else 'y'
 
