@@ -50,11 +50,29 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         return 0
 
 
-    def model_lya(self):
+    def model_lya(self, zem=None, resol=None):
         """@brief Model Ly-a forest 🚧
         @details 🚧
+        @param zem Emission redshift
+        @param resol Resolution
         @url absorbers_cb.html#model-ly-a-forest
         """
+
+        try:
+            zem = float(zem)
+            resol = None if resol in [None, 'None'] else float(resol)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        if resol is None:
+            check, resol = resol_check(self.sess.spec)
+        if resol is None:
+            self.sess.spec._resol_est(3, True)
+            resol = self.sess.spec._t['resol'][0]
+
+        self.sess.spec._t['resol'] = resol
+        self.lya_fit(zem=zem, sigma=10, iter_n=0, resol=resol)
 
         return 0
 
@@ -88,15 +106,12 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
             z_start = 0
         z_end = zem
 
-        print(resol)
 
         if resol is None:
             check, resol = resol_check(self.sess.spec)
-        print(resol)
         if resol is None:
             self.sess.spec._resol_est(3, True)
             resol = self.sess.spec._t['resol'][0]
-        print(resol)
 
         col = 'deabs' if 'deabs' in self.sess.spec._t.colnames else 'y'
 

@@ -2974,7 +2974,7 @@ class CookbookAbsorbersOld(object):
 
     #@arg_fix(arg_mapping={'thres': 'sigma'})
     def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            sigma=1, distance=3, append=True):
+                            sigma=1, distance=3, append=True, resol=resol_def):
         """ @brief New systems from error function
         @details TBD
         @param series Series of transitions
@@ -2999,12 +2999,12 @@ class CookbookAbsorbersOld(object):
         modul = 10
         distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
-                                 z_end=z_end, modul=modul, sigma=sigma,
+                                 z_end=z_end, modul=modul, sigma=sigma, resol=resol,
                                  distance=distance, append=append)
 
         return 0
 
-    def _series_fit(self, series, zem, z_start=None, z_end=None, sigma=2, iter_n=3):
+    def _series_fit(self, series, zem, z_start=None, z_end=None, sigma=2, iter_n=3, resol=resol_def):
 
         def z_check(zem, z_start, z_end, s):
             if zem != None:
@@ -3025,14 +3025,14 @@ class CookbookAbsorbersOld(object):
         for s in series.split(';'):
             z_start, z_end = z_check(zem, z_start, z_end, s)
             self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
-                                     sigma=sigma)
+                                     sigma=sigma, resol=resol)
         self.systs_fit(refit_n=1)#, max_nfev=0)
         for i in range(iter_n):
             self.sess.systs._freeze_pars()
             for s in series.split(';'):
                 z_start, z_end = z_check(zem, z_start, z_end, s)
                 self._systs_new_from_erf(series=s, col='deabs',
-                                         z_start=z_start, z_end=z_end, sigma=sigma)
+                                         z_start=z_start, z_end=z_end, sigma=sigma, resol=resol_def)
             self.systs_fit(refit_n=0)#, max_nfev=0)
             self.sess.systs._unfreeze_pars()
             resid_peaks()
@@ -3042,7 +3042,7 @@ class CookbookAbsorbersOld(object):
         return 0
 
 
-    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3):
+    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3, resol=resol_def):
         """ @brief Fit the Lyman-alpha forest
         @details The recipe identifies Lyman-alpha absorbers using the
         likelihood method and fits them. The procedure is iterated on residuals
@@ -3069,7 +3069,7 @@ class CookbookAbsorbersOld(object):
             z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
             z_end = zem
 
-        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n)
+        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n, resol)
         #plt.show()
         return 0
 
