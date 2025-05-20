@@ -489,11 +489,53 @@ def resol_check(spec, resol=None, prefix=prefix):
 def running_mean(x, h=1):
     """ From https://stackoverflow.com/questions/13728392/moving-average-or-running-mean """
 
-    n = 2*h+1
-    cs = np.nancumsum(np.insert(x, 0, 0))
-    norm = np.nancumsum(~np.isnan(np.insert(x, 0, 0)))
-    rm = (cs[n:] - cs[:-n]) / (norm[n:]-norm[:-n])
-    return np.concatenate((h*[rm[0]], rm, h*[rm[-1]]))
+    # Ensure x is a numpy array and float type for NaN handling
+    x_arr = np.asarray(x, dtype=float)
+
+    if h < 0:
+        raise ValueError("h (window half-width) must be non-negative.")
+
+    # For a true running mean with h=0 (window size 1), result should be x.
+    if h == 0:
+        return x_arr.copy()
+
+    n_window_elements = 2*h+1
+
+    # If the array is empty, return an empty array
+    if x_arr.size == 0:
+        return np.array([], dtype=float)
+    
+    # If the array is shorter than the window size for the core calculation,
+    # rm will be empty. len(rm) = len(x) - 2*h.
+    # rm is empty if len(x) - 2*h <= 0  => len(x) <= 2*h.
+    # This is equivalent to len(x) < n_window_elements.
+    if len(x_arr) < n_window_elements:
+        # No full window can be formed for the central part 'rm'.
+        # Return an array of NaNs of the same shape as x.
+        return np.full_like(x_arr, np.nan, dtype=float)
+
+    _x_inserted = np.insert(x_arr, 0, 0.0) # Prepend 0.0 for calculations
+    cs = np.nancumsum(_x_inserted)
+    
+    _isnan_inserted = np.isnan(_x_inserted)
+    norm = np.nancumsum(~_isnan_inserted)
+    
+    # Core running mean calculation
+    # Denominator can be 0 if a window is all NaNs (or only the prepended 0)
+    rm_core_numerator = cs[n_window_elements:] - cs[:-n_window_elements]
+    rm_core_denominator = norm[n_window_elements:] - norm[:-n_window_elements]
+
+    # Initialize rm_core with NaNs to handle division by zero
+    rm_core = np.full(rm_core_numerator.shape, np.nan, dtype=float)
+    
+    # Perform division only where denominator is not zero
+    valid_mask = rm_core_denominator != 0
+    rm_core[valid_mask] = rm_core_numerator[valid_mask] / rm_core_denominator[valid_mask]
+    # --- End of original core logic ---
+
+    # At this point, rm_core is guaranteed non-empty because len(x_arr) >= n_window_elements,
+    # which means len(x_arr) - 2*h >= 1. So rm_core[0] and rm_core[-1] are valid.
+    return np.concatenate((h * [rm_core[0]], rm_core, h * [rm_core[-1]]))
 
 
 def running_median(x, h=1):
