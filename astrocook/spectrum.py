@@ -443,6 +443,14 @@ class Spectrum(Frame):
             spl = nodes.split('.')
             nodes = getattr(getattr(self._gui, spl[0]), spl[1])
 
+        if 'cont_no_telluric' in self._t.colnames:
+            logging.info("An existing continuum included a telluric model. "
+                         "I'm updating the continuum without changing the "
+                         "telluric model.")
+            self._t['telluric'] = self._t['cont']/self._t['cont_no_telluric']
+            self._t['cont_telluric'] = self._t['cont']
+            self._t['cont'] = self._t['cont_no_telluric']
+
         x = nodes.x.value
         y = nodes.y.value
         dy = nodes.dy.value
@@ -462,6 +470,12 @@ class Spectrum(Frame):
         if hasattr(lines, '_t'):
             lines._t['cont'] = np.interp(lines.x, self.x, cont)
         nodes._t['cont'] = np.interp(nodes.x, self.x, cont)
+
+        if 'cont_no_telluric' in self._t.colnames:
+            self._t['cont_no_telluric'] = self._t['cont']
+            self._t['cont'] = self._t['cont']*self._t['telluric']
+            self._t.remove_columns(['cont_telluric', 'telluric'])
+
         return 0
 
 
