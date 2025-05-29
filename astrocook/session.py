@@ -491,13 +491,22 @@ class Session(object):
             logging.info("I'm using line list %s." % path)
             data = ascii.read(path)
             if mode == 'std':
-                series = data['col1']
-                z = data['col2']
-                dz = data['col3']
-                logN = data['col4']
-                dlogN = data['col5']
-                b = data['col6']
-                db = data['col7']
+                if 'col1' in data.colnames:
+                    series = data['col1']
+                    z = data['col2']
+                    dz = data['col3']
+                    logN = data['col4']
+                    dlogN = data['col5']
+                    b = data['col6']
+                    db = data['col7']
+                elif 'series' in data.colnames:
+                    series = data['series']
+                    z = data['z']
+                    dz = data['dz']
+                    logN = data['logN']
+                    dlogN = data['dlogN']
+                    b = data['b']
+                    db = data['db']
             if mode == 'viper':
                 z = data['col1']/1215.67-1
                 dz = [np.nan]*len(data)
