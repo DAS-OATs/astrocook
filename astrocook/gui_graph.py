@@ -64,6 +64,7 @@ class GUIGraphMain(wx.Frame):
         self._legend = False
         self._closed = False
         self._refreshed = False
+        self._shown = True
         if main:
             self._gui._graph_main = self
         self._init(**kwargs)

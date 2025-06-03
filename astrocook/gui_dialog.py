@@ -345,20 +345,23 @@ class GUIDialogMini(wx.Dialog):
 class GUIDialogMiniConstraints(wx.Dialog):
     def __init__(self, parent_gui, title="Manage Constraints"):
         self._gui = parent_gui
-        super(GUIDialogMiniConstraints, self).__init__(None, title=title, size=(400, 200))
+        self._gui._dlg_mini_constr = self
+        super(GUIDialogMiniConstraints, self).__init__(None, title=title)
+        self._dlg_id = self._gui._menu_dlg_id
+        self._menu = self._gui._panel_sess._menu._view._menu
 
         self.panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         # Optional: Display area for constraints (e.g., a TextCtrl or ListCtrl)
         # For simplicity, we'll start without a display and just have load/save.
-        self.constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE)# | wx.TE_READONLY)
         vbox.Add(self.constraints_display, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self._refresh_display() # You'd need to implement this if you add a display
 
-        load_button = wx.Button(self.panel, label="Load Constraints from File...")
-        save_button = wx.Button(self.panel, label="Save Constraints to File...")
-        apply_button = wx.Button(self.panel, label="Apply Loaded/Current Constraints")
+        load_button = wx.Button(self.panel, label="Load...")
+        save_button = wx.Button(self.panel, label="Save...")
+        apply_button = wx.Button(self.panel, label="Apply")
         close_button = wx.Button(self.panel, label="Close")
 
         hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -420,7 +423,7 @@ class GUIDialogMiniConstraints(wx.Dialog):
                 systs = self._gui._sess_sel.systs
                 systs._constr = loaded_constraints # Directly replace the constraints
                 
-                # self._refresh_display() # If you have a display
+                self._refresh_display() # If you have a display
 
                 wx.MessageBox(f"Constraints loaded successfully from {pathname}.\n"
                               "Click 'Apply Loaded/Current Constraints' to make them active.",
@@ -500,6 +503,8 @@ class GUIDialogMiniConstraints(wx.Dialog):
 
     def _on_close(self, event):
         self.Destroy()
+        self._menu.FindItemById(self._dlg_id[4]).Check(False)
+
 
 class GUIDialogMiniDefaults(GUIDialogMini):
     def __init__(self,
