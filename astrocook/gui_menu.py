@@ -176,6 +176,18 @@ class GUIMenu(object):
                                   params_last=self._params_last)
         self._params_last = dlg._params
 
+
+    def _on_dialog_mini_constr(self, event, title, targ, log=True):
+        if log:
+            sess = self._gui._sess_sel
+            sess.log.append_full('_menu', '_on_dialog_mini_constr',
+                                 {'event': None, 'title': title, 'targ': targ})
+        if hasattr(self._gui, '_dlg_mini_graph') and hasattr(self._gui, '_dlg_mini_constr'):
+            self._gui._dlg_mini_constr._refresh()
+        else:
+            dlg = GUIDialogMiniConstraints(self._gui, title)
+
+
     def _on_dialog_mini_defs(self, event, title, targ, log=True):
         if log:
             sess = self._gui._sess_sel
@@ -701,7 +713,7 @@ class GUIMenuView(GUIMenu):
         self._gui._menu_view = self
         #tab_id = [start_id+1, start_id+2, start_id+3, start_id+4, start_id+5]
         tab_id = [start_id+0, start_id+1, start_id+2]
-        dlg_id = [start_id+4, start_id+5, start_id+10, start_id+11]
+        dlg_id = [start_id+4, start_id+5, start_id+10, start_id+11, start_id+13]
         self._gui._menu_tab_id = tab_id
         self._gui._menu_dlg_id = dlg_id
 
@@ -733,7 +745,11 @@ class GUIMenuView(GUIMenu):
                      'key': 'log', 'append': 'spec', 'dlg_mini': 'log'},
                      {'type': '_item', 'title': "Session defaults",
                       'event': lambda e: self._on_dlg_mini(e, 'defs'),
-                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'}
+                      'key': 'defs', 'append': 'spec', 'dlg_mini': 'defs'},
+                     '--',
+                     {'type': '_item', 'title': "System constraints",
+                      'event': lambda e: self._on_dlg_mini(e, 'constr'),
+                      'key': 'constr', 'append': 'systs', 'dlg_mini': 'constr'}
                      ]
 
         if show_all:
@@ -815,8 +831,8 @@ class GUIMenuView(GUIMenu):
         self._gui._refresh()
 
     def _on_dlg_mini(self, event, obj, check=None, log=True):
-        index = ['graph', 'cursor', 'log', 'defs'].index(obj)
-        title = ['Graph elements', '', 'Session log', 'Session defaults'][index]
+        index = ['graph', 'cursor', 'log', 'defs', 'constr'].index(obj)
+        title = ['Graph elements', '', 'Session log', 'Session defaults', 'System constraints'][index]
         item = self._menu.FindItemById(self._gui._menu_dlg_id[index])
 
         if check is not None:
