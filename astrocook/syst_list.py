@@ -291,6 +291,14 @@ class SystList(object):
                             if k in self._constr:
                                 self._constr[k+'_backup'] = self._constr[k]
                             self._constr[k] = (v[0], k.split('_')[-1], None)
+                    #if k=='lines_voigt_137_b':
+                    #        print(v[0], v[2], type(v[2]))
+                    #        print(m['mod']._pars[k])
+
+                    #if k=='lines_voigt_147_b':
+                    #        print(v[0], v[2], type(v[2]))
+                    #        print(m['mod']._pars[k])
+
 
 
     def _freeze(self):

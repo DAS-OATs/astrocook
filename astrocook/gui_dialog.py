@@ -471,6 +471,21 @@ class GUIDialogMiniConstraints(wx.Dialog):
         systs = self._gui._sess_sel.systs
         cb = self._gui._sess_sel.cb
 
+        constr_str = self.constraints_display.GetValue()
+        constr_str = constr_str.replace('‘', '"')
+        constr_str = constr_str.replace('’', '"')
+        constr_str = constr_str.replace("'", '"')
+        constr_str = constr_str.replace('(', '[')
+        constr_str = constr_str.replace(')', ']')
+        constr_str = constr_str.replace('None', 'null')
+        systs._constr = json.loads(constr_str)
+        tab_constr = {}
+        for k, v in systs._constr.items():
+            if v[2]!=None:
+                tab_constr[k] = (v[0], 'expr', v[2])
+            else:
+                tab_constr[k] = (v[0], 'vary', False)
+
         if not hasattr(systs, '_constr') or not systs._constr:
             wx.MessageBox("No constraints loaded or available to apply.", "Information", wx.OK | wx.ICON_INFORMATION)
             return
@@ -478,14 +493,15 @@ class GUIDialogMiniConstraints(wx.Dialog):
         try:
             # Re-apply constraints to the models
             # This involves iterating through _constr and setting model parameters
-            systs._constrain(systs._constr) # This should apply them to lmfit parameters
+            systs._constrain(tab_constr) # This should apply them to lmfit parameters
             
             # Recreate models if necessary (especially if expressions changed)
             if hasattr(cb, '_mods_recreate2'):
-                 cb._mods_recreate2(only_constr=True)
+                cb._mods_recreate2(only_constr=True)
 
             # Refresh the GUITableSystList display
-            if hasattr(self._gui, '_tab_systs') and self._gui._tab_systs._shown:
+            if hasattr(self._gui, '_tab_systs'): # and self._gui._tab_systs._shown:
+                self._gui._tab_systs._on_view(event=None)
                 self._gui._tab_systs._text_colours()
                 self._gui._tab_systs._tab.ForceRefresh()
             
@@ -495,6 +511,8 @@ class GUIDialogMiniConstraints(wx.Dialog):
 
             wx.MessageBox("Constraints have been applied to the current models.", "Success", wx.OK | wx.ICON_INFORMATION)
             logging.info("Applied constraints from _constr dictionary.")
+
+            self._gui._refresh()
 
         except Exception as e:
             wx.MessageBox(f"Error applying constraints: {e}", "Error", wx.OK | wx.ICON_ERROR)

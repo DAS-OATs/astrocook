@@ -1009,6 +1009,7 @@ class GUITableSystList(GUITable):
                         c = None
                     r = i if c == 11 else self._row_extract(int(p.split('_')[-2]))
                     if r!=None and c!=None:
+
                         if v.vary==False: # and r != None and c != None:
                             self._tab.SetCellTextColour(r, c, 'grey')
                         if v.expr!=None: #and r != None and c != None:
