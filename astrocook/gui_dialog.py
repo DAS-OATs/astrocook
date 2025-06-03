@@ -342,6 +342,165 @@ class GUIDialogMini(wx.Dialog):
         self.Show()
 
 
+class GUIDialogMiniConstraints(wx.Dialog):
+    def __init__(self, parent_gui, title="Manage Constraints"):
+        self._gui = parent_gui
+        super(GUIDialogMiniConstraints, self).__init__(None, title=title, size=(400, 200))
+
+        self.panel = wx.Panel(self)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Optional: Display area for constraints (e.g., a TextCtrl or ListCtrl)
+        # For simplicity, we'll start without a display and just have load/save.
+        self.constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        vbox.Add(self.constraints_display, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        self._refresh_display() # You'd need to implement this if you add a display
+
+        load_button = wx.Button(self.panel, label="Load Constraints from File...")
+        save_button = wx.Button(self.panel, label="Save Constraints to File...")
+        apply_button = wx.Button(self.panel, label="Apply Loaded/Current Constraints")
+        close_button = wx.Button(self.panel, label="Close")
+
+        hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        hbox_buttons.Add(load_button, flag=wx.RIGHT, border=5)
+        hbox_buttons.Add(save_button, flag=wx.RIGHT, border=5)
+        hbox_buttons.Add(apply_button, flag=wx.RIGHT, border=5) # Added Apply button
+        hbox_buttons.AddStretchSpacer()
+        hbox_buttons.Add(close_button)
+
+        vbox.Add(hbox_buttons, flag=wx.EXPAND | wx.ALL, border=10)
+
+        self.panel.SetSizer(vbox)
+
+        load_button.Bind(wx.EVT_BUTTON, self._on_load_constraints)
+        save_button.Bind(wx.EVT_BUTTON, self._on_save_constraints)
+        apply_button.Bind(wx.EVT_BUTTON, self._on_apply_constraints) # Bind Apply button
+        close_button.Bind(wx.EVT_BUTTON, self._on_close)
+
+        self.Centre()
+        self.Show()
+
+    def _refresh_display(self): # If you add a display
+        if hasattr(self._gui, '_sess_sel') and self._gui._sess_sel:
+            systs = self._gui._sess_sel.systs
+            try:
+                # Pretty print for readability
+                import pprint
+                display_text = pprint.pformat(systs._constr, indent=2)
+                self.constraints_display.SetValue(display_text)
+            except Exception as e:
+                self.constraints_display.SetValue(f"Error displaying constraints: {e}")
+        else:
+            self.constraints_display.SetValue("No active session or systems list.")
+
+
+    def _on_load_constraints(self, event):
+        if not (hasattr(self._gui, '_sess_sel') and self._gui._sess_sel):
+            wx.MessageBox("No active session selected.", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        with wx.FileDialog(self, "Load constraints from JSON file",
+                           wildcard="JSON files (*.json)|*.json",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'r') as f:
+                    loaded_constraints = json.load(f)
+                
+                # Basic validation (can be improved)
+                if not isinstance(loaded_constraints, dict):
+                    raise ValueError("Loaded file is not a valid constraint dictionary.")
+                for k, v_tuple in loaded_constraints.items():
+                    if not (isinstance(k, str) and isinstance(v_tuple, list) and len(v_tuple) == 3):
+                         # JSON loads tuples as lists, so we check for list
+                        raise ValueError(f"Invalid constraint format for key {k}")
+
+                systs = self._gui._sess_sel.systs
+                systs._constr = loaded_constraints # Directly replace the constraints
+                
+                # self._refresh_display() # If you have a display
+
+                wx.MessageBox(f"Constraints loaded successfully from {pathname}.\n"
+                              "Click 'Apply Loaded/Current Constraints' to make them active.",
+                              "Success", wx.OK | wx.ICON_INFORMATION)
+                logging.info(f"Constraints loaded from {pathname}")
+
+            except Exception as e:
+                wx.MessageBox(f"Error loading constraints: {e}", "Error", wx.OK | wx.ICON_ERROR)
+                logging.error(f"Error loading constraints: {e}")
+
+    def _on_save_constraints(self, event):
+        if not (hasattr(self._gui, '_sess_sel') and self._gui._sess_sel):
+            wx.MessageBox("No active session selected.", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        systs = self._gui._sess_sel.systs
+        if not hasattr(systs, '_constr') or not systs._constr:
+            wx.MessageBox("No constraints to save.", "Information", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        with wx.FileDialog(self, "Save constraints to JSON file",
+                           wildcard="JSON files (*.json)|*.json",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            try:
+                # Convert tuples to lists for JSON compatibility if they are tuples.
+                # However, _constr values are already lists/tuples that json.dump handles.
+                # (id, type, value) -> json.dump will convert tuple to list in json
+                constraints_to_save = systs._constr
+                with open(pathname, 'w') as f:
+                    json.dump(constraints_to_save, f, indent=4)
+                wx.MessageBox(f"Constraints saved successfully to {pathname}", "Success", wx.OK | wx.ICON_INFORMATION)
+                logging.info(f"Constraints saved to {pathname}")
+            except Exception as e:
+                wx.MessageBox(f"Error saving constraints: {e}", "Error", wx.OK | wx.ICON_ERROR)
+                logging.error(f"Error saving constraints: {e}")
+
+    def _on_apply_constraints(self, event):
+        if not (hasattr(self._gui, '_sess_sel') and self._gui._sess_sel):
+            wx.MessageBox("No active session selected.", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        systs = self._gui._sess_sel.systs
+        cb = self._gui._sess_sel.cb
+
+        if not hasattr(systs, '_constr') or not systs._constr:
+            wx.MessageBox("No constraints loaded or available to apply.", "Information", wx.OK | wx.ICON_INFORMATION)
+            return
+        
+        try:
+            # Re-apply constraints to the models
+            # This involves iterating through _constr and setting model parameters
+            systs._constrain(systs._constr) # This should apply them to lmfit parameters
+            
+            # Recreate models if necessary (especially if expressions changed)
+            if hasattr(cb, '_mods_recreate2'):
+                 cb._mods_recreate2(only_constr=True)
+
+            # Refresh the GUITableSystList display
+            if hasattr(self._gui, '_tab_systs') and self._gui._tab_systs._shown:
+                self._gui._tab_systs._text_colours()
+                self._gui._tab_systs._tab.ForceRefresh()
+            
+            # Refresh the main graph if it exists
+            if hasattr(self._gui, '_graph_main') and self._gui._graph_main._shown:
+                self._gui._graph_main._refresh(self._gui._sess_sel)
+
+            wx.MessageBox("Constraints have been applied to the current models.", "Success", wx.OK | wx.ICON_INFORMATION)
+            logging.info("Applied constraints from _constr dictionary.")
+
+        except Exception as e:
+            wx.MessageBox(f"Error applying constraints: {e}", "Error", wx.OK | wx.ICON_ERROR)
+            logging.exception("Error applying constraints:")
+
+
+    def _on_close(self, event):
+        self.Destroy()
+
 class GUIDialogMiniDefaults(GUIDialogMini):
     def __init__(self,
                  gui,
