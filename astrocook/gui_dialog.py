@@ -415,13 +415,21 @@ class GUIDialogMiniConstraints(wx.Dialog):
                 # Basic validation (can be improved)
                 if not isinstance(loaded_constraints, dict):
                     raise ValueError("Loaded file is not a valid constraint dictionary.")
-                for k, v_tuple in loaded_constraints.items():
+                
+                # Filter out any potential _backup entries from the loaded data
+                active_loaded_constraints = {
+                    key: value
+                    for key, value in loaded_constraints.items()
+                    if not key.endswith('_backup')
+                }
+
+                for k, v_tuple in active_loaded_constraints.items():
                     if not (isinstance(k, str) and isinstance(v_tuple, list) and len(v_tuple) == 3):
                          # JSON loads tuples as lists, so we check for list
                         raise ValueError(f"Invalid constraint format for key {k}")
 
                 systs = self._gui._sess_sel.systs
-                systs._constr = loaded_constraints # Directly replace the constraints
+                systs._constr = active_loaded_constraints # Directly replace the constraints
                 
                 self._refresh_display() # If you have a display
 
@@ -444,6 +452,17 @@ class GUIDialogMiniConstraints(wx.Dialog):
             wx.MessageBox("No constraints to save.", "Information", wx.OK | wx.ICON_INFORMATION)
             return
 
+        # Filter out backup constraints before saving
+        active_constraints_to_save = {
+            key: value
+            for key, value in systs._constr.items()
+            if not key.endswith('_backup')
+        }
+
+        if not active_constraints_to_save:
+            wx.MessageBox("No active (non-backup) constraints to save.", "Information", wx.OK | wx.ICON_INFORMATION)
+            return
+
         with wx.FileDialog(self, "Save constraints to JSON file",
                            wildcard="JSON files (*.json)|*.json",
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
@@ -454,9 +473,8 @@ class GUIDialogMiniConstraints(wx.Dialog):
                 # Convert tuples to lists for JSON compatibility if they are tuples.
                 # However, _constr values are already lists/tuples that json.dump handles.
                 # (id, type, value) -> json.dump will convert tuple to list in json
-                constraints_to_save = systs._constr
                 with open(pathname, 'w') as f:
-                    json.dump(constraints_to_save, f, indent=4)
+                    json.dump(active_constraints_to_save, f, indent=4)
                 wx.MessageBox(f"Constraints saved successfully to {pathname}", "Success", wx.OK | wx.ICON_INFORMATION)
                 logging.info(f"Constraints saved to {pathname}")
             except Exception as e:
@@ -490,10 +508,24 @@ class GUIDialogMiniConstraints(wx.Dialog):
             wx.MessageBox("No constraints loaded or available to apply.", "Information", wx.OK | wx.ICON_INFORMATION)
             return
         
+        # Filter out backup constraints from systs._constr before passing to _constrain
+        # systs._constr might have been populated by _on_load_constraints (which loads clean data)
+        # or it might be the live _constr object with internal _backup keys.
+        active_constraints_to_apply = {
+            key: value
+            for key, value in systs._constr.items()
+            if not key.endswith('_backup')
+        }
+
+        if not active_constraints_to_apply:
+            wx.MessageBox("No active (non-backup) constraints found to apply.", "Information", wx.OK | wx.ICON_INFORMATION)
+            # This could happen if _constr only contained _backup entries.
+            return
+
         try:
             # Re-apply constraints to the models
             # This involves iterating through _constr and setting model parameters
-            systs._constrain(tab_constr) # This should apply them to lmfit parameters
+            systs._constrain(active_constraints_to_apply) # This should apply them to lmfit parameters
             
             # Recreate models if necessary (especially if expressions changed)
             if hasattr(cb, '_mods_recreate2'):
