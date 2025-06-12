@@ -4,12 +4,13 @@ from .message import *
 from .vars import docs_url, graph_elem, graph_lim_def, hwin_def, xem_d
 from collections import OrderedDict
 from copy import deepcopy as dc
+import datetime as dt
 import inspect
 import json
 import numpy as np
-import datetime as dt
-import wx
 import os
+import pprint
+import wx
 
 _cached_offset_y = None
 
@@ -346,28 +347,40 @@ class GUIDialogMiniConstraints(wx.Dialog):
     def __init__(self, parent_gui, title="Manage Constraints"):
         self._gui = parent_gui
         self._gui._dlg_mini_constr = self
-        super(GUIDialogMiniConstraints, self).__init__(None, title=title)
+        super(GUIDialogMiniConstraints, self).__init__(None, title=title, size=(600, 450))
         self._dlg_id = self._gui._menu_dlg_id
         self._menu = self._gui._panel_sess._menu._view._menu
 
         self.panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        # Optional: Display area for constraints (e.g., a TextCtrl or ListCtrl)
-        # For simplicity, we'll start without a display and just have load/save.
-        self.constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE)# | wx.TE_READONLY)
-        vbox.Add(self.constraints_display, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
-        self._refresh_display() # You'd need to implement this if you add a display
+        # User-friendly display using ListCtrl
+        self.constraints_list_ctrl = wx.ListCtrl(self.panel, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_VRULES)
+        self.constraints_list_ctrl.InsertColumn(0, "System ID", width=80)
+        self.constraints_list_ctrl.InsertColumn(1, "Parameter", width=80)
+        self.constraints_list_ctrl.InsertColumn(2, "Constraint Type", width=120)
+        self.constraints_list_ctrl.InsertColumn(3, "Details", width=250)
+        
+        vbox.Add(self.constraints_list_ctrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        self._refresh_display() # Populate the ListCtrl
+
+        # Optional: Raw display for debugging or if parsing fails
+        self.raw_constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP, size=(-1, 100))
+        vbox.Add(wx.StaticText(self.panel, label="Raw Constraints (for debugging):"), flag=wx.LEFT | wx.TOP, border=5)
+        vbox.Add(self.raw_constraints_display, proportion=0, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=5)
+        self._refresh_raw_display()
 
         load_button = wx.Button(self.panel, label="Load...")
         save_button = wx.Button(self.panel, label="Save...")
         apply_button = wx.Button(self.panel, label="Apply")
+        refresh_button = wx.Button(self.panel, label="Refresh") # Added Refresh button
         close_button = wx.Button(self.panel, label="Close")
 
         hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
         hbox_buttons.Add(load_button, flag=wx.RIGHT, border=5)
         hbox_buttons.Add(save_button, flag=wx.RIGHT, border=5)
         hbox_buttons.Add(apply_button, flag=wx.RIGHT, border=5) # Added Apply button
+        hbox_buttons.Add(refresh_button, flag=wx.RIGHT, border=5)
         hbox_buttons.AddStretchSpacer()
         hbox_buttons.Add(close_button)
 
@@ -378,23 +391,165 @@ class GUIDialogMiniConstraints(wx.Dialog):
         load_button.Bind(wx.EVT_BUTTON, self._on_load_constraints)
         save_button.Bind(wx.EVT_BUTTON, self._on_save_constraints)
         apply_button.Bind(wx.EVT_BUTTON, self._on_apply_constraints) # Bind Apply button
+        refresh_button.Bind(wx.EVT_BUTTON, self._on_refresh_display_button)
         close_button.Bind(wx.EVT_BUTTON, self._on_close)
 
         self.Centre()
         self.Show()
 
-    def _refresh_display(self): # If you add a display
-        if hasattr(self._gui, '_sess_sel') and self._gui._sess_sel:
+    def _parse_constraint_key(self, key_str):
+        """
+        Parses keys like 'lines_voigt_130_b' or 'lines_voigt_130_b_backup'.
+        Returns (id, param_name, is_backup)
+        """
+        parts = key_str.split('_')
+        is_backup = False
+        if parts[-1] == 'backup':
+            is_backup = True
+            parts.pop() # Remove 'backup'
+        
+        if len(parts) >= 3 and parts[0] == 'lines' and parts[1] == 'voigt':
+            try:
+                sys_id = int(parts[2])
+                param_name = parts[3]
+                return sys_id, param_name, is_backup
+            except (ValueError, IndexError):
+                return None, key_str, is_backup # Return original key if parsing fails
+        return None, key_str, is_backup # Fallback
+
+    def _refresh_display(self):
+        self.constraints_list_ctrl.DeleteAllItems()
+        if not (hasattr(self._gui, '_sess_sel') and self._gui._sess_sel and \
+                hasattr(self._gui._sess_sel, 'systs') and \
+                hasattr(self._gui._sess_sel.systs, '_constr')):
+            # Insert a placeholder item if no constraints are available
+            index = self.constraints_list_ctrl.InsertItem(0, "N/A")
+            self.constraints_list_ctrl.SetItem(index, 1, "No active session or constraints.")
+            return
+
+        systs_constr = self._gui._sess_sel.systs._constr
+        if not systs_constr:
+            index = self.constraints_list_ctrl.InsertItem(0, "N/A")
+            self.constraints_list_ctrl.SetItem(index, 1, "No constraints defined.")
+            return
+
+        # Sort constraints for consistent display, e.g., by system ID then parameter
+        # This makes it easier to compare if you also handle backups
+        sorted_constr_items = sorted(systs_constr.items(), key=lambda item: self._parse_constraint_key(item[0]))
+
+
+        for key, value_list in sorted_constr_items:
+            # value_list is like: [constrained_sys_id, param_short_name_or_constr_type, value_or_expr_or_None]
+            # Example: 'lines_voigt_130_b': [130, 'b', None] for a freeze
+            # Example: 'lines_voigt_150_z': [150, 'z', 'lines_voigt_84_z'] for a link
+
+            parsed_sys_id, parsed_param_name, is_backup = self._parse_constraint_key(key)
+            
+            # If parsing fails, parsed_sys_id will be None. Use constrained_sys_id from value_list as fallback.
+            display_sys_id = str(parsed_sys_id) if parsed_sys_id is not None else str(value_list[0])
+            # Use parsed_param_name if available, otherwise use value_list[1] which might be param or type
+            display_param_name = parsed_param_name if parsed_param_name else str(value_list[1])
+
+            # Adjust display_param_name if value_list[1] was actually the constraint type (old format)
+            # This logic might need refinement based on exact _constr structure evolution
+            if display_param_name in ['vary', 'expr']: # value_list[1] was type, not param name
+                # Try to get param name from key again, or mark as unknown
+                temp_id, temp_param, _ = self._parse_constraint_key(key.replace('_backup',''))
+                display_param_name = temp_param if temp_param else "Unknown"
+
+
+            constraint_target_id = value_list[0] # The ID of the system whose parameter is being constrained
+            # value_list[1] can be param name (e.g. 'z', 'b') or constraint type ('vary', 'expr')
+            # value_list[2] is the constraint value/expression or None/True/False
+
+            constraint_type_str = ""
+            details_str = ""
+
+            # Standardized internal format: (id, param_short_name, value/expr)
+            # Example: _constr[k] = (v[0], k.split('_')[-1], v[2]) -> (target_id, param_name, expr_or_None)
+            # This is from your SystList._constrain method when it sets _constr[k] for expr or vary:
+            # self._constr[k] = (v[0], k.split('_')[-1], None) for frozen
+            # self._constr[k] = (v[0], k.split('_')[-1], v[2]) for linked
+            
+            # New interpretation based on SystList._constrain structure:
+            # value_list[0] = target_id
+            # value_list[1] = param_short_name (e.g., 'z', 'logN', 'b')
+            # value_list[2] = expression string (for links) OR None (for frozen) OR True/False (older vary style)
+            
+            true_param_name = str(value_list[1])
+            constraint_value = value_list[2]
+
+            if isinstance(constraint_value, str) and constraint_value.startswith('lines_voigt_'): # Likely a link
+                constraint_type_str = "Linked"
+                linked_to_sys_id, linked_to_param_name, _ = self._parse_constraint_key(constraint_value)
+                if linked_to_sys_id is not None:
+                    details_str = f"to System {linked_to_sys_id}, Param {linked_to_param_name}"
+                else:
+                    details_str = f"to {constraint_value}" # Fallback
+            elif constraint_value is None: # Frozen (according to SystList._constrain for 'vary': False)
+                constraint_type_str = "Frozen"
+                details_str = f"Value fixed (was {self._get_current_param_value_for_display(constraint_target_id, true_param_name)})"
+            elif isinstance(constraint_value, bool): # Older 'vary': True/False style
+                if not constraint_value: # vary: False
+                    constraint_type_str = "Frozen (legacy)"
+                    details_str = f"Value fixed (was {self._get_current_param_value_for_display(constraint_target_id, true_param_name)})"
+                else: # vary: True
+                    constraint_type_str = "Set to Vary (legacy)"
+                    details_str = "Parameter is free"
+            else: # Unknown or other type
+                constraint_type_str = "Custom/Unknown"
+                details_str = str(constraint_value)
+
+            if is_backup:
+                constraint_type_str += " (Backup)"
+
+            index = self.constraints_list_ctrl.InsertItem(self.constraints_list_ctrl.GetItemCount(), display_sys_id)
+            self.constraints_list_ctrl.SetItem(index, 1, true_param_name) # Use the param name from value_list[1]
+            self.constraints_list_ctrl.SetItem(index, 2, constraint_type_str)
+            self.constraints_list_ctrl.SetItem(index, 3, details_str)
+        
+        # Also refresh the raw display if you have it
+        # self._refresh_raw_display()
+
+
+    def _get_current_param_value_for_display(self, sys_id, param_short_name):
+        """ Helper to get current value of a param for display in 'frozen' state """
+        try:
+            systs = self._gui._sess_sel.systs
+            # Find the model corresponding to sys_id
+            target_mod = None
+            for m_row in systs._mods_t:
+                if m_row['id'] is not None and sys_id in m_row['id']:
+                    target_mod = m_row['mod']
+                    break
+            if target_mod:
+                param_full_name_pattern = f"lines_voigt_{sys_id}_{param_short_name}"
+                # Check for exact match first
+                if param_full_name_pattern in target_mod._pars:
+                     return f"{target_mod._pars[param_full_name_pattern].value:.4f}" # Format as needed
+                # Fallback: sometimes the _constr key might be slightly different from lmfit param name
+                # (e.g. if _constr holds 'N' but lmfit has 'logN'). This part is tricky.
+                # For now, we assume direct mapping for simplicity of this helper.
+
+        except Exception as e:
+            logging.debug(f"Could not get current value for sys {sys_id}, param {param_short_name}: {e}")
+        return "N/A" # Fallback
+
+    def _on_refresh_display_button(self, event):
+        self._refresh_display()
+        # self._refresh_raw_display() # if you have it
+
+    def _refresh_raw_display(self): # If you add a raw display TextCtrl
+        if hasattr(self._gui, '_sess_sel') and self._gui._sess_sel and \
+           hasattr(self._gui._sess_sel.systs, '_constr'):
             systs = self._gui._sess_sel.systs
             try:
-                # Pretty print for readability
-                import pprint
-                display_text = pprint.pformat(systs._constr, indent=2)
-                self.constraints_display.SetValue(display_text)
+                display_text = pprint.pformat(systs._constr, indent=2, width=120)
+                self.raw_constraints_display.SetValue(display_text)
             except Exception as e:
-                self.constraints_display.SetValue(f"Error displaying constraints: {e}")
+                self.raw_constraints_display.SetValue(f"Error displaying raw constraints: {e}")
         else:
-            self.constraints_display.SetValue("No active session or systems list.")
+            self.raw_constraints_display.SetValue("No active session or system constraints.")
 
 
     def _on_load_constraints(self, event):
