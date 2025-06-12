@@ -483,7 +483,7 @@ class GUIDialogMiniConstraints(wx.Dialog):
                 constraint_type_str = "Linked"
                 linked_to_sys_id, linked_to_param_name, _ = self._parse_constraint_key(constraint_value)
                 if linked_to_sys_id is not None:
-                    details_str = f"to System {linked_to_sys_id}, Param {linked_to_param_name}"
+                    details_str = f"to System {linked_to_sys_id}, parameter {linked_to_param_name}"
                 else:
                     details_str = f"to {constraint_value}" # Fallback
             elif constraint_value is None: # Frozen (according to SystList._constrain for 'vary': False)
@@ -644,7 +644,7 @@ class GUIDialogMiniConstraints(wx.Dialog):
         systs = self._gui._sess_sel.systs
         cb = self._gui._sess_sel.cb
 
-        constr_str = self.constraints_display.GetValue()
+        constr_str = self.raw_constraints_display.GetValue()
         constr_str = constr_str.replace('‘', '"')
         constr_str = constr_str.replace('’', '"')
         constr_str = constr_str.replace("'", '"')
