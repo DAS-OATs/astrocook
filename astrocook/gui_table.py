@@ -601,7 +601,7 @@ class GUITableSystList(GUITable):
             if v in self._links_d and self._links_d[v][2] != '' and self._freezes_d[v][2] == True:
                 self._freezes_d[v] = (self._freezes_d[v][0],
                                       self._freezes_d[v][1], False)
-        systs._constrain(self._freezes_d)
+        systs._constrain(self._freezes_d, source="GUITableSystList._data_freeze_par")
         self._text_colours()
 
 
@@ -653,7 +653,7 @@ class GUITableSystList(GUITable):
                     self._data_edit(r, labels[c], v, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-        systs._constrain(self._links_d)
+        systs._constrain(self._links_d, source="GUITableSystList._data_link_bt")
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
@@ -681,7 +681,7 @@ class GUITableSystList(GUITable):
                     self._data_edit(r, labels[c], vt, update_mod=False)
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
-        systs._constrain(self._links_d)
+        systs._constrain(self._links_d, source="GUITableSystList._data_link_par")
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
@@ -886,7 +886,10 @@ class GUITableSystList(GUITable):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+        logging.info("Calling _data_freeze_par FIRST TIME")
         self._data_freeze_par(row, col)
+        logging.info("Returned from _data_freeze_par FIRST TIME")
+
 
 
     def _on_freeze_par_all(self, event=None, col=None, reverse=False):

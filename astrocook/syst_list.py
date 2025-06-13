@@ -272,33 +272,134 @@ class SystList(object):
             self._compressed = False
 
 
-    def _constrain(self, dict):
-        for k, v in dict.items():
-            for m in self._mods_t:
-                if v[0] in m['id']:
-                    if v[1]=='expr':
-                        m['mod']._pars[k].set(expr=v[2])
-                        if v[2]=='':
-                            m['mod']._pars[k].set(vary=True)
-                        if k in self._constr:
-                            self._constr[k+'_backup'] = self._constr[k]
-                        self._constr[k] = (v[0], k.split('_')[-1], v[2])
-                    if v[1]=='vary':
-                        m['mod']._pars[k].set(vary=v[2])
-                        if v[2]:
-                            if k in self._constr: del self._constr[k]
+    def _constrain(self, constr_dict_to_apply, source="Unknown"): # constr_dict_to_apply = {'param_full_name': (id, 'type', value_or_expr_for_lmfit)}
+        logging.info(f"SystList._constrain CALLED BY: {source}. With: {constr_dict_to_apply}") # Log source
+        logging.debug(f"Current self._constr BEFORE applying: {dc(self._constr)}")
+    
+        # Work on a copy of self._constr to manage changes carefully
+        current_internal_constraints = dc(self._constr)
+        
+        for param_full_name, (target_id, constr_type, val_for_lmfit) in constr_dict_to_apply.items():
+            logging.info(f"Processing constraint: param={param_full_name}, id={target_id}, type={constr_type}, lmfit_val='{val_for_lmfit}'")
+
+            param_suffix = param_full_name.split('_')[-1] # e.g., 'z', 'logN', 'b'
+
+            found_mod_for_param = False
+            for m_row in self._mods_t:
+                if m_row['id'] is not None and target_id in m_row['id']:
+                    mod = m_row['mod']
+                    if mod is None or not hasattr(mod, '_pars') or param_full_name not in mod._pars:
+                        # This check is important: if the param isn't in this model, skip
+                        # Could happen if target_id is part of multiple models (unlikely for lines_voigt_ID_param)
+                        # or if constr_dict_to_apply has stale/incorrect param_full_names
+                        continue 
+                    
+                    found_mod_for_param = True
+                    try:
+                        # --- Backup Logic ---
+                        # Backup only if a real change is happening to an existing constraint or a new one is set
+                        backup_key = param_full_name + '_backup'
+                        if param_full_name in current_internal_constraints and backup_key not in current_internal_constraints:
+                            # If there's an existing constraint and no backup for it yet, create one.
+                            current_internal_constraints[backup_key] = current_internal_constraints[param_full_name]
+                            logging.debug(f"Backed up '{param_full_name}': {current_internal_constraints[backup_key]}")
+                        elif param_full_name not in current_internal_constraints:
+                            # If it's a new constraint, there's nothing to back up for param_full_name itself.
+                            # However, if a backup for it *already exists* (e.g. from a previous op), clear it? Risky.
+                            # Best to only create backup if param_full_name *is* in current_internal_constraints.
+                            pass
+
+
+                        # --- Apply to lmfit Parameter and Update current_internal_constraints ---
+                        if constr_type == 'expr':
+                            mod._pars[param_full_name].set(expr=val_for_lmfit) # val_for_lmfit is the expression string
+                            # Store in _constr format: (id, param_suffix, expression_string)
+                            current_internal_constraints[param_full_name] = (target_id, param_suffix, str(val_for_lmfit))
+                            logging.info(f"Set expr for {param_full_name} to '{val_for_lmfit}' for id {target_id}. _constr updated.")
+
+                            if val_for_lmfit == '': # Unlinking
+                                mod._pars[param_full_name].set(vary=True) # lmfit needs vary=True if expr is removed
+                                # How to represent "unlinked" in _constr?
+                                # Option 1: Remove key if it means "fully free"
+                                # if param_full_name in current_internal_constraints:
+                                #     del current_internal_constraints[param_full_name]
+                                # Option 2: Keep it but mark as 'vary': True, with expr='' or None
+                                # current_internal_constraints[param_full_name] = (target_id, param_suffix, None) # Or ''
+                                # The original code implies backup restoration or specific state for unlinking.
+                                # For now, let's ensure the expression string is empty.
+                                current_internal_constraints[param_full_name] = (target_id, param_suffix, '')
+
+
+                                # Attempt to restore from backup if unlinking
+                                if backup_key in current_internal_constraints:
+                                    bu_id, bu_param_suffix, bu_val_str = current_internal_constraints[backup_key]
+                                    if bu_id == target_id: # Ensure backup is for the same component
+                                        if bu_val_str is None: # Backup was a 'vary': False (frozen)
+                                            mod._pars[param_full_name].set(vary=False, expr=None)
+                                            current_internal_constraints[param_full_name] = (target_id, param_suffix, None)
+                                            logging.info(f"Unlinked {param_full_name}, reverted to prior frozen state from backup.")
+                                        # else if backup was another expression, don't auto-reapply, just unlinked current.
+                                        # else if backup was vary=True, it's already vary=True.
+                                        del current_internal_constraints[backup_key]
+                                        logging.debug(f"Removed backup {backup_key} after unlinking & check.")
+                                else: # No backup, simply unlinked and varying
+                                    # If we want to remove the key from _constr when unlinked and no prior state:
+                                    # if param_full_name in current_internal_constraints and current_internal_constraints[param_full_name][2] == '':
+                                    # del current_internal_constraints[param_full_name]
+                                    # logging.debug(f"Unlinked {param_full_name}, now varying. Removed from _constr.")
+                                    pass # Current logic: keeps (id, suffix, '')
+
+
+                        elif constr_type == 'vary':
+                            mod._pars[param_full_name].set(vary=val_for_lmfit) # val_for_lmfit is True or False
+                            if val_for_lmfit is False: # Freezing
+                                # Store in _constr format: (id, param_suffix, None) for frozen
+                                current_internal_constraints[param_full_name] = (target_id, param_suffix, None)
+                            else: # Unfreezing (vary=True)
+                                # If unfreezing, what to store in _constr?
+                                # Option 1: Remove the key if it means "no constraint"
+                                # if param_full_name in current_internal_constraints:
+                                #    del current_internal_constraints[param_full_name]
+                                # Option 2: Restore from backup if one existed (e.g., an old expression)
+                                if backup_key in current_internal_constraints:
+                                    bu_id, bu_param_suffix, bu_val_str = current_internal_constraints[backup_key]
+                                    if bu_id == target_id: # Ensure backup is for the same component
+                                        if bu_val_str is not None and bu_val_str != '': # Backup was an expression
+                                            mod._pars[param_full_name].set(expr=bu_val_str, vary=True)
+                                            current_internal_constraints[param_full_name] = (target_id, param_suffix, bu_val_str)
+                                            logging.info(f"Unfroze {param_full_name}, restored expression '{bu_val_str}' from backup.")
+                                        # elif bu_val_str is None: # Backup was frozen, already handled by vary=False logic, no change
+                                        #     pass
+                                        # elif bu_val_str == '': # Backup was unlinked, now unfreezing means vary=True
+                                        #     # Key might be removed or set to (id, suffix, '') or specific marker for "vary true"
+                                        #     if param_full_name in current_internal_constraints: # Remove if "fully free"
+                                        #          del current_internal_constraints[param_full_name]
+                                        #     logging.info(f"Unfroze {param_full_name}, was previously unlinked. Now free.")
+                                        # else bu_val_str is some other string not None or '' (should not happen for 'vary' type backup)
+                                        del current_internal_constraints[backup_key]
+                                        logging.debug(f"Removed backup {backup_key} after unfreezing & check.")
+                                else: # No backup, just unfreezing. Remove from _constr if that means "no constraint"
+                                    if param_full_name in current_internal_constraints:
+                                        del current_internal_constraints[param_full_name]
+                                    logging.info(f"Unfroze {param_full_name}. No prior constraint to restore. Removed from _constr.")
+
+                            logging.info(f"Set vary for {param_full_name} to {val_for_lmfit} for id {target_id}. _constr updated.")
+
                         else:
-                            if k in self._constr:
-                                self._constr[k+'_backup'] = self._constr[k]
-                            self._constr[k] = (v[0], k.split('_')[-1], None)
-                    #if k=='lines_voigt_137_b':
-                    #        print(v[0], v[2], type(v[2]))
-                    #        print(m['mod']._pars[k])
+                            logging.warning(f"Unknown constraint type '{constr_type}' for {param_full_name}. Skipping.")
 
-                    #if k=='lines_voigt_147_b':
-                    #        print(v[0], v[2], type(v[2]))
-                    #        print(m['mod']._pars[k])
+                    except Exception as e:
+                        logging.error(f"Error applying constraint for {param_full_name} (id {target_id}) in model {m_row['mod']}: {e}", exc_info=True)
+                        # ณ จุดนี้ คุณอาจต้องการ rollback current_internal_constraints to self._constr before this loop iteration
+                        # or at least not assign current_internal_constraints back to self._constr at the end if errors occurred.
+                        # For now, it logs and continues.
+                    break # Found model for this param_full_name and target_id, applied, so break from m_row loop.
+                
+            if not found_mod_for_param:
+                 logging.warning(f"No model parameter '{param_full_name}' found for id {target_id} across all models. Constraint not fully applied.")
 
+        self._constr = current_internal_constraints # Assign the modified dictionary back
+        logging.debug(f"Current self._constr AFTER applying all: {dc(self._constr)}")
 
 
     def _freeze(self):
