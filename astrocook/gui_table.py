@@ -1028,3 +1028,24 @@ class GUITableSystList(GUITable):
                 cols = self._tab.GetNumberCols()
                 for c in range(cols):
                     self._tab.SetCellTextColour(r, c, 'light grey')
+
+
+_original_destroy = GUITableSystList.Destroy
+
+# 2. Define our new function that will replace it
+def _guarded_destroy(self, *args, **kwargs):
+    import traceback
+    print("="*80)
+    print("!!! INTERCEPTED CALL to GUITableSystList.Destroy() !!!")
+    print("The window object being destroyed is:", self)
+    print("Stack trace of the caller:")
+    traceback.print_stack()
+    print("="*80)
+    
+    # 3. Now, call the original method so it still works as intended
+    return _original_destroy(self, *args, **kwargs)
+
+# 4. Overwrite the class's Destroy method with our new guarded version
+GUITableSystList.Destroy = _guarded_destroy
+
+print(">>> GUITableSystList.Destroy has been monkey-patched for debugging. <<<")

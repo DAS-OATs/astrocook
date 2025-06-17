@@ -414,7 +414,7 @@ class GUIDialogMiniDefaults(GUIDialogMini):
         if refresh:
             if hasattr(sess, 'systs') and sess.systs is not None:
                 sess.cb._mods_recreate2()
-            self._gui._refresh(init_cursor=True, init_tab=False, init_bar=True)
+            self._gui._refresh(init_cursor=True, init_tab=False, init_bar=False)
 
 
     def _on_load(self, e=None, path=None, log=True):

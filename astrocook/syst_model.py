@@ -67,11 +67,12 @@ class SystModel(LMComposite):
             if plot_jac: plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
             plt.plot(self._xf, self._yf)
+            from .utils import run_with_recursion_retry
             if use_jac:
                 fit_kws_c['jac'] = _jac
 
                 try:
-                    fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                    fit = run_with_recursion_retry(super(SystModel, self).fit, self._yf, self._pars, x=self._xf,
                                                      weights=self._wf,
                                                      max_nfev=max_nfev,
                                                      fit_kws=fit_kws_c,
@@ -83,7 +84,7 @@ class SystModel(LMComposite):
                     use_jac = False
             if not use_jac:
                 try:
-                    fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+                    fit = run_with_recursion_retry(super(SystModel, self).fit, self._yf, self._pars, x=self._xf,
                                                  weights=self._wf,
                                                  max_nfev=max_nfev,
                                                  fit_kws=fit_kws_c,
@@ -95,7 +96,8 @@ class SystModel(LMComposite):
                 if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='blue')
             if plot_jac: plt.show()
             time_end = datetime.datetime.now()
-            self._ys = self.eval(x=self._xs, params=self._pars)
+            from .utils import run_with_recursion_retry
+            self._ys = run_with_recursion_retry(self.eval, x=self._xs, params=self._pars)
             #plt.plot(self._xs, self._ys)
             #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))
             #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))

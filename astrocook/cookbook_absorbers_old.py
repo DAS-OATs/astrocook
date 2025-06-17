@@ -3,6 +3,7 @@ from .message import *
 from .feat_list import FeatList
 from .syst_list import SystList
 from .syst_model import SystModel
+from .utils import run_with_recursion_retry
 from .vars import *
 from astropy import constants as aconst
 from astropy import table as at
@@ -537,10 +538,11 @@ class CookbookAbsorbersOld(object):
                     else:
                         N_tot = False
                         N_tot_specs = (None, None, None)
-                    mod._new_voigt(spec, series=s['series'], z=s['z'], logN=s['logN'],
-                                   b=s['b'], resol=s['resol'],
-                                   defs=self.sess.defs,
-                                   N_tot=N_tot, N_tot_specs=N_tot_specs)
+                    
+                    run_with_recursion_retry(mod._new_voigt, spec, series=s['series'], z=s['z'], logN=s['logN'],
+                                           b=s['b'], resol=s['resol'],
+                                           defs=self.sess.defs,
+                                           N_tot=N_tot, N_tot_specs=N_tot_specs)
                     self._mods_update(mod)
 
                 else:
@@ -639,7 +641,7 @@ class CookbookAbsorbersOld(object):
         model[s] = cont[s]
         for i, r in enumerate(systs._mods_t):
             mod = r['mod']
-            model[s] = mod.eval(x=systs._xs, params=mod._pars) * model[s]
+            model[s] = run_with_recursion_retry(mod.eval, x=systs._xs, params=mod._pars) * model[s]
         #print(cont[s],y[s],model[s])
         systs._bounds = argrelmax(model[s]/cont[s])[0]
         try:
