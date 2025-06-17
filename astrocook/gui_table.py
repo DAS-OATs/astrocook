@@ -1047,5 +1047,3 @@ def _guarded_destroy(self, *args, **kwargs):
 
 # 4. Overwrite the class's Destroy method with our new guarded version
 GUITableSystList.Destroy = _guarded_destroy
-
-print(">>> GUITableSystList.Destroy has been monkey-patched for debugging. <<<")
