@@ -15,6 +15,7 @@ import numpy as np
 from scipy.stats import norm
 import time
 import wx
+from wx.lib.newevent import NewCommandEvent
 
 # Windows sizes and offsets
 ds_x = int(wx.DisplaySize()[0]*0.98)
@@ -32,6 +33,8 @@ size_y_detail = ds_y*2//3
 offset_x_detail = do_x+ds_x-size_x_detail
 offset_y_detail = do_y
 
+# Create a custom event for when plotting data is ready
+PlotUpdateEvent, EVT_PLOT_UPDATE = NewCommandEvent()
 
 class GUIGraphMain(wx.Frame):
     """ Class for the GUI spectrum graph frame """
@@ -68,6 +71,7 @@ class GUIGraphMain(wx.Frame):
             self._gui._graph_main = self
         self._init(**kwargs)
         self.SetPosition((offset_x_main, offset_y_main))
+        #self.Bind(EVT_PLOT_UPDATE, self._on_plot_update_ready)
 
 
     def _init(self, **kwargs):
@@ -542,3 +546,40 @@ class GUIGraphHistogram(GUIGraphMain):
         self._closed = True
         self.Destroy()
         del self._gui._graph_hist
+
+
+#    def trigger_plot_refresh(self):
+#        """Called by a button or other event. Starts the background work."""
+#        # Show a spinner or disable controls here
+#        thread = threading.Thread(target=self._prepare_plot_data_background)
+#        thread.daemon = True # Allows app to exit even if thread is running
+#        thread.start()
+#
+#
+#    def _prepare_plot_data_background(self):
+#        """
+#        !!! This runs on a background thread !!!
+#        Perform all slow operations here.
+#        """
+#        # 1. Load FITS file
+#        # 2. Perform calculations (e.g., normalization, unit conversion)
+#        # 3. Prepare all x, y, arrays and other plotting parameters
+#        plot_data = {
+#            'x_spec': prepared_x_data,
+#            'y_spec': prepared_y_data,
+#            'x_nodes': prepared_node_data,
+#            # ... etc.
+#        }
+#        # Post an event to the main thread with the results
+#        evt = PlotUpdateEvent(data=plot_data)
+#        wx.PostEvent(self, evt)
+#
+#    def _on_plot_update_ready(self, event):
+#        """
+#        !!! This runs on the main GUI thread !!!
+#        It's fast because the data is already prepared.
+#        """
+#        plot_data = event.data
+#        # Call a lightweight plot update function
+#        self._graph._update_artists(plot_data)
+#        # Hide spinner, re-enable controls

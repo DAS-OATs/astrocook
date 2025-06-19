@@ -483,12 +483,14 @@ class Graph(object):
                 if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
                     if mode != 'axhline':
-                        x = dc(t[xcol])
+                        #x = dc(t[xcol])
+                        x = t[xcol].copy()
                     if mode != 'axvline':
                         try:
                             y = int(ycol)
                         except:
-                            y = dc(t[ycol])
+                            #y = dc(t[ycol])
+                            y = t[ycol].copy()
                     if mcol not in ['None', 'none', None]:
                         x[t[mcol]==0] = np.nan
 
