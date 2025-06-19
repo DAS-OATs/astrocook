@@ -972,20 +972,92 @@ class GUITableSystList(GUITable):
 
 
     def _on_view(self, event, **kwargs):
-        profile = cProfile.Profile()
-        profile.enable()
+        #profile = cProfile.Profile()
+        #profile.enable()
 
-        super(GUITableSystList, self)._on_view(event, **kwargs)
+        #super(GUITableSystList, self)._on_view(event, **kwargs)
+        #self._text_colours()
+        #self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
+        #               self._on_cell_right_click)
+        #for k, v in self._data._constr.items():
+        #    if v[2]==None:
+        #        self._freezes_d[k]=(v[0], 'vary', False)
+        #    else:
+        #        self._links_d[k]=(v[0], 'expr', v[2])
+
+                # Calls _data_init, _fill, _init for the table grid itself
+        super(GUITableSystList, self)._on_view(event, **kwargs) 
+
+        # Initialize/clear _freezes_d and _links_d before repopulating.
+        # This is CRITICAL to ensure they don't accumulate old states if _on_view is called multiple times.
+        self._freezes_d = {}
+        self._links_d = {}
+        
+        logging.debug(f"GUITableSystList._on_view: Initializing _freezes_d/_links_d from systs._constr.")
+        if hasattr(self, '_data') and hasattr(self._data, '_constr'): # self._data is GUITable._attr ('systs'), so self._data is session.systs
+            systs_constr = self._data._constr # This is session.systs._constr
+            logging.debug(f"GUITableSystList._on_view: systs._constr to process: {systs_constr}")
+
+            for k_constr, v_constr_tuple in systs_constr.items():
+                # k_constr is the full parameter name (e.g., 'lines_voigt_X_z')
+                # v_constr_tuple is (target_id, param_suffix, value_or_expr_string)
+                
+                if k_constr.endswith("_backup"): # Important: Skip any backup keys in _constr
+                    logging.debug(f"GUITableSystList._on_view: Skipping backup key from _constr: {k_constr}")
+                    continue
+
+                # Ensure v_constr_tuple has the expected structure (3 elements)
+                if not (isinstance(v_constr_tuple, (list, tuple)) and len(v_constr_tuple) == 3):
+                    logging.warning(f"GUITableSystList._on_view: Malformed _constr entry for {k_constr}: {v_constr_tuple}. Skipping.")
+                    continue
+                
+                target_id, param_suffix, val_expr_str = v_constr_tuple
+                
+                # Further validation: check if target_id and param_suffix seem valid for k_constr
+                # (e.g., does k_constr contain target_id and param_suffix strings?)
+                # This helps catch severely corrupted _constr entries.
+                if not (str(target_id) in k_constr and param_suffix in k_constr):
+                    logging.warning(f"GUITableSystList._on_view: Potential mismatch in _constr entry {k_constr} -> {v_constr_tuple}. Proceeding cautiously.")
+
+                if val_expr_str is None: # Parameter is frozen in _constr
+                    # _freezes_d expects: {'full_param_name': (id, 'vary', False)}
+                    self._freezes_d[k_constr] = (target_id, 'vary', False)
+                elif val_expr_str == '': 
+                    # Parameter was explicitly unlinked and is just varying; not actively constrained by link/freeze.
+                    # It should NOT be in _freezes_d or _links_d.
+                    # If it's in _constr with ('id', 'suffix', ''), it means _constrain put it there.
+                    # This state means "actively set to free after being constrained".
+                    # We usually represent "free" by absence from _freezes_d and _links_d.
+                    pass # Do not add to _freezes_d or _links_d
+                else: # Parameter has an expression string, so it's linked in _constr
+                    # _links_d expects: {'full_param_name': (id, 'expr', 'expression_string')}
+                    self._links_d[k_constr] = (target_id, 'expr', val_expr_str)
+            
+            logging.debug(f"GUITableSystList._on_view: Initialized _freezes_d: {self._freezes_d}")
+            logging.debug(f"GUITableSystList._on_view: Initialized _links_d: {self._links_d}")
+        else:
+            logging.warning("GUITableSystList._on_view: self._data or self._data._constr not found. _freezes_d/_links_d may be empty.")
+
+        # _text_colours() should be called AFTER _freezes_d and _links_d are populated,
+        # if it relies on them. However, _text_colours primarily reads from lmfit model._pars.
+        # The lmfit model._pars should already be in sync with _systs_constr due to prior operations
+        # or model loading/recreation.
+        # The order here is okay: super()._on_view sets up the table cells, then we sync our
+        # GUI constraint dicts, then _text_colours applies colors based on lmfit state.
         self._text_colours()
-        self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK,
-                       self._on_cell_right_click)
-        for k, v in self._data._constr.items():
-            if v[2]==None:
-                self._freezes_d[k]=(v[0], 'vary', False)
-            else:
-                self._links_d[k]=(v[0], 'expr', v[2])
-        profile.disable()
-        ps = pstats.Stats(profile)
+
+        # Event binding is fine here.
+        self._tab.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self._on_cell_right_click)
+        
+        # The old loop `for k, v in self._data._constr.items():` was almost correct.
+        # The main additions are:
+        # 1. Clearing _freezes_d and _links_d at the start.
+        # 2. Skipping "_backup" keys.
+        # 3. Handling the `val_expr_str == ''` case (explicitly free/unlinked) by not adding to either dict.
+        # 4. Using the correct tuple structure for _freezes_d and _links_d.
+        
+        #profile.disable()
+        #ps = pstats.Stats(profile)
 
 
     def _row_extract(self, id):

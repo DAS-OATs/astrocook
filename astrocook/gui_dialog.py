@@ -365,10 +365,10 @@ class GUIDialogMiniConstraints(wx.Dialog):
         self._refresh_display() # Populate the ListCtrl
 
         # Optional: Raw display for debugging or if parsing fails
-        self.raw_constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP, size=(-1, 100))
-        vbox.Add(wx.StaticText(self.panel, label="Raw Constraints (for debugging):"), flag=wx.LEFT | wx.TOP, border=5)
-        vbox.Add(self.raw_constraints_display, proportion=0, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=5)
-        self._refresh_raw_display()
+        #self.raw_constraints_display = wx.TextCtrl(self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP, size=(-1, 100))
+        #vbox.Add(wx.StaticText(self.panel, label="Raw Constraints (for debugging):"), flag=wx.LEFT | wx.TOP, border=5)
+        #vbox.Add(self.raw_constraints_display, proportion=0, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=5)
+        #self._refresh_raw_display()
 
         load_button = wx.Button(self.panel, label="Load...")
         save_button = wx.Button(self.panel, label="Save...")
@@ -537,7 +537,7 @@ class GUIDialogMiniConstraints(wx.Dialog):
 
     def _on_refresh_display_button(self, event):
         self._refresh_display()
-        # self._refresh_raw_display() # if you have it
+        #self._refresh_raw_display() # if you have it
 
     def _refresh_raw_display(self): # If you add a raw display TextCtrl
         if hasattr(self._gui, '_sess_sel') and self._gui._sess_sel and \
