@@ -460,6 +460,16 @@ class GUITableSystList(GUITable):
         self._links_c = {}
         self._cells_sel = []
 
+    def _col_idx_from_label(self, label_to_find):
+        labels = self._labels_extract() # Assumes self._labels_extract() works
+        try:
+            return np.where(labels == label_to_find)[0][0]
+        except IndexError:
+            logging.error(f"Column with label '{label_to_find}' not found in table.")
+            # Depending on usage, either raise an error or return a value like -1
+            # For robust usage in _data_link_bt, it should probably raise or be checked.
+            raise ValueError(f"Column '{label_to_find}' not found.")
+
     def _data_cell_right_click(self, row, col):
         sel = get_selected_cells(self._tab)
         if len(sel) == 1:
@@ -588,7 +598,7 @@ class GUITableSystList(GUITable):
         cb._spec_update()
 
 
-    def _data_freeze_par(self, row, col):
+    def _data_freeze_par_old(self, row, col):
         for (r, c) in self._cells_sel:
             id, parn = self._key_extract(r, c)
             if self._tab.GetCellTextColour(row, col) != 'black':
@@ -605,13 +615,159 @@ class GUITableSystList(GUITable):
         self._text_colours()
 
 
-    def _data_freeze_par_all(self, col, reverse):
+    def _data_freeze_par(self, row_clicked, col_clicked):
+        """
+        Toggles the freeze state of selected parameters.
+        If a parameter is linked, freezing it removes the link.
+        If a parameter is frozen, this unfreezes it.
+        If a parameter is free, this freezes it.
+        """
+        changes_to_apply = {}
+        systs = self._gui._sess_sel.systs
+
+        logging.debug(f"GUITableSystList._data_freeze_par: ENTRY. Clicked_row={row_clicked}, col={col_clicked}. _cells_sel={self._cells_sel}")
+        logging.debug(f"  Initial _freezes_d: {self._freezes_d}")
+        logging.debug(f"  Initial _links_d: {self._links_d}")
+
+        if not self._cells_sel:
+            logging.warning("_data_freeze_par: No cells selected (_cells_sel is empty).")
+            # Potentially use row_clicked, col_clicked if _cells_sel is empty after a single click
+            # For now, assume _cells_sel is populated correctly by _data_cell_right_click
+            if row_clicked != -1 and col_clicked != -1 : # Make sure it's a valid cell
+                 try:
+                    # Attempt to use the clicked cell if _cells_sel is empty
+                    param_id_clicked, param_full_name_clicked = self._key_extract(row_clicked, col_clicked)
+                    cells_to_process = [(row_clicked, col_clicked)]
+                    logging.debug(f"  _cells_sel empty, using clicked cell: ({row_clicked},{col_clicked}) for {param_full_name_clicked}")
+                 except Exception as e:
+                    logging.error(f"  _cells_sel empty, and error extracting key from clicked cell ({row_clicked},{col_clicked}): {e}")
+                    self._text_colours() # Refresh colors anyway
+                    self._tab.ForceRefresh()
+                    return
+            else:
+                self._text_colours()
+                self._tab.ForceRefresh()
+                return
+        else:
+            cells_to_process = self._cells_sel
+
+        for (sel_r, sel_c) in cells_to_process:
+            try:
+                param_id, param_full_name = self._key_extract(sel_r, sel_c)
+            except IndexError: # Happens if _key_extract fails (e.g. non-parameter cell)
+                logging.warning(f"  Skipping cell ({sel_r},{sel_c}): Could not extract parameter key.")
+                continue
+
+            if self._tab.GetCellTextColour(sel_r, 0) == 'light grey': # System inactive
+                logging.debug(f"  Skipping {param_full_name} at ({sel_r},{sel_c}): System inactive.")
+                continue
+
+            is_currently_frozen = param_full_name in self._freezes_d
+            is_currently_linked = param_full_name in self._links_d
+
+            if is_currently_frozen:
+                # Action: UNFREEZE
+                changes_to_apply[param_full_name] = (param_id, 'vary', True)
+                del self._freezes_d[param_full_name]
+                logging.info(f"  {param_full_name}: UNFREEZE. Removed from _freezes_d.")
+            elif is_currently_linked:
+                # Action: FREEZE (this overrides/removes the link)
+                changes_to_apply[param_full_name] = (param_id, 'vary', False)
+                self._freezes_d[param_full_name] = (param_id, 'vary', False) # Add to freezes
+                del self._links_d[param_full_name] # Remove from links
+                logging.info(f"  {param_full_name}: FREEZE (was linked). Added to _freezes_d, removed from _links_d.")
+            else: # Currently free
+                # Action: FREEZE
+                changes_to_apply[param_full_name] = (param_id, 'vary', False)
+                self._freezes_d[param_full_name] = (param_id, 'vary', False)
+                logging.info(f"  {param_full_name}: FREEZE (was free). Added to _freezes_d.")
+
+        if not changes_to_apply:
+            logging.debug("  _data_freeze_par: No changes to apply.")
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        logging.debug(f"  _data_freeze_par: changes_to_apply: {changes_to_apply}")
+        systs._constrain(changes_to_apply, source="GUITableSystList._data_freeze_par")
+
+        logging.debug(f"  _data_freeze_par: Final _freezes_d: {self._freezes_d}")
+        logging.debug(f"  _data_freeze_par: Final _links_d: {self._links_d}")
+
+        self._text_colours()
+        self._tab.ForceRefresh()
+        logging.debug(f"GUITableSystList._data_freeze_par: EXIT")
+
+    def _data_freeze_par_all_old(self, col, reverse):
         par = self._labels_extract()[col]
         self._tab.ForceRefresh()
         self._freezes_d = self._gui._sess_sel.systs._freeze_par(par, [], reverse)
         self._text_colours()
         if reverse:
             self._gui._refresh(init_cursor=True)
+
+
+    def _data_freeze_par_all(self, col_to_process, freeze_action=True): # True to freeze, False to unfreeze
+        """
+        Freezes or unfreezes all applicable parameters in the specified column.
+        """
+        changes_to_apply = {}
+        systs = self._gui._sess_sel.systs
+        action_str = "FREEZE_ALL" if freeze_action else "UNFREEZE_ALL"
+        
+        logging.debug(f"GUITableSystList._data_freeze_par_all: ENTRY. Column_idx={col_to_process}, Action: {action_str}")
+        logging.debug(f"  Initial _freezes_d: {self._freezes_d}")
+        logging.debug(f"  Initial _links_d: {self._links_d}")
+    
+        if col_to_process < 0 or col_to_process >= self._tab.GetNumberCols():
+            logging.error(f"  Invalid column index {col_to_process}.")
+            return
+    
+        # param_name_in_col = self._labels_extract()[col_to_process] # e.g. 'z', 'logN', 'b'
+    
+        for r_idx in range(self._tab.GetNumberRows()):
+            try:
+                # We are iterating rows for a GIVEN column (col_to_process)
+                param_id, param_full_name = self._key_extract(r_idx, col_to_process) 
+            except IndexError:
+                # This row/col might not be a valid parameter cell (e.g. header, or parse error)
+                logging.warning(f"  Skipping cell ({r_idx},{col_to_process}) for {action_str}: Could not extract parameter key.")
+                continue
+                
+            if self._tab.GetCellTextColour(r_idx, 0) == 'light grey': # System inactive
+                logging.debug(f"  Skipping {param_full_name} for {action_str}: System inactive.")
+                continue
+            
+            if freeze_action: # Intent is to FREEZE
+                if param_full_name not in self._freezes_d: # Only if not already frozen
+                    changes_to_apply[param_full_name] = (param_id, 'vary', False)
+                    self._freezes_d[param_full_name] = (param_id, 'vary', False)
+                    if param_full_name in self._links_d: # If it was linked, remove link
+                        del self._links_d[param_full_name]
+                    logging.info(f"  {param_full_name}: {action_str}. Added to _freezes_d, removed from _links_d if present.")
+            else: # Intent is to UNFREEZE
+                if param_full_name in self._freezes_d: # Only if currently frozen
+                    changes_to_apply[param_full_name] = (param_id, 'vary', True)
+                    del self._freezes_d[param_full_name]
+                    logging.info(f"  {param_full_name}: {action_str}. Removed from _freezes_d.")
+                # If unfreezing, we don't automatically re-link it if it was previously linked then frozen.
+                # It just becomes free. User would have to re-link manually if desired.
+    
+        if not changes_to_apply:
+            logging.debug(f"  _data_freeze_par_all: No changes to apply for {action_str}.")
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+    
+        logging.debug(f"  _data_freeze_par_all: changes_to_apply for {action_str}: {changes_to_apply}")
+        systs._constrain(changes_to_apply, source=f"GUITableSystList._data_freeze_par_all ({action_str})")
+    
+        logging.debug(f"  _data_freeze_par_all: Final _freezes_d: {self._freezes_d}")
+        logging.debug(f"  _data_freeze_par_all: Final _links_d: {self._links_d}")
+        
+        self._text_colours()
+        self._tab.ForceRefresh()
+        logging.debug(f"GUITableSystList._data_freeze_par_all: EXIT for {action_str}")
 
 
     def _data_init(self, from_scratch=True, autosort=False, attr=None):
@@ -621,7 +777,7 @@ class GUITableSystList(GUITable):
                               i, np.where(labels == 'id')[0][0]))) \
                               for i in range(self._tab.GetNumberRows())])
 
-    def _data_link_bt(self, row, col):
+    def _data_link_bt_old(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
         others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
@@ -658,7 +814,171 @@ class GUITableSystList(GUITable):
         self._text_colours()
 
 
-    def _data_link_par(self, row, col):
+    def _data_link_bt(self, row_clicked, col_clicked):
+        """
+        Thermally links Doppler 'b' parameters of selected components (>=2) of the SAME ION
+        to the 'b' parameter of the component with the smallest ID in the selection.
+        Expression: b_other = b_ref * sqrt(mass_ion / mass_ion) = b_ref (if same ion)
+        If different ions are selected, this should error or link b*sqrt(T) if that's the intent.
+        The current name implies linking 'b' for thermal broadening, which requires temperature.
+        If it's linking b values assuming same temperature: b_i ~ sqrt(1/m_i).
+        b_other = b_ref * sqrt(m_ref / m_other)
+
+        If already linked this way, unlinks them.
+        If parameters are frozen, linking them unfreezes them.
+        """
+        changes_to_apply = {}
+        systs = self._gui._sess_sel.systs
+
+        logging.debug(f"GUITableSystList._data_link_bt: ENTRY. Clicked_row={row_clicked}, col={col_clicked}. _cells_sel={self._cells_sel}")
+        logging.debug(f"  Initial _freezes_d: {self._freezes_d}")
+        logging.debug(f"  Initial _links_d: {self._links_d}")
+
+        if len(self._cells_sel) < 2:
+            logging.warning("  _data_link_bt: Fewer than 2 cells selected.")
+            wx.MessageBox("Select at least two 'b' parameter cells to link thermally.", "Linking Error", wx.OK | wx.ICON_WARNING)
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        selected_params_info = []
+        param_col_label = self._labels_extract()[col_clicked] # Get label of clicked column, e.g. 'b'
+        if param_col_label != 'b': # Ensure this is for 'b' parameters
+            logging.error(f"  _data_link_bt: Clicked column '{param_col_label}' is not 'b'. This function is for 'b' params only.")
+            wx.MessageBox(f"Thermal linking is for 'b' parameters only. Clicked on '{param_col_label}'.", "Linking Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        for (sel_r, sel_c) in self._cells_sel:
+            try:
+                # Ensure we are only processing 'b' parameters from the selection
+                if self._labels_extract()[sel_c] != 'b':
+                    logging.warning(f"  Skipping cell ({sel_r},{sel_c}) for bT link: Not a 'b' parameter column.")
+                    continue
+
+                param_id, param_full_name = self._key_extract(sel_r, sel_c)
+                if self._tab.GetCellTextColour(sel_r, 0) == 'light grey':
+                    logging.debug(f"  Skipping {param_full_name} at ({sel_r},{sel_c}): System inactive.")
+                    continue
+                
+                # Get series and ion for mass calculation
+                series_str = self._tab.GetCellValue(sel_r, self._col_idx_from_label('series')) # Assuming 'series' column exists
+                transitions = trans_parse(series_str)
+                if not transitions:
+                    logging.warning(f"  Skipping {param_full_name}: Could not parse transitions from series '{series_str}'.")
+                    continue
+                # The key for mass_d should be the resolved transition string itself,
+                # assuming mass_d is built with these strings as keys.
+                # We'll use the first resolved transition for this component's mass.
+                mass_d_key = transitions[0] 
+
+                if mass_d_key not in mass_d: # mass_d is from voigtastro.vars
+                    logging.warning(f"  Skipping {param_full_name}: Resolved transition '{mass_d_key}' (from series '{series_str}') not found as a key in mass_d.")
+                    continue
+ 
+                ion_mass = mass_d[mass_d_key]
+                # For logging or other purposes, you might still want a simplified ion name
+                simple_ion_name = mass_d_key.split('_')[0] # Or a more robust extraction if needed
+                
+                selected_params_info.append({
+                    'id': param_id, 'name': param_full_name, 'row': sel_r, 'col': sel_c,
+                    'mass_d_key': mass_d_key, # Store the key used for mass_d
+                    'ion_for_display': simple_ion_name, # For logging/display
+                    'mass': ion_mass
+                })
+            except Exception as e: # Catch potential errors like _col_idx_from_label
+                logging.error(f"  Error processing cell ({sel_r},{sel_c}) for bT link: {e}")
+                continue
+
+        if len(selected_params_info) < 2:
+            logging.warning("  _data_link_bt: Fewer than 2 valid 'b' parameters from active systems selected.")
+            wx.MessageBox("Select at least two valid 'b' parameter cells from active systems to link thermally.", "Linking Error", wx.OK | wx.ICON_WARNING)
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        selected_params_info.sort(key=lambda p: p['id'])
+        ref_param = selected_params_info[0]
+        other_params = selected_params_info[1:]
+
+        logging.debug(f"  Reference param for bT linking: {ref_param['name']} (id: {ref_param['id']}, mass_key: {ref_param['mass_d_key']})")
+
+        # Check for existing thermal link
+        all_currently_linked_thermally = True
+        if ref_param['name'] in self._links_d:
+             all_currently_linked_thermally = False # Ref should not be dependent
+
+        for p_other in other_params:
+            mass_ratio_sqrt = np.sqrt(ref_param['mass'] / p_other['mass'])
+            expected_expr = f"{ref_param['name']}*{mass_ratio_sqrt:.14f}" # Match precision from old code
+            is_linked_as_expected = (
+                p_other['name'] in self._links_d and
+                self._links_d[p_other['name']][2] == expected_expr and
+                self._links_d[p_other['name']][0] == p_other['id']
+            )
+            if not is_linked_as_expected:
+                all_currently_linked_thermally = False
+                break
+
+        if all_currently_linked_thermally and len(other_params) > 0:
+            logging.info(f"  Detected existing thermal link to {ref_param['name']}. Action: UNLINK all in selection.")
+            for p_info in selected_params_info:
+                if p_info['name'] in self._links_d:
+                    changes_to_apply[p_info['name']] = (p_info['id'], 'expr', '')
+                    del self._links_d[p_info['name']]
+                    logging.info(f"    {p_info['name']}: UNLINK (was bT). Removed from _links_d.")
+        else:
+            logging.info(f"  Action: Thermally LINK other selected 'b' parameters to {ref_param['name']}.")
+            if ref_param['name'] in self._links_d:
+                changes_to_apply[ref_param['name']] = (ref_param['id'], 'expr', '')
+                del self._links_d[ref_param['name']]
+                logging.info(f"    Reference {ref_param['name']} was linked. Unlinking it.")
+            if ref_param['name'] in self._freezes_d:
+                changes_to_apply[ref_param['name']] = (ref_param['id'], 'vary', True)
+                del self._freezes_d[ref_param['name']]
+                logging.info(f"    Reference {ref_param['name']} was frozen. Unfreezing it.")
+
+            for p_other in other_params:
+                # The mass_ratio_sqrt is now calculated using the stored masses
+                mass_ratio_sqrt = np.sqrt(ref_param['mass'] / p_other['mass'])
+                link_expression = f"{ref_param['name']}*{mass_ratio_sqrt:.14f}"
+
+                changes_to_apply[p_other['name']] = (p_other['id'], 'expr', link_expression)
+                self._links_d[p_other['name']] = (p_other['id'], 'expr', link_expression)
+                if p_other['name'] in self._freezes_d:
+                    del self._freezes_d[p_other['name']]
+                logging.info(f"    {p_other['name']} (mass_key {p_other['mass_d_key']}): LINK_BT to {link_expression}. Added to _links_d, removed from _freezes_d if present.")
+
+                # No need for the p_other['ion'] == ref_param['ion'] check anymore if linking any two b's
+                # based on their respective masses from mass_d, as the mass ratio handles it.
+                # If you did want to restrict to same ion, you'd use 'ion_for_display' or re-extract.
+
+
+        if not changes_to_apply:
+            logging.debug("  _data_link_bt: No changes to apply.")
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        logging.debug(f"  _data_link_bt: changes_to_apply: {changes_to_apply}")
+        systs._constrain(changes_to_apply, source="GUITableSystList._data_link_bt")
+
+        logging.debug(f"  _data_link_bt: Final _freezes_d: {self._freezes_d}")
+        logging.debug(f"  _data_link_bt: Final _links_d: {self._links_d}")
+
+        self._text_colours()
+        self._tab.ForceRefresh()
+        logging.debug(f"GUITableSystList._data_link_bt: EXIT")
+
+        # Helper to find column index (you might have this elsewhere)
+        def _col_idx_from_label(self, label_to_find):
+            labels = self._labels_extract()
+            try:
+                return np.where(labels == label_to_find)[0][0]
+            except IndexError:
+                logging.error(f"Column with label '{label_to_find}' not found.")
+                raise # Or return -1 and handle
+
+    def _data_link_par_old(self, row, col):
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
         others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
@@ -685,6 +1005,119 @@ class GUITableSystList(GUITable):
         self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
         self._text_colours()
 
+
+    def _data_link_par(self, row_clicked, col_clicked):
+        """
+        Links selected parameters (>=2) to the one with the smallest ID in the selection.
+        If parameters are frozen, linking them unfreezes them.
+        If already linked (any param in selection to the ref), unlinks them.
+        """
+        changes_to_apply = {}
+        systs = self._gui._sess_sel.systs
+
+        logging.debug(f"GUITableSystList._data_link_par: ENTRY. Clicked_row={row_clicked}, col={col_clicked}. _cells_sel={self._cells_sel}")
+        logging.debug(f"  Initial _freezes_d: {self._freezes_d}")
+        logging.debug(f"  Initial _links_d: {self._links_d}")
+
+        if len(self._cells_sel) < 2:
+            logging.warning("  _data_link_par: Fewer than 2 cells selected. Linking requires at least two parameters.")
+            wx.MessageBox("Select at least two parameter cells to link.", "Linking Error", wx.OK | wx.ICON_WARNING)
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        # Extract (param_id, param_full_name, row, col) for all selected cells
+        selected_params_info = []
+        for (sel_r, sel_c) in self._cells_sel:
+            try:
+                param_id, param_full_name = self._key_extract(sel_r, sel_c)
+                if self._tab.GetCellTextColour(sel_r, 0) == 'light grey':
+                    logging.debug(f"  Skipping {param_full_name} at ({sel_r},{sel_c}): System inactive.")
+                    continue
+                selected_params_info.append({'id': param_id, 'name': param_full_name, 'row': sel_r, 'col': sel_c})
+            except IndexError:
+                logging.warning(f"  Skipping cell ({sel_r},{sel_c}) for linking: Could not extract parameter key.")
+                continue
+            
+        if len(selected_params_info) < 2:
+            logging.warning("  _data_link_par: Fewer than 2 valid, active parameters selected.")
+            wx.MessageBox("Select at least two valid parameter cells from active systems to link.", "Linking Error", wx.OK | wx.ICON_WARNING)
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        # Sort by param_id to find the reference parameter (smallest ID)
+        selected_params_info.sort(key=lambda p: p['id'])
+        ref_param = selected_params_info[0]
+        other_params = selected_params_info[1:]
+
+        logging.debug(f"  Reference param for linking: {ref_param['name']} (id: {ref_param['id']})")
+
+        # Check if this set is ALREADY linked together (ref_param linked to itself, others linked to ref_param)
+        # A simple check: is the reference parameter itself currently part of a link *as a dependent* or are others linked to it?
+        # More robust: check if all 'other_params' are linked to 'ref_param' with the simple expression.
+        all_currently_linked_to_ref = True
+        if ref_param['name'] in self._links_d: # Ref param should not be a dependent if it's the reference
+            all_currently_linked_to_ref = False
+
+        for p_other in other_params:
+            if not (p_other['name'] in self._links_d and \
+                    self._links_d[p_other['name']][2] == ref_param['name'] and \
+                    self._links_d[p_other['name']][0] == p_other['id']): # check id too
+                all_currently_linked_to_ref = False
+                break
+            
+        if all_currently_linked_to_ref and len(other_params) > 0 : # only consider unlinking if there were others
+            # Action: UNLINK ALL in the selection
+            logging.info(f"  Detected existing link to {ref_param['name']}. Action: UNLINK all in selection.")
+            for p_info in selected_params_info: # Unlink ref as well if it was somehow linked
+                if p_info['name'] in self._links_d:
+                    changes_to_apply[p_info['name']] = (p_info['id'], 'expr', '') # Unlink
+                    del self._links_d[p_info['name']]
+                    logging.info(f"    {p_info['name']}: UNLINK. Removed from _links_d.")
+        else:
+            # Action: LINK OTHERS to REF_PARAM
+            logging.info(f"  Action: LINK other selected parameters to {ref_param['name']}.")
+            # Ensure ref_param is not linked to something else and not frozen
+            if ref_param['name'] in self._links_d: # Ref param itself is a dependent! Cannot be.
+                changes_to_apply[ref_param['name']] = (ref_param['id'], 'expr', '') # Unlink ref_param
+                del self._links_d[ref_param['name']]
+                logging.info(f"    Reference {ref_param['name']} was linked. Unlinking it.")
+            if ref_param['name'] in self._freezes_d: # Ref param is frozen! Unfreeze it.
+                changes_to_apply[ref_param['name']] = (ref_param['id'], 'vary', True) # Unfreeze
+                del self._freezes_d[ref_param['name']]
+                logging.info(f"    Reference {ref_param['name']} was frozen. Unfreezing it.")
+
+            link_expression = ref_param['name'] # Simple link: P_other = P_ref
+
+            for p_other in other_params:
+                changes_to_apply[p_other['name']] = (p_other['id'], 'expr', link_expression)
+                self._links_d[p_other['name']] = (p_other['id'], 'expr', link_expression) # Add to links
+                if p_other['name'] in self._freezes_d: # If linked one was frozen, unfreeze it
+                    # The 'expr' in changes_to_apply will tell _constrain to set vary=True
+                    del self._freezes_d[p_other['name']] 
+                logging.info(f"    {p_other['name']}: LINK to {link_expression}. Added to _links_d, removed from _freezes_d if present.")
+
+                # Update cell value in table for immediate visual feedback (optional, _constrain + refresh should do it)
+                # ref_val_str = self._tab.GetCellValue(ref_param['row'], ref_param['col'])
+                # self._tab.SetCellValue(p_other['row'], p_other['col'], ref_val_str)
+
+
+        if not changes_to_apply:
+            logging.debug("  _data_link_par: No changes to apply.")
+            self._text_colours()
+            self._tab.ForceRefresh()
+            return
+
+        logging.debug(f"  _data_link_par: changes_to_apply: {changes_to_apply}")
+        systs._constrain(changes_to_apply, source="GUITableSystList._data_link_par")
+
+        logging.debug(f"  _data_link_par: Final _freezes_d: {self._freezes_d}")
+        logging.debug(f"  _data_link_par: Final _links_d: {self._links_d}")
+
+        self._text_colours()
+        self._tab.ForceRefresh()
+        logging.debug(f"GUITableSystList._data_link_par: EXIT")
 
     def _data_top_label_right_click(self, col):
         self._gui._col_sel = col
@@ -1055,7 +1488,7 @@ class GUITableSystList(GUITable):
         # 2. Skipping "_backup" keys.
         # 3. Handling the `val_expr_str == ''` case (explicitly free/unlinked) by not adding to either dict.
         # 4. Using the correct tuple structure for _freezes_d and _links_d.
-        
+
         #profile.disable()
         #ps = pstats.Stats(profile)
 

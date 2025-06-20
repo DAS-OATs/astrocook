@@ -278,7 +278,7 @@ class SystList(object):
     
         # Log initial state for debugging
         initial_self_constr_for_log = dc(self._constr)
-        logging.info(f"SystList._constrain START (NO BACKUP): Initial self._constr: {initial_self_constr_for_log}")
+        logging.debug(f"SystList._constrain START (NO BACKUP): Initial self._constr: {initial_self_constr_for_log}")
         
         current_internal_constraints = dc(self._constr)
 
@@ -337,7 +337,7 @@ class SystList(object):
             if not found_mod_for_param:
                  logging.warning(f"SystList._constrain (NO BACKUP): No model parameter '{param_full_name}' found for id {target_id}. Constraint not fully applied.")
 
-        logging.info(f"SystList._constrain END (NO BACKUP): Final current_internal_constraints: {current_internal_constraints}")
+        logging.debug(f"SystList._constrain END (NO BACKUP): Final current_internal_constraints: {current_internal_constraints}")
         self._constr = current_internal_constraints
 
     def _freeze(self):
