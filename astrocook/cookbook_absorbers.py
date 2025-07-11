@@ -72,7 +72,8 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
             resol = self.sess.spec._t['resol'][0]
 
         self.sess.spec._t['resol'] = resol
-        self.lya_fit(zem=zem, sigma=10, iter_n=0, resol=resol)
+        logging.debug(f"Fitting Lyman forest at zem={zem} with resol={resol}.")
+        self.lya_fit(zem=zem, sigma=3, prominence=2, iter_n=1, resol=resol)
 
         return 0
 

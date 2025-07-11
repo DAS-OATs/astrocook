@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
-from scipy.signal import argrelmin, argrelmax, find_peaks
+from scipy.signal import argrelmin, argrelmax, find_peaks, savgol_filter
 from scipy.special import erf, erfc, erfinv
 import sys
 import time
@@ -2431,7 +2431,7 @@ class CookbookAbsorbersOld(object):
     #@arg_fix(arg_mapping={'thres': 'sigma'})
     def systs_complete_from_like(self, series='all', series_ref=None, z_start=0,
                                  z_end=6, binz=1e-2, dz=1e-4,
-                                 modul=10, sigma=2, distance=3,
+                                 modul=10, sigma=2, distance=3, prominence=None,
                                  logN=logN_def, b=b_def, resol=resol_def,
                                  chi2r_thres=np.inf, dlogN_thres=np.inf,
                                  refit_n=0, chi2rav_thres=1e-2,
@@ -2447,6 +2447,7 @@ class CookbookAbsorbersOld(object):
         @param modul Modulation of the error function
         @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
+        @param prominence Prominence of systems
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
         @param resol Resolution
@@ -2470,6 +2471,7 @@ class CookbookAbsorbersOld(object):
             modul = float(modul)
             sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
+            prominence = None if prominence in [None, 'None'] else float(prominence)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2546,7 +2548,7 @@ class CookbookAbsorbersOld(object):
                 """
                 self._likes = likes
                 self._z_likes = z_likes
-                self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
+                self._systs_like(series, sigma, distance, prominence, logN, b, resol, chi2r_thres,
                                  dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         if compressed:
@@ -2562,7 +2564,7 @@ class CookbookAbsorbersOld(object):
 
     #@arg_fix(arg_mapping={'thres': 'sigma'})
     def systs_new_from_like(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            dz=1e-4, modul=10, sigma=2, distance=3,
+                            dz=1e-4, modul=10, sigma=2, distance=3, prominence=None,
                             logN=logN_def, b=b_def, resol=resol_def,
                             chi2r_thres=np.inf, dlogN_thres=np.inf,
                             refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def,
@@ -2580,6 +2582,7 @@ class CookbookAbsorbersOld(object):
         @param modul Modulation of the error function
         @param sigma Threshold for accepting systems
         @param distance Distance between systems in pixels
+        @param prominence Prominence of systems
         @param logN Guess (logarithmic) column density
         @param b Guess Doppler broadening
         @param resol Resolution
@@ -2602,6 +2605,7 @@ class CookbookAbsorbersOld(object):
             modul = float(modul)
             sigma = float(sigma)
             distance = None if distance in [None, 'None'] else float(distance)
+            prominence = None if prominence in [None, 'None'] else float(prominence)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2621,14 +2625,14 @@ class CookbookAbsorbersOld(object):
 
         self._likes, self._z_likes = self._abs_like(series, col, z_start, z_end, dz,
                                                     modul)
-        self._systs_like(series, sigma, distance, logN, b, resol, chi2r_thres,
+        self._systs_like(series, sigma, distance, prominence, logN, b, resol, chi2r_thres,
                          dlogN_thres, refit_n, chi2rav_thres, max_nfev, append)
 
         return 0
 
 
     #@arg_fix(arg_mapping={'thres': 'sigma'})
-    def _systs_like(self, series='Ly-a', sigma=2, distance=3, logN=logN_def,
+    def _systs_like(self, series='Ly-a', sigma=2, distance=3, prominence=None, logN=logN_def,
                     b=b_def, resol=resol_def, chi2r_thres=np.inf,
                     dlogN_thres=np.inf, refit_n=0, chi2rav_thres=1e-2,
                     max_nfev=max_nfev_def, append=True):
@@ -2712,8 +2716,10 @@ class CookbookAbsorbersOld(object):
                 #p0, _ = find_peaks(likes[s][w], distance=distance)
                 #plt.scatter(z_int[w][p0], likes[s][w][p0])
 
-                p0, _ = find_peaks(likes[s], distance=distance)
-                pw = np.where(likes[s][p0]>sigma)
+                logging.debug(f"Finding peaks in {s} with sigma={sigma}, distance={distance}, prominence={prominence}.")
+                smoothed = savgol_filter(likes[s], window_length=5, polyorder=1)
+                p0, _ = find_peaks(smoothed, distance=distance, prominence=prominence)
+                pw = np.where(smoothed[p0]>sigma)
                 p0 = p0[pw]
                 #plt.scatter(z_int[p0], likes[s][p0])
 
@@ -2976,7 +2982,7 @@ class CookbookAbsorbersOld(object):
 
     #@arg_fix(arg_mapping={'thres': 'sigma'})
     def _systs_new_from_erf(self, series='Ly-a', col='y', z_start=0, z_end=6,
-                            sigma=1, distance=3, append=True, resol=resol_def):
+                            sigma=1, distance=3, prominence=None, append=True, resol=resol_def):
         """ @brief New systems from error function
         @details TBD
         @param series Series of transitions
@@ -2985,6 +2991,7 @@ class CookbookAbsorbersOld(object):
         @param z_end End redshift
         @param sigma Significance of absorbers (in units of the local error)
         @param distance Distance between systems in pixels
+        @param prominence Prominence of systems
         @param append Append systems to existing system list
         @return 0
         """
@@ -3002,11 +3009,11 @@ class CookbookAbsorbersOld(object):
         distance = 3
         self.systs_new_from_like(series=series, col=col, z_start=z_start,
                                  z_end=z_end, modul=modul, sigma=sigma, resol=resol,
-                                 distance=distance, append=append)
+                                 distance=distance, prominence=prominence, append=append)
 
         return 0
 
-    def _series_fit(self, series, zem, z_start=None, z_end=None, sigma=2, iter_n=3, resol=resol_def):
+    def _series_fit(self, series, zem, z_start=None, z_end=None, sigma=2, prominence=None, iter_n=3, resol=resol_def):
 
         def z_check(zem, z_start, z_end, s):
             if zem != None:
@@ -3021,20 +3028,23 @@ class CookbookAbsorbersOld(object):
             spec = self.sess.spec
             #spec._gauss_convolve(std=std, input_col='deabs', output_col='deabs_mod')
             spec.t['deabs_mod'] = np.maximum(1, spec.t['deabs'])
-            p, _ = find_peaks(spec.t['deabs_mod'], prominence=0.05)
+            #smoothed = savgol_filter(spec.t['deabs_mod'], window_length=51, polyorder=3)
+            smoothed = spec._t['deabs_mod']
+            p, _ = find_peaks(smoothed, prominence=0.05)
             #print(np.array(spec._t['x'][p]))
 
         for s in series.split(';'):
             z_start, z_end = z_check(zem, z_start, z_end, s)
+            logging.debug(f"Calling _systs_new_from_erf for series {s} in the range {z_start}-{z_end}.") 
             self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
-                                     sigma=sigma, resol=resol)
+                                     sigma=sigma, prominence=prominence, resol=resol)
         self.systs_fit(refit_n=1)#, max_nfev=0)
         for i in range(iter_n):
             self.sess.systs._freeze_pars()
             for s in series.split(';'):
                 z_start, z_end = z_check(zem, z_start, z_end, s)
                 self._systs_new_from_erf(series=s, col='deabs',
-                                         z_start=z_start, z_end=z_end, sigma=sigma, resol=resol_def)
+                                         z_start=z_start, z_end=z_end, sigma=sigma, prominence=prominence, resol=resol_def)
             self.systs_fit(refit_n=0)#, max_nfev=0)
             self.sess.systs._unfreeze_pars()
             resid_peaks()
@@ -3044,7 +3054,7 @@ class CookbookAbsorbersOld(object):
         return 0
 
 
-    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, iter_n=3, resol=resol_def):
+    def lya_fit(self, zem=None, z_start=None, z_end=None, sigma=1, prominence=None, iter_n=3, resol=resol_def):
         """ @brief Fit the Lyman-alpha forest
         @details The recipe identifies Lyman-alpha absorbers using the
         likelihood method and fits them. The procedure is iterated on residuals
@@ -3053,6 +3063,7 @@ class CookbookAbsorbersOld(object):
         @param z_start Start redshift (ignored if zem is specified)
         @param z_end End redshift (ignored if zem is specified)
         @param sigma Significance of absorbers (in units of the local error)
+        @param prominence Prominence of absorbers
         @param iter_n Number of iterations on residuals
         @return 0
         """
@@ -3062,6 +3073,7 @@ class CookbookAbsorbersOld(object):
             z_start = None if z_start in [None, 'None'] else float(z_start)
             z_end = None if z_end in [None, 'None'] else float(z_end)
             sigma = float(sigma)
+            prominence = None if prominence in [None, 'None'] else float(prominence)
             iter_n = int(iter_n)
         except:
             logging.error(msg_param_fail)
@@ -3071,7 +3083,8 @@ class CookbookAbsorbersOld(object):
             z_start = (1+zem)*xem_d['Ly_b']/xem_d['Ly_a']-1
             z_end = zem
 
-        self._series_fit('Ly_a', zem, z_start, z_end, sigma, iter_n, resol)
+        logging.debug("I'm fitting Lyman-alpha forest in the range %s-%s." % (z_start, z_end))
+        self._series_fit('Ly_a', zem, z_start, z_end, sigma, prominence, iter_n, resol)
         #plt.show()
         return 0
 
@@ -3150,7 +3163,7 @@ class CookbookAbsorbersOld(object):
                 z_start = (1+zem)*xem_d['Ly_a']/xem_d[t[-1]]-1
                 z_end = zem
         """
-        self._series_fit(series, zem, z_start, z_end, sigma, iter_n)
+        self._series_fit(series, zem, z_start, z_end, sigma, None, iter_n)
             #self._systs_new_from_erf(series=s, z_start=z_start, z_end=z_end,
             #                         sigma=sigma)
 
