@@ -1,6 +1,7 @@
 from .cookbook_absorbers_old import CookbookAbsorbersOld
 from .functions import resol_check, to_z, trans_parse
 from .line_list import LineList
+from .message import msg_param_fail
 from .vars import resol_def, xem_d
 
 import logging
@@ -50,6 +51,26 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         return 0
 
 
+    def resol_def(self, resol, px=None):
+        """ @brief Define resolution
+        @details Assign a resolution to spectral bins, either from a fixed value or from the spectral sampling
+        @url absorbers_cb.html#resol-def
+        @param resol Single-value resolution
+        @param px Number of bins per resolution element
+        @return 0
+        """
+
+        try:
+            resol = None if resol in [None, 'None'] else float(resol)
+            px = None if px in [None, 'None'] else int(px)
+        except:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.spec._resol_def(resol, px)
+
+        return 0
+
     def model_lya(self, zem=None, resol=None):
         """@brief Model Ly-a forest 🚧
         @details 🚧
@@ -68,7 +89,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         if resol is None:
             check, resol = resol_check(self.sess.spec)
         if resol is None:
-            self.sess.spec._resol_est(3, True)
+            self.sess.spec._resol_def(3, True)
             resol = self.sess.spec._t['resol'][0]
 
         self.sess.spec._t['resol'] = resol
@@ -111,7 +132,7 @@ class CookbookAbsorbers(CookbookAbsorbersOld):
         if resol is None:
             check, resol = resol_check(self.sess.spec)
         if resol is None:
-            self.sess.spec._resol_est(3, True)
+            self.sess.spec._resol_def(3, True)
             resol = self.sess.spec._t['resol'][0]
 
         col = 'deabs' if 'deabs' in self.sess.spec._t.colnames else 'y'

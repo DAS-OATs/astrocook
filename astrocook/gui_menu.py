@@ -377,6 +377,8 @@ class GUIMenuAbsorbers(GUIMenu):
 
         self._rec = [{'targ': 'find_lines', 'append': 'spec'},
                      '--',
+                     {'targ': 'resol_def', 'append': 'spec'},
+                     '--',
                      {'targ': 'model_lya', 'append': 'cont'},
                      #{'targ': 'lya_fit', 'append': 'cont'},
                      {'targ': 'model_metals', 'append': 'cont'},
@@ -631,7 +633,7 @@ class GUIMenuGeneral(GUIMenu):
                      {'targ': 'telluric_mask', 'append': 'spec'},
                      '--',
                      {'targ': 'snr_est', 'append': 'spec'},
-                     {'targ': 'resol_est', 'append': 'spec'},
+                     {'targ': 'resol_def', 'append': 'spec'},
                      {'targ': 'rms_est', 'append': 'spec'},
                      {'targ': 'dx_est', 'append': 'spec'},
                      '--',

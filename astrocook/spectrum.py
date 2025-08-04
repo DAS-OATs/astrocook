@@ -646,7 +646,17 @@ class Spectrum(Frame):
         return out
 
 
-    def _resol_est(self, px, update):
+    def _resol_def(self, resol=None, px=None):
+        if resol is not None:
+            self._resol_from_value(resol)
+        elif px is not None:
+            self._resol_from_sampling(px, update=True)
+        else:
+            logging.error("You must provide either 'resol' or 'px'.")
+        return 0
+
+
+    def _resol_from_sampling(self, px, update):
         dx = self.xmax[px-1:].value-self.xmin[:1-px].value
         if px%2:
             dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
@@ -660,6 +670,17 @@ class Spectrum(Frame):
             else:
                 logging.info("I'm updating column 'resol'.")
             self._t['resol'] = self.x/dx
+        logging.info('The mean estimated resolution is %4.2f.'
+                     % np.nanmean(self._t['resol']))
+        return 0
+
+
+    def _resol_from_value(self, resol):
+        if 'resol' not in self._t.colnames:
+            logging.info("I'm adding column 'resol'.")
+        else:
+            logging.info("I'm updating column 'resol'.")
+        self._t['resol'] = resol
         logging.info('The mean estimated resolution is %4.2f.'
                      % np.nanmean(self._t['resol']))
         return 0

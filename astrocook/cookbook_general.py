@@ -609,33 +609,6 @@ class CookbookGeneral(object):
         return new
 
 
-    def resol_est(self, px=3, update=True):
-        """ @brief Estimate resolution
-        @details Assign a resolution to spectral bins, assuming that the
-        spectrum is designed to have a fixed number of bins per resolution
-        element.
-
-        This recipe is useful to populate the `resol` column in a spectrum
-        (needed to fit the absorption systems) when it is empty, and information
-        about the original sampling of the data is available. It does *not* try
-        to infer the resolution from, e.g., the width of unresolved spectral
-        feature.
-        @param px Number of bins per resolution element
-        @param update Update column 'resol'
-        @return 0
-        """
-
-        try:
-            px = int(px)
-            update = str(update) == 'True'
-        except:
-            logging.error(msg_param_fail)
-            return 0
-
-        self.sess.spec._resol_est(px, update)
-
-        return 0
-
     def _rm_est(self, hwindow=100):
         """ @brief Compute running mean
         @details Compute running mean of the flux.

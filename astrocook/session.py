@@ -525,7 +525,7 @@ class Session(object):
                 series = ['Ly_a']*len(data)
 
             func = ['voigt']*len(data)
-            self.cb.resol_est()
+            self.cb.resol_def()
             resol = [np.nanmean(self.spec._t['resol'])]*len(data)
             chi2r = [np.nan]*len(data)
             id = range(len(data))
