@@ -18,7 +18,8 @@
     "x_lim": null
   },
   "group": {
-    "thres": 5e-2
+    "region_thres": 1e-3,
+    "group_thres": 1e-1
   },
   "fit": {
     "use_jac": false,

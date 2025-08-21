@@ -503,7 +503,8 @@ class SystModel(LMComposite):
         self._resol = resol
         self._series = series
 
-        thres = defs.dict['group']['thres']
+        region_thres = defs.dict['group']['region_thres']
+        group_thres = defs.dict['group']['group_thres']
 
         time_check = False
         if time_check:
@@ -527,7 +528,7 @@ class SystModel(LMComposite):
             tt = time.time()
 
         #self._make_group()
-        self._make_groups(spec, thres=thres)
+        self._make_groups(spec, thres=group_thres)
         if time_check:
             print('c %.4f' % (time.time()-tt))
             tt = time.time()
@@ -539,7 +540,7 @@ class SystModel(LMComposite):
 
         ys = dc(self._ys)
         self._xr, self._yr, self._wr = \
-            self._make_regions(self, spec, self._xs, thres=thres)
+            self._make_regions(self, spec, self._xs, thres=region_thres)
         if time_check:
             print('e %.4f' % (time.time()-tt))
             tt = time.time()
