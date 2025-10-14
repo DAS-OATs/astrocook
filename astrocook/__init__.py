@@ -5,8 +5,8 @@
 version = "1.9"
 current_year = 2025
 
-from .session import Session
-from .syst_list import SystList
+from .v1.session import Session
+from .v1.syst_list import SystList
 
 import logging
 logging.basicConfig(

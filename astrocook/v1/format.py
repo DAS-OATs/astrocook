@@ -470,7 +470,7 @@ class Format(object):
 
     def _col_name(self, data, col):
         flag = '--'+col+'col'
-        if self._gui._flags_cond(flag):
+        if self._gui._flags_cond(flag):        
             col_name = self._gui._flags_extr(flag)
             if col_name in data.colnames:
                 logging.info("I am using '%s' as '%s' column." % (col_name, col))
@@ -513,11 +513,11 @@ class Format(object):
                 else:
                     data_s = hdul[extnum].data
                     data = Table(data_s)
+                    
                     x_name = self._col_name(data, 'x')
                     y_name = self._col_name(data, 'y')
                     dy_name = self._col_name(data, 'dy')
                     cont_name = self._col_name(data, 'cont')
-                    print(x_name, y_name, dy_name, cont_name)
 
                     try:
                         x = np.ravel(data[x_name])

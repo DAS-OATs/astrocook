@@ -1,4 +1,4 @@
-from . import *
+from .. import *
 from .defaults import *
 from .functions import expr_eval, x_convert, elem_expand
 from .message import *
@@ -15,6 +15,8 @@ import numpy as np
 #from sphinx.util import docstrings as ds
 import wx
 import wx.lib.mixins.listctrl as listmix
+
+from ..v2.session import SessionV2 as Session
 
 ds_x = int(wx.DisplaySize()[0]*0.98)
 ds_y = int(wx.DisplaySize()[1]*0.88)
@@ -552,8 +554,26 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         logging.info("I'm loading file %s into a new session..." % path)
-        sess = Session(gui=self._gui, path=path, name=name)
-        self._gui._panel_sess._on_add(sess, open=True)
+        # 1. Crea la Sessione V2 di base (stato vuoto)
+        # Nota: La Sessione V2 ora ha un costruttore più semplice, ignoreremo i vecchi parametri in V1
+        # sess = Session(gui=self._gui, path=path, name=name) # <-- Vecchio V1
+        initial_sess = Session(name=name, gui=self._gui) # <-- Nuovo V2
+
+        # 2. Chiama il metodo di caricamento V2 (che restituisce la sessione caricata)
+        format_name = 'generic_spectrum' 
+        
+        try:
+            # Chiama il metodo di caricamento V2 (che è nel tuo nuovo session.py V2)
+            sess = initial_sess.open_new(path, format_name=format_name) # <-- Pattern Immutabile V2
+        except Exception as e:
+             # Se il caricamento fallisce (es. formato non trovato), gestisci l'errore
+             logging.error(f"Failed to load V2 session from {path}: {e}")
+             return 0
+        
+        # 3. Aggiungi la NUOVA sessione caricata (sess_loaded) alla lista
+        # self._gui._panel_sess._on_add(sess, open=True) # <-- Vecchio V1
+        self._gui._panel_sess._on_add(sess, open=False) # <-- Nuovo V2, open=False perché è già caricata
+        
         sess.log.append_full('_panel_sess', '_on_open',
                              {'path': path, '_flags': _flags})
 

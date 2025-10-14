@@ -168,14 +168,13 @@ filt_x_skymap = {'u': 348.0, 'v': 382.5, 'g': 493.0, 'r': 629.4, 'i': 770.2,
 zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
                      'r': 29.0143769, 'i': 28.4342476, 'z': 27.9522006}
 
-p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../'
+p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../../'
 
 # Assuming atom_par.dat is now in astrocook/data/atom_par.dat
 #data_file_path = files('astrocook').joinpath('data', 'atom_par.dat')
 
 #with data_file_path.open('rt') as f:
 #    atom_par = ascii.read(f)
-
 atom_par = ascii.read(pathlib.Path(p+'/astrocook/data/atom_par.dat'))
 
 qso_composite = ascii.read(pathlib.Path(p+'/astrocook/data/qso_composite.dat'))

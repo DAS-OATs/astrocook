@@ -8,7 +8,7 @@ def main():
 
     # Must be extended path
     app = wx.App(False)
-    from astrocook.gui import GUI
+    from astrocook.v1.gui import GUI
     try:
         pw = np.where([a[0]!='-' for a in sys.argv[1:]])
         fw = np.where([a[0]=='-' for a in sys.argv[1:]])

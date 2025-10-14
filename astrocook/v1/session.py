@@ -1,4 +1,4 @@
-from . import version
+from .. import version
 from .cookbook import Cookbook
 from .defaults import Defaults
 from .format import Format
