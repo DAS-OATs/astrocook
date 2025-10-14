@@ -456,6 +456,7 @@ class SystModel(LMComposite):
         spec.t['fit_mask'][c] = True
         #plt.plot(xr, mod.eval(x=xr, params=self._pars))
         #return xr, yr, wr, ys
+        #print(len(xr))
         return xr, yr, wr
 
 
