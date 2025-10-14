@@ -20,3 +20,5 @@ dist/astrocook-1.5.1-py3-none-any.whl
 dist/astrocook-1.9.0.tar.gz
 dist/astrocook-1.5.1.tar.gz
 dist/astrocook-1.9.0-py3-none-any.whl
+py2md.sh
+docs/general_cb.md.old
