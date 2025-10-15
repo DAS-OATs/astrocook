@@ -31,6 +31,11 @@ class SessionV2:
         # con il modo in cui il codice legacy accede agli attributi interni.
         self._shade = False # Il valore predefinito sicuro per 'non ombreggiato'
         self._open_twin = kwargs.get('twin', False)
+        self._clicks = []  # Used by graph._on_click to track points
+        self._shade = False # Used by graph._refresh and graph._on_click
+        #self._ztrans = None # Used by graph._refresh (Redshift axis)
+        self._z_sel = 0.0   # Used by graph._on_syst_new and graph._on_move
+        self._series_sel = 'Ly_a' # Used by graph._on_syst_new for cursor
         # ----------------------------------------------
 
     @property

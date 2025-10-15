@@ -18,9 +18,11 @@ import numpy as np
 import time
 import wx
 
-
 import matplotlib.style as mplstyle
 mplstyle.use('fast')
+
+import astrocook.settings as settings
+from astrocook.v2.spectrum import SpectrumV2 
 
 """
 try:
@@ -306,7 +308,6 @@ class Graph(object):
         yfmt.set_powerlimits((0,0))
         self._ax.yaxis.set_major_formatter(yfmt)
 
-
         # Rest frame axis
         if sess[0].spec._rfz != 0.0:
             self._ax.set_xlabel(str(self._xunit)+", rest frame (z = %3.3f)"
@@ -337,7 +338,7 @@ class Graph(object):
             except:
                 pass
             self._axt = None
-
+        
         if logx:
             self._ax.set_xscale('log')
             try:
@@ -369,7 +370,6 @@ class Graph(object):
                             pass
                 elif ls[-1]!='auto':
                     logging.error(msg_lim(ls[0]))
-
         
         if xlim is None and xlim_old != (0,1): xlim = xlim_old
         if ylim is None and ylim_old != (0,1): ylim = ylim_old
@@ -466,7 +466,6 @@ class Graph(object):
         self._systs_label = False
 
         fast = sess.defs.dict['graph']['fast']
-
         for e in focus._elem.split('\n'):
             try:
                 sel, struct, xcol, ycol, mcol, mode, style, width, color, alpha\
@@ -478,7 +477,7 @@ class Graph(object):
                     label = '%s, %s (%s)' % (struct, ycol, mcol)
                 else:
                     label = '%s, %s' % (struct, ycol)
-
+        
                 if struct == 'systs': self._systs_label = True
                 if struct in ['spec','lines','nodes','systs','feats']:
                     t = getattr(sess, struct).t
@@ -498,13 +497,21 @@ class Graph(object):
                     if detail:
                         self._x_iswave = True
                     else:
-                        try:
-                            xp = sess.spec._t['x'].to('nm')
-                            self._x_iswave = True
-                        except:
-                            xp = sess.spec._t['x'].to('km/s', equivalencies=equiv_w_v)
-                            self._x_iswave = False
-
+                        
+                        # Find the V2 Spectrum object
+                        if settings.MODE == 'V2':
+                            # V2 ARCHITECTURE MODE: Direct Unit Check
+                            self._x_iswave = sess.spec.x.unit.is_equivalent(au.nm)
+                            xp = sess.spec.x # Use the V2 Quantity directly
+                        
+                        else:
+                            try:
+                                xp = sess.spec._t['x'].to('nm')
+                                self._x_iswave = True
+                            except:
+                                xp = sess.spec._t['x'].to('km/s', equivalencies=equiv_w_v)
+                                self._x_iswave = False
+                        
 
                 if struct in ['systs', 'cursor']:
                     if xcol == 'z' :
@@ -781,13 +788,25 @@ class GraphSpectrumNodesXY(object):
 class GraphSpectrumXY(object):
     def __init__(self, sess, norm=False):
         self._type = 'step'
-        #self._type = 'plot'
-        self._x = sess.spec.x
-        self._y = sess.spec.y
-        if norm and 'cont' in sess.spec._t.colnames:
-            self._y = self._y/sess.spec._t['cont']
+
+        if settings.MODE == 'V2' and isinstance(sess.spec, SpectrumV2):
+            # V2 ARCHITECTURE MODE: Use clean V2 API
+            self._x = sess.spec.x
+            self._y = sess.spec.y
+            
+            if norm and sess.spec.has_aux_column('cont'): 
+                cont_data = sess.spec.get_column('cont')
+                if cont_data is not None:
+                    self._y = self._y / cont_data 
+        else:
+            # V1 LEGACY MODE: Use mutable V1 object structure
+            self._x = sess.spec.x
+            self._y = sess.spec.y
+            
+            # Use original V1 data access for auxiliary columns
+            if norm and 'cont' in sess.spec._t.colnames:
+                self._y = self._y / sess.spec._t['cont']
         self._kwargs = {'lw':1.0, 'label':sess.name, 'where':'mid'}
-        #self._kwargs = {'lw':1.0, 'label':sess.name}
 
 
 class GraphSpectrumH2ORegion(GraphSpectrumXY):
@@ -915,16 +934,36 @@ class GraphSystListZSeries(object):
 class GraphCursorZSeries(object):
     def __init__(self, sess):
         self._type = 'axvline_special'
-        if hasattr(sess, '_series_sel'):
+        
+        # --- V1/V2 Logic for Series Selection and Wavelengths ---
+        if settings.MODE == 'V2' and isinstance(sess.spec, SpectrumV2):
+            # V2 ARCHITECTURE MODE: Use explicit SessionV2 state attributes
             self._series = sess._series_sel
+            
+            # V1 logic for finding transition rest wavelengths:
+            xem_values = np.array([xem_d[t].value for t in trans_parse(self._series)])
+            
+            self._xem = xem_values # V1 uses this raw array
+            self._xmean = np.mean(self._xem) * au.nm
+            try:
+                # Assumes sess._z_sel (V2 adapter) is implemented
+                self._z = sess._z_sel 
+            except:
+                self._z = 0
+            
         else:
-            self._series = 'CIV'
-        self._xem = np.array([xem_d[t].value for t in trans_parse(self._series)])
-        self._xmean = np.mean(self._xem)*au.nm
-        try:
-            #self._z = np.mean(sess.spec.x).to(au.nm).value/self._xmean.value-1.0
-            self._z = sess._z_sel
-        except:
-            self._z = 0
+            # V1 LEGACY MODE: Use original V1 logic and structure
+            if hasattr(sess, '_series_sel'):
+                self._series = sess._series_sel
+            else:
+                self._series = 'CIV'
+                
+            self._xem = np.array([xem_d[t].value for t in trans_parse(self._series)])
+            self._xmean = np.mean(self._xem) * au.nm
+            try:
+                self._z = sess._z_sel
+            except:
+                self._z = 0
+                
         self._x = self._xem*(1+self._z)*au.nm
         self._kwargs = {'label':self._series, 'linestyle': '--'}

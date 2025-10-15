@@ -209,6 +209,10 @@ class SpectrumV2:
         where_safe = ~np.isnan(quantity.value)
         return quantity[where_safe]
 
+    def has_aux_column(self, name: str) -> bool:
+        """Checks if an auxiliary column exists."""
+        return name in self._data.aux_cols
+    
     # Metodo generico per accedere a una colonna ausiliaria
     def get_column(self, name: str) -> Optional[au.Quantity]:
         """Accede a una colonna ausiliaria per la GUI (es. 'cont')."""
