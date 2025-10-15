@@ -14,6 +14,10 @@ import wx.grid as gridlib
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.colourdb as cdb
 
+import astrocook.settings as settings
+# Import only the V2 class needed for type checking
+from astrocook.v2.spectrum import SpectrumV2 
+
 """
 import scienceplots
 from cycler import cycler
@@ -108,39 +112,65 @@ class GUITable(wx.Frame):
         if attr is None: attr = self._attr
 
         tab = getattr(self._gui, '_tab_'+attr)
+
+        if settings.MODE == 'V2' and isinstance(tab._data, SpectrumV2):
+            # V2 MODE: Use the TableAdapterV2 (which is tab._data.t)
+            t = tab._data.t 
+            data_cols = t.colnames
+        else:
+            # V1 LEGACY MODE: Use the internal astropy Table
+            t = tab._data.t
+            data_cols = t.colnames
+
         if len(tab._data.t)>max_rows:
             logging.warning("The table is too long! I displayed only the first "
                             "{} rows. To display a different range, extract it "
                             "first.".format(max_rows))
-            t = tab._data.t[:max_rows]
+            t_slice = tab._data.t[:max_rows]
         else:
-            t = tab._data.t
-        for j, r in enumerate(t):
-            for i, n in enumerate(tab._data.t.colnames):
+            t_slice = tab._data.t
+
+        for j, r in enumerate(t_slice):
+            for i, n in enumerate(data_cols):
 
                 if j == 0:
                     tab._tab.SetColSize(i, 150)
-                    tab._tab.SetColLabelValue(i, "%s\n%s" \
-                                              % (n, str(tab._data.t[n].unit)))
-                if type(r[n]) == np.int64:
-                    tab._tab.SetCellValue(j, i, "%4i" % r[n])
-                elif type(r[n]) == str or type(r[n]) == np.str_:
-                    tab._tab.SetCellValue(j, i, r[n])
-                elif type(r[n]) == OrderedDict:
-                    tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
-                elif type(r[n]) == dict:
-                    tab._tab.SetCellValue(j, i, pprint.pformat(r[n]))
+
+                    # V1/V2 Fix: Extract unit robustly from the column header or the Quantity
+                    if settings.MODE == 'V2':
+                        # V2: Unit is accessible via the Quantity in the first row of the dictionary
+                        unit_val = r[n].unit if hasattr(r[n], 'unit') else ""
+                    else:
+                        # V1: Unit is attached to the column itself
+                        unit_val = tab._data.t[n].unit
+
+                    tab._tab.SetColLabelValue(i, "%s\n%s" % (n, str(unit_val)))
+
+                cell_data = r[n]
+                if hasattr(cell_data, 'value'):
+                    cell_data_val = cell_data.value # Handles V2 Quantity
+                else:
+                    cell_data_val = cell_data # Handles V1 native types
+
+                if type(cell_data_val) == np.int64:
+                    tab._tab.SetCellValue(j, i, "%4i" % cell_data_val)
+                elif type(cell_data_val) == str or type(cell_data_val) == np.str_:
+                    tab._tab.SetCellValue(j, i, cell_data_val)
+                elif type(cell_data_val) == OrderedDict:
+                    tab._tab.SetCellValue(j, i, pprint.pformat(cell_data_val))
+                elif type(cell_data_val) == dict:
+                    tab._tab.SetCellValue(j, i, pprint.pformat(cell_data_val))
                 else:
                     if n in ['logN', 'dlogN', 'b', 'db', 'btur', 'dbtur', 'resol', 'chi2r', \
                              'snr']:
                         format = '%3.3'
                     else:
                         format = '%3.7'
-                    if np.abs(r[n])<1e-7 and r[n]!=0:
+                    if np.abs(cell_data_val) < 1e-7 and cell_data_val != 0:
                         format += 'e'
                     else:
                         format += 'f'
-                    tab._tab.SetCellValue(j, i, format % r[n])
+                    tab._tab.SetCellValue(j, i, format % cell_data_val)
         tab._tab.AutoSizeColumns(True)
 
 

@@ -3,7 +3,68 @@ from .structures import SpectrumDataV2, DataColumnV2
 import astropy.units as au
 from copy import deepcopy
 import numpy as np
-from typing import Self, Dict, Any, Optional # Usiamo Self per i metodi che restituiscono una nuova istanza
+from typing import Self, Dict, Any, Optional, Union # Usiamo Self per i metodi che restituiscono una nuova istanza
+
+
+class TableAdapterV2(object):
+    """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
+    def __init__(self, data_dict):
+        self._data_dict = data_dict
+        self.colnames = list(data_dict.keys())
+        
+    def __getitem__(self, key):
+        return self._data_dict[key]
+        
+    # Crucially, add a method to simulate row access (needed for row iteration)
+    def __len__(self):
+        # Assumes 'x' is present and holds the length
+        return len(self._data_dict['x']) 
+
+    # Implement a simple iterator for row access (the "r" in "for r in t")
+    def __iter__(self):
+        self._current_row = 0
+        return self
+
+    def __next__(self):
+        if self._current_row < len(self):
+            row_data = {col: self._data_dict[col][self._current_row] for col in self.colnames}
+            self._current_row += 1
+            return row_data
+        raise StopIteration
+    
+    def __getitem__(self, key: Union[str, slice]) -> Union[au.Quantity, 'TableAdapterV2']:
+        """
+        Handles access via column name (string) OR slicing (slice object).
+        """
+        if isinstance(key, str):
+            # Case 1: Column name lookup (original working logic)
+            return self._data_dict[key]
+        
+        elif isinstance(key, slice):
+            # Case 2: Row slicing (NEW LOGIC)
+            
+            # Create a new dictionary to hold the sliced data
+            new_data_dict = {}
+            
+            # Iterate through all columns and apply the slice to their arrays
+            for col_name, quantity in self._data_dict.items():
+                
+                # Check if the object is a Quantity (most V2 columns are)
+                if hasattr(quantity, 'value'):
+                    # Apply slice to the underlying NumPy array for efficiency
+                    new_values = quantity.value[key]
+                    new_unit = quantity.unit
+                    # Recreate the Quantity for consistency (or just use the sliced array if safe)
+                    new_data_dict[col_name] = au.Quantity(new_values, new_unit)
+                else:
+                    # Handle non-Quantity items (like metadata lists if any)
+                    new_data_dict[col_name] = quantity[key]
+                    
+            # Return a NEW TableAdapterV2 instance containing the sliced data
+            return TableAdapterV2(new_data_dict)
+            
+        else:
+            raise KeyError(f"Invalid key type: {type(key)}. Expected string or slice.")
 
 class SpectrumV2:
     """
@@ -41,12 +102,13 @@ class SpectrumV2:
         return deepcopy(self._data.meta) # Restituisce una copia per prevenire modifiche esterne
 
     @property
-    def t(self) -> Dict[str, au.Quantity]:
+    def t(self) -> TableAdapterV2:
         """
-        Adapter: Restituisce un dizionario simile a un'astropy Table (V1)
-        per la compatibilità con la GUI V1 e la visualizzazione.
+        Adapter: Replaces the raw table/dictionary access.
+        Returns a TableAdapterV2 instance to simulate an Astropy Table (V1)
+        for compatibility with GUI/V1 logic (like gui_table.py).
         """
-        # Questa è la funzione ADAPTER per la GUI V1
+        # 1. Build the raw data dictionary (Integration of existing logic)
         output = {
             'x': self.x,
             'xmin': self.xmin,
@@ -54,11 +116,13 @@ class SpectrumV2:
             'y': self.y,
             'dy': self.dy,
         }
-        # Aggiungere le colonne ausiliarie (es. 'cont', 'resol')
+        
+        # 2. Add auxiliary columns
         for name, col_data in self._data.aux_cols.items():
             output[name] = col_data.quantity
             
-        return output
+        # 3. Return the Adapter Instance (Replacement)
+        return TableAdapterV2(output)
 
     @property
     def _rfz(self) -> float:
