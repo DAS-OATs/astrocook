@@ -16,7 +16,18 @@ import numpy as np
 import wx
 import wx.lib.mixins.listctrl as listmix
 
-from ..v2.session import SessionV2 as Session
+from .session import Session as SessionV1
+
+# --- DYNAMIC IMPORT LOGIC ---
+import astrocook.settings as settings
+from astrocook.v2.session import SessionV2 
+# Note: Ensure V1 Session is importable via its V1 path for safety
+
+# Set the active Session class based on the global flag
+if settings.MODE == 'V2':
+    Session = SessionV2 
+else:
+    Session = SessionV1
 
 ds_x = int(wx.DisplaySize()[0]*0.98)
 ds_y = int(wx.DisplaySize()[1]*0.88)
@@ -49,26 +60,30 @@ class GUI(object):
             print(" ASTROCOOK  v%3s " % version)
             print(''.join(l))
         print("Cupani et al. 2017-%s * INAF-OATs" % current_year)
-        self._sess_list = []
-        self._sess_item_list = []
-        self._sess_sel = None
-        self._sess_item_sel = []
-        self._menu_spec_id = []
-        self._menu_y_conv_id = []
-        self._menu_lines_id = []
-        self._menu_cont_id = []
-        self._menu_nodes_id = []
-        self._menu_systs_id = []
-        self._menu_z0_id = []
-        self._menu_mods_id = []
-        self._menu_feats_id = []
-        self._menu_tab_id = []
-        self._defs = Defaults(self)
-        self._panel_sess = GUIPanelSession(self, mute=self._mute)
-        self._id_zoom = 9
-        self._data_lim = None
-        self._tag = ""
-        self._ok = True
+        try:
+            self._sess_list = []
+            self._sess_item_list = []
+            self._sess_sel = None
+            self._sess_item_sel = []
+            self._menu_spec_id = []
+            self._menu_y_conv_id = []
+            self._menu_lines_id = []
+            self._menu_cont_id = []
+            self._menu_nodes_id = []
+            self._menu_systs_id = []
+            self._menu_z0_id = []
+            self._menu_mods_id = []
+            self._menu_feats_id = []
+            self._menu_tab_id = []
+            self._defs = Defaults(self)
+            self._panel_sess = GUIPanelSession(self, mute=self._mute)
+            self._id_zoom = 9
+            self._data_lim = None
+            self._tag = ""
+            self._ok = True
+        except Exception as e:
+            logging.error(f"Internal GUI initialization error: {e}")
+
         if not self._mute:
             from .gui_graph import GUIGraphMain
             from .gui_image import GUIImageCompleteness, GUIImageCorrectness
@@ -554,41 +569,52 @@ class GUIPanelSession(wx.Frame):
             return 0
 
         logging.info("I'm loading file %s into a new session..." % path)
-        # 1. Crea la Sessione V2 di base (stato vuoto)
-        # Nota: La Sessione V2 ora ha un costruttore più semplice, ignoreremo i vecchi parametri in V1
-        # sess = Session(gui=self._gui, path=path, name=name) # <-- Vecchio V1
-        initial_sess = Session(name=name, gui=self._gui) # <-- Nuovo V2
+    
+        # 1. Instantiation
+        if settings.MODE == 'V2':
+            sess = SessionV2(name=name, gui=self._gui)
+            format_name = 'generic_spectrum'
+        else:
+            sess = SessionV1(gui=self._gui, path=path, name=name)
 
-        # 2. Chiama il metodo di caricamento V2 (che restituisce la sessione caricata)
-        format_name = 'generic_spectrum' 
+        # 2. Loading Logic (The core difference)
+        if settings.MODE == 'V2':
+            try:
+                # Call immutable loading, which returns the final object
+                sess_final = sess.open_new(path, format_name=format_name)
+                self._gui._panel_sess._on_add(sess_final, open=False) 
+                
+                # CRITICAL STEP: Replace the placeholder 'sess' with the loaded 'sess_final' in GUI list
+                # Since the internal list stores 'sess', we must update the list item directly, 
+                # or rely on _on_add being a proper replacement helper.
+                # Assuming _on_add can replace, but for now, the simplest thing is:
+                self._gui._sess_list[-1] = sess_final # Replace the last added placeholder
+
+            except Exception as e:
+                logging.error(f"Failed to load V2 session from {path}: {e}")
+                self._gui._panel_sess._on_close_sess(event=None) 
+                return 0
+
+        else: # V1 LEGACY MODE: Execute V1 mutable open
+            self._gui._panel_sess._on_add(sess, open=True) 
+            sess_final = sess # Final object is the mutable one
+
         
-        try:
-            # Chiama il metodo di caricamento V2 (che è nel tuo nuovo session.py V2)
-            sess = initial_sess.open_new(path, format_name=format_name) # <-- Pattern Immutabile V2
-        except Exception as e:
-             # Se il caricamento fallisce (es. formato non trovato), gestisci l'errore
-             logging.error(f"Failed to load V2 session from {path}: {e}")
-             return 0
-        
-        # 3. Aggiungi la NUOVA sessione caricata (sess_loaded) alla lista
-        # self._gui._panel_sess._on_add(sess, open=True) # <-- Vecchio V1
-        self._gui._panel_sess._on_add(sess, open=False) # <-- Nuovo V2, open=False perché è già caricata
-        
-        sess.log.append_full('_panel_sess', '_on_open',
+        sess_final.log.append_full('_panel_sess', '_on_open',
                              {'path': path, '_flags': _flags})
 
-        if sess._open_twin:
+        if sess_final._open_twin:
             logging.info("I'm loading twin session %s..." % path)
-            sess = Session(gui=self._gui, path=path, name=name, twin=True)
-            self._gui._panel_sess._on_add(sess, open=True)
+            sess_final = Session(gui=self._gui, path=path, name=name, twin=True)
+            self._gui._panel_sess._on_add(sess_final, open=True)
 
         if _flags is not None and '-s' in _flags:
             logging.info("I'm loading session for slice 0...")
-            sess = Session(gui=self._gui, path=path, name='%s_0' \
+            sess_final = Session(gui=self._gui, path=path, name='%s_0' \
                            % name, slice=0)
-            self._gui._panel_sess._on_add(sess, open=True)
+            self._gui._panel_sess._on_add(sess_final, open=True)
             logging.info("I'm loading session for slice 1...")
-            sess = Session(gui=self._gui, path=path, name='%s_1' \
+            sess_final = Session(gui=self._gui, path=path, name='%s_1' \
                            % name, slice=1)
             self._gui._panel_sess._on_add(sess, open=True)
 
@@ -598,25 +624,25 @@ class GUIPanelSession(wx.Frame):
             flag = np.array(_flags)[np.where(['-o' in f[:2] for f in _flags])][0][3:]
             if flag != '':
                 olim = [int(f) for f in flag.split(',')]
-                rlim = [np.where(sess._order==olim[0])[0][0],
-                    np.where(sess._order==olim[1])[0][-1]]
-                sess._row = rlim[0]
+                rlim = [np.where(sess_final._order==olim[0])[0][0],
+                    np.where(sess_final._order==olim[1])[0][-1]]
+                sess_final._row = rlim[0]
                 lim = rlim[1]
             else:
                 lim = np.inf
 
             # Create new sessions for the selected orders
-            while sess._row is not None and sess._row <= lim:
+            while sess_final._row is not None and sess_final._row <= lim:
                 logging.info("I'm loading session for order %i, slice 0..." \
-                    % sess._order[sess._row])
-                sess = Session(gui=self._gui, path=path, name='%s_%i-0' \
-                               % (name, sess._order[sess._row]), row=sess._row)
-                self._gui._panel_sess._on_add(sess, open=True)
+                    % sess_final._order[sess_final._row])
+                sess_final = Session(gui=self._gui, path=path, name='%s_%i-0' \
+                               % (name, sess_final._order[sess_final._row]), row=sess_final._row)
+                self._gui._panel_sess._on_add(sess_final, open=True)
                 logging.info("I'm loading session for order %i, slice 1..." \
-                             % sess._order[sess._row])
-                sess = Session(gui=self._gui, path=path, name='%s_%i-1' \
-                               % (name, sess._order[sess._row]), row=sess._row)
-                self._gui._panel_sess._on_add(sess, open=True)
+                             % sess_final._order[sess_final._row])
+                sess_final = Session(gui=self._gui, path=path, name='%s_%i-1' \
+                               % (name, sess_final._order[sess_final._row]), row=sess_final._row)
+                self._gui._panel_sess._on_add(sess_final, open=True)
 
 
     def _entry_select(self):
