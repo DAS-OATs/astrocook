@@ -5,6 +5,7 @@ from ..v1.format import Format # Import the Format V1 class for I/O
 from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
 from .io_adapter import load_spectrum_to_v2_format # Import V2 adapter for loading
 from .recipes.edit import RecipeEditV2
+from .recipes.flux import RecipeFluxV2
 from .spectrum import SpectrumV2
 from .utils import guarded_deepcopy_v1_state
 
@@ -47,7 +48,9 @@ class SessionV2:
             self.defs = Defaults(self._gui)
 
         # The V1 GUI expects the Cookbook to be named 'cb'
-        self._cb = RecipeEditV2(self)
+        self.edit = RecipeEditV2(self)
+        self.flux = RecipeFluxV2(self)
+        self.cb = self.edit
 
         # --- Adapter Attributo per V1 (Temporaneo) ---
         # Inizializza l'attributo legacy che il codice V1 si aspetta.
@@ -61,6 +64,22 @@ class SessionV2:
         self._series_sel = 'Ly_a' # Used by graph._on_syst_new for cursor
         # ----------------------------------------------
 
+    def __getattr__(self, name):
+        """
+        Dynamically dispatches method calls (like 'rebin') 
+        to the appropriate V2 recipe adapter (self.flux, self.edit).
+        """
+        # 1. Check if the method exists in the 'flux' recipe category
+        if hasattr(self.flux, name):
+            return getattr(self.flux, name)
+            
+        # 2. Check if the method exists in the 'edit' recipe category
+        if hasattr(self.edit, name):
+            return getattr(self.edit, name)
+
+        # 3. Fallback to default Python behavior (raise AttributeError)
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
     @property
     def spec(self) -> Optional[SpectrumV2]: # Mantiene il nome V1 'spec' per l'adapter
         return self._current_spectrum
@@ -68,10 +87,6 @@ class SessionV2:
     @property
     def lines(self):
         return self._lines # Sarà LineListV2
-    
-    @property
-    def cb(self) -> RecipeEditV2:
-        return self._cb
 
     # Metodo cruciale: Crea una NUOVA sessione quando si carica un file
     def open_new(self, path: str, format_name: str, **kwargs) -> 'SessionV2':

@@ -1,11 +1,11 @@
-from .spectrum_operations import convert_x_axis, convert_y_axis, rebin_spectrum
-from .structures import SpectrumDataV2, DataColumnV2
 
 import astropy.units as au
 from copy import deepcopy
 import numpy as np
-from typing import Self, Dict, Any, Optional, Union # Usiamo Self per i metodi che restituiscono una nuova istanza
+from typing import Dict, Any, Optional, Union
 
+from .spectrum_operations import convert_axis_velocity, convert_x_axis, convert_y_axis, rebin_spectrum
+from .structures import SpectrumDataV2, DataColumnV2
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
     def __init__(self, data_dict):
@@ -227,16 +227,37 @@ class SpectrumV2:
         API: Rebins the spectrum and returns a NEW SpectrumV2 instance.
         """
         
+        original_x_unit = self._data.x.unit 
+        zem = self._data.rf_z # Use the current rest-frame Z as the conversion zero point
+
+        # Determine target unit for rebinning (km/s if the step is in km/s, otherwise original unit)
+        if dx.unit.is_equivalent(au.km/au.s):
+            target_calc_unit = au.km/au.s
+        else:
+            target_calc_unit = original_x_unit
+
+        # --- Unit Conversion to Calculation Space ---
+        x_calc = convert_axis_velocity(self._data.x.quantity, zem, target_calc_unit)
+        xmin_calc = convert_axis_velocity(self._data.xmin.quantity, zem, target_calc_unit)
+        xmax_calc = convert_axis_velocity(self._data.xmax.quantity, zem, target_calc_unit)
+
         # 1. Execute pure rebinning logic
         x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
-            self._data, xstart, xend, dx, kappa, filling
+            x_calc, xmin_calc, xmax_calc, # Pass the converted X-arrays
+            self._data, 
+            xstart, xend, dx, target_calc_unit,
+            kappa, filling
         )
         
+        x_final = convert_axis_velocity(x_new, zem, original_x_unit)
+        xmin_final = convert_axis_velocity(xmin_new, zem, original_x_unit)
+        xmax_final = convert_axis_velocity(xmax_new, zem, original_x_unit)
+
         # 2. Build new SpectrumDataV2
         new_data = SpectrumDataV2(
-            x=DataColumnV2(x_new.value, x_new.unit),
-            xmin=DataColumnV2(xmin_new.value, x_new.unit),
-            xmax=DataColumnV2(xmax_new.value, x_new.unit),
+            x=DataColumnV2(x_final.value, x_final.unit),
+            xmin=DataColumnV2(xmin_final.value, xmin_final.unit),
+            xmax=DataColumnV2(xmax_final.value, xmax_final.unit),
             y=DataColumnV2(y_new.value, y_new.unit),
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=self._data.aux_cols, # Auxiliary columns are NOT handled in core rebin

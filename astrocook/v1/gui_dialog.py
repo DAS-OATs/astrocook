@@ -14,11 +14,13 @@ import os
 
 from astrocook.v2.recipes.utils import get_recipe_schema
 from astrocook.v2.recipes.edit import RecipeEditV2
+from astrocook.v2.recipes.flux import RecipeFluxV2
 from astrocook.v2.utils import is_branching_recipe
 
 # This links the instantiated V2 recipe class to its string category
 RECIPE_CATEGORY_MAP = {
     RecipeEditV2: 'edit',
+    RecipeFluxV2: 'flux',
 }
 
 _cached_offset_y = None
@@ -67,11 +69,13 @@ class GUIDialog(wx.Dialog):
         for i, a in enumerate(self._attr):
             self._sess_sel =  self._gui._sess_sel
             self._cb =  self._gui._sess_sel.cb
-            if self._obj == None:
-                if hasattr(self._cb, a):
-                    self._obj = self._cb
-                else:
-                    self._obj = self._sess_sel
+            if a in dir(self._cb): # Check RecipeEditV2 methods (x_convert, y_convert)
+                self._obj = self._cb # CookbookAdapterV2 instance
+            elif hasattr(self._sess_sel.flux, a): # Check RecipeFluxV2 methods (rebin)
+                self._obj = self._sess_sel.flux # RecipeFluxV2 instance
+            else: 
+                # Fallback to the Session object for methods like save(), open_new(), etc.
+                self._obj = self._sess_sel 
             method = getattr(self._obj, a)
             self._methods.append(method)
             self._get_params(method)
@@ -116,14 +120,15 @@ class GUIDialog(wx.Dialog):
                 
                 # 1. Infer the Category from the object instance
                 recipe_class = self._obj.__class__
+
                 category = RECIPE_CATEGORY_MAP.get(recipe_class)
-                
+
                 if not category:
                     raise AttributeError(f"Recipe class {recipe_class.__name__} not mapped to a category.")
                     
                 # 2. Call the centralized schema retrieval utility
                 v2_schema = get_recipe_schema(category, recipe_name)
-
+                
                 # --- Populate V1 attributes from V2 schema ---
                 self._brief.append(v2_schema['brief'])
                 self._details.append(v2_schema['details'])
@@ -137,7 +142,6 @@ class GUIDialog(wx.Dialog):
                 )
                 self._params.append(param_defaults)
 
-                # ... Populate self._params and self._doc from v2_schema['params']
                 return # Exit successfully
 
         except Exception:
