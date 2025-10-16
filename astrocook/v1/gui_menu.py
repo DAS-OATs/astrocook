@@ -471,6 +471,12 @@ class GUIMenuEdit(GUIMenu):
                      {'targ': 'mask', 'append': 'spec'}
                      ]
 
+        # --- TEMPORARY ADDITION FOR V2 TESTING ---
+        # Add x_convert to the accessible menu list
+        self._rec.append({'targ': 'x_convert', 'append': 'spec'})
+        self._rec.append({'targ': 'y_convert', 'append': 'spec'})
+        # -----------------------------------------
+
         if show_all:
             self._rec += ['--',
                           {'targ': 'x_convert', 'append': 'spec'},

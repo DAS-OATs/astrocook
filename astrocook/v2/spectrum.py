@@ -1,10 +1,10 @@
+from .spectrum_operations import convert_x_axis, convert_y_axis, rebin_spectrum
 from .structures import SpectrumDataV2, DataColumnV2
 
 import astropy.units as au
 from copy import deepcopy
 import numpy as np
 from typing import Self, Dict, Any, Optional, Union # Usiamo Self per i metodi che restituiscono una nuova istanza
-
 
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
@@ -213,8 +213,86 @@ class SpectrumV2:
         """Checks if an auxiliary column exists."""
         return name in self._data.aux_cols
     
-    # Metodo generico per accedere a una colonna ausiliaria
     def get_column(self, name: str) -> Optional[au.Quantity]:
         """Accede a una colonna ausiliaria per la GUI (es. 'cont')."""
         col = self._data.aux_cols.get(name)
         return col.quantity if col else None
+    
+    # Methods implementing the API
+
+    def rebin(self, xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
+              dx: au.Quantity, kappa: Optional[float], 
+              filling: float) -> 'SpectrumV2':
+        """
+        API: Rebins the spectrum and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Execute pure rebinning logic
+        x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
+            self._data, xstart, xend, dx, kappa, filling
+        )
+        
+        # 2. Build new SpectrumDataV2
+        new_data = SpectrumDataV2(
+            x=DataColumnV2(x_new.value, x_new.unit),
+            xmin=DataColumnV2(xmin_new.value, x_new.unit),
+            xmax=DataColumnV2(xmax_new.value, x_new.unit),
+            y=DataColumnV2(y_new.value, y_new.unit),
+            dy=DataColumnV2(dy_new.value, dy_new.unit),
+            aux_cols=self._data.aux_cols, # Auxiliary columns are NOT handled in core rebin
+            meta=self._data.meta, rf_z=self._data.rf_z 
+        )
+        
+        # 3. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
+        return SpectrumV2(data=new_data, history=new_history)
+
+    def x_convert(self, zem: float, xunit: au.Unit) -> 'SpectrumV2':
+        """
+        API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
+        (Replaces V1's mutable _x_convert)
+        """
+        
+        # 1. Execute pure conversion logic
+        x_new, xmin_new, xmax_new = convert_x_axis(self._data, zem, xunit)
+        
+        # 2. Build new SpectrumDataV2, preserving the core vertical data
+        new_data = SpectrumDataV2(
+            x=DataColumnV2(x_new.value, xunit),
+            xmin=DataColumnV2(xmin_new.value, xunit),
+            xmax=DataColumnV2(xmax_new.value, xunit),
+            y=self._data.y, 
+            dy=self._data.dy,
+            aux_cols=self._data.aux_cols,
+            meta=self._data.meta,
+            rf_z=zem # Update rest frame Z in the new object
+        )
+        
+        # 3. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"X-axis converted to {xunit} at zem={zem}"]
+        return SpectrumV2(data=new_data, history=new_history)
+
+    def y_convert(self, yunit: au.Unit) -> 'SpectrumV2':
+        """
+        API: Converts the Y-axis units and returns a NEW SpectrumV2 instance.
+        (Replaces V1's mutable _y_convert)
+        """
+        
+        # 1. Execute pure conversion logic
+        new_y, new_dy, new_aux_cols = convert_y_axis(self._data, yunit)
+        
+        # 2. Build new SpectrumDataV2, preserving the X-axis and metadata
+        new_data = SpectrumDataV2(
+            x=self._data.x, 
+            xmin=self._data.xmin,
+            xmax=self._data.xmax,
+            y=new_y, # Updated
+            dy=new_dy, # Updated
+            aux_cols=new_aux_cols, # Auxiliary columns should also be converted if unit-dependent
+            meta=self._data.meta,
+            rf_z=self._data.rf_z 
+        )
+        
+        # 3. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Y-axis converted to {yunit}"]
+        return SpectrumV2(data=new_data, history=new_history)

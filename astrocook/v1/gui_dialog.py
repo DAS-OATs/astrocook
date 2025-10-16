@@ -1,3 +1,4 @@
+from astrocook import settings
 import astropy.units as au
 from .functions import elem_expand, meta_parse, trans_parse
 from .message import *
@@ -10,6 +11,15 @@ import numpy as np
 import datetime as dt
 import wx
 import os
+
+from astrocook.v2.recipes.utils import get_recipe_schema
+from astrocook.v2.recipes.edit import RecipeEditV2
+from astrocook.v2.utils import is_branching_recipe
+
+# This links the instantiated V2 recipe class to its string category
+RECIPE_CATEGORY_MAP = {
+    RecipeEditV2: 'edit',
+}
 
 _cached_offset_y = None
 
@@ -99,6 +109,40 @@ class GUIDialog(wx.Dialog):
         self._bottom.SetSizeHints(self)
 
     def _get_doc(self, method):
+        # 1. Check V2 Schema (Requires importing the V2 Adapter and using the method)
+        try:
+            if settings.MODE == 'V2':
+                recipe_name = method.__name__
+                
+                # 1. Infer the Category from the object instance
+                recipe_class = self._obj.__class__
+                category = RECIPE_CATEGORY_MAP.get(recipe_class)
+                
+                if not category:
+                    raise AttributeError(f"Recipe class {recipe_class.__name__} not mapped to a category.")
+                    
+                # 2. Call the centralized schema retrieval utility
+                v2_schema = get_recipe_schema(category, recipe_name)
+
+                # --- Populate V1 attributes from V2 schema ---
+                self._brief.append(v2_schema['brief'])
+                self._details.append(v2_schema['details'])
+                self._url.append(docs_url + v2_schema['url'])
+                param_docs = [p['doc'] for p in v2_schema['params']]
+                self._doc.append(param_docs) # self._doc must be a list of strings/documentation
+
+                # Create the OrderedDict expected by self._get_params
+                param_defaults = OrderedDict(
+                    [(p['name'], str(p['default'])) for p in v2_schema['params']]
+                )
+                self._params.append(param_defaults)
+
+                # ... Populate self._params and self._doc from v2_schema['params']
+                return # Exit successfully
+
+        except Exception:
+            logging.error("I wasn't able to retrieve the V2 schema.") # Fall through to V1 Docstring parsing if V2 method fails or is not found
+
         full = inspect.getdoc(method)
         split = full.split('@')
         self._brief.append([s[6:-1] for s in split \
@@ -178,10 +222,24 @@ class GUIDialog(wx.Dialog):
             sel_old = self._gui._sess_list.index(self._gui._sess_sel)
 
             if out is not None:
-                if out is 0:
-                    pass
+                if settings.MODE == 'V2':
+                    # Default V2 behavior: REPLACE the current session with the new, updated session.
+                    # The V2 recipe implicitly becomes the "next state."
+
+                    if is_branching_recipe(a): # Needs a global list of branching recipes
+                        self._gui._panel_sess._on_add(out, open=False) # Adds to list
+                    else:
+                        # REPLACE the current session in the list:
+                        current_index = self._gui._sess_list.index(self._gui._sess_sel)
+                        self._gui._sess_list[current_index] = out
+                        self._gui._sess_sel = out # Update the selected session reference
+
                 else:
-                    self._gui._panel_sess._on_add(out, open=False)
+                    if out is 0:
+                        pass
+                    else:
+                        self._gui._panel_sess._on_add(out, open=False)
+                
                 self.Close()
 
             if out is None or out==0:
