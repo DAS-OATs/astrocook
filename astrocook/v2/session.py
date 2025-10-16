@@ -94,18 +94,30 @@ class SessionV2:
         Carica un nuovo spettro utilizzando l'adapter V2 e restituisce una NUOVA SessionV2.
         (Sostituisce il vecchio 'sess.open()' che modificava in-place)
         """
-        # 1. Carica il nuovo spettro V2
+
+        # We retrieve 'gui' from the object's instance variable, but still need to clean kwargs.
+        # The safest method is to create a copy of kwargs without 'gui'.
+
+        # We retrieve the GUI object from the instance variable set in __init__
+        gui_ref = self._gui 
+
+        # We must ensure the 'gui' key isn't sent twice if it was passed to open_new
+        io_kwargs = kwargs.copy()
+        if 'gui' in io_kwargs:
+            del io_kwargs['gui']
+
+        # 2. Call the I/O adapter: Pass gui explicitly, then unpack the cleaned kwargs.
         new_spec_v2 = load_spectrum_to_v2_format(
             path, 
             format_name, 
-            gui=self._gui,
+            gui=gui_ref,
             **kwargs
         ) 
 
-        # 2. Aggiorna lo stato. (Gli altri oggetti sono None per ora)
+        # 3. Update the history log
         new_history = self.history + [f"Opened file {path} with {format_name}"]
         
-        # 3. Restituisce una NUOVA istanza (immutabilità)
+        # 4. Return a new SessionV2 instance with the updated spectrum and history
         return SessionV2(name=self.name, 
                          current_spectrum=new_spec_v2, 
                          lines=self._lines, 
