@@ -12,7 +12,8 @@ from .utils import guarded_deepcopy_v1_state
 import astropy.units as au
 from copy import deepcopy
 import numpy as np
-from typing import Optional
+import os
+from typing import Any, Optional
 
 
 class SessionV2:
@@ -159,3 +160,20 @@ class SessionV2:
         
         # 2. Return the new, copied instance
         return SessionV2(**kwargs)
+
+
+def load_session_from_file(file_path: str, format_name: str, gui_context: Any) -> 'SessionV2':
+    """
+    Orchestrates the immutable loading of a V2 session from a file.
+    This replaces load_initial_session.
+    """
+    # 1. Create an initial SessionV2 instance (placeholder for immutable update)
+    name = os.path.basename(file_path) # Get name from path
+    initial_sess = SessionV2(name=name, gui=gui_context)
+
+    # 2. Execute V2 immutable loading via the instance method
+    sess_loaded = initial_sess.open_new(
+        path=file_path,
+        format_name=format_name,
+    )
+    return sess_loaded
