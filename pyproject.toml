@@ -75,6 +75,7 @@ Homepage = "https://github.com/DAS-OATs/astrocook" # Or your specific homepage
 Repository = "https://github.com/DAS-OATs/astrocook"
 # Bug-Tracker = "https://github.com/DAS-OATs/astrocook/issues" # Optional
 
+
 # --- Setuptools specific configuration ---
 [tool.setuptools]
 # This is where include-package-data belongs:
@@ -95,4 +96,17 @@ minversion = "6.0"
 addopts = "-ra -q"
 testpaths = [
     "tests", # Specifies where pytest should look for tests
+]
+
+[tool.coverage.run]
+# CRITICAL FIX: Tell the coverage tool that the source code starts in the 'astrocook' directory.
+# This resolves the "Module was never imported" error.
+source = ["astrocook"]
+
+[tool.coverage.report]
+# Configure which files to include/exclude from the report (optional)
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    # Add other boilerplate lines to exclude here
 ]
