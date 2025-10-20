@@ -5,7 +5,7 @@ import os
 from PySide6.QtCore import Qt, QStringListModel
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QMenuBar, QStackedWidget, QLabel, QDockWidget, QListView, QFileDialog
+    QMainWindow, QWidget, QVBoxLayout, QMenuBar, QStackedWidget, QLabel, QDockWidget, QListView, QFileDialog, QApplication
 )
 
 from .pyside_plot import SpectrumPlotWidget
@@ -24,7 +24,19 @@ class MainWindowV2(QMainWindow):
         # 3. Create the list model for QListView (must be defined early)
         self.session_model = QStringListModel()
 
-        self.setGeometry(100, 100, 1400, 900)
+        self.setGeometry(100, 100, 450, 150)
+        
+        # --- FIX: Center the window on the screen ---
+        # 1. Get the screen geometry
+        screen_geometry = QApplication.primaryScreen().geometry()
+        
+        # 2. Calculate the center position
+        x = (screen_geometry.width() - self.width()) // 2
+        y = (screen_geometry.height() - self.height()) // 2
+        
+        # 3. Move the window
+        self.move(x, y)
+        
         self.central_stack = QStackedWidget()
         self.setCentralWidget(self.central_stack)
         
@@ -43,6 +55,7 @@ class MainWindowV2(QMainWindow):
         else:
             # If the session is an empty placeholder, explicitly set the view to empty.
             self.central_stack.setCurrentIndex(1)
+            self.session_dock.setVisible(False)
     
     def _setup_plot_view(self):
         """Sets up the primary spectrum plot area."""
@@ -209,6 +222,14 @@ class MainWindowV2(QMainWindow):
         
         # 3. Update the central view
         if new_session.spec and len(new_session.spec.x) > 0:
+            if self.central_stack.currentIndex() == 1:
+                self.resize(1400, 900) # Resize to the working size
+                self.session_dock.setVisible(True)
+                
+                screen_geometry = QApplication.primaryScreen().geometry()
+                x = (screen_geometry.width() - self.width()) // 2
+                y = (screen_geometry.height() - self.height()) // 2
+                self.move(x, y)
             self.central_stack.setCurrentIndex(0) 
             self.plot_viewer.update_plot(new_session)
         else:
