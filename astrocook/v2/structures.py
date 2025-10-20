@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from astropy import units as au
 from astropy.table import Table
 import numpy as np
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 @dataclass(frozen=True)
 class DataColumnV2:
@@ -69,3 +69,43 @@ class SpectrumDataV2:
                    aux_cols=aux_cols, 
                    meta=meta if meta is not None else {},
                    rf_z=rf_z)
+    
+@dataclass(frozen=True)
+class ComponentDataV2:
+    """Immutable data structure for a single absorption component (Voigt profile)."""
+    
+    # Core Physical Parameters (z, logN, b)
+    z: float
+    dz: Optional[float] 
+    logN: float
+    dlogN: Optional[float]
+    b: float
+    db: Optional[float]
+    
+    # Turbulance Parameter (from V1)
+    btur: float = 0.0
+    dbtur: Optional[float] = None
+    
+    # Type and identification
+    func: str = 'voigt'
+    series: str = 'Ly_a'
+    id: int = field(init=False)
+    
+    # NOTE: We keep fit models and constraints OUT of this pure data structure.
+    
+    def __post_init__(self):
+        # Generate a unique integer ID based on redshift for now (required by V1 logic)
+        # This is a temporary ID assignment until a proper ID management system is implemented.
+        generated_id = int(self.z * 1000000)
+        object.__setattr__(self, 'id', generated_id)
+
+
+@dataclass(frozen=True)
+class SystemListDataV2:
+    """Immutable container for system components (list of ComponentDataV2)."""
+    
+    components: List[ComponentDataV2] = field(default_factory=list)
+    
+    # Placeholder for complex V1 structures (mutable state reference, if needed)
+    v1_models_t: Any = None 
+    meta: Dict[str, Any] = field(default_factory=dict)
