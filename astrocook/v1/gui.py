@@ -496,7 +496,13 @@ class GUIPanelSession(wx.Frame):
 
         if not self._mute:
             from .gui_log import GUILog
-            sess.log = GUILog(self._gui)
+            if isinstance(sess, (int, float, type(None))):
+            # If the returned value is a failure code (0, None), skip setup and logging.
+                return 0 
+        
+            # Now, the rest of the code is safe to assume 'sess' is a valid SessionV2 object
+            if not hasattr(sess, 'log'):
+                sess.log = GUILog(self._gui) # This was the line that crashed later
         sess.defs = Defaults(self._gui)
         self._gui._defs = sess.defs
 

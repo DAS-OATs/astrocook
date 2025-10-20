@@ -12,10 +12,9 @@ import datetime as dt
 import wx
 import os
 
-from astrocook.v2.recipes.utils import get_recipe_schema
 from astrocook.v2.recipes.edit import RecipeEditV2
 from astrocook.v2.recipes.flux import RecipeFluxV2
-from astrocook.v2.utils import is_branching_recipe
+from astrocook.v2.utils import get_recipe_schema, is_branching_recipe
 
 # This links the instantiated V2 recipe class to its string category
 RECIPE_CATEGORY_MAP = {
