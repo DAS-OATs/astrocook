@@ -2,7 +2,7 @@ from astropy import units as au
 from astropy.table import Table
 import logging
 import numpy as np
-from typing import Dict, Any
+from typing import Any, Optional
 
 from .io_v1_stubs import load_v1_spec_object, load_v1_systs_object
 from .structures import DataColumnV2, SpectrumDataV2
@@ -50,24 +50,43 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
         rf_z=getattr(v1_spectrum_instance, '_rfz', 0.0)
     )
 
-def load_and_migrate_structure(archive_root: str, structure_name: str, gui_context: Any, format_name: str):
+def load_and_migrate_structure(archive_root: str, structure_name: str, gui_context: Any, format_name: str, spec_file_path: Optional[str] = None):
     """
     General purpose function to load a V1 structure from file and migrate it to V2 immutable object.
+    
+    :param archive_root: The clean, extension-less root path (e.g., /tmp/xyz/session_root).
+    :param spec_file_path: The specific, resolved path for the 'spec' structure (used only for 'spec').
     """
     
-    file_path_fits = f"{archive_root}_{structure_name}.fits"
+    # 1. Determine the exact path based on structure type
+    if structure_name == 'spec':
+        # Use the explicit file path passed from the orchestrator (required for archive resolution)
+        path_to_load = spec_file_path
+        
+    elif structure_name == 'systs':
+        # Construct the path for the associated structure using the archive root
+        path_to_load = f"{archive_root}_systs.fits"
+        
+    else:
+        # Placeholder for other structure names
+        return None
+        
     
     if structure_name == 'spec':
-        # --- Spectrum Migration (Existing Logic) ---
-        v1_spec = load_v1_spec_object(file_path_fits, format_name, gui_context) # Placeholder for V1 I/O
+        # --- Spectrum Migration ---
+        # Call V1 loading utility with the full, resolved path
+        v1_spec = load_v1_spec_object(path_to_load, format_name, gui_context) 
         if v1_spec:
             data_core_v2 = v1_table_to_data_v2(v1_spec)
             return SpectrumV2(data=data_core_v2)
         
     elif structure_name == 'systs':
-        # --- System List Migration (New Logic) ---
-        from .system_list_migration import migrate_system_list_v1_to_v2 # Assume this utility is importable
-        v1_systs = load_v1_systs_object(file_path_fits) # Placeholder for V1 I/O
+        # --- System List Migration ---
+        from .system_list_migration import migrate_system_list_v1_to_v2 
+        from .system_list import SystemListV2
+        
+        # Call V1 loading utility (load_v1_systs_object needs only the path)
+        v1_systs = load_v1_systs_object(path_to_load) 
         
         if v1_systs:
             data_core_v2 = migrate_system_list_v1_to_v2(v1_systs)

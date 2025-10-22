@@ -9,6 +9,7 @@ from ..v1.defaults import Defaults
 from ..v1.format import Format # Import the Format V1 class for I/O 
 from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
 from .io_adapter import load_and_migrate_structure # Import V2 adapter for loading
+from .io_v1_stubs import V1ArchiveManager
 from .recipes.edit import RecipeEditV2
 from .recipes.flux import RecipeFluxV2
 from .spectrum import SpectrumV2
@@ -21,46 +22,77 @@ def load_session_from_file(file_path: str, format_name: str, gui_context: Any) -
     Orchestrates the loading and migration of all associated structures for a new SessionV2 object.
     """
     
-    archive_root_full = os.path.splitext(file_path)[0]
-    name = os.path.basename(archive_root_full)
+    archive_manager = None
     
-    # Since V1 structure files often contain the structure name in the file name (e.g., *_spec.fits),
-    # we remove it to get the generic archive name.
-    
-    # We check for and remove common endings that might conflict with V1/V2 structure tags.
-    # Note: We must also handle the '.fits' extension removal, which os.path.splitext does.
-    
-    # Check for common V1 suffixes like '_spec'
-    if archive_root_full.lower().endswith('_spec'):
-        archive_root = archive_root_full[:-5] # Remove '_spec' (5 characters)
-        name = os.path.basename(archive_root)
-    else:
-        archive_root = archive_root_full
+    try:
+        # --- 1. Archive Detection and Unpacking ---
+        is_archive = file_path.lower().endswith('.acs')
         
-    # 2. Load and migrate Spectrum (required structure)
-    spec_v2 = load_and_migrate_structure(archive_root, 'spec', gui_context, format_name)
-    
-    if spec_v2 is None:
-        raise FileNotFoundError(f"Failed to load Spectrum structure from {file_path}")
+        if is_archive:
+            archive_manager = V1ArchiveManager(file_path)
+            temp_root = archive_manager.unpack()
+            if temp_root is None:
+                raise FileNotFoundError(f"Could not unpack archive {file_path}")
+            
+            # The archive manager must resolve the actual file path inside the temp dir.
+            # We must resolve the path for the primary structure (spec).
+            spec_file_path = archive_manager.get_structure_path('spec')
+            if spec_file_path is None:
+                raise FileNotFoundError("Mandatory *_spec.fits not found in archive.")
+                
+            # The archive root for subsequent loads (systs) is derived from the spec file
+            archive_root = os.path.splitext(spec_file_path)[0] # e.g., /tmp/xyz/session_root_spec
+            name = os.path.basename(archive_root)
+            
+        else:
+            # --- Standard FITS File Handling ---
+            spec_file_path = file_path
+            archive_root = os.path.splitext(file_path)[0]
+            name = os.path.basename(archive_root)
 
-    # 2. Load and migrate System List (optional structure)
-    systs_v2 = load_and_migrate_structure(archive_root, 'systs', gui_context, format_name)
-    
-    # 3. Create the final SessionV2 object
-    initial_sess = SessionV2(name=name, gui=gui_context)
-    
-    sess_loaded = SessionV2(
-        name=name, 
-        current_spectrum=spec_v2, 
-        systs=systs_v2, 
-        # Line List and other structures will be added here
+        # Clean the name: remove '_spec' suffix if present (as the V1 stubs expects the core name)
+        if name.lower().endswith('_spec'):
+            name = name[:-5]
+            archive_root = archive_root[:-5]
+
+        # 2. Load and migrate Spectrum (required structure)
+        # The io_adapter needs the full path to the FITS file and the correct root name
+        spec_v2 = load_and_migrate_structure(
+            archive_root, 'spec', gui_context, format_name, spec_file_path # Pass full path for direct FITS loading
+        )
         
-        # Pass the original context to the new session
-        log=initial_sess.log,
-        defs=initial_sess.defs,
-        gui=gui_context
-    )
-    return sess_loaded
+        if spec_v2 is None:
+            raise FileNotFoundError(f"Failed to load Spectrum structure from {spec_file_path}")
+
+        # 3. Load and migrate System List (optional structure)
+        # The archive_root variable is the base path for associated files (*_systs.fits)
+        systs_v2 = load_and_migrate_structure(
+            archive_root, 'systs', gui_context, format_name, spec_file_path=None
+        )
+        
+        # 4. Create the final SessionV2 object
+        # The initial session is created just to get the log/defs objects correctly
+        initial_sess = SessionV2(name=name, gui=gui_context)
+        
+        sess_loaded = SessionV2(
+            name=name, 
+            current_spectrum=spec_v2, 
+            systs=systs_v2, 
+            # Pass original context objects
+            log=initial_sess.log,
+            defs=initial_sess.defs,
+            gui=gui_context
+        )
+        return sess_loaded
+
+    except Exception as e:
+        logging.error(f"FATAL I/O ERROR during session loading: {e}")
+        # Re-raise or handle cleanup
+        raise
+        
+    finally:
+        if archive_manager:
+            archive_manager.cleanup()
 
 class SessionV2:
     """
@@ -73,7 +105,7 @@ class SessionV2:
         # I dati principali sono gestiti tramite composizione e immutabilità
         self._current_spectrum = current_spectrum
         self._lines = lines
-        self._systs = systs
+        self.systs = systs
         self.history = history if history is not None else []
         self._gui = kwargs.get('gui') # Manteniamo il link alla GUI
         

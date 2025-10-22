@@ -1,10 +1,62 @@
 from astropy.io import fits
 import logging
+import os
+import tarfile
+import tempfile
 from typing import Any, Optional
 
 from ..v1.format import Format as FormatV1 
 from ..v1.spectrum import Spectrum as SpectrumV1
 from ..v1.syst_list import SystList as SystListV1
+class V1ArchiveManager:
+    """
+    Handles unpacking and cleanup of the mutable V1 Astrocook session (.acs) archive.
+    """
+    def __init__(self, acs_path: str):
+        self.acs_path = acs_path
+        self.temp_dir = None
+        
+    def unpack(self) -> Optional[str]:
+        """Unpacks the .acs (tar.gz) archive into a temporary directory."""
+        if not self.acs_path.lower().endswith(('.acs', '.tar.gz')):
+            return None
+            
+        try:
+            self.temp_dir = tempfile.mkdtemp()
+            with tarfile.open(self.acs_path, 'r:gz') as tar:
+                tar.extractall(path=self.temp_dir)
+            logging.info(f"Unpacked archive to temporary directory: {self.temp_dir}")
+            return self.temp_dir
+        except Exception as e:
+            logging.error(f"Failed to unpack .acs archive {self.acs_path}: {e}")
+            self.cleanup()
+            return None
+            
+    def get_structure_path(self, structure_name: str) -> Optional[str]:
+        """Returns the full path to the requested FITS file inside the temp directory."""
+        if self.temp_dir is None:
+            return None
+            
+        # V1 logic scans for the file pattern (*_structure_name.fits)
+        # We simplify this by looking for the mandatory spec file name structure.
+        
+        # Example: Scan the temp_dir for a file ending in *_spec.fits or *_systs.fits
+        for fname in os.listdir(self.temp_dir):
+            if fname.lower().endswith(f'_{structure_name}.fits'):
+                return os.path.join(self.temp_dir, fname)
+        
+        return None
+
+    def cleanup(self):
+        """Removes the temporary directory."""
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            import shutil
+            shutil.rmtree(self.temp_dir)
+            logging.info(f"Cleaned up temporary directory: {self.temp_dir}")
+
+# Register cleanup method to run when the application exits (crucial for stability)
+import atexit
+atexit.register(V1ArchiveManager.cleanup)
 
 def create_mock_v1_spectrum(hdul):
     """Creates a mock V1 Spectrum object with the correct size from HDUL."""
@@ -94,5 +146,44 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
         return None
 
 def load_v1_systs_object(file_path: str) -> Optional[SystListV1]:
-    """Placeholder for V1 SystList loading logic."""
-    return None
+    """
+    Implements the logic to load a V1 SystList object from a FITS file.
+    
+    This function simulates the V1 Session logic calling Format.astrocook.
+    """
+    
+    # 1. Open the associated FITS file
+    try:
+        if not os.path.exists(file_path):
+            logging.warning(f"Associated system list file not found: {file_path}")
+            return None
+            
+        hdul = fits.open(file_path)
+        
+    except Exception as e:
+        logging.error(f"Failed to open system list FITS file {file_path}: {e}")
+        return None
+
+    # 2. Call the V1 Format parser
+    v1_format_loader = FormatV1()
+    
+    try:
+        # Format.astrocook is the method used for internal archive structures.
+        # It expects the HDUList and the structure tag ('systs').
+        v1_systs_obj = v1_format_loader.astrocook(hdul, 'systs')
+        
+    except Exception as e:
+        logging.error(f"V1 Format.astrocook failed to parse system list: {e}")
+        v1_systs_obj = None
+        
+    finally:
+        if hdul is not None:
+            hdul.close()
+
+    # CRITICAL CHECK: The V1 Format method returns 0 on failure, which Python sees as None.
+    # We ensure we return the SystListV1 object if successful.
+    if isinstance(v1_systs_obj, SystListV1):
+        logging.info(f"V1 System List loaded successfully from {file_path}.")
+        return v1_systs_obj
+    else:
+        return None
