@@ -29,6 +29,13 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
 
     # 2. Colonne Ausiliarie (Cont, Resol, Model, etc.)
     aux_cols = {}
+
+    if 'resol' not in t_v1.colnames:
+        # Create a default 'resol' column with NaNs if missing
+        nan_array = np.full_like(t_v1['x'].value, np.nan)
+        # Use a safe default unit, e.g., dimensionless or km/s (as often used in V1)
+        aux_cols['resol'] = DataColumnV2(nan_array, au.dimensionless_unscaled, description="Spectral Resolution")
+
     for colname in t_v1.colnames:
         # Check if column is a core column before processing aux_cols
         if colname not in ['x', 'xmin', 'xmax', 'y', 'dy']:

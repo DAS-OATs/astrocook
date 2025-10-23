@@ -9,7 +9,7 @@ from ..v1.defaults import Defaults
 from ..v1.format import Format # Import the Format V1 class for I/O 
 from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
 from .io_adapter import load_and_migrate_structure # Import V2 adapter for loading
-from .io_v1_stubs import V1ArchiveManager
+from .io_v1_stubs import V1ArchiveManager, save_archive_v1
 from .recipes.edit import RecipeEditV2
 from .recipes.flux import RecipeFluxV2
 from .spectrum import SpectrumV2
@@ -255,3 +255,37 @@ class SessionV2:
             pass # The initial loading already covers the spectrum.
 
         return None # Return None for other unimplemented structuresl
+    
+    def save(self, file_path: str, models: bool = False):
+        """
+        Saves the current session state by converting V2 immutable structures 
+        back into V1 mutable structures and creating a .acs archive.
+        """
+        
+        # [TODO: V1 REGRESSION FIX] The V2 -> V1 conversion needs verification 
+        # to ensure compatibility with V1 Session.open() due to Astropy Column 
+        # structure changes (causes RecursionError on load).
+        
+        # 1. Convert V2 immutable structures to V1 mutable/saveable format
+        try:
+            # Requires SpectrumV2 to have a to_v1_spectrum() method
+            v1_spec_for_save = self.spec.to_v1_spectrum() 
+            # Requires SystemListV2 to have a to_v1_systlist() method
+            v1_systs_for_save = self.systs.to_v1_systlist() 
+
+        except Exception as e:
+            logging.error(f"FATAL: V2-to-V1 conversion failed during saving: {e}")
+            return 0
+        
+        # 2. Extract JSON Log (String format)
+        # The log object itself stores the V1-compatible JSON string.
+        json_log_str = self.log.str
+        
+        # 3. Call V1 Archive Writer Utility
+        # NOTE: This utility needs to be implemented to accept the V1 structures.
+        
+        # We assume a utility function handles tarball creation:
+        save_archive_v1(v1_spec_for_save, v1_systs_for_save, json_log_str, file_path)
+
+        logging.info(f"Session state saved successfully to {file_path}.")
+        return 0

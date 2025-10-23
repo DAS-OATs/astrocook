@@ -51,25 +51,36 @@ class Frame():
     def t(self):
         return self._t
 
+    def _get_column_data_and_unit(self, column_name):
+        """Extracts the raw array and unit, avoiding direct Column reference."""
+        col = self._t[column_name]
+        return col.data, col.unit
+        
     @property
     def x(self):
-        return au.Quantity(self._t['x'])
+        # --- CRITICAL FIX: Extract values and unit separately to break the chain ---
+        raw_values, unit = self._get_column_data_and_unit('x')
+        return au.Quantity(raw_values, unit)
 
     @property
     def xmin(self):
-        return au.Quantity(self._t['xmin'])
+        raw_values, unit = self._get_column_data_and_unit('xmin')
+        return au.Quantity(raw_values, unit)
 
     @property
     def xmax(self):
-        return au.Quantity(self._t['xmax'])
-
+        raw_values, unit = self._get_column_data_and_unit('xmax')
+        return au.Quantity(raw_values, unit)
+        
     @property
     def y(self):
-        return au.Quantity(self._t['y'])
+        raw_values, unit = self._get_column_data_and_unit('y')
+        return au.Quantity(raw_values, unit)
 
     @property
     def dy(self):
-        return au.Quantity(self._t['dy'])
+        raw_values, unit = self._get_column_data_and_unit('dy')
+        return au.Quantity(raw_values, unit)
 
     @property
     def meta(self):

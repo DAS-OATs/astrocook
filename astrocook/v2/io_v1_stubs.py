@@ -25,7 +25,7 @@ class V1ArchiveManager:
             self.temp_dir = tempfile.mkdtemp()
             with tarfile.open(self.acs_path, 'r:gz') as tar:
                 tar.extractall(path=self.temp_dir)
-            logging.info(f"Unpacked archive to temporary directory: {self.temp_dir}")
+            logging.debug(f"Unpacked archive to temporary directory: {self.temp_dir}")
             return self.temp_dir
         except Exception as e:
             logging.error(f"Failed to unpack .acs archive {self.acs_path}: {e}")
@@ -52,7 +52,7 @@ class V1ArchiveManager:
         if self.temp_dir and os.path.exists(self.temp_dir):
             import shutil
             shutil.rmtree(self.temp_dir)
-            logging.info(f"Cleaned up temporary directory: {self.temp_dir}")
+            logging.debug(f"Cleaned up temporary directory: {self.temp_dir}")
 
 # Register cleanup method to run when the application exits (crucial for stability)
 import atexit
@@ -128,7 +128,7 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
             # Raise an exception to correctly enter the 'except' block
             raise RuntimeError(f"V1 loader '{format_name}' returned None.")
         
-        logging.info(f"V1 spectrum loaded successfully using {format_name}.")
+        logging.debug(f"V1 spectrum loaded successfully using {format_name}.")
         
     except Exception as e:
         # If V1 loading fails (expected for generic_spectrum), use the size-matched mock
@@ -183,7 +183,71 @@ def load_v1_systs_object(file_path: str) -> Optional[SystListV1]:
     # CRITICAL CHECK: The V1 Format method returns 0 on failure, which Python sees as None.
     # We ensure we return the SystListV1 object if successful.
     if isinstance(v1_systs_obj, SystListV1):
-        logging.info(f"V1 System List loaded successfully from {file_path}.")
+        logging.debug(f"V1 System List loaded successfully from {file_path}.")
         return v1_systs_obj
     else:
         return None
+    
+def save_archive_v1(v1_spec: Any, v1_systs: Any, json_log_str: str, file_path: str):
+    """
+    Creates the V1-compatible .acs (tar.gz) archive by writing all V1 structures 
+    (spec, systs) and the JSON log to FITS/JSON files and bundling them.
+    """
+    temp_dir = None
+    
+    try:
+        # 1. Setup Temporary Directory
+        temp_dir = tempfile.mkdtemp()
+        
+        # Determine base names for files inside the archive (using sess.name standard)
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        
+        # 2. Write Structures to Temporary FITS Files
+        
+        # Spectrum (required)
+        spec_fname = f"{base_name}_spec.fits"
+        spec_path_temp = os.path.join(temp_dir, spec_fname)
+        if hasattr(v1_spec, 'meta'):
+            v1_spec.t.meta.update(v1_spec.meta)
+        v1_spec.t.write(spec_path_temp, format='fits', overwrite=True)
+        logging.debug(f"Wrote temporary spectrum FITS file: {spec_fname}")
+        
+        # System List (optional)
+        systs_fname = None
+        if v1_systs is not None:
+            systs_fname = f"{base_name}_systs.fits"
+            systs_path_temp = os.path.join(temp_dir, systs_fname)
+            if hasattr(v1_systs, 'meta'):
+                v1_systs.t.meta.update(v1_systs.meta)
+            v1_systs.t.write(systs_path_temp, format='fits', overwrite=True)
+            logging.debug(f"Wrote temporary system list FITS file: {systs_fname}")
+
+        # 3. Write JSON Log
+        log_fname = f"{base_name}_log.json"
+        log_path_temp = os.path.join(temp_dir, log_fname)
+        with open(log_path_temp, 'w') as f:
+            f.write(json_log_str)
+        logging.debug(f"Wrote temporary JSON log: {log_fname}")
+            
+        # 4. Create the .acs (tar.gz) Archive
+        final_path = file_path if file_path.lower().endswith('.acs') else file_path + '.acs'
+        
+        with tarfile.open(final_path, 'w:gz') as tar:
+            # Add files to the tarball
+            tar.add(spec_path_temp, arcname=spec_fname)
+            if v1_systs is not None:
+                 tar.add(systs_path_temp, arcname=systs_fname)
+            tar.add(log_path_temp, arcname=log_fname)
+            
+        logging.debug(f"Archive created successfully at: {final_path}")
+
+    except Exception as e:
+        logging.error(f"FATAL: Archive creation failed during I/O: {e}")
+        raise # Re-raise the error to be handled by the SessionV2.save() controller
+        
+    finally:
+        # 5. Clean up temporary directory
+        if temp_dir and os.path.exists(temp_dir):
+            import shutil
+            shutil.rmtree(temp_dir)
+            logging.debug(f"Cleaned up temporary directory: {temp_dir}")

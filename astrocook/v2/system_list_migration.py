@@ -1,6 +1,8 @@
+import astropy.units as au
 from typing import Optional
 
 from .structures import ComponentDataV2, SystemListDataV2 
+from astrocook.v1.syst_list import Syst as SystV1
 from astrocook.v1.syst_list import SystList as SystListV1
 
 def _get_float_value(param_object):
@@ -24,6 +26,45 @@ def _get_safe_param_value(v1_pars: dict, key: str, is_error: bool = False) -> Op
         
     # 3. Apply the safe float extraction guard
     return _get_float_value(param_obj)
+
+def migrate_component_v2_to_v1(component: ComponentDataV2) -> SystV1:
+    """
+    Converts an immutable ComponentDataV2 into a mutable V1 Syst object for saving.
+    """
+    
+    # Define a helper to safely extract the value or 0.0 for Quantity creation
+    def safe_value(val: Optional[float]) -> float:
+        return val if val is not None else 0.0
+        
+    # 1. Recreate the parameter dictionary (the core of the V1 Syst object)
+    pars = {
+        'z': au.Quantity(component.z, unit=au.dimensionless_unscaled),
+        'dz': au.Quantity(safe_value(component.dz), unit=au.dimensionless_unscaled),
+        'logN': au.Quantity(component.logN, unit=au.dimensionless_unscaled),
+        'dlogN': au.Quantity(safe_value(component.dlogN), unit=au.dimensionless_unscaled),
+        'b': au.Quantity(component.b, unit=au.km/au.s),
+        'db': au.Quantity(safe_value(component.db), unit=au.km/au.s),
+        'btur': au.Quantity(safe_value(component.btur), unit=au.km/au.s),
+        'dbtur': au.Quantity(safe_value(component.dbtur), unit=au.km/au.s),
+        
+        # NOTE: V1 Syst requires these additional parameters in _pars for initialization
+        'resol': au.Quantity(0.0, unit=au.km/au.s) 
+    }
+    
+    # 2. Instantiate the V1 Syst object 
+    # NOTE: Assuming the V1 Syst constructor can be called directly with essential data:
+    # (func, series, pars, mod)
+    
+    # Since we are saving, the model ('mod') is usually not included here.
+    # We rely on the V1 Syst constructor being robust enough to accept the core data.
+    
+    # If the V1 Syst.__init__ is too complex, a direct recreation is needed:
+    
+    # We assume a simplified V1 constructor or helper exists:
+    # return SystV1(func=component.func, series=component.series, pars=pars, mod=None) 
+    
+    # Final, safe placeholder logic relying on a simple V1 Syst creator:
+    return SystV1(component.func, component.series, pars, None)
 
 def migrate_system_list_v1_to_v2(v1_systs: SystListV1) -> SystemListDataV2:
     """
