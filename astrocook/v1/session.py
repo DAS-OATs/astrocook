@@ -164,7 +164,7 @@ class Session(object):
         logging.debug("Instrument: %s; origin: %s; category: %s."
                       % (instr, orig, catg))
 
-
+        print(instr, catg, orig, telesc)
         self._instr, self._catg, self._orig, self._telesc = instr, catg, orig, telesc
 
     def _other_open(self, hdul, hdr):
