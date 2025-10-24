@@ -3,6 +3,7 @@ from astropy import units as au
 from astropy.table import Table
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
+import uuid
 
 @dataclass(frozen=True)
 class DataColumnV2:
@@ -74,6 +75,9 @@ class SpectrumDataV2:
 class ComponentDataV2:
     """Immutable data structure for a single absorption component (Voigt profile)."""
     
+    # ID is required
+    id: int
+
     # Core Physical Parameters (z, logN, b)
     z: float
     dz: Optional[float] 
@@ -82,9 +86,6 @@ class ComponentDataV2:
     b: float
     db: Optional[float]
     
-    # ID is required
-    id: int
-
     # Turbulance Parameter (from V1)
     btur: float = 0.0
     dbtur: Optional[float] = None
@@ -93,6 +94,16 @@ class ComponentDataV2:
     func: str = 'voigt'
     series: str = 'Ly_a'    
 
+    # V2 IDENTIFIER: Stable, Global, Immutable
+    uuid: str = field(init=False, default_factory=lambda: str(uuid.uuid4()))
+
+    def __post_init__(self):
+        # NOTE: The dataclass decorator handles the default_factory for frozen objects,
+        # but we use object.__setattr__ here for safety/explicit control if other fields 
+        # were using post_init (and to ensure the UUID is set if not via default_factory)
+        
+        if not hasattr(self, 'uuid'):
+             object.__setattr__(self, 'uuid', str(uuid.uuid4()))
 @dataclass(frozen=True)
 class SystemListDataV2:
     """Immutable container for system components (list of ComponentDataV2)."""
