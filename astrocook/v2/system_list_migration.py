@@ -88,6 +88,8 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
 
         # 1. Create the immutable ComponentV2 object
         component_v2_data = ComponentDataV2(
+            id=v1_id
+            
             # Apply the guard for every parameter extraction
             z=_get_float_value(v1_pars['z']),             
             logN=_get_float_value(v1_pars['logN']),
@@ -104,7 +106,6 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
 
             func=v1_syst._func,
             series=v1_syst._series,
-            id=v1_id
         )
         components_v2.append(component_v2_data)
         
