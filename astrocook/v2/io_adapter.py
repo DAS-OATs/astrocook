@@ -93,10 +93,10 @@ def load_and_migrate_structure(archive_root: str, structure_name: str, gui_conte
         from .system_list import SystemListV2
         
         # Call V1 loading utility (load_v1_systs_object needs only the path)
-        v1_systs = load_v1_systs_object(path_to_load) 
+        v1_systs, syst_header = load_v1_systs_object(path_to_load) 
         
         if v1_systs:
-            data_core_v2 = migrate_system_list_v1_to_v2(v1_systs)
+            data_core_v2 = migrate_system_list_v1_to_v2(v1_systs, syst_header)
             return SystemListV2(data=data_core_v2)
             
     # For all other structures or if loading fails

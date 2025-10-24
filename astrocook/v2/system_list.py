@@ -1,8 +1,9 @@
 from astropy.table import Table, Column
 import astropy.units as au
 import numpy as np
-from typing import List
+from typing import Any, Dict, List, Tuple
 
+from .fitting.voigt_model import VoigtModelConstraintV2
 from .structures import ComponentDataV2, SystemListDataV2
 from .system_list_migration import migrate_component_v2_to_v1
 from ..v1.syst_list import SystList as SystListV1
@@ -13,8 +14,24 @@ class SystemListV2:
     
     def __init__(self, data: SystemListDataV2):
         self._data = data
-        # NOTE: ConstraintModelV2 will be instantiated here later
-        # self.constraints = ConstraintModelV2(data) 
+        
+        # 1. Initialize the attribute to None first
+        self.constraint_model = None 
+        
+        # 2. CRITICAL STEP: Call the initialization logic now
+        self._initialize_constraint_model()
+
+    def _initialize_constraint_model(self):
+        """Initializes the constraint model once the SystemListV2 object is constructed."""
+        
+        # NOTE: This ensures 'self' is fully constructed before passed to VoigtModelConstraintV2
+        self.constraint_model = VoigtModelConstraintV2(self)
+        
+        # We need to ensure VoigtModelConstraintV2.__init__ calls its own 
+        # complex builders only on subsequent calls, or we must refactor VMCV2.
+        
+        # Assuming VMCV2 is updated to be initialized correctly, this structural 
+        # change should resolve the circularity issue.
 
     @property
     def components(self) -> List[ComponentDataV2]:
@@ -76,6 +93,25 @@ class SystemListV2:
         """Returns a flat list of component IDs."""
         return [c.id for c in self._data.components]
 
+    @property
+    def v1_models_t(self) -> Any:
+        """Adapter for temporary read-only access to the V1 lmfit models placeholder (_mods_t)."""
+        # CRITICAL FIX: Return the attribute from the underlying data core
+        return self._data.v1_models_t
+
+    @property
+    def constraint_status(self) -> Dict[str, np.ndarray]:
+        """
+        Returns the constraint status arrays (is_free, link_target_index) 
+        for GUI display (e.g., coloring cells).
+        """
+        return self.constraint_model._param_map
+    
+    @property
+    def parsed_constraints(self) -> Dict[Tuple[int, str], Dict[str, Any]]:
+        """Provides read-only access to the V2-parsed constraint state."""
+        return self._data.parsed_constraints
+    
     # TODO: Methods for constraints, fitting, and immutable updates will go here.
 
     def to_v1_systlist(self) -> SystListV1:

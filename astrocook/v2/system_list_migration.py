@@ -1,5 +1,6 @@
 import astropy.units as au
-from typing import Optional
+import logging
+from typing import Any, Dict, Optional, Tuple
 
 from .structures import ComponentDataV2, SystemListDataV2 
 from astrocook.v1.syst_list import Syst as SystV1
@@ -66,11 +67,17 @@ def migrate_component_v2_to_v1(component: ComponentDataV2) -> SystV1:
     # Final, safe placeholder logic relying on a simple V1 Syst creator:
     return SystV1(component.func, component.series, pars, None)
 
-def migrate_system_list_v1_to_v2(v1_systs: SystListV1) -> SystemListDataV2:
+def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, Any]) -> SystemListDataV2:
     """
     Converts a mutable SystListV1 object into an immutable SystemListV2 
     containing ComponentV2 objects.
     """
+    
+    if not isinstance(v1_systs, SystListV1):
+        # If the input is not the expected V1 class (e.g., it's a tuple or None), 
+        # return an empty V2 data core to prevent crashing.
+        logging.warning(f"V1 system list migration received invalid type: {type(v1_systs)}. Returning empty list.")
+        return SystemListDataV2()
     
     components_v2 = []
     
@@ -97,10 +104,12 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1) -> SystemListDataV2:
 
             func=v1_syst._func,
             series=v1_syst._series,
-            # The 'id' is set automatically by ComponentV2.__post_init__ or will be assigned later
+            id=v1_id
         )
         components_v2.append(component_v2_data)
         
+    parsed_constraints = parse_v1_fits_constraints(syst_header)
+
     # 2. Create the V2 container
     # CRITICAL: We pass the mutable V1 lmfit models (v1_systs._mods_t) as a placeholder 
     # until the V2 ConstraintModelV2 is implemented.
@@ -108,6 +117,73 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1) -> SystemListDataV2:
         components=components_v2,
         v1_models_t=v1_systs._mods_t, # Placeholder for V1 lmfit models
         meta=v1_systs._meta,
+        v1_header_constraints=syst_header,
+        parsed_constraints=parsed_constraints
     )
     
     return systlist_v2
+
+
+def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict[str, Any]]:
+    """
+    Parses V1 constraint keywords (HIERARCH AC CONSTR) from the FITS header 
+    and returns a clean V2-compatible constraint dictionary.
+    
+    Returns: {(comp_id, param_name): {'is_free': bool, 'expression': str}}
+    """
+    # Keys will store the final parsed constraints
+    parsed_constraints = {}
+    
+    # Storage for intermediate parsing (key is the progressive integer [n])
+    constraint_data = {}
+    # Iterate over the header items to find matching keys
+    for key, value in hdr.items():
+        if key.startswith('AC CONSTR'):
+            try:
+                parts = key.split()
+                # Assuming key structure is AC CONSTR ID [n]
+                # The index [n] is the 4th element (index 3) of the split list
+                # The type is the 3rd element (index 2), e.g., 'ID', 'PAR', 'VAL'
+                
+                # Check for ID, PAR, and VAL keywords using the progressive index [n]
+                if len(parts) >= 4:
+                    index_type = parts[2] # 'ID', 'PAR', or 'VAL'
+                    n = int(parts[3])      # The progressive integer index [n]
+                    
+                    if n not in constraint_data:
+                        constraint_data[n] = {}
+                        
+                    if index_type == 'ID':
+                        constraint_data[n]['id'] = int(value)
+                    elif index_type == 'PAR':
+                        constraint_data[n]['par'] = value.lower() # Normalize parameter name
+                    elif index_type == 'VAL':
+                        constraint_data[n]['val'] = value
+                        
+            except (ValueError, IndexError):
+                # Ignore malformed or unexpected header keywords
+                continue
+    
+    # --- Convert Intermediate Data to Final V2 Structure ---
+    for n, data in constraint_data.items():
+        if 'id' in data and 'par' in data and 'val' in data:
+            comp_id = data['id']
+            param_name = data['par']
+            val = data['val']
+            
+            # 1. Determine Freezing (vary=False)
+            is_free = True
+            if val == '' or val is None:
+                is_free = False # VAL is empty string means frozen
+            
+            # 2. Determine Expression (link/fixed value)
+            expression = val if val != '' else None
+            
+            # V2 Key: (comp_id, param_name)
+            parsed_constraints[(comp_id, param_name)] = {
+                'is_free': is_free,
+                'expression': expression
+            }
+
+    logging.info(f"Parsed {len(parsed_constraints)} constraints from FITS header metadata.")
+    return parsed_constraints

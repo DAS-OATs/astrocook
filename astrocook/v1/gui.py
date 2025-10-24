@@ -601,6 +601,23 @@ class GUIPanelSession(wx.Frame):
                 self._gui._panel_sess._on_close_sess(event=None) 
                 return 0
 
+            if sess_final.systs and sess_final.systs.components:
+                constraint_model = sess_final.systs.constraint_model
+
+                # 1. Check the V1 Placeholder (Source of Truth)
+                v1_models_placeholder = sess_final.systs.v1_models_t
+                print(f"V1 Model Placeholder Type: {type(v1_models_placeholder)}")
+                # If the placeholder is an Astropy Table, check its length:
+                if hasattr(v1_models_placeholder, '__len__'):
+                     print(f"V1 Placeholder Length: {len(v1_models_placeholder)}")
+
+                # 2. Check the V2 Constraint Map (The result of the copy)
+                is_free_vector = constraint_model._param_map['is_free']
+
+                # Total Free Parameters (Currently defaults to 3056, assuming no freezes)
+                print(f"Total Free Parameters: {np.sum(is_free_vector)}")
+                print(f"Is Free Vector (First 8): {is_free_vector[:8]}")
+
         else: # V1 LEGACY MODE: Execute V1 mutable open
             self._gui._panel_sess._on_add(sess, open=True) 
             sess_final = sess # Final object is the mutable one

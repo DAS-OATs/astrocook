@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from astropy import units as au
 from astropy.table import Table
 import numpy as np
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional, Tuple
 
 @dataclass(frozen=True)
 class DataColumnV2:
@@ -82,30 +82,25 @@ class ComponentDataV2:
     b: float
     db: Optional[float]
     
+    # ID is required
+    id: int
+
     # Turbulance Parameter (from V1)
     btur: float = 0.0
     dbtur: Optional[float] = None
     
     # Type and identification
     func: str = 'voigt'
-    series: str = 'Ly_a'
-    id: int = field(init=False)
-    
-    # NOTE: We keep fit models and constraints OUT of this pure data structure.
-    
-    def __post_init__(self):
-        # Generate a unique integer ID based on redshift for now (required by V1 logic)
-        # This is a temporary ID assignment until a proper ID management system is implemented.
-        generated_id = int(self.z * 1000000)
-        object.__setattr__(self, 'id', generated_id)
-
+    series: str = 'Ly_a'    
 
 @dataclass(frozen=True)
 class SystemListDataV2:
     """Immutable container for system components (list of ComponentDataV2)."""
     
     components: List[ComponentDataV2] = field(default_factory=list)
-    
+    v1_header_constraints: Dict[str, Any] = field(default_factory=dict)
+    parsed_constraints: Dict[Tuple[int, str], Dict[str, Any]] = field(default_factory=dict)
+
     # Placeholder for complex V1 structures (mutable state reference, if needed)
     v1_models_t: Any = None 
     meta: Dict[str, Any] = field(default_factory=dict)

@@ -13,6 +13,8 @@ from .io_v1_stubs import V1ArchiveManager, save_archive_v1
 from .recipes.edit import RecipeEditV2
 from .recipes.flux import RecipeFluxV2
 from .spectrum import SpectrumV2
+from .structures import SystemListDataV2
+from .system_list import SystemListV2
 from .system_list_migration import migrate_system_list_v1_to_v2
 from .utils import guarded_deepcopy_v1_state
 
@@ -142,6 +144,14 @@ class SessionV2:
         self._z_sel = 0.0   # Used by graph._on_syst_new and graph._on_move
         self._series_sel = 'Ly_a' # Used by graph._on_syst_new for cursor
         # ----------------------------------------------
+
+        if systs is None:
+            # If the loading fails (systs=None), initialize with an empty SystemListDataV2 core
+            empty_data_core = SystemListDataV2()
+            self.systs = SystemListV2(data=empty_data_core)
+        else:
+            # Assume 'systs' is a valid SystemListV2 object passed from open_new
+            self.systs = systs
 
     def __getattr__(self, name):
         """

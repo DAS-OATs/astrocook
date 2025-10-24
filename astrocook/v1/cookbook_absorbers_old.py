@@ -497,7 +497,6 @@ class CookbookAbsorbersOld(object):
 
         if not fast:
             systs._mods_t.remove_rows(mod_w)
-
             systs_t.sort('id')
             wrong_id = []
             corr_id = []
@@ -512,7 +511,6 @@ class CookbookAbsorbersOld(object):
                 #for s in systs_t[np.where(systs_t['id']==m)[0]]:
                     vars = {}
                     constr = {}
-
                     for k, v in systs._constr.items():
                         if v[0]==systs._id:
                             try:
