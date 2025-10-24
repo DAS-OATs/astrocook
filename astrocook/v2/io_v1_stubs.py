@@ -171,6 +171,7 @@ def load_v1_systs_object(file_path: str) -> Optional[SystListV1]:
         # Format.astrocook is the method used for internal archive structures.
         # It expects the HDUList and the structure tag ('systs').
         v1_systs_obj = v1_format_loader.astrocook(hdul, 'systs')
+        hdr = hdul[1].header
         
     except Exception as e:
         logging.error(f"V1 Format.astrocook failed to parse system list: {e}")
@@ -184,9 +185,9 @@ def load_v1_systs_object(file_path: str) -> Optional[SystListV1]:
     # We ensure we return the SystListV1 object if successful.
     if isinstance(v1_systs_obj, SystListV1):
         logging.debug(f"V1 System List loaded successfully from {file_path}.")
-        return v1_systs_obj
+        return v1_systs_obj, dict(hdr)
     else:
-        return None
+        return None, None
     
 def save_archive_v1(v1_spec: Any, v1_systs: Any, json_log_str: str, file_path: str):
     """
