@@ -5,6 +5,26 @@ import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
+
+@dataclass(frozen=True)
+class SessionMetadataV2:
+    """
+    Core immutable structure for holding constraints, configuration, and history.
+    This will be serialized to a JSON/YAML file within the .acs archive.
+    """
+    
+    # Stores constraints linked by Component UUID
+    constraints_by_uuid: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    
+    # Stores the original system reconstruction data (for technical debt logging)
+    v1_reconstruction_data: Any = None 
+
+    # Improved Session History/Log
+    log_history_json: str = ""
+    
+    # Stores a list of all component UUIDs in the order they appear
+    component_uuids: List[str] = field(default_factory=list)
+
 @dataclass(frozen=True)
 class DataColumnV2:
     """Contenitore per una singola colonna di dati con unità."""
@@ -104,13 +124,36 @@ class ComponentDataV2:
         
         if not hasattr(self, 'uuid'):
              object.__setattr__(self, 'uuid', str(uuid.uuid4()))
+
+@dataclass(frozen=True)
+class ParameterConstraintV2:
+    """
+    Immutable data structure defining the constraint for a single parameter.
+    """
+    # True if the parameter should be varied during minimization.
+    is_free: bool
+    
+    # If not None, indicates a link. Must use UUID of the target component.
+    target_uuid: Optional[str] = None
+    
+    # Stores the mathematical expression linking this parameter to the target UUID.
+    expression: Optional[str] = None
+    
+    # The original V1 integer ID of the target (for debugging/reconstruction only)
+    v1_target_id: Optional[int] = None
+
 @dataclass(frozen=True)
 class SystemListDataV2:
     """Immutable container for system components (list of ComponentDataV2)."""
     
     components: List[ComponentDataV2] = field(default_factory=list)
     v1_header_constraints: Dict[str, Any] = field(default_factory=dict)
-    parsed_constraints: Dict[Tuple[int, str], Dict[str, Any]] = field(default_factory=dict)
+    
+    # Stores a dictionary mapping (Component UUID, Parameter Name) -> ConstraintDataV2
+    parsed_constraints: Dict[Tuple[str, str], ParameterConstraintV2] = field(default_factory=dict)
+
+    # Add the missing field
+    v1_id_to_uuid_map: Dict[int, str] = field(default_factory=dict)
 
     # Placeholder for complex V1 structures (mutable state reference, if needed)
     v1_models_t: Any = None 

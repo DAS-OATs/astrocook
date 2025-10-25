@@ -80,6 +80,7 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
         return SystemListDataV2()
     
     components_v2 = []
+    id_to_uuid_map = {}
     
     # Iterate through the V1 system components (stored in v1_systs._d)
     for v1_id, v1_syst in v1_systs._d.items():
@@ -88,8 +89,8 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
 
         # 1. Create the immutable ComponentV2 object
         component_v2_data = ComponentDataV2(
-            id=v1_id
-            
+            id=v1_id,
+
             # Apply the guard for every parameter extraction
             z=_get_float_value(v1_pars['z']),             
             logN=_get_float_value(v1_pars['logN']),
@@ -105,12 +106,15 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
             dbtur=_get_safe_param_value(v1_pars, 'dbtur', is_error=True),
 
             func=v1_syst._func,
-            series=v1_syst._series,
+            series=v1_syst._series
         )
+
+        id_to_uuid_map[v1_id] = component_v2_data.uuid
+
         components_v2.append(component_v2_data)
         
-    parsed_constraints = parse_v1_fits_constraints(syst_header)
-
+    parsed_constraints_v1_keyed = parse_v1_fits_constraints(syst_header)
+    
     # 2. Create the V2 container
     # CRITICAL: We pass the mutable V1 lmfit models (v1_systs._mods_t) as a placeholder 
     # until the V2 ConstraintModelV2 is implemented.
@@ -119,9 +123,10 @@ def migrate_system_list_v1_to_v2(v1_systs: SystListV1, syst_header: Dict[str, An
         v1_models_t=v1_systs._mods_t, # Placeholder for V1 lmfit models
         meta=v1_systs._meta,
         v1_header_constraints=syst_header,
-        parsed_constraints=parsed_constraints
+        parsed_constraints=parsed_constraints_v1_keyed,
+        v1_id_to_uuid_map=id_to_uuid_map
     )
-    
+
     return systlist_v2
 
 
