@@ -112,6 +112,14 @@ class SystemListV2:
         """Provides read-only access to the V2-parsed constraint state."""
         return self._data.parsed_constraints
     
+    @property
+    def v2_constraints_for_save(self) -> Dict[Tuple[int, str], Dict[str, Any]]:
+        """
+        Exposes the constraint state (is_free/expression) for persistence.
+        """
+        # This relies on VoigtModelConstraintV2 exposing the final map.
+        return self.constraint_model.v2_constraints_map # Assuming the final map is stored here
+
     # TODO: Methods for constraints, fitting, and immutable updates will go here.
 
     def to_v1_systlist(self) -> SystListV1:

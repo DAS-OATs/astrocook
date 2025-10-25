@@ -18,117 +18,135 @@ from .system_list import SystemListV2
 from .system_list_migration import migrate_system_list_v1_to_v2
 from .utils import guarded_deepcopy_v1_state
 
-
-def load_session_from_file(file_path: str, format_name: str, gui_context: Any) -> 'SessionV2':
+def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':
     """
-    Orchestrates the loading and migration of all associated structures for a new SessionV2 object.
+    Orchestrates the loading of a session from an archive (.acs or .acs2)
+    and handles the V1-to-V2 migration if necessary.
     """
+    archive_manager = V1ArchiveManager(archive_path)
+    temp_dir = archive_manager.unpack()
+    archive_root = ""
+    v2_metadata = None
     
-    archive_manager = None
-    
-    try:
-        # --- 1. Archive Detection and Unpacking ---
-        is_archive = file_path.lower().endswith('.acs')
+    if temp_dir is None:
+        # Not an archive, assume it's a single FITS file
+        archive_root = os.path.splitext(archive_path)[0]
+        spec_file_path = archive_path # The path *is* the spec file
+    else:
+        # It's an archive, find the components
+        spec_file_path = archive_manager.get_structure_path('spec')
+        if not spec_file_path:
+             raise FileNotFoundError("Could not find a _spec.fits file in the archive.")
         
-        if is_archive:
-            archive_manager = V1ArchiveManager(file_path)
-            temp_root = archive_manager.unpack()
-            if temp_root is None:
-                raise FileNotFoundError(f"Could not unpack archive {file_path}")
-            
-            # The archive manager must resolve the actual file path inside the temp dir.
-            # We must resolve the path for the primary structure (spec).
-            spec_file_path = archive_manager.get_structure_path('spec')
-            if spec_file_path is None:
-                raise FileNotFoundError("Mandatory *_spec.fits not found in archive.")
-                
-            # The archive root for subsequent loads (systs) is derived from the spec file
-            archive_root = os.path.splitext(spec_file_path)[0] # e.g., /tmp/xyz/session_root_spec
-            name = os.path.basename(archive_root)
-            
+        archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
+        
+        # --- V2 METADATA LOADING ---
+        # V2 archive name is predictable: {base_name}_meta.json
+        meta_fname = f"{os.path.basename(archive_root)}_meta.json"
+        meta_file_path = os.path.join(temp_dir, meta_fname)
+
+        if os.path.exists(meta_file_path):
+            try:
+                with open(meta_file_path, 'r') as f:
+                    v2_metadata = json.load(f)
+                logging.info("Loaded V2 metadata from _meta.json.")
+            except Exception as e:
+                logging.error(f"Failed to load _meta.json: {e}")
         else:
-            # --- Standard FITS File Handling ---
-            spec_file_path = file_path
-            archive_root = os.path.splitext(file_path)[0]
-            name = os.path.basename(archive_root)
+            logging.debug("No _meta.json found, assuming V1 archive.")
+        # -------------------------
 
-        # Clean the name: remove '_spec' suffix if present (as the V1 stubs expects the core name)
-        if name.lower().endswith('_spec'):
-            name = name[:-5]
-            archive_root = archive_root[:-5]
+    # 1. Load Spectrum (This logic works for both V1 and V2 FITS files)
+    spectrum_v2 = load_and_migrate_structure(
+        archive_root, 'spec', gui_context, format_name, spec_file_path=spec_file_path
+    )
 
-        # 2. Load and migrate Spectrum (required structure)
-        # The io_adapter needs the full path to the FITS file and the correct root name
-        spec_v2 = load_and_migrate_structure(
-            archive_root, 'spec', gui_context, format_name, spec_file_path # Pass full path for direct FITS loading
-        )
-        
-        if spec_v2 is None:
-            raise FileNotFoundError(f"Failed to load Spectrum structure from {spec_file_path}")
+    # 2. Load System List (Now handles V1 or V2)
+    system_list_v2 = load_and_migrate_structure(
+        archive_root, 'systs', gui_context, format_name,
+        v2_metadata=v2_metadata  # <<< PASS THE LOADED V2 METADATA
+    )
 
-        # 3. Load and migrate System List (optional structure)
-        # The archive_root variable is the base path for associated files (*_systs.fits)
-        systs_v2 = load_and_migrate_structure(
-            archive_root, 'systs', gui_context, format_name, spec_file_path=None
-        )
-        
-        # 4. Create the final SessionV2 object
-        # The initial session is created just to get the log/defs objects correctly
-        initial_sess = SessionV2(name=name, gui=gui_context)
-        
-        sess_loaded = SessionV2(
-            name=name, 
-            current_spectrum=spec_v2, 
-            systs=systs_v2, 
-            # Pass original context objects
-            log=initial_sess.log,
-            defs=initial_sess.defs,
-            gui=gui_context
-        )
-        return sess_loaded
+    # 3. Create the SessionV2 wrapper (V1 compatibility attributes)
+    
+    # Initialize V1 GUI logger (with GUI context) and Defaults
+    v1_log = GUILog(gui_context)
+    v1_defs = Defaults(gui_context)
+    
+    # This is the 'try' block you were referring to, which loads the log.
+    try:
+        if v2_metadata and 'log_history_json' in v2_metadata:
+            # V2 path: Load log from the metadata dict
+            v1_log.str = v2_metadata['log_history_json']
+            logging.info("V2 log history restored.")
+        elif temp_dir:
+            # V1 path: Find and load the _log.json file from the archive
+            log_path = archive_manager.get_structure_path('log.json')
+            if not log_path:
+                 # V1 log files might not follow the _suffix pattern, try basename
+                 log_path_alt = os.path.join(temp_dir, f"{os.path.basename(archive_root)}_log.json")
+                 if os.path.exists(log_path_alt):
+                     log_path = log_path_alt
 
+            if log_path and os.path.exists(log_path):
+                with open(log_path, 'r') as f:
+                    v1_log.str = f.read()
+                logging.info(f"V1 log history restored from {log_path}.")
+            else:
+                 logging.debug(f"No V1 _log.json found (archive root: {archive_root}).")
+        else:
+            logging.debug("No archive or V2 metadata, starting with empty log.")
+            
     except Exception as e:
-        logging.error(f"FATAL I/O ERROR during session loading: {e}")
-        # Re-raise or handle cleanup
-        raise
-        
-    finally:
-        if archive_manager:
-            archive_manager.cleanup()
+        logging.error(f"Failed to restore log history: {e}")
+            
+    # Clean up the temporary directory
+    archive_manager.cleanup()
+
+    # Instantiate and return the new SessionV2 object
+    # (We assume SessionV2 class is defined in this file)
+    # Instantiate and return the new SessionV2 object
+    new_session = SessionV2(
+        name=name, 
+        gui=gui_context, 
+        log=v1_log, 
+        defs=v1_defs,
+        spec=spectrum_v2, 
+        systs=system_list_v2
+    )
+    return new_session
 
 class SessionV2:
     """
     Sessione Astrocook V2: Contenitore di stato immutabile.
     """
 
-    def __init__(self, name: str, current_spectrum: Optional[SpectrumV2] = None, 
-                 lines=None, systs=None, log=None, history: list = None, **kwargs):
+    def __init__(self,
+                 name: str,
+                 gui: Any, # Pass GUI context directly for loading
+                 spec: Optional[SpectrumV2] = None, # Use 'spec' argument name matching the loader
+                 systs: Optional[SystemListV2] = None,
+                 log: Optional[GUILog] = None, # Optional log/defs for loading/copying
+                 defs: Optional[Defaults] = None):
+
+        self._gui = gui
         self.name = name
-        # I dati principali sono gestiti tramite composizione e immutabilità
-        self._current_spectrum = current_spectrum
-        self._lines = lines
-        self.systs = systs
-        self.history = history if history is not None else []
-        self._gui = kwargs.get('gui') # Manteniamo il link alla GUI
-        
-        # The log needs to be attached to the session for V1 compatibility.
-        # We deepcopy the GUILog object if passed during copying.
-        log_instance = kwargs.get('log')
-        if log_instance is not None:
-            self.log = deepcopy(log_instance)
-        else:
-            # Initialize a new GUILog instance (requires the GUI object)
-            self.log = GUILog(self._gui) 
 
-        defs_instance = kwargs.get('defs')
-        if defs_instance is not None:
-            # When creating an immutable copy, use the deepcopied defs passed
-            self.defs = defs_instance 
-        else:
-            # When creating a brand new session, initialize a new Defaults instance
-            self.defs = Defaults(self._gui)
+        # --- V1 Compatibility Adapters ---
+        # Initialize log: Use passed one (e.g., from deepcopy) or create new.
+        # load_session_from_file passes None here and sets .str later.
+        self.log = log if log is not None else GUILog(self._gui)
 
-        # The V1 GUI expects the Cookbook to be named 'cb'
+        # Initialize defs: Use passed one or create new.
+        self.defs = defs if defs is not None else Defaults(self._gui)
+
+        # --- V2 Core Components ---
+        # Store spectrum internally to avoid property conflict
+        self._current_spectrum = spec
+        # Ensure systs is always a valid SystemListV2 object
+        self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
+
+        # --- V2 Recipe Initialization ---
         self.edit = RecipeEditV2(self)
         self.flux = RecipeFluxV2(self)
         self.cb = self.edit
@@ -138,7 +156,7 @@ class SessionV2:
         # Lo usiamo come attributo diretto per la massima compatibilità
         # con il modo in cui il codice legacy accede agli attributi interni.
         self._shade = False # Il valore predefinito sicuro per 'non ombreggiato'
-        self._open_twin = kwargs.get('twin', False)
+        self._open_twin = False
         self._clicks = []  # Used by graph._on_click to track points
         self._shade = False # Used by graph._refresh and graph._on_click
         self._z_sel = 0.0   # Used by graph._on_syst_new and graph._on_move
@@ -152,6 +170,10 @@ class SessionV2:
         else:
             # Assume 'systs' is a valid SystemListV2 object passed from open_new
             self.systs = systs
+        
+        logging.debug(f"SessionV2 '{self.name}' initialized. "
+                      f"Internal spec type: {type(self._current_spectrum)}, "
+                      f"Property spec type: {type(self.spec)}") # Check both
 
     def __getattr__(self, name):
         """
@@ -178,32 +200,26 @@ class SessionV2:
         return self._lines # Sarà LineListV2
 
     # Metodo cruciale: Crea una NUOVA sessione quando si carica un file
-    def open_new(self, path: str, format_name: str, **kwargs) -> 'SessionV2':
+    @classmethod
+    def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':        
         """
         Carica un nuovo spettro utilizzando l'adapter V2 e restituisce una NUOVA SessionV2.
         (Sostituisce il vecchio 'sess.open()' che modificava in-place)
         """
-        # We access the GUI context from the instance variable
-        gui_context = self._gui 
-        
-        # --- CRITICAL FIX: The entire loading logic is now handled by the orchestrator ---
         try:
             # 1. Call the module-level orchestrator function
-            new_session = load_session_from_file(
-                file_path=path,
-                format_name=format_name,
-                gui_context=gui_context
+            session = load_session_from_file(
+                archive_path=file_path,  # <<< ARGUMENT RENAMED
+                name=name, 
+                gui_context=gui_context, 
+                format_name=format_name
             )
+            logging.info(f"SessionV2 '{name}' loaded successfully from {file_path}.")
+            return session
         except Exception as e:
             # Handle I/O failures gracefully
-            logging.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {path}: {e}")
+            logging.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
             return 0 # Return 0 to signal failure to the V1 dialog loop
-
-        # 2. Add history (optional, as history is added in the orchestrator)
-        # We rely on the orchestrator to set the history correctly.
-        
-        # 3. Return the fully loaded, immutable SessionV2 object
-        return new_session
 
     def with_new_spectrum(self, new_spec_v2: SpectrumV2) -> 'SessionV2':
         """
@@ -268,34 +284,50 @@ class SessionV2:
     
     def save(self, file_path: str, models: bool = False):
         """
-        Saves the current session state by converting V2 immutable structures 
-        back into V1 mutable structures and creating a .acs archive.
+        Saves the current session state.
+        Calls V2 saver (.acs2) or V1 saver (.acs) based on file extension.
         """
         
-        # [TODO: V1 REGRESSION FIX] The V2 -> V1 conversion needs verification 
-        # to ensure compatibility with V1 Session.open() due to Astropy Column 
-        # structure changes (causes RecursionError on load).
-        
-        # 1. Convert V2 immutable structures to V1 mutable/saveable format
-        try:
-            # Requires SpectrumV2 to have a to_v1_spectrum() method
-            v1_spec_for_save = self.spec.to_v1_spectrum() 
-            # Requires SystemListV2 to have a to_v1_systlist() method
-            v1_systs_for_save = self.systs.to_v1_systlist() 
+        # Determine which archive format to use
+        if file_path.lower().endswith('.acs2'):
+            # --- V2 NATIVE SAVE ---
+            try:
+                # Call the V2 archive writer, passing the SessionV2 instance
+                save_archive_v2(self, file_path)
+                logging.info(f"V2 Session state saved successfully to {file_path}.")
+                
+            except Exception as e:
+                logging.error(f"FATAL: V2 archive saving failed: {e}")
+                return 0 # V1 failure code
+                
+        else:
+            # --- V1 LEGACY SAVE (.acs) ---
+            
+            # 1. Convert V2 immutable structures to V1 mutable/saveable format
+            try:
+                v1_spec_for_save = self.spec.to_v1_spectrum() 
+                v1_systs_for_save = self.systs.to_v1_systlist() 
 
-        except Exception as e:
-            logging.error(f"FATAL: V2-to-V1 conversion failed during saving: {e}")
-            return 0
+            except Exception as e:
+                logging.error(f"FATAL: V2-to-V1 conversion failed during saving: {e}")
+                return 0
+            
+            # 2. Get the V1-compatible JSON log string
+            # save_archive_v1 expects a string, not a dict
+            json_log_str = self.log.str 
+            
+            # 3. Call V1 Archive Writer Utility
+            try:
+                save_archive_v1(
+                    v1_spec_for_save, 
+                    v1_systs_for_save, 
+                    json_log_str,  # CRITICAL FIX: Pass the correct JSON string
+                    file_path
+                )
+                logging.info(f"V1 compatibility session saved successfully to {file_path}.")
+            
+            except Exception as e:
+                logging.error(f"FATAL: V1 archive writing failed: {e}")
+                return 0
         
-        # 2. Extract JSON Log (String format)
-        # The log object itself stores the V1-compatible JSON string.
-        json_log_str = self.log.str
-        
-        # 3. Call V1 Archive Writer Utility
-        # NOTE: This utility needs to be implemented to accept the V1 structures.
-        
-        # We assume a utility function handles tarball creation:
-        save_archive_v1(v1_spec_for_save, v1_systs_for_save, json_log_str, file_path)
-
-        logging.info(f"Session state saved successfully to {file_path}.")
-        return 0
+        return 0 # V1 success code

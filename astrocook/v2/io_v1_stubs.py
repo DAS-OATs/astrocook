@@ -118,13 +118,12 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
 
     # The V1 logic needs access to the main GUI controller to check flags.
     mock_sess = MockSessionV1(gui_context)       
-    
     v1_format_loader = FormatV1()
     
     try:
         # Attempt real V1 loading
         v1_spec = getattr(v1_format_loader, format_name)(mock_sess, hdul)
-        if v1_spec is None:
+        if v1_spec is None or v1_spec == 0:
             # Raise an exception to correctly enter the 'except' block
             raise RuntimeError(f"V1 loader '{format_name}' returned None.")
         

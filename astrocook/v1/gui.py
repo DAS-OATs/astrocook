@@ -578,16 +578,29 @@ class GUIPanelSession(wx.Frame):
     
         # 1. Instantiation
         if settings.MODE == 'V2':
-            sess = SessionV2(name=name, gui=self._gui)
+            # V2 uses a classmethod, so we just define the format.
+            # No placeholder instance is created.
             format_name = 'generic_spectrum'
+            sess = None
         else:
+            # V1 creates the instance and then calls its .open() method
             sess = SessionV1(gui=self._gui, path=path, name=name)
 
         # 2. Loading Logic (The core difference)
         if settings.MODE == 'V2':
             try:
-                # Call immutable loading, which returns the final object
-                sess_final = sess.open_new(path, format_name=format_name)
+                sess_final = Session.open_new(
+                    file_path=path,
+                    name=name,
+                    gui_context=self._gui,
+                    format_name=format_name
+                )
+                
+                # Check for V1 failure code
+                if sess_final == 0: 
+                    raise RuntimeError("Session.open_new returned failure code 0.")
+                    
+                # Add the fully-formed session to the GUI
                 self._gui._panel_sess._on_add(sess_final, open=False) 
                 
                 # CRITICAL STEP: Replace the placeholder 'sess' with the loaded 'sess_final' in GUI list
@@ -601,6 +614,7 @@ class GUIPanelSession(wx.Frame):
                 self._gui._panel_sess._on_close_sess(event=None) 
                 return 0
 
+            #"""
             if sess_final.systs and sess_final.systs.components:
                 constraint_model = sess_final.systs.constraint_model
 
@@ -617,6 +631,7 @@ class GUIPanelSession(wx.Frame):
                 # Total Free Parameters (Currently defaults to 3056, assuming no freezes)
                 print(f"Total Free Parameters: {np.sum(is_free_vector)}")
                 print(f"Is Free Vector (First 8): {is_free_vector[:8]}")
+            #"""
 
         else: # V1 LEGACY MODE: Execute V1 mutable open
             self._gui._panel_sess._on_add(sess, open=True) 
