@@ -69,46 +69,25 @@ class SpectrumPlotWidget(QWidget):
     Refactored widget that contains the plot canvas, toolbar, and toggles.
     This replaces the content that was previously inside SpectrumViewerPySide.
     """
-    def __init__(self, session_manager: 'SessionV2'):
+    def __init__(self, session_manager: 'SessionV2', main_window_ref):
         super().__init__()
         self.session_manager = session_manager
+        self.main_window = main_window_ref
         
         # Main Vertical Layout for the plot area
         self.main_layout = QVBoxLayout(self)
 
-        # 1. Initialize Canvas (Draw object is created)
+        # 1. Canvas
         self.canvas = MatplotlibCanvas(self)
-        self.main_layout.addWidget(self.canvas, 1) # Stretch factor 1
+        self.main_layout.addWidget(self.canvas, 1)
 
-        # 2. Controls Container Setup (Stretch factor 0)
-        self.controls_container = QWidget()
-        self.controls_layout = QHBoxLayout(self.controls_container)
-        self.controls_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # 3. Initialize Toolbar (Needs canvas)
-        # NOTE: We assume AstrocookToolbar is defined and functional.
-        self.toolbar = AstrocookToolbar(self.canvas, self)
-        self.controls_layout.addWidget(self.toolbar)
+        # 2. Toolbar (NO Checkboxes here anymore)
+        self.toolbar = AstrocookToolbar(self.canvas, self) # Pass self as parent
 
-        # 4. Add Stretch Spacer (Pushes controls right)
-        self.controls_layout.addStretch(1) 
+        # Add ONLY toolbar to main layout
+        self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
 
-        # 5. Initialize and Place Toggles (Fixed position)
-        self.error_checkbox = QCheckBox("Show 1σ Error")
-        self.error_checkbox.setChecked(True)
-        self.error_checkbox.stateChanged.connect(self.plot_spectrum)
-        
-        self.continuum_checkbox = QCheckBox("Show Continuum")
-        self.continuum_checkbox.setChecked(False)
-        self.continuum_checkbox.stateChanged.connect(self.plot_spectrum)
-        
-        self.controls_layout.addWidget(self.error_checkbox)
-        self.controls_layout.addWidget(self.continuum_checkbox)
-        
-        # 6. Add the combined Controls Container to the main layout
-        self.main_layout.addWidget(self.controls_container, 0) # Stretch factor 0
-        
-        # Draw initial plot
+        # Draw initial plot (will read checkbox state from main window)
         self.plot_spectrum(initial_draw=True)
 
     # --- Refactored Plotting Method (Requires an update) ---
@@ -134,31 +113,26 @@ class SpectrumPlotWidget(QWidget):
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
             ax.step(x_data, y_data, where='mid', label="Spectrum", lw=1.0)
 
+            # --- Check state from main_window reference ---
             # 2. Plot Error Shading (Conditional)
-            if hasattr(self, 'error_checkbox') and self.error_checkbox.isChecked():
+            if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
                 ax.fill_between(
-                    x_data, 
-                    y_data - dy_data, 
-                    y_data + dy_data, 
-                    step='mid', 
-                    color='#aaaaaa',  # Muted gray for background uncertainty
-                    alpha=0.5, 
+                    x_data, y_data - dy_data, y_data + dy_data,
+                    step='mid', color='#aaaaaa', alpha=0.5,
                     label='1 sigma uncertainty'
                 )
 
-            # 3. Plot Continuum (Conditional and V2 API check)
-            if hasattr(self, 'continuum_checkbox') and self.continuum_checkbox.isChecked():
+            # 3. Plot Continuum (Conditional)
+            if self.main_window.continuum_checkbox.isChecked(): # <<< Check main window's checkbox
                 cont_data_q = spec.get_column('cont')
                 if cont_data_q is not None:
                     ax.plot(
-                        x_data, 
-                        cont_data_q.value, 
-                        linestyle='--', 
-                        color='red', 
-                        label='Continuum'
+                        x_data, cont_data_q.value, linestyle='--',
+                        color='red', label='Continuum'
                     )
                 else:
-                    logging.warning("Continuum requested but 'cont' column not found in V2 spectrum.")
+                    logging.warning("Continuum requested but 'cont' not found.")
+            # -----------------------------------------------
 
             # 4. Final Touches
             ax.legend(loc='best')
@@ -168,8 +142,10 @@ class SpectrumPlotWidget(QWidget):
             ax.grid(True, linestyle=':')
             
         else:
-            self.canvas.axes.set_title("No Spectrum Data Loaded")
-        
+            ax = self.canvas.axes # Ensure ax is defined
+            ax.clear() # Clear axes even if no data
+            ax.set_title("No Spectrum Data Loaded") 
+
         # Redraw the canvas
         if initial_draw:
             self.canvas.draw()
