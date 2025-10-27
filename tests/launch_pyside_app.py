@@ -30,7 +30,7 @@ def main():
 
     # 1. Create a TRULY empty V2 session 
     mock_gui = MockGUI()
-    empty_session = SessionV2(name="Astrocook V2", gui=mock_gui, current_spectrum=None) 
+    empty_session = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None) 
     
     # 2. Initialize the Main Window (Start with the empty state)
     # The MainWindowV2.__init__ must be adapted to handle the truly empty list.
