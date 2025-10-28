@@ -4,7 +4,9 @@ import logging
 import os
 from PySide6.QtCore import ( # <<< Modify this import
     Qt, QStringListModel, QSize,
-    QItemSelectionModel # <<< Add QItemSelectionModel
+    QItemSelectionModel, # <<< Add QItemSelectionModel
+    QPropertyAnimation, QEasingCurve, QRect, QPoint,
+    QParallelAnimationGroup
 )
 from PySide6.QtGui import QAction, QIcon, QPalette, QFont # Import QPalette
 from PySide6.QtWidgets import (
@@ -16,6 +18,11 @@ from PySide6.QtWidgets import (
 from .pyside_plot import SpectrumPlotWidget
 from ..session import load_session_from_file
 
+# --- Constants for Sidebar Widths ---
+LEFT_SIDEBAR_WIDTH = 250
+RIGHT_SIDEBAR_WIDTH = 200
+ANIMATION_DURATION = 150 # ** Speed up animation **
+BUTTON_WIDTH = 20
 class MainWindowV2(QMainWindow):
     def __init__(self, session):
         super().__init__()
@@ -23,81 +30,64 @@ class MainWindowV2(QMainWindow):
         self.session_manager = session
         self.session_model = QStringListModel()
 
+        # Animation objects (initialize early)
+        self.left_sidebar_animation = None
+        self.right_sidebar_animation = None
+
         self.setGeometry(100, 100, 450, 150) # Initial small size
         screen_geometry = QApplication.primaryScreen().geometry()
         x = (screen_geometry.width() - self.width()) // 2
         y = (screen_geometry.height() - self.height()) // 2
         self.move(x, y)
 
-        # --- Central Widget Setup ---
-        # Main widget to hold the layout
-        self.main_widget = QWidget()
-        self.main_layout = QHBoxLayout(self.main_widget)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setSpacing(0) # No space between dock area and content
-
-        # Area for dock widgets (will contain the session panel)
-        # QMainWindow handles dock areas implicitly, but we manage the central part
-        self.setCentralWidget(self.main_widget)
-
-        # --- Content Stack (Plot or Empty View) ---
+# --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
         self._setup_plot_view()
         self._setup_empty_view()
-        # Add stack AFTER dock setup if button is between dock and stack
+        self.setCentralWidget(self.central_stack) # Stack fills the window initially
 
-        # --- Setup Dockable Session Panel ---
-        self._setup_session_panel() # This ADDS the dock widget to the main window
+        # --- ** Sidebars are Children of the MainWindow, floating above ** ---
+        self._setup_left_sidebar()  # Creates self.left_sidebar_widget
+        self._setup_right_sidebar() # Creates self.right_sidebar_widget
 
-        # --- ** Collapse Button (Now part of main layout) ** ---
-        self.session_collapse_button = QPushButton() # No text initially
-        self.session_collapse_button.setToolTip("Collapse/Expand Session Panel")
-        self.session_collapse_button.setFixedSize(QSize(20, 40)) # Narrower, taller
-        self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding) # Fill vertically
-        self.session_collapse_button.clicked.connect(self._toggle_session_dock)
-        self.main_layout.addWidget(self.session_collapse_button)
-        
-        # ** Add button to the main layout, between dock and central stack **
-        # (QMainWindow manages dock areas, so we add stack to main layout)
-        self.main_layout.addWidget(self.central_stack, 1) # Stack takes remaining space
-
-        # --- ** Right Collapse Button ** ---
-        self.plot_controls_collapse_button = QPushButton() # NEW button
-        self.plot_controls_collapse_button.setToolTip("Collapse/Expand Plot Controls")
-        self.plot_controls_collapse_button.setFixedSize(QSize(20, 40))
-        self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-        self.plot_controls_collapse_button.clicked.connect(self._toggle_plot_controls_dock) # New slot
-        self.plot_controls_collapse_button.setObjectName("CollapseButton") # Keep common ID for style
-        self.main_layout.addWidget(self.plot_controls_collapse_button) # Add RIGHT button
-
-        # --- Setup Dockable Plot Controls Panel (Right) ---
-        self._setup_plot_controls_panel() # Adds the right dock widget
+        # --- ** Buttons are also Children of MainWindow ** ---
+        self._setup_collapse_buttons()
 
         self._create_menubar()
+        self._apply_styles()
 
-        # --- Styling ---
-        self._apply_styles() # Apply QSS
+        # --- Initial State ---
+        is_initial_session_valid = bool(self.session_manager.spec and len(self.session_manager.spec.x) > 0)
+        self._update_ui_state(is_initial_session_valid, is_startup=True)
 
-        # Initial state based on session
-        if self.session_manager.spec and len(self.session_manager.spec.x) > 0:
-            self.add_session(session, initial_load=True)
-            self._update_session_collapse_button_icon(True) # Set initial icon
-            self.session_collapse_button.setVisible(True) # ** Show button **
-            self._update_plot_controls_collapse_button_icon(True) # Update right button
-            self.plot_controls_collapse_button.setVisible(True)
-            self.plot_controls_dock.setVisible(True) # Make sure right dock is visible
-        else:
-            self.central_stack.setCurrentIndex(1) # Show empty view
-            self.session_dock.setVisible(False) # Hide dock initially
-            self.plot_controls_dock.setVisible(False) # Hide dock initially
-            self._update_session_collapse_button_icon(False) # Set initial icon
-            self.session_collapse_button.setVisible(False) # ** Hide button initially **
-            self._update_plot_controls_collapse_button_icon(False)
-            self.plot_controls_collapse_button.setVisible(False)
+    def resizeEvent(self, event):
+        """Handle window resizing to reposition floating elements."""
+        super().resizeEvent(event)
+        self._reposition_floating_widgets()
 
-        # Connect dock visibility change AFTER button exists
-        self.session_dock.visibilityChanged.connect(self._update_session_collapse_button_icon)
-        self.plot_controls_dock.visibilityChanged.connect(self._update_plot_controls_collapse_button_icon) # Connect right dock
+    def _reposition_floating_widgets(self):
+        """Positions sidebars and buttons based on current window size and visibility."""
+        window_height = self.height()
+        window_width = self.width()
+        menubar_height = self.menuBar().height() if self.menuBar() else 0
+        content_y = menubar_height
+        content_height = window_height - content_y
+
+        # --- Left Sidebar & Button ---
+        left_visible = self.left_sidebar_widget.isVisible()
+        left_width = LEFT_SIDEBAR_WIDTH if left_visible else 0
+        # **Button at absolute left edge**
+        self.session_collapse_button.setGeometry(0, content_y, BUTTON_WIDTH, content_height)
+        # **Sidebar positioned next to the button**
+        self.left_sidebar_widget.setGeometry(BUTTON_WIDTH, content_y, left_width, content_height)
+
+        # --- Right Sidebar & Button ---
+        right_visible = self.right_sidebar_widget.isVisible()
+        right_width = RIGHT_SIDEBAR_WIDTH if right_visible else 0
+        # **Button at absolute right edge**
+        self.plot_controls_collapse_button.setGeometry(window_width - BUTTON_WIDTH, content_y, BUTTON_WIDTH, content_height)
+        # **Sidebar positioned next (left) to the button**
+        self.right_sidebar_widget.setGeometry(window_width - BUTTON_WIDTH - right_width, content_y, right_width, content_height)
 
     def _setup_plot_view(self):
         self.plot_viewer = SpectrumPlotWidget(self.session_manager, self)
@@ -116,65 +106,68 @@ class MainWindowV2(QMainWindow):
         layout.addWidget(label)
         self.central_stack.addWidget(empty_widget)
 
-    def _setup_session_panel(self):
-        self.session_dock = QDockWidget("Sessions", self)
-        self.session_dock.setAllowedAreas(Qt.LeftDockWidgetArea)
-        self.session_dock.setFeatures(QDockWidget.DockWidgetMovable) # Only movable
-        self.session_dock.setTitleBarWidget(QWidget()) # Hide title bar
-
-        container_widget = QWidget()
-        container_widget.setFixedWidth(200)
-        container_layout = QVBoxLayout(container_widget)
-        container_layout.setContentsMargins(0,0,0,0)
-        container_layout.setSpacing(0)
+    def _setup_left_sidebar(self):
+        """Creates the left sidebar widget as a child of the main window."""
+        self.left_sidebar_widget = QWidget(self) # ** Parent is main window **
+        sidebar_layout = QVBoxLayout(self.left_sidebar_widget)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0); sidebar_layout.setSpacing(0)
 
         self.session_list_view = QListView()
+        # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
-        font = self.session_list_view.font()
-        font.setPointSize(14) # Set desired point size
-        self.session_list_view.setFont(font)
-
-        container_layout.addWidget(self.session_list_view)
-        self.session_dock.setWidget(container_widget)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.session_dock)
+        font = self.session_list_view.font(); font.setPointSize(10); self.session_list_view.setFont(font)
         self.session_list_view.clicked.connect(self._on_session_switched)
 
-        # Give IDs for styling
-        container_widget.setObjectName("SessionContainer")
+        sidebar_layout.addWidget(self.session_list_view)
+        self.left_sidebar_widget.setObjectName("SessionContainer")
         self.session_list_view.setObjectName("SessionListView")
 
-    def _setup_plot_controls_panel(self):
-        """Creates the right-hand dock widget for plot toggles."""
-        self.plot_controls_dock = QDockWidget("Plot Controls", self)
-        self.plot_controls_dock.setAllowedAreas(Qt.RightDockWidgetArea)
-        # **Hide title bar and limit features for consistency**
-        self.plot_controls_dock.setFeatures(QDockWidget.DockWidgetMovable)
-        self.plot_controls_dock.setTitleBarWidget(QWidget())
+        # Initial geometry set later, start hidden/collapsed
+        self.left_sidebar_widget.setVisible(False)
 
-        controls_container = QWidget()
-        controls_container.setFixedWidth(200)
-        controls_layout = QVBoxLayout(controls_container)
-        controls_layout.setContentsMargins(10, 10, 10, 10)
-        controls_layout.setSpacing(8)
+    def _setup_right_sidebar(self):
+        """Creates the right sidebar widget as a child of the main window."""
+        self.right_sidebar_widget = QWidget(self) # ** Parent is main window **
+        sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10); sidebar_layout.setSpacing(8)
 
-        # --- Checkboxes (unchanged) ---
-        self.error_checkbox = QCheckBox("Show 1σ Error"); self.error_checkbox.setChecked(True)
-        self.error_checkbox.stateChanged.connect(self._trigger_replot)
-        controls_layout.addWidget(self.error_checkbox)
-
-        self.continuum_checkbox = QCheckBox("Show Continuum"); self.continuum_checkbox.setChecked(False)
-        self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
-        controls_layout.addWidget(self.continuum_checkbox)
-        # ... (add more later) ...
-
+        # --- Checkboxes ---
+        self.error_checkbox = QCheckBox("Show 1σ Error"); # ... setup ...
+        self.continuum_checkbox = QCheckBox("Show Continuum"); # ... setup ...
+        self.error_checkbox.setChecked(True); self.error_checkbox.stateChanged.connect(self._trigger_replot)
+        self.continuum_checkbox.setChecked(False); self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
+        sidebar_layout.addWidget(self.error_checkbox)
+        sidebar_layout.addWidget(self.continuum_checkbox)
+        # ... (spacer) ...
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        controls_layout.addItem(spacer)
-        self.plot_controls_dock.setWidget(controls_container)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.plot_controls_dock)
+        sidebar_layout.addItem(spacer)
 
-        controls_container.setObjectName("PlotControlsContainer") # For styling
+        self.right_sidebar_widget.setObjectName("PlotControlsContainer")
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
+
+        # Initial geometry set later, start hidden/collapsed
+        self.right_sidebar_widget.setVisible(False)
+
+    def _setup_collapse_buttons(self):
+        """Creates and positions the collapse buttons as children of main window."""
+        # Left Button
+        self.session_collapse_button = QPushButton(self) # ** Parent is main window **
+        self.session_collapse_button.setToolTip("Collapse/Expand Session Panel")
+        self.session_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, 40)) # Adjust height?
+        self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding) # Fill height
+        self.session_collapse_button.clicked.connect(self._toggle_left_sidebar)
+        self.session_collapse_button.setObjectName("CollapseButton")
+        self.session_collapse_button.setVisible(False) # Start hidden
+
+        # Right Button
+        self.plot_controls_collapse_button = QPushButton(self) # ** Parent is main window **
+        self.plot_controls_collapse_button.setToolTip("Collapse/Expand Plot Controls")
+        self.plot_controls_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, 40)) # Adjust height?
+        self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding) # Fill height
+        self.plot_controls_collapse_button.clicked.connect(self._toggle_right_sidebar)
+        self.plot_controls_collapse_button.setObjectName("CollapseButton")
+        self.plot_controls_collapse_button.setVisible(False) # Start hidden
 
     def _trigger_replot(self):
         """Slot to be called when any plot toggle checkbox changes state."""
@@ -205,11 +198,17 @@ class MainWindowV2(QMainWindow):
         open_action.triggered.connect(self._on_open_spectrum)
         file_menu.addAction(open_action)
 
-        # The QDockWidget automatically provides an action to toggle its visibility.
-        view_menu.addAction(self.session_dock.toggleViewAction())
+        # --- View Menu Actions ---
+        toggle_left_action = QAction("Toggle Session Panel", self)
+        toggle_left_action.triggered.connect(self._toggle_left_sidebar)
+        view_menu.addAction(toggle_left_action)
 
-        # Action to toggle the NEW plot controls dock
-        view_menu.addAction(self.plot_controls_dock.toggleViewAction())
+        toggle_right_action = QAction("Toggle Plot Controls", self)
+        toggle_right_action.triggered.connect(self._toggle_right_sidebar)
+        view_menu.addAction(toggle_right_action)
+
+        self.toggle_left_action = toggle_left_action
+        self.toggle_right_action = toggle_right_action
 
         # --- Add QActions for V2 Recipes ---
         
@@ -235,183 +234,225 @@ class MainWindowV2(QMainWindow):
         # ... (Other menu item actions will be added here later) ...
 
     def _apply_styles(self):
-        """Applies QSS styling to the relevant widgets."""
-
-        # Try to get a theme-aware background color (might just be standard window bg)
-        try:
+        # ... (Get palette colors) ...
+        # ... (Define sidebar_bg, item_selected_bg, etc.) ...
+        try: # Added try-except for palette
             palette = QApplication.palette()
-            # Use Button role for a slightly darker/more distinct sidebar usually
+            # Get RGB components from the desired background color
+            sidebar_base_color = palette.color(palette.ColorRole.Button)
+            sidebar_r = sidebar_base_color.red()
+            sidebar_g = sidebar_base_color.green()
+            sidebar_b = sidebar_base_color.blue()
+            sidebar_a = 0.3 # Alpha value (0.0 to 1.0), e.g., 90% opaque
+
             sidebar_bg = palette.color(palette.ColorRole.Button).name()
             item_selected_bg = palette.color(palette.ColorRole.Highlight).name()
             item_selected_text = palette.color(palette.ColorRole.HighlightedText).name()
-            item_hover_bg = palette.color(palette.ColorRole.Midlight).name() # Or Mid
-            #window_bg = palette.color(palette.ColorRole.Window).name() # Get standard window bg
-            text_color = palette.color(palette.ColorRole.WindowText).name() # Standard text
-            button_bg = palette.color(palette.ColorRole.Button).name() # Use Button bg
-            button_fg = palette.color(palette.ColorRole.ButtonText).name() # Use Button text for icon
-            button_hover_bg = palette.color(palette.ColorRole.Midlight).name()
+            item_hover_bg = palette.color(palette.ColorRole.Midlight).name()
             border_color = palette.color(palette.ColorRole.Mid).name()
-        except:
-            # Fallback colors if palette query fails
-            sidebar_bg = "#E0E0E0" # Light gray fallback
-            item_selected_bg = "#808080" # Mid-gray selected
-            item_selected_text = "#FFFFFF" # White text
-            item_hover_bg = "#D0D0D0"
-            border_color = "#B0B0B0"
-
+            button_fg = palette.color(palette.ColorRole.ButtonText).name()
+        except Exception as e:
+            logging.warning(f"Could not query palette: {e}. Using fallback colors.")
+            sidebar_r, sidebar_g, sidebar_b = 224, 224, 224 # RGB for #E0E0E0
+            sidebar_a = 0.9
+            sidebar_bg="#E0E0E0"; item_selected_bg="#808080"; item_selected_text="#FFFFFF";
+            item_hover_bg="#D0D0D0"; border_color="#B0B0B0"; button_fg="#000000";
 
         qss = f"""
-            /* Left Sidebar Container */
-            QWidget#SessionContainer {{
-                background-color: {sidebar_bg};
-                border: none; /* No internal border */
+            /* Sidebar Containers: Transparent background, NO side borders */
+            QWidget#SessionContainer, QWidget#PlotControlsContainer {{
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
+                border: none; /* ** Remove all borders ** */
             }}
-            /* Left Sidebar List View */
-            QListView#SessionListView {{
-                background-color: transparent;
-                border: none;
-            }}
+            /* Add side borders for visual separation */
+            QWidget#SessionContainer {{ border-right: 1px solid {border_color}; }}
+            QWidget#PlotControlsContainer {{ border-left: 1px solid {border_color}; }}
+
+            /* Make ListView background fully transparent */
+            QListView#SessionListView {{ background-color: transparent; border: none; }}
+            /* Ensure list items are NOT transparent */
             QListView#SessionListView::item {{
-                padding: 6px 10px;
-                border: none;
-                background-color: transparent;
-                /* Font set directly on widget */
-            }}
+                padding: 6px 10px; border: none;
+                background-color: transparent; /* Inherit sidebar bg initially */
+                color: {button_fg}; /* Use button text color for readability */
+             }}
+            /* Selected/Hover items should be opaque */
             QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
             QListView#SessionListView::item:hover {{ background-color: {item_hover_bg}; }}
 
-            /* Right Sidebar Container */
-            QWidget#PlotControlsContainer {{
-                background-color: {sidebar_bg}; /* ** Match left sidebar bg ** */
-                border: none; /* No internal border */
-            }}
-            /* Right Sidebar Checkboxes */
+            /* Ensure Checkboxes are NOT transparent */
             QCheckBox#PlotControlCheckbox {{
-                color: {text_color};
-                spacing: 5px;
-                padding: 4px 0px; /* Add some vertical padding */
+                color: {button_fg}; spacing: 5px; padding: 4px 0px;
+                background-color: transparent; /* Let container show through */
             }}
 
-            /* General Style for BOTH Collapse Buttons */
+            /* Collapse Buttons: Blend, NO borders */
             QPushButton#CollapseButton {{
-                background-color: {button_bg}; /* ** Use explicit button background ** */
-                color: {button_fg}; /* ** Explicitly set icon/text color ** */
-                border: 1px solid {border_color}; /* Add a border for definition */
-                border-radius: 3px; /* Slightly rounded */
-                margin: 0px;
-                padding: 0px;
-                /* Ensure icon size fits */
-                icon-size: 16px; /* Adjust if needed */
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
+                color: {button_fg}; /* Icon color */
+                border: none; /* ** Remove all borders ** */
+                margin: 0px; padding: 0px;
+                icon-size: 16px;
+                /* Maybe add slight rounding */
+                border-radius: 3px;
             }}
             QPushButton#CollapseButton:hover {{
-                 background-color: {button_hover_bg};
-            }}
-
-            /* Style Dock Separators (Optional) */
-            QMainWindow::separator {{
-                background: {palette.color(palette.ColorRole.Mid).name() if 'palette' in locals() else '#C0C0C0'};
-                width: 1px; /* Vertical */
-                height: 1px; /* Horizontal */
-            }}
-            QMainWindow::separator:hover {{
-                background: {palette.color(palette.ColorRole.Highlight).name() if 'palette' in locals() else '#808080'};
+                 background-color: {item_hover_bg};
             }}
         """
-        self.setStyleSheet(qss) # Apply to main window, cascade down
-        self.session_collapse_button.setObjectName("CollapseButton") # Set ID for QSS
-        self.plot_controls_collapse_button.setObjectName("CollapseButton")
+        self.setStyleSheet(qss)
+        # Set object names after creation if not done elsewhere
 
-    def _toggle_session_dock(self):
-        is_visible = self.session_dock.isVisible()
-        self.session_dock.setVisible(not is_visible)
-        # Icon update handled by visibilityChanged signal
+    # --- ** NEW Toggle & Animation Methods ** ---
 
-    def _toggle_plot_controls_dock(self): # <<< NEW METHOD
-        """Toggles the visibility of the plot controls dock widget."""
-        is_visible = self.plot_controls_dock.isVisible()
-        self.plot_controls_dock.setVisible(not is_visible)
+    def _toggle_left_sidebar(self):
+        """Animates the left sidebar overlay."""
+        is_currently_visible = self.left_sidebar_widget.isVisible()
+        start_geometry = QRect(self.left_sidebar_widget.geometry())
+        end_geometry = QRect(start_geometry)
 
-    def _update_session_collapse_button_icon(self, visible):
-        """Updates the collapse button icon based on dock visibility."""
-        if visible:
-            # Use standard Pixmap for left arrow
-            icon = self.style().standardIcon(QStyle.SP_ArrowLeft)
-            self.session_collapse_button.setToolTip("Collapse Session Panel")
+        if is_currently_visible: # Closing
+            end_geometry.setWidth(0) # Animate width to 0
+            target_visible = False
+            # Button stays at x=0
+        else: # Opening
+            start_geometry.setWidth(0) # Start from width 0
+            end_geometry.setWidth(LEFT_SIDEBAR_WIDTH)
+            target_visible = True
+            self.left_sidebar_widget.setVisible(True) # Show before animation
+
+        # Animate sidebar width
+        self.left_sidebar_animation = QPropertyAnimation(self.left_sidebar_widget, b"geometry") # Animate geometry
+        self.left_sidebar_animation.setDuration(ANIMATION_DURATION)
+        self.left_sidebar_animation.setStartValue(start_geometry)
+        self.left_sidebar_animation.setEndValue(end_geometry)
+        self.left_sidebar_animation.setEasingCurve(QEasingCurve.InOutQuad)
+        if not target_visible: # Hide after closing animation
+            self.left_sidebar_animation.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
+
+        self.left_sidebar_animation.start()
+        self._update_sidebar_button_icon(self.session_collapse_button, target_visible, is_left=True)
+        # Button position doesn't change, no need to animate it
+
+    def _toggle_right_sidebar(self):
+        """Animates the right sidebar overlay."""
+        is_currently_visible = self.right_sidebar_widget.isVisible()
+        start_geometry = QRect(self.right_sidebar_widget.geometry())
+        end_geometry = QRect(start_geometry)
+        window_width = self.width()
+
+        if is_currently_visible: # Closing
+            end_geometry.setX(window_width - BUTTON_WIDTH) # Move X to button
+            end_geometry.setWidth(0) # Animate width to 0
+            target_visible = False
+        else: # Opening
+            start_geometry.setX(window_width - BUTTON_WIDTH) # Start at button
+            start_geometry.setWidth(0)
+            end_geometry.setX(window_width - BUTTON_WIDTH - RIGHT_SIDEBAR_WIDTH) # Move X left
+            end_geometry.setWidth(RIGHT_SIDEBAR_WIDTH)
+            target_visible = True
+            self.right_sidebar_widget.setVisible(True) # Show before animation
+
+        # Animate sidebar geometry (position and width)
+        self.right_sidebar_animation = QPropertyAnimation(self.right_sidebar_widget, b"geometry")
+        self.right_sidebar_animation.setDuration(ANIMATION_DURATION)
+        self.right_sidebar_animation.setStartValue(start_geometry)
+        self.right_sidebar_animation.setEndValue(end_geometry)
+        self.right_sidebar_animation.setEasingCurve(QEasingCurve.InOutQuad)
+        if not target_visible: # Hide after closing
+            self.right_sidebar_animation.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
+
+        self.right_sidebar_animation.start()
+        self._update_sidebar_button_icon(self.plot_controls_collapse_button, target_visible, is_left=False)
+        # Button position doesn't change, no need to animate it 
+
+    def _update_sidebar_button_icon(self, button, sidebar_is_visible, is_left):
+        """Updates collapse button icon based on sidebar visibility."""
+        # Icon logic adjusted: Left button shows '>' when sidebar is hidden (points right to expand)
+        # Right button shows '<' when sidebar is hidden (points left to expand)
+        if is_left:
+            icon_name = QStyle.SP_ArrowLeft if sidebar_is_visible else QStyle.SP_ArrowRight
+            tooltip = "Collapse Session Panel" if sidebar_is_visible else "Expand Session Panel"
+        else: # Right sidebar button
+            icon_name = QStyle.SP_ArrowRight if sidebar_is_visible else QStyle.SP_ArrowLeft
+            tooltip = "Collapse Plot Controls" if sidebar_is_visible else "Expand Plot Controls"
+
+        icon = self.style().standardIcon(icon_name)
+        button.setIcon(icon); button.setToolTip(tooltip)
+
+    def _update_ui_state(self, is_valid_session, is_startup=False):
+        is_valid_session = bool(is_valid_session)
+
+        # ... (Enable/Disable View menu actions) ...
+        if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
+        if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
+        # --- Update Session Logic ---
+
+        if is_valid_session:
+            # --- State when a valid session IS loaded ---
+            if self.central_stack.currentIndex() != 0: # If switching from empty
+                self.central_stack.setCurrentIndex(0)
+                # Resize only on first valid load
+                # Check if *any* previous session existed and was valid
+                was_previously_empty = not any(s and s.spec and len(s.spec.x) > 0 for s in self.active_sessions[:-1])
+                if is_startup or was_previously_empty:
+                    logging.debug("Resizing and centering window for first valid session.")
+                    self.resize(1400, 900)
+                    # Recenter after resize
+                    screen_geometry = QApplication.primaryScreen().geometry()
+                    x = (screen_geometry.width() - self.width()) // 2
+                    y = (screen_geometry.height() - self.height()) // 2
+                    self.move(x, y)
+
+            # Show buttons
+            self.session_collapse_button.setVisible(True)
+            self.plot_controls_collapse_button.setVisible(True)
+
+            # Update icons based on current *actual* visibility state of sidebars
+            self._update_sidebar_button_icon(self.session_collapse_button, self.left_sidebar_widget.isVisible(), is_left=True)
+            self._update_sidebar_button_icon(self.plot_controls_collapse_button, self.right_sidebar_widget.isVisible(), is_left=False)
+
+            # Ensure sidebars are potentially visible (geometry/animation handles appearance)
+            # No setVisible calls needed here, _reposition handles geometry         
+
         else:
-            # Use standard Pixmap for right arrow
-            icon = self.style().standardIcon(QStyle.SP_ArrowRight)
-            self.session_collapse_button.setToolTip("Expand Session Panel")
-        self.session_collapse_button.setIcon(icon)
+            # --- State when NO valid session is loaded ---
+            if self.central_stack.currentIndex() != 1: self.central_stack.setCurrentIndex(1)
 
-    def _update_plot_controls_collapse_button_icon(self, visible): # <<< NEW METHOD
-        """Updates the right collapse button icon."""
-        if visible:
-            # Right sidebar collapses TO the right, so arrow points right
-            icon = self.style().standardIcon(QStyle.SP_ArrowRight)
-            self.plot_controls_collapse_button.setToolTip("Collapse Plot Controls")
-        else:
-            # Right sidebar expands FROM the right, so arrow points left
-            icon = self.style().standardIcon(QStyle.SP_ArrowLeft)
-            self.plot_controls_collapse_button.setToolTip("Expand Plot Controls")
-        self.plot_controls_collapse_button.setIcon(icon)
+            # Hide buttons
+            self.session_collapse_button.setVisible(False)
+            self.plot_controls_collapse_button.setVisible(False)
+            # Hide sidebars directly (no animation needed when invalid)
+            if self.left_sidebar_widget.isVisible(): self.left_sidebar_widget.setVisible(False)
+            if self.right_sidebar_widget.isVisible(): self.right_sidebar_widget.setVisible(False)
+
+        # Reposition elements after visibility/state changes might affect layout needs
+        # QTimer.singleShot(0, self._reposition_floating_widgets) # Schedule reposition slightly later
+        self._reposition_floating_widgets() # Try immediate reposition first
+
 
     def update_session(self, new_session, set_current_list_item=False):
         """Swaps the central session manager object and updates the view."""
         self.session_manager = new_session
-        is_valid_session = new_session and new_session.spec and len(new_session.spec.x) > 0
+        is_valid = bool(new_session and new_session.spec and len(new_session.spec.x) > 0)
 
-        if is_valid_session:
-            if self.central_stack.currentIndex() != 0: # If switching from empty
-                self.resize(1400, 900)
-                # Recenter after resize
-                screen_geometry = QApplication.primaryScreen().geometry()
-                x = (screen_geometry.width() - self.width()) // 2
-                y = (screen_geometry.height() - self.height()) // 2
-                self.move(x, y)
-                # Ensure dock is visible when a valid session is active
-                if not self.session_dock.isVisible():
-                    self.session_dock.setVisible(True)
+        # This call now handles all UI state changes correctly
+        self._update_ui_state(is_valid, is_startup=(len(self.active_sessions) <= 1) ) # Pass startup hint
 
-            if not self.session_collapse_button.isVisible():
-                 self.session_collapse_button.setVisible(True)
-            if not self.plot_controls_collapse_button.isVisible():
-                 self.plot_controls_collapse_button.setVisible(True)
-            if not self.session_dock.isVisible():
-                self.session_dock.setVisible(True)
-            if not self.plot_controls_dock.isVisible():
-                 self.plot_controls_dock.setVisible(True)
-
-            self.central_stack.setCurrentIndex(0) # Switch to plot view
-            self.plot_viewer.update_plot(new_session)
-
+        if is_valid:
+            self.plot_viewer.update_plot(new_session) # Update plot content
             if set_current_list_item:
-                 try:
+                # ... (list item selection logic) ...
+                try:
                     idx = self.active_sessions.index(new_session)
                     q_model_index = self.session_model.index(idx)
-                    # Use selection model for better control
                     selection_model = self.session_list_view.selectionModel()
                     selection_flag = QItemSelectionModel.SelectionFlag.ClearAndSelect
                     selection_model.setCurrentIndex(q_model_index, selection_flag)
-                 except (ValueError, IndexError):
-                     logging.warning("Could not find new session in list view to select.")
-
-        else: # Handle empty/invalid session
+                except (ValueError, IndexError, AttributeError) as e:
+                    logging.warning(f"Could not select session in list view: {e}")
+        else:
             logging.info("Updating to an empty session view.")
-            self.central_stack.setCurrentIndex(1)
-
-            # ** Hide Plot Controls dock for empty view **
-            if self.plot_controls_dock.isVisible():
-                 self.plot_controls_dock.setVisible(False)
-
-            # Hide BOTH collapse buttons and docks for empty view
-            if self.session_collapse_button.isVisible():
-                 self.session_collapse_button.setVisible(False)
-            if self.plot_controls_collapse_button.isVisible():
-                 self.plot_controls_collapse_button.setVisible(False)
-            if self.session_dock.isVisible():
-                 self.session_dock.setVisible(False)
-            if self.plot_controls_dock.isVisible():
-                 self.plot_controls_dock.setVisible(False)
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
