@@ -19,10 +19,12 @@ from .pyside_plot import SpectrumPlotWidget
 from ..session import load_session_from_file
 
 # --- Constants for Sidebar Widths ---
-LEFT_SIDEBAR_WIDTH = 250
-RIGHT_SIDEBAR_WIDTH = 200
+LEFT_SIDEBAR_WIDTH = 300
+RIGHT_SIDEBAR_WIDTH = 300
 ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 20
+BUTTON_HEIGHT = 30
+
 class MainWindowV2(QMainWindow):
     def __init__(self, session):
         super().__init__()
@@ -30,9 +32,9 @@ class MainWindowV2(QMainWindow):
         self.session_manager = session
         self.session_model = QStringListModel()
 
-        # Animation objects (initialize early)
-        self.left_sidebar_animation = None
-        self.right_sidebar_animation = None
+        # ** Initialize animation attributes to None **
+        self.left_animation_group = None
+        self.right_animation_group = None
 
         self.setGeometry(100, 100, 450, 150) # Initial small size
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -40,7 +42,7 @@ class MainWindowV2(QMainWindow):
         y = (screen_geometry.height() - self.height()) // 2
         self.move(x, y)
 
-# --- ** Central Widget is NOW the Stack ** ---
+        # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
         self._setup_plot_view()
         self._setup_empty_view()
@@ -70,25 +72,29 @@ class MainWindowV2(QMainWindow):
         window_height = self.height()
         window_width = self.width()
         menubar_height = self.menuBar().height() if self.menuBar() else 0
-        content_y = menubar_height
-        content_height = window_height - content_y
+        content_y_start = menubar_height
+        content_height = window_height - content_y_start
+
+        # ** Calculate centered Y position for buttons **
+        button_y = content_y_start + (content_height - BUTTON_HEIGHT) // 2
 
         # --- Left Sidebar & Button ---
-        left_visible = self.left_sidebar_widget.isVisible()
-        left_width = LEFT_SIDEBAR_WIDTH if left_visible else 0
-        # **Button at absolute left edge**
-        self.session_collapse_button.setGeometry(0, content_y, BUTTON_WIDTH, content_height)
-        # **Sidebar positioned next to the button**
-        self.left_sidebar_widget.setGeometry(BUTTON_WIDTH, content_y, left_width, content_height)
+        left_width = self.left_sidebar_widget.width()
+        button_x = left_width - BUTTON_WIDTH if left_width > 0 else left_width
+        # ** Use calculated button_y **
+        self.session_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        # Sidebar still fills the full content height
+        self.left_sidebar_widget.setGeometry(0, content_y_start, left_width, content_height)
 
         # --- Right Sidebar & Button ---
-        right_visible = self.right_sidebar_widget.isVisible()
-        right_width = RIGHT_SIDEBAR_WIDTH if right_visible else 0
-        # **Button at absolute right edge**
-        self.plot_controls_collapse_button.setGeometry(window_width - BUTTON_WIDTH, content_y, BUTTON_WIDTH, content_height)
-        # **Sidebar positioned next (left) to the button**
-        self.right_sidebar_widget.setGeometry(window_width - BUTTON_WIDTH - right_width, content_y, right_width, content_height)
-
+        right_width = self.right_sidebar_widget.width()
+        sidebar_x = window_width - right_width
+        button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
+         # ** Use calculated button_y **
+        self.plot_controls_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        # Sidebar still fills the full content height
+        self.right_sidebar_widget.setGeometry(sidebar_x, content_y_start, right_width, content_height)
+        
     def _setup_plot_view(self):
         self.plot_viewer = SpectrumPlotWidget(self.session_manager, self)
         self.central_stack.addWidget(self.plot_viewer)
@@ -115,7 +121,7 @@ class MainWindowV2(QMainWindow):
         self.session_list_view = QListView()
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
-        font = self.session_list_view.font(); font.setPointSize(10); self.session_list_view.setFont(font)
+        font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
         self.session_list_view.clicked.connect(self._on_session_switched)
 
         sidebar_layout.addWidget(self.session_list_view)
@@ -123,6 +129,7 @@ class MainWindowV2(QMainWindow):
         self.session_list_view.setObjectName("SessionListView")
 
         # Initial geometry set later, start hidden/collapsed
+        self.left_sidebar_widget.resize(0, self.height())
         self.left_sidebar_widget.setVisible(False)
 
     def _setup_right_sidebar(self):
@@ -147,6 +154,8 @@ class MainWindowV2(QMainWindow):
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
 
         # Initial geometry set later, start hidden/collapsed
+        self.right_sidebar_widget.resize(0, self.height()) # Set initial size for geometry
+        self.right_sidebar_widget.move(self.width(), self.right_sidebar_widget.y()) # Also set initial X pos offscreen
         self.right_sidebar_widget.setVisible(False)
 
     def _setup_collapse_buttons(self):
@@ -154,8 +163,8 @@ class MainWindowV2(QMainWindow):
         # Left Button
         self.session_collapse_button = QPushButton(self) # ** Parent is main window **
         self.session_collapse_button.setToolTip("Collapse/Expand Session Panel")
-        self.session_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, 40)) # Adjust height?
-        self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding) # Fill height
+        self.session_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, BUTTON_HEIGHT))
+        self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.session_collapse_button.clicked.connect(self._toggle_left_sidebar)
         self.session_collapse_button.setObjectName("CollapseButton")
         self.session_collapse_button.setVisible(False) # Start hidden
@@ -163,8 +172,8 @@ class MainWindowV2(QMainWindow):
         # Right Button
         self.plot_controls_collapse_button = QPushButton(self) # ** Parent is main window **
         self.plot_controls_collapse_button.setToolTip("Collapse/Expand Plot Controls")
-        self.plot_controls_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, 40)) # Adjust height?
-        self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding) # Fill height
+        self.plot_controls_collapse_button.setFixedSize(QSize(BUTTON_WIDTH, BUTTON_HEIGHT))
+        self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.plot_controls_collapse_button.clicked.connect(self._toggle_right_sidebar)
         self.plot_controls_collapse_button.setObjectName("CollapseButton")
         self.plot_controls_collapse_button.setVisible(False) # Start hidden
@@ -243,12 +252,12 @@ class MainWindowV2(QMainWindow):
             sidebar_r = sidebar_base_color.red()
             sidebar_g = sidebar_base_color.green()
             sidebar_b = sidebar_base_color.blue()
-            sidebar_a = 0.3 # Alpha value (0.0 to 1.0), e.g., 90% opaque
+            sidebar_a = 0.5 # Alpha value (0.0 to 1.0), e.g., 90% opaque
 
             sidebar_bg = palette.color(palette.ColorRole.Button).name()
             item_selected_bg = palette.color(palette.ColorRole.Highlight).name()
             item_selected_text = palette.color(palette.ColorRole.HighlightedText).name()
-            item_hover_bg = palette.color(palette.ColorRole.Midlight).name()
+            #item_hover_bg = palette.color(palette.ColorRole.Highlight).name()
             border_color = palette.color(palette.ColorRole.Mid).name()
             button_fg = palette.color(palette.ColorRole.ButtonText).name()
         except Exception as e:
@@ -264,10 +273,7 @@ class MainWindowV2(QMainWindow):
                 background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
                 border: none; /* ** Remove all borders ** */
             }}
-            /* Add side borders for visual separation */
-            QWidget#SessionContainer {{ border-right: 1px solid {border_color}; }}
-            QWidget#PlotControlsContainer {{ border-left: 1px solid {border_color}; }}
-
+            
             /* Make ListView background fully transparent */
             QListView#SessionListView {{ background-color: transparent; border: none; }}
             /* Ensure list items are NOT transparent */
@@ -278,26 +284,23 @@ class MainWindowV2(QMainWindow):
              }}
             /* Selected/Hover items should be opaque */
             QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
-            QListView#SessionListView::item:hover {{ background-color: {item_hover_bg}; }}
-
+            
             /* Ensure Checkboxes are NOT transparent */
             QCheckBox#PlotControlCheckbox {{
                 color: {button_fg}; spacing: 5px; padding: 4px 0px;
                 background-color: transparent; /* Let container show through */
+                padding-left: 15px;
             }}
 
             /* Collapse Buttons: Blend, NO borders */
             QPushButton#CollapseButton {{
-                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
+                background-color: none;
                 color: {button_fg}; /* Icon color */
                 border: none; /* ** Remove all borders ** */
                 margin: 0px; padding: 0px;
                 icon-size: 16px;
                 /* Maybe add slight rounding */
                 border-radius: 3px;
-            }}
-            QPushButton#CollapseButton:hover {{
-                 background-color: {item_hover_bg};
             }}
         """
         self.setStyleSheet(qss)
@@ -306,65 +309,86 @@ class MainWindowV2(QMainWindow):
     # --- ** NEW Toggle & Animation Methods ** ---
 
     def _toggle_left_sidebar(self):
-        """Animates the left sidebar overlay."""
-        is_currently_visible = self.left_sidebar_widget.isVisible()
-        start_geometry = QRect(self.left_sidebar_widget.geometry())
-        end_geometry = QRect(start_geometry)
+        """Animates the left sidebar overlay and its button together."""
+        is_currently_visible = self.left_sidebar_widget.width() > 0 # Use width check
+        start_sidebar_geom = QRect(self.left_sidebar_widget.geometry()) # Get current geometry
+        end_sidebar_geom = QRect(start_sidebar_geom) # Copy for end state
+        start_button_x = self.session_collapse_button.x()
+        end_button_x = 0 # Default button X when closed
 
         if is_currently_visible: # Closing
-            end_geometry.setWidth(0) # Animate width to 0
+            end_sidebar_geom.setWidth(0) # Animate width to 0
+            # Button X already calculated (end_button_x = 0)
             target_visible = False
-            # Button stays at x=0
         else: # Opening
-            start_geometry.setWidth(0) # Start from width 0
-            end_geometry.setWidth(LEFT_SIDEBAR_WIDTH)
+            # Start geom should reflect the hidden state (width 0)
+            start_sidebar_geom.setWidth(0)
+            end_sidebar_geom.setWidth(LEFT_SIDEBAR_WIDTH) # Animate width open
+            end_button_x = LEFT_SIDEBAR_WIDTH - BUTTON_WIDTH # Button X moves out
             target_visible = True
-            self.left_sidebar_widget.setVisible(True) # Show before animation
+            self.left_sidebar_widget.setVisible(True) # Show before animating
 
-        # Animate sidebar width
-        self.left_sidebar_animation = QPropertyAnimation(self.left_sidebar_widget, b"geometry") # Animate geometry
-        self.left_sidebar_animation.setDuration(ANIMATION_DURATION)
-        self.left_sidebar_animation.setStartValue(start_geometry)
-        self.left_sidebar_animation.setEndValue(end_geometry)
-        self.left_sidebar_animation.setEasingCurve(QEasingCurve.InOutQuad)
-        if not target_visible: # Hide after closing animation
-            self.left_sidebar_animation.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
+        # --- Animation Group ---
+        # Stop previous animation if running
+        if self.left_animation_group and self.left_animation_group.state() == QParallelAnimationGroup.Running:
+            self.left_animation_group.stop()
+        self.left_animation_group = QParallelAnimationGroup(self)
 
-        self.left_sidebar_animation.start()
+        # ** Animate sidebar GEOMETRY **
+        sidebar_anim = QPropertyAnimation(self.left_sidebar_widget, b"geometry")
+        sidebar_anim.setDuration(ANIMATION_DURATION)
+        sidebar_anim.setStartValue(start_sidebar_geom) # Start geometry
+        sidebar_anim.setEndValue(end_sidebar_geom)     # End geometry
+        sidebar_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.left_animation_group.addAnimation(sidebar_anim)
+
+        # Animate button X position
+        button_anim = QPropertyAnimation(self.session_collapse_button, b"pos")
+        button_anim.setDuration(ANIMATION_DURATION)
+        # Use current Y, animate X
+        button_anim.setStartValue(QPoint(start_button_x, self.session_collapse_button.y()))
+        button_anim.setEndValue(QPoint(end_button_x, self.session_collapse_button.y()))
+        button_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.left_animation_group.addAnimation(button_anim)
+
+        # Hide sidebar widget AFTER closing animation finishes
+        if not target_visible:
+            # Ensure lambda captures the correct widget state if needed
+            self.left_animation_group.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
+
+        self.left_animation_group.start()
         self._update_sidebar_button_icon(self.session_collapse_button, target_visible, is_left=True)
-        # Button position doesn't change, no need to animate it
+
 
     def _toggle_right_sidebar(self):
-        """Animates the right sidebar overlay."""
-        is_currently_visible = self.right_sidebar_widget.isVisible()
-        start_geometry = QRect(self.right_sidebar_widget.geometry())
-        end_geometry = QRect(start_geometry)
+        # ... (get start/end width, window_width, start/end sidebar X, start/end button X) ...
+        start_width = self.right_sidebar_widget.width(); end_width = 0 if start_width > 0 else RIGHT_SIDEBAR_WIDTH
         window_width = self.width()
+        start_sidebar_x = self.right_sidebar_widget.x(); end_sidebar_x = window_width if end_width == 0 else window_width - end_width
+        start_button_x = self.plot_controls_collapse_button.x(); end_button_x = window_width - BUTTON_WIDTH if end_width == 0 else window_width - end_width
+        target_visible = end_width > 0
 
-        if is_currently_visible: # Closing
-            end_geometry.setX(window_width - BUTTON_WIDTH) # Move X to button
-            end_geometry.setWidth(0) # Animate width to 0
-            target_visible = False
-        else: # Opening
-            start_geometry.setX(window_width - BUTTON_WIDTH) # Start at button
-            start_geometry.setWidth(0)
-            end_geometry.setX(window_width - BUTTON_WIDTH - RIGHT_SIDEBAR_WIDTH) # Move X left
-            end_geometry.setWidth(RIGHT_SIDEBAR_WIDTH)
-            target_visible = True
-            self.right_sidebar_widget.setVisible(True) # Show before animation
+        # ** Calculate the constant button Y **
+        button_y = self.plot_controls_collapse_button.y() # Keep current Y
 
-        # Animate sidebar geometry (position and width)
-        self.right_sidebar_animation = QPropertyAnimation(self.right_sidebar_widget, b"geometry")
-        self.right_sidebar_animation.setDuration(ANIMATION_DURATION)
-        self.right_sidebar_animation.setStartValue(start_geometry)
-        self.right_sidebar_animation.setEndValue(end_geometry)
-        self.right_sidebar_animation.setEasingCurve(QEasingCurve.InOutQuad)
-        if not target_visible: # Hide after closing
-            self.right_sidebar_animation.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
+        if target_visible: self.right_sidebar_widget.setVisible(True)
+        self.right_animation_group = QParallelAnimationGroup(self)
+        # Sidebar Animation (geometry)
+        sidebar_geom_anim = QPropertyAnimation(self.right_sidebar_widget, b"geometry"); sidebar_geom_anim.setDuration(ANIMATION_DURATION)
+        sidebar_geom_anim.setStartValue(QRect(start_sidebar_x, self.right_sidebar_widget.y(), start_width, self.right_sidebar_widget.height()))
+        sidebar_geom_anim.setEndValue(QRect(end_sidebar_x, self.right_sidebar_widget.y(), end_width, self.right_sidebar_widget.height()))
+        sidebar_geom_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.right_animation_group.addAnimation(sidebar_geom_anim)
+        # Button Animation (pos)
+        button_anim = QPropertyAnimation(self.plot_controls_collapse_button, b"pos"); button_anim.setDuration(ANIMATION_DURATION)
+        button_anim.setStartValue(QPoint(start_button_x, button_y)) # Start at current Y
+        button_anim.setEndValue(QPoint(end_button_x, button_y))     # End at same Y
+        button_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.right_animation_group.addAnimation(button_anim)
 
-        self.right_sidebar_animation.start()
+        if not target_visible: self.right_animation_group.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
+        self.right_animation_group.start()
         self._update_sidebar_button_icon(self.plot_controls_collapse_button, target_visible, is_left=False)
-        # Button position doesn't change, no need to animate it 
 
     def _update_sidebar_button_icon(self, button, sidebar_is_visible, is_left):
         """Updates collapse button icon based on sidebar visibility."""
@@ -408,23 +432,27 @@ class MainWindowV2(QMainWindow):
             self.session_collapse_button.setVisible(True)
             self.plot_controls_collapse_button.setVisible(True)
 
-            # Update icons based on current *actual* visibility state of sidebars
-            self._update_sidebar_button_icon(self.session_collapse_button, self.left_sidebar_widget.isVisible(), is_left=True)
-            self._update_sidebar_button_icon(self.plot_controls_collapse_button, self.right_sidebar_widget.isVisible(), is_left=False)
+            # Update icons based on *current width* (more reliable during animation)
+            self._update_sidebar_button_icon(self.session_collapse_button, self.left_sidebar_widget.width() > 0, is_left=True)
+            self._update_sidebar_button_icon(self.plot_controls_collapse_button, self.right_sidebar_widget.width() > 0, is_left=False)
 
-            # Ensure sidebars are potentially visible (geometry/animation handles appearance)
-            # No setVisible calls needed here, _reposition handles geometry         
+            # Ensure sidebars are visible if they have width > 0
+            # (Animation handles the actual hiding/showing based on width)
+            if self.left_sidebar_widget.width() > 0: self.left_sidebar_widget.setVisible(True)
+            if self.right_sidebar_widget.width() > 0: self.right_sidebar_widget.setVisible(True)         
 
         else:
-            # --- State when NO valid session is loaded ---
             if self.central_stack.currentIndex() != 1: self.central_stack.setCurrentIndex(1)
 
             # Hide buttons
             self.session_collapse_button.setVisible(False)
             self.plot_controls_collapse_button.setVisible(False)
-            # Hide sidebars directly (no animation needed when invalid)
-            if self.left_sidebar_widget.isVisible(): self.left_sidebar_widget.setVisible(False)
-            if self.right_sidebar_widget.isVisible(): self.right_sidebar_widget.setVisible(False)
+
+            # Hide sidebars immediately (stop animations if running)
+            if self.left_animation_group and self.left_animation_group.state() == QParallelAnimationGroup.Running: self.left_animation_group.stop()
+            if self.right_animation_group and self.right_animation_group.state() == QParallelAnimationGroup.Running: self.right_animation_group.stop()
+            self.left_sidebar_widget.setVisible(False); self.left_sidebar_widget.setGeometry(0, self.left_sidebar_widget.y(), 0, self.left_sidebar_widget.height()) # Reset geom
+            self.right_sidebar_widget.setVisible(False); self.right_sidebar_widget.setGeometry(self.width(), self.right_sidebar_widget.y(), 0, self.right_sidebar_widget.height()) # Reset geom
 
         # Reposition elements after visibility/state changes might affect layout needs
         # QTimer.singleShot(0, self._reposition_floating_widgets) # Schedule reposition slightly later
