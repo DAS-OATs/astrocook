@@ -5,22 +5,30 @@ import os
 from PySide6.QtCore import ( # <<< Modify this import
     Qt, QStringListModel, QSize,
     QItemSelectionModel, # <<< Add QItemSelectionModel
+    QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup
 )
-from PySide6.QtGui import QAction, QIcon, QPalette, QFont # Import QPalette
+from PySide6.QtGui import QAction, QDoubleValidator # Import QPalette
 from PySide6.QtWidgets import (
     QCheckBox, 
-    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QLabel, QDockWidget, QListView, QFileDialog, QApplication, 
-    QPushButton, QSizePolicy, QSpacerItem, QStyle
+    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QFileDialog, QApplication, 
+    QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
 
 from .pyside_plot import SpectrumPlotWidget
 from ..session import load_session_from_file
+try:
+    from ...v1.functions import trans_parse
+    from ...v1.vars import xem_d
+    V1_FUNCTIONS_AVAILABLE = True
+except ImportError:
+    logging.error("Could not import V1 functions (trans_parse, xem_d) needed for redshift cursor.")
+    V1_FUNCTIONS_AVAILABLE = False
 
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = 300
-RIGHT_SIDEBAR_WIDTH = 300
+RIGHT_SIDEBAR_WIDTH = 200
 ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 20
 BUTTON_HEIGHT = 30
@@ -133,29 +141,85 @@ class MainWindowV2(QMainWindow):
         self.left_sidebar_widget.setVisible(False)
 
     def _setup_right_sidebar(self):
-        """Creates the right sidebar widget as a child of the main window."""
-        self.right_sidebar_widget = QWidget(self) # ** Parent is main window **
+        """Creates the right sidebar widget with plot toggles and cursor controls."""
+        self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10); sidebar_layout.setSpacing(8)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(15) # Increase spacing between sections
 
-        # --- Checkboxes ---
-        self.error_checkbox = QCheckBox("Show 1σ Error"); # ... setup ...
-        self.continuum_checkbox = QCheckBox("Show Continuum"); # ... setup ...
-        self.error_checkbox.setChecked(True); self.error_checkbox.stateChanged.connect(self._trigger_replot)
-        self.continuum_checkbox.setChecked(False); self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
-        sidebar_layout.addWidget(self.error_checkbox)
-        sidebar_layout.addWidget(self.continuum_checkbox)
-        # ... (spacer) ...
+        # --- Plot Element Toggles ---
+        plot_toggles_layout = QVBoxLayout() # Group toggles
+        plot_toggles_layout.setSpacing(8)
+        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>")) # Section title
+
+        self.error_checkbox = QCheckBox("1-sigma error"); self.error_checkbox.setChecked(True)
+        self.error_checkbox.stateChanged.connect(self._trigger_replot)
+        plot_toggles_layout.addWidget(self.error_checkbox)
+
+        self.continuum_checkbox = QCheckBox("Continuum"); self.continuum_checkbox.setChecked(True)
+        self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
+        plot_toggles_layout.addWidget(self.continuum_checkbox)
+
+        self.model_checkbox = QCheckBox("Model"); self.model_checkbox.setChecked(True)
+        self.model_checkbox.stateChanged.connect(self._trigger_replot)
+        plot_toggles_layout.addWidget(self.model_checkbox)
+
+        self.systems_checkbox = QCheckBox("Systems"); self.systems_checkbox.setChecked(True) # Often useful default
+        self.systems_checkbox.stateChanged.connect(self._trigger_replot)
+        plot_toggles_layout.addWidget(self.systems_checkbox)
+
+        # self.lines_checkbox = QCheckBox("Lines"); self.lines_checkbox.setChecked(False) # Add if needed
+        # self.lines_checkbox.stateChanged.connect(self._trigger_replot)
+        # plot_toggles_layout.addWidget(self.lines_checkbox)
+
+        sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
+    
+        # --- Redshift Cursor Controls ---
+        cursor_layout = QVBoxLayout() # Group cursor controls
+        cursor_layout.setSpacing(8)
+        cursor_layout.addWidget(QLabel("<b>Redshift Cursor:</b>")) # Section title
+
+        # Use QFormLayout for label-input pairs
+        form_layout = QFormLayout()
+        form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        form_layout.setLabelAlignment(Qt.AlignLeft) # Align labels left
+        form_layout.setSpacing(5)
+
+        self.cursor_series_input = QLineEdit("Ly_a") # Default series
+        self.cursor_z_input = QLineEdit("0.0") # Default redshift
+        # Add validator for redshift input
+        z_validator = QDoubleValidator()
+        # ** Set locale to one using period (e.g., C locale or en_US) **
+        z_validator.setLocale(QLocale.C) # Force C locale (period decimal separator)
+        z_validator.setNotation(QDoubleValidator.StandardNotation)
+        self.cursor_z_input.setValidator(z_validator)
+
+        form_layout.addRow("Series:", self.cursor_series_input)
+        form_layout.addRow("Redshift:", self.cursor_z_input)
+        cursor_layout.addLayout(form_layout) # Add form to cursor group
+
+        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
+        cursor_layout.addWidget(self.cursor_show_checkbox)
+
+        sidebar_layout.addLayout(cursor_layout) # Add group to main layout
+
+        # Connect signals for cursor updates
+        self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
+        self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
+        self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) # Just replot on show/hide
+
+        # --- Spacer ---
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
+        # Assign object names for styling if needed
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
+        self.model_checkbox.setObjectName("PlotControlCheckbox")
+        self.systems_checkbox.setObjectName("PlotControlCheckbox")
+        self.cursor_show_checkbox.setObjectName("PlotControlCheckbox")
 
-        # Initial geometry set later, start hidden/collapsed
-        self.right_sidebar_widget.resize(0, self.height()) # Set initial size for geometry
-        self.right_sidebar_widget.move(self.width(), self.right_sidebar_widget.y()) # Also set initial X pos offscreen
         self.right_sidebar_widget.setVisible(False)
 
     def _setup_collapse_buttons(self):
@@ -183,6 +247,13 @@ class MainWindowV2(QMainWindow):
         if self.plot_viewer: # Check if plot viewer exists
             # Call the plot function, which will now read checkbox states
             self.plot_viewer.plot_spectrum()
+
+    def _update_cursor_and_replot(self):
+        """Slot called when cursor series or redshift changes."""
+        # Optional: Add validation for series input here if needed
+        # (e.g., check if series exists in xem_d)
+        if self.cursor_show_checkbox.isChecked(): # Only replot if cursor is visible
+            self._trigger_replot()
 
     def _create_menubar(self):
         menu_bar = self.menuBar()
@@ -252,7 +323,7 @@ class MainWindowV2(QMainWindow):
             sidebar_r = sidebar_base_color.red()
             sidebar_g = sidebar_base_color.green()
             sidebar_b = sidebar_base_color.blue()
-            sidebar_a = 0.5 # Alpha value (0.0 to 1.0), e.g., 90% opaque
+            sidebar_a = 0.7 # Alpha value (0.0 to 1.0), e.g., 90% opaque
 
             sidebar_bg = palette.color(palette.ColorRole.Button).name()
             item_selected_bg = palette.color(palette.ColorRole.Highlight).name()
@@ -260,6 +331,7 @@ class MainWindowV2(QMainWindow):
             #item_hover_bg = palette.color(palette.ColorRole.Highlight).name()
             border_color = palette.color(palette.ColorRole.Mid).name()
             button_fg = palette.color(palette.ColorRole.ButtonText).name()
+            text_color = palette.color(palette.ColorRole.Text).name()
         except Exception as e:
             logging.warning(f"Could not query palette: {e}. Using fallback colors.")
             sidebar_r, sidebar_g, sidebar_b = 224, 224, 224 # RGB for #E0E0E0
@@ -285,11 +357,27 @@ class MainWindowV2(QMainWindow):
             /* Selected/Hover items should be opaque */
             QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
             
-            /* Ensure Checkboxes are NOT transparent */
+            /* Right Sidebar Checkboxes & Labels */
+            QWidget#PlotControlsContainer QLabel {{ /* Style section labels */
+                margin-bottom: 4px; /* Space below label */
+            }}
             QCheckBox#PlotControlCheckbox {{
-                color: {button_fg}; spacing: 5px; padding: 4px 0px;
-                background-color: transparent; /* Let container show through */
-                padding-left: 15px;
+                color: {text_color}; spacing: 5px; padding: 2px 0px; /* Reduced padding */
+                background-color: transparent; padding-left: 15px; /* Indentation */
+            }}
+            /* Style LineEdits for Cursor */
+            QWidget#PlotControlsContainer QLineEdit {{
+                padding: 3px;
+                border: 1px solid {border_color};
+                border-radius: 3px;
+                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
+                color: {text_color};
+            }}
+            /* Style Form Layout labels */
+            QWidget#PlotControlsContainer QFormLayout QLabel {{ /* More specific selector */
+                color: {text_color};
+                margin-bottom: 0px; /* Override default label margin */
+                padding-top: 4px; /* Align better with LineEdit */
             }}
 
             /* Collapse Buttons: Blend, NO borders */
