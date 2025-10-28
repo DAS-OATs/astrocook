@@ -40,7 +40,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         #self.axes.grid(True, which='major', linestyle=':', alpha=0.6)
         
         # Apply the tight layout after setting up the axes
-        #fig.tight_layout()
+        fig.tight_layout()
 
         super(MatplotlibCanvas, self).__init__(fig)
         
@@ -188,7 +188,7 @@ class AstrocookToolbar(NavigationToolbar):
     def __init__(self, canvas, parent):
         # 1. Base Class Initialization: This CREATES and stores the C++ QAction objects.
         # This MUST run first.
-        super().__init__(canvas, parent, coordinates=False) 
+        super().__init__(canvas, parent, coordinates=True) 
         self.viewer_parent = parent
 
         # 2. Final cleanup (Remove unwanted actions created by the base class)

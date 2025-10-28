@@ -54,10 +54,6 @@ class V1ArchiveManager:
             shutil.rmtree(self.temp_dir)
             logging.debug(f"Cleaned up temporary directory: {self.temp_dir}")
 
-# Register cleanup method to run when the application exits (crucial for stability)
-import atexit
-atexit.register(V1ArchiveManager.cleanup)
-
 def create_mock_v1_spectrum(hdul):
     """Creates a mock V1 Spectrum object with the correct size from HDUL."""
     from astropy import units as au
