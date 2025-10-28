@@ -28,24 +28,46 @@ try:
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
+    logging.error("V1 functions/vars not found, cursor/system plotting may fail.")
+    
+# --- Helper function for inverse Z calculation ---
+def z_convert_inverse(x_plot, xem_nm, zem_spec, x_unit):
+    """Converts plot X coordinate back to redshift for a given line."""
+    if not V1_FUNCTIONS_AVAILABLE or not isinstance(x_unit, au.UnitBase):
+        logging.warning("Cannot perform inverse Z conversion: V1 functions/units unavailable.")
+        return None
+    try:
+        # Convert plot x back to observed wavelength in nm
+        x_obs_nm = x_convert(x_plot * x_unit, zem=zem_spec, xunit=au.nm).to_value(au.nm)
+        # Calculate redshift
+        z = (x_obs_nm / xem_nm) - 1.0
+        return z
+    except Exception as e:
+        logging.debug(f"Inverse z conversion failed for x={x_plot} ({x_unit}): {e}")
+        return None
+# -----------------------------------------------
+
+# --- Helper to get colors ---
+def get_color_cycle(n=10, fallback_cmap='viridis'):
+    # ... (function definition as before) ...
+    try:
+        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        return [colors[i % len(colors)] for i in range(n)]
+    except Exception as e:
+        logging.warning(f"Could not get color cycle: {e}. Using fallback.")
+        cmap = plt.get_cmap(fallback_cmap); return [cmap(i / n) for i in range(n)]
+# ----------------------------
+
+
 class MatplotlibCanvas(FigureCanvasQTAgg):
-    """A custom Matplotlib canvas for embedding in a PySide widget."""
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-
-        # --- Apply Matplotlib Style ---
+    """A custom Matplotlib canvas enabling blitting for cursor dragging."""
+    def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
         try:
-            plt.style.use(['science', 'nature','fast'])
-            params = {'legend.fontsize': 11,
-                      'axes.labelsize': 11,
-                      'axes.titlesize': 12,
-                      'xtick.labelsize': 10,
-                      'ytick.labelsize': 10}
-            plt.rcParams.update(params)
+            plt.style.use(['science', 'fast'])
         except Exception as e:
-            logging.warning(f"Could not apply 'scienceplots' style: {e}. Using default.")
-            plt.style.use('fast') # Fallback to fast
+            logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
+            plt.style.use('fast')
 
-        # Create a Matplotlib Figure object
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
 
@@ -57,7 +79,13 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         fig.tight_layout()
 
         super(MatplotlibCanvas, self).__init__(fig)
-        
+
+        # We rely on the QtAgg backend's native speed for now.
+        if parent:
+            self.setParent(parent)
+
+        self.plot_widget = plot_widget # Store reference
+
         # NOTE: Blitting is usually handled automatically by NavigationToolbar2QT,
         # but performance issues can arise if the canvas draw method is overriding defaults.
         # Check that you are not suppressing the backend's default interactive rendering.
@@ -67,29 +95,180 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         #from matplotlib import rcParams
         #rcParams['path.simplify_threshold'] = 1.0 # Simplify plotting paths
         
-        # We rely on the QtAgg backend's native speed for now.
-        if parent:
-            self.setParent(parent)
+        # --- Blitting Attributes ---
+        self.background = None # Store the clean background pixels
+        self.cursor_artists = [] # Store references to the cursor axvline objects
+        self.draw_event_cid = None # Store connection ID for draw_event
+        
+        # ---------------------------
 
-    def _on_draw_event(self, event):
-        """Captures the canvas background after the first full draw."""
-        # This hook ensures we only try to capture the background once, after axes are ready.
-        if not self.blit_initialized and self.figure.get_size_inches().any():
-            self.background = self.copy_from_bbox(self.figure.bbox)
-            self.blit_initialized = True
+        # --- Dragging Attributes ---
+        # self.dragging_cursor = False
+        # self.active_cursor_line = None # Optional: Store the specific line being dragged
+        # ---------------------------
+
+        # Connect Matplotlib events
+        # self.mpl_connect('button_press_event', self.on_press)
+        # self.mpl_connect('button_release_event', self.on_release)
+        # self.mpl_connect('motion_notify_event', self.on_motion)
+        self.mpl_connect('motion_notify_event', self.on_motion)
+        # draw_event connected dynamically in plot_spectrum
+
+        self.xlim_cid = None
+        self.ylim_cid = None
+
+        self._lim_changed = False
+
+    def on_lim_changed(self, axes):
+        """Callback for xlim_changed or ylim_changed events."""
+        # Invalidate the background cache whenever limits change
+        logging.debug(f"Limits changed ({axes.get_label()}): Invalidating blit background.")
+        self._lim_changed = True
+        self.background = None
+        # The next full draw will recapture the background.
+
+    def _capture_background(self, event):
+        """Callback for draw_event to capture the background for blitting."""
+        # Only capture if needed (background is None) and canvas size is valid
+        if self.background is None and self.figure.get_size_inches().any():
+            # Check if axes bounding box is valid before copying
+            if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
+                self.background = self.copy_from_bbox(self.axes.bbox)
+                logging.debug("Captured background for blitting.")
+                print("DEBUG: **** Background CAPTURED ****")
+            else:
+                logging.debug("Skipped background capture - axes bbox invalid.")
+        else:
+            logging.debug("Skipped background capture - already captured or canvas size invalid.")
+
+        # Crucial: Disconnect immediately to prevent re-capturing during animation redraws
+        if self.draw_event_cid is not None:
+            try: self.mpl_disconnect(self.draw_event_cid)
+            except Exception: pass
+            self.draw_event_cid = None
+
+    def draw_animated(self):
+        """Redraws only the animated artists using blitting."""
+        if self.background is None and self._lim_changed == True and hasattr(self, 'plot_widget'):
+            logging.debug("draw_animated called before background captured.")
+            print("DEBUG: draw_animated: Background is None! Triggering draw_idle.") # <<< MORE VISIBLE DEBUG
+            #self.draw_idle()
+            self._lim_changed = False
+            self.plot_widget.plot_spectrum() # Force full redraw to recreate artists
+            return # Wait for first full draw
+
+        # ** 1. Save current axes limits **
+        #current_xlim = self.axes.get_xlim()
+        #current_ylim = self.axes.get_ylim()
+        # logging.debug(f"draw_animated: Saving limits X={current_xlim}, Y={current_ylim}") # Optional debug
+
+        # 2. Restore the clean background
+        self.restore_region(self.background)
+
+        # 3. Draw *only* the cursor artists
+        drawn_artists = []
+        for artist in self.cursor_artists:
+            try:
+                self.axes.draw_artist(artist)
+                drawn_artists.append(artist) # Keep track if successful
+            except Exception as e:
+                 logging.error(f"Error drawing animated artist {artist}: {e}")
+
+        # ** 4. Restore axes limits BEFORE blitting **
+        # This prevents blit/backend from potentially using reset limits
+        #self.axes.set_xlim(current_xlim)
+        #self.axes.set_ylim(current_ylim)
+        # logging.debug(f"draw_animated: Restored limits X={current_xlim}, Y={current_ylim}") # Optional debug
 
 
-def get_color_cycle(n=10, fallback_cmap='viridis'):
-    """Gets the current axes.prop_cycle colors, with a fallback."""
-    try:
-        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        # Ensure we have enough colors, cycle if needed
-        return [colors[i % len(colors)] for i in range(n)]
-    except Exception as e:
-        logging.warning(f"Could not get color cycle from rcParams: {e}. Using fallback cmap.")
-        # Fallback using a colormap
-        cmap = plt.get_cmap(fallback_cmap)
-        return [cmap(i / n) for i in range(n)]
+        # 5. Update only the necessary parts of the screen (blit)
+        if drawn_artists:
+            try:
+                self.blit(self.axes.bbox)
+            except Exception as e: # Catch potential backend blitting errors
+                logging.error(f"Blitting failed: {e}. Falling back to draw_idle.")
+                self.draw_idle() # Fallback if blit fails
+
+
+    def on_press(self, event):
+        """Initiates cursor drag OR handles other clicks."""
+        # ... (Safety check for plot_widget/main_window) ...
+        if not self.plot_widget or not hasattr(self.plot_widget, 'main_window') or not self.plot_widget.main_window: return
+
+        main_window = self.plot_widget.main_window
+
+        if event.button == 3 and event.inaxes == self.axes:
+             logging.debug("Right-click detected.")
+             # Add context menu logic here if needed later
+
+
+    def on_motion(self, event):
+        """Handles mouse motion: Updates cursor position if active."""
+        # Safety checks
+        if (not self.plot_widget or not hasattr(self.plot_widget, 'main_window')
+            or not self.plot_widget.main_window):
+            # logging.debug("on_motion: plot_widget or main_window invalid.")
+            return
+
+        main_window = self.plot_widget.main_window # type: MainWindowV2
+
+        # Check if inside axes and cursor checkbox is checked
+        if (event.inaxes == self.axes and event.xdata is not None
+            and main_window.cursor_show_checkbox.isChecked()):
+
+            # --- Always update on motion if cursor is active ---
+            mouse_x = event.xdata
+            spec = self.plot_widget.session_manager.spec
+            if not spec: return
+
+            try:
+                # Calculate new_z based on mouse_x
+                series_str = main_window.cursor_series_input.text(); transitions = trans_parse(series_str)
+                if not transitions or not V1_FUNCTIONS_AVAILABLE: return
+                ref_transition = None; ref_xem_nm = None
+                for t in transitions:
+                    if t in xem_d: ref_transition = t; ref_xem_nm = xem_d[t].to_value(au.nm); break
+                if ref_xem_nm is None: return
+                zem_spec = getattr(spec, '_zem', 0.0); x_unit = spec.x.unit
+                new_z = z_convert_inverse(mouse_x, ref_xem_nm, zem_spec, x_unit)
+
+                if new_z is not None:
+                    # Update QLineEdit (no need for blockSignals if not dragging)
+                    current_text_z = None
+                    try: current_text_z = float(main_window.cursor_z_input.text())
+                    except ValueError: pass
+                    # Update text only if significantly different to avoid excessive signals
+                    if current_text_z is None or not np.isclose(new_z, current_text_z, atol=1e-7):
+                        main_window.cursor_z_input.setText(f"{new_z:.7f}")
+
+                    # Update Artist Positions & Redraw using Blit
+                    new_x_positions = self.plot_widget.get_cursor_line_positions_at_z(new_z)
+
+                    # Ensure artists exist and match count
+                    if not self.cursor_artists or len(new_x_positions) != len(self.cursor_artists):
+                        # Force a full redraw if artists are missing/mismatched
+                        logging.warning("Cursor artists missing or mismatched on motion. Forcing full redraw.")
+                        self.plot_widget.plot_spectrum() # Recreate artists
+                    else:
+                        # Update existing artists
+                        for artist, x_pos in zip(self.cursor_artists, new_x_positions):
+                            artist.set_xdata([x_pos])
+                        self.draw_animated() # Use blitting redraw
+
+            except Exception as e:
+                logging.error(f"Error during cursor hover update: {e}", exc_info=True)
+        # else:
+            # Optional: Clear coordinate display if outside axes or cursor off?
+            # Toolbar should handle clearing coordinate display by default.
+            # pass
+
+    def on_release(self, event):
+        """Handles mouse button release events to stop cursor drag."""
+        # ... (Safety checks) ...
+        if not self.plot_widget: return
+
+        pass
+
 class SpectrumPlotWidget(QWidget):
     """
     Refactored widget that contains the plot canvas, toolbar, and toggles.
@@ -104,7 +283,7 @@ class SpectrumPlotWidget(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         # 1. Canvas
-        self.canvas = MatplotlibCanvas(self)
+        self.canvas = MatplotlibCanvas(parent=self, plot_widget=self)
         self.main_layout.addWidget(self.canvas, 1)
 
         # 2. Toolbar (NO Checkboxes here anymore)
@@ -127,18 +306,34 @@ class SpectrumPlotWidget(QWidget):
         ax = self.canvas.axes
 
         # ** Store current limits BEFORE clearing **
-        was_zoomed = False
-        current_xlim = ax.get_xlim()
-        current_ylim = ax.get_ylim()
-        # Check if axes were not in default state (0,1) or uninitialized
-        if current_xlim != (0.0, 1.0) or current_ylim != (0.0, 1.0):
-             # More robust check: are limits valid numbers and different?
-             if all(isinstance(v, (int, float)) for v in current_xlim + current_ylim) and \
-                current_xlim[0] != current_xlim[1] and current_ylim[0] != current_ylim[1]:
-                 was_zoomed = True
-                 logging.debug(f"Plot was zoomed. Xlim={current_xlim}, Ylim={current_ylim}")
+        # ** Make sure to store current xlim/ylim BEFORE ax.clear() **
+        was_zoomed = False; current_xlim = (0.0, 1.0); current_ylim = (0.0, 1.0) # Initialize
+        try: # Get current limits robustly
+             current_xlim = ax.get_xlim()
+             current_ylim = ax.get_ylim()
+             if current_xlim != (0.0, 1.0) or current_ylim != (0.0, 1.0):
+                 if all(isinstance(v,(int,float)) for v in current_xlim+current_ylim) and \
+                    current_xlim[0]!=current_xlim[1] and current_ylim[0]!=current_ylim[1]:
+                      was_zoomed = True
+        except Exception: pass # Ignore if axes not ready
+        ax.clear() # Now clear axes
 
-        ax.clear() # Clear after getting limits
+        # ** Reconnect limit change callbacks here **
+        # Disconnect previous first, just in case
+        if self.canvas.xlim_cid is not None:
+            try: self.canvas.axes.callbacks.disconnect(self.canvas.xlim_cid)
+            except Exception: pass
+        if self.canvas.ylim_cid is not None:
+            try: self.canvas.axes.callbacks.disconnect(self.canvas.ylim_cid)
+            except Exception: pass
+        # Reconnect
+        try:
+            self.canvas.xlim_cid = self.canvas.axes.callbacks.connect('xlim_changed', self.canvas.on_lim_changed)
+            self.canvas.ylim_cid = self.canvas.axes.callbacks.connect('ylim_changed', self.canvas.on_lim_changed)
+            logging.debug("Reconnected limit change callbacks in plot_spectrum.")
+        except Exception as e:
+            logging.error(f"Failed to reconnect limit callbacks: {e}")
+        # ----------------------------------------
 
         # ** Determine Legend Location **
         legend_loc = 'best' # Default
@@ -161,7 +356,11 @@ class SpectrumPlotWidget(QWidget):
             legend_loc = 'best' # Fallback
         # -----------------------------
 
-
+        # ** Reset background and clear artists for blitting **
+        self.canvas.background = None
+        self.canvas.cursor_artists = []
+        # ----------------------------------------------------
+        
         if spec and len(spec.x) > 0:
             
             # --- V2 Data Access: Retrieve data and check for safety ---
@@ -264,33 +463,27 @@ class SpectrumPlotWidget(QWidget):
             # 6. Plot Redshift Cursor
             if self.main_window.cursor_show_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE:
                 try:
-                    series_str = self.main_window.cursor_series_input.text()
                     z_cursor = float(self.main_window.cursor_z_input.text())
-                    transitions = trans_parse(series_str)
-                    xlim = ax.get_xlim() # Get current limits
+                    # Calculate positions using helper
+                    cursor_x_positions = self.get_cursor_line_positions_at_z(z_cursor)
                     added_cursor_label = False
-                    for t in transitions:
-                        if t in xem_d:
-                            xem_nm = xem_d[t].to_value(au.nm)
-                            x_obs = (1 + z_cursor) * xem_nm * au.nm
-                            # Convert to plot's x-unit
-                            try:
-                                zem = getattr(spec, '_zem', 0.0)
-                                x_plot = x_convert(x_obs, zem=zem, xunit=spec.x.unit).value
-                            except Exception: continue # Skip if conversion fails
+                    colors = get_color_cycle(5) # Get colors
 
-                            if xlim[0] <= x_plot <= xlim[1]:
-                                label = f"Cursor (z={z_cursor:.4f})" if not added_cursor_label else None
-                                ax.axvline(x_plot, ls='--', color='blue', alpha=0.8, lw=1.0, label=label)
-                                added_cursor_label = True
-                        else:
-                             logging.warning(f"Cursor transition '{t}' for series '{series_str}' not found in xem_d.")
-
-                except ValueError:
-                    logging.warning("Invalid redshift value entered for cursor.")
+                    for x_plot in cursor_x_positions:
+                        # ** REMOVED check against xlim_plot **
+                        # if xlim_plot[0] <= x_plot <= xlim_plot[1]:
+                        label = f"Cursor (z={z_cursor:.4f})" if not added_cursor_label else None
+                        line = self.canvas.axes.axvline(x_plot, ls='--', color=colors[3],
+                                                         alpha=0.8, lw=1.0, label=label,
+                                                         animated=True) # <<< ANIMATED
+                        self.canvas.cursor_artists.append(line)
+                        added_cursor_label = True # Only label first line potentially visible
+                        # *************************************
+                    logging.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
+                except (ValueError, AttributeError) as e:
+                    logging.warning(f"Could not draw cursor lines: {e}")
                 except Exception as e:
-                    logging.error(f"Error drawing redshift cursor: {e}")
-            # -----------------------------------------------
+                    logging.error(f"Unexpected error drawing cursor: {e}", exc_info=True)  
 
             # 4. Final Touches
             if ax.has_data(): # Only add legend if something was plotted
@@ -315,6 +508,12 @@ class SpectrumPlotWidget(QWidget):
             ax.clear() # Clear axes even if no data
             ax.set_title("No Spectrum Data Loaded") 
 
+        # Disconnect any previous connection first
+        if self.canvas.draw_event_cid is not None:
+            try: self.canvas.mpl_disconnect(self.canvas.draw_event_cid)
+            except Exception: pass # Ignore if already disconnected
+        self.canvas.draw_event_cid = self.canvas.mpl_connect('draw_event', self.canvas._capture_background)
+
         # Redraw the canvas
         if initial_draw:
             self.canvas.draw()
@@ -324,6 +523,34 @@ class SpectrumPlotWidget(QWidget):
         # NOTE: You must update the self.session reference here if the session changes.
         # This function will be called by update_plot().
 
+    def get_cursor_line_positions_at_z(self, z_cursor):
+        """Helper to get theoretical X positions for cursor lines at a specific Z."""
+        positions = []
+        spec = self.session_manager.spec
+        main_window = self.main_window # type: MainWindowV2
+        if not spec or not V1_FUNCTIONS_AVAILABLE: return []
+        try:
+            series_str = main_window.cursor_series_input.text()
+            transitions = trans_parse(series_str)
+            zem = getattr(spec, '_zem', 0.0) # Get spec RF z
+            x_unit = spec.x.unit # Get spec current x unit
+
+            for t in transitions:
+                if t in xem_d:
+                    xem_nm = xem_d[t].to_value(au.nm)
+                    x_obs = (1 + z_cursor) * xem_nm * au.nm
+                    try:
+                        # Convert observed nm to current plot unit
+                        x_plot = x_convert(x_obs, zem=zem, xunit=x_unit).value
+                        positions.append(x_plot)
+                    except Exception as e:
+                        logging.debug(f"Cursor pos calculation failed for {t}: {e}")
+                        continue # Skip this transition if conversion fails
+        except (ValueError, AttributeError, ImportError) as e:
+            logging.warning(f"Could not calculate cursor positions: {e}")
+            return []
+        return positions
+    
     def update_plot(self, new_session):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.session_manager = new_session
