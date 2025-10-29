@@ -10,7 +10,7 @@ from PySide6.QtCore import ( # <<< Modify this import
     QParallelAnimationGroup,
     QSize, QStringListModel, QTimer
 )
-from PySide6.QtGui import QAction, QDoubleValidator # Import QPalette
+from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QDialog, QFileDialog, 
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QMessageBox,
@@ -46,6 +46,9 @@ class MainWindowV2(QMainWindow):
         self.left_animation_group = None
         self.right_animation_group = None
 
+        # ** Add History Index **
+        self.history_index = -1 # Index of the currently active session in active_sessions
+
         self.setGeometry(100, 100, 450, 150) # Initial small size
         screen_geometry = QApplication.primaryScreen().geometry()
         x = (screen_geometry.width() - self.width()) // 2
@@ -70,7 +73,13 @@ class MainWindowV2(QMainWindow):
 
         # --- Initial State ---
         is_initial_session_valid = bool(self.session_manager.spec and len(self.session_manager.spec.x) > 0)
-        self._update_ui_state(is_initial_session_valid, is_startup=True)
+        # Add the initial session (if valid) *without* triggering history truncation
+        if is_initial_session_valid:
+            self._add_session_internal(session, is_initial=True) # Use internal add
+        else:
+            self._update_ui_state(False, is_startup=True) # Show empty state
+
+        self._update_undo_redo_actions() # Set initial state
 
     def resizeEvent(self, event):
         """Handle window resizing to reposition floating elements."""
@@ -292,6 +301,20 @@ class MainWindowV2(QMainWindow):
 
         # --- Add QActions for V2 Recipes ---
         
+        # ** Undo Action **
+        self.undo_action = QAction("&Undo", self)
+        self.undo_action.setShortcut(QKeySequence.Undo) # Standard shortcut (Ctrl+Z / Cmd+Z)
+        self.undo_action.triggered.connect(self._undo_last_action)
+        edit_menu.addAction(self.undo_action)
+
+        # ** Redo Action **
+        self.redo_action = QAction("&Redo", self)
+        self.redo_action.setShortcut(QKeySequence.Redo) # Standard shortcut (Ctrl+Y / Cmd+Shift+Z)
+        self.redo_action.triggered.connect(self._redo_last_action)
+        edit_menu.addAction(self.redo_action)
+
+        edit_menu.addSeparator()
+
         # RECIPES FOR 'EDIT' MENU (x_convert, y_convert)
         
         # x_convert Action
@@ -315,6 +338,8 @@ class MainWindowV2(QMainWindow):
         self.rebin_action = rebin_action; rebin_action.setEnabled(False)
 
         # ... (Other menu item actions will be added here later) ...
+
+        self._update_undo_redo_actions()
 
     def _launch_recipe_dialog(self, category, name):
         """Creates and executes the RecipeDialog for the specified recipe."""
@@ -586,52 +611,103 @@ class MainWindowV2(QMainWindow):
             logging.error("update_gui_session_state received invalid session object.")
             return
 
-        if is_branching:
-            logging.debug(f"Adding new session (branching recipe) at index {original_session_index + 1}")
-            # Insert the new session after the original one
-            insert_pos = original_session_index + 1
-            self.active_sessions.insert(insert_pos, new_session)
-            # Update the list model
-            self.session_model.insertRow(insert_pos)
-            self.session_model.setData(self.session_model.index(insert_pos), new_session.name)
-            # Set the new session as active
-            self.update_session(new_session, set_current_list_item=True)
-        else:
-            logging.debug(f"Replacing session at index {original_session_index}")
-            # Replace the old session with the new one
-            if 0 <= original_session_index < len(self.active_sessions):
-                self.active_sessions[original_session_index] = new_session
-                # Update the list model item text
-                self.session_model.setData(self.session_model.index(original_session_index), new_session.name)
-                # Ensure the updated session is set as active (important if multiple sessions were open)
-                self.update_session(new_session, set_current_list_item=True)
-            else:
-                 # Should not happen if index is correct, but handle defensively
-                 logging.warning("Original session index invalid during update. Appending new session.")
-                 self.add_session(new_session) # Fallback to adding
+        # ** 1. Truncate history beyond the current point **
+        # If user did Undo, then performed an action, remove the 'redoable' states
+        current_len = len(self.active_sessions)
+        if self.history_index < current_len - 1:
+            logging.debug(f"Truncating history: removing {current_len - 1 - self.history_index} states.")
+            del self.active_sessions[self.history_index + 1:]
+            # Update model (remove rows from the end)
+            self.session_model.removeRows(self.history_index + 1, current_len - 1 - self.history_index)
 
-    def update_session(self, new_session, set_current_list_item=False):
-        """Swaps the central session manager object and updates the view."""
-        self.session_manager = new_session
-        is_valid = bool(new_session and new_session.spec and len(new_session.spec.x) > 0)
+        # ** 2. Append the new state (Works for both linear and branching after truncation) **
+        insert_pos = self.history_index + 1
+        logging.debug(f"Adding new session state at index {insert_pos} (Branching={is_branching})")
+        self.active_sessions.insert(insert_pos, new_session)
+        self.session_model.insertRow(insert_pos)
+        self.session_model.setData(self.session_model.index(insert_pos), new_session.name)
+        self.history_index = insert_pos # New state becomes current
 
-        # This call now handles all UI state changes correctly
-        self._update_ui_state(is_valid, is_startup=(len(self.active_sessions) <= 1) ) # Pass startup hint
+        # ** 3. Update the view to show the new state **
+        self._update_view_for_session(new_session, set_current_list_item=True)
+        self._update_undo_redo_actions()
+
+    def _add_session_internal(self, new_session, is_initial=False):
+        """Internal helper to add a session to the list and model, updating history index."""
+        if new_session is None or isinstance(new_session, int): return
+
+        # On initial load or explicit add, truncate any potential redo history
+        if not is_initial and self.history_index < len(self.active_sessions) - 1:
+            del self.active_sessions[self.history_index + 1:]
+            self.session_model.removeRows(self.history_index + 1, len(self.active_sessions) - 1 - self.history_index)
+
+        # Append
+        self.active_sessions.append(new_session)
+        new_idx = len(self.active_sessions) - 1
+        self.session_model.insertRow(new_idx)
+        self.session_model.setData(self.session_model.index(new_idx), new_session.name)
+        self.history_index = new_idx # Make the newly added session current
+
+    def _update_view_for_session(self, session_to_show: SessionV2, set_current_list_item=False):
+        """Updates the central plot widget and UI state for the given session."""
+        self.session_manager = session_to_show # Update the reference
+        is_valid = bool(session_to_show and session_to_show.spec and len(session_to_show.spec.x) > 0)
+
+        # Update UI visibility etc.
+        self._update_ui_state(is_valid)
 
         if is_valid:
-            self.plot_viewer.update_plot(new_session) # Update plot content
+            self.plot_viewer.update_plot(session_to_show) # Update plot content
             if set_current_list_item:
-                # ... (list item selection logic) ...
+                # Select the corresponding item in the list view
                 try:
-                    idx = self.active_sessions.index(new_session)
-                    q_model_index = self.session_model.index(idx)
+                    # Index in history IS the index in the list/model now
+                    q_model_index = self.session_model.index(self.history_index)
                     selection_model = self.session_list_view.selectionModel()
                     selection_flag = QItemSelectionModel.SelectionFlag.ClearAndSelect
                     selection_model.setCurrentIndex(q_model_index, selection_flag)
-                except (ValueError, IndexError, AttributeError) as e:
-                    logging.warning(f"Could not select session in list view: {e}")
+                except Exception as e:
+                    logging.warning(f"Could not select session index {self.history_index} in list view: {e}")
         else:
-            logging.info("Updating to an empty session view.")
+             logging.info("Updating to an empty session view.")
+
+    def _undo_last_action(self):
+        """Switches the view to the previous state in the history."""
+        if self.history_index > 0:
+            self.history_index -= 1
+            logging.debug(f"Undo: Switching to history index {self.history_index}")
+            session_to_show = self.active_sessions[self.history_index]
+            self._update_view_for_session(session_to_show, set_current_list_item=True)
+            self._update_undo_redo_actions()
+        else:
+            logging.debug("Undo: Already at oldest state.")
+
+    def _redo_last_action(self):
+        """Switches the view to the next state in the history."""
+        if self.history_index < len(self.active_sessions) - 1:
+            self.history_index += 1
+            logging.debug(f"Redo: Switching to history index {self.history_index}")
+            session_to_show = self.active_sessions[self.history_index]
+            self._update_view_for_session(session_to_show, set_current_list_item=True)
+            self._update_undo_redo_actions()
+        else:
+            logging.debug("Redo: Already at newest state.")
+
+    def _update_undo_redo_actions(self):
+        """Enables/disables Undo/Redo actions based on history index."""
+        can_undo = self.history_index > 0
+        can_redo = self.history_index < len(self.active_sessions) - 1
+
+        # ** Add Debug Print **
+        print(f"DEBUG _update_undo_redo: history_index={self.history_index}, "
+              f"len(active_sessions)={len(self.active_sessions)}, "
+              f"Can Undo={can_undo}, Can Redo={can_redo}")
+        # ********************
+
+        if hasattr(self, 'undo_action'):
+            self.undo_action.setEnabled(can_undo)
+        if hasattr(self, 'redo_action'):
+            self.redo_action.setEnabled(can_redo)
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
@@ -723,36 +799,27 @@ class MainWindowV2(QMainWindow):
         print("Launching Rebin Dialog...")
         
 
+# --- Modify add_session (used by _on_open_spectrum) ---
     def add_session(self, new_session, initial_load=False):
-        """Adds a new session object and sets it as active."""
+        """Adds a new session, potentially clearing redo history, and updates view."""
+        self._add_session_internal(new_session, is_initial=initial_load)
+        # Update view to show the newly added session
+        self._update_view_for_session(new_session, set_current_list_item=True)
+        self._update_undo_redo_actions() # Update enabled state
 
-        # Make sure the session object is valid
-        if new_session is None or isinstance(new_session, int):
-             logging.error("add_session received invalid session object.")
-             return
-
-        self.active_sessions.append(new_session)
-
-        # Set session name if not already set during loading
-        if not hasattr(new_session, 'name') or not new_session.name:
-             # Fallback name based on file path if needed
-             new_session.name = os.path.splitext(os.path.basename(getattr(new_session,'path', f"Session_{len(self.active_sessions)}")))[0]
-
-
-        # Update the model list after modification
-        self.session_model.setStringList([s.name for s in self.active_sessions])
-
-        # Set the new session as active and redraw
-        self.update_session(new_session, set_current_list_item=True)
-
+    # --- Modify _on_session_switched ---
     def _on_session_switched(self, index):
-        """Switches the main window's active session when the list view is clicked."""
+        """Sets the active history index when the list view is clicked."""
         try:
-            session_index = index.row()
-            if 0 <= session_index < len(self.active_sessions):
-                new_active_session = self.active_sessions[session_index]
-                self.update_session(new_active_session)
+            new_history_index = index.row()
+            if 0 <= new_history_index < len(self.active_sessions):
+                 if new_history_index != self.history_index: # Only update if changed
+                     logging.debug(f"Session list clicked: Setting history index to {new_history_index}")
+                     self.history_index = new_history_index
+                     session_to_show = self.active_sessions[self.history_index]
+                     self._update_view_for_session(session_to_show, set_current_list_item=False) # View update, no need to re-select list item
+                     self._update_undo_redo_actions()
             else:
-                 logging.warning(f"Invalid index {session_index} clicked in session list.")
+                 logging.warning(f"Invalid index {new_history_index} clicked in session list.")
         except Exception as e:
-            logging.error(f"Error switching session: {e}")
+            logging.error(f"Error switching session via list click: {e}")
