@@ -3,21 +3,23 @@
 import logging
 import os
 from PySide6.QtCore import ( # <<< Modify this import
-    Qt, QStringListModel, QSize,
+    Qt,
     QItemSelectionModel, # <<< Add QItemSelectionModel
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
-    QParallelAnimationGroup
+    QParallelAnimationGroup,
+    QSize, QStringListModel, QTimer
 )
 from PySide6.QtGui import QAction, QDoubleValidator # Import QPalette
 from PySide6.QtWidgets import (
-    QCheckBox, 
-    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QFileDialog, QApplication, 
+    QApplication, QCheckBox, QDialog, QFileDialog, 
+    QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QMessageBox,
     QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
 
 from .pyside_plot import SpectrumPlotWidget
-from ..session import load_session_from_file
+from .recipe_dialog import RecipeDialog
+from ..session import SessionV2, load_session_from_file
 try:
     from ...v1.functions import trans_parse
     from ...v1.vars import xem_d
@@ -273,18 +275,16 @@ class MainWindowV2(QMainWindow):
         # --- File and View operations ---
 
         # Open file
-        open_action = QAction("&Open Spectrum...", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self._on_open_spectrum)
+        open_action = QAction("&Open Spectrum...", self); open_action.setShortcut("Ctrl+O"); open_action.triggered.connect(self._on_open_spectrum)
         file_menu.addAction(open_action)
+        save_action = QAction("&Save Session...", self); save_action.setShortcut("Ctrl+S"); save_action.triggered.connect(self._on_save_session); 
+        save_action.setEnabled(False)
+        file_menu.addAction(save_action)
 
         # --- View Menu Actions ---
-        toggle_left_action = QAction("Toggle Session Panel", self)
-        toggle_left_action.triggered.connect(self._toggle_left_sidebar)
+        toggle_left_action = QAction("Toggle Session Panel", self); toggle_left_action.triggered.connect(self._toggle_left_sidebar)
         view_menu.addAction(toggle_left_action)
-
-        toggle_right_action = QAction("Toggle Plot Controls", self)
-        toggle_right_action.triggered.connect(self._toggle_right_sidebar)
+        toggle_right_action = QAction("Toggle Plot Controls", self); toggle_right_action.triggered.connect(self._toggle_right_sidebar)
         view_menu.addAction(toggle_right_action)
 
         self.toggle_left_action = toggle_left_action
@@ -296,22 +296,42 @@ class MainWindowV2(QMainWindow):
         
         # x_convert Action
         x_convert_action = QAction("Convert &X Axis...", self)
-        x_convert_action.triggered.connect(self._launch_x_convert_dialog)
+        x_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "x_convert"))
         edit_menu.addAction(x_convert_action)
-        
+        self.x_convert_action = x_convert_action; x_convert_action.setEnabled(False)
+
         # y_convert Action
         y_convert_action = QAction("Convert &Y Axis...", self)
-        y_convert_action.triggered.connect(self._launch_y_convert_dialog)
+        y_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "y_convert"))
         edit_menu.addAction(y_convert_action)
-        
+        self.y_convert_action = y_convert_action; y_convert_action.setEnabled(False)
+
         # RECIPES FOR 'FLUX' MENU (rebin)
         
         # rebin Action
         rebin_action = QAction("&Rebin Spectrum...", self)
-        rebin_action.triggered.connect(self._launch_rebin_dialog)
+        rebin_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "rebin"))
         flux_menu.addAction(rebin_action)
-        
+        self.rebin_action = rebin_action; rebin_action.setEnabled(False)
+
         # ... (Other menu item actions will be added here later) ...
+
+    def _launch_recipe_dialog(self, category, name):
+        """Creates and executes the RecipeDialog for the specified recipe."""
+        if not self.session_manager or not self.session_manager.spec:
+            QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
+            return
+
+        logging.info(f"Launching dialog for recipe: {category}.{name}")
+        dialog = RecipeDialog(category, name, self.session_manager, self)
+        # .exec() runs the dialog modally and returns QDialog.Accepted or QDialog.Rejected
+        result = dialog.exec()
+
+        if result == QDialog.Accepted:
+            logging.debug(f"Recipe dialog {name} accepted (state update handled by dialog's accept method).")
+            # The dialog's accept() method now calls self.update_gui_session_state
+        else:
+            logging.debug(f"Recipe dialog {name} cancelled.")
 
     def _apply_styles(self):
         # ... (Get palette colors) ...
@@ -500,6 +520,17 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
         # --- Update Session Logic ---
 
+        # ** Enable/Disable Recipe Actions **
+        enable_recipes = is_valid_session
+        # Check if actions exist before enabling/disabling
+        if hasattr(self, 'x_convert_action'): self.x_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'y_convert_action'): self.y_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
+        # ... enable/disable other recipe actions ...
+
+        # Enable Save action only if valid session
+        if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
+
         if is_valid_session:
             # --- State when a valid session IS loaded ---
             if self.central_stack.currentIndex() != 0: # If switching from empty
@@ -546,6 +577,38 @@ class MainWindowV2(QMainWindow):
         # QTimer.singleShot(0, self._reposition_floating_widgets) # Schedule reposition slightly later
         self._reposition_floating_widgets() # Try immediate reposition first
 
+    def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, is_branching: bool):
+        """
+        Updates the GUI state after a recipe successfully returns a new session.
+        Called by RecipeDialog.accept().
+        """
+        if not isinstance(new_session, SessionV2):
+            logging.error("update_gui_session_state received invalid session object.")
+            return
+
+        if is_branching:
+            logging.debug(f"Adding new session (branching recipe) at index {original_session_index + 1}")
+            # Insert the new session after the original one
+            insert_pos = original_session_index + 1
+            self.active_sessions.insert(insert_pos, new_session)
+            # Update the list model
+            self.session_model.insertRow(insert_pos)
+            self.session_model.setData(self.session_model.index(insert_pos), new_session.name)
+            # Set the new session as active
+            self.update_session(new_session, set_current_list_item=True)
+        else:
+            logging.debug(f"Replacing session at index {original_session_index}")
+            # Replace the old session with the new one
+            if 0 <= original_session_index < len(self.active_sessions):
+                self.active_sessions[original_session_index] = new_session
+                # Update the list model item text
+                self.session_model.setData(self.session_model.index(original_session_index), new_session.name)
+                # Ensure the updated session is set as active (important if multiple sessions were open)
+                self.update_session(new_session, set_current_list_item=True)
+            else:
+                 # Should not happen if index is correct, but handle defensively
+                 logging.warning("Original session index invalid during update. Appending new session.")
+                 self.add_session(new_session) # Fallback to adding
 
     def update_session(self, new_session, set_current_list_item=False):
         """Swaps the central session manager object and updates the view."""
@@ -616,6 +679,36 @@ class MainWindowV2(QMainWindow):
                 # Consider showing an error message box to the user here
                 # from PySide6.QtWidgets import QMessageBox
                 # QMessageBox.critical(self, "Error Loading File", f"Could not load {file_name}:\n{e}")
+
+    def _on_save_session(self):
+        """Handles the File > Save Session action."""
+        if not self.session_manager or not self.session_manager.spec:
+            QMessageBox.warning(self, "No Session", "No active session to save.")
+            return
+
+        # Suggest filename based on session name, default to .acs2
+        default_name = self.session_manager.name + ".acs2"
+        # Use QFileDialog to get save path
+        file_name, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Save Astrocook Session",
+            default_name, # Default filename
+            "Astrocook V2 Session (*.acs2);;Astrocook V1 Session (*.acs)" # Filters
+        )
+
+        if file_name:
+            logging.info(f"Saving session to: {file_name}")
+            try:
+                # Call the SessionV2 save method
+                # The 'models' argument might be irrelevant for V2, check save() signature
+                result = self.session_manager.save(file_path=file_name) # Pass file_path
+                if result != 0: # Check for V1-style error code
+                     raise RuntimeError("Session save method returned non-zero error code.")
+                logging.info("Session saved successfully.")
+                # Optionally update window title or status bar
+            except Exception as e:
+                logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
+                QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
 
     def _launch_x_convert_dialog(self):
         # Placeholder function called by the QAction

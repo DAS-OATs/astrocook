@@ -221,40 +221,56 @@ class SessionV2:
             logging.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
             return 0 # Return 0 to signal failure to the V1 dialog loop
 
-    def with_new_spectrum(self, new_spec_v2: SpectrumV2) -> 'SessionV2':
+    def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
         """
-        Helper method to create a NEW SessionV2 instance with the updated spectrum,
-        preserving all other state (immutability pattern).
+        [V2 Immutable Helper]
+        Creates a new SessionV2 instance with the updated spectrum,
+        carrying over other state (systs, log, defs).
         """
+        if not isinstance(new_spectrum, SpectrumV2):
+             raise TypeError("with_new_spectrum requires a valid SpectrumV2 object")
 
-        # 1. Use the new utility for both log and defs
-        copied_log = guarded_deepcopy_v1_state(self.log)
-        copied_defs = guarded_deepcopy_v1_state(self.defs)
+        # Use guarded deepcopy for V1 state objects (log, defs)
+        new_log = guarded_deepcopy_v1_state(self.log)
+        new_defs = guarded_deepcopy_v1_state(self.defs)
 
-        # 1. Mutate the V2 constructor parameters
-        kwargs = {
+        # Create args for the new SessionV2 instance
+        constructor_args = {
             'name': self.name,
-            'current_spectrum': new_spec_v2,
-            
-            # Preserve all V1 adapter attributes and essential state
-            'lines': deepcopy(self._lines),
-            'systs': deepcopy(self._systs),
-            'history': new_spec_v2.history, # Use the updated history from the spectrum
             'gui': self._gui,
-            'log': copied_log, 
-            'defs': copied_defs, 
-
-            # --- V1 ADAPTER ATTRIBUTES (Must be copied to maintain state) ---
-            'twin': self._open_twin, 
-            '_shade': self._shade,
-            '_z_sel': self._z_sel,
-            '_series_sel': self._series_sel,
-            # ... and any other internal attributes the V1 code might rely on!
-            # The simplest and safest approach is to manually pass the adapters like this.
+            'spec': new_spectrum, # Use the new spectrum
+            'systs': self.systs, # Carry over existing systs
+            # 'lines': deepcopy(self._lines), # <<< REMOVE THIS LINE
+            'log': new_log, # Use copied log
+            'defs': new_defs, # Use copied defs
+            # 'history': deepcopy(self.history) # Remove if history isn't used
         }
-        
-        # 2. Return the new, copied instance
-        return SessionV2(**kwargs)
+
+        logging.debug("Creating new SessionV2 state via with_new_spectrum.")
+        return SessionV2(**constructor_args)
+
+    def with_new_system_list(self, new_systs: SystemListV2) -> 'SessionV2':
+        """
+        [V2 Immutable Helper]
+        Creates a new SessionV2 instance with the updated system list,
+        carrying over other state (spec, log, defs).
+        """
+        if not isinstance(new_systs, SystemListV2):
+             raise TypeError("with_new_system_list requires a valid SystemListV2 object")
+
+        new_log = guarded_deepcopy_v1_state(self.log)
+        new_defs = guarded_deepcopy_v1_state(self.defs)
+
+        constructor_args = {
+            'name': self.name,
+            'gui': self._gui,
+            'spec': self.spec,   # Carry over existing spec
+            'systs': new_systs, # Use the new system list
+            'log': new_log,
+            'defs': new_defs,
+        }
+        logging.debug("Creating new SessionV2 state via with_new_system_list.")
+        return SessionV2(**constructor_args)
     
     def load_structure_v2_from_file(archive_root: str, structure_name: str):
         """
