@@ -99,7 +99,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.background = None # Store the clean background pixels
         self.cursor_artists = [] # Store references to the cursor axvline objects
         self.draw_event_cid = None # Store connection ID for draw_event
-        
+        self._needs_full_redraw = False
         # ---------------------------
 
         # --- Dragging Attributes ---
@@ -111,83 +111,63 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         # self.mpl_connect('button_press_event', self.on_press)
         # self.mpl_connect('button_release_event', self.on_release)
         # self.mpl_connect('motion_notify_event', self.on_motion)
+        # ... (Connect motion, limit events) ...
         self.mpl_connect('motion_notify_event', self.on_motion)
-        # draw_event connected dynamically in plot_spectrum
+        self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
+        self.ylim_cid = self.axes.callbacks.connect('ylim_changed', self.on_lim_changed)
 
-        self.xlim_cid = None
-        self.ylim_cid = None
-
-        self._lim_changed = False
+        #self._lim_changed = False
 
     def on_lim_changed(self, axes):
-        """Callback for xlim_changed or ylim_changed events."""
-        # Invalidate the background cache whenever limits change
-        logging.debug(f"Limits changed ({axes.get_label()}): Invalidating blit background.")
-        self._lim_changed = True
-        self.background = None
-        # The next full draw will recapture the background.
+        """Callback: Invalidate background and flag for full redraw,
+           ONLY if a stable background already exists."""
+
+        # ** CRITICAL CHECK: **
+        # Only invalidate if a background has already been captured.
+        # This prevents on_lim_changed from firing during the
+        # *initial* plot_spectrum call (when background is None).
+        if self.background is not None:
+            logging.debug(f"Limits changed ({axes.get_label()}) *after* init: Invalidating background & flagging redraw.")
+            self.background = None # Invalidate background
+            self._needs_full_redraw = True # Flag that the *next* motion event needs to trigger a full plot
+        else:
+            logging.debug(f"Limits changed ({axes.get_label()}) *during* init/redraw. Ignoring.")
+            # Do nothing - a redraw is already in progress which will capture the background.
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
-        # Only capture if needed (background is None) and canvas size is valid
-        if self.background is None and self.figure.get_size_inches().any():
-            # Check if axes bounding box is valid before copying
-            if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
-                self.background = self.copy_from_bbox(self.axes.bbox)
-                logging.debug("Captured background for blitting.")
-                print("DEBUG: **** Background CAPTURED ****")
-            else:
-                logging.debug("Skipped background capture - axes bbox invalid.")
-        else:
-            logging.debug("Skipped background capture - already captured or canvas size invalid.")
-
-        # Crucial: Disconnect immediately to prevent re-capturing during animation redraws
-        if self.draw_event_cid is not None:
-            try: self.mpl_disconnect(self.draw_event_cid)
-            except Exception: pass
-            self.draw_event_cid = None
-
+        capture_successful = False
+        try:
+            if self.background is None and self.figure.get_size_inches().any():
+                if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
+                    self.background = self.copy_from_bbox(self.axes.bbox)
+                    capture_successful = True
+        except Exception as e:
+            logging.error(f"Failed during background copy: {e}")
+            self.background = None
+        finally:
+            if self.draw_event_cid is not None:
+                try: self.mpl_disconnect(self.draw_event_cid)
+                except Exception: pass
+                self.draw_event_cid = None
+                 
     def draw_animated(self):
-        """Redraws only the animated artists using blitting."""
-        if self.background is None and self._lim_changed == True and hasattr(self, 'plot_widget'):
-            logging.debug("draw_animated called before background captured.")
-            print("DEBUG: draw_animated: Background is None! Triggering draw_idle.") # <<< MORE VISIBLE DEBUG
-            #self.draw_idle()
-            self._lim_changed = False
-            self.plot_widget.plot_spectrum() # Force full redraw to recreate artists
-            return # Wait for first full draw
+        if self.background is None:
+            # This can happen in the small gap between on_lim_changed
+            # and the full redraw completing. Calling draw_idle()
+            # is a safe, lightweight way to request the redraw.
+            self.draw_idle()
+            return
 
-        # ** 1. Save current axes limits **
-        #current_xlim = self.axes.get_xlim()
-        #current_ylim = self.axes.get_ylim()
-        # logging.debug(f"draw_animated: Saving limits X={current_xlim}, Y={current_ylim}") # Optional debug
-
-        # 2. Restore the clean background
+        # Proceed with blitting
         self.restore_region(self.background)
-
-        # 3. Draw *only* the cursor artists
         drawn_artists = []
         for artist in self.cursor_artists:
-            try:
-                self.axes.draw_artist(artist)
-                drawn_artists.append(artist) # Keep track if successful
-            except Exception as e:
-                 logging.error(f"Error drawing animated artist {artist}: {e}")
-
-        # ** 4. Restore axes limits BEFORE blitting **
-        # This prevents blit/backend from potentially using reset limits
-        #self.axes.set_xlim(current_xlim)
-        #self.axes.set_ylim(current_ylim)
-        # logging.debug(f"draw_animated: Restored limits X={current_xlim}, Y={current_ylim}") # Optional debug
-
-
-        # 5. Update only the necessary parts of the screen (blit)
+            try: self.axes.draw_artist(artist); drawn_artists.append(artist)
+            except Exception as e: logging.error(f"Error drawing anim artist {artist}: {e}")
         if drawn_artists:
-            try:
-                self.blit(self.axes.bbox)
-            except Exception as e: # Catch potential backend blitting errors
-                logging.error(f"Blitting failed: {e}. Falling back to draw_idle.")
-                self.draw_idle() # Fallback if blit fails
+            try: self.blit(self.axes.bbox)
+            except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
 
 
     def on_press(self, event):
@@ -212,6 +192,13 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
         main_window = self.plot_widget.main_window # type: MainWindowV2
 
+
+        # ** 1. Check if a full redraw is flagged **
+        if self._needs_full_redraw:
+            self._needs_full_redraw = False # Reset flag
+            self.plot_widget.plot_spectrum() # Trigger full redraw
+            return # Stop here, don't try to blit this frame
+        
         # Check if inside axes and cursor checkbox is checked
         if (event.inaxes == self.axes and event.xdata is not None
             and main_window.cursor_show_checkbox.isChecked()):
@@ -358,6 +345,7 @@ class SpectrumPlotWidget(QWidget):
 
         # ** Reset background and clear artists for blitting **
         self.canvas.background = None
+        self.canvas._needs_full_redraw = False # Reset flag on *every* full draw
         self.canvas.cursor_artists = []
         # ----------------------------------------------------
         
