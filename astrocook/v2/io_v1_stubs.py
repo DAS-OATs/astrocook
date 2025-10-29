@@ -1,5 +1,6 @@
 from astropy.io import fits
 import logging
+import numpy as np
 import os
 import tarfile
 import tempfile

@@ -147,17 +147,22 @@ class RecipeDialog(QDialog):
                     params_to_pass[param_name] = widget.currentText() # Or currentData()
                 # TODO: Handle other widget types (e.g., file path)
                 logging.debug(f" - {param_name}: {params_to_pass[param_name]}")
+        except Exception as e:
+            logging.error(f"Error gathering parameters: {e}")
+            QMessageBox.critical(self, "Parameter Error", f"Could not read parameters:\n{e}")
+            return # Keep dialog open
 
+        try:
             # --- Find and Call the V2 Recipe Method ---
             # Get the recipe class instance from the session (e.g., session.flux)
             recipe_instance = getattr(self.session, self.recipe_category, None)
             if not recipe_instance:
-                 raise AttributeError(f"Session object has no attribute '{self.recipe_category}'")
+                raise AttributeError(f"Session object has no attribute '{self.recipe_category}'")
 
             # Get the actual method from the instance
             recipe_method = getattr(recipe_instance, self.recipe_name, None)
             if not callable(recipe_method):
-                 raise AttributeError(f"Recipe instance has no callable method '{self.recipe_name}'")
+                raise AttributeError(f"Recipe instance has no callable method '{self.recipe_name}'")
 
             logging.info(f"Running recipe: {self.recipe_category}.{self.recipe_name} with params: {params_to_pass}")
             new_session_state = recipe_method(**params_to_pass)
@@ -176,30 +181,50 @@ class RecipeDialog(QDialog):
                 # Success: Update the main window's state
                 logging.info(f"Recipe {self.recipe_name} completed successfully.")
                 if self.parent_window and hasattr(self.parent_window, 'update_gui_session_state'):
-                     # Find index of old session to replace/insert after
-                     try:
-                         current_index = self.parent_window.active_sessions.index(self.session)
-                     except ValueError:
-                         current_index = -1 # Or handle as error/append case
+                    # Find the index of the SessionHistory that was active when dialog opened
+                    original_history_index = -1
+                    try:
+                        # Find the history manager whose *current state* matches the session
+                        # the dialog was launched with. This is safer than relying on active_history directly.
+                        for i, history in enumerate(self.parent_window.session_histories):
+                             # Compare object identity
+                             if history.current_state is self.session:
+                                 original_history_index = i
+                                 break
+                        if original_history_index == -1:
+                             # Fallback or error if the original session wasn't found
+                             logging.error("Could not find original session history manager!")
+                             # Maybe default to current active_history index?
+                             original_history_index = self.parent_window.session_histories.index(self.parent_window.active_history)
 
-                     # Determine if it's a branching recipe
-                     branching = is_branching_recipe(self.recipe_name)
+                    except (ValueError, AttributeError, IndexError) as find_err:
+                        logging.error(f"Error finding original history index: {find_err}. Using active history.")
+                        try: # Fallback
+                             original_history_index = self.parent_window.session_histories.index(self.parent_window.active_history)
+                        except (ValueError, AttributeError):
+                             original_history_index = -1 # Should not happen
 
-                     self.parent_window.update_gui_session_state(
-                         new_session_state,
-                         original_session_index=current_index,
-                         is_branching=branching
-                     )
+                    if original_history_index != -1:
+                        branching = is_branching_recipe(self.recipe_name)
+                        # Call MainWindowV2's update method
+                        self.parent_window.update_gui_session_state(
+                            new_session_state,
+                            original_session_index=original_history_index, # Pass index in session_histories
+                            is_branching=branching
+                        )
+                    else:
+                         logging.error("Could not trigger GUI update: Original history index not found.")
+
                 else:
                      logging.warning("Parent window reference missing or lacks update method.")
 
                 super().accept() # Close the dialog on success
 
             else:
-                 # Unexpected return type
-                 logging.error(f"Recipe {self.recipe_name} returned unexpected type: {type(new_session_state)}")
-                 QMessageBox.critical(self, "Recipe Error", "Recipe returned an unexpected result.")
-                 return # Keep dialog open
+                # Unexpected return type
+                logging.error(f"Recipe {self.recipe_name} returned unexpected type: {type(new_session_state)}")
+                QMessageBox.critical(self, "Recipe Error", "Recipe returned an unexpected result.")
+                return # Keep dialog open
 
         except Exception as e:
             logging.error(f"Error running recipe {self.recipe_name}: {e}", exc_info=True) # Log traceback

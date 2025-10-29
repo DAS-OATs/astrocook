@@ -243,10 +243,27 @@ class SpectrumPlotWidget(QWidget):
         self.plot_spectrum(initial_draw=True)
 
     # --- Refactored Plotting Method (Requires an update) ---
-    def plot_spectrum(self, initial_draw=False):
+    def plot_spectrum(self, initial_draw=False, autoscale_x=False):
         """
         Retrieves data from the immutable V2 Session and plots it.
         """
+        if self.session_manager is None:
+            logging.debug("plot_spectrum called with no session manager. Clearing plot.")
+            ax = self.canvas.axes
+            ax.clear()
+            ax.set_title("No Spectrum Data Loaded")
+            # Ensure background capture logic is handled if needed after clear
+            self.canvas.background = None # Reset background
+            # Connect draw_event for potential background capture if needed later
+            if self.canvas.draw_event_cid is not None:
+                try: self.canvas.mpl_disconnect(self.canvas.draw_event_cid)
+                except Exception: pass
+            self.canvas.draw_event_cid = self.canvas.mpl_connect('draw_event', self.canvas._capture_background)
+            # Trigger draw
+            if initial_draw: self.canvas.draw()
+            else: self.canvas.draw_idle()
+            return # Exit early
+        
         spec = self.session_manager.spec
         systs = self.session_manager.systs # Get systs object
 
@@ -289,7 +306,7 @@ class SpectrumPlotWidget(QWidget):
                 # Check width as a proxy for visibility/expanded state
                 left_sidebar_open = self.main_window.left_sidebar_widget.width() > 1
                 right_sidebar_open = self.main_window.right_sidebar_widget.width() > 1
-    
+
                 if left_sidebar_open and not right_sidebar_open:
                     legend_loc = 'upper right'
                 elif not left_sidebar_open and right_sidebar_open:
@@ -530,10 +547,10 @@ class SpectrumPlotWidget(QWidget):
             return []
         return positions
     
-    def update_plot(self, new_session):
+    def update_plot(self, new_session, autoscale_x=False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.session_manager = new_session
-        self.plot_spectrum(initial_draw=False)
+        self.plot_spectrum(initial_draw=False, autoscale_x=autoscale_x)
 
 # NOTE: The rest of the plotting logic (plot_spectrum content, resizeEvent, etc.) 
 # must be placed into this class, and the old SpectrumViewerPySide class should be deleted.

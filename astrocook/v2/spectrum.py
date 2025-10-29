@@ -340,7 +340,7 @@ class SpectrumV2:
             xmax=DataColumnV2(xmax_final.value, xmax_final.unit),
             y=DataColumnV2(y_new.value, y_new.unit),
             dy=DataColumnV2(dy_new.value, dy_new.unit),
-            aux_cols=self._data.aux_cols, # Auxiliary columns are NOT handled in core rebin
+            #aux_cols=self._data.aux_cols, # Auxiliary columns are NOT handled in core rebin
             meta=self._data.meta, rf_z=self._data.rf_z 
         )
         

@@ -1,5 +1,3 @@
-# astrocook/v2/gui/main_window.py
-
 import logging
 import os
 from PySide6.QtCore import ( # <<< Modify this import
@@ -16,9 +14,11 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QMessageBox,
     QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
+from typing import List, Optional
 
 from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
+from .session_history import SessionHistory
 from ..session import SessionV2, load_session_from_file
 try:
     from ...v1.functions import trans_parse
@@ -29,17 +29,28 @@ except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
 
 # --- Constants for Sidebar Widths ---
-LEFT_SIDEBAR_WIDTH = 300
-RIGHT_SIDEBAR_WIDTH = 200
+LEFT_SIDEBAR_WIDTH = 250
+RIGHT_SIDEBAR_WIDTH = 250
 ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 20
 BUTTON_HEIGHT = 30
 
+class MockV1GUIContext:
+    """Provides the minimal methods expected by V1 loaders."""
+    def __init__(self):
+        # V1 loaders might expect _flags attribute, even if empty
+        self._flags = []
+    def _flags_cond(self, flag):
+        # V2 GUI doesn't use these flags, so always return False
+        return False
+    def _flags_extr(self, flag):
+        # V2 GUI doesn't use these flags, so return None
+        return None
 class MainWindowV2(QMainWindow):
-    def __init__(self, session):
+    def __init__(self, initial_session: SessionV2):
         super().__init__()
-        self.active_sessions = []
-        self.session_manager = session
+        self.session_histories: List[SessionHistory] = [] # List of history managers
+        self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
 
         # ** Initialize animation attributes to None **
@@ -57,7 +68,7 @@ class MainWindowV2(QMainWindow):
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
-        self._setup_plot_view()
+        self._setup_plot_view(initial_session)
         self._setup_empty_view()
         self.setCentralWidget(self.central_stack) # Stack fills the window initially
 
@@ -72,12 +83,18 @@ class MainWindowV2(QMainWindow):
         self._apply_styles()
 
         # --- Initial State ---
-        is_initial_session_valid = bool(self.session_manager.spec and len(self.session_manager.spec.x) > 0)
-        # Add the initial session (if valid) *without* triggering history truncation
+        is_initial_session_valid = bool(initial_session and initial_session.spec and len(initial_session.spec.x) > 0)
         if is_initial_session_valid:
-            self._add_session_internal(session, is_initial=True) # Use internal add
+            # Create the first history manager
+            initial_history = SessionHistory(initial_session)
+            self.session_histories.append(initial_history)
+            self.active_history = initial_history
+            self.session_model.setStringList([h.display_name for h in self.session_histories])
+            self._update_view_for_session(initial_history.current_state, set_current_list_item=True) # Show initial state
         else:
-            self._update_ui_state(False, is_startup=True) # Show empty state
+            # No initial session, start empty
+            self.active_history = None
+            self._update_view_for_session(None, set_current_list_item=False) # Show empty state
 
         self._update_undo_redo_actions() # Set initial state
 
@@ -114,8 +131,8 @@ class MainWindowV2(QMainWindow):
         # Sidebar still fills the full content height
         self.right_sidebar_widget.setGeometry(sidebar_x, content_y_start, right_width, content_height)
         
-    def _setup_plot_view(self):
-        self.plot_viewer = SpectrumPlotWidget(self.session_manager, self)
+    def _setup_plot_view(self, session_for_plot: SessionV2):
+        self.plot_viewer = SpectrumPlotWidget(session_for_plot, self)
         self.central_stack.addWidget(self.plot_viewer)
 
     def _setup_empty_view(self):
@@ -368,7 +385,7 @@ class MainWindowV2(QMainWindow):
             sidebar_r = sidebar_base_color.red()
             sidebar_g = sidebar_base_color.green()
             sidebar_b = sidebar_base_color.blue()
-            sidebar_a = 0.7 # Alpha value (0.0 to 1.0), e.g., 90% opaque
+            sidebar_a = 0.9 # Alpha value (0.0 to 1.0), e.g., 90% opaque
 
             sidebar_bg = palette.color(palette.ColorRole.Button).name()
             item_selected_bg = palette.color(palette.ColorRole.Highlight).name()
@@ -537,177 +554,163 @@ class MainWindowV2(QMainWindow):
         icon = self.style().standardIcon(icon_name)
         button.setIcon(icon); button.setToolTip(tooltip)
 
-    def _update_ui_state(self, is_valid_session, is_startup=False):
-        is_valid_session = bool(is_valid_session)
-
-        # ... (Enable/Disable View menu actions) ...
-        if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
-        if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
-        # --- Update Session Logic ---
-
-        # ** Enable/Disable Recipe Actions **
-        enable_recipes = is_valid_session
-        # Check if actions exist before enabling/disabling
-        if hasattr(self, 'x_convert_action'): self.x_convert_action.setEnabled(enable_recipes)
-        if hasattr(self, 'y_convert_action'): self.y_convert_action.setEnabled(enable_recipes)
-        if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
-        # ... enable/disable other recipe actions ...
-
-        # Enable Save action only if valid session
-        if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
-
-        if is_valid_session:
-            # --- State when a valid session IS loaded ---
-            if self.central_stack.currentIndex() != 0: # If switching from empty
-                self.central_stack.setCurrentIndex(0)
-                # Resize only on first valid load
-                # Check if *any* previous session existed and was valid
-                was_previously_empty = not any(s and s.spec and len(s.spec.x) > 0 for s in self.active_sessions[:-1])
-                if is_startup or was_previously_empty:
-                    logging.debug("Resizing and centering window for first valid session.")
-                    self.resize(1400, 900)
-                    # Recenter after resize
-                    screen_geometry = QApplication.primaryScreen().geometry()
-                    x = (screen_geometry.width() - self.width()) // 2
-                    y = (screen_geometry.height() - self.height()) // 2
-                    self.move(x, y)
-
-            # Show buttons
-            self.session_collapse_button.setVisible(True)
-            self.plot_controls_collapse_button.setVisible(True)
-
-            # Update icons based on *current width* (more reliable during animation)
-            self._update_sidebar_button_icon(self.session_collapse_button, self.left_sidebar_widget.width() > 0, is_left=True)
-            self._update_sidebar_button_icon(self.plot_controls_collapse_button, self.right_sidebar_widget.width() > 0, is_left=False)
-
-            # Ensure sidebars are visible if they have width > 0
-            # (Animation handles the actual hiding/showing based on width)
-            if self.left_sidebar_widget.width() > 0: self.left_sidebar_widget.setVisible(True)
-            if self.right_sidebar_widget.width() > 0: self.right_sidebar_widget.setVisible(True)         
-
-        else:
-            if self.central_stack.currentIndex() != 1: self.central_stack.setCurrentIndex(1)
-
-            # Hide buttons
-            self.session_collapse_button.setVisible(False)
-            self.plot_controls_collapse_button.setVisible(False)
-
-            # Hide sidebars immediately (stop animations if running)
-            if self.left_animation_group and self.left_animation_group.state() == QParallelAnimationGroup.Running: self.left_animation_group.stop()
-            if self.right_animation_group and self.right_animation_group.state() == QParallelAnimationGroup.Running: self.right_animation_group.stop()
-            self.left_sidebar_widget.setVisible(False); self.left_sidebar_widget.setGeometry(0, self.left_sidebar_widget.y(), 0, self.left_sidebar_widget.height()) # Reset geom
-            self.right_sidebar_widget.setVisible(False); self.right_sidebar_widget.setGeometry(self.width(), self.right_sidebar_widget.y(), 0, self.right_sidebar_widget.height()) # Reset geom
-
-        # Reposition elements after visibility/state changes might affect layout needs
-        # QTimer.singleShot(0, self._reposition_floating_widgets) # Schedule reposition slightly later
-        self._reposition_floating_widgets() # Try immediate reposition first
-
-    def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, is_branching: bool):
+    def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
+                                 is_branching: bool, autoscale_x: bool = False):
         """
-        Updates the GUI state after a recipe successfully returns a new session.
-        Called by RecipeDialog.accept().
+        Updates the GUI state AND history after a recipe returns a new session.
+        Operates on the currently active SessionHistory.
         """
         if not isinstance(new_session, SessionV2):
-            logging.error("update_gui_session_state received invalid session object.")
-            return
+             logging.error("update_gui_session_state received invalid session.")
+             return
+        if self.active_history is None:
+             logging.error("Cannot update state: No active session history.")
+             return # Should not happen if a session is loaded
 
-        # ** 1. Truncate history beyond the current point **
-        # If user did Undo, then performed an action, remove the 'redoable' states
-        current_len = len(self.active_sessions)
-        if self.history_index < current_len - 1:
-            logging.debug(f"Truncating history: removing {current_len - 1 - self.history_index} states.")
-            del self.active_sessions[self.history_index + 1:]
-            # Update model (remove rows from the end)
-            self.session_model.removeRows(self.history_index + 1, current_len - 1 - self.history_index)
+        if is_branching:
+            logging.debug(f"Branching: Creating new SessionHistory from current state.")
+            # Create new history manager, copying states up to current index
+            new_history = SessionHistory(self.active_history.states[0]) # Start with initial state
+            new_history.states = self.active_history.states[:self.active_history.current_index + 1] # Copy history
+            new_history.current_index = self.active_history.current_index
+            # Add the *new* state from the recipe to this *new* history
+            new_history.add_state(new_session) # This correctly handles truncation and index update within new_history
 
-        # ** 2. Append the new state (Works for both linear and branching after truncation) **
-        insert_pos = self.history_index + 1
-        logging.debug(f"Adding new session state at index {insert_pos} (Branching={is_branching})")
-        self.active_sessions.insert(insert_pos, new_session)
-        self.session_model.insertRow(insert_pos)
-        self.session_model.setData(self.session_model.index(insert_pos), new_session.name)
-        self.history_index = insert_pos # New state becomes current
+            # Add the new history manager to the main list
+            self.session_histories.append(new_history)
+            self.active_history = new_history # New branch becomes active
+            # Update the sidebar model
+            self.session_model.setStringList([h.display_name for h in self.session_histories])
+            new_list_index = len(self.session_histories) - 1
+            # Update view for the state in the new history
+            self._update_view_for_session(new_history.current_state, set_current_list_item=True, target_list_index=new_list_index, autoscale_x=autoscale_x)
 
-        # ** 3. Update the view to show the new state **
-        self._update_view_for_session(new_session, set_current_list_item=True)
+        else: # Linear update
+             logging.debug(f"Linear update: Adding state to active SessionHistory.")
+             # Add state to the *current* history manager
+             self.active_history.add_state(new_session) # Handles truncation and index update
+             # Update the name in the sidebar model *if* the active history corresponds to the last item
+             # (This keeps the name updated for the current linear path)
+             try:
+                 active_list_index = self.session_histories.index(self.active_history)
+                 self.session_model.setData(self.session_model.index(active_list_index), self.active_history.display_name) # Update name if needed
+             except (ValueError, IndexError): pass
+             # Update view for the new state in the current history
+             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, autoscale_x=autoscale_x) # List item selection doesn't change
+
         self._update_undo_redo_actions()
-
+    
     def _add_session_internal(self, new_session, is_initial=False):
-        """Internal helper to add a session to the list and model, updating history index."""
+        """Creates and adds a new SessionHistory manager."""
         if new_session is None or isinstance(new_session, int): return
 
-        # On initial load or explicit add, truncate any potential redo history
-        if not is_initial and self.history_index < len(self.active_sessions) - 1:
-            del self.active_sessions[self.history_index + 1:]
-            self.session_model.removeRows(self.history_index + 1, len(self.active_sessions) - 1 - self.history_index)
+        # Always create a new history for a newly loaded session
+        new_history = SessionHistory(new_session)
+        self.session_histories.append(new_history)
+        self.active_history = new_history # Newly loaded becomes active
+        # Update model
+        self.session_model.setStringList([h.display_name for h in self.session_histories])
 
-        # Append
-        self.active_sessions.append(new_session)
-        new_idx = len(self.active_sessions) - 1
-        self.session_model.insertRow(new_idx)
-        self.session_model.setData(self.session_model.index(new_idx), new_session.name)
-        self.history_index = new_idx # Make the newly added session current
+    def add_session(self, new_session, initial_load=False):
+        """Adds a new session history and updates view."""
+        self._add_session_internal(new_session, is_initial=initial_load)
+        if self.active_history:
+            new_list_index = len(self.session_histories) - 1
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
+        self._update_undo_redo_actions()
 
-    def _update_view_for_session(self, session_to_show: SessionV2, set_current_list_item=False):
-        """Updates the central plot widget and UI state for the given session."""
-        self.session_manager = session_to_show # Update the reference
-        is_valid = bool(session_to_show and session_to_show.spec and len(session_to_show.spec.x) > 0)
+    def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
+                                 set_current_list_item=False, target_list_index=None,
+                                 autoscale_x=False):
+        """Updates the central plot widget and UI state for the given session state."""
+        self.session_manager = session_state_to_show # Keep for plot widget compatibility
+        is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
 
-        # Update UI visibility etc.
+        # Update general UI visibility etc. based on validity
         self._update_ui_state(is_valid)
 
+        # Update X Unit Combo Box
+        #if is_valid and hasattr(session_state_to_show.spec, 'x') # ... : Update combo box ...
+
+        # Update Plot Widget
         if is_valid:
-            self.plot_viewer.update_plot(session_to_show) # Update plot content
-            if set_current_list_item:
-                # Select the corresponding item in the list view
+            self.plot_viewer.update_plot(session_state_to_show, autoscale_x=autoscale_x)
+        else:
+             self.plot_viewer.update_plot(None) # Clear plot if session is None
+
+        # Update List View Selection
+        if set_current_list_item:
+            list_index_to_select = target_list_index # Use specific index if provided (for branching/add)
+            if list_index_to_select is None: # Otherwise, find index of active history
+                 try: list_index_to_select = self.session_histories.index(self.active_history)
+                 except (ValueError, AttributeError): list_index_to_select = -1
+
+            if list_index_to_select >= 0:
                 try:
-                    # Index in history IS the index in the list/model now
-                    q_model_index = self.session_model.index(self.history_index)
+                    q_model_index = self.session_model.index(list_index_to_select)
                     selection_model = self.session_list_view.selectionModel()
                     selection_flag = QItemSelectionModel.SelectionFlag.ClearAndSelect
                     selection_model.setCurrentIndex(q_model_index, selection_flag)
                 except Exception as e:
-                    logging.warning(f"Could not select session index {self.history_index} in list view: {e}")
-        else:
-             logging.info("Updating to an empty session view.")
+                    logging.warning(f"Could not select session index {list_index_to_select} in list view: {e}")
 
     def _undo_last_action(self):
-        """Switches the view to the previous state in the history."""
-        if self.history_index > 0:
-            self.history_index -= 1
-            logging.debug(f"Undo: Switching to history index {self.history_index}")
-            session_to_show = self.active_sessions[self.history_index]
-            self._update_view_for_session(session_to_show, set_current_list_item=True)
-            self._update_undo_redo_actions()
+        """Switches the view to the previous state in the active history."""
+        if self.active_history:
+            previous_state = self.active_history.undo()
+            if previous_state:
+                logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
+                self._update_view_for_session(previous_state, set_current_list_item=False) # Update view, list selection unchanged
+                self._update_undo_redo_actions()
+            else:
+                logging.debug("Undo: Already at oldest state for this session.")
         else:
-            logging.debug("Undo: Already at oldest state.")
+             logging.debug("Undo: No active session.")
+
 
     def _redo_last_action(self):
-        """Switches the view to the next state in the history."""
-        if self.history_index < len(self.active_sessions) - 1:
-            self.history_index += 1
-            logging.debug(f"Redo: Switching to history index {self.history_index}")
-            session_to_show = self.active_sessions[self.history_index]
-            self._update_view_for_session(session_to_show, set_current_list_item=True)
-            self._update_undo_redo_actions()
+        """Switches the view to the next state in the active history."""
+        if self.active_history:
+            next_state = self.active_history.redo()
+            if next_state:
+                logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
+                self._update_view_for_session(next_state, set_current_list_item=False)
+                self._update_undo_redo_actions()
+            else:
+                logging.debug("Redo: Already at newest state for this session.")
         else:
-            logging.debug("Redo: Already at newest state.")
+             logging.debug("Redo: No active session.")
+
 
     def _update_undo_redo_actions(self):
-        """Enables/disables Undo/Redo actions based on history index."""
-        can_undo = self.history_index > 0
-        can_redo = self.history_index < len(self.active_sessions) - 1
+        """Enables/disables Undo/Redo based on the active history manager."""
+        can_undo = self.active_history.can_undo() if self.active_history else False
+        can_redo = self.active_history.can_redo() if self.active_history else False
 
-        # ** Add Debug Print **
-        print(f"DEBUG _update_undo_redo: history_index={self.history_index}, "
-              f"len(active_sessions)={len(self.active_sessions)}, "
-              f"Can Undo={can_undo}, Can Redo={can_redo}")
-        # ********************
+        if hasattr(self, 'undo_action'): self.undo_action.setEnabled(can_undo)
+        if hasattr(self, 'redo_action'): self.redo_action.setEnabled(can_redo)
 
-        if hasattr(self, 'undo_action'):
-            self.undo_action.setEnabled(can_undo)
-        if hasattr(self, 'redo_action'):
-            self.redo_action.setEnabled(can_redo)
+
+    def _on_session_switched(self, index):
+        """Sets the active SessionHistory manager when the list view is clicked."""
+        try:
+            new_history_list_index = index.row()
+            if 0 <= new_history_list_index < len(self.session_histories):
+                 new_active_history = self.session_histories[new_history_list_index]
+                 if new_active_history != self.active_history:
+                     logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
+                     self.active_history = new_active_history
+                     # Show the state pointed to by the NEW active history's index
+                     self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+                     self._update_undo_redo_actions()
+                 else:
+                      # Clicked on the already active session, maybe ensure view reflects current index?
+                      # This can happen if user undid then clicked the list item again.
+                      self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+            else:
+                 logging.warning(f"Invalid index {new_history_list_index} clicked.")
+        except Exception as e:
+            logging.error(f"Error switching session via list click: {e}")
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
@@ -727,13 +730,7 @@ class MainWindowV2(QMainWindow):
 
             # Make sure a valid GUI context placeholder exists
             # If session_manager might be None initially, handle it
-            gui_context = getattr(self.session_manager, '_gui', None)
-            if gui_context is None:
-                 # Create a temporary mock if no session exists yet
-                 from tests.launch_pyside_app import MockGUI # Assuming mock is accessible
-                 gui_context = MockGUI()
-                 logging.warning("No active session, using temporary GUI context for loading.")
-
+            gui_context = MockV1GUIContext()
 
             try:
                 # CRITICAL FIX: Call the utility function with 'archive_path'
@@ -797,29 +794,70 @@ class MainWindowV2(QMainWindow):
     def _launch_rebin_dialog(self):
         # Placeholder function called by the QAction
         print("Launching Rebin Dialog...")
-        
 
-# --- Modify add_session (used by _on_open_spectrum) ---
-    def add_session(self, new_session, initial_load=False):
-        """Adds a new session, potentially clearing redo history, and updates view."""
-        self._add_session_internal(new_session, is_initial=initial_load)
-        # Update view to show the newly added session
-        self._update_view_for_session(new_session, set_current_list_item=True)
-        self._update_undo_redo_actions() # Update enabled state
+    def _update_ui_state(self, is_valid_session, is_startup=False):
+        is_valid_session = bool(is_valid_session)
 
-    # --- Modify _on_session_switched ---
-    def _on_session_switched(self, index):
-        """Sets the active history index when the list view is clicked."""
-        try:
-            new_history_index = index.row()
-            if 0 <= new_history_index < len(self.active_sessions):
-                 if new_history_index != self.history_index: # Only update if changed
-                     logging.debug(f"Session list clicked: Setting history index to {new_history_index}")
-                     self.history_index = new_history_index
-                     session_to_show = self.active_sessions[self.history_index]
-                     self._update_view_for_session(session_to_show, set_current_list_item=False) # View update, no need to re-select list item
-                     self._update_undo_redo_actions()
-            else:
-                 logging.warning(f"Invalid index {new_history_index} clicked in session list.")
-        except Exception as e:
-            logging.error(f"Error switching session via list click: {e}")
+        # ... (Enable/Disable View menu actions) ...
+        if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
+        if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
+        # --- Update Session Logic ---
+
+        # ** Enable/Disable Recipe Actions **
+        enable_recipes = is_valid_session
+        # Check if actions exist before enabling/disabling
+        if hasattr(self, 'x_convert_action'): self.x_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'y_convert_action'): self.y_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
+        # ... enable/disable other recipe actions ...
+
+        # Enable Save action only if valid session
+        if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
+
+        if is_valid_session:
+            # --- State when a valid session IS loaded ---
+            if self.central_stack.currentIndex() != 0: # If switching from empty
+                self.central_stack.setCurrentIndex(0)
+                # Resize only on first valid load
+                # Check if *any* previous session existed and was valid
+                was_previously_empty = len(self.session_histories) <= 1
+                if is_startup or was_previously_empty:
+                    logging.debug("Resizing and centering window for first valid session.")
+                    self.resize(1400, 900)
+                    # Recenter after resize
+                    screen_geometry = QApplication.primaryScreen().geometry()
+                    x = (screen_geometry.width() - self.width()) // 2
+                    y = (screen_geometry.height() - self.height()) // 2
+                    self.move(x, y)
+
+            # Show buttons
+            self.session_collapse_button.setVisible(True)
+            self.plot_controls_collapse_button.setVisible(True)
+
+            # Update icons based on *current width* (more reliable during animation)
+            self._update_sidebar_button_icon(self.session_collapse_button, self.left_sidebar_widget.width() > 0, is_left=True)
+            self._update_sidebar_button_icon(self.plot_controls_collapse_button, self.right_sidebar_widget.width() > 0, is_left=False)
+
+            # Ensure sidebars are visible if they have width > 0
+            # (Animation handles the actual hiding/showing based on width)
+            if self.left_sidebar_widget.width() > 0: self.left_sidebar_widget.setVisible(True)
+            if self.right_sidebar_widget.width() > 0: self.right_sidebar_widget.setVisible(True)         
+
+        else:
+            if self.central_stack.currentIndex() != 1: self.central_stack.setCurrentIndex(1)
+
+            # Hide buttons
+            self.session_collapse_button.setVisible(False)
+            self.plot_controls_collapse_button.setVisible(False)
+
+            # Hide sidebars immediately (stop animations if running)
+            if self.left_animation_group and self.left_animation_group.state() == QParallelAnimationGroup.Running: self.left_animation_group.stop()
+            if self.right_animation_group and self.right_animation_group.state() == QParallelAnimationGroup.Running: self.right_animation_group.stop()
+            self.left_sidebar_widget.setVisible(False); self.left_sidebar_widget.setGeometry(0, self.left_sidebar_widget.y(), 0, self.left_sidebar_widget.height()) # Reset geom
+            self.right_sidebar_widget.setVisible(False); self.right_sidebar_widget.setGeometry(self.width(), self.right_sidebar_widget.y(), 0, self.right_sidebar_widget.height()) # Reset geom
+
+        # Reposition elements after visibility/state changes might affect layout needs
+        # QTimer.singleShot(0, self._reposition_floating_widgets) # Schedule reposition slightly later
+        self._reposition_floating_widgets() # Try immediate reposition first
+
+        self._update_undo_redo_actions()
