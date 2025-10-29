@@ -160,7 +160,7 @@ class MainWindowV2(QMainWindow):
         self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.continuum_checkbox)
 
-        self.model_checkbox = QCheckBox("Model"); self.model_checkbox.setChecked(True)
+        self.model_checkbox = QCheckBox("Absorption model"); self.model_checkbox.setChecked(True)
         self.model_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.model_checkbox)
 

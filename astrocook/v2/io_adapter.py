@@ -52,7 +52,7 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
             # Use defensive coding to check if the column is accessible
             try:
                 col_data = t_v1[colname]
-                col_unit = col_data.unit if col_data.unit else au.dimensionless_unscaled
+                col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
                 aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             except Exception as e:
                 logging.warning(f"Could not map auxiliary column {colname} from V1 table: {e}")

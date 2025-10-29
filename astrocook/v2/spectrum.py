@@ -101,6 +101,30 @@ class SpectrumV2:
         return self._data.dy.quantity
 
     @property
+    def cont(self) -> Optional[au.Quantity]:
+        """
+        Returns the 'cont' auxiliary column as an Astropy Quantity,
+        or None if the column does not exist.
+        """
+        cont_col = self._data.aux_cols.get('cont')
+        if cont_col is not None:
+            # Combine values and unit into a Quantity
+            return au.Quantity(cont_col.values, cont_col.unit)
+        return None
+
+    @property
+    def model(self) -> Optional[au.Quantity]:
+        """
+        Returns the 'model' auxiliary column as an Astropy Quantity,
+        or None if the column does not exist.
+        """
+        model_col = self._data.aux_cols.get('model')
+        if model_col is not None:
+            # Combine values and unit into a Quantity
+            return au.Quantity(model_col.values, model_col.unit)
+        return None
+
+    @property
     def meta(self) -> Dict[str, Any]:
         return deepcopy(self._data.meta) # Restituisce una copia per prevenire modifiche esterne
 
@@ -247,7 +271,7 @@ class SpectrumV2:
             meta=data_core.meta
         )
 
-# NOTE: V1 Spectrum objects often store meta in an internal dict/Astropy Header.
+        # NOTE: V1 Spectrum objects often store meta in an internal dict/Astropy Header.
         # We assume the V1 constructor places 'meta' into an accessible attribute like v1_spec._meta
         
         # Ensure the V1 object's metadata is explicitly set to include 'ORIGIN'

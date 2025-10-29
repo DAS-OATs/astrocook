@@ -11,10 +11,8 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from matplotlib.figure import Figure
 import matplotlib.style as mplstyle
 import numpy as np
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QCheckBox, QHBoxLayout, QStyle
-)
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 import scienceplots
 from typing import TYPE_CHECKING
 
@@ -64,18 +62,13 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
         try:
             plt.style.use(['science', 'fast'])
+            #plt.style.use('fast')
         except Exception as e:
             logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
             plt.style.use('fast')
 
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-
-        # Apply basic style improvements immediately:
-        #self.axes.tick_params(direction='in', top=True, right=True)
-        #self.axes.grid(True, which='major', linestyle=':', alpha=0.6)
-        
-        # Apply the tight layout after setting up the axes
         fig.tight_layout()
 
         super(MatplotlibCanvas, self).__init__(fig)
@@ -86,53 +79,27 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
         self.plot_widget = plot_widget # Store reference
 
-        # NOTE: Blitting is usually handled automatically by NavigationToolbar2QT,
-        # but performance issues can arise if the canvas draw method is overriding defaults.
-        # Check that you are not suppressing the backend's default interactive rendering.
-        # If the slowness persists after checking the basics, 
-        # the simplest general speedup is using 'fast' style:
-        
-        #from matplotlib import rcParams
-        #rcParams['path.simplify_threshold'] = 1.0 # Simplify plotting paths
-        
-        # --- Blitting Attributes ---
+        # Blitting Attributes
         self.background = None # Store the clean background pixels
         self.cursor_artists = [] # Store references to the cursor axvline objects
         self.draw_event_cid = None # Store connection ID for draw_event
-        self._needs_full_redraw = False
-        # ---------------------------
-
-        # --- Dragging Attributes ---
-        # self.dragging_cursor = False
-        # self.active_cursor_line = None # Optional: Store the specific line being dragged
-        # ---------------------------
 
         # Connect Matplotlib events
-        # self.mpl_connect('button_press_event', self.on_press)
-        # self.mpl_connect('button_release_event', self.on_release)
-        # self.mpl_connect('motion_notify_event', self.on_motion)
-        # ... (Connect motion, limit events) ...
         self.mpl_connect('motion_notify_event', self.on_motion)
         self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
         self.ylim_cid = self.axes.callbacks.connect('ylim_changed', self.on_lim_changed)
 
-        #self._lim_changed = False
 
     def on_lim_changed(self, axes):
-        """Callback: Invalidate background and flag for full redraw,
-           ONLY if a stable background already exists."""
-
-        # ** CRITICAL CHECK: **
-        # Only invalidate if a background has already been captured.
-        # This prevents on_lim_changed from firing during the
-        # *initial* plot_spectrum call (when background is None).
+        """Callback: Invalidate background and schedule a full redraw."""
+        # Only act if a background existed (prevents initial draw loops)
         if self.background is not None:
-            logging.debug(f"Limits changed ({axes.get_label()}) *after* init: Invalidating background & flagging redraw.")
-            self.background = None # Invalidate background
-            self._needs_full_redraw = True # Flag that the *next* motion event needs to trigger a full plot
-        else:
-            logging.debug(f"Limits changed ({axes.get_label()}) *during* init/redraw. Ignoring.")
-            # Do nothing - a redraw is already in progress which will capture the background.
+            logging.debug(f"Limits changed ({axes.get_label()}): Invalidating background & scheduling plot_spectrum.")
+            self.background = None # Invalidate background cache
+
+            # Schedule plot_spectrum to run soon via the event loop
+            if self.plot_widget:
+                QTimer.singleShot(0, self.plot_widget.plot_spectrum) # <<< Schedule call
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
@@ -191,13 +158,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             return
 
         main_window = self.plot_widget.main_window # type: MainWindowV2
-
-
-        # ** 1. Check if a full redraw is flagged **
-        if self._needs_full_redraw:
-            self._needs_full_redraw = False # Reset flag
-            self.plot_widget.plot_spectrum() # Trigger full redraw
-            return # Stop here, don't try to blit this frame
         
         # Check if inside axes and cursor checkbox is checked
         if (event.inaxes == self.axes and event.xdata is not None
@@ -294,14 +254,14 @@ class SpectrumPlotWidget(QWidget):
 
         # ** Store current limits BEFORE clearing **
         # ** Make sure to store current xlim/ylim BEFORE ax.clear() **
-        was_zoomed = False; current_xlim = (0.0, 1.0); current_ylim = (0.0, 1.0) # Initialize
-        try: # Get current limits robustly
-             current_xlim = ax.get_xlim()
-             current_ylim = ax.get_ylim()
-             if current_xlim != (0.0, 1.0) or current_ylim != (0.0, 1.0):
-                 if all(isinstance(v,(int,float)) for v in current_xlim+current_ylim) and \
-                    current_xlim[0]!=current_xlim[1] and current_ylim[0]!=current_ylim[1]:
-                      was_zoomed = True
+        previous_xlim = ax.get_xlim()
+        previous_ylim = ax.get_ylim()
+        was_zoomed = False
+        try: 
+            if previous_xlim != (0.0, 1.0) or previous_ylim != (0.0, 1.0):
+                if all(isinstance(v,(int,float)) for v in previous_xlim+previous_ylim) and \
+                    previous_xlim[0] != previous_xlim[1] and previous_ylim[0] != previous_ylim[1]:
+                    was_zoomed = True
         except Exception: pass # Ignore if axes not ready
         ax.clear() # Now clear axes
 
@@ -324,45 +284,87 @@ class SpectrumPlotWidget(QWidget):
 
         # ** Determine Legend Location **
         legend_loc = 'best' # Default
-        try:
-            # Check width as a proxy for visibility/expanded state
-            left_sidebar_open = self.main_window.left_sidebar_widget.width() > 1
-            right_sidebar_open = self.main_window.right_sidebar_widget.width() > 1
-
-            if left_sidebar_open and not right_sidebar_open:
-                legend_loc = 'upper right'
-            elif not left_sidebar_open and right_sidebar_open:
-                legend_loc = 'upper left'
-            elif left_sidebar_open and right_sidebar_open:
-                # Maybe center top if both are open? Or stick to one side.
-                legend_loc = 'upper center'
-            # else: use 'best' if both closed
-            logging.debug(f"Legend location set to: {legend_loc} (L:{left_sidebar_open}, R:{right_sidebar_open})")
-        except Exception as e:
-            logging.warning(f"Could not determine sidebar state for legend: {e}")
-            legend_loc = 'best' # Fallback
-        # -----------------------------
+        if not initial_draw:
+            try:
+                # Check width as a proxy for visibility/expanded state
+                left_sidebar_open = self.main_window.left_sidebar_widget.width() > 1
+                right_sidebar_open = self.main_window.right_sidebar_widget.width() > 1
+    
+                if left_sidebar_open and not right_sidebar_open:
+                    legend_loc = 'upper right'
+                elif not left_sidebar_open and right_sidebar_open:
+                    legend_loc = 'upper left'
+                elif left_sidebar_open and right_sidebar_open:
+                    # Maybe center top if both are open? Or stick to one side.
+                    legend_loc = 'upper center'
+                # else: use 'best' if both closed
+                logging.debug(f"Legend location set to: {legend_loc} (L:{left_sidebar_open}, R:{right_sidebar_open})")
+            except Exception as e:
+                logging.warning(f"Could not determine sidebar state for legend: {e}")
+                legend_loc = 'best' # Fallback
 
         # ** Reset background and clear artists for blitting **
         self.canvas.background = None
-        self.canvas._needs_full_redraw = False # Reset flag on *every* full draw
         self.canvas.cursor_artists = []
-        # ----------------------------------------------------
         
         if spec and len(spec.x) > 0:
             
-            # --- V2 Data Access: Retrieve data and check for safety ---
-            x_data = spec.x.value
-            y_data = spec.y.value
-            # Safely handle missing error data by defaulting to zeros
-            dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(y_data)
+            # --- ** Data Slicing Logic ** ---
+            # Get full data arrays
+            full_x_data = spec.x.value
+            full_y_data = spec.y.value
+            full_dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(full_y_data)
+            full_cont_data = spec.cont   # Returns np.ndarray or None
+            full_model_data = spec.model # Returns np.ndarray or None
+            
+            x_unit_str = str(spec.x.unit); y_unit_str = str(spec.y.unit)
+
+            # --- ** Get CURRENT target Axes Limits ** ---
+            # Get limits AFTER ax.clear() but BEFORE plotting.
+            # These might be autoscaled (inf/-inf initially) or set by zoom/pan.
+            target_xlim = ax.get_xlim()
+            target_ylim = ax.get_ylim()
+            logging.debug(f"Target limits for slicing: X={target_xlim}, Y={target_ylim}")
+            # ------------------------------------------
+
+            data_slice = slice(None) # Default: use full array
+            
+
+            # If zoomed in, calculate the slice
+            if was_zoomed and not initial_draw:
+                try:
+                    # Find indices for the visible range
+                    # Use searchsorted for fast lookup on sorted x data
+                    idx_start = np.searchsorted(full_x_data, previous_xlim[0], side='left')
+                    idx_end = np.searchsorted(full_x_data, previous_xlim[1], side='right')
+
+                    # Add a small buffer (e.g., 50 points) to each side for cleaner edges
+                    buffer = 50 
+                    idx_start = max(0, idx_start - buffer)
+                    idx_end = min(len(full_x_data), idx_end + buffer)
+
+                    if idx_end > idx_start: # Ensure slice is valid
+                        data_slice = slice(idx_start, idx_end)
+                        logging.debug(f"Plotting sliced data: {idx_end - idx_start} points (was {len(full_x_data)})")
+                    else:
+                        logging.debug("Zoom slice is empty, plotting full data.")
+                except Exception as e:
+                    logging.warning(f"Failed to calculate plot slice: {e}")
+
+            # Apply the slice
+            x_data = full_x_data[data_slice]
+            y_data = full_y_data[data_slice]
+            dy_data = full_dy_data[data_slice]
+            cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
+            model_data = full_model_data[data_slice] if full_model_data is not None else None
+
             x_unit = str(spec.x.unit)
             y_unit = str(spec.y.unit)
                     
             colors = get_color_cycle(5)
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
-            ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0])
+            ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
 
             # --- Check state from main_window reference ---
             # 2. Plot Error Shading (Conditional)
@@ -370,37 +372,41 @@ class SpectrumPlotWidget(QWidget):
                 ax.fill_between(
                     x_data, y_data - dy_data, y_data + dy_data,
                     step='mid', color='#aaaaaa', alpha=0.5,
-                    label='1-sigma error'
+                    label='1-sigma error', rasterized=True
                 )
 
             # 3. Plot Continuum (Conditional)
             if self.main_window.continuum_checkbox.isChecked(): # <<< Check main window's checkbox
-                cont_data_q = spec.get_column('cont')
-                if cont_data_q is not None:
+                if cont_data is not None:
                     ax.plot(
-                        x_data, cont_data_q.value, linestyle='--',
-                        color='black', lw=0.8, label='Continuum'
+                        x_data, cont_data.value, linestyle='--',
+                        color='black', lw=0.8, label='Continuum', rasterized=True
                     )
                 else:
                     logging.warning("Continuum requested but 'cont' not found.")
 
             # 4. Plot Model
             if self.main_window.model_checkbox.isChecked():
-                model_data_q = spec.get_column('model')
-                if model_data_q is not None:
-                    ax.plot(x_data, model_data_q.value, ls='-', color=colors[1], lw=0.8, label='Model')
+                if model_data is not None:
+                    ax.plot(x_data, model_data.value, ls='-', color=colors[1], lw=0.8, label='Absorption model', rasterized=True)
                 # No warning needed
 
             # 5. Plot Systems
             if self.main_window.systems_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE and systs and systs.components:
                 # Get current plot limits to only draw visible lines
                 xlim = ax.get_xlim()
-                ylim = ax.get_ylim()
                 added_hi_label = False
                 added_metal_label = False
 
                 # Define Y position for markers (e.g., slightly below top, in axis coords)
                 marker_y_axis_coord = 0.05 # 5% from the bottom
+                
+                trans = ax.get_xaxis_transform()
+
+                # ** Create lists to batch coordinates **
+                hi_lines_x = []
+                metal_lines_x = []
+                zem = getattr(spec, '_zem', 0.0) # Get zem once
 
                 for comp in systs.components:
                     z = comp.z
@@ -408,45 +414,30 @@ class SpectrumPlotWidget(QWidget):
                     transitions = trans_parse(comp.series)
                     for t in transitions:
                         if t in xem_d:
-                            # Calculate observed wavelength in current spectrum units
-                            xem_nm = xem_d[t].to_value(au.nm)
-                            x_obs = (1 + z) * xem_nm * au.nm
-                            # Convert to plot's x-unit (might be velocity)
                             try:
-                                # Need zem for velocity conversion if spec._xunit is velocity
-                                zem = getattr(spec, '_zem', 0.0) # Get emission redshift if available
-                                x_plot = x_convert(x_obs, zem=zem, xunit=spec.x.unit).value
-                            except Exception as e:
-                                # Fallback if conversion fails (e.g., incompatible units)
-                                logging.debug(f"Could not convert syst wavelength {x_obs} to plot unit {spec.x.unit}: {e}")
-                                continue
+                                x_plot = x_convert((1 + z) * xem_d[t].to_value(au.nm) * au.nm, zem=zem, xunit=spec.x.unit).value
+                            except Exception: continue
 
+                            # Check xlim *before* appending to keep lists small
                             if xlim[0] <= x_plot <= xlim[1]:
-                                # --- Color and Label Logic ---
-                                is_hi = t.startswith('Ly_') # Simple check for Lyman series
-                                color = colors[2] if is_hi else colors[3] # HI = red, Metals = blue
-                                label = None
-                                if is_hi and not added_hi_label:
-                                    label = "HI Systems"
-                                    added_hi_label = True
-                                elif not is_hi and not added_metal_label:
-                                    label = "Metal Systems"
-                                    added_metal_label = True
-                                # ---------------------------
-
-                                # Convert marker Y position from axis to data coordinates
-                                # Use blended transform: data for X, axes for Y
-                                trans = ax.get_xaxis_transform() # Shortcut for blended transform
-                                marker_y_data_coord = marker_y_axis_coord # For plot in axis coords
-
-                                # Use ax.plot with marker style
-                                ax.plot(x_plot, marker_y_data_coord,
-                                        marker='|', markersize=24, linestyle='None', # Use '|' marker
-                                        color=color, alpha=0.5, label=label,
-                                        transform=trans) # Apply transform for Y axis coord
+                                if t.startswith('Ly_'):
+                                    hi_lines_x.append(x_plot)
+                                else:
+                                    metal_lines_x.append(x_plot)
                         else:
                             logging.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
 
+                # ** Make only TWO plot calls, outside the loop **
+                if hi_lines_x:
+                    ax.plot(hi_lines_x, [marker_y_axis_coord] * len(hi_lines_x),
+                            marker='|', markersize=12, linestyle='None',
+                            color='red', alpha=0.9, label="HI Systems",
+                            transform=trans)
+                if metal_lines_x:
+                    ax.plot(metal_lines_x, [marker_y_axis_coord] * len(metal_lines_x),
+                            marker='|', markersize=12, linestyle='None',
+                            color='darkgray', alpha=0.9, label="Metal Systems",
+                            transform=trans)
 
             # 6. Plot Redshift Cursor
             if self.main_window.cursor_show_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE:
@@ -483,11 +474,11 @@ class SpectrumPlotWidget(QWidget):
             
             # ** Restore Zoom/Pan if applicable **
             if was_zoomed and not initial_draw:
-                logging.debug(f"Restoring zoom: Xlim={current_xlim}, Ylim={current_ylim}")
+                logging.debug(f"Restoring zoom: Xlim={previous_xlim}, Ylim={previous_ylim}")
                 # Check if limits are still somewhat valid (optional, prevents extreme zooms on different data)
                 # For now, just restore them
-                ax.set_xlim(current_xlim)
-                ax.set_ylim(current_ylim)
+                ax.set_xlim(previous_xlim)
+                ax.set_ylim(previous_ylim)
             else:
                 logging.debug("Not restoring zoom (initial draw or wasn't zoomed).")
 
