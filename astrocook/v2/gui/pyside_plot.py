@@ -243,6 +243,9 @@ class SpectrumPlotWidget(QWidget):
         # 2. Toolbar (NO Checkboxes here anymore)
         self.toolbar = AstrocookToolbar(self.canvas, self) # Pass self as parent
 
+        # ** Store the last-drawn normalization state **
+        self._last_draw_norm_state = False # Default to non-normalized
+
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
 
@@ -280,6 +283,7 @@ class SpectrumPlotWidget(QWidget):
         # ** Make sure to store current xlim/ylim BEFORE ax.clear() **
         previous_xlim = ax.get_xlim()
         previous_ylim = ax.get_ylim()
+        if previous_ylim == (-0.3, 1.3): previous_ylim = (0.0, 1.0) # Normalize special case
         was_zoomed = False
         try: 
             if previous_xlim != (0.0, 1.0) or previous_ylim != (0.0, 1.0):
@@ -287,6 +291,7 @@ class SpectrumPlotWidget(QWidget):
                     previous_xlim[0] != previous_xlim[1] and previous_ylim[0] != previous_ylim[1]:
                     was_zoomed = True
         except Exception: pass # Ignore if axes not ready
+        
         ax.clear() # Now clear axes
 
         # ** Reconnect limit change callbacks here **
@@ -343,24 +348,20 @@ class SpectrumPlotWidget(QWidget):
             full_cont_data = spec.cont   # Returns np.ndarray or None
             full_model_data = spec.model # Returns np.ndarray or None
             
-            x_unit_str = str(spec.x.unit); y_unit_str = str(spec.y.unit)
-
             # --- Check View Toggles ---
             is_norm_y = self.main_window.norm_y_checkbox.isChecked()
             is_log_x = self.main_window.log_x_checkbox.isChecked()
             is_log_y = self.main_window.log_y_checkbox.isChecked()
             selected_x_unit = self.main_window.x_unit_combo.currentText()
 
-            # --- ** Get CURRENT target Axes Limits ** ---
-            # Get limits AFTER ax.clear() but BEFORE plotting.
-            # These might be autoscaled (inf/-inf initially) or set by zoom/pan.
-            target_xlim = ax.get_xlim()
-            target_ylim = ax.get_ylim()
-            logging.debug(f"Target limits for slicing: X={target_xlim}, Y={target_ylim}")
-            # ------------------------------------------
-
+            # ** Check if normalization state CHANGED since last draw **
+            norm_state_changed = (is_norm_y != self._last_draw_norm_state)
+            if norm_state_changed:
+                logging.debug(f"Normalization state changed to: {is_norm_y}")
+            # ** Update the stored state for the next draw **
+            self._last_draw_norm_state = is_norm_y
+        
             data_slice = slice(None) # Default: use full array
-            
 
             # If zoomed in, calculate the slice
             if was_zoomed and not initial_draw:
@@ -529,30 +530,24 @@ class SpectrumPlotWidget(QWidget):
             ax.set_xlabel(xlabel)
             
             # 3. Y-Axis Label
-            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({y_unit_str})")
+            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({str(spec.y.unit)})")
             
             # 4. Set Limits
             # X-Axis: Restore zoom if needed
-            if was_zoomed and target_xlim is None: ax.set_xlim(previous_xlim)
-            # elif target_xlim is not None: ax.set_xlim(target_xlim)
-            # else: autoscale #(Matplotlib default)
+            if previous_xlim != (0.0, 1.0): ax.set_xlim(previous_xlim)
             
             # Y-Axis: Handle normalization OR restore zoom
-            if is_norm_y:
-                ax.set_ylim(-0.3, 1.3) # Apply fixed limits
-            #elif target_ylim is not None: ax.set_ylim(target_ylim)
-            elif was_zoomed: ax.set_ylim(previous_ylim)
-            # else: autoscale (Matplotlib default)
-            """
-            if was_zoomed and not initial_draw:
-                logging.debug(f"Restoring zoom: Xlim={previous_xlim}, Ylim={previous_ylim}")
-                # Check if limits are still somewhat valid (optional, prevents extreme zooms on different data)
-                # For now, just restore them
-                ax.set_xlim(previous_xlim)
+            if norm_state_changed:
+                # 2. Priority: Normalization was just toggled
+                if is_norm_y:
+                    logging.debug("Normalization toggled ON: Setting default Y limits.")
+                    ax.set_ylim(-0.3, 1.3) # Apply fixed limits
+                else:
+                    logging.debug("Normalization toggled OFF: Autoscaling Y.")
+                    ax.autoscale(enable=True, axis='y') # Autoscale flux
+            elif previous_ylim != (0.0, 1.0):
                 ax.set_ylim(previous_ylim)
-            else:
-                logging.debug("Not restoring zoom (initial draw or wasn't zoomed).")
-            """
+
         if not plot_occurred:
             ax = self.canvas.axes # Ensure ax is defined
             ax.clear() # Clear axes even if no data
