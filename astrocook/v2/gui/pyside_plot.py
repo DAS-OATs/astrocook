@@ -10,6 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.style as mplstyle
+import matplotlib.ticker as plt_ticker
 import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
@@ -157,6 +158,15 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         if (event.inaxes == self.axes and event.xdata is not None
             and main_window.cursor_show_checkbox.isChecked()):
 
+            session_state = None
+            if main_window.active_history:
+                session_state = main_window.active_history.current_state
+
+            if not session_state or not session_state.spec:
+                logging.debug(
+                    "on_motion: No active session state or spec. Skipping.")
+                return  # Can't do conversions without a spec
+            
             # --- Always update on motion if cursor is active ---
             mouse_x = event.xdata
             spec = self.plot_widget.session_state.spec
@@ -189,7 +199,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                     if not self.cursor_artists or len(new_x_positions) != len(self.cursor_artists):
                         # Force a full redraw if artists are missing/mismatched
                         logging.warning("Cursor artists missing or mismatched on motion. Forcing full redraw.")
-                        self.plot_widget.plot_spectrum() # Recreate artists
+                        self.plot_widget.plot_spectrum(session_state=session_state) # Recreate artists
                     else:
                         # Update existing artists
                         for artist, x_pos in zip(self.cursor_artists, new_x_positions):
@@ -496,39 +506,49 @@ class SpectrumPlotWidget(QWidget):
             ax.set_xlabel(f"Wavelength ({x_unit})")
             ax.set_ylabel(f"Flux ({y_unit})")
             ax.set_title(f"Spectrum: {session_state.name}")
-            ax.grid(True, linestyle=':')
-
+            
             # 1. Scales (Log/Linear)
             ax.set_xscale('log' if is_log_x else 'linear')
             ax.set_yscale('log' if is_log_y else 'linear')
 
+            ax.grid(True, linestyle=':')
+            
             # 2. X-Axis Formatting
             xlabel = "Wavelength (nm)" # Default
             if selected_x_unit == 'Angstrom':
                 ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x * 10:g}"))
                 xlabel = "Wavelength (Angstrom)"
-            elif selected_x_unit == 'um':
+            elif selected_x_unit == 'micron':
                 ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x / 1000:g}"))
-                xlabel = "Wavelength (μm)"
+                xlabel = "Wavelength (micron)"
             # else: no formatter needed for nm
             ax.set_xlabel(xlabel)
-
+            
             # 3. Y-Axis Label
             ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({y_unit_str})")
             
             # 4. Set Limits
             # X-Axis: Restore zoom if needed
             if was_zoomed and target_xlim is None: ax.set_xlim(previous_xlim)
-            elif target_xlim is not None: ax.set_xlim(target_xlim)
-            # else: autoscale (Matplotlib default)
+            # elif target_xlim is not None: ax.set_xlim(target_xlim)
+            # else: autoscale #(Matplotlib default)
             
             # Y-Axis: Handle normalization OR restore zoom
             if is_norm_y:
                 ax.set_ylim(-0.3, 1.3) # Apply fixed limits
-            elif target_ylim is not None: ax.set_ylim(target_ylim)
-            elif was_zoomed_y: ax.set_ylim(previous_ylim)
+            #elif target_ylim is not None: ax.set_ylim(target_ylim)
+            elif was_zoomed: ax.set_ylim(previous_ylim)
             # else: autoscale (Matplotlib default)
-
+            """
+            if was_zoomed and not initial_draw:
+                logging.debug(f"Restoring zoom: Xlim={previous_xlim}, Ylim={previous_ylim}")
+                # Check if limits are still somewhat valid (optional, prevents extreme zooms on different data)
+                # For now, just restore them
+                ax.set_xlim(previous_xlim)
+                ax.set_ylim(previous_ylim)
+            else:
+                logging.debug("Not restoring zoom (initial draw or wasn't zoomed).")
+            """
         if not plot_occurred:
             ax = self.canvas.axes # Ensure ax is defined
             ax.clear() # Clear axes even if no data

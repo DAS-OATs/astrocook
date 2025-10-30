@@ -210,14 +210,14 @@ class MainWindowV2(QMainWindow):
         # X-Axis Unit
         form_layout_x = QFormLayout()
         self.x_unit_combo = QComboBox()
-        self.x_unit_options = ["nm", "Angstrom", "um"] # Simplified units
+        self.x_unit_options = ["nm", "Angstrom", "micron"] # Simplified units
         self.x_unit_combo.addItems(self.x_unit_options)
         self.x_unit_combo.setToolTip("Change X-axis display units (data remains nm).")
         form_layout_x.addRow("X-Unit:", self.x_unit_combo)
         view_layout.addLayout(form_layout_x)
         
         # X/Y Toggles
-        self.norm_y_checkbox = QCheckBox("Normalize (Y / Cont.)")
+        self.norm_y_checkbox = QCheckBox("Normalize flux")
         self.norm_y_checkbox.setToolTip("Plot Y / Continuum and set Y-limits.")
         view_layout.addWidget(self.norm_y_checkbox)
 
@@ -225,7 +225,7 @@ class MainWindowV2(QMainWindow):
         view_layout.addWidget(self.log_x_checkbox)
         
         self.log_y_checkbox = QCheckBox("Logarithmic Y-Axis")
-        view_layout.addWidget(self.log_y_checkbox)
+        #view_layout.addWidget(self.log_y_checkbox)
         
         sidebar_layout.addLayout(view_layout)
         # -----------------------------
