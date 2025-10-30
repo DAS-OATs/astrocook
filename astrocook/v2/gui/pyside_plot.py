@@ -56,8 +56,8 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     """A custom Matplotlib canvas enabling blitting for cursor dragging."""
     def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
         try:
-            plt.style.use(['science', 'fast'])
-            #plt.style.use('fast')
+            #plt.style.use(['science', 'fast'])
+            plt.style.use('fast')
         except Exception as e:
             logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
             plt.style.use('fast')
@@ -87,14 +87,18 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
     def on_lim_changed(self, axes):
         """Callback: Invalidate background and schedule a full redraw."""
-        # Only act if a background existed (prevents initial draw loops)
-        if self.background is not None:
+        if self.background is not None and self.plot_widget: # Check for plot_widget
             logging.debug(f"Limits changed ({axes.get_label()}): Invalidating background & scheduling plot_spectrum.")
             self.background = None # Invalidate background cache
 
+            # Get the current state to pass to the scheduled plot call
+            session_state = None
+            if self.plot_widget.main_window and self.plot_widget.main_window.active_history:
+                session_state = self.plot_widget.main_window.active_history.current_state
+
             # Schedule plot_spectrum to run soon via the event loop
-            if self.plot_widget:
-                QTimer.singleShot(0, self.plot_widget.plot_spectrum) # <<< Schedule call
+            # ** Use lambda to pass the session_state argument **
+            QTimer.singleShot(0, lambda: self.plot_widget.plot_spectrum(session_state=session_state))
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
