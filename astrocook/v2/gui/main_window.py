@@ -11,11 +11,13 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, 
-    QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QMessageBox,
+    QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QMenu, QMessageBox,
     QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
 from typing import List, Optional
 
+from .log_viewer_dialog import LogViewerDialog
 from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
 from .session_history import SessionHistory
@@ -54,6 +56,7 @@ class MainWindowV2(QMainWindow):
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
+        self.open_dialogs = []
 
         # ** Initialize animation attributes to None **
         self.left_animation_group = None
@@ -186,6 +189,13 @@ class MainWindowV2(QMainWindow):
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
         font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
+
+        # 1. Set the context menu policy
+        self.session_list_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        
+        # 2. Connect the signal
+        self.session_list_view.customContextMenuRequested.connect(self._on_session_list_context_menu)
+
         self.session_list_view.clicked.connect(self._on_session_switched)
 
         sidebar_layout.addWidget(self.session_list_view)
@@ -387,9 +397,14 @@ class MainWindowV2(QMainWindow):
         view_menu.addAction(toggle_left_action)
         toggle_right_action = QAction("Toggle Plot Controls", self); toggle_right_action.triggered.connect(self._toggle_right_sidebar)
         view_menu.addAction(toggle_right_action)
-
         self.toggle_left_action = toggle_left_action
         self.toggle_right_action = toggle_right_action
+
+        view_menu.addSeparator()
+        self.view_log_action = QAction("View Session &Log", self)
+        self.view_log_action.triggered.connect(self._on_view_log)
+        self.view_log_action.setEnabled(False) # Disabled by default
+        view_menu.addAction(self.view_log_action)
 
         # --- Add QActions for V2 Recipes ---
         
@@ -908,6 +923,65 @@ class MainWindowV2(QMainWindow):
                 logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
                 QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
 
+    def _on_session_list_context_menu(self, pos: QPoint):
+        """
+        Handles the right-click on the session list.
+        """
+        index = self.session_list_view.indexAt(pos)
+        if not index.isValid():
+            return # Clicked on empty space
+
+        row = index.row()
+        if 0 <= row < len(self.session_histories):
+            # Get the *clicked* history item
+            history_item = self.session_histories[row]
+            session_name = history_item.display_name
+            log_to_show = history_item.log
+
+            # Create the context menu
+            menu = QMenu(self)
+            view_action = QAction(f"View Log for '{session_name}'", self)
+            
+            # Use lambda to pass the correct log object
+            view_action.triggered.connect(
+                lambda: self._launch_log_viewer(log_to_show, session_name)
+            )
+            menu.addAction(view_action)
+            
+            # --- (Future) Add "Replay Log..." action here ---
+            
+            # Show the menu at the cursor's global position
+            menu.exec(self.session_list_view.mapToGlobal(pos))
+
+    def _on_view_log(self):
+        """
+        Handles the "View > View Session Log" menu action.
+        Shows the log for the *currently active* session.
+        """
+        if self.active_history:
+            session_name = self.active_history.display_name
+            log_to_show = self.active_history.log
+            self._launch_log_viewer(log_to_show, session_name)
+        else:
+            logging.warning("View Log called with no active history.")
+            
+    def _launch_log_viewer(self, log_object: 'GUILog', session_name: str):
+        """
+        Creates and shows a non-modal LogViewerDialog.
+        """
+        # Create the dialog
+        dialog = LogViewerDialog(log_object, session_name, self)
+        
+        # Store a reference to prevent garbage collection
+        self.open_dialogs.append(dialog)
+        
+        # Connect the 'finished' signal to remove the reference
+        # This is crucial for non-modal dialogs to be cleaned up
+        dialog.finished.connect(lambda: self.open_dialogs.remove(dialog))
+        
+        # Show the dialog modelessly
+        dialog.show()
+
     def _launch_x_convert_dialog(self):
         # Placeholder function called by the QAction
         print("Launching X Convert Dialog...")
@@ -926,7 +1000,7 @@ class MainWindowV2(QMainWindow):
         # ... (Enable/Disable View menu actions) ...
         if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
         if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
-        # --- Update Session Logic ---
+        if hasattr(self, 'view_log_action'): self.view_log_action.setEnabled(is_valid_session)
 
         # ** Enable/Disable Recipe Actions **
         enable_recipes = is_valid_session

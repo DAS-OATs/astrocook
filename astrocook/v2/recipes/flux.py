@@ -51,16 +51,28 @@ class RecipeFluxV2:
         API: Rebins the spectrum, logs the action, and returns a NEW SpectrumV2 instance.
         """
 
-        # 2. Log the action *before* executing
-        # We log to the session's log instance.
-        # append_full also adds the '_refresh' command
+        # 1. Get parameter names from the SSOT (the schema)
         try:
-            # self._tag is 'cb' from the __init__
+            param_names = [p['name'] for p in FLUX_RECIPES_SCHEMAS['rebin']['params']]
+        except KeyError:
+            logging.error("Could not find 'rebin' schema for logging.")
+            param_names = [] # Fallback
+
+        # 2. Build params dict dynamically from the function's local scope
+        params = {}
+        local_scope = locals()
+        for name in param_names:
+            if name in local_scope:
+                params[name] = local_scope[name]
+            else:
+                logging.warning(f"SSOT schema param '{name}' not found in rebin() locals.")
+        
+        # 3. Log the action *before* executing
+        try:
             self._session.log.append_full(self._tag, 'rebin', params)
             logging.debug(f"Logged recipe: {self._tag}.rebin")
         except Exception as e:
-            # Don't stop the recipe, but log the failure
-            logging.error(f"Failed to log rebin action: {e}")
+            logging.error(f"Failed to log rebin action: {e}", exc_info=True)
 
         try:
             # Type Casting based on string input
