@@ -725,6 +725,11 @@ class MainWindowV2(QMainWindow):
                 except Exception as e:
                     logging.warning(f"Could not select session index {list_index_to_select} in list view: {e}")
 
+        self.left_sidebar_widget.raise_()
+        self.right_sidebar_widget.raise_()
+        self.session_collapse_button.raise_()
+        self.plot_controls_collapse_button.raise_()
+
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""
         if self.active_history:
