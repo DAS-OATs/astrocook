@@ -56,7 +56,9 @@ class MainWindowV2(QMainWindow):
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
-        self.open_dialogs = []
+        
+        # Track viewers by their SessionHistory object
+        self.open_log_viewers = {}
 
         # ** Initialize animation attributes to None **
         self.left_animation_group = None
@@ -702,6 +704,12 @@ class MainWindowV2(QMainWindow):
             self.active_history.add_state(new_session) # Handles truncation and index update
             # Update the name in the sidebar model *if* the active history corresponds to the last item
             # (This keeps the name updated for the current linear path)
+            # Refresh the log viewer if it's open
+            if self.active_history in self.open_log_viewers:
+                try:
+                    self.open_log_viewers[self.active_history].refresh()
+                except Exception as e:
+                    logging.error(f"Failed to refresh log viewer: {e}")
             try:
                 active_list_index = self.session_histories.index(self.active_history)
                 self.session_model.setData(self.session_model.index(active_list_index), self.active_history.display_name) # Update name if needed
@@ -935,22 +943,15 @@ class MainWindowV2(QMainWindow):
         if 0 <= row < len(self.session_histories):
             # Get the *clicked* history item
             history_item = self.session_histories[row]
-            session_name = history_item.display_name
-            log_to_show = history_item.log
-
-            # Create the context menu
             menu = QMenu(self)
-            view_action = QAction(f"View Log for '{session_name}'", self)
+            view_action = QAction(f"View Log for '{history_item.display_name}'", self)
             
-            # Use lambda to pass the correct log object
+            # Use lambda to pass the correct *history* object
             view_action.triggered.connect(
-                lambda: self._launch_log_viewer(log_to_show, session_name)
+                lambda: self._launch_log_viewer(history_item) # <<< Pass history obj
             )
             menu.addAction(view_action)
             
-            # --- (Future) Add "Replay Log..." action here ---
-            
-            # Show the menu at the cursor's global position
             menu.exec(self.session_list_view.mapToGlobal(pos))
 
     def _on_view_log(self):
@@ -959,28 +960,68 @@ class MainWindowV2(QMainWindow):
         Shows the log for the *currently active* session.
         """
         if self.active_history:
-            session_name = self.active_history.display_name
-            log_to_show = self.active_history.log
-            self._launch_log_viewer(log_to_show, session_name)
+            self._launch_log_viewer(self.active_history) # <<< Pass history obj
         else:
             logging.warning("View Log called with no active history.")
             
-    def _launch_log_viewer(self, log_object: 'GUILog', session_name: str):
+    def _launch_log_viewer(self, history_object: 'SessionHistory'):
         """
-        Creates and shows a non-modal LogViewerDialog.
+        Creates and shows a non-modal LogViewerDialog,
+        or activates an existing one for this history.
         """
-        # Create the dialog
-        dialog = LogViewerDialog(log_object, session_name, self)
+        # 1. Check if a viewer for this history already exists
+        if history_object in self.open_log_viewers:
+            existing_dialog = self.open_log_viewers[history_object]
+            existing_dialog.raise_()
+            existing_dialog.activateWindow() # Bring to front
+            existing_dialog.refresh() # Also refresh it
+            logging.debug(f"Activating existing log viewer for {history_object.display_name}")
+            return
+
+        # 2. If not, create a new one
+        try:
+            log_object = history_object.log
+            session_name = history_object.display_name
+            
+            # We are keeping the fix from last time: parent=None
+            dialog = LogViewerDialog(log_object, session_name, None)
+            
+            # Store a reference by its history object
+            self.open_log_viewers[history_object] = dialog
+            
+            # Connect the 'finished' signal to our new handler slot.
+            # We still use a lambda to pass the 'history_object' key
+            # to the slot so it knows which viewer to remove.
+            dialog.finished.connect(
+                lambda: self._on_log_viewer_closed(history_object) 
+            )
+            
+            dialog.show()
+            logging.debug(f"Creating new log viewer for {history_object.display_name}")
+
+        except Exception as e:
+            logging.error(f"Failed to launch log viewer: {e}", exc_info=True)
+
+    def _on_log_viewer_closed(self, history_object_key: 'SessionHistory'):
+        """
+        Slot called when a LogViewerDialog is closed.
+        Cleans up the reference AND re-raises the floating buttons.
+        """
+        # 1. Remove the dialog from our tracking dictionary
+        removed_viewer = self.open_log_viewers.pop(history_object_key, None)
         
-        # Store a reference to prevent garbage collection
-        self.open_dialogs.append(dialog)
+        if removed_viewer:
+            logging.debug(f"Removed closed log viewer for {history_object_key.display_name}.")
         
-        # Connect the 'finished' signal to remove the reference
-        # This is crucial for non-modal dialogs to be cleaned up
-        dialog.finished.connect(lambda: self.open_dialogs.remove(dialog))
-        
-        # Show the dialog modelessly
-        dialog.show()
+        # 2. Forcefully re-raise the floating buttons to the top
+        #    to fix the stacking order.
+        try:
+            self.session_collapse_button.raise_()
+            self.plot_controls_collapse_button.raise_()
+            logging.debug("Re-raised floating sidebar buttons.")
+        except Exception as e:
+            # This might fail if the main window is closing
+            logging.warning(f"Could not re-raise buttons: {e}")
 
     def _launch_x_convert_dialog(self):
         # Placeholder function called by the QAction
