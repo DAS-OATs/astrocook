@@ -72,17 +72,25 @@ class MainWindowV2(QMainWindow):
         # --- ** Sidebars are Children of the MainWindow, floating above ** ---
         self._setup_left_sidebar()  # Creates self.left_sidebar_widget
         self._setup_right_sidebar() # Creates self.right_sidebar_widget
-
-        # --- ** Buttons are also Children of MainWindow ** ---
         self._setup_collapse_buttons()
-
-        self._create_menubar()
-        self._apply_styles()
 
         # --- ** Central Stack Views ** ---
         self._setup_plot_view(initial_session)
         self._setup_empty_view()
+        
+        # --- 3. Set Central Widget THIRD ---
         self.setCentralWidget(self.central_stack) # Stack fills the window initially
+
+        # --- 4. CRITICAL FIX: Raise floating widgets LAST ---
+        # (This brings them visually on top of the central widget)
+        self.left_sidebar_widget.raise_()
+        self.right_sidebar_widget.raise_()
+        self.session_collapse_button.raise_()
+        self.plot_controls_collapse_button.raise_()
+
+        # --- Menubar, Styles, Initial State ---
+        self._create_menubar()
+        self._apply_styles()
 
         # --- Initial State ---
         is_initial_session_valid = bool(initial_session and initial_session.spec and len(initial_session.spec.x) > 0)
@@ -290,6 +298,7 @@ class MainWindowV2(QMainWindow):
         
         self.cursor_show_checkbox.setObjectName("PlotControlCheckbox")
         
+        self.right_sidebar_widget.resize(0, self.height())
         self.right_sidebar_widget.setVisible(False)
 
     def _setup_collapse_buttons(self):
