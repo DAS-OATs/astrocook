@@ -10,7 +10,7 @@ from PySide6.QtCore import ( # <<< Modify this import
 )
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QDialog, QFileDialog, 
+    QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, 
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, QMessageBox,
     QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
@@ -202,6 +202,40 @@ class MainWindowV2(QMainWindow):
 
         sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
     
+        # --- ** Axis & View Controls ** ---
+        view_layout = QVBoxLayout()
+        view_layout.setSpacing(8)
+        view_layout.addWidget(QLabel("<b>View Controls:</b>"))
+
+        # X-Axis Unit
+        form_layout_x = QFormLayout()
+        self.x_unit_combo = QComboBox()
+        self.x_unit_options = ["nm", "Angstrom", "um"] # Simplified units
+        self.x_unit_combo.addItems(self.x_unit_options)
+        self.x_unit_combo.setToolTip("Change X-axis display units (data remains nm).")
+        form_layout_x.addRow("X-Unit:", self.x_unit_combo)
+        view_layout.addLayout(form_layout_x)
+        
+        # X/Y Toggles
+        self.norm_y_checkbox = QCheckBox("Normalize (Y / Cont.)")
+        self.norm_y_checkbox.setToolTip("Plot Y / Continuum and set Y-limits.")
+        view_layout.addWidget(self.norm_y_checkbox)
+
+        self.log_x_checkbox = QCheckBox("Logarithmic X-Axis")
+        view_layout.addWidget(self.log_x_checkbox)
+        
+        self.log_y_checkbox = QCheckBox("Logarithmic Y-Axis")
+        view_layout.addWidget(self.log_y_checkbox)
+        
+        sidebar_layout.addLayout(view_layout)
+        # -----------------------------
+
+        # Connect new signals
+        self.x_unit_combo.currentTextChanged.connect(self._trigger_replot)
+        self.norm_y_checkbox.stateChanged.connect(self._trigger_replot)
+        self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
+        self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
+
         # --- Redshift Cursor Controls ---
         cursor_layout = QVBoxLayout() # Group cursor controls
         cursor_layout.setSpacing(8)
@@ -246,8 +280,14 @@ class MainWindowV2(QMainWindow):
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
         self.model_checkbox.setObjectName("PlotControlCheckbox")
         self.systems_checkbox.setObjectName("PlotControlCheckbox")
+        
+        self.x_unit_combo.setObjectName("XUnitCombo")
+        self.norm_y_checkbox.setObjectName("PlotControlCheckbox")
+        self.log_x_checkbox.setObjectName("PlotControlCheckbox")
+        self.log_y_checkbox.setObjectName("PlotControlCheckbox")
+        
         self.cursor_show_checkbox.setObjectName("PlotControlCheckbox")
-
+        
         self.right_sidebar_widget.setVisible(False)
 
     def _setup_collapse_buttons(self):
@@ -273,8 +313,14 @@ class MainWindowV2(QMainWindow):
     def _trigger_replot(self):
         """Slot to be called when any plot toggle checkbox changes state."""
         if self.plot_viewer: # Check if plot viewer exists
-            # Call the plot function, which will now read checkbox states
-            self.plot_viewer.plot_spectrum()
+            # ** 1. Get the currently active session state **
+            session_state = None
+            if self.active_history:
+                session_state = self.active_history.current_state
+            
+            # ** 2. Pass the state to plot_spectrum **
+            # plot_spectrum itself handles the None case
+            self.plot_viewer.plot_spectrum(session_state=session_state)
 
     def _update_cursor_and_replot(self):
         """Slot called when cursor series or redshift changes."""
@@ -555,17 +601,17 @@ class MainWindowV2(QMainWindow):
         button.setIcon(icon); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
-                                 is_branching: bool, autoscale_x: bool = False):
+                                 is_branching: bool):
         """
         Updates the GUI state AND history after a recipe returns a new session.
         Operates on the currently active SessionHistory.
         """
         if not isinstance(new_session, SessionV2):
-             logging.error("update_gui_session_state received invalid session.")
-             return
+            logging.error("update_gui_session_state received invalid session.")
+            return
         if self.active_history is None:
-             logging.error("Cannot update state: No active session history.")
-             return # Should not happen if a session is loaded
+            logging.error("Cannot update state: No active session history.")
+            return # Should not happen if a session is loaded
 
         if is_branching:
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
@@ -583,20 +629,20 @@ class MainWindowV2(QMainWindow):
             self.session_model.setStringList([h.display_name for h in self.session_histories])
             new_list_index = len(self.session_histories) - 1
             # Update view for the state in the new history
-            self._update_view_for_session(new_history.current_state, set_current_list_item=True, target_list_index=new_list_index, autoscale_x=autoscale_x)
+            self._update_view_for_session(new_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
 
         else: # Linear update
-             logging.debug(f"Linear update: Adding state to active SessionHistory.")
-             # Add state to the *current* history manager
-             self.active_history.add_state(new_session) # Handles truncation and index update
-             # Update the name in the sidebar model *if* the active history corresponds to the last item
-             # (This keeps the name updated for the current linear path)
-             try:
-                 active_list_index = self.session_histories.index(self.active_history)
-                 self.session_model.setData(self.session_model.index(active_list_index), self.active_history.display_name) # Update name if needed
-             except (ValueError, IndexError): pass
-             # Update view for the new state in the current history
-             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, autoscale_x=autoscale_x) # List item selection doesn't change
+            logging.debug(f"Linear update: Adding state to active SessionHistory.")
+            # Add state to the *current* history manager
+            self.active_history.add_state(new_session) # Handles truncation and index update
+            # Update the name in the sidebar model *if* the active history corresponds to the last item
+            # (This keeps the name updated for the current linear path)
+            try:
+                active_list_index = self.session_histories.index(self.active_history)
+                self.session_model.setData(self.session_model.index(active_list_index), self.active_history.display_name) # Update name if needed
+            except (ValueError, IndexError): pass
+            # Update view for the new state in the current history
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True) # List item selection doesn't change
 
         self._update_undo_redo_actions()
     
@@ -620,8 +666,7 @@ class MainWindowV2(QMainWindow):
         self._update_undo_redo_actions()
 
     def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
-                                 set_current_list_item=False, target_list_index=None,
-                                 autoscale_x=False):
+                                 set_current_list_item=False, target_list_index=None):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
@@ -629,12 +674,27 @@ class MainWindowV2(QMainWindow):
         # Update general UI visibility etc. based on validity
         self._update_ui_state(is_valid)
 
-        # Update X Unit Combo Box
-        #if is_valid and hasattr(session_state_to_show.spec, 'x') # ... : Update combo box ...
+        # ** Update X Unit Combo Box **
+        # This part is different. We don't read from the session (which is always nm).
+        # We *could* store the user's *preference* somewhere, but for now, let's just
+        # reset it to "nm" when a new session is shown, or leave it as is.
+        # Let's leave it as is, the plot function will just obey it.
+        # We DO need to reset the Normalize/Log toggles to their defaults.
+        if is_valid:
+             self.norm_y_checkbox.blockSignals(True)
+             self.log_x_checkbox.blockSignals(True)
+             self.log_y_checkbox.blockSignals(True)
+             self.norm_y_checkbox.setChecked(False)
+             self.log_x_checkbox.setChecked(False)
+             self.log_y_checkbox.setChecked(False)
+             self.norm_y_checkbox.blockSignals(False)
+             self.log_x_checkbox.blockSignals(False)
+             self.log_y_checkbox.blockSignals(False)
+             # Let x_unit_combo keep its value.
 
         # Update Plot Widget
         if is_valid:
-            self.plot_viewer.update_plot(session_state_to_show, autoscale_x=autoscale_x)
+            self.plot_viewer.update_plot(session_state_to_show)
         else:
              self.plot_viewer.update_plot(None) # Clear plot if session is None
 

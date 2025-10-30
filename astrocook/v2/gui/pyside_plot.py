@@ -14,7 +14,7 @@ import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 import scienceplots
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
@@ -28,22 +28,16 @@ except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
     logging.error("V1 functions/vars not found, cursor/system plotting may fail.")
     
-# --- Helper function for inverse Z calculation ---
-def z_convert_inverse(x_plot, xem_nm, zem_spec, x_unit):
-    """Converts plot X coordinate back to redshift for a given line."""
-    if not V1_FUNCTIONS_AVAILABLE or not isinstance(x_unit, au.UnitBase):
-        logging.warning("Cannot perform inverse Z conversion: V1 functions/units unavailable.")
-        return None
+# The x_plot it receives is *always* in the data's native units (nm)
+def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
+    """Converts plot X coordinate (in data units, nm) back to redshift."""
+    if not V1_FUNCTIONS_AVAILABLE: return None
     try:
-        # Convert plot x back to observed wavelength in nm
-        x_obs_nm = x_convert(x_plot * x_unit, zem=zem_spec, xunit=au.nm).to_value(au.nm)
-        # Calculate redshift
-        z = (x_obs_nm / xem_nm) - 1.0
+        z = (x_plot_nm / xem_nm) - 1.0 # Simple calculation
         return z
     except Exception as e:
-        logging.debug(f"Inverse z conversion failed for x={x_plot} ({x_unit}): {e}")
+        logging.debug(f"Inverse z conversion failed: {e}")
         return None
-# -----------------------------------------------
 
 # --- Helper to get colors ---
 def get_color_cycle(n=10, fallback_cmap='viridis'):
@@ -165,7 +159,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
             # --- Always update on motion if cursor is active ---
             mouse_x = event.xdata
-            spec = self.plot_widget.session_manager.spec
+            spec = self.plot_widget.session_state.spec
             if not spec: return
 
             try:
@@ -177,7 +171,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                     if t in xem_d: ref_transition = t; ref_xem_nm = xem_d[t].to_value(au.nm); break
                 if ref_xem_nm is None: return
                 zem_spec = getattr(spec, '_zem', 0.0); x_unit = spec.x.unit
-                new_z = z_convert_inverse(mouse_x, ref_xem_nm, zem_spec, x_unit)
+                new_z = z_convert_inverse(mouse_x, ref_xem_nm)
 
                 if new_z is not None:
                     # Update QLineEdit (no need for blockSignals if not dragging)
@@ -221,9 +215,8 @@ class SpectrumPlotWidget(QWidget):
     Refactored widget that contains the plot canvas, toolbar, and toggles.
     This replaces the content that was previously inside SpectrumViewerPySide.
     """
-    def __init__(self, session_manager: 'SessionV2', main_window_ref):
+    def __init__(self, initial_session_state: Optional['SessionV2'], main_window_ref):
         super().__init__()
-        self.session_manager = session_manager
         self.main_window = main_window_ref
         
         # Main Vertical Layout for the plot area
@@ -240,14 +233,14 @@ class SpectrumPlotWidget(QWidget):
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
 
         # Draw initial plot (will read checkbox state from main window)
-        self.plot_spectrum(initial_draw=True)
+        self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
 
     # --- Refactored Plotting Method (Requires an update) ---
-    def plot_spectrum(self, initial_draw=False, autoscale_x=False):
+    def plot_spectrum(self, session_state: Optional['SessionV2'], initial_draw=False):
         """
         Retrieves data from the immutable V2 Session and plots it.
         """
-        if self.session_manager is None:
+        if session_state is None:
             logging.debug("plot_spectrum called with no session manager. Clearing plot.")
             ax = self.canvas.axes
             ax.clear()
@@ -263,9 +256,9 @@ class SpectrumPlotWidget(QWidget):
             if initial_draw: self.canvas.draw()
             else: self.canvas.draw_idle()
             return # Exit early
-        
-        spec = self.session_manager.spec
-        systs = self.session_manager.systs # Get systs object
+
+        spec = session_state.spec
+        systs = session_state.systs # Get systs object
 
         ax = self.canvas.axes
 
@@ -324,8 +317,10 @@ class SpectrumPlotWidget(QWidget):
         self.canvas.background = None
         self.canvas.cursor_artists = []
         
+        plot_occurred = False
         if spec and len(spec.x) > 0:
-            
+            plot_occurred = True
+
             # --- ** Data Slicing Logic ** ---
             # Get full data arrays
             full_x_data = spec.x.value
@@ -335,6 +330,12 @@ class SpectrumPlotWidget(QWidget):
             full_model_data = spec.model # Returns np.ndarray or None
             
             x_unit_str = str(spec.x.unit); y_unit_str = str(spec.y.unit)
+
+            # --- Check View Toggles ---
+            is_norm_y = self.main_window.norm_y_checkbox.isChecked()
+            is_log_x = self.main_window.log_x_checkbox.isChecked()
+            is_log_y = self.main_window.log_y_checkbox.isChecked()
+            selected_x_unit = self.main_window.x_unit_combo.currentText()
 
             # --- ** Get CURRENT target Axes Limits ** ---
             # Get limits AFTER ax.clear() but BEFORE plotting.
@@ -374,6 +375,14 @@ class SpectrumPlotWidget(QWidget):
             dy_data = full_dy_data[data_slice]
             cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
             model_data = full_model_data[data_slice] if full_model_data is not None else None
+
+            if is_norm_y and cont_data is not None:
+                # Avoid division by zero
+                y_data = np.divide(y_data, cont_data, out=np.full_like(y_data, np.nan), where=cont_data!=0)
+                dy_data = np.divide(dy_data, cont_data, out=np.full_like(dy_data, np.nan), where=cont_data!=0)
+                if model_data is not None:
+                    model_data = np.divide(model_data, cont_data, out=np.full_like(model_data, np.nan), where=cont_data!=0)
+                cont_data = np.ones_like(cont_data) # Normalized continuum is 1
 
             x_unit = str(spec.x.unit)
             y_unit = str(spec.y.unit)
@@ -486,20 +495,41 @@ class SpectrumPlotWidget(QWidget):
                 ax.legend(loc=legend_loc, markerscale=0.2) # Smaller legend font
             ax.set_xlabel(f"Wavelength ({x_unit})")
             ax.set_ylabel(f"Flux ({y_unit})")
-            ax.set_title(f"Spectrum: {self.session_manager.name}")
+            ax.set_title(f"Spectrum: {session_state.name}")
             ax.grid(True, linestyle=':')
-            
-            # ** Restore Zoom/Pan if applicable **
-            if was_zoomed and not initial_draw:
-                logging.debug(f"Restoring zoom: Xlim={previous_xlim}, Ylim={previous_ylim}")
-                # Check if limits are still somewhat valid (optional, prevents extreme zooms on different data)
-                # For now, just restore them
-                ax.set_xlim(previous_xlim)
-                ax.set_ylim(previous_ylim)
-            else:
-                logging.debug("Not restoring zoom (initial draw or wasn't zoomed).")
 
-        else:
+            # 1. Scales (Log/Linear)
+            ax.set_xscale('log' if is_log_x else 'linear')
+            ax.set_yscale('log' if is_log_y else 'linear')
+
+            # 2. X-Axis Formatting
+            xlabel = "Wavelength (nm)" # Default
+            if selected_x_unit == 'Angstrom':
+                ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x * 10:g}"))
+                xlabel = "Wavelength (Angstrom)"
+            elif selected_x_unit == 'um':
+                ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x / 1000:g}"))
+                xlabel = "Wavelength (μm)"
+            # else: no formatter needed for nm
+            ax.set_xlabel(xlabel)
+
+            # 3. Y-Axis Label
+            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({y_unit_str})")
+            
+            # 4. Set Limits
+            # X-Axis: Restore zoom if needed
+            if was_zoomed and target_xlim is None: ax.set_xlim(previous_xlim)
+            elif target_xlim is not None: ax.set_xlim(target_xlim)
+            # else: autoscale (Matplotlib default)
+            
+            # Y-Axis: Handle normalization OR restore zoom
+            if is_norm_y:
+                ax.set_ylim(-0.3, 1.3) # Apply fixed limits
+            elif target_ylim is not None: ax.set_ylim(target_ylim)
+            elif was_zoomed_y: ax.set_ylim(previous_ylim)
+            # else: autoscale (Matplotlib default)
+
+        if not plot_occurred:
             ax = self.canvas.axes # Ensure ax is defined
             ax.clear() # Clear axes even if no data
             ax.set_title("No Spectrum Data Loaded") 
@@ -522,7 +552,7 @@ class SpectrumPlotWidget(QWidget):
     def get_cursor_line_positions_at_z(self, z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
         positions = []
-        spec = self.session_manager.spec
+        spec = session_state.spec
         main_window = self.main_window # type: MainWindowV2
         if not spec or not V1_FUNCTIONS_AVAILABLE: return []
         try:
@@ -534,23 +564,16 @@ class SpectrumPlotWidget(QWidget):
             for t in transitions:
                 if t in xem_d:
                     xem_nm = xem_d[t].to_value(au.nm)
-                    x_obs = (1 + z_cursor) * xem_nm * au.nm
-                    try:
-                        # Convert observed nm to current plot unit
-                        x_plot = x_convert(x_obs, zem=zem, xunit=x_unit).value
-                        positions.append(x_plot)
-                    except Exception as e:
-                        logging.debug(f"Cursor pos calculation failed for {t}: {e}")
-                        continue # Skip this transition if conversion fails
+                    x_plot_nm = (1 + z_cursor) * xem_nm # This is the data coordinate
+                    positions.append(x_plot_nm)
         except (ValueError, AttributeError, ImportError) as e:
             logging.warning(f"Could not calculate cursor positions: {e}")
             return []
         return positions
     
-    def update_plot(self, new_session, autoscale_x=False):
+    def update_plot(self, new_session_state: Optional['SessionV2']):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
-        self.session_manager = new_session
-        self.plot_spectrum(initial_draw=False, autoscale_x=autoscale_x)
+        self.plot_spectrum(session_state=new_session_state, initial_draw=False)
 
 # NOTE: The rest of the plotting logic (plot_spectrum content, resizeEvent, etc.) 
 # must be placed into this class, and the old SpectrumViewerPySide class should be deleted.
