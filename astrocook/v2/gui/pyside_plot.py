@@ -173,7 +173,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             
             # --- Always update on motion if cursor is active ---
             mouse_x = event.xdata
-            spec = self.plot_widget.session_state.spec
+            spec = session_state.spec
             if not spec: return
 
             try:
@@ -197,7 +197,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                         main_window.cursor_z_input.setText(f"{new_z:.7f}")
 
                     # Update Artist Positions & Redraw using Blit
-                    new_x_positions = self.plot_widget.get_cursor_line_positions_at_z(new_z)
+                    new_x_positions = self.plot_widget.get_cursor_line_positions_at_z(session_state, new_z)
 
                     # Ensure artists exist and match count
                     if not self.cursor_artists or len(new_x_positions) != len(self.cursor_artists):
@@ -485,7 +485,7 @@ class SpectrumPlotWidget(QWidget):
                 try:
                     z_cursor = float(self.main_window.cursor_z_input.text())
                     # Calculate positions using helper
-                    cursor_x_positions = self.get_cursor_line_positions_at_z(z_cursor)
+                    cursor_x_positions = self.get_cursor_line_positions_at_z(session_state, z_cursor)
                     added_cursor_label = False
                     colors = get_color_cycle(5) # Get colors
 
@@ -532,21 +532,30 @@ class SpectrumPlotWidget(QWidget):
             # 3. Y-Axis Label
             ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({str(spec.y.unit)})")
             
-            # 4. Set Limits
-            # X-Axis: Restore zoom if needed
-            if previous_xlim != (0.0, 1.0): ax.set_xlim(previous_xlim)
-            
-            # Y-Axis: Handle normalization OR restore zoom
+            # --- X Limits ---
+            # Priority: Autoscale if requested (e.g., by unit change)
+            if was_zoomed:
+                logging.debug(f"Restoring previous X zoom: {previous_xlim}")
+                ax.set_xlim(previous_xlim)
+            # Else (initial draw or zoomed out), let Matplotlib autoscale
+            else:
+                logging.debug("Allowing default X autoscale.")
+                # No command needed, autoscale is default after clear()
+
+            # --- Y Limits (Your simplified logic) ---
             if norm_state_changed:
-                # 2. Priority: Normalization was just toggled
                 if is_norm_y:
                     logging.debug("Normalization toggled ON: Setting default Y limits.")
-                    ax.set_ylim(-0.3, 1.3) # Apply fixed limits
+                    ax.set_ylim(-0.3, 1.3)
                 else:
                     logging.debug("Normalization toggled OFF: Autoscaling Y.")
-                    ax.autoscale(enable=True, axis='y') # Autoscale flux
-            elif previous_ylim != (0.0, 1.0):
+                    ax.autoscale(enable=True, axis='y')
+            elif was_zoomed:
+                logging.debug(f"Restoring previous Y zoom: {previous_ylim}")
                 ax.set_ylim(previous_ylim)
+            # Else (initial draw or zoomed out), let Matplotlib autoscale
+            else:
+                logging.debug("Allowing default Y autoscale.")
 
         if not plot_occurred:
             ax = self.canvas.axes # Ensure ax is defined
@@ -568,7 +577,7 @@ class SpectrumPlotWidget(QWidget):
         # NOTE: You must update the self.session reference here if the session changes.
         # This function will be called by update_plot().
 
-    def get_cursor_line_positions_at_z(self, z_cursor):
+    def get_cursor_line_positions_at_z(self, session_state: 'SessionV2', z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
         positions = []
         spec = session_state.spec
