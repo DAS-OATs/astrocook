@@ -1,12 +1,13 @@
-import sys
+import argparse
 import os
 import logging
+import sys
 from PySide6.QtWidgets import QApplication
 
 # Assuming your session and GUI modules are correctly set up on the path
 # (This usually means the project root needs to be added for module resolution)
 
-from astrocook.v2.session import SessionV2
+from astrocook.v2.session import SessionV2, load_session_from_file
 from astrocook.v2.gui.main_window import MainWindowV2 # Import your new main window
 
 # --- Minimal V1/V2 Context Mocks (Still needed for initialization) ---
@@ -23,25 +24,54 @@ class MockGUI:
 def main():
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(module)s: %(message)s')
     
-    # 1. Initialize PySide Application (Must be first)
+    # 1. Set up Argument Parser
+    parser = argparse.ArgumentParser(description="Launch Astrocook V2 PySide GUI.")
+    parser.add_argument('session_file', nargs='?', default=None,
+                        help="Optional path to a .acs or .acs2 session file to load.")
+    args = parser.parse_args()
+
+    # 2. Initialize PySide Application (Must be first)
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
 
-    # 1. Create a TRULY empty V2 session 
+    # 3. Create a TRULY empty V2 session
     mock_gui = MockGUI()
-    empty_session = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None) 
-    
-    # 2. Initialize the Main Window (Start with the empty state)
+    empty_session = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None)
+
+    # 4. Load Session or Create Empty
+    session_to_load = None
+    if args.session_file:
+        file_path = os.path.realpath(args.session_file)
+        if os.path.exists(file_path):
+            logging.info(f"Attempting to load session from: {file_path}")
+            try:
+                session_name = os.path.splitext(os.path.basename(file_path))[0]
+                session_to_load = load_session_from_file(
+                    archive_path=file_path,
+                    name=session_name,
+                    format_name='generic_spectrum', # V1 loader default
+                    gui_context=mock_gui
+                )
+                if session_to_load == 0: # Check for V1-style failure
+                     raise RuntimeError("load_session_from_file returned failure code 0.")
+            except Exception as e:
+                logging.error(f"Failed to load session file {file_path}: {e}", exc_info=True)
+                session_to_load = None # Fallback to empty
+        else:
+            logging.warning(f"File not found: {args.session_file}. Starting empty.")
+
+    if session_to_load is None:
+        # No file provided, or loading failed.
+        logging.info("Starting with an empty session.")
+        session_to_load = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None)
+
+    # 5. Initialize the Main Window (Start with the empty state)
     # The MainWindowV2.__init__ must be adapted to handle the truly empty list.
-    main_window = MainWindowV2(empty_session) 
+    main_window = MainWindowV2(session_to_load) 
     main_window.show()
 
-    # --- DELETE/COMMENT OUT ALL DATA LOADING LOGIC ---
-    # Delete the logic that attempts to load the J0103-1305 file implicitly.
-    # The initial state must be empty.
-    
-    # 3. Start the PySide Event Loop (CRITICAL)
+    # 6. Start the PySide Event Loop (CRITICAL)
     sys.exit(app.exec())
 
 

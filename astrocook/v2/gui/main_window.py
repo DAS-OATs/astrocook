@@ -68,10 +68,7 @@ class MainWindowV2(QMainWindow):
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
-        self._setup_plot_view(initial_session)
-        self._setup_empty_view()
-        self.setCentralWidget(self.central_stack) # Stack fills the window initially
-
+        
         # --- ** Sidebars are Children of the MainWindow, floating above ** ---
         self._setup_left_sidebar()  # Creates self.left_sidebar_widget
         self._setup_right_sidebar() # Creates self.right_sidebar_widget
@@ -82,6 +79,11 @@ class MainWindowV2(QMainWindow):
         self._create_menubar()
         self._apply_styles()
 
+        # --- ** Central Stack Views ** ---
+        self._setup_plot_view(initial_session)
+        self._setup_empty_view()
+        self.setCentralWidget(self.central_stack) # Stack fills the window initially
+
         # --- Initial State ---
         is_initial_session_valid = bool(initial_session and initial_session.spec and len(initial_session.spec.x) > 0)
         if is_initial_session_valid:
@@ -90,11 +92,11 @@ class MainWindowV2(QMainWindow):
             self.session_histories.append(initial_history)
             self.active_history = initial_history
             self.session_model.setStringList([h.display_name for h in self.session_histories])
-            self._update_view_for_session(initial_history.current_state, set_current_list_item=True) # Show initial state
+            self._update_view_for_session(initial_history.current_state, set_current_list_item=True, is_startup=True) # Show initial state
         else:
             # No initial session, start empty
             self.active_history = None
-            self._update_view_for_session(None, set_current_list_item=False) # Show empty state
+            self._update_view_for_session(None, set_current_list_item=False, is_startup=True) # Show empty state
 
         self._update_undo_redo_actions() # Set initial state
 
@@ -666,13 +668,13 @@ class MainWindowV2(QMainWindow):
         self._update_undo_redo_actions()
 
     def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
-                                 set_current_list_item=False, target_list_index=None):
+                                 set_current_list_item=False, target_list_index=None, is_startup=False):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
-
+        
         # Update general UI visibility etc. based on validity
-        self._update_ui_state(is_valid)
+        self._update_ui_state(is_valid, is_startup=is_startup)
 
         # ** Update X Unit Combo Box **
         # This part is different. We don't read from the session (which is always nm).
@@ -878,17 +880,18 @@ class MainWindowV2(QMainWindow):
             # --- State when a valid session IS loaded ---
             if self.central_stack.currentIndex() != 0: # If switching from empty
                 self.central_stack.setCurrentIndex(0)
-                # Resize only on first valid load
-                # Check if *any* previous session existed and was valid
-                was_previously_empty = len(self.session_histories) <= 1
-                if is_startup or was_previously_empty:
-                    logging.debug("Resizing and centering window for first valid session.")
-                    self.resize(1400, 900)
-                    # Recenter after resize
-                    screen_geometry = QApplication.primaryScreen().geometry()
-                    x = (screen_geometry.width() - self.width()) // 2
-                    y = (screen_geometry.height() - self.height()) // 2
-                    self.move(x, y)
+            
+            # 2. Resize logic (DE-NESTED from the stack index check)
+            # Check if this is the very first session being loaded
+            was_previously_empty = len(self.session_histories) <= 1
+            if is_startup or was_previously_empty:
+                logging.debug("Resizing and centering window for first valid session.")
+                self.resize(1400, 900)
+                # Recenter after resize
+                screen_geometry = QApplication.primaryScreen().geometry()
+                x = (screen_geometry.width() - self.width()) // 2
+                y = (screen_geometry.height() - self.height()) // 2
+                self.move(x, y)
 
             # Show buttons
             self.session_collapse_button.setVisible(True)
