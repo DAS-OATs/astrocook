@@ -2,14 +2,22 @@ import logging
 from typing import List, Optional
 
 from ..session import SessionV2
+from ...v1.gui_log import GUILog
 
 class SessionHistory:
     """Manages the list of states and current index for one session lineage."""
-    def __init__(self, initial_state: SessionV2):
+    def __init__(self, initial_state: SessionV2, gui_log: GUILog):
         if not isinstance(initial_state, SessionV2):
             raise TypeError("SessionHistory must be initialized with a SessionV2 object.")
+        if not isinstance(gui_log, GUILog): # <<< Add check
+            raise TypeError("SessionHistory must be initialized with a GUILog object.")
+        
         self.states: List[SessionV2] = [initial_state]
         self.current_index: int = 0 # Points to the active state
+        self.log: GUILog = gui_log
+
+        # Ensure the initial state uses this history's log instance
+        initial_state.log = self.log
 
     @property
     def current_state(self) -> SessionV2:
@@ -31,6 +39,12 @@ class SessionHistory:
         # Truncate states after the current index
         if self.current_index < len(self.states) - 1:
             del self.states[self.current_index + 1:]
+        
+        # Ensure the new state (which should have a ref) points to this log
+        if new_state.log is not self.log:
+            logging.warning("SessionHistory.add_state: New state had incorrect log reference. Forcibly linking.")
+            new_state.log = self.log
+
         # Append the new state
         self.states.append(new_state)
         # Update the index to point to the new state

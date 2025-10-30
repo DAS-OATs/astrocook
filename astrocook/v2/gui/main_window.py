@@ -1,8 +1,8 @@
 import logging
 import os
-from PySide6.QtCore import ( # <<< Modify this import
+from PySide6.QtCore import (
     Qt,
-    QItemSelectionModel, # <<< Add QItemSelectionModel
+    QItemSelectionModel,
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup,
@@ -20,6 +20,8 @@ from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
 from .session_history import SessionHistory
 from ..session import SessionV2, load_session_from_file
+from ..utils import guarded_deepcopy_v1_state
+from ...v1.gui_log import GUILog
 try:
     from ...v1.functions import trans_parse
     from ...v1.vars import xem_d
@@ -47,7 +49,7 @@ class MockV1GUIContext:
         # V2 GUI doesn't use these flags, so return None
         return None
 class MainWindowV2(QMainWindow):
-    def __init__(self, initial_session: SessionV2):
+    def __init__(self, initial_session: SessionV2, initial_log_string: str):
         super().__init__()
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
@@ -94,9 +96,25 @@ class MainWindowV2(QMainWindow):
 
         # --- Initial State ---
         is_initial_session_valid = bool(initial_session and initial_session.spec and len(initial_session.spec.x) > 0)
+        
+        # ** Create the Mock GUI context once for all loggers **
+        self.mock_gui_context = MockV1GUIContext()
+
         if is_initial_session_valid:
             # Create the first history manager
-            initial_history = SessionHistory(initial_session)
+            # 1. Create the log object
+            initial_log = GUILog(self.mock_gui_context)
+            if initial_log_string: # <<< Set the loaded string
+                try:
+                    # GUILog.str property automatically handles json.loads
+                    initial_log.str = initial_log_string
+                    logging.info("Initial session log restored.")
+                except Exception as e:
+                    logging.error(f"Failed to parse initial log string: {e}")
+                    initial_log.clear() # Reset to empty log on failure
+
+            # Create the first history manager
+            initial_history = SessionHistory(initial_session, initial_log)
             self.session_histories.append(initial_history)
             self.active_history = initial_history
             self.session_model.setStringList([h.display_name for h in self.session_histories])
@@ -626,12 +644,33 @@ class MainWindowV2(QMainWindow):
 
         if is_branching:
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
-            # Create new history manager, copying states up to current index
-            new_history = SessionHistory(self.active_history.states[0]) # Start with initial state
-            new_history.states = self.active_history.states[:self.active_history.current_index + 1] # Copy history
-            new_history.current_index = self.active_history.current_index
-            # Add the *new* state from the recipe to this *new* history
-            new_history.add_state(new_session) # This correctly handles truncation and index update within new_history
+            # 1. Get the source log and create a V1-safe deep copy
+            source_log = self.active_history.log
+            new_log_copy = guarded_deepcopy_v1_state(source_log)
+            if new_log_copy is None:
+                logging.error("Failed to deepcopy GUILog for branching, aborting.")
+                QMessageBox.critical(self, "Branching Error", "Could not copy session log state.")
+                return
+
+            # 2. Update the new state from the recipe to point to the *new* log
+            new_session.log = new_log_copy
+
+            # 3. Create the new history manager, passing the first state and the new log
+            # The SessionHistory constructor will link states[0].log to new_log_copy
+            initial_state_for_branch = self.active_history.states[0]
+            new_history = SessionHistory(initial_state_for_branch, new_log_copy)
+
+            # 4. Copy the *rest* of the states, re-linking their log reference
+            other_states_to_copy = self.active_history.states[1:self.active_history.current_index + 1]
+            for state in other_states_to_copy:
+                state.log = new_log_copy # Re-link to the new log
+            
+            # 5. Manually set the full state list for the new history
+            new_history.states.extend(other_states_to_copy) # Add the re-linked states
+            new_history.current_index = self.active_history.current_index # Set index to match
+
+            # 6. Add the *new* state from the recipe to this *new* history
+            new_history.add_state(new_session) # This correctly handles truncation and index update
 
             # Add the new history manager to the main list
             self.session_histories.append(new_history)
@@ -661,16 +700,26 @@ class MainWindowV2(QMainWindow):
         """Creates and adds a new SessionHistory manager."""
         if new_session is None or isinstance(new_session, int): return
 
-        # Always create a new history for a newly loaded session
-        new_history = SessionHistory(new_session)
+        # 1. Create the new GUILog object for this history
+        new_log = GUILog(self.mock_gui_context)
+        if log_string: # <<< Set the loaded log string
+             try:
+                 new_log.str = log_string
+                 logging.info(f"Log restored for session '{new_session.name}'.")
+             except Exception as e:
+                 logging.error(f"Failed to parse log string for '{new_session.name}': {e}")
+                 new_log.clear()
+
+        # 2. Always create a new history for a newly loaded session
+        new_history = SessionHistory(new_session, new_log)
         self.session_histories.append(new_history)
         self.active_history = new_history # Newly loaded becomes active
         # Update model
         self.session_model.setStringList([h.display_name for h in self.session_histories])
 
-    def add_session(self, new_session, initial_load=False):
+    def add_session(self, new_session: SessionV2, log_string: str, initial_load=False):
         """Adds a new session history and updates view."""
-        self._add_session_internal(new_session, is_initial=initial_load)
+        self._add_session_internal(new_session, log_string, is_initial=initial_load)
         if self.active_history:
             new_list_index = len(self.session_histories) - 1
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
@@ -692,22 +741,22 @@ class MainWindowV2(QMainWindow):
         # Let's leave it as is, the plot function will just obey it.
         # We DO need to reset the Normalize/Log toggles to their defaults.
         if is_valid:
-             self.norm_y_checkbox.blockSignals(True)
-             self.log_x_checkbox.blockSignals(True)
-             self.log_y_checkbox.blockSignals(True)
-             self.norm_y_checkbox.setChecked(False)
-             self.log_x_checkbox.setChecked(False)
-             self.log_y_checkbox.setChecked(False)
-             self.norm_y_checkbox.blockSignals(False)
-             self.log_x_checkbox.blockSignals(False)
-             self.log_y_checkbox.blockSignals(False)
-             # Let x_unit_combo keep its value.
+            self.norm_y_checkbox.blockSignals(True)
+            self.log_x_checkbox.blockSignals(True)
+            self.log_y_checkbox.blockSignals(True)
+            self.norm_y_checkbox.setChecked(False)
+            self.log_x_checkbox.setChecked(False)
+            self.log_y_checkbox.setChecked(False)
+            self.norm_y_checkbox.blockSignals(False)
+            self.log_x_checkbox.blockSignals(False)
+            self.log_y_checkbox.blockSignals(False)
+            # Let x_unit_combo keep its value.
 
         # Update Plot Widget
         if is_valid:
             self.plot_viewer.update_plot(session_state_to_show)
         else:
-             self.plot_viewer.update_plot(None) # Clear plot if session is None
+            self.plot_viewer.update_plot(None) # Clear plot if session is None
 
         # Update List View Selection
         if set_current_list_item:
@@ -805,7 +854,7 @@ class MainWindowV2(QMainWindow):
 
             try:
                 # CRITICAL FIX: Call the utility function with 'archive_path'
-                new_session = load_session_from_file(
+                new_session, log_string = load_session_from_file(
                     archive_path=file_name, # <<< CORRECT ARGUMENT NAME
                     name=session_name, # Use extracted name
                     format_name=format_name,
@@ -816,7 +865,7 @@ class MainWindowV2(QMainWindow):
                      raise RuntimeError("load_session_from_file returned failure code 0.")
 
                 # Add the new session to the application state
-                self.add_session(new_session)
+                self.add_session(new_session, log_string)
 
             except Exception as e:
                 logging.error(f"Failed to load file via V2 adapter: {e}")

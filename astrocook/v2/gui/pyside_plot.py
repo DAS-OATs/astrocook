@@ -41,8 +41,14 @@ def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
         return None
 
 # --- Helper to get colors ---
-def get_color_cycle(n=10, fallback_cmap='viridis'):
+def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
     # ... (function definition as before) ...
+    if cmap is not None:
+        try:
+            cmap_obj = plt.get_cmap(cmap)
+            return [cmap_obj(i / n) for i in range(n)]
+        except Exception as e:
+            logging.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
     try:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         return [colors[i % len(colors)] for i in range(n)]
@@ -402,7 +408,7 @@ class SpectrumPlotWidget(QWidget):
             x_unit = str(spec.x.unit)
             y_unit = str(spec.y.unit)
                     
-            colors = get_color_cycle(5)
+            colors = get_color_cycle(5, cmap='tab20') # Get colors
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
             ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
@@ -487,8 +493,7 @@ class SpectrumPlotWidget(QWidget):
                     # Calculate positions using helper
                     cursor_x_positions = self.get_cursor_line_positions_at_z(session_state, z_cursor)
                     added_cursor_label = False
-                    colors = get_color_cycle(5) # Get colors
-
+                    
                     for x_plot in cursor_x_positions:
                         # ** REMOVED check against xlim_plot **
                         # if xlim_plot[0] <= x_plot <= xlim_plot[1]:

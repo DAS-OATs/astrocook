@@ -47,28 +47,31 @@ def main():
             logging.info(f"Attempting to load session from: {file_path}")
             try:
                 session_name = os.path.splitext(os.path.basename(file_path))[0]
-                session_to_load = load_session_from_file(
+                session, log_str = load_session_from_file(
                     archive_path=file_path,
                     name=session_name,
                     format_name='generic_spectrum', # V1 loader default
                     gui_context=mock_gui
                 )
-                if session_to_load == 0: # Check for V1-style failure
-                     raise RuntimeError("load_session_from_file returned failure code 0.")
+                if session != 0:
+                    initial_session = session
+                    initial_log_string = log_str
+                else:
+                    logging.error(f"Failed to load initial session from {file_path}.")
             except Exception as e:
                 logging.error(f"Failed to load session file {file_path}: {e}", exc_info=True)
-                session_to_load = None # Fallback to empty
+                initial_session = None # Fallback to empty
         else:
             logging.warning(f"File not found: {args.session_file}. Starting empty.")
 
-    if session_to_load is None:
+    if initial_session is None:
         # No file provided, or loading failed.
         logging.info("Starting with an empty session.")
-        session_to_load = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None)
+        initial_session = SessionV2(name="Astrocook V2", gui=mock_gui, spec=None)
 
     # 5. Initialize the Main Window (Start with the empty state)
     # The MainWindowV2.__init__ must be adapted to handle the truly empty list.
-    main_window = MainWindowV2(session_to_load) 
+    main_window = MainWindowV2(initial_session, initial_log_string)
     main_window.show()
 
     # 6. Start the PySide Event Loop (CRITICAL)

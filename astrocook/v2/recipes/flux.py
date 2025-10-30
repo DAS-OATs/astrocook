@@ -46,11 +46,22 @@ class RecipeFluxV2:
         self._tag = 'cb'
 
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
-              kappa: str = '5.0', filling: str = 'nan', norm: str = 'False') -> 'SpectrumV2':
+              kappa: str = '5.0', filling: str = 'nan', norm: str = 'False') -> 'SessionV2':
         """
-        API: Rebins the spectrum and returns a NEW SpectrumV2 instance.
+        API: Rebins the spectrum, logs the action, and returns a NEW SpectrumV2 instance.
         """
-        
+
+        # 2. Log the action *before* executing
+        # We log to the session's log instance.
+        # append_full also adds the '_refresh' command
+        try:
+            # self._tag is 'cb' from the __init__
+            self._session.log.append_full(self._tag, 'rebin', params)
+            logging.debug(f"Logged recipe: {self._tag}.rebin")
+        except Exception as e:
+            # Don't stop the recipe, but log the failure
+            logging.error(f"Failed to log rebin action: {e}")
+
         try:
             # Type Casting based on string input
             xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None

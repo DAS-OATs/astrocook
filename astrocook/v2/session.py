@@ -1,9 +1,10 @@
 import astropy.units as au
 from copy import deepcopy
+import json
 import logging
 import numpy as np
 import os
-from typing import Optional, Any
+from typing import Any, Optional, Tuple
 
 from ..v1.defaults import Defaults
 from ..v1.format import Format # Import the Format V1 class for I/O 
@@ -18,103 +19,121 @@ from .system_list import SystemListV2
 from .system_list_migration import migrate_system_list_v1_to_v2
 from .utils import guarded_deepcopy_v1_state
 
-def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':
+def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Tuple[Optional['SessionV2'], str]:
     """
     Orchestrates the loading of a session from an archive (.acs or .acs2)
     and handles the V1-to-V2 migration if necessary.
+
+    Returns:
+        A tuple: (SessionV2 object, log_history_string)
+        On failure, returns (0, "")
     """
     archive_manager = V1ArchiveManager(archive_path)
     temp_dir = archive_manager.unpack()
     archive_root = ""
     v2_metadata = None
+    log_history_string = ""
     
-    if temp_dir is None:
-        # Not an archive, assume it's a single FITS file
-        archive_root = os.path.splitext(archive_path)[0]
-        spec_file_path = archive_path # The path *is* the spec file
-    else:
-        # It's an archive, find the components
-        spec_file_path = archive_manager.get_structure_path('spec')
-        if not spec_file_path:
-             raise FileNotFoundError("Could not find a _spec.fits file in the archive.")
-        
-        archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
-        
-        # --- V2 METADATA LOADING ---
-        # V2 archive name is predictable: {base_name}_meta.json
-        meta_fname = f"{os.path.basename(archive_root)}_meta.json"
-        meta_file_path = os.path.join(temp_dir, meta_fname)
-
-        if os.path.exists(meta_file_path):
-            try:
-                with open(meta_file_path, 'r') as f:
-                    v2_metadata = json.load(f)
-                logging.info("Loaded V2 metadata from _meta.json.")
-            except Exception as e:
-                logging.error(f"Failed to load _meta.json: {e}")
-        else:
-            logging.debug("No _meta.json found, assuming V1 archive.")
-        # -------------------------
-
-    # 1. Load Spectrum (This logic works for both V1 and V2 FITS files)
-    spectrum_v2 = load_and_migrate_structure(
-        archive_root, 'spec', gui_context, format_name, spec_file_path=spec_file_path
-    )
-
-    # 2. Load System List (Now handles V1 or V2)
-    system_list_v2 = load_and_migrate_structure(
-        archive_root, 'systs', gui_context, format_name,
-        v2_metadata=v2_metadata  # <<< PASS THE LOADED V2 METADATA
-    )
-
-    # 3. Create the SessionV2 wrapper (V1 compatibility attributes)
-    
-    # Initialize V1 GUI logger (with GUI context) and Defaults
-    v1_log = GUILog(gui_context)
-    v1_defs = Defaults(gui_context)
-    
-    # This is the 'try' block you were referring to, which loads the log.
     try:
-        if v2_metadata and 'log_history_json' in v2_metadata:
-            # V2 path: Load log from the metadata dict
-            v1_log.str = v2_metadata['log_history_json']
-            logging.info("V2 log history restored.")
-        elif temp_dir:
-            # V1 path: Find and load the _log.json file from the archive
-            log_path = archive_manager.get_structure_path('log.json')
-            if not log_path:
-                 # V1 log files might not follow the _suffix pattern, try basename
-                 log_path_alt = os.path.join(temp_dir, f"{os.path.basename(archive_root)}_log.json")
-                 if os.path.exists(log_path_alt):
-                     log_path = log_path_alt
 
-            if log_path and os.path.exists(log_path):
-                with open(log_path, 'r') as f:
-                    v1_log.str = f.read()
-                logging.info(f"V1 log history restored from {log_path}.")
-            else:
-                 logging.debug(f"No V1 _log.json found (archive root: {archive_root}).")
+        if temp_dir is None:
+            # Not an archive, assume it's a single FITS file
+            archive_root = os.path.splitext(archive_path)[0]
+            spec_file_path = archive_path # The path *is* the spec file
         else:
-            logging.debug("No archive or V2 metadata, starting with empty log.")
-            
-    except Exception as e:
-        logging.error(f"Failed to restore log history: {e}")
-            
-    # Clean up the temporary directory
-    archive_manager.cleanup()
+            # It's an archive, find the components
+            spec_file_path = archive_manager.get_structure_path('spec')
+            if not spec_file_path:
+                 raise FileNotFoundError("Could not find a _spec.fits file in the archive.")
 
-    # Instantiate and return the new SessionV2 object
-    # (We assume SessionV2 class is defined in this file)
-    # Instantiate and return the new SessionV2 object
-    new_session = SessionV2(
-        name=name, 
-        gui=gui_context, 
-        log=v1_log, 
-        defs=v1_defs,
-        spec=spectrum_v2, 
-        systs=system_list_v2
-    )
-    return new_session
+            archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
+
+            # --- V2 METADATA LOADING ---
+            # V2 archive name is predictable: {base_name}_meta.json
+            meta_fname = f"{os.path.basename(archive_root)}_meta.json"
+            meta_file_path = os.path.join(temp_dir, meta_fname)
+
+            if os.path.exists(meta_file_path):
+                try:
+                    with open(meta_file_path, 'r') as f:
+                        v2_metadata = json.load(f)
+                    logging.info("Loaded V2 metadata from _meta.json.")
+                except Exception as e:
+                    logging.error(f"Failed to load _meta.json: {e}")
+            else:
+                logging.debug("No _meta.json found, assuming V1 archive.")
+            # -------------------------
+
+        # 1. Load Spectrum (This logic works for both V1 and V2 FITS files)
+        spectrum_v2 = load_and_migrate_structure(
+            archive_root, 'spec', gui_context, format_name, spec_file_path=spec_file_path
+        )
+
+        # 2. Load System List (Now handles V1 or V2)
+        system_list_v2 = load_and_migrate_structure(
+            archive_root, 'systs', gui_context, format_name,
+            v2_metadata=v2_metadata  # <<< PASS THE LOADED V2 METADATA
+        )
+
+        if not spectrum_v2: # <<< Add check for spectrum load failure
+            raise RuntimeError("Spectrum loading failed, aborting session creation.")
+
+        # 3. Create the SessionV2 wrapper (V1 compatibility attributes)
+
+        # Initialize V1 GUI logger (with GUI context) and Defaults
+        v1_log = GUILog(gui_context)
+        v1_defs = Defaults(gui_context)
+
+        # This is the 'try' block you were referring to, which loads the log.
+        try:
+            if v2_metadata and 'log_history_json' in v2_metadata:
+                # V2 path: Load log from the metadata dict
+                log_history_string = v2_metadata['log_history_json'] # <<< Store string
+                logging.info("V2 log history restored.")
+            elif temp_dir:
+                # V1 path: Find and load the _log.json file from the archive
+                log_path = archive_manager.get_structure_path('log.json')
+                if not log_path:
+                    # V1 log files might not follow the _suffix pattern, try basename
+                    log_path_alt = os.path.join(temp_dir, f"{os.path.basename(archive_root)}_log.json")
+                    if os.path.exists(log_path_alt):
+                        log_path = log_path_alt
+
+                if log_path and os.path.exists(log_path):
+                    with open(log_path, 'r') as f:
+                        log_history_string = f.read()
+                    logging.info(f"V1 log history restored from {log_path}.")
+                else:
+                    logging.debug(f"No V1 _log.json found (archive root: {archive_root}).")
+            else:
+                logging.debug("No archive or V2 metadata, starting with empty log.")
+
+        except Exception as e:
+            logging.error(f"Failed to restore log history: {e}")
+
+        # Clean up the temporary directory
+        archive_manager.cleanup()
+
+        # Instantiate and return the new SessionV2 object
+        # (We assume SessionV2 class is defined in this file)
+        # Instantiate and return the new SessionV2 object
+        new_session = SessionV2(
+            name=name, 
+            gui=gui_context, 
+            log=v1_log, 
+            defs=v1_defs,
+            spec=spectrum_v2, 
+            systs=system_list_v2
+        )
+        return new_session, log_history_string
+
+    except Exception as e: # <<< Catch errors during loading
+        logging.error(f"FATAL: load_session_from_file failed: {e}", exc_info=True)
+        return 0, "" # <<< Return failure tuple
+
+    finally: # <<< Ensure cleanup runs
+        # Clean up the temporary directory
+        archive_manager.cleanup()
 
 class SessionV2:
     """
@@ -208,7 +227,7 @@ class SessionV2:
         """
         try:
             # 1. Call the module-level orchestrator function
-            session = load_session_from_file(
+            session, _ = load_session_from_file(
                 archive_path=file_path,  # <<< ARGUMENT RENAMED
                 name=name, 
                 gui_context=gui_context, 
@@ -231,7 +250,7 @@ class SessionV2:
              raise TypeError("with_new_spectrum requires a valid SpectrumV2 object")
 
         # Use guarded deepcopy for V1 state objects (log, defs)
-        new_log = guarded_deepcopy_v1_state(self.log)
+        new_log = self.log # <<< PASS THE REFERENCE
         new_defs = guarded_deepcopy_v1_state(self.defs)
 
         # Create args for the new SessionV2 instance
@@ -258,7 +277,7 @@ class SessionV2:
         if not isinstance(new_systs, SystemListV2):
              raise TypeError("with_new_system_list requires a valid SystemListV2 object")
 
-        new_log = guarded_deepcopy_v1_state(self.log)
+        new_log = self.log # <<< PASS THE REFERENCE
         new_defs = guarded_deepcopy_v1_state(self.defs)
 
         constructor_args = {
