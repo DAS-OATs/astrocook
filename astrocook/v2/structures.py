@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from astropy import units as au
 from astropy.table import Table
+import logging
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
@@ -158,3 +159,73 @@ class SystemListDataV2:
     # Placeholder for complex V1 structures (mutable state reference, if needed)
     v1_models_t: Any = None 
     meta: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class LogEntryV2:
+    """A V2-native log entry. 1-to-1 with a state change."""
+    recipe_name: str
+    params: Dict[str, Any]
+    # We can add more data later, like execution time, success, etc.
+
+class HistoryLogV2:
+    """
+    Manages the V2-native log. This is a 1-to-1 list of states
+    and supports truncation for Option 2.
+    """
+    def __init__(self):
+        self.entries: List[LogEntryV2] = []
+        # current_index points to the *last valid entry*
+        self.current_index: int = -1 
+
+    @property
+    def is_v2_log(self) -> bool:
+        return True
+
+    def add_entry(self, recipe_name: str, params: Dict[str, Any]):
+        """
+        Adds a new entry, truncating any "future" (undone) logs.
+        This implements Option 2's truncation.
+        """
+        # 1. Truncate stale future history
+        if self.current_index < len(self.entries) - 1:
+            logging.debug(f"Truncating V2 log from index {self.current_index + 1}")
+            del self.entries[self.current_index + 1:]
+        
+        # 2. Add the new entry
+        entry = LogEntryV2(recipe_name=recipe_name, params=params)
+        self.entries.append(entry)
+        
+        # 3. Update the index to point to the new entry
+        self.current_index = len(self.entries) - 1
+        logging.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
+
+    def undo(self) -> bool:
+        """Moves the index back one step. Does not delete."""
+        if self.current_index > -1:
+            self.current_index -= 1
+            logging.debug(f"Log index undone to {self.current_index}")
+            return True
+        return False
+
+    def redo(self) -> bool:
+        """Moves the index forward one step."""
+        if self.current_index < len(self.entries) - 1:
+            self.current_index += 1
+            logging.debug(f"Log index redone to {self.current_index}")
+            return True
+        return False
+
+# --- V1 Compatibility Wrapper ---
+
+class V1LogArtifact:
+    """
+    A read-only wrapper for a V1 log string.
+    It mimics just enough of the HistoryLogV2 interface
+    for the LogViewerDialog.
+    """
+    def __init__(self, v1_log_json: dict):
+        self.v1_json = v1_log_json
+    
+    @property
+    def is_v2_log(self) -> bool:
+        return False

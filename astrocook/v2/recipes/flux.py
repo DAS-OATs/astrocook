@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from ..spectrum import DataColumnV2, SpectrumDataV2, SpectrumV2
 from ..spectrum_operations import rebin_spectrum
+from ..structures import HistoryLogV2
 from ...v1.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -69,11 +70,22 @@ class RecipeFluxV2:
         
         # 3. Log the action *before* executing
         try:
-            self._session.log.append_full(self._tag, 'rebin', params)
-            logging.debug(f"Logged recipe: {self._tag}.rebin")
+            # Check if the session is using the new V2 log
+            if isinstance(self._session.log_manager, HistoryLogV2):
+                # Call the V2-native 1-to-1 add_entry
+                # This call *also handles truncation*
+                self._session.log_manager.add_entry(recipe_name='rebin', params=params)
+                logging.debug("Logged V2 recipe: rebin")
+            
+            # Fallback for V1 log (e.g., loaded V1 session)
+            elif hasattr(self._session.log_manager, 'append_full'):
+                logging.warning("Using V1 logging fallback (append_full).")
+                self._session.log_manager.append_full(self._tag, 'rebin', params)
+                
         except Exception as e:
             logging.error(f"Failed to log rebin action: {e}", exc_info=True)
 
+        # 4. Perform Type Casting
         try:
             # Type Casting based on string input
             xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None
@@ -91,10 +103,10 @@ class RecipeFluxV2:
             # Replicates V1 error handling path to avoid crash in the GUI context
             logging.error(msg_param_fail)
 
-        # 1. Execute the immutable V2 operation
+        # 5. Execute the immutable V2 operation
         new_spec_v2 = self._session.spec.rebin(
             xstart=xstart_q, xend=xend_q, dx=dx_q, kappa=kappa_f, filling=filling_f
         )
         
-        # 2. Return a NEW SessionV2 instance (the new state)
+        # 6. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)

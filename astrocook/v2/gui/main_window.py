@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from PySide6.QtCore import (
@@ -22,6 +23,7 @@ from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file
+from ..structures import HistoryLogV2, V1LogArtifact
 from ..utils import guarded_deepcopy_v1_state
 from ...v1.gui_log import GUILog
 try:
@@ -110,18 +112,23 @@ class MainWindowV2(QMainWindow):
         if is_initial_session_valid:
             # Create the first history manager
             # 1. Create the log object
-            initial_log = GUILog(self.mock_gui_context)
-            if initial_log_string: # <<< Set the loaded string
+            log_object = None
+            if initial_log_string: # A log was loaded
                 try:
-                    # GUILog.str property automatically handles json.loads
-                    initial_log.str = initial_log_string
-                    logging.info("Initial session log restored.")
+                    parsed_json = json.loads(initial_log_string)
+                    # This is a V1 log, wrap it
+                    log_object = V1LogArtifact(parsed_json)
+                    logging.info("Initial session: V1 log artifact created.")
                 except Exception as e:
-                    logging.error(f"Failed to parse initial log string: {e}")
-                    initial_log.clear() # Reset to empty log on failure
+                    logging.error(f"Failed to parse initial log: {e}. Creating new V2 log.")
+                    log_object = HistoryLogV2()
+            else:
+                # No log string, this is a new session
+                log_object = HistoryLogV2()
+                logging.info("Initial session: New V2 log created.")
 
             # Create the first history manager
-            initial_history = SessionHistory(initial_session, initial_log)
+            initial_history = SessionHistory(initial_session, log_object)
             self.session_histories.append(initial_history)
             self.active_history = initial_history
             self.session_model.setStringList([h.display_name for h in self.session_histories])
@@ -711,25 +718,25 @@ class MainWindowV2(QMainWindow):
         if is_branching:
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and create a V1-safe deep copy
-            source_log = self.active_history.log
-            new_log_copy = guarded_deepcopy_v1_state(source_log)
+            source_log_manager = self.active_history.log_manager
+            new_log_copy = guarded_deepcopy_v1_state(source_log_manager)
+
             if new_log_copy is None:
                 logging.error("Failed to deepcopy GUILog for branching, aborting.")
                 QMessageBox.critical(self, "Branching Error", "Could not copy session log state.")
                 return
 
             # 2. Update the new state from the recipe to point to the *new* log
-            new_session.log = new_log_copy
+            new_session.log_manager = new_log_copy
 
-            # 3. Create the new history manager, passing the first state and the new log
-            # The SessionHistory constructor will link states[0].log to new_log_copy
+            # 3. Create the new history manager
             initial_state_for_branch = self.active_history.states[0]
             new_history = SessionHistory(initial_state_for_branch, new_log_copy)
 
             # 4. Copy the *rest* of the states, re-linking their log reference
             other_states_to_copy = self.active_history.states[1:self.active_history.current_index + 1]
             for state in other_states_to_copy:
-                state.log = new_log_copy # Re-link to the new log
+                state.log_manager = new_log_copy # Re-link to the new log
             
             # 5. Manually set the full state list for the new history
             new_history.states.extend(other_states_to_copy) # Add the re-linked states
@@ -773,17 +780,21 @@ class MainWindowV2(QMainWindow):
         if new_session is None or isinstance(new_session, int): return
 
         # 1. Create the new GUILog object for this history
-        new_log = GUILog(self.mock_gui_context)
-        if log_string: # <<< Set the loaded log string
-             try:
-                 new_log.str = log_string
-                 logging.info(f"Log restored for session '{new_session.name}'.")
-             except Exception as e:
-                 logging.error(f"Failed to parse log string for '{new_session.name}': {e}")
-                 new_log.clear()
+        log_object = None
+        if log_string: # A log was loaded from the file
+            try:
+                parsed_json = json.loads(log_string)
+                log_object = V1LogArtifact(parsed_json)
+                logging.info(f"V1 log artifact created for session '{new_session.name}'.")
+            except Exception as e:
+                logging.error(f"Failed to parse loaded log string: {e}. Creating new V2 log.")
+                log_object = HistoryLogV2()
+        else:
+            logging.debug(f"No log string found. Creating new HistoryLogV2 for '{new_session.name}'.")
+            log_object = HistoryLogV2()
 
         # 2. Always create a new history for a newly loaded session
-        new_history = SessionHistory(new_session, new_log)
+        new_history = SessionHistory(new_session, log_object)
         self.session_histories.append(new_history)
         self.active_history = new_history # Newly loaded becomes active
         # Update model
@@ -864,6 +875,8 @@ class MainWindowV2(QMainWindow):
                 logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
                 self._update_view_for_session(previous_state, set_current_list_item=False) # Update view, list selection unchanged
                 self._update_undo_redo_actions()
+                if self.active_history in self.open_log_viewers:
+                    self.open_log_viewers[self.active_history].refresh()
             else:
                 logging.debug("Undo: Already at oldest state for this session.")
         else:
@@ -878,6 +891,8 @@ class MainWindowV2(QMainWindow):
                 logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
                 self._update_view_for_session(next_state, set_current_list_item=False)
                 self._update_undo_redo_actions()
+                if self.active_history in self.open_log_viewers:
+                    self.open_log_viewers[self.active_history].refresh()
             else:
                 logging.debug("Redo: Already at newest state for this session.")
         else:
@@ -1034,11 +1049,9 @@ class MainWindowV2(QMainWindow):
 
         # 2. If not, create a new one
         try:
-            log_object = history_object.log
+            log_object_to_view = history_object.log_manager
             session_name = history_object.display_name
-            
-            # We are keeping the fix from last time: parent=None
-            dialog = LogViewerDialog(log_object, session_name, None)
+            dialog = LogViewerDialog(log_object_to_view, session_name, None)
             
             # Store a reference by its history object
             self.open_log_viewers[history_object] = dialog

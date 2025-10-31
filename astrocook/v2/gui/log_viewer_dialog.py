@@ -1,82 +1,125 @@
 import logging
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QListWidget, QPushButton, QDialogButtonBox
+    QDialog, QVBoxLayout, QListWidget, QPushButton, QDialogButtonBox, QListWidgetItem
 )
 from PySide6.QtCore import Qt
-from typing import TYPE_CHECKING
+from PySide6.QtGui import QColor # <<< *** ADD THIS IMPORT ***
+from typing import TYPE_CHECKING, Union
 
-if TYPE_CHECKING:
-    from ...v1.gui_log import GUILog
+# --- V2 Imports ---
+from ..structures import HistoryLogV2, V1LogArtifact
+# --- V1 Imports ---
+from ...v1.gui_log import GUILog
+
+# Define the type for the log manager
+LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
+
 
 class LogViewerDialog(QDialog):
     """
-    A non-modal dialog to display the session's V1 log history
+    A non-modal dialog to display the session's log history
     in a human-readable format.
+    Supports both V2 (HistoryLogV2) and V1 (V1LogArtifact) logs.
     """
-    def __init__(self, log_object: 'GUILog', session_name: str, parent=None):
+    def __init__(self, log_object: LogManager, session_name: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle(f"Log History: {session_name}")
-        self.setWindowFlags(self.windowFlags() | Qt.Window) # Ensure it's a modeless window
-
-        self.log_object = log_object
+        # self.setWindowFlags(self.windowFlags() | Qt.Window) # Removed to fix bugs
+        
+        self.log_object = log_object # Save the log manager
 
         self.layout = QVBoxLayout(self)
-        
-        # 1. The List Widget to show parsed commands
         self.list_widget = QListWidget()
         self.layout.addWidget(self.list_widget)
 
-        # 2. Close Button
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        button_box.rejected.connect(self.reject) # Close connects to reject
+        button_box.rejected.connect(self.reject)
         self.layout.addWidget(button_box)
 
-        # 3. Populate the list
-        self._populate_list(log_object)
-        
-        # Set a reasonable default size
+        self._populate_list() # Populate on init
         self.resize(600, 600)
 
-    def _populate_list(self, log_object: 'GUILog'):
+    def _populate_list(self):
         """
-        Parses the GUILog's JSON and populates the list widget.
+        Parses the log_object and populates the list widget.
         """
         self.list_widget.clear()
         
-        try:
-            # Get the list of commands
-            commands = log_object.json.get('set_menu', [])
-        except Exception as e:
-            logging.error(f"Failed to parse log JSON: {e}")
-            self.list_widget.addItem("Error: Could not parse log history.")
-            return
-
-        if not commands:
-            self.list_widget.addItem("Log is empty.")
-            return
-
-        # Parse each command dictionary
-        for cmd in commands:
-            # Skip V1 internal refresh commands
-            if cmd.get('recipe') == '_refresh':
-                continue
-
-            # Get recipe name
-            rec = cmd.get('recipe', 'N/A')
-            # Capitalize first letter for readability
-            rec_display = rec.capitalize() 
-
-            # Format params: (key1=val1, key2=val2)
-            params_dict = cmd.get('params', {})
-            params_str = ", ".join(f"{k}={v}" for k, v in params_dict.items())
+        # --- *** START V2/V1 LOGIC *** ---
+        
+        # Check if this is a V2 Log
+        if hasattr(self.log_object, 'is_v2_log') and self.log_object.is_v2_log:
+            self._populate_v2_list()
+        
+        # Check if this is a V1 Artifact
+        elif hasattr(self.log_object, 'is_v2_log') and not self.log_object.is_v2_log:
+            self._populate_v1_list(self.log_object.v1_json)
             
-            # The human-readable string (prefix omitted)
-            display_string = f"{rec_display} ({params_str})"
+        # Fallback for raw V1 GUILog (from branching)
+        elif isinstance(self.log_object, GUILog):
+            logging.warning("LogViewerDialog received raw GUILog, parsing .json")
+            self._populate_v1_list(self.log_object.json)
             
-            self.list_widget.addItem(display_string)
+        else:
+            self.list_widget.addItem("Error: Unknown log object type.")
+            logging.error(f"LogViewerDialog: Unknown log object type: {type(self.log_object)}")
+
+        # --- *** END V2/V1 LOGIC *** ---
 
         # Scroll to the bottom to show the most recent command
         self.list_widget.scrollToBottom()
+
+    def _populate_v2_list(self):
+        """Populates the list from a HistoryLogV2 object."""
+        
+        entries = self.log_object.entries
+        current_idx = self.log_object.current_index
+        
+        if not entries:
+            self.list_widget.addItem("Log is empty.")
+            return
+
+        gray_color = QColor(Qt.GlobalColor.gray)
+
+        for i, entry in enumerate(entries):
+            # Format the string
+            rec_display = entry.recipe_name.capitalize()
+            params_str = ", ".join(f"{k}={v}" for k, v in entry.params.items())
+            display_string = f"{rec_display} ({params_str})"
+            
+            item = QListWidgetItem(display_string)
+            
+            # --- *** THIS IS THE SHADING LOGIC *** ---
+            if i > current_idx:
+                item.setForeground(gray_color)
+            # ----------------------------------
+                
+            self.list_widget.addItem(item)
+
+    def _populate_v1_list(self, v1_json: dict):
+        """Populates the list from a V1 log JSON dictionary."""
+        try:
+            commands = v1_json.get('set_menu', [])
+        except Exception as e:
+            logging.error(f"Failed to parse V1 log JSON: {e}")
+            self.list_widget.addItem("Error: Could not parse V1 log.")
+            return
+
+        if not commands:
+            self.list_widget.addItem("V1 Log is empty.")
+            return
+
+        for cmd in commands:
+            if cmd.get('recipe') == '_refresh':
+                continue
+            rec = cmd.get('recipe', 'N/A')
+            rec_display = rec.capitalize() 
+            params_dict = cmd.get('params', {})
+            params_str = ", ".join(f"{k}={v}" for k, v in params_dict.items())
+            display_string = f"{rec_display} ({params_str})"
+            
+            # V1 logs are always "active", no shading
+            self.list_widget.addItem(display_string)
 
     def refresh(self):
         """
@@ -84,4 +127,4 @@ class LogViewerDialog(QDialog):
         """
         logging.debug(f"Refreshing LogViewerDialog for {self.windowTitle()}")
         self.list_widget.clear()
-        self._populate_list(self.log_object)
+        self._populate_list() # Uses self.log_object
