@@ -20,7 +20,7 @@ from typing import List, Optional
 from .log_viewer_dialog import LogViewerDialog
 from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
-from .session_history import SessionHistory
+from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file
 from ..utils import guarded_deepcopy_v1_state
 from ...v1.gui_log import GUILog
@@ -59,6 +59,8 @@ class MainWindowV2(QMainWindow):
         
         # Track viewers by their SessionHistory object
         self.open_log_viewers = {}
+
+        self.active_recipe_dialog: Optional[QDialog] = None
 
         # ** Initialize animation attributes to None **
         self.left_animation_group = None
@@ -164,6 +166,17 @@ class MainWindowV2(QMainWindow):
         # Sidebar still fills the full content height
         self.right_sidebar_widget.setGeometry(sidebar_x, content_y_start, right_width, content_height)
         
+
+        self.central_stack.lower()
+
+        # 1. Raise the sidebars (middle layer)
+        self.left_sidebar_widget.raise_()
+        self.right_sidebar_widget.raise_()
+        
+        # 2. Raise the buttons (top layer)
+        self.session_collapse_button.raise_()
+        self.plot_controls_collapse_button.raise_()
+
     def _setup_plot_view(self, session_for_plot: SessionV2):
         self.plot_viewer = SpectrumPlotWidget(session_for_plot, self)
         self.central_stack.addWidget(self.plot_viewer)
@@ -452,20 +465,56 @@ class MainWindowV2(QMainWindow):
 
     def _launch_recipe_dialog(self, category, name):
         """Creates and executes the RecipeDialog for the specified recipe."""
+        if self.active_recipe_dialog:
+            self.active_recipe_dialog.activateWindow()
+            return
+        
         if not self.session_manager or not self.session_manager.spec:
             QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
             return
 
         logging.info(f"Launching dialog for recipe: {category}.{name}")
-        dialog = RecipeDialog(category, name, self.session_manager, self)
-        # .exec() runs the dialog modally and returns QDialog.Accepted or QDialog.Rejected
+        
+        current_state = self.active_history.current_state
+
+        # 1. Use parent=None. This fixes the sidebar event bug.
+        # We assume RecipeDialog has its __init__ updated to no longer
+        # require the 'main_window_ref' argument.
+        dialog = RecipeDialog(category, name, current_state, self) 
+
+        # 2. Run the modal dialog.
         result = dialog.exec()
 
+        QTimer.singleShot(0, self._force_restack_floating_widgets)
+
         if result == QDialog.Accepted:
-            logging.debug(f"Recipe dialog {name} accepted (state update handled by dialog's accept method).")
-            # The dialog's accept() method now calls self.update_gui_session_state
+            logging.debug(f"Recipe dialog {name} accepted.")
         else:
             logging.debug(f"Recipe dialog {name} cancelled.")
+
+    def _force_restack_floating_widgets(self):
+        """
+        Slot to be called by QTimer.
+        This is the programmatic equivalent of the user manually
+        resizing the window, which we know fixes the bug.
+        """
+        logging.debug("QTimer: Forcing native resize event to fix widget stacking.")
+        try:
+            # 1. Get the current size
+            current_size = self.size()
+            
+            # 2. "Jiggle" the size: resize by +1 pixel
+            # This is invisible but forces the native resizeEvent to run
+            self.resize(current_size.width() + 1, current_size.height())
+            
+            # 3. Immediately resize back to the original size
+            self.resize(current_size)
+            
+            # The resizeEvent itself will call _reposition_floating_widgets,
+            # which will handle the final Z-stacking.
+            
+        except Exception as e:
+            logging.warning(f"Failed to force resize: {e}")
 
     def _apply_styles(self):
         # ... (Get palette colors) ...
@@ -755,7 +804,7 @@ class MainWindowV2(QMainWindow):
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
         
         # Update general UI visibility etc. based on validity
-        self._update_ui_state(is_valid, is_startup=is_startup)
+        #self._update_ui_state(is_valid, is_startup=is_startup)
 
         # ** Update X Unit Combo Box **
         # This part is different. We don't read from the session (which is always nm).
@@ -780,6 +829,11 @@ class MainWindowV2(QMainWindow):
             self.plot_viewer.update_plot(session_state_to_show)
         else:
             self.plot_viewer.update_plot(None) # Clear plot if session is None
+
+        #    Call this *after* the plot draw has completed,
+        #    so that _reposition_floating_widgets is the *last*
+        #    operation, resetting any corrupted state.
+        self._update_ui_state(is_valid, is_startup=is_startup)
 
         # Update List View Selection
         if set_current_list_item:
