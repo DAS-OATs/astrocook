@@ -1,7 +1,8 @@
 from astropy.table import Table, Column
 import astropy.units as au
+import logging
 import numpy as np
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .fitting.voigt_model import VoigtModelConstraintV2
 from .structures import ComponentDataV2, SystemListDataV2
@@ -24,14 +25,20 @@ class SystemListV2:
     def _initialize_constraint_model(self):
         """Initializes the constraint model once the SystemListV2 object is constructed."""
         
-        # NOTE: This ensures 'self' is fully constructed before passed to VoigtModelConstraintV2
-        self.constraint_model = VoigtModelConstraintV2(self)
+        # The VoigtModelConstraintV2 constructor
+        # takes the *SystemListV2* instance (self) and reads the
+        # data core (_data) from it to build the constraints.
+        #
+        # We must pass 'self' to the constructor.
         
-        # We need to ensure VoigtModelConstraintV2.__init__ calls its own 
-        # complex builders only on subsequent calls, or we must refactor VMCV2.
-        
-        # Assuming VMCV2 is updated to be initialized correctly, this structural 
-        # change should resolve the circularity issue.
+        try:
+            self.constraint_model = VoigtModelConstraintV2(self)
+        except Exception as e:
+            logging.error(f"Failed to initialize VoigtModelConstraintV2: {e}", exc_info=True)
+            # Fallback to an empty model if initialization fails
+            if self.constraint_model is None:
+                 # Create an empty model if it failed during init
+                 self.constraint_model = VoigtModelConstraintV2(SystemListV2(data=SystemListDataV2()))
 
     @property
     def components(self) -> List[ComponentDataV2]:
@@ -113,68 +120,43 @@ class SystemListV2:
         return self._data.parsed_constraints
     
     @property
-    def v2_constraints_for_save(self) -> Dict[Tuple[int, str], Dict[str, Any]]:
+    def v2_constraints_for_save(self) -> Dict[str, Dict[str, Any]]:
         """
-        Exposes the constraint state (is_free/expression) for persistence.
+        Returns the V2-native constraint map (UUID-keyed) for serialization.
         """
-        # This relies on VoigtModelConstraintV2 exposing the final map.
-        return self.constraint_model.v2_constraints_map # Assuming the final map is stored here
+        if self.constraint_model:
+            return self.constraint_model.v2_constraints_by_uuid
+        return {}
 
-    # TODO: Methods for constraints, fitting, and immutable updates will go here.
+    def to_v1_systlist(self) -> Optional[Table]:
+        """
+        Converts the V2 component data back into a V1-style Astropy Table (SystList).
+        
+        NOTE: This is a placeholder. The full implementation needs to reconstruct
+        the complex V1 Table format, including metadata and constraints in the header.
+        """
+        if not self.components:
+            return None # Return None if empty
 
-    def to_v1_systlist(self) -> SystListV1:
-        """Converts the immutable SystemListV2 back to a mutable SystListV1 for saving."""
+        # This is a simplified conversion, focusing on core data.
+        # A full V1 save would require rebuilding the exact V1 Table structure.
+        logging.warning("Simplified V2->V1 system list conversion. V1 constraints may be lost.")
         
-        # 1. Convert each V2 component into a V1 Syst object
-        v1_syst_objects = []
-        for component_data in self._data.components:
-            # We assume migrate_component_v2_to_v1 returns a V1 Syst object
-            v1_syst = migrate_component_v2_to_v1(component_data)
-            v1_syst_objects.append(v1_syst)
-            
-        # 2. Extract necessary parallel arrays for V1 SystList constructor
-        # NOTE: V1 SystList often requires constructing parallel arrays/columns from the V1 Syst objects.
-        # This is complex and relies on the V1 SystList constructor signature.
+        data_dict = {
+            'id': [c.id for c in self.components],
+            'z': [c.z for c in self.components],
+            'dz': [c.dz if c.dz is not None else 0.0 for c in self.components],
+            'logN': [c.logN for c in self.components],
+            'dlogN': [c.dlogN if c.dlogN is not None else 0.0 for c in self.components],
+            'b': [c.b for c in self.components],
+            'db': [c.db if c.db is not None else 0.0 for c in self.components],
+            'btur': [c.btur for c in self.components],
+            'dbtur': [c.dbtur if c.dbtur is not None else 0.0 for c in self.components],
+            'func': [c.func for c in self.components],
+            'series': [c.series for c in self.components],
+        }
         
-        # SIMPLIFIED V2 APPROACH: Construct a list of dictionaries that the V1 SystList constructor can parse.
-        # If the V1 SystList constructor is robust, it can take the raw data arrays.
-        components = self._data.components
-        z_list = [c.z for c in components]
-        dz_list = [c.dz if c.dz is not None else np.nan for c in components]
-        logN_list = [c.logN for c in components]
-        dlogN_list = [c.dlogN if c.dlogN is not None else np.nan for c in components]
-        b_list = [c.b for c in components]
-        db_list = [c.db if c.db is not None else np.nan for c in components]
-        btur_list = [c.btur for c in components]
-        dbtur_list = [c.dbtur if c.dbtur is not None else np.nan for c in components]
+        v1_table = Table(data_dict)
+        # TODO: Add V1 constraint logic (e.g., self.constraint_model.to_v1_header())
         
-        func_list = [c.func for c in components]
-        series_list = [c.series for c in components]
-        id_list = [c.id for c in components]
-        
-        # NOTE: V1 SystList constructor also expects arrays for state/results:
-        # resol, chi2r, snr. We must provide placeholder arrays with the correct length.
-        length = len(components)
-        nan_array = [np.nan] * length
-        
-        # 2. Instantiate the V1 SystList with *all* parameters explicitly passed
-        v1_systs = SystListV1(
-            # Core Parameters
-            z=z_list, dz=dz_list, 
-            logN=logN_list, dlogN=dlogN_list, 
-            b=b_list, db=db_list, 
-            btur=btur_list, dbtur=dbtur_list,
-            # State/Metadata Parameters (required by V1 __init__)
-            func=func_list,
-            series=series_list,
-            id=id_list,
-            resol=nan_array,
-            chi2r=nan_array,
-            snr=nan_array
-            # Other potential parameters from the V1 constructor (e.g., id_start, meta) must also be checked
-        )
-        
-        # 4. Attach the V1 lmfit models placeholder (critical for V1 saving logic)
-        v1_systs._mods_t = self._data.v1_models_t
-        
-        return v1_systs
+        return v1_table

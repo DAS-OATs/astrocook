@@ -21,7 +21,10 @@ class SessionMetadataV2:
     v1_reconstruction_data: Any = None 
 
     # Improved Session History/Log
-    log_history_json: str = ""
+    # Stores the serialized log object (either a V2 dict or V1 JSON)
+    log_history_json: Any = field(default_factory=dict) # Changed default
+    # Stores the type ('v2', 'v1_artifact', 'v1_legacy')
+    log_type: str = "v1_legacy" # Default to old V1 log
     
     # Stores a list of all component UUIDs in the order they appear
     component_uuids: List[str] = field(default_factory=list)
@@ -153,8 +156,12 @@ class SystemListDataV2:
     # Stores a dictionary mapping (Component UUID, Parameter Name) -> ConstraintDataV2
     parsed_constraints: Dict[Tuple[str, str], ParameterConstraintV2] = field(default_factory=dict)
 
+    # V2-style constraints: {UUID: {ParamName: {...}}}
+    v2_constraints_map: Dict[str, Dict[str, ParameterConstraintV2]] = field(default_factory=dict)
+    
     # Add the missing field
     v1_id_to_uuid_map: Dict[int, str] = field(default_factory=dict)
+
 
     # Placeholder for complex V1 structures (mutable state reference, if needed)
     v1_models_t: Any = None 
@@ -167,6 +174,7 @@ class LogEntryV2:
     params: Dict[str, Any]
     # We can add more data later, like execution time, success, etc.
 
+@dataclass
 class HistoryLogV2:
     """
     Manages the V2-native log. This is a 1-to-1 list of states

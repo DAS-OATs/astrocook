@@ -22,10 +22,11 @@ from .log_viewer_dialog import LogViewerDialog
 from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
-from ..session import SessionV2, load_session_from_file
+from ..session import SessionV2, load_session_from_file, LogManager
 from ..structures import HistoryLogV2, V1LogArtifact
 from ..utils import guarded_deepcopy_v1_state
 from ...v1.gui_log import GUILog
+from ...v1.defaults import Defaults
 try:
     from ...v1.functions import trans_parse
     from ...v1.vars import xem_d
@@ -53,7 +54,7 @@ class MockV1GUIContext:
         # V2 GUI doesn't use these flags, so return None
         return None
 class MainWindowV2(QMainWindow):
-    def __init__(self, initial_session: SessionV2, initial_log_string: str):
+    def __init__(self, initial_session: SessionV2, initial_log_object: Optional[LogManager]):
         super().__init__()
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
@@ -110,25 +111,18 @@ class MainWindowV2(QMainWindow):
         self.mock_gui_context = MockV1GUIContext()
 
         if is_initial_session_valid:
-            # Create the first history manager
-            # 1. Create the log object
-            log_object = None
-            if initial_log_string: # A log was loaded
-                try:
-                    parsed_json = json.loads(initial_log_string)
-                    # This is a V1 log, wrap it
-                    log_object = V1LogArtifact(parsed_json)
-                    logging.info("Initial session: V1 log artifact created.")
-                except Exception as e:
-                    logging.error(f"Failed to parse initial log: {e}. Creating new V2 log.")
-                    log_object = HistoryLogV2()
-            else:
-                # No log string, this is a new session
-                log_object = HistoryLogV2()
-                logging.info("Initial session: New V2 log created.")
+            log_object = initial_log_object if initial_log_object else HistoryLogV2()
 
-            # Create the first history manager
             initial_history = SessionHistory(initial_session, log_object)
+            
+            # Manually set V1 stubs for the initial session
+            initial_session.log = GUILog(self.mock_gui_context)
+            initial_session.defs = Defaults(self.mock_gui_context)
+            if isinstance(log_object, V1LogArtifact):
+                try:
+                    initial_session.log.str = json.dumps(log_object.v1_json)
+                except Exception: pass
+
             self.session_histories.append(initial_history)
             self.active_history = initial_history
             self.session_model.setStringList([h.display_name for h in self.session_histories])
@@ -407,12 +401,20 @@ class MainWindowV2(QMainWindow):
         
         # --- File and View operations ---
 
-        # Open file
+        # --- File Menu Actions
         open_action = QAction("&Open Spectrum...", self); open_action.setShortcut("Ctrl+O"); open_action.triggered.connect(self._on_open_spectrum)
         file_menu.addAction(open_action)
         save_action = QAction("&Save Session...", self); save_action.setShortcut("Ctrl+S"); save_action.triggered.connect(self._on_save_session); 
         save_action.setEnabled(False)
         file_menu.addAction(save_action)
+        self.save_action = save_action # Assign to self
+        file_menu.addSeparator()
+        close_action = QAction("&Close Session", self)
+        close_action.setShortcut("Ctrl+W")
+        close_action.triggered.connect(self._on_close_session_requested)
+        close_action.setEnabled(False)
+        file_menu.addAction(close_action)
+        self.close_session_action = close_action
 
         # --- View Menu Actions ---
         toggle_left_action = QAction("Toggle Session Panel", self); toggle_left_action.triggered.connect(self._toggle_left_sidebar)
@@ -775,34 +777,35 @@ class MainWindowV2(QMainWindow):
 
         self._update_undo_redo_actions()
     
-    def _add_session_internal(self, new_session, is_initial=False):
+    def _add_session_internal(self, new_session, log_object: LogManager, is_initial=False):
         """Creates and adds a new SessionHistory manager."""
         if new_session is None or isinstance(new_session, int): return
 
-        # 1. Create the new GUILog object for this history
-        log_object = None
-        if log_string: # A log was loaded from the file
-            try:
-                parsed_json = json.loads(log_string)
-                log_object = V1LogArtifact(parsed_json)
-                logging.info(f"V1 log artifact created for session '{new_session.name}'.")
-            except Exception as e:
-                logging.error(f"Failed to parse loaded log string: {e}. Creating new V2 log.")
-                log_object = HistoryLogV2()
-        else:
-            logging.debug(f"No log string found. Creating new HistoryLogV2 for '{new_session.name}'.")
-            log_object = HistoryLogV2()
-
-        # 2. Always create a new history for a newly loaded session
+        # The V1/V2 logic is already handled by load_session_from_file
+        
+        # 1. Always create a new history for a newly loaded session
         new_history = SessionHistory(new_session, log_object)
+        
+        # 2. Manually set the V1 stubs (log and defs) on the new session
+        #    This is required for recipes to run
+        new_session.log = GUILog(self.mock_gui_context)
+        new_session.defs = Defaults(self.mock_gui_context)
+        
+        # If it's a V1 log, set the .str property
+        if isinstance(log_object, V1LogArtifact):
+            try:
+                new_session.log.str = json.dumps(log_object.v1_json)
+            except Exception:
+                pass # Ignore failure
+        
         self.session_histories.append(new_history)
         self.active_history = new_history # Newly loaded becomes active
         # Update model
         self.session_model.setStringList([h.display_name for h in self.session_histories])
 
-    def add_session(self, new_session: SessionV2, log_string: str, initial_load=False):
+    def add_session(self, new_session: SessionV2, log_object: LogManager, initial_load=False):
         """Adds a new session history and updates view."""
-        self._add_session_internal(new_session, log_string, is_initial=initial_load)
+        self._add_session_internal(new_session, log_object, is_initial=initial_load)
         if self.active_history:
             new_list_index = len(self.session_histories) - 1
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
@@ -944,61 +947,30 @@ class MainWindowV2(QMainWindow):
             # Extract just the filename stem for the session name
             session_name = os.path.splitext(os.path.basename(file_name))[0]
 
-
             # Make sure a valid GUI context placeholder exists
             # If session_manager might be None initially, handle it
-            gui_context = MockV1GUIContext()
+            gui_context = self.mock_gui_context
 
             try:
-                # CRITICAL FIX: Call the utility function with 'archive_path'
-                new_session, log_string = load_session_from_file(
-                    archive_path=file_name, # <<< CORRECT ARGUMENT NAME
-                    name=session_name, # Use extracted name
+                # --- *** Expect a log_object, not log_string *** ---
+                new_session, log_object = load_session_from_file(
+                    archive_path=file_name, 
+                    name=session_name, 
                     format_name=format_name,
                     gui_context=gui_context
                 )
 
                 if new_session == 0: # Check for V1-style failure
-                     raise RuntimeError("load_session_from_file returned failure code 0.")
+                    raise RuntimeError("load_session_from_file returned failure code 0.")
 
                 # Add the new session to the application state
-                self.add_session(new_session, log_string)
+                self.add_session(new_session, log_object)
 
             except Exception as e:
                 logging.error(f"Failed to load file via V2 adapter: {e}")
                 # Consider showing an error message box to the user here
                 # from PySide6.QtWidgets import QMessageBox
                 # QMessageBox.critical(self, "Error Loading File", f"Could not load {file_name}:\n{e}")
-
-    def _on_save_session(self):
-        """Handles the File > Save Session action."""
-        if not self.session_manager or not self.session_manager.spec:
-            QMessageBox.warning(self, "No Session", "No active session to save.")
-            return
-
-        # Suggest filename based on session name, default to .acs2
-        default_name = self.session_manager.name + ".acs2"
-        # Use QFileDialog to get save path
-        file_name, selected_filter = QFileDialog.getSaveFileName(
-            self,
-            "Save Astrocook Session",
-            default_name, # Default filename
-            "Astrocook V2 Session (*.acs2);;Astrocook V1 Session (*.acs)" # Filters
-        )
-
-        if file_name:
-            logging.info(f"Saving session to: {file_name}")
-            try:
-                # Call the SessionV2 save method
-                # The 'models' argument might be irrelevant for V2, check save() signature
-                result = self.session_manager.save(file_path=file_name) # Pass file_path
-                if result != 0: # Check for V1-style error code
-                     raise RuntimeError("Session save method returned non-zero error code.")
-                logging.info("Session saved successfully.")
-                # Optionally update window title or status bar
-            except Exception as e:
-                logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
-                QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
 
     def _on_session_list_context_menu(self, pos: QPoint):
         """
@@ -1011,17 +983,44 @@ class MainWindowV2(QMainWindow):
         row = index.row()
         if 0 <= row < len(self.session_histories):
             # Get the *clicked* history item
-            history_item = self.session_histories[row]
-            menu = QMenu(self)
-            view_action = QAction(f"View Log for '{history_item.display_name}'", self)
+            """
+        Handles the right-click on the session list.
+        """
+        index = self.session_list_view.indexAt(pos)
+        if not index.isValid():
+            return 
+
+        row = index.row()
+        if not (0 <= row < len(self.session_histories)):
+            return
             
-            # Use lambda to pass the correct *history* object
-            view_action.triggered.connect(
-                lambda: self._launch_log_viewer(history_item) # <<< Pass history obj
-            )
-            menu.addAction(view_action)
-            
-            menu.exec(self.session_list_view.mapToGlobal(pos))
+        history_item = self.session_histories[row]
+        session_name = history_item.display_name
+        menu = QMenu(self)
+
+        # --- View Log action ---
+        view_action = QAction(f"View Log for '{session_name}'", self)
+        view_action.triggered.connect(
+            lambda: self._launch_log_viewer(history_item)
+        )
+        menu.addAction(view_action)
+
+        # --- Save Session Action ---
+        save_action = QAction(f"Save '{session_name}' as...", self)
+        save_action.triggered.connect(
+            lambda: self._on_save_session_context(history_item)
+        )
+        menu.addAction(save_action)
+
+        # --- Close Session Action ---
+        menu.addSeparator()
+        close_action = QAction(f"Close '{session_name}'", self)
+        close_action.triggered.connect(
+            lambda: self._on_close_session_requested(history_item)
+        )
+        menu.addAction(close_action)
+        
+        menu.exec(self.session_list_view.mapToGlobal(pos))
 
     def _on_view_log(self):
         """
@@ -1032,6 +1031,136 @@ class MainWindowV2(QMainWindow):
             self._launch_log_viewer(self.active_history) # <<< Pass history obj
         else:
             logging.warning("View Log called with no active history.")
+
+    def _on_save_session_context(self, history_item: SessionHistory):
+        """
+        Slot for the context menu's "Save" action.
+        """
+        # We don't need to switch the active session, just save the one clicked
+        self._save_session(history_item)
+
+    def _on_save_session(self):
+        """Handles the File > Save Session action for the *active* session."""
+        self._save_session(self.active_history)
+
+    def _save_session(self, history_to_save: Optional[SessionHistory]):
+        """Saves the specified SessionHistory."""
+        if not history_to_save or not history_to_save.current_state.spec:
+            QMessageBox.warning(self, "No Session", "No active session to save.")
+            return False # Indicate failure
+
+        session_to_save = history_to_save.current_state
+        default_name = session_to_save.name + ".acs2"
+        
+        file_name, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Save Astrocook Session",
+            default_name,
+            "Astrocook V2 Session (*.acs2);;Astrocook V1 Session (*.acs)"
+        )
+
+        if file_name:
+            logging.info(f"Saving session to: {file_name}")
+            try:
+                result = session_to_save.save(file_path=file_name)
+                logging.info("Session saved successfully.")
+                return True # Indicate success
+            except Exception as e:
+                logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
+                QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
+                return False # Indicate failure
+        return False # User cancelled
+
+    # --- *** START NEW "CLOSE" METHODS *** ---
+    def _on_close_session_requested(self, history_to_close: Optional[SessionHistory] = None):
+        """
+        Handles the request to close a session, either from the menu (active)
+        or context menu (specific).
+        """
+        if history_to_close is None:
+            history_to_close = self.active_history
+
+        if not history_to_close:
+            logging.warning("Close request with no session specified or active.")
+            return
+
+        session_name = history_to_close.display_name
+        
+        # Check for unsaved changes (basic check: has an undo history)
+        # A more robust check would be a "is_dirty" flag
+        is_dirty = history_to_close.can_undo() or history_to_close.can_redo()
+        
+        if is_dirty:
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Close Session")
+            msg_box.setText(f"Session '{session_name}' has unsaved changes.")
+            msg_box.setInformativeText("Do you want to save your changes before closing?")
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Save |
+                                       QMessageBox.StandardButton.Discard |
+                                       QMessageBox.StandardButton.Cancel)
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
+            
+            ret = msg_box.exec()
+
+            if ret == QMessageBox.StandardButton.Save:
+                saved_ok = self._save_session(history_to_close)
+                if saved_ok:
+                    self._close_session(history_to_close) # Close only if save succeeded
+            elif ret == QMessageBox.StandardButton.Discard:
+                self._close_session(history_to_close) # Close without saving
+            elif ret == QMessageBox.StandardButton.Cancel:
+                return # Do nothing
+        else:
+            # Not dirty, just close it
+            self._close_session(history_to_close)
+
+    def _close_session(self, history_to_close: SessionHistory):
+        """
+        Performs the actual removal of the session from the GUI.
+        """
+        try:
+            row_to_remove = self.session_histories.index(history_to_close)
+        except ValueError:
+            logging.error(f"Could not find session {history_to_close.display_name} to close.")
+            return
+            
+        logging.info(f"Closing session: {history_to_close.display_name}")
+
+        # Remove from list
+        self.session_histories.pop(row_to_remove)
+        
+        # Update model
+        self.session_model.removeRow(row_to_remove)
+
+        # Clean up any open dialogs for this session
+        if history_to_close in self.open_log_viewers:
+            self.open_log_viewers[history_to_close].close()
+            # The _on_log_viewer_closed will handle the pop
+        
+        # --- Handle switching the active view ---
+        new_active_history = None
+        if history_to_close is not self.active_history:
+            # We closed a background session. Active history is unchanged.
+            new_active_history = self.active_history
+        elif self.session_histories:
+            # We closed the active session, but others remain.
+            # Select the one at the same index, or the last one.
+            new_index = min(row_to_remove, len(self.session_histories) - 1)
+            new_active_history = self.session_histories[new_index]
+        else:
+            # We closed the last session.
+            new_active_history = None
+
+        self.active_history = new_active_history
+        
+        if self.active_history:
+            # Update view to show the new active session
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
+        else:
+            # Show empty view
+            self._update_view_for_session(None, set_current_list_item=False)
+
+        self._update_undo_redo_actions()
             
     def _launch_log_viewer(self, history_object: 'SessionHistory'):
         """
@@ -1104,6 +1233,10 @@ class MainWindowV2(QMainWindow):
 
     def _update_ui_state(self, is_valid_session, is_startup=False):
         is_valid_session = bool(is_valid_session)
+
+        # ... (Enable/Disable File menu actions) ...
+        if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
+        if hasattr(self, 'close_session_action'): self.close_session_action.setEnabled(is_valid_session)
 
         # ... (Enable/Disable View menu actions) ...
         if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
