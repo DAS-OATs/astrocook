@@ -298,7 +298,197 @@ class SpectrumV2:
             
         return v1_spec
     
-    # Methods implementing the API
+    
+    # --- Methods implementing the API ---
+
+    def arithmetics(self, col_target: str, col_left: str, op: str, col_right: str) -> 'SpectrumV2':
+        """
+        API: Performs column arithmetics and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get all data columns via the adapter
+        all_cols = self.t._data_dict # Access the raw dict from the adapter
+        
+        # 2. Get data arrays
+        if col_left not in all_cols: raise ValueError(f"Column '{col_left}' not found.")
+        if col_right not in all_cols: raise ValueError(f"Column '{col_right}' not found.")
+        # Note: col_target does not need to exist yet
+            
+        left_q = all_cols[col_left]
+        right_q = all_cols[col_right]
+
+        # 3. Perform operation
+        new_quantity = None
+        if op == '+': new_quantity = left_q + right_q
+        elif op == '-': new_quantity = left_q - right_q
+        elif op == '*': new_quantity = left_q * right_q
+        elif op == '/': 
+            new_values = np.divide(left_q.value, right_q.value, 
+                                   out=np.full_like(left_q.value, np.nan), 
+                                   where=right_q.value!=0)
+            new_quantity = au.Quantity(new_values, left_q.unit / right_q.unit)
+        else:
+            raise ValueError(f"Invalid operator '{op}'")
+            
+        # 4. Create new SpectrumDataV2 using the immutable pattern
+        # Start with all original data
+        core_cols = {
+            'x': self._data.x,
+            'xmin': self._data.xmin,
+            'xmax': self._data.xmax,
+            'y': self._data.y,
+            'dy': self._data.dy
+        }
+        aux_cols = deepcopy(self._data.aux_cols) # Copy the aux_cols dict
+
+        # 5. Create the new DataColumnV2
+        new_data_col = DataColumnV2(new_quantity.value, new_quantity.unit)
+
+        # 6. Overwrite the target column in the *correct dictionary*
+        if col_target in core_cols:
+            core_cols[col_target] = new_data_col
+        elif col_target in aux_cols:
+            # This allows overwriting an existing aux col
+            aux_cols[col_target] = new_data_col
+        else:
+            # This was a new column, add it to aux_cols
+            logging.debug(f"Arithmetics: creating new aux_col '{col_target}'")
+            aux_cols[col_target] = new_data_col
+
+        # 7. Create the new data core
+        new_data_core = SpectrumDataV2(
+            x=core_cols['x'],
+            xmin=core_cols['xmin'],
+            xmax=core_cols['xmax'],
+            y=core_cols['y'],
+            dy=core_cols['dy'],
+            aux_cols=aux_cols,
+            meta=deepcopy(self._data.meta),
+            rf_z=self._data.rf_z
+        )
+
+        # 8. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Arithmetics: {col_target} = {col_left} {op} {col_right}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+
+    def mask(self, col_target: str, col_cond: str, op: str, value: float) -> 'SpectrumV2':
+        """
+        API: Masks a column based on a condition and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get all data columns
+        all_cols = self.t._data_dict
+        
+        # 2. Get data arrays
+        if col_target not in all_cols: raise ValueError(f"Target column '{col_target}' not found.")
+        if col_cond not in all_cols: raise ValueError(f"Condition column '{col_cond}' not found.")
+            
+        target_q = all_cols[col_target]
+        cond_q = all_cols[col_cond]
+        
+        # 3. Find indices to mask
+        mask_indices = None
+        cond_vals = cond_q.value # Get raw numpy array
+        
+        if op == '<=': mask_indices = np.where(cond_vals <= value)
+        elif op == '<': mask_indices = np.where(cond_vals < value)
+        elif op == '==': mask_indices = np.where(cond_vals == value)
+        elif op == '>': mask_indices = np.where(cond_vals > value)
+        elif op == '>=': mask_indices = np.where(cond_vals >= value)
+        elif op == '!=': mask_indices = np.where(cond_vals != value)
+        else:
+            raise ValueError(f"Invalid operator '{op}'")
+            
+        # 4. Create new data array
+        new_values = target_q.value.copy()
+        new_values[mask_indices] = np.nan
+        new_quantity = au.Quantity(new_values, target_q.unit)
+        new_data_col = DataColumnV2(new_quantity.value, new_quantity.unit)
+
+        # 5. Create new SpectrumDataV2 using the immutable pattern
+        # Start with all original data
+        core_cols = {
+            'x': self._data.x,
+            'xmin': self._data.xmin,
+            'xmax': self._data.xmax,
+            'y': self._data.y,
+            'dy': self._data.dy
+        }
+        aux_cols = deepcopy(self._data.aux_cols) # Copy the aux_cols dict
+
+        # 6. Overwrite the target column in the *correct dictionary*
+        if col_target in core_cols:
+            core_cols[col_target] = new_data_col
+        elif col_target in aux_cols:
+            aux_cols[col_target] = new_data_col
+        else:
+            raise ValueError(f"Target column '{col_target}' is not a core or aux column.")
+
+        # 7. Create the new data core
+        new_data_core = SpectrumDataV2(
+            x=core_cols['x'],
+            xmin=core_cols['xmin'],
+            xmax=core_cols['xmax'],
+            y=core_cols['y'],
+            dy=core_cols['dy'],
+            aux_cols=aux_cols,
+            meta=deepcopy(self._data.meta),
+            rf_z=self._data.rf_z
+        )
+
+        # 8. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Mask: {col_target} where {col_cond} {op} {value}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+
+    def split(self, col_check: str, min_val: float, max_val: float) -> 'SpectrumV2':
+        """
+        API: Extracts a slice of the spectrum and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get all data columns
+        all_cols = self.t._data_dict
+        if col_check not in all_cols: raise ValueError(f"Check column '{col_check}' not found.")
+        
+        check_q = all_cols[col_check]
+        
+        # 2. Find indices for the slice
+        # This assumes the check column is sorted (like 'x')
+        idx_start = np.searchsorted(check_q.value, min_val, side='left')
+        idx_end = np.searchsorted(check_q.value, max_val, side='right')
+        
+        if idx_start >= idx_end:
+            raise ValueError("Split range resulted in an empty spectrum.")
+            
+        data_slice = slice(idx_start, idx_end)
+
+        # 3. Create a new data core by slicing all columns
+        # We can use the TableAdapterV2's slicing capability
+        
+        # Create a new dictionary to hold the sliced data
+        new_data_cols_dict = {}
+        
+        # Iterate through all columns and apply the slice
+        for col_name, quantity in all_cols.items():
+            new_values = quantity.value[data_slice]
+            new_unit = quantity.unit
+            new_data_cols_dict[col_name] = DataColumnV2(new_values, new_unit)
+
+        # 4. Build new SpectrumDataV2
+        new_data_core = SpectrumDataV2(
+            x=new_data_cols_dict.pop('x'),
+            xmin=new_data_cols_dict.pop('xmin'),
+            xmax=new_data_cols_dict.pop('xmax'),
+            y=new_data_cols_dict.pop('y'),
+            dy=new_data_cols_dict.pop('dy'),
+            aux_cols=new_data_cols_dict, # Remaining items are aux_cols
+            meta=deepcopy(self._data.meta), 
+            rf_z=self._data.rf_z 
+        )
+        
+        # 5. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+    
 
     def rebin(self, xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float], 

@@ -1,6 +1,8 @@
 from astropy import units as au
+import logging
 from typing import TYPE_CHECKING, Optional, Union
 
+from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
 from ...v1.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -23,6 +25,38 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density"},
         ],
         "url": "edit_cb.html#convert-y-axis"
+    },
+    "arithmetics": {
+        "brief": "Column arithmetics.",
+        "details": "Perform arithmetic operations between columns (e.g., y = y / cont).",
+        "params": [
+            {"name": "col_target", "type": str, "default": "y", "doc": "Target column (to be overwritten)"},
+            {"name": "col_left", "type": str, "default": "y", "doc": "Left-hand side column"},
+            {"name": "op", "type": str, "default": "/", "doc": "Operation (+, -, *, /)"},
+            {"name": "col_right", "type": str, "default": "cont", "doc": "Right-hand side column"},
+        ],
+        "url": "edit_cb.html#arithmetics" # Placeholder URL
+    },
+    "mask": {
+        "brief": "Mask column by condition.",
+        "details": "Mask a column by setting values to NaN based on a condition.",
+        "params": [
+            {"name": "col_target", "type": str, "default": "y", "doc": "Target column to mask (e.g., y)"},
+            {"name": "col_cond", "type": str, "default": "dy", "doc": "Column to check condition against (e.g., dy)"},
+            {"name": "op", "type": str, "default": "<=", "doc": "Condition (<=, <, ==, >, >=, !=)"},
+            {"name": "value", "type": float, "default": 0.0, "doc": "Value for condition (e.g., 0.0)"},
+        ],
+        "url": "edit_cb.html#mask" # Placeholder URL
+    },
+    "split": {
+        "brief": "Split spectrum by range.",
+        "details": "Extract a portion of the spectrum into a new, separate session.",
+        "params": [
+            {"name": "col_check", "type": str, "default": "x", "doc": "Column to check for range (e.g., x)"},
+            {"name": "min_val", "type": float, "default": 400.0, "doc": "Minimum value to keep (in column's units)"},
+            {"name": "max_val", "type": float, "default": 500.0, "doc": "Maximum value to keep (in column's units)"},
+        ],
+        "url": "edit_cb.html#split" # Placeholder URL
     }
 }
 
@@ -67,4 +101,107 @@ class RecipeEditV2:
         
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
+    
+    def arithmetics(self, col_target: str, col_left: str, op: str, col_right: str) -> 'SessionV2':
+        """
+        API: Performs column arithmetics.
+        """
+        # 1. Log the action
+        params = locals()
+        params.pop('self') # Remove self from logged params
+        try:
+            if isinstance(self._session.log_manager, HistoryLogV2):
+                self._session.log_manager.add_entry(recipe_name='arithmetics', params=params)
+        except Exception as e:
+            logging.error(f"Failed to log arithmetics action: {e}", exc_info=True)
+
+        # 2. Validate operator
+        valid_ops = ['+', '-', '*', '/']
+        if op not in valid_ops:
+            logging.error(f"Invalid operator '{op}'. Must be one of {valid_ops}")
+            return 0 # V1-style failure
+
+        try:
+            # 3. Execute the immutable V2 operation
+            new_spec_v2 = self._session.spec.arithmetics(
+                col_target=col_target,
+                col_left=col_left,
+                op=op,
+                col_right=col_right
+            )
+            
+            # 4. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+        except Exception as e:
+            logging.error(f"Failed during arithmetics: {e}", exc_info=True)
+            return 0 # V1-style failure
+            
+    def mask(self, col_target: str, col_cond: str, op: str, value: str) -> 'SessionV2':
+        """
+        API: Masks a column based on a condition.
+        """
+        # 1. Log the action
+        params = locals()
+        params.pop('self')
+        try:
+            if isinstance(self._session.log_manager, HistoryLogV2):
+                self._session.log_manager.add_entry(recipe_name='mask', params=params)
+        except Exception as e:
+            logging.error(f"Failed to log mask action: {e}", exc_info=True)
+
+        # 2. Validate operator
+        valid_ops = ['<=', '<', '==', '>', '>=', '!=']
+        if op not in valid_ops:
+            logging.error(f"Invalid operator '{op}'. Must be one of {valid_ops}")
+            return 0 
+
+        try:
+            # 3. Type casting
+            value_f = float(value)
+            
+            # 4. Execute the immutable V2 operation
+            new_spec_v2 = self._session.spec.mask(
+                col_target=col_target,
+                col_cond=col_cond,
+                op=op,
+                value=value_f
+            )
+            
+            # 5. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+        except Exception as e:
+            logging.error(f"Failed during mask: {e}", exc_info=True)
+            return 0
+
+    def split(self, col_check: str, min_val: str, max_val: str) -> 'SessionV2':
+        """
+        API: Splits the spectrum, returning a new spectrum of the sub-range.
+        """
+        # 1. Log the action
+        params = locals()
+        params.pop('self')
+        try:
+            if isinstance(self._session.log_manager, HistoryLogV2):
+                self._session.log_manager.add_entry(recipe_name='split', params=params)
+        except Exception as e:
+            logging.error(f"Failed to log split action: {e}", exc_info=True)
+
+        try:
+            # 2. Type casting
+            min_val_f = float(min_val)
+            max_val_f = float(max_val)
+            
+            # 3. Execute the immutable V2 operation
+            new_spec_v2 = self._session.spec.split(
+                col_check=col_check,
+                min_val=min_val_f,
+                max_val=max_val_f
+            )
+            
+            # 4. Return a NEW SessionV2 instance
+            # The GUI will handle this as a "branching" action
+            return self._session.with_new_spectrum(new_spec_v2)
+        except Exception as e:
+            logging.error(f"Failed during split: {e}", exc_info=True)
+            return 0
 
