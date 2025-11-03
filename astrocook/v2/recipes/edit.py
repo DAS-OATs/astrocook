@@ -1,6 +1,8 @@
 from astropy import units as au
 import logging
-from typing import TYPE_CHECKING, Optional, Union
+import numpy as np
+import re
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
 from ...v1.message import msg_param_fail
@@ -56,10 +58,96 @@ EDIT_RECIPES_SCHEMAS = {
     }
 }
 
+SESSION_VAR_REGEX = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
+
 class RecipeEditV2:
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
+
+    def _resample_and_replace_match(self, match_obj: re.Match, 
+                                  alias_map: Dict[str, str], 
+                                  extra_vars: Dict[str, np.ndarray]) -> str:
+        """
+        This function is called by re.sub for every 's1.y' pattern found.
+        It performs the resampling and returns the safe variable name (e.g., 's1_y').
+        """
+        alias = match_obj.group(1)
+        col_name = match_obj.group(2)
+        
+        if alias not in alias_map:
+            return match_obj.group(0)
+
+        safe_var_name = f"{alias}_{col_name}" # e.g., "s1_y"
+        
+        if safe_var_name in extra_vars:
+            return safe_var_name
+
+        # --- Perform the resampling logic ---
+        try:
+            # 1. Find the target session
+            full_name = alias_map[alias]
+            target_hist = None
+            gui = self._session._gui
+            if not (gui and hasattr(gui, 'session_histories')):
+                raise RuntimeError("GUI context not found.")
+                
+            for hist in gui.session_histories:
+                if hist.display_name == full_name:
+                    target_hist = hist
+                    break
+            
+            if not target_hist:
+                raise ValueError(f"Could not find session '{full_name}' for alias '{alias}'.")
+            
+            target_spec = target_hist.current_state.spec
+            current_spec = self._session.spec
+            
+            # --- *** BUG 2 FIX: Add oversampling check *** ---
+            if len(target_spec.x) > len(current_spec.x):
+                logging.warning(f"Oversampling: Target '{alias}' grid ({len(target_spec.x)} pts) "
+                                f"is finer than current grid ({len(current_spec.x)} pts).")
+            # --- *** END BUG 2 FIX *** ---
+
+            # 2. Get the *current* spec's grid (in nm)
+            current_x_grid_nm = current_spec.x.to_value(au.nm)
+            
+            # 3. Call the *new, lightweight* API method
+            logging.debug(f"Auto-resampling {alias}.{col_name} onto current grid...")
+            resampled_array = target_spec.get_resampled_column(
+                col_name,
+                current_x_grid_nm
+            )
+            
+            # 4. Add the new array to our extra_vars dict
+            extra_vars[safe_var_name] = resampled_array
+            
+            return safe_var_name # This string replaces the 's1.y'
+            
+        except Exception as e:
+            logging.error(f"Failed to resample {alias}.{col_name}: {e}", exc_info=True)
+            return match_obj.group(0) # Keep original text on failure
+    
+    def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> (str, Dict[str, np.ndarray]):
+        """
+        Parses an expression, finds multi-session variables (e.g., s1.y),
+        resamples them onto the current grid, and returns a sanitized
+        expression and a dict of the new data.
+        """
+        if not alias_map:
+            return expression, {} # No aliases, nothing to do
+
+        extra_vars = {}
+
+        # Create a lambda to pass the extra_vars dict into our helper
+        replacer = lambda m: self._resample_and_replace_match(m, alias_map, extra_vars)
+        
+        # re.sub will find all matches and call 'replacer' for each one
+        final_expression = SESSION_VAR_REGEX.sub(replacer, expression)
+        
+        # --- *** END FIX *** ---
+
+        return final_expression, extra_vars
 
     def x_convert(self, zem: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
@@ -98,34 +186,52 @@ class RecipeEditV2:
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
     
-    def apply_expression(self, target_col: str, expression: str) -> 'SessionV2':
+    def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Applies a numerical expression to the spectrum data.
+        API: Applies a numerical expression, handling multi-session variables.
         """
+        expression = expression.strip()
         if not expression:
             logging.error("Expression cannot be empty.")
             return 0
         try:
+            # 1. Prepare multi-session vars
+            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+            logging.debug(f"Original expression: '{expression}'")
+            logging.debug(f"Final expression: '{final_expression}'")
+            logging.debug(f"Extra vars: {list(extra_vars.keys())}")
+
+            # 2. Call the API with the prepared data
             new_spec_v2 = self._session.spec.apply_expression(
                 target_col=target_col,
-                expression=expression
+                expression=final_expression,
+                extra_vars=extra_vars
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logging.error(f"Failed during apply_expression: {e}", exc_info=True)
-            return 0 # V1-style failure
+            return 0 
             
-    def mask_expression(self, target_col: str, expression: str) -> 'SessionV2':
+    def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Masks a column based on a boolean expression.
+        API: Masks a column, handling multi-session variables.
         """
+        expression = expression.strip()
         if not expression:
             logging.error("Expression cannot be empty.")
             return 0
         try:
+            # 1. Prepare multi-session vars
+            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+            logging.debug(f"Original expression: '{expression}'")
+            logging.debug(f"Final expression: '{final_expression}'")
+            logging.debug(f"Extra vars: {list(extra_vars.keys())}")
+            
+            # 2. Call the API with the prepared data
             new_spec_v2 = self._session.spec.mask_expression(
                 target_col=target_col,
-                expression=expression
+                expression=final_expression,
+                extra_vars=extra_vars
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:

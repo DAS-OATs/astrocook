@@ -27,3 +27,4 @@ Prompt to restart (30-10-2025).gdoc
 Prompts to restart.gdoc
 tests/data/*.acs2
 tests/data/*.acs
+astrocook.egg-info/requires.txt

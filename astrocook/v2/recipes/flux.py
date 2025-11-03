@@ -37,6 +37,14 @@ FLUX_RECIPES_SCHEMAS = {
             {"name": "filling", "type": str, "default": "nan", "doc": "Value to fill region without data"}, 
         ],
         "url": "edit_cb.html#rebin"
+    },
+    "resample": {
+        "brief": "Resample on another grid.",
+        "details": "Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.",
+        "params": [
+            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the session to use as the grid"}
+        ],
+        "url": "edit_cb.html#resample" # Placeholder URL
     }
 }
 
@@ -77,3 +85,39 @@ class RecipeFluxV2:
         
         # 6. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
+    
+    def resample(self, target_session: str = 'None') -> 'SessionV2':
+        """
+        API: Resamples the spectrum onto the grid of a target session.
+        """
+        if target_session == 'None' or target_session == '':
+            logging.error("No target session was selected for resampling.")
+            return 0
+
+        try:
+            # 1. Find the target session object from the main window
+            target_hist = None
+            if hasattr(self._session, '_gui') and hasattr(self._session._gui, 'session_histories'):
+                for hist in self._session._gui.session_histories:
+                    if hist.display_name == target_session:
+                        target_hist = hist
+                        break
+            
+            if target_hist is None:
+                raise ValueError(f"Could not find an open session named '{target_session}'.")
+
+            target_spec = target_hist.current_state.spec
+            if target_spec is None:
+                 raise ValueError(f"Target session '{target_session}' has no spectrum data.")
+
+            # 2. Execute the immutable V2 operation
+            new_spec_v2 = self._session.spec.resample_on_grid(
+                target_grid_spec=target_spec
+            )
+            
+            # 3. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+            
+        except Exception as e:
+            logging.error(f"Failed during resample: {e}", exc_info=True)
+            return 0

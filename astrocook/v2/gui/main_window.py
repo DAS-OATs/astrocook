@@ -858,6 +858,7 @@ class MainWindowV2(QMainWindow):
         
         # 2. Manually set the V1 stubs (log and defs) on the new session
         #    This is required for recipes to run
+        new_session._gui = self
         new_session.log = GUILog(self.mock_gui_context)
         new_session.defs = Defaults(self.mock_gui_context)
         
