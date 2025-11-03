@@ -70,17 +70,15 @@ class RecipeFluxV2:
         
         # 3. Log the action *before* executing
         try:
-            # Check if the session is using the new V2 log
+            # Check for the V2 log manager first
             if isinstance(self._session.log_manager, HistoryLogV2):
-                # Call the V2-native 1-to-1 add_entry
-                # This call *also handles truncation*
                 self._session.log_manager.add_entry(recipe_name='rebin', params=params)
                 logging.debug("Logged V2 recipe: rebin")
             
-            # Fallback for V1 log (e.g., loaded V1 session)
-            elif hasattr(self._session.log_manager, 'append_full'):
-                logging.warning("Using V1 logging fallback (append_full).")
-                self._session.log_manager.append_full(self._tag, 'rebin', params)
+            # Fallback for V1: check the '.log' stub
+            elif hasattr(self._session.log, 'append_full'):
+                logging.warning("Using V1 logging fallback (append_full on session.log).")
+                self._session.log.append_full(self._tag, 'rebin', params)
                 
         except Exception as e:
             logging.error(f"Failed to log rebin action: {e}", exc_info=True)

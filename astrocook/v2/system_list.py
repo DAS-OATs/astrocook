@@ -35,10 +35,23 @@ class SystemListV2:
             self.constraint_model = VoigtModelConstraintV2(self)
         except Exception as e:
             logging.error(f"Failed to initialize VoigtModelConstraintV2: {e}", exc_info=True)
-            # Fallback to an empty model if initialization fails
-            if self.constraint_model is None:
-                 # Create an empty model if it failed during init
-                 self.constraint_model = VoigtModelConstraintV2(SystemListV2(data=SystemListDataV2()))
+            
+            # Create a "dummy" empty SystemListV2 to break the
+            # recursion loop. We use __new__ to get an
+            # un-initialized object, and then set its data manually.
+            try:
+                logging.warning("Creating fallback empty constraint model.")
+                # 1. Create a dummy object *without* calling __init__
+                dummy_systs = SystemListV2.__new__(SystemListV2)
+                # 2. Set its data core manually
+                dummy_systs._data = SystemListDataV2()
+                dummy_systs.components = []
+                # 3. Now, pass this safe object to the constructor
+                self.constraint_model = VoigtModelConstraintV2(dummy_systs)
+            except Exception as e_fallback:
+                logging.error(f"FATAL: Could not create fallback constraint model: {e_fallback}")
+                self.constraint_model = None # Give up
+            
 
     @property
     def components(self) -> List[ComponentDataV2]:
@@ -125,6 +138,8 @@ class SystemListV2:
         Returns the V2-native constraint map (UUID-keyed) for serialization.
         """
         if self.constraint_model:
+            # This must point to the *attribute* in the model,
+            # not a property with the same name.
             return self.constraint_model.v2_constraints_by_uuid
         return {}
 

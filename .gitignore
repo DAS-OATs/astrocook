@@ -24,3 +24,6 @@ astrocook.egg-info/SOURCES.txt
 astrocook.egg-info/PKG-INFO
 tests/data/J0103-1305_metallines_lya_new.json
 Prompt to restart (30-10-2025).gdoc
+Prompts to restart.gdoc
+tests/data/*.acs2
+tests/data/*.acs

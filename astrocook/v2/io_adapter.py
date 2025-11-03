@@ -197,55 +197,16 @@ def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':
     return SpectrumV2(data=data_core)
 
 
-def _parse_v2_metadata_constraints(v2_metadata: Dict) -> Dict[Tuple[int, str], Dict]:
+def _parse_v2_metadata_constraints(v2_metadata: Dict) -> Dict[str, Dict]:
     """
-    Converts the V2 JSON metadata constraints (string keys) back into the
-    V1-style tuple-key map (parsed_constraints) that VoigtModelConstraintV2 expects.
+    Loads the V2-native constraint map from the metadata dictionary.
+    This map is: {UUID-str: {param_name-str: {constraint_dict}}}
     """
-    # *** THIS WAS THE BUG ***
-    # The constraints are saved under 'constraints_by_uuid', which is a dict
-    # of dataclasses. When serialized by asdict(), it's a plain dict.
-    # We must read from the same key.
     v2_constraints_map = v2_metadata.get('constraints_by_uuid', {})
     
-    # We must also handle the V1->V2 migration name
-    # "v1_reconstruction_data" is not what we want.
-    # We are looking for the direct V2 constraints.
+    # This log line was redundant and confusing.
+    # logging.info(f"Loaded {len(v2_constraints_map)} V2 constraint sets from metadata.")
     
-    logging.info(f"Loaded {len(v2_constraints_map)} constraints from V2 metadata.")
-    
-    # Since we save them as UUID-keyed dicts of dicts, we can return as-is
-    # *IF* the constraint model expects UUIDs.
-    #
-    # *** RE-READING `_parse_v2_metadata_constraints` from file ***
-    # AH, the V1-to-V2 migration saves them as '1__z'. This is the problem.
-    # Let's fix the *save* logic, not the load logic.
-    
-    # The *load* logic is correct for the *old* save format.
-    # It converts '1__z' back to (1, 'z').
-    
-    v1_constraints_str_key = v2_metadata.get('constraints_by_uuid', {})
-    parsed_constraints = {}
-    
-    for str_key, data in v1_constraints_str_key.items():
-        # This is the V1-to-V2 migration data.
-        # This is WRONG. We need to parse the *V2* constraint data.
-        # Let's assume the key is `constraints_by_uuid` and it's a dict
-        # of dicts, keyed by UUID.
-        pass # This function needs to be re-evaluated
-        
-    # --- *** RE-EVALUATION *** ---
-    # The original `_parse_v2_metadata_constraints` from
-    # is only for V1-migrated constraints. We need to load V2 constraints.
-    
-    # V2 constraints are saved as `Dict[str, Dict[str, ParameterConstraintV2]]`
-    # (UUID -> Param Name -> Dataclass)
-    # After asdict() and json.load(), this is:
-    # `Dict[str, Dict[str, Dict]]`
-    # This is *already* what `SystemListV2.from_v2_data` needs.
-    
-    v2_constraints_map = v2_metadata.get('constraints_by_uuid', {})
-    logging.info(f"Loaded {len(v2_constraints_map)} V2 constraint sets from metadata.")
     return v2_constraints_map
 
 def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], Dict[int, str]):
@@ -323,34 +284,42 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
     # This was fixed to `v2_constraints_by_uuid`
     constraint_map_obj = session.systs.constraint_model.v2_constraints_by_uuid
 
-    # --- *** START V2 LOG SERIALIZATION *** ---
-    log_manager = getattr(session, 'log_manager', None)
+    log_manager_to_save = getattr(session, 'log_manager', None)
+    
+    # Check if this is a V1-loaded session (has GUILog)
+    v1_log_stub = getattr(session, 'log', None)
+    if isinstance(v1_log_stub, GUILog) and v1_log_stub.json['set_menu']:
+        # This V1 stub has been updated. Use it as the source of truth.
+        log_manager_to_save = v1_log_stub
+        logging.debug("Using session.log (GUILog) as save source.")
+    else:
+        logging.debug(f"Using session.log_manager ({type(log_manager_to_save)}) as save source.")
+
     log_history_data = None
     log_type = "unknown"
 
-    if isinstance(log_manager, HistoryLogV2):
-        log_history_data = dataclasses.asdict(log_manager)
+    if isinstance(log_manager_to_save, HistoryLogV2):
+        log_history_data = dataclasses.asdict(log_manager_to_save)
         log_type = "v2"
-        logging.debug(f"Serializing HistoryLogV2 (type='v2') with {len(log_manager.entries)} entries.")
+        logging.debug(f"Serializing HistoryLogV2 (type='v2') with {len(log_manager_to_save.entries)} entries.")
         
-    elif isinstance(log_manager, V1LogArtifact):
-        log_history_data = log_manager.v1_json
+    elif isinstance(log_manager_to_save, V1LogArtifact):
+        log_history_data = log_manager_to_save.v1_json
         log_type = "v1_artifact"
         logging.debug("Serializing V1LogArtifact (type='v1_artifact')")
 
-    elif isinstance(log_manager, GUILog):
+    elif isinstance(log_manager_to_save, GUILog):
         try:
-            log_history_data = json.loads(log_manager.str)
+            log_history_data = json.loads(log_manager_to_save.str)
         except json.JSONDecodeError:
             log_history_data = {"set_menu": []} 
         log_type = "v1_legacy"
         logging.debug("Serializing V1 GUILog (type='v1_legacy')")
         
     else:
-        logging.error(f"Unknown log type in session: {type(log_manager)}. Saving empty log.")
+        logging.error(f"Unknown log type in session: {type(log_manager_to_save)}. Saving empty log.")
         log_history_data = {}
-    # --- *** END V2 LOG SERIALIZATION *** ---
-
+    
     # 3. Create the SessionMetadataV2 object
     metadata = SessionMetadataV2(
         constraints_by_uuid=constraint_map_obj,
