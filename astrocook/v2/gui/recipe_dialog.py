@@ -8,6 +8,7 @@ from PySide6.QtGui import QIntValidator, QDoubleValidator, QFont
 from PySide6.QtCore import Qt, QLocale
 
 from ..session import SessionV2
+from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
 from ..utils import get_recipe_schema, is_branching_recipe
 from astrocook import settings
 
@@ -203,6 +204,18 @@ class RecipeDialog(QDialog):
                              original_history_index = self.parent_window.session_histories.index(self.parent_window.active_history)
                         except (ValueError, AttributeError):
                              original_history_index = -1 # Should not happen
+
+                    if original_history_index != -1:
+                        try:
+                            active_log_manager = self.parent_window.session_histories[original_history_index].log_manager
+                            if isinstance(active_log_manager, HistoryLogV2):
+                                active_log_manager.add_entry(
+                                    recipe_name=self.recipe_name, 
+                                    params=params_to_pass
+                                )
+                                logging.debug(f"Logged successful recipe: {self.recipe_name}")
+                        except Exception as e:
+                            logging.error(f"Failed to log successful recipe: {e}")
 
                     if original_history_index != -1:
                         branching = is_branching_recipe(self.recipe_name)
