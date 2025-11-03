@@ -448,32 +448,19 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'EDIT' MENU (x_convert, y_convert)
         
-        # x_convert Action
-        x_convert_action = QAction("Convert &X Axis...", self)
-        x_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "x_convert"))
-        edit_menu.addAction(x_convert_action)
-        self.x_convert_action = x_convert_action; x_convert_action.setEnabled(False)
-
-        # y_convert Action
-        y_convert_action = QAction("Convert &Y Axis...", self)
-        y_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "y_convert"))
-        edit_menu.addAction(y_convert_action)
-        self.y_convert_action = y_convert_action; y_convert_action.setEnabled(False)
-
-        # --- *** START NEW RECIPES *** ---
-        edit_menu.addSeparator()
+        # apply_expression Action
+        apply_expr_action = QAction("Apply &Expression...", self)
+        apply_expr_action.setToolTip("Apply a numerical expression to columns (e.g., 'y / 2.0')")
+        apply_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "apply_expression"))
+        edit_menu.addAction(apply_expr_action)
+        self.apply_expression_action = apply_expr_action; self.apply_expression_action.setEnabled(False)
         
-        # arithmetics Action
-        arithmetics_action = QAction("Column &Arithmetics...", self)
-        arithmetics_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "arithmetics"))
-        edit_menu.addAction(arithmetics_action)
-        self.arithmetics_action = arithmetics_action; arithmetics_action.setEnabled(False)
-        
-        # mask Action
-        mask_action = QAction("&Mask Spectrum...", self)
-        mask_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "mask"))
-        edit_menu.addAction(mask_action)
-        self.mask_action = mask_action; mask_action.setEnabled(False)
+        # mask_expression Action
+        mask_expr_action = QAction("&Mask by Expression...", self)
+        mask_expr_action.setToolTip("Mask a column using a boolean expression (e.g., 'x < 300')")
+        mask_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "mask_expression"))
+        edit_menu.addAction(mask_expr_action)
+        self.mask_expression_action = mask_expr_action; self.mask_expression_action.setEnabled(False)
 
         # split Action
         split_action = QAction("S&plit Spectrum...", self)
@@ -1346,14 +1333,12 @@ class MainWindowV2(QMainWindow):
         # ** Enable/Disable Recipe Actions **
         enable_recipes = is_valid_session
         # Check if actions exist before enabling/disabling
-        if hasattr(self, 'x_convert_action'): self.x_convert_action.setEnabled(enable_recipes)
-        if hasattr(self, 'y_convert_action'): self.y_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
+        if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
+        if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
+        
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         
-        # --- *** START NEW RECIPES *** ---
-        if hasattr(self, 'arithmetics_action'): self.arithmetics_action.setEnabled(enable_recipes)
-        if hasattr(self, 'mask_action'): self.mask_action.setEnabled(enable_recipes)
-        if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

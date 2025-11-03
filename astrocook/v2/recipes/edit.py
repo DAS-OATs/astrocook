@@ -26,27 +26,23 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#convert-y-axis"
     },
-    "arithmetics": {
-        "brief": "Column arithmetics.",
-        "details": "Perform arithmetic operations between columns (e.g., y = y / cont).",
+    "apply_expression": {
+        "brief": "Apply expression to columns.",
+        "details": "Apply a NumPy-style expression. Use column names (x, y, cont...) as variables. E.g., 'y / cont', 'y * 2.0', or 'log10(y)'.",
         "params": [
-            {"name": "col_target", "type": str, "default": "y", "doc": "Target column (to be overwritten)"},
-            {"name": "col_left", "type": str, "default": "y", "doc": "Left-hand side column"},
-            {"name": "op", "type": str, "default": "/", "doc": "Operation (+, -, *, /)"},
-            {"name": "col_right", "type": str, "default": "cont", "doc": "Right-hand side column"},
+            {"name": "target_col", "type": str, "default": "y", "doc": "Target column (to be overwritten or created)"},
+            {"name": "expression", "type": str, "default": "y / cont", "doc": "Expression to evaluate (e.g., 'y / 2.0')"},
         ],
-        "url": "edit_cb.html#arithmetics" # Placeholder URL
+        "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
-    "mask": {
-        "brief": "Mask column by condition.",
-        "details": "Mask a column by setting values to NaN based on a condition.",
+    "mask_expression": {
+        "brief": "Mask column by expression.",
+        "details": "Mask a target column by setting values to NaN where the expression is True. E.g., '(x < 300) | (x > 400)', or 'dy <= 0'.",
         "params": [
-            {"name": "col_target", "type": str, "default": "y", "doc": "Target column to mask (e.g., y)"},
-            {"name": "col_cond", "type": str, "default": "dy", "doc": "Column to check condition against (e.g., dy)"},
-            {"name": "op", "type": str, "default": "<=", "doc": "Condition (<=, <, ==, >, >=, !=)"},
-            {"name": "value", "type": float, "default": 0.0, "doc": "Value for condition (e.g., 0.0)"},
+            {"name": "target_col", "type": str, "default": "y", "doc": "Target column to mask (e.g., y)"},
+            {"name": "expression", "type": str, "default": "dy <= 0", "doc": "Boolean expression (e.g., '(x > 300) & (x < 400)')"},
         ],
-        "url": "edit_cb.html#mask" # Placeholder URL
+        "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
     "split": {
         "brief": "Split spectrum by range.",
@@ -102,103 +98,57 @@ class RecipeEditV2:
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
     
-    def arithmetics(self, col_target: str, col_left: str, op: str, col_right: str) -> 'SessionV2':
+    def apply_expression(self, target_col: str, expression: str) -> 'SessionV2':
         """
-        API: Performs column arithmetics.
+        API: Applies a numerical expression to the spectrum data.
         """
-        # 1. Log the action
-        params = locals()
-        params.pop('self') # Remove self from logged params
+        if not expression:
+            logging.error("Expression cannot be empty.")
+            return 0
         try:
-            if isinstance(self._session.log_manager, HistoryLogV2):
-                self._session.log_manager.add_entry(recipe_name='arithmetics', params=params)
-        except Exception as e:
-            logging.error(f"Failed to log arithmetics action: {e}", exc_info=True)
-
-        # 2. Validate operator
-        valid_ops = ['+', '-', '*', '/']
-        if op not in valid_ops:
-            logging.error(f"Invalid operator '{op}'. Must be one of {valid_ops}")
-            return 0 # V1-style failure
-
-        try:
-            # 3. Execute the immutable V2 operation
-            new_spec_v2 = self._session.spec.arithmetics(
-                col_target=col_target,
-                col_left=col_left,
-                op=op,
-                col_right=col_right
+            new_spec_v2 = self._session.spec.apply_expression(
+                target_col=target_col,
+                expression=expression
             )
-            
-            # 4. Return a NEW SessionV2 instance
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during arithmetics: {e}", exc_info=True)
+            logging.error(f"Failed during apply_expression: {e}", exc_info=True)
             return 0 # V1-style failure
             
-    def mask(self, col_target: str, col_cond: str, op: str, value: str) -> 'SessionV2':
+    def mask_expression(self, target_col: str, expression: str) -> 'SessionV2':
         """
-        API: Masks a column based on a condition.
+        API: Masks a column based on a boolean expression.
         """
-        # 1. Log the action
-        params = locals()
-        params.pop('self')
+        if not expression:
+            logging.error("Expression cannot be empty.")
+            return 0
         try:
-            if isinstance(self._session.log_manager, HistoryLogV2):
-                self._session.log_manager.add_entry(recipe_name='mask', params=params)
-        except Exception as e:
-            logging.error(f"Failed to log mask action: {e}", exc_info=True)
-
-        # 2. Validate operator
-        valid_ops = ['<=', '<', '==', '>', '>=', '!=']
-        if op not in valid_ops:
-            logging.error(f"Invalid operator '{op}'. Must be one of {valid_ops}")
-            return 0 
-
-        try:
-            # 3. Type casting
-            value_f = float(value)
-            
-            # 4. Execute the immutable V2 operation
-            new_spec_v2 = self._session.spec.mask(
-                col_target=col_target,
-                col_cond=col_cond,
-                op=op,
-                value=value_f
+            new_spec_v2 = self._session.spec.mask_expression(
+                target_col=target_col,
+                expression=expression
             )
-            
-            # 5. Return a NEW SessionV2 instance
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during mask: {e}", exc_info=True)
+            logging.error(f"Failed during mask_expression: {e}", exc_info=True)
             return 0
 
     def split(self, col_check: str, min_val: str, max_val: str) -> 'SessionV2':
         """
         API: Splits the spectrum, returning a new spectrum of the sub-range.
         """
-        # 1. Log the action
-        params = locals()
-        params.pop('self')
         try:
-            if isinstance(self._session.log_manager, HistoryLogV2):
-                self._session.log_manager.add_entry(recipe_name='split', params=params)
-        except Exception as e:
-            logging.error(f"Failed to log split action: {e}", exc_info=True)
-
-        try:
-            # 2. Type casting
+            # 1. Type casting
             min_val_f = float(min_val)
             max_val_f = float(max_val)
             
-            # 3. Execute the immutable V2 operation
+            # 2. Execute the immutable V2 operation
             new_spec_v2 = self._session.spec.split(
                 col_check=col_check,
                 min_val=min_val_f,
                 max_val=max_val_f
             )
             
-            # 4. Return a NEW SessionV2 instance
+            # 3. Return a NEW SessionV2 instance
             # The GUI will handle this as a "branching" action
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:

@@ -1,6 +1,8 @@
 
 import astropy.units as au
 from copy import deepcopy
+import logging
+import numexpr as ne
 import numpy as np
 from typing import Dict, Any, Optional, Union
 
@@ -298,146 +300,120 @@ class SpectrumV2:
             
         return v1_spec
     
+    def _get_ne_local_dict(self) -> Dict[str, np.ndarray]:
+        """Helper to create the variable dictionary for numexpr."""
+        all_cols = self.t._data_dict
+        # Pass only the raw numpy arrays to numexpr
+        local_dict = {k: v.value for k, v in all_cols.items()}
+        return all_cols, local_dict
     
     # --- Methods implementing the API ---
 
-    def arithmetics(self, col_target: str, col_left: str, op: str, col_right: str) -> 'SpectrumV2':
+    def apply_expression(self, target_col: str, expression: str) -> 'SpectrumV2':
         """
-        API: Performs column arithmetics and returns a NEW SpectrumV2 instance.
+        API: Applies a numerical expression and returns a NEW SpectrumV2 instance.
         """
         
-        # 1. Get all data columns via the adapter
-        all_cols = self.t._data_dict # Access the raw dict from the adapter
+        # 1. Get column data and the numexpr variable dict
+        all_cols, local_dict = self._get_ne_local_dict()
         
-        # 2. Get data arrays
-        if col_left not in all_cols: raise ValueError(f"Column '{col_left}' not found.")
-        if col_right not in all_cols: raise ValueError(f"Column '{col_right}' not found.")
-        # Note: col_target does not need to exist yet
-            
-        left_q = all_cols[col_left]
-        right_q = all_cols[col_right]
+        try:
+            # 2. Evaluate the expression
+            new_values = ne.evaluate(expression, local_dict=local_dict)
+        except Exception as e:
+            logging.error(f"Numexpr evaluation failed for expression: '{expression}'")
+            raise e # Re-raise for the recipe to catch
 
-        # 3. Perform operation
-        new_quantity = None
-        if op == '+': new_quantity = left_q + right_q
-        elif op == '-': new_quantity = left_q - right_q
-        elif op == '*': new_quantity = left_q * right_q
-        elif op == '/': 
-            new_values = np.divide(left_q.value, right_q.value, 
-                                   out=np.full_like(left_q.value, np.nan), 
-                                   where=right_q.value!=0)
-            new_quantity = au.Quantity(new_values, left_q.unit / right_q.unit)
+        # 3. Determine the unit for the new column
+        target_unit = au.dimensionless_unscaled
+        if target_col in all_cols:
+            target_unit = all_cols[target_col].unit
+            logging.debug(f"Expression result will inherit unit '{target_unit}' from target '{target_col}'")
         else:
-            raise ValueError(f"Invalid operator '{op}'")
-            
+            logging.debug(f"Expression result for new column '{target_col}' will be dimensionless.")
+
         # 4. Create new SpectrumDataV2 using the immutable pattern
-        # Start with all original data
         core_cols = {
-            'x': self._data.x,
-            'xmin': self._data.xmin,
-            'xmax': self._data.xmax,
-            'y': self._data.y,
-            'dy': self._data.dy
+            'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
+            'y': self._data.y, 'dy': self._data.dy
         }
-        aux_cols = deepcopy(self._data.aux_cols) # Copy the aux_cols dict
+        aux_cols = deepcopy(self._data.aux_cols)
 
         # 5. Create the new DataColumnV2
-        new_data_col = DataColumnV2(new_quantity.value, new_quantity.unit)
+        new_data_col = DataColumnV2(new_values, target_unit)
 
-        # 6. Overwrite the target column in the *correct dictionary*
-        if col_target in core_cols:
-            core_cols[col_target] = new_data_col
-        elif col_target in aux_cols:
-            # This allows overwriting an existing aux col
-            aux_cols[col_target] = new_data_col
+        # 6. Overwrite or add the target column
+        if target_col in core_cols:
+            core_cols[target_col] = new_data_col
         else:
-            # This was a new column, add it to aux_cols
-            logging.debug(f"Arithmetics: creating new aux_col '{col_target}'")
-            aux_cols[col_target] = new_data_col
+            # Overwrites existing aux or adds new one
+            aux_cols[target_col] = new_data_col
 
         # 7. Create the new data core
         new_data_core = SpectrumDataV2(
-            x=core_cols['x'],
-            xmin=core_cols['xmin'],
-            xmax=core_cols['xmax'],
-            y=core_cols['y'],
-            dy=core_cols['dy'],
+            x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
+            y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
             rf_z=self._data.rf_z
         )
 
         # 8. Return a NEW SpectrumV2 instance
-        new_history = self.history + [f"Arithmetics: {col_target} = {col_left} {op} {col_right}"]
+        new_history = self.history + [f"Apply: {target_col} = {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
 
-    def mask(self, col_target: str, col_cond: str, op: str, value: float) -> 'SpectrumV2':
+    def mask_expression(self, target_col: str, expression: str) -> 'SpectrumV2':
         """
-        API: Masks a column based on a condition and returns a NEW SpectrumV2 instance.
+        API: Masks a column based on a boolean expression and returns a NEW SpectrumV2 instance.
         """
         
-        # 1. Get all data columns
-        all_cols = self.t._data_dict
+        # 1. Get column data and the numexpr variable dict
+        all_cols, local_dict = self._get_ne_local_dict()
         
-        # 2. Get data arrays
-        if col_target not in all_cols: raise ValueError(f"Target column '{col_target}' not found.")
-        if col_cond not in all_cols: raise ValueError(f"Condition column '{col_cond}' not found.")
+        # 2. Check that target column exists
+        if target_col not in all_cols: 
+            raise ValueError(f"Target column '{target_col}' not found.")
             
-        target_q = all_cols[col_target]
-        cond_q = all_cols[col_cond]
-        
-        # 3. Find indices to mask
-        mask_indices = None
-        cond_vals = cond_q.value # Get raw numpy array
-        
-        if op == '<=': mask_indices = np.where(cond_vals <= value)
-        elif op == '<': mask_indices = np.where(cond_vals < value)
-        elif op == '==': mask_indices = np.where(cond_vals == value)
-        elif op == '>': mask_indices = np.where(cond_vals > value)
-        elif op == '>=': mask_indices = np.where(cond_vals >= value)
-        elif op == '!=': mask_indices = np.where(cond_vals != value)
-        else:
-            raise ValueError(f"Invalid operator '{op}'")
+        target_q = all_cols[target_col]
+
+        try:
+            # 3. Evaluate the boolean expression to get the mask
+            mask_indices = ne.evaluate(expression, local_dict=local_dict)
+            if mask_indices.dtype != bool:
+                raise TypeError("Mask expression did not return a boolean array.")
+        except Exception as e:
+            logging.error(f"Numexpr evaluation failed for mask expression: '{expression}'")
+            raise e # Re-raise for the recipe to catch
             
         # 4. Create new data array
         new_values = target_q.value.copy()
         new_values[mask_indices] = np.nan
-        new_quantity = au.Quantity(new_values, target_q.unit)
-        new_data_col = DataColumnV2(new_quantity.value, new_quantity.unit)
+        new_data_col = DataColumnV2(new_values, target_q.unit)
 
         # 5. Create new SpectrumDataV2 using the immutable pattern
-        # Start with all original data
         core_cols = {
-            'x': self._data.x,
-            'xmin': self._data.xmin,
-            'xmax': self._data.xmax,
-            'y': self._data.y,
-            'dy': self._data.dy
+            'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
+            'y': self._data.y, 'dy': self._data.dy
         }
-        aux_cols = deepcopy(self._data.aux_cols) # Copy the aux_cols dict
+        aux_cols = deepcopy(self._data.aux_cols)
 
-        # 6. Overwrite the target column in the *correct dictionary*
-        if col_target in core_cols:
-            core_cols[col_target] = new_data_col
-        elif col_target in aux_cols:
-            aux_cols[col_target] = new_data_col
-        else:
-            raise ValueError(f"Target column '{col_target}' is not a core or aux column.")
+        # 6. Overwrite the target column
+        if target_col in core_cols:
+            core_cols[target_col] = new_data_col
+        elif target_col in aux_cols:
+            aux_cols[target_col] = new_data_col
 
         # 7. Create the new data core
         new_data_core = SpectrumDataV2(
-            x=core_cols['x'],
-            xmin=core_cols['xmin'],
-            xmax=core_cols['xmax'],
-            y=core_cols['y'],
-            dy=core_cols['dy'],
+            x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
+            y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
             rf_z=self._data.rf_z
         )
 
         # 8. Return a NEW SpectrumV2 instance
-        new_history = self.history + [f"Mask: {col_target} where {col_cond} {op} {value}"]
+        new_history = self.history + [f"Mask: {target_col} where {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
 
     def split(self, col_check: str, min_val: float, max_val: float) -> 'SpectrumV2':

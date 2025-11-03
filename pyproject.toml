@@ -52,6 +52,7 @@ dependencies = [
     "numpy>=1.17.3",       # Core numerical operations
     "cycler>=0.10",
     "statsmodels>=0.10.1",   # Plotting library
+    "numexpr",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
