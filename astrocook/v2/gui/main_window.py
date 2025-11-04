@@ -1339,7 +1339,12 @@ class MainWindowV2(QMainWindow):
             return
 
         try:
-            dialog = LogScripterDialog(log_object_to_view, session_name, self)
+            dialog = LogScripterDialog(
+                log_object_to_view, 
+                session_name, 
+                self, 
+                self.recipe_category_map # Pass the map
+            )
             self.log_scripter_dialog = dialog
             dialog.finished.connect(
                 lambda: self._on_log_scripter_closed() 

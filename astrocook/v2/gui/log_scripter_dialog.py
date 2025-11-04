@@ -9,6 +9,9 @@ from PySide6.QtGui import QColor, QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Union, Optional
 
 # --- V2 Imports ---
+from ..recipes.edit import EDIT_RECIPES_SCHEMAS
+from ..recipes.flux import FLUX_RECIPES_SCHEMAS
+from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..structures import HistoryLogV2, V1LogArtifact
 from ..utils import get_recipe_schema # For inserting recipes
 # --- V1 Imports ---
@@ -16,6 +19,13 @@ from ...v1.gui_log import GUILog
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
+
+ALL_SCHEMAS = {
+    'edit': EDIT_RECIPES_SCHEMAS,
+    'flux': FLUX_RECIPES_SCHEMAS,
+    'continuum': CONTINUUM_RECIPES_SCHEMAS
+    # Add new schema imports here
+}
 
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
@@ -26,12 +36,13 @@ class LogScripterDialog(QDialog):
     A non-modal dialog to display, edit, and save the session's log history
     as a runnable script.
     """
-    def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindowV2'):
+    def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindowV2', recipe_map: dict):
         super().__init__(parent)
         self.main_window = parent # Store reference to MainWindowV2
         self.setWindowTitle(f"Log Scripter: {session_name}")
         
         self.log_object = log_object # Save the log manager
+        self.recipe_map = recipe_map
 
         self.layout = QVBoxLayout(self)
         
@@ -297,21 +308,18 @@ class LogScripterDialog(QDialog):
         
         menu = QMenu(self)
         
-        # --- Create a simple menu ---
+        category_menus = {}
+        
         try:
-            # Get Edit schemas
-            from ..recipes.edit import EDIT_RECIPES_SCHEMAS
-            edit_menu = menu.addMenu("Edit")
-            for name in EDIT_RECIPES_SCHEMAS.keys():
-                action = edit_menu.addAction(name)
-                action.triggered.connect(lambda checked=False, n=name: self._insert_template(n))
-                
-            # Get Flux schemas
-            from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-            flux_menu = menu.addMenu("Flux")
-            for name in FLUX_RECIPES_SCHEMAS.keys():
-                action = flux_menu.addAction(name)
-                action.triggered.connect(lambda checked=False, n=name: self._insert_template(n))
+            # Use the recipe_map passed from main_window
+            for recipe_name, category in self.recipe_map.items():
+                if category not in category_menus:
+                    # Create a new sub-menu for this category
+                    category_menus[category] = menu.addMenu(category.capitalize())
+                    
+                # Add the recipe action to its category sub-menu
+                action = category_menus[category].addAction(recipe_name)
+                action.triggered.connect(lambda checked=False, n=recipe_name, c=category: self._insert_template(c, n))
 
         except Exception as e:
             logging.error(f"Failed to build recipe insert menu: {e}")
@@ -322,29 +330,32 @@ class LogScripterDialog(QDialog):
         cursor_pos = self.insert_recipe_button.mapToGlobal(self.insert_recipe_button.rect().bottomLeft())
         menu.exec(cursor_pos)
         
-    def _insert_template(self, recipe_name: str):
+    def _insert_template(self, category: str, recipe_name: str):
         """Inserts a text template for the given recipe."""
         
-        # Try to find the schema
         schema = None
-        params_str = "..." # Default
+        params_str = "..."
         try:
-            from ..recipes.edit import EDIT_RECIPES_SCHEMAS
-            if recipe_name in EDIT_RECIPES_SCHEMAS:
-                schema = EDIT_RECIPES_SCHEMAS[recipe_name]
-            else:
-                from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-                if recipe_name in FLUX_RECIPES_SCHEMAS:
-                    schema = FLUX_RECIPES_SCHEMAS[recipe_name]
+            # Use the ALL_SCHEMAS map to find the correct schema
+            if category in ALL_SCHEMAS and recipe_name in ALL_SCHEMAS[category]:
+                schema = ALL_SCHEMAS[category][recipe_name]
             
             if schema and 'params' in schema:
                 params = []
                 for p in schema['params']:
-                    params.append(f"{p['name']}={p['default']}")
+                    # Use str() for non-string defaults like False or 0.0
+                    default_val = p['default']
+                    if isinstance(default_val, str) and default_val != "_current_":
+                        default_val = f"'{default_val}'" # Add quotes to strings
+                    else:
+                        default_val = str(default_val) # Convert False, 0.0, etc.
+                        
+                    params.append(f"{p['name']}={default_val}")
                 params_str = ", ".join(params)
                 
-        except Exception:
-            pass # Use default "..."
+        except Exception as e:
+            logging.warning(f"Could not find schema for {category}.{recipe_name}: {e}")
+            pass 
             
         template = f"{recipe_name}({params_str})\n"
         self.scripter_edit.textCursor().insertText(template)
