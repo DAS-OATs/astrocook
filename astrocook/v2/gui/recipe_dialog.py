@@ -119,7 +119,10 @@ class RecipeDialog(QDialog):
 
                 if self.recipe_name == 'resample' and param_name == 'target_session':
                     widget = QComboBox()
-                    other_names = self._get_other_session_names()
+
+                    other_names = list(self.session_alias_map.values())
+                    other_names.sort()
+
                     if not other_names:
                         # No other sessions, disable
                         widget.addItem("No other sessions open")

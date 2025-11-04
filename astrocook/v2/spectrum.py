@@ -506,47 +506,80 @@ class SpectrumV2:
               dx: au.Quantity, kappa: Optional[float], 
               filling: float) -> 'SpectrumV2':
         """
-        API: Rebins the spectrum and returns a NEW SpectrumV2 instance.
+        API: Rebins the spectrum to a new *uniform* grid.
+        This now correctly interpolates all auxiliary columns.
         """
         
         original_x_unit = self._data.x.unit 
-        zem = self._data.rf_z # Use the current rest-frame Z as the conversion zero point
+        zem = self._data.rf_z 
 
-        # Determine target unit for rebinning (km/s if the step is in km/s, otherwise original unit)
         if dx.unit.is_equivalent(au.km/au.s):
             target_calc_unit = au.km/au.s
         else:
             target_calc_unit = original_x_unit
 
-        # --- Unit Conversion to Calculation Space ---
         x_calc = convert_axis_velocity(self._data.x.quantity, zem, target_calc_unit)
         xmin_calc = convert_axis_velocity(self._data.xmin.quantity, zem, target_calc_unit)
         xmax_calc = convert_axis_velocity(self._data.xmax.quantity, zem, target_calc_unit)
 
-        # 1. Execute pure rebinning logic
+        # 1. Rebin the flux-like columns
         x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
-            x_calc, xmin_calc, xmax_calc, # Pass the converted X-arrays
+            x_calc, xmin_calc, xmax_calc, 
             self._data, 
             xstart, xend, dx, target_calc_unit,
             kappa, filling
         )
         
+        # 2. Convert new grid back to original units (e.g., nm)
         x_final = convert_axis_velocity(x_new, zem, original_x_unit)
         xmin_final = convert_axis_velocity(xmin_new, zem, original_x_unit)
         xmax_final = convert_axis_velocity(xmax_new, zem, original_x_unit)
+        
+        # --- *** 3. THIS IS THE FIX: Interpolate Aux Columns *** ---
+        new_aux_cols = {}
+        x_final_nm = x_final.to_value(au.nm) # Get the new grid in nm for interpolation
+        
+        for name, col_data in self._data.aux_cols.items():
+            
+            # --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---
+            if col_data.values is None:
+                logging.debug(f"Skipping aux col '{name}' as its data is None.")
+                continue
+            # --- *** END FIX 1 *** ---
 
-        # 2. Build new SpectrumDataV2
+            if col_data.values.dtype.kind in 'fiub': # Check for float, int, unsigned, or bool
+                try:
+                    logging.debug(f"Rebin: Interpolating aux column '{name}'...")
+                    interp_values = self.get_resampled_column(
+                        name, 
+                        x_final_nm 
+                    )
+                    
+                    # --- *** FIX 2: Check if interpolation returned None (e.g., for string) *** ---
+                    if interp_values is not None:
+                        new_aux_cols[name] = DataColumnV2(interp_values, col_data.unit)
+                    # (If it is None, get_resampled_column already warned us, so we just drop it)
+                    # --- *** END FIX 2 *** ---
+
+                except Exception as e:
+                    logging.warning(f"Failed to interpolate aux col '{name}' during rebin: {e}. Dropping.")
+            else:
+                logging.warning(f"Cannot rebin non-numerical aux col '{name}'. Dropping.")
+        # --- *** END FIX *** ---
+
+        # 4. Build new SpectrumDataV2
         new_data = SpectrumDataV2(
             x=DataColumnV2(x_final.value, x_final.unit),
             xmin=DataColumnV2(xmin_final.value, xmin_final.unit),
             xmax=DataColumnV2(xmax_final.value, xmax_final.unit),
             y=DataColumnV2(y_new.value, y_new.unit),
             dy=DataColumnV2(dy_new.value, dy_new.unit),
-            #aux_cols=self._data.aux_cols, # Auxiliary columns are NOT handled in core rebin
-            meta=self._data.meta, rf_z=self._data.rf_z 
+            aux_cols=new_aux_cols, 
+            meta=self._data.meta, 
+            rf_z=self._data.rf_z 
         )
         
-        # 3. Return a NEW SpectrumV2 instance
+        # 5. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return SpectrumV2(data=new_data, history=new_history)
 

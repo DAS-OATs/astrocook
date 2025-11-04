@@ -486,6 +486,13 @@ class MainWindowV2(QMainWindow):
         flux_menu.addAction(rebin_action)
         self.rebin_action = rebin_action; rebin_action.setEnabled(False)
 
+        # resample Action
+        resample_action = QAction("Re&sample on Grid...", self)
+        resample_action.setToolTip("Resample this spectrum onto another session's grid")
+        resample_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "resample"))
+        flux_menu.addAction(resample_action)
+        self.resample_action = resample_action; self.resample_action.setEnabled(False)
+
         # ... (Other menu item actions will be added here later) ...
 
         self._update_undo_redo_actions()
@@ -1467,6 +1474,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
+        if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
         
         # --- *** END NEW RECIPES *** ---
         

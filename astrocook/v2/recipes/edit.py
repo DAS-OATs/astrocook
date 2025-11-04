@@ -83,7 +83,6 @@ class RecipeEditV2:
         if safe_var_name in extra_vars:
             return safe_var_name
 
-        # --- Perform the resampling logic ---
         try:
             # 1. Find the target session
             full_name = alias_map[alias]
@@ -102,31 +101,38 @@ class RecipeEditV2:
             
             target_spec = target_hist.current_state.spec
             current_spec = self._session.spec
-            
-            # --- *** BUG 2 FIX: Add oversampling check *** ---
+
             if len(target_spec.x) > len(current_spec.x):
                 logging.warning(f"Oversampling: Target '{alias}' grid ({len(target_spec.x)} pts) "
                                 f"is finer than current grid ({len(current_spec.x)} pts).")
-            # --- *** END BUG 2 FIX *** ---
-
+            
             # 2. Get the *current* spec's grid (in nm)
             current_x_grid_nm = current_spec.x.to_value(au.nm)
             
-            # 3. Call the *new, lightweight* API method
+            # 3. Call the lightweight API method
             logging.debug(f"Auto-resampling {alias}.{col_name} onto current grid...")
             resampled_array = target_spec.get_resampled_column(
                 col_name,
                 current_x_grid_nm
             )
             
-            # 4. Add the new array to our extra_vars dict
+            # --- *** THIS IS THE FIX *** ---
+            # 4. Check if the column was non-numerical
+            if resampled_array is None:
+                # Raise a clear error that the user will see in the dialog
+                raise ValueError(f"Column '{col_name}' in session '{alias}' is non-numerical and cannot be used in expression.")
+            # --- *** END FIX *** ---
+                
+            # 5. Add the new array to our extra_vars dict
             extra_vars[safe_var_name] = resampled_array
             
-            return safe_var_name # This string replaces the 's1.y'
+            return safe_var_name 
             
         except Exception as e:
+            # This will now catch our new ValueError
             logging.error(f"Failed to resample {alias}.{col_name}: {e}", exc_info=True)
-            return match_obj.group(0) # Keep original text on failure
+            # Re-raise the error so the recipe can catch it
+            raise e
     
     def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> (str, Dict[str, np.ndarray]):
         """
@@ -139,11 +145,12 @@ class RecipeEditV2:
 
         extra_vars = {}
 
-        # Create a lambda to pass the extra_vars dict into our helper
-        replacer = lambda m: self._resample_and_replace_match(m, alias_map, extra_vars)
-        
-        # re.sub will find all matches and call 'replacer' for each one
-        final_expression = SESSION_VAR_REGEX.sub(replacer, expression)
+        try:
+            replacer = lambda m: self._resample_and_replace_match(m, alias_map, extra_vars)
+            final_expression = SESSION_VAR_REGEX.sub(replacer, expression)
+        except Exception as e:
+            # Propagate the clear error message (e.g., "Cannot resample...")
+            raise e
         
         # --- *** END FIX *** ---
 
