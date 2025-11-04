@@ -742,6 +742,31 @@ class SpectrumV2:
             description=f"Continuum fit (interp+smooth) to '{mask_col}'"
         )
         
+        old_cont_col = self._data.aux_cols.get('cont')
+        old_model_col = self._data.aux_cols.get('model')
+
+        if old_cont_col is not None and old_model_col is not None:
+            logging.info("Old 'cont' and 'model' found, renormalizing model...")
+            try:
+                # Use np.divide for zero-division safety
+                normalized_model = np.divide(
+                    old_model_col.values, 
+                    old_cont_col.values, 
+                    out=np.ones_like(old_model_col.values), 
+                    where=old_cont_col.values!=0
+                )
+                
+                # Recalculate model against new continuum
+                new_model_values = cont_values * normalized_model
+                
+                new_aux_cols['model'] = DataColumnV2(
+                    values=new_model_values,
+                    unit=self._data.y.unit, # Model has same unit as flux
+                    description=old_model_col.description
+                )
+            except Exception as e:
+                logging.warning(f"Failed to renormalize model column: {e}")
+
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
         # 4. Return new SpectrumV2
