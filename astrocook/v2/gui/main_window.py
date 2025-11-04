@@ -457,6 +457,14 @@ class MainWindowV2(QMainWindow):
         edit_menu.addSeparator()
 
         # RECIPES FOR 'EDIT' MENU
+
+        # set_properties Action
+        set_props_action = QAction("Set &Properties...", self)
+        set_props_action.setToolTip("Set core session properties (e.g., z_em)")
+        set_props_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "set_properties"))
+        edit_menu.addAction(set_props_action)
+        self.set_properties_action = set_props_action; self.set_properties_action.setEnabled(False)
+        edit_menu.addSeparator()
         
         # apply_expression Action
         apply_expr_action = QAction("Apply &Expression...", self)
@@ -1488,6 +1496,7 @@ class MainWindowV2(QMainWindow):
         # ** Enable/Disable Recipe Actions **
         enable_recipes = is_valid_session
         # Check if actions exist before enabling/disabling
+        if hasattr(self, 'set_properties_action'): self.set_properties_action.setEnabled(enable_recipes)
         if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)

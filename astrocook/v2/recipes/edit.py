@@ -11,11 +11,20 @@ if TYPE_CHECKING:
     from ..session import SessionV2
 
 EDIT_RECIPES_SCHEMAS = {
+    "set_properties": {
+        "brief": "Set session properties.",
+        "details": "Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).",
+        "params": [
+            {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
+            {"name": "z_rf", "type": float, "default": "_current_", "doc": "Rest-Frame Redshift (z_rf)"},
+        ],
+        "url": "edit_cb.html#set_properties"
+    },
     "x_convert": {
         "brief": "Convert X axis.",
         "details": "Convert the x axis units and zero point to wavelength or velocity units.",
         "params": [
-            {"name": "zem", "type": float, "default": 0.0, "doc": "Emission redshift"},
+            {"name": "z_rf", "type": float, "default": "_current_", "doc": "Emission redshift"},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
         ],
         "url": "edit_cb.html#convert-x-axis"
@@ -155,14 +164,37 @@ class RecipeEditV2:
         # --- *** END FIX *** ---
 
         return final_expression, extra_vars
+    
+    def set_properties(self, z_em: str = '0.0', z_rf: str = '0.0') -> Optional['SessionV2']:
+        """
+        API: Sets the core properties (z_em, z_rf) on the spectrum.
+        """
+        try:
+            z_em_f = float(z_em)
+            z_rf_f = float(z_rf)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+            
+        try:
+            # Check if values actually changed
+            if z_em_f == self._session.spec._data.z_em and z_rf_f == self._session.spec._data.z_rf:
+                logging.info("Properties are the same, no changes made.")
+                return 0 # Return 0 to indicate no state change
+                
+            new_spec = self._session.spec.with_properties(z_em=z_em_f, z_rf=z_rf_f)
+            return self._session.with_new_spectrum(new_spec)
+        except Exception as e:
+            logging.error(f"Failed during set_properties: {e}", exc_info=True)
+            return 0
 
-    def x_convert(self, zem: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
+    def x_convert(self, z_rf: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
         Intercepts the V1 x_convert call, performs validation, and returns a NEW SessionV2.
         """
         # V1-style validation (simplified)
         try:
-            zem_float = float(zem)
+            z_rf_float = float(z_rf)
             xunit_obj = au.Unit(xunit)
         except ValueError:
             # Replicates V1 error handling path to avoid crash in the GUI context
@@ -170,7 +202,7 @@ class RecipeEditV2:
             return 0 # Returning 0 prevents crashing and triggers V1 logging
 
         # 1. Get the new SpectrumV2 instance (the immutable operation)
-        new_spec_v2 = self._session.spec.x_convert(zem=zem_float, xunit=xunit_obj)
+        new_spec_v2 = self._session.spec.x_convert(z_rf=z_rf_float, xunit=xunit_obj)
         
         # 2. Return a NEW SessionV2 instance with the updated spectrum
         return self._session.with_new_spectrum(new_spec_v2) 

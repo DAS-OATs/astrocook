@@ -112,6 +112,15 @@ class RecipeDialog(QDialog):
                 param_doc = param.get('doc', param_name) # Use name if no doc
                 param_default = str(param.get('default', '')) # Ensure string default
 
+                if param_default == "_current_":
+                    try:
+                        # Get the value from the session's data core
+                        current_val = getattr(self.session.spec._data, param_name)
+                        param_default = str(current_val)
+                    except AttributeError:
+                        logging.warning(f"Could not find current value for '{param_name}'.")
+                        param_default = "0.0" # Fallback
+
                 label = QLabel(f"{param_doc}:")
                 label.setToolTip(param_doc) # Add tooltip to label too
 

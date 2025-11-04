@@ -266,6 +266,11 @@ def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
     # Use 'same' mode to keep the array length, handling edges
     window_size = 2 * h + 1
+    # Handle edge case where window is larger than array
+    if window_size > len(y):
+        logging.warning("Running mean window is larger than array, returning array mean.")
+        return np.full_like(y, np.mean(y))
+        
     return np.convolve(y, np.ones(window_size) / window_size, mode='same')
 
 def find_unabsorbed_regions(
@@ -286,7 +291,10 @@ def find_unabsorbed_regions(
     mask_unabs = np.ones_like(y, dtype=bool)
     
     # Exclude regions with very low S/N, as they are unreliable
-    mask_unabs[y <= 3.0 * dy] = False
+    # Also exclude NaN values from the start
+    valid_data = ~np.isnan(y) & ~np.isnan(dy) & (dy > 0)
+    mask_unabs[~valid_data] = False
+    mask_unabs[y <= 3.0 * dy] = False # Low S/N
     
     for i in range(maxiter):
         # 1. Get the data from the *current* unabsorbed regions
@@ -300,7 +308,6 @@ def find_unabsorbed_regions(
         y_rm_unabs = running_mean(y_unabs, h=hwindow)
         
         # 3. Interpolate this mean back to the *full* array's size
-        # We must use the indices of the unabsorbed points as the 'x'
         indices_full = np.arange(len(y))
         indices_unabs = indices_full[mask_unabs]
         y_rm_full = np.interp(indices_full, indices_unabs, y_rm_unabs)
@@ -312,7 +319,7 @@ def find_unabsorbed_regions(
         # 5. Update the mask
         new_mask_unabs = mask_unabs & ~is_outlier
         
-        if np.sum(new_mask_unabs) == np.sum(mask_unabs):
+        if np.all(new_mask_unabs == mask_unabs):
             logging.info(f"Clipping converged after {i+1} iterations.")
             break # No new outliers found, we are done
             

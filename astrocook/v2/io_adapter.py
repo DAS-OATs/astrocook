@@ -60,7 +60,8 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
         y=y_col, dy=dy_col, 
         aux_cols=aux_cols, 
         meta=meta_v1,
-        rf_z=getattr(v1_spectrum_instance, '_rfz', 0.0)
+        z_rf=getattr(v1_spectrum_instance, '_rfz', 0.0), # Read old _rfz
+        z_em=getattr(v1_spectrum_instance, '_zem', 0.0)  # Try to get _zem
     )
 
 def load_and_migrate_structure(
@@ -174,14 +175,16 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
             col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
             aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
-    rf_z = float(meta.pop('RF_Z', 0.0)) # Pop rf_z from meta
-    
+    z_rf = float(meta.pop('Z_RF', 0.0)) # Pop z_rf from meta
+    z_em = float(meta.pop('Z_EM', 0.0)) # Pop z_em from meta
+
     return SpectrumDataV2(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
         y=y_col, dy=dy_col, 
         aux_cols=aux_cols, 
         meta=meta,
-        rf_z=rf_z
+        z_rf=z_rf,
+        z_em=z_em
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':
@@ -347,8 +350,10 @@ def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
         
     t.meta.update(spec_data.meta)
     t.meta['ORIGIN'] = 'Astrocook V2'
-    t.meta['RF_Z'] = spec_data.rf_z # <<< SAVE RF_Z
     
+    t.meta['Z_RF'] = spec_data.z_rf
+    t.meta['Z_EM'] = spec_data.z_em
+
     return t
 
 def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:

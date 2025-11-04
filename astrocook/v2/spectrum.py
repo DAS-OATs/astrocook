@@ -165,23 +165,36 @@ class SpectrumV2:
         return TableAdapterV2(output)
 
     @property
-    def _rfz(self) -> float:
+    def _z_rf(self) -> float:
         """
         Adapter GETTER per l'attributo V1 '_rfz'.
-        Restituisce l'attributo immutabile rf_z dal contenitore dati.
+        Restituisce l'attributo immutabile z_rf.
         """
-        return self._data.rf_z
+        return self._data.z_rf
 
-    @_rfz.setter
-    def _rfz(self, val: float):
+    @_z_rf.setter
+    def _z_rf(self, val: float):
         """
         Adapter SETTER per l'attributo V1 '_rfz'.
-        Ignora silenziosamente la modifica, poiché SpectrumV2 è immutabile.
+        Ignora silenziosamente la modifica.
         """
-        # Se il codice V1 chiama self.spec._rfz = 1.5, l'oggetto V2 non viene modificato.
-        # L'unica vera modifica dovrebbe avvenire tramite un metodo che restituisce
-        # una NUOVA istanza SpectrumV2 (come shift_rest_frame che avevamo abbozzato).
-        pass # Ignora la modifica in-place
+        pass 
+        
+    @property
+    def _z_em(self) -> float:
+        """
+        Adapter GETTER per l'attributo V1 '_zem'.
+        Restituisce l'attributo immutabile z_em.
+        """
+        return self._data.z_em
+
+    @_z_em.setter
+    def _z_em(self, val: float):
+        """
+        Adapter SETTER per l'attributo V1 '_zem'.
+        Ignora silenziosamente la modifica.
+        """
+        pass
 
     @property
     def _xunit(self) -> au.Unit:
@@ -311,6 +324,14 @@ class SpectrumV2:
             
         return v1_spec
     
+    def with_properties(self, z_em: float, z_rf: float) -> 'SpectrumV2':
+        """
+        API: Returns a NEW SpectrumV2 instance with updated properties.
+        """
+        new_data = dataclasses.replace(self._data, z_em=z_em, z_rf=z_rf)
+        new_history = self.history + [f"Set properties (z_em={z_em}, z_rf={z_rf})"]
+        return SpectrumV2(data=new_data, history=new_history)
+
     def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
         """
         Helper to create the contexts for numexpr.
@@ -387,7 +408,8 @@ class SpectrumV2:
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            rf_z=self._data.rf_z
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
 
         # 8. Return a NEW SpectrumV2 instance
@@ -448,7 +470,8 @@ class SpectrumV2:
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            rf_z=self._data.rf_z
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
 
         # 8. Return a NEW SpectrumV2 instance
@@ -497,7 +520,8 @@ class SpectrumV2:
             dy=new_data_cols_dict.pop('dy'),
             aux_cols=new_data_cols_dict, # Remaining items are aux_cols
             meta=deepcopy(self._data.meta), 
-            rf_z=self._data.rf_z 
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
         
         # 5. Return a NEW SpectrumV2 instance
@@ -514,16 +538,16 @@ class SpectrumV2:
         """
         
         original_x_unit = self._data.x.unit 
-        zem = self._data.rf_z 
+        z_rf = self._data.z_rf 
 
         if dx.unit.is_equivalent(au.km/au.s):
             target_calc_unit = au.km/au.s
         else:
             target_calc_unit = original_x_unit
 
-        x_calc = convert_axis_velocity(self._data.x.quantity, zem, target_calc_unit)
-        xmin_calc = convert_axis_velocity(self._data.xmin.quantity, zem, target_calc_unit)
-        xmax_calc = convert_axis_velocity(self._data.xmax.quantity, zem, target_calc_unit)
+        x_calc = convert_axis_velocity(self._data.x.quantity, z_rf, target_calc_unit)
+        xmin_calc = convert_axis_velocity(self._data.xmin.quantity, z_rf, target_calc_unit)
+        xmax_calc = convert_axis_velocity(self._data.xmax.quantity, z_rf, target_calc_unit)
 
         # 1. Rebin the flux-like columns
         x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
@@ -534,9 +558,9 @@ class SpectrumV2:
         )
         
         # 2. Convert new grid back to original units (e.g., nm)
-        x_final = convert_axis_velocity(x_new, zem, original_x_unit)
-        xmin_final = convert_axis_velocity(xmin_new, zem, original_x_unit)
-        xmax_final = convert_axis_velocity(xmax_new, zem, original_x_unit)
+        x_final = convert_axis_velocity(x_new, z_rf, original_x_unit)
+        xmin_final = convert_axis_velocity(xmin_new, z_rf, original_x_unit)
+        xmax_final = convert_axis_velocity(xmax_new, z_rf, original_x_unit)
         
         # --- *** 3. THIS IS THE FIX: Interpolate Aux Columns *** ---
         new_aux_cols = {}
@@ -579,7 +603,8 @@ class SpectrumV2:
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=self._data.meta, 
-            rf_z=self._data.rf_z 
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
         
         # 5. Return a NEW SpectrumV2 instance
@@ -620,7 +645,8 @@ class SpectrumV2:
             dy=dy_col_new, 
             aux_cols=aux_cols_new, 
             meta=deepcopy(self.meta),
-            rf_z=self._data.rf_z
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
         new_history = self.history + [f"Resampled on grid of '{target_grid_spec.meta.get('name', 'unnamed')}'"]
         return SpectrumV2(data=new_data_core, history=new_history)
@@ -720,14 +746,14 @@ class SpectrumV2:
         new_history = self.history + [f"Fitted continuum (deg={deg})"]
         return SpectrumV2(data=new_data, history=new_history)
 
-    def x_convert(self, zem: float, xunit: au.Unit) -> 'SpectrumV2':
+    def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
         """
         API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
         (Replaces V1's mutable _x_convert)
         """
         
         # 1. Execute pure conversion logic
-        x_new, xmin_new, xmax_new = convert_x_axis(self._data, zem, xunit)
+        x_new, xmin_new, xmax_new = convert_x_axis(self._data, z_rf, xunit)
         
         # 2. Build new SpectrumDataV2, preserving the core vertical data
         new_data = SpectrumDataV2(
@@ -738,11 +764,12 @@ class SpectrumV2:
             dy=self._data.dy,
             aux_cols=self._data.aux_cols,
             meta=self._data.meta,
-            rf_z=zem # Update rest frame Z in the new object
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
         
         # 3. Return a NEW SpectrumV2 instance
-        new_history = self.history + [f"X-axis converted to {xunit} at zem={zem}"]
+        new_history = self.history + [f"X-axis converted to {xunit} at z_rf={z_rf}"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def y_convert(self, yunit: au.Unit) -> 'SpectrumV2':
@@ -763,7 +790,8 @@ class SpectrumV2:
             dy=new_dy, # Updated
             aux_cols=new_aux_cols, # Auxiliary columns should also be converted if unit-dependent
             meta=self._data.meta,
-            rf_z=self._data.rf_z 
+            z_rf=self._data.z_rf,  # Propagate
+            z_em=self._data.z_em   # Propagate
         )
         
         # 3. Return a NEW SpectrumV2 instance

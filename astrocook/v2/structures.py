@@ -59,7 +59,10 @@ class SpectrumDataV2:
     
     # Metadata di Alto Livello
     meta: Dict[str, Any] = field(default_factory=dict)
-    rf_z: float = 0.0 # Redshift del rest frame
+    
+    # Session properties
+    z_rf: float = 0.0 # Redshift del rest frame (was rf_z)
+    z_em: float = 0.0 # Emission redshift
 
     @classmethod
     def from_flat_data(cls, 
@@ -70,7 +73,8 @@ class SpectrumDataV2:
                        xmax_values: Optional[np.ndarray] = None,
                        aux_data: Optional[Dict[str, tuple]] = None, # {'col_name': (values, unit, desc)}
                        meta: Optional[Dict[str, Any]] = None,
-                       rf_z: float = 0.0) -> 'SpectrumDataV2':
+                       z_rf: float = 0.0,
+                       z_em: float = 0.0) -> 'SpectrumDataV2':
 
         # Assicurare che xmin/xmax abbiano valori (es. copiando x se assenti)
         if xmin_values is None: xmin_values = x_values
@@ -93,7 +97,8 @@ class SpectrumDataV2:
                    y=y_col, dy=dy_col, 
                    aux_cols=aux_cols, 
                    meta=meta if meta is not None else {},
-                   rf_z=rf_z)
+                   z_rf=z_rf,
+                   z_em=z_em)
     
 @dataclass(frozen=True)
 class ComponentDataV2:
