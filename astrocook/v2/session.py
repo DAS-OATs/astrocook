@@ -26,22 +26,24 @@ from .utils import guarded_deepcopy_v1_state
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
 
-def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Tuple[Optional['SessionV2'], Optional[LogManager]]:
+def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
     """
     Orchestrates the loading of a session from an archive (.acs or .acs2)
     and handles the V1-to-V2 migration if necessary.
+    
+    Per Point 3, this function now *ignores* any saved log.
     """
     archive_manager = None 
     temp_dir = None
     archive_root = ""
     v2_metadata = None
-    log_object_to_return: Optional[LogManager] = None # <<< *** BUG FIX IS HERE ***
+    # log_object_to_return has been removed
     
     try:
         archive_path_lower = archive_path.lower()
         
         if archive_path_lower.endswith('.acs2') or archive_path_lower.endswith('.tar.gz'):
-            # This is a V2 archive (tar.gz)
+            # ... (unpacking logic) ...
             logging.debug(f"Unpacking V2 archive: {archive_path}")
             temp_dir = tempfile.mkdtemp()
             with tarfile.open(archive_path, 'r:gz') as tar:
@@ -58,7 +60,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         elif archive_path_lower.endswith('.acs'):
-            # This is a V1 archive
+            # ... (unpacking logic) ...
             logging.debug(f"Unpacking V1 archive: {archive_path}")
             archive_manager = V1ArchiveManager(archive_path)
             temp_dir = archive_manager.unpack()
@@ -71,13 +73,13 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         else:
-            # This is a single FITS file
+            # ... (single FITS logic) ...
             logging.debug("Loading single FITS file.")
             temp_dir = None
             archive_root = os.path.splitext(archive_path)[0]
             spec_file_path = archive_path
         
-        # --- V2 METADATA LOADING ---
+        # --- V2 METADATA LOADING (Still needed for constraints) ---
         if temp_dir:
             meta_fname = f"{os.path.basename(archive_root)}_meta.json"
             meta_file_path = os.path.join(temp_dir, meta_fname)
@@ -91,7 +93,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             else:
                 logging.debug("No _meta.json found (assuming V1 archive or single FITS).")
 
-        # 1. Load Spectrum (This will now use the V2 path if v2_metadata is not None)
+        # 1. Load Spectrum
         spectrum_v2 = load_and_migrate_structure(
             archive_root, 'spec', gui_context, format_name, 
             spec_file_path=spec_file_path,
@@ -107,38 +109,10 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if not spectrum_v2: 
             raise RuntimeError("Spectrum loading failed, aborting session creation.")
 
+        # --- *** (Point 3) *** ---
         # 3. Load V2/V1 Log Object
-        try:
-            if v2_metadata:
-                log_data = v2_metadata.get('log_history_json')
-                log_type = v2_metadata.get('log_type', 'v1_legacy')
-                if log_type == 'v2' and isinstance(log_data, dict):
-                    log_obj = HistoryLogV2()
-                    log_obj.current_index = log_data.get('current_index', -1)
-                    log_obj.entries = [LogEntryV2(**entry) for entry in log_data.get('entries', [])]
-                    log_object_to_return = log_obj
-                    logging.info(f"Restored V2 log with {len(log_obj.entries)} entries.")
-                elif log_type in ('v1_artifact', 'v1_legacy'):
-                    if isinstance(log_data, str): log_data = json.loads(log_data)
-                    log_object_to_return = V1LogArtifact(log_data or {"set_menu": []})
-                    logging.info("Restored V1 log artifact.")
-            elif temp_dir and archive_manager: # <<< Make sure this is V1 path
-                log_path = archive_manager.get_structure_path('log.json')
-                if not log_path:
-                    log_path_alt = os.path.join(temp_dir, f"{os.path.basename(archive_root)}_log.json")
-                    if os.path.exists(log_path_alt): log_path = log_path_alt
-                if log_path and os.path.exists(log_path):
-                    with open(log_path, 'r') as f:
-                        log_string = f.read()
-                    log_object_to_return = V1LogArtifact(json.loads(log_string))
-                    logging.info(f"V1 log artifact restored from {log_path}.")
-            
-            if log_object_to_return is None:
-                 logging.debug("No log found, creating new HistoryLogV2.")
-                 log_object_to_return = HistoryLogV2()
-        except Exception as e:
-            logging.error(f"Failed to restore log history: {e}. Creating new V2 log.")
-            log_object_to_return = HistoryLogV2()
+        #    This entire block is now REMOVED. We no longer parse the log.
+        logging.info("Ignoring saved log on load, as per new design.")
             
         
         # Call the simplified constructor
@@ -149,14 +123,14 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             systs=system_list_v2
         )
         
-        return new_session, log_object_to_return 
+        return new_session # <<< *** MODIFIED: Only return session
 
     except Exception as e: 
         logging.error(f"FATAL: load_session_from_file failed: {e}", exc_info=True)
-        return 0, None
+        return 0 # <<< *** MODIFIED: Return 0 on failure (V1 style)
 
     finally: 
-        # Cleanup
+        # ... (cleanup logic) ...
         if archive_manager:
             archive_manager.cleanup()
         elif temp_dir and os.path.exists(temp_dir):
@@ -206,7 +180,7 @@ class SessionV2:
     @classmethod
     def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':        
         try:
-            session, log_object = load_session_from_file(
+            session = load_session_from_file(
                 archive_path=file_path,
                 name=name, 
                 gui_context=gui_context, 
@@ -215,7 +189,7 @@ class SessionV2:
             return session
         except Exception as e:
             logging.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
-            return 0 
+            return 0
 
     def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
         constructor_args = {
@@ -243,11 +217,28 @@ class SessionV2:
         new_session.log_manager = self.log_manager
         return new_session
     
-    def save(self, file_path: str, models: bool = False):
+    def save(self, file_path: str, 
+             initial_session: Optional['SessionV2'] = None, 
+             models: bool = False):
+        """
+        Saves the session.
+        
+        Args:
+            file_path (str): The destination path.
+            initial_session (Optional[SessionV2]): The *initial* state of the
+                session, to be saved as "original data".
+            models (bool): V1 compatibility flag.
+        """
         if file_path.lower().endswith('.acs2'):
-            save_archive_v2(self, file_path)
+            # Pass *both* the initial and final (self) session states
+            save_archive_v2(
+                session_v2_final=self, 
+                session_v2_initial=initial_session,
+                file_path=file_path
+            )
             logging.info(f"V2 Session state saved successfully to {file_path}.")
         else:
+            # ... (V1 save logic is unchanged, it only saves final state) ...
             try:
                 v1_spec_for_save = self.spec.to_v1_spectrum() 
                 v1_systs_for_save = self.systs.to_v1_systlist() 
@@ -260,6 +251,12 @@ class SessionV2:
                 json_log_str = self.log_manager.str
             elif isinstance(self.log_manager, V1LogArtifact):
                 json_log_str = json.dumps(self.log_manager.v1_json)
+            elif isinstance(self.log_manager, HistoryLogV2):
+                # We can serialize the V2 log for documentation in V1
+                try:
+                    json_log_str = json.dumps(dataclasses.asdict(self.log_manager))
+                except Exception:
+                    json_log_str = json.dumps({"set_menu": []})
             else:
                 logging.warning("Cannot save V2 log to V1 .acs archive. Log will be empty.")
                 json_log_str = json.dumps({"set_menu": []})

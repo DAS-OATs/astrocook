@@ -60,9 +60,7 @@ class MainWindowV2(QMainWindow):
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
         
-        # Track viewers by their SessionHistory object
-        self.open_log_viewers = {}
-
+        self.log_viewer_dialog: Optional[LogViewerDialog] = None
         self.active_recipe_dialog: Optional[QDialog] = None
 
         # ** Initialize animation attributes to None **
@@ -111,26 +109,24 @@ class MainWindowV2(QMainWindow):
         self.mock_gui_context = MockV1GUIContext()
 
         if is_initial_session_valid:
-            log_object = initial_log_object if initial_log_object else HistoryLogV2()
-
+            log_object = HistoryLogV2() # <<< ALWAYS create a new, empty log
+            
             initial_history = SessionHistory(initial_session, log_object)
             
-            # Manually set V1 stubs for the initial session
+            # Link the *real* GUI (self) to the session for recipes
+            initial_session._gui = self
+            
             initial_session.log = GUILog(self.mock_gui_context)
             initial_session.defs = Defaults(self.mock_gui_context)
-            if isinstance(log_object, V1LogArtifact):
-                try:
-                    initial_session.log.str = json.dumps(log_object.v1_json)
-                except Exception: pass
+            # We no longer check for V1LogArtifact here, it's always new
 
             self.session_histories.append(initial_history)
             self.active_history = initial_history
             self.session_model.setStringList([h.display_name for h in self.session_histories])
-            self._update_view_for_session(initial_history.current_state, set_current_list_item=True, is_startup=True) # Show initial state
+            self._update_view_for_session(initial_history.current_state, set_current_list_item=True, is_startup=True)
         else:
-            # No initial session, start empty
             self.active_history = None
-            self._update_view_for_session(None, set_current_list_item=False, is_startup=True) # Show empty state
+            self._update_view_for_session(None, set_current_list_item=False, is_startup=True)
 
         self._update_undo_redo_actions() # Set initial state
 
@@ -734,6 +730,9 @@ class MainWindowV2(QMainWindow):
             logging.error("Cannot update state: No active session history.")
             return # Should not happen if a session is loaded
 
+        # Ensure the new state also points to the real GUI
+        new_session._gui = self
+
         if is_branching:
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and create a V1-safe deep copy
@@ -790,6 +789,8 @@ class MainWindowV2(QMainWindow):
                 initial_state_for_branch.systs
             )
 
+            initial_state_copy._gui = self # Ensure copy also has real GUI
+
             initial_state_copy.name = new_branch_name
             initial_state_copy.log_manager = new_log_copy
             initial_state_copy.log = new_session.log # Use the new log stub
@@ -805,6 +806,8 @@ class MainWindowV2(QMainWindow):
                 state_copy = state.with_new_spectrum(state.spec)
                 state_copy = state_copy.with_new_system_list(state.systs)
                 
+                state_copy._gui = self # Ensure copy also has real GUI
+
                 state_copy.name = new_branch_name # Ensure name consistency
                 state_copy.log_manager = new_log_copy # Re-link to the new log
                 state_copy.log = new_session.log # Re-link V1 stub
@@ -832,12 +835,14 @@ class MainWindowV2(QMainWindow):
             target_history.add_state(new_session) # Handles truncation and index update
             # Update the name in the sidebar model *if* the active history corresponds to the last item
             # (This keeps the name updated for the current linear path)
-            # Refresh the log viewer if it's open
-            if target_history in self.open_log_viewers:
+
+            # Refresh the *single* log viewer if it's open
+            if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
                 try:
-                    self.open_log_viewers[target_history].refresh()
+                    self.log_viewer_dialog.refresh()
                 except Exception as e:
                     logging.error(f"Failed to refresh log viewer: {e}")
+
             try:
                 active_list_index = self.session_histories.index(target_history)
                 self.session_model.setData(self.session_model.index(active_list_index), target_history.display_name) # Update name if needed
@@ -847,36 +852,34 @@ class MainWindowV2(QMainWindow):
 
         self._update_undo_redo_actions()
     
-    def _add_session_internal(self, new_session, log_object: LogManager, is_initial=False):
+    def _add_session_internal(self, new_session, is_initial=False):
         """Creates and adds a new SessionHistory manager."""
         if new_session is None or isinstance(new_session, int): return
 
-        # The V1/V2 logic is already handled by load_session_from_file
+        # Per Point 3, we *always* create a new, empty log
+        log_object = HistoryLogV2()
         
         # 1. Always create a new history for a newly loaded session
         new_history = SessionHistory(new_session, log_object)
         
-        # 2. Manually set the V1 stubs (log and defs) on the new session
-        #    This is required for recipes to run
+        # Overwrite the mock GUI context with the real one
         new_session._gui = self
+        
+        # 2. Manually set the V1 stubs (log and defs) on the new session
         new_session.log = GUILog(self.mock_gui_context)
         new_session.defs = Defaults(self.mock_gui_context)
         
-        # If it's a V1 log, set the .str property
-        if isinstance(log_object, V1LogArtifact):
-            try:
-                new_session.log.str = json.dumps(log_object.v1_json)
-            except Exception:
-                pass # Ignore failure
+        # We no longer need to check for V1LogArtifact
         
         self.session_histories.append(new_history)
         self.active_history = new_history # Newly loaded becomes active
         # Update model
         self.session_model.setStringList([h.display_name for h in self.session_histories])
 
-    def add_session(self, new_session: SessionV2, log_object: LogManager, initial_load=False):
+    def add_session(self, new_session: SessionV2, initial_load=False):
         """Adds a new session history and updates view."""
-        self._add_session_internal(new_session, log_object, is_initial=initial_load)
+        # The log_object parameter has been removed
+        self._add_session_internal(new_session, is_initial=initial_load)
         if self.active_history:
             new_list_index = len(self.session_histories) - 1
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
@@ -888,6 +891,13 @@ class MainWindowV2(QMainWindow):
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
         
+        # Add refresh call for the single log viewer
+        if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+            if session_state_to_show and self.active_history: # Check for active_history
+                self.log_viewer_dialog.set_log_object(self.active_history.log_manager)
+            else:
+                self.log_viewer_dialog.set_log_object(None) # Clear viewer
+
         # Update general UI visibility etc. based on validity
         #self._update_ui_state(is_valid, is_startup=is_startup)
 
@@ -1004,17 +1014,21 @@ class MainWindowV2(QMainWindow):
         try:
             new_history_list_index = index.row()
             if 0 <= new_history_list_index < len(self.session_histories):
-                 new_active_history = self.session_histories[new_history_list_index]
-                 if new_active_history != self.active_history:
-                     logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
-                     self.active_history = new_active_history
-                     # Show the state pointed to by the NEW active history's index
-                     self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
-                     self._update_undo_redo_actions()
-                 else:
-                      # Clicked on the already active session, maybe ensure view reflects current index?
-                      # This can happen if user undid then clicked the list item again.
-                      self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+                new_active_history = self.session_histories[new_history_list_index]
+                if new_active_history != self.active_history:
+                    logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
+                    self.active_history = new_active_history
+                    # Show the state pointed to by the NEW active history's index
+                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+                    self._update_undo_redo_actions()
+
+                    # Update the log viewer if it's open
+                    if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+                        self.log_viewer_dialog.set_log_object(self.active_history.log_manager)
+                else:
+                    # Clicked on the already active session, maybe ensure view reflects current index?
+                    # This can happen if user undid then clicked the list item again.
+                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
             else:
                  logging.warning(f"Invalid index {new_history_list_index} clicked.")
         except Exception as e:
@@ -1025,40 +1039,33 @@ class MainWindowV2(QMainWindow):
         file_name, _ = QFileDialog.getOpenFileName(
             self, 
             "Open Spectrum File", 
-            os.getcwd(), # Start in current working directory
-            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;All Files (*)" # Updated filter
+            os.getcwd(),
+            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;All Files (*)"
         )
         
         if file_name:
-            # We assume a fixed format name for now, as V1 auto-detection is complex
             format_name = 'generic_spectrum'
-            # Extract just the filename stem for the session name
             session_name = os.path.splitext(os.path.basename(file_name))[0]
-
-            # Make sure a valid GUI context placeholder exists
-            # If session_manager might be None initially, handle it
             gui_context = self.mock_gui_context
 
             try:
-                # --- *** Expect a log_object, not log_string *** ---
-                new_session, log_object = load_session_from_file(
+                # load_session_from_file now only returns the session (Point 3)
+                new_session = load_session_from_file(
                     archive_path=file_name, 
                     name=session_name, 
                     format_name=format_name,
                     gui_context=gui_context
                 )
 
-                if new_session == 0: # Check for V1-style failure
+                if new_session == 0:
                     raise RuntimeError("load_session_from_file returned failure code 0.")
 
-                # Add the new session to the application state
-                self.add_session(new_session, log_object)
+                # add_session no longer takes a log_object (Point 3)
+                self.add_session(new_session)
 
             except Exception as e:
                 logging.error(f"Failed to load file via V2 adapter: {e}")
-                # Consider showing an error message box to the user here
-                # from PySide6.QtWidgets import QMessageBox
-                # QMessageBox.critical(self, "Error Loading File", f"Could not load {file_name}:\n{e}")
+                QMessageBox.critical(self, "Error Loading File", f"Could not load {file_name}:\n{e}")
 
     def _on_session_list_context_menu(self, pos: QPoint):
         """
@@ -1113,10 +1120,10 @@ class MainWindowV2(QMainWindow):
     def _on_view_log(self):
         """
         Handles the "View > View Session Log" menu action.
-        Shows the log for the *currently active* session.
+        Shows/raises the *single, persistent* log viewer.
         """
         if self.active_history:
-            self._launch_log_viewer(self.active_history) # <<< Pass history obj
+            self._launch_log_viewer(self.active_history)
         else:
             logging.warning("View Log called with no active history.")
 
@@ -1137,8 +1144,10 @@ class MainWindowV2(QMainWindow):
             QMessageBox.warning(self, "No Session", "No active session to save.")
             return False # Indicate failure
 
-        session_to_save = history_to_save.current_state
-        default_name = session_to_save.name + ".acs2"
+        session_to_save_final = history_to_save.current_state
+        session_to_save_initial = history_to_save.states[0]
+        
+        default_name = session_to_save_final.name + ".acs2"
         
         file_name, selected_filter = QFileDialog.getSaveFileName(
             self,
@@ -1150,14 +1159,18 @@ class MainWindowV2(QMainWindow):
         if file_name:
             logging.info(f"Saving session to: {file_name}")
             try:
-                result = session_to_save.save(file_path=file_name)
+                # Pass *both* sessions to the save method
+                result = session_to_save_final.save(
+                    file_path=file_name,
+                    initial_session=session_to_save_initial
+                )
                 logging.info("Session saved successfully.")
                 return True # Indicate success
             except Exception as e:
                 logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
                 QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
-                return False # Indicate failure
-        return False # User cancelled
+                return False
+        return False
 
     # --- *** START NEW "CLOSE" METHODS *** ---
     def _on_close_session_requested(self, history_to_close: Optional[SessionHistory] = None):
@@ -1221,9 +1234,8 @@ class MainWindowV2(QMainWindow):
         self.session_model.removeRow(row_to_remove)
 
         # Clean up any open dialogs for this session
-        if history_to_close in self.open_log_viewers:
-            self.open_log_viewers[history_to_close].close()
-            # The _on_log_viewer_closed will handle the pop
+        if self.log_viewer_dialog and self.log_viewer_dialog.log_object is history_to_close.log_manager:
+            self.log_viewer_dialog.close() # This will trigger _on_log_viewer_closed
         
         # --- Handle switching the active view ---
         new_active_history = None
@@ -1252,59 +1264,53 @@ class MainWindowV2(QMainWindow):
             
     def _launch_log_viewer(self, history_object: 'SessionHistory'):
         """
-        Creates and shows a non-modal LogViewerDialog,
-        or activates an existing one for this history.
+        Creates and shows the *single, persistent* LogViewerDialog,
+        or activates it if it already exists.
         """
-        # 1. Check if a viewer for this history already exists
-        if history_object in self.open_log_viewers:
-            existing_dialog = self.open_log_viewers[history_object]
-            existing_dialog.raise_()
-            existing_dialog.activateWindow() # Bring to front
-            existing_dialog.refresh() # Also refresh it
-            logging.debug(f"Activating existing log viewer for {history_object.display_name}")
+        log_object_to_view = history_object.log_manager
+        session_name = history_object.display_name
+
+        # 1. Check if the viewer already exists
+        if self.log_viewer_dialog:
+            self.log_viewer_dialog.set_log_object(log_object_to_view) # Update its content
+            self.log_viewer_dialog.setWindowTitle(f"Log History: {session_name}")
+            self.log_viewer_dialog.raise_()
+            self.log_viewer_dialog.activateWindow()
+            logging.debug(f"Activating existing log viewer for {session_name}")
             return
 
         # 2. If not, create a new one
         try:
-            log_object_to_view = history_object.log_manager
-            session_name = history_object.display_name
             dialog = LogViewerDialog(log_object_to_view, session_name, None)
             
-            # Store a reference by its history object
-            self.open_log_viewers[history_object] = dialog
+            # Store the single instance
+            self.log_viewer_dialog = dialog
             
-            # Connect the 'finished' signal to our new handler slot.
-            # We still use a lambda to pass the 'history_object' key
-            # to the slot so it knows which viewer to remove.
+            # Connect the 'finished' signal to our handler
+            # This lambda is now simpler, it doesn't need to pass the key
             dialog.finished.connect(
-                lambda: self._on_log_viewer_closed(history_object) 
+                lambda: self._on_log_viewer_closed() 
             )
             
             dialog.show()
-            logging.debug(f"Creating new log viewer for {history_object.display_name}")
+            logging.debug(f"Creating new single log viewer for {session_name}")
 
         except Exception as e:
             logging.error(f"Failed to launch log viewer: {e}", exc_info=True)
 
-    def _on_log_viewer_closed(self, history_object_key: 'SessionHistory'):
+    def _on_log_viewer_closed(self):
         """
-        Slot called when a LogViewerDialog is closed.
-        Cleans up the reference AND re-raises the floating buttons.
+        Slot called when the single LogViewerDialog is closed.
+        Cleans up the reference.
         """
-        # 1. Remove the dialog from our tracking dictionary
-        removed_viewer = self.open_log_viewers.pop(history_object_key, None)
+        self.log_viewer_dialog = None
+        logging.debug("Single log viewer closed, reference removed.")
         
-        if removed_viewer:
-            logging.debug(f"Removed closed log viewer for {history_object_key.display_name}.")
-        
-        # 2. Forcefully re-raise the floating buttons to the top
-        #    to fix the stacking order.
+        # We still re-raise the floating buttons
         try:
             self.session_collapse_button.raise_()
             self.plot_controls_collapse_button.raise_()
-            logging.debug("Re-raised floating sidebar buttons.")
         except Exception as e:
-            # This might fail if the main window is closing
             logging.warning(f"Could not re-raise buttons: {e}")
 
     def _launch_x_convert_dialog(self):

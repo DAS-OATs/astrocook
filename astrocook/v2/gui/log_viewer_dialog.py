@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor # <<< *** ADD THIS IMPORT ***
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 # --- V2 Imports ---
 from ..structures import HistoryLogV2, V1LogArtifact
@@ -38,6 +38,28 @@ class LogViewerDialog(QDialog):
 
         self._populate_list() # Populate on init
         self.resize(600, 600)
+
+    def set_log_object(self, new_log_object: Optional[LogManager]):
+        """
+        Updates the log viewer to point to a new log manager
+        (e.g., when the active session changes).
+        """
+        if new_log_object is None:
+            # Clear the view if no session is active
+            self.log_object = None
+            self.list_widget.clear()
+            self.list_widget.addItem("No active session.")
+            self.setWindowTitle("Log History")
+        elif new_log_object is not self.log_object:
+            # Find the new session's name from the main window
+            new_title = "Log History"
+            if hasattr(self, 'parent') and hasattr(self.parent(), 'active_history'):
+                 if self.parent().active_history.log_manager is new_log_object:
+                    new_title = f"Log History: {self.parent().active_history.display_name}"
+            
+            self.log_object = new_log_object
+            self.setWindowTitle(new_title) # Update window title
+            self.refresh() # Refresh the view with the new object
 
     def _populate_list(self):
         """

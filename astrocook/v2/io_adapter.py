@@ -389,9 +389,16 @@ def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
 
 # --- The Main V2 Archive Writer ---
 
-def save_archive_v2(session_v2: 'SessionV2', file_path: str):
+def save_archive_v2(session_v2_final: 'SessionV2', 
+                    session_v2_initial: Optional['SessionV2'], 
+                    file_path: str):
     """
-    Saves the SessionV2 to a V2-native .acs2 archive by serializing data cores directly.
+    Saves the SessionV2 to a V2-native .acs2 archive.
+    
+    Args:
+        session_v2_final (SessionV2): The final, current state to save.
+        session_v2_initial (Optional[SessionV2]): The initial, original state to save.
+        file_path (str): The destination path.
     """
     temp_dir = None
     
@@ -399,38 +406,69 @@ def save_archive_v2(session_v2: 'SessionV2', file_path: str):
         temp_dir = tempfile.mkdtemp()
         base_name = os.path.splitext(os.path.basename(file_path))[0]
         
-        # A. Spectrum (as FITS)
+        # --- A. Final (Current) Data ---
         spec_fname = f"{base_name}_spec.fits"
         spec_path_temp = os.path.join(temp_dir, spec_fname)
-        spec_table = _convert_spec_data_to_table(session_v2.spec._data)
+        spec_table = _convert_spec_data_to_table(session_v2_final.spec._data)
         spec_table.write(spec_path_temp, format='fits', overwrite=True)
-        logging.info(f"Wrote V2 spectrum FITS file: {spec_fname}")
+        logging.info(f"Wrote V2 final spectrum FITS file: {spec_fname}")
         
-        # B. System List (as FITS)
         systs_fname = None
-        if session_v2.systs and session_v2.systs.components:
+        if session_v2_final.systs and session_v2_final.systs.components:
             systs_fname = f"{base_name}_systs.fits"
             systs_path_temp = os.path.join(temp_dir, systs_fname)
-            systs_table = _convert_syst_list_to_table(session_v2.systs._data)
+            systs_table = _convert_syst_list_to_table(session_v2_final.systs._data)
             systs_table.write(systs_path_temp, format='fits', overwrite=True)
-            logging.info(f"Wrote V2 system list FITS file: {systs_fname}")
+            logging.info(f"Wrote V2 final system list FITS file: {systs_fname}")
 
-        # C. Metadata (Log, Constraints, etc. as JSON)
+        # --- B. Metadata (Log, Constraints, etc. from FINAL session) ---
         meta_fname = f"{base_name}_meta.json"
         meta_path_temp = os.path.join(temp_dir, meta_fname)
-        meta_json_str = _serialize_v2_metadata(session_v2)
+        # The log manager is attached to the final session state
+        meta_json_str = _serialize_v2_metadata(session_v2_final) 
         with open(meta_path_temp, 'w') as f:
             f.write(meta_json_str)
         logging.info(f"Wrote V2 metadata JSON: {meta_fname}")
+        
+        # --- C. Original (Initial) Data (Point 2) ---
+        spec_orig_fname = None
+        systs_orig_fname = None
+        if session_v2_initial:
+            try:
+                # Save original spectrum
+                spec_orig_fname = f"{base_name}_spec_orig.fits"
+                spec_orig_path_temp = os.path.join(temp_dir, spec_orig_fname)
+                spec_orig_table = _convert_spec_data_to_table(session_v2_initial.spec._data)
+                spec_orig_table.write(spec_orig_path_temp, format='fits', overwrite=True)
+                logging.info(f"Wrote V2 original spectrum FITS file: {spec_orig_fname}")
+
+                # Save original systems
+                if session_v2_initial.systs and session_v2_initial.systs.components:
+                    systs_orig_fname = f"{base_name}_systs_orig.fits"
+                    systs_orig_path_temp = os.path.join(temp_dir, systs_orig_fname)
+                    systs_orig_table = _convert_syst_list_to_table(session_v2_initial.systs._data)
+                    systs_orig_table.write(systs_orig_path_temp, format='fits', overwrite=True)
+                    logging.info(f"Wrote V2 original system list FITS file: {systs_orig_fname}")
+            except Exception as e:
+                logging.error(f"Failed to save original data, archive may be incomplete: {e}")
+                spec_orig_fname = None
+                systs_orig_fname = None
             
         # 3. Create the .acs2 (tar.gz) Archive
         final_path = file_path if file_path.lower().endswith(('.acs2', '.tar.gz')) else file_path + '.acs2'
         
         with tarfile.open(final_path, 'w:gz') as tar:
+            # Add final data
             tar.add(spec_path_temp, arcname=spec_fname)
             if systs_fname:
                  tar.add(systs_path_temp, arcname=systs_fname)
             tar.add(meta_path_temp, arcname=meta_fname)
+            
+            # Add original data
+            if spec_orig_fname:
+                tar.add(spec_orig_path_temp, arcname=spec_orig_fname)
+            if systs_orig_fname:
+                tar.add(systs_orig_path_temp, arcname=systs_orig_fname)
             
         logging.info(f"V2 archive created successfully at: {final_path}")
 
