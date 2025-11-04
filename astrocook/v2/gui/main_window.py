@@ -535,6 +535,14 @@ class MainWindowV2(QMainWindow):
         if not self.active_history or not self.active_history.current_state.spec:
             QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
             return
+        
+        if self.plot_viewer and self.plot_viewer.toolbar:
+            try:
+                # Toggle them both off to reset the state
+                self.plot_viewer.toolbar.pan(False)
+                self.plot_viewer.toolbar.zoom(False)
+            except Exception as e:
+                logging.warning(f"Could not reset toolbar state: {e}")
 
         logging.info(f"Launching dialog for recipe: {category}.{name}")
         
