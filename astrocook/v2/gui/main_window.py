@@ -37,9 +37,12 @@ except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
 
 # --- *** RECIPE LOOKUP MAP *** ---
+from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..recipes.edit import EDIT_RECIPES_SCHEMAS
 from ..recipes.flux import FLUX_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
+for name in CONTINUUM_RECIPES_SCHEMAS: 
+    RECIPE_CATEGORY_MAP[name] = 'continuum'
 for name in EDIT_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'edit'
 for name in FLUX_RECIPES_SCHEMAS:
@@ -425,7 +428,7 @@ class MainWindowV2(QMainWindow):
         file_menu.addAction(close_action)
         self.close_session_action = close_action
 
-        # --- View Menu Actions ---
+        # 'VIEW' MENU ACTIONS
         toggle_left_action = QAction("Toggle Session Panel", self); toggle_left_action.triggered.connect(self._toggle_left_sidebar)
         view_menu.addAction(toggle_left_action)
         toggle_right_action = QAction("Toggle Plot Controls", self); toggle_right_action.triggered.connect(self._toggle_right_sidebar)
@@ -439,8 +442,6 @@ class MainWindowV2(QMainWindow):
         self.view_log_action.setEnabled(False) # Disabled by default
         view_menu.addAction(self.view_log_action)
 
-        # --- Add QActions for V2 Recipes ---
-        
         # ** Undo Action **
         self.undo_action = QAction("&Undo", self)
         self.undo_action.setShortcut(QKeySequence.Undo) # Standard shortcut (Ctrl+Z / Cmd+Z)
@@ -455,7 +456,7 @@ class MainWindowV2(QMainWindow):
 
         edit_menu.addSeparator()
 
-        # RECIPES FOR 'EDIT' MENU (x_convert, y_convert)
+        # RECIPES FOR 'EDIT' MENU
         
         # apply_expression Action
         apply_expr_action = QAction("Apply &Expression...", self)
@@ -476,9 +477,8 @@ class MainWindowV2(QMainWindow):
         split_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "split"))
         edit_menu.addAction(split_action)
         self.split_action = split_action; split_action.setEnabled(False)
-        # --- *** END NEW RECIPES *** ---
 
-        # RECIPES FOR 'FLUX' MENU (rebin)
+        # RECIPES FOR 'FLUX' MENU
         
         # rebin Action
         rebin_action = QAction("&Rebin Spectrum...", self)
@@ -493,7 +493,26 @@ class MainWindowV2(QMainWindow):
         flux_menu.addAction(resample_action)
         self.resample_action = resample_action; self.resample_action.setEnabled(False)
 
-        # ... (Other menu item actions will be added here later) ...
+        # RECIPES FOR 'CONTINUUM' MENU
+
+        # "Single-Click" recipe
+        auto_cont_action = QAction("&Auto-estimate Continuum...", self)
+        auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_auto"))
+        continuum_menu.addAction(auto_cont_action)
+        self.auto_cont_action = auto_cont_action; self.auto_cont_action.setEnabled(False)
+
+        continuum_menu.addSeparator()
+
+        # "Building Block" recipes
+        find_unabs_action = QAction("&Find Unabsorbed Regions...", self)
+        find_unabs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_unabsorbed"))
+        continuum_menu.addAction(find_unabs_action)
+        self.find_unabs_action = find_unabs_action; self.find_unabs_action.setEnabled(False)
+
+        fit_poly_action = QAction("Fit &Polynomial to Mask...", self)
+        fit_poly_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_polynomial"))
+        continuum_menu.addAction(fit_poly_action)
+        self.fit_poly_action = fit_poly_action; self.fit_poly_action.setEnabled(False)
 
         self._update_undo_redo_actions()
 
@@ -1476,6 +1495,9 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
         
+        if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
+        if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
+        if hasattr(self, 'fit_poly_action'): self.fit_poly_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

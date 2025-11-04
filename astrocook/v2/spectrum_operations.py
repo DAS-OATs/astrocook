@@ -2,6 +2,7 @@ import bisect
 from astropy import units as au
 from astropy.constants import c as c_light
 from astropy.stats import sigma_clip
+import logging
 import numpy as np
 from typing import Optional, Tuple
 
@@ -257,3 +258,67 @@ def rebin_spectrum(
     
     # Return the new immutable data required by SpectrumV2
     return x_out, xmin_out, xmax_out, y_out, dy_out
+
+def running_mean(y: np.ndarray, h: int) -> np.ndarray:
+    """
+    Computes a running mean of an array.
+    This is a standard numpy implementation of the 'h' parameter logic.
+    """
+    # Use 'same' mode to keep the array length, handling edges
+    window_size = 2 * h + 1
+    return np.convolve(y, np.ones(window_size) / window_size, mode='same')
+
+def find_unabsorbed_regions(
+    y: np.ndarray, 
+    dy: np.ndarray, 
+    hwindow: int, 
+    kappa: float, 
+    maxiter: int = 100
+) -> np.ndarray:
+    """
+    Pure function to find unabsorbed regions via kappa-sigma clipping.
+    Based on the core logic of V1's 'clip_flux'.
+    
+    Returns:
+        mask_unabs (np.ndarray): A boolean mask where True means "unabsorbed".
+    """
+    # Start with a mask where everything is unabsorbed
+    mask_unabs = np.ones_like(y, dtype=bool)
+    
+    # Exclude regions with very low S/N, as they are unreliable
+    mask_unabs[y <= 3.0 * dy] = False
+    
+    for i in range(maxiter):
+        # 1. Get the data from the *current* unabsorbed regions
+        y_unabs = y[mask_unabs]
+        
+        if len(y_unabs) < hwindow * 2 + 1:
+            logging.warning("Clipping stopped: not enough unabsorbed points to continue.")
+            break # Not enough points to calculate a running mean
+            
+        # 2. Compute the running mean *only* on those points
+        y_rm_unabs = running_mean(y_unabs, h=hwindow)
+        
+        # 3. Interpolate this mean back to the *full* array's size
+        # We must use the indices of the unabsorbed points as the 'x'
+        indices_full = np.arange(len(y))
+        indices_unabs = indices_full[mask_unabs]
+        y_rm_full = np.interp(indices_full, indices_unabs, y_rm_unabs)
+
+        # 4. Find new outliers (absorbed regions)
+        # An outlier is a point *below* the mean by kappa*sigma
+        is_outlier = (y - y_rm_full) < (-kappa * dy)
+        
+        # 5. Update the mask
+        new_mask_unabs = mask_unabs & ~is_outlier
+        
+        if np.sum(new_mask_unabs) == np.sum(mask_unabs):
+            logging.info(f"Clipping converged after {i+1} iterations.")
+            break # No new outliers found, we are done
+            
+        mask_unabs = new_mask_unabs
+        
+        if i == maxiter - 1:
+            logging.warning(f"Clipping did not converge after {maxiter} iterations.")
+            
+    return mask_unabs

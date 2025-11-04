@@ -13,6 +13,7 @@ from ..v1.format import Format # Import the Format V1 class for I/O
 from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
 from .io_adapter import load_and_migrate_structure, save_archive_v2
 from .io_v1_stubs import V1ArchiveManager, save_archive_v1
+from .recipes.continuum import RecipeContinuumV2
 from .recipes.edit import RecipeEditV2
 from .recipes.flux import RecipeFluxV2
 from .spectrum import SpectrumV2
@@ -153,8 +154,11 @@ class SessionV2:
         self.log_manager: Optional[LogManager] = None
         self._current_spectrum = spec
         self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
+        
         self.edit = RecipeEditV2(self)
         self.flux = RecipeFluxV2(self)
+        self.continuum = RecipeContinuumV2(self)
+
         self.cb = self.edit
         self._shade = False 
         self._open_twin = False
@@ -168,6 +172,8 @@ class SessionV2:
             return getattr(self.flux, name)
         if hasattr(self.edit, name):
             return getattr(self.edit, name)
+        if hasattr(self.continuum, name):
+            return getattr(self.continuum, name)
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @property
