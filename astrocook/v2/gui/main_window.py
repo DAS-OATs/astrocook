@@ -1449,8 +1449,12 @@ class MainWindowV2(QMainWindow):
                 if not new_session_state or new_session_state == 0:
                     raise ValueError(f"Recipe failed to execute.")
                     
+                # Create a *copy* for logging and remove runtime-only keys
+                params_to_log = params_dict.copy()
+                params_to_log.pop('alias_map', None)
+
                 # 3c. Success! Add to the new history
-                new_log.add_entry(recipe_name, params_dict)
+                new_log.add_entry(recipe_name, params_to_log)
                 new_history.add_state(new_session_state)
                 current_processing_state = new_session_state
 

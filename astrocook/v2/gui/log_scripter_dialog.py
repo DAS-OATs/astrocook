@@ -236,9 +236,11 @@ class LogScripterDialog(QDialog):
         # Check the *text content* of the scripter, not the log object
         if self.scripter_edit:
             script_text = self.scripter_edit.toPlainText().strip()
-            # Check if there is any non-comment, non-empty text
-            if script_text and not script_text.startswith("#"):
-                can_run = True
+            # Find any line that is not empty and not a comment
+            for line in script_text.splitlines():
+                if line.strip() and not line.strip().startswith('#'):
+                    can_run = True
+                    break
         
         self.undo_button.setEnabled(can_undo)
         self.redo_button.setEnabled(can_redo)
@@ -303,23 +305,21 @@ class LogScripterDialog(QDialog):
     def _on_insert_recipe(self):
         """Shows a menu of available recipes to insert as a template."""
         
-        # This is a complex task. For now, I'll provide a placeholder
-        # In the future, this would scan all recipe schemas.
-        
         menu = QMenu(self)
         
-        category_menus = {}
+        # Define the main menu order
+        category_order = ['edit', 'flux', 'continuum']
         
         try:
-            # Use the recipe_map passed from main_window
-            for recipe_name, category in self.recipe_map.items():
-                if category not in category_menus:
-                    # Create a new sub-menu for this category
-                    category_menus[category] = menu.addMenu(category.capitalize())
-                    
-                # Add the recipe action to its category sub-menu
-                action = category_menus[category].addAction(recipe_name)
-                action.triggered.connect(lambda checked=False, n=recipe_name, c=category: self._insert_template(c, n))
+            # Loop in the defined order
+            for category in category_order:
+                # Check if we have schemas for this category
+                if category in ALL_SCHEMAS:
+                    category_menu = menu.addMenu(category.capitalize())
+                    # Loop in the order defined in the schema file (which is preserved)
+                    for recipe_name in ALL_SCHEMAS[category].keys():
+                        action = category_menu.addAction(recipe_name)
+                        action.triggered.connect(lambda checked=False, c=category, n=recipe_name: self._insert_template(c, n))
 
         except Exception as e:
             logging.error(f"Failed to build recipe insert menu: {e}")
@@ -334,32 +334,37 @@ class LogScripterDialog(QDialog):
         """Inserts a text template for the given recipe."""
         
         schema = None
-        params_str = "..."
+        params_str = "..." 
         try:
-            # Use the ALL_SCHEMAS map to find the correct schema
             if category in ALL_SCHEMAS and recipe_name in ALL_SCHEMAS[category]:
                 schema = ALL_SCHEMAS[category][recipe_name]
             
             if schema and 'params' in schema:
                 params = []
                 for p in schema['params']:
-                    # Use str() for non-string defaults like False or 0.0
                     default_val = p['default']
                     if isinstance(default_val, str) and default_val != "_current_":
-                        default_val = f"'{default_val}'" # Add quotes to strings
+                        default_val = f"'{default_val}'"
                     else:
-                        default_val = str(default_val) # Convert False, 0.0, etc.
-                        
+                        default_val = str(default_val)
                     params.append(f"{p['name']}={default_val}")
                 params_str = ", ".join(params)
                 
-        except Exception as e:
-            logging.warning(f"Could not find schema for {category}.{recipe_name}: {e}")
+        except Exception:
             pass 
             
         template = f"{recipe_name}({params_str})\n"
-        self.scripter_edit.textCursor().insertText(template)
+        
+        cursor = self.scripter_edit.textCursor()
+        
+        # Add a newline *before* the template ONLY IF:
+        # 1. The text box is NOT empty.
+        # 2. The cursor is NOT already at the start of a line.
+        if self.scripter_edit.toPlainText().strip() and not cursor.atBlockStart():
+            template = f"\n{template}"
+            
+        cursor.insertText(template)
         self.scripter_edit.setFocus()
-
-        # Manually update the button state after inserting text
-        self._update_button_state()
+        
+        # This will now trigger the 'textChanged' signal,
+        # which will call _update_button_state automatically.
