@@ -112,7 +112,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         # --- *** (Point 3) *** ---
         # 3. Load V2/V1 Log Object
         #    This entire block is now REMOVED. We no longer parse the log.
-        logging.info("Ignoring saved log on load, as per new design.")
+        logging.debug("Ignoring saved log on load, as per new design.")
             
         
         # Call the simplified constructor

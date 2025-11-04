@@ -16,9 +16,10 @@ from PySide6.QtWidgets import (
     QMenu, QMessageBox,
     QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
+import re
 from typing import List, Optional
 
-from .log_viewer_dialog import LogViewerDialog
+from .log_scripter_dialog import LogScripterDialog
 from .pyside_plot import SpectrumPlotWidget
 from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
@@ -34,6 +35,16 @@ try:
 except ImportError:
     logging.error("Could not import V1 functions (trans_parse, xem_d) needed for redshift cursor.")
     V1_FUNCTIONS_AVAILABLE = False
+
+# --- *** RECIPE LOOKUP MAP *** ---
+from ..recipes.edit import EDIT_RECIPES_SCHEMAS
+from ..recipes.flux import FLUX_RECIPES_SCHEMAS
+RECIPE_CATEGORY_MAP = {}
+for name in EDIT_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'edit'
+for name in FLUX_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'flux'
+# (Add other recipe categories here as they are created)
 
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = 250
@@ -60,8 +71,10 @@ class MainWindowV2(QMainWindow):
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
         
-        self.log_viewer_dialog: Optional[LogViewerDialog] = None
+        self.log_scripter_dialog: Optional[LogScripterDialog] = None
         self.active_recipe_dialog: Optional[QDialog] = None
+
+        self.recipe_category_map = RECIPE_CATEGORY_MAP
 
         # ** Initialize animation attributes to None **
         self.left_animation_group = None
@@ -837,9 +850,9 @@ class MainWindowV2(QMainWindow):
             # (This keeps the name updated for the current linear path)
 
             # Refresh the *single* log viewer if it's open
-            if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+            if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
                 try:
-                    self.log_viewer_dialog.refresh()
+                    self.log_scripter_dialog.refresh()
                 except Exception as e:
                     logging.error(f"Failed to refresh log viewer: {e}")
 
@@ -892,11 +905,11 @@ class MainWindowV2(QMainWindow):
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
         
         # Add refresh call for the single log viewer
-        if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+        if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
             if session_state_to_show and self.active_history: # Check for active_history
-                self.log_viewer_dialog.set_log_object(self.active_history.log_manager)
+                self.log_scripter_dialog.set_log_object(self.active_history.log_manager)
             else:
-                self.log_viewer_dialog.set_log_object(None) # Clear viewer
+                self.log_scripter_dialog.set_log_object(None) # Clear viewer
 
         # Update general UI visibility etc. based on validity
         #self._update_ui_state(is_valid, is_startup=is_startup)
@@ -978,8 +991,8 @@ class MainWindowV2(QMainWindow):
                 self._update_undo_redo_actions()
                 
                 # --- MODIFIED CHECK ---
-                if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
-                    self.log_viewer_dialog.refresh()
+                if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                    self.log_scripter_dialog.refresh()
                 # --- END MODIFIED CHECK ---
             else:
                 logging.debug("Undo: Already at oldest state for this session.")
@@ -996,8 +1009,8 @@ class MainWindowV2(QMainWindow):
                 self._update_undo_redo_actions()
 
                 # --- MODIFIED CHECK ---
-                if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
-                    self.log_viewer_dialog.refresh()
+                if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                    self.log_scripter_dialog.refresh()
                 # --- END MODIFIED CHECK ---
             else:
                 logging.debug("Redo: Already at newest state for this session.")
@@ -1027,8 +1040,8 @@ class MainWindowV2(QMainWindow):
                     self._update_undo_redo_actions()
 
                     # Update the log viewer if it's open
-                    if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
-                        self.log_viewer_dialog.set_log_object(self.active_history.log_manager)
+                    if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                        self.log_scripter_dialog.set_log_object(self.active_history.log_manager)
                 else:
                     # Clicked on the already active session, maybe ensure view reflects current index?
                     # This can happen if user undid then clicked the list item again.
@@ -1100,7 +1113,7 @@ class MainWindowV2(QMainWindow):
         # --- View Log action ---
         view_action = QAction(f"View Log for '{session_name}'", self)
         view_action.triggered.connect(
-            lambda: self._launch_log_viewer(history_item)
+            lambda: self._launch_log_scripter(history_item)
         )
         menu.addAction(view_action)
 
@@ -1124,10 +1137,10 @@ class MainWindowV2(QMainWindow):
     def _on_view_log(self):
         """
         Handles the "View > View Session Log" menu action.
-        Shows/raises the *single, persistent* log viewer.
+        Shows/raises the *single, persistent* log scripter.
         """
         if self.active_history:
-            self._launch_log_viewer(self.active_history)
+            self._launch_log_scripter(self.active_history)
         else:
             logging.warning("View Log called with no active history.")
 
@@ -1238,8 +1251,8 @@ class MainWindowV2(QMainWindow):
         self.session_model.removeRow(row_to_remove)
 
         # Clean up the single log viewer IF it was showing the closing session
-        if self.log_viewer_dialog and self.log_viewer_dialog.log_object is history_to_close.log_manager:
-            self.log_viewer_dialog.close() # This will trigger _on_log_viewer_closed
+        if self.log_scripter_dialog and self.log_scripter_dialog.log_object is history_to_close.log_manager:
+            self.log_scripter_dialog.close()
         
         # --- Handle switching the active view ---
         new_active_history = None
@@ -1265,57 +1278,162 @@ class MainWindowV2(QMainWindow):
             self._update_view_for_session(None, set_current_list_item=False)
 
         self._update_undo_redo_actions()
-            
-    def _launch_log_viewer(self, history_object: 'SessionHistory'):
+                
+    def _launch_log_scripter(self, history_object: 'SessionHistory'):
         """
-        Creates and shows the *single, persistent* LogViewerDialog,
+        Creates and shows the *single, persistent* LogScripterDialog,
         or activates it if it already exists.
         """
         log_object_to_view = history_object.log_manager
         session_name = history_object.display_name
 
-        # 1. Check if the viewer already exists
-        if self.log_viewer_dialog:
-            self.log_viewer_dialog.set_log_object(log_object_to_view) # Update its content
-            self.log_viewer_dialog.setWindowTitle(f"Log History: {session_name}")
-            self.log_viewer_dialog.raise_()
-            self.log_viewer_dialog.activateWindow()
-            logging.debug(f"Activating existing log viewer for {session_name}")
+        if self.log_scripter_dialog:
+            self.log_scripter_dialog.set_log_object(log_object_to_view) 
+            self.log_scripter_dialog.setWindowTitle(f"Log Scripter: {session_name}")
+            self.log_scripter_dialog.raise_()
+            self.log_scripter_dialog.activateWindow()
+            logging.debug(f"Activating existing log scripter for {session_name}")
             return
 
-        # 2. If not, create a new one
         try:
-            dialog = LogViewerDialog(log_object_to_view, session_name, None)
-            
-            # Store the single instance
-            self.log_viewer_dialog = dialog
-            
-            # Connect the 'finished' signal to our handler
-            # This lambda is now simpler, it doesn't need to pass the key
+            dialog = LogScripterDialog(log_object_to_view, session_name, self)
+            self.log_scripter_dialog = dialog
             dialog.finished.connect(
-                lambda: self._on_log_viewer_closed() 
+                lambda: self._on_log_scripter_closed() 
             )
-            
             dialog.show()
-            logging.debug(f"Creating new single log viewer for {session_name}")
-
+            logging.debug(f"Creating new single log scripter for {session_name}")
         except Exception as e:
-            logging.error(f"Failed to launch log viewer: {e}", exc_info=True)
+            logging.error(f"Failed to launch log scripter: {e}", exc_info=True)
 
-    def _on_log_viewer_closed(self):
+    def _on_log_scripter_closed(self):
         """
-        Slot called when the single LogViewerDialog is closed.
+        Slot called when the single LogScripterDialog is closed.
         Cleans up the reference.
         """
-        self.log_viewer_dialog = None
-        logging.debug("Single log viewer closed, reference removed.")
+        self.log_scripter_dialog = None
+        logging.debug("Single log scripter closed, reference removed.")
         
-        # We still re-raise the floating buttons
         try:
             self.session_collapse_button.raise_()
             self.plot_controls_collapse_button.raise_()
         except Exception as e:
             logging.warning(f"Could not re-raise buttons: {e}")
+
+    # Simple regex to find recipe(args)
+    _SCRIPT_LINE_REGEX = re.compile(r'(\w+)\((.*)\)')
+    
+    def run_script(self, script_text: str):
+        """Re-runs an analysis script, replacing the active history."""
+        
+        if not self.active_history:
+            QMessageBox.warning(self, "No Session", "Cannot run script: No active session.")
+            return
+
+        logging.info("Starting script run...")
+
+        # 1. Get the original, pristine state
+        initial_state = self.active_history.states[0]
+        
+        # 2. Create a new history to build into
+        new_log = HistoryLogV2()
+        # We must create a true copy of the initial state
+        initial_state_copy = initial_state.with_new_spectrum(
+            initial_state.spec
+        ).with_new_system_list(
+            initial_state.systs
+        )
+        # Re-link the new state to the GUI
+        initial_state_copy._gui = self
+        initial_state_copy.log = GUILog(self.mock_gui_context) 
+        initial_state_copy.defs = Defaults(self.mock_gui_context)
+        
+        new_history = SessionHistory(initial_state_copy, new_log)
+        current_processing_state = initial_state_copy
+
+        # 3. Process the script line by line
+        lines = script_text.splitlines()
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue # Skip comments and empty lines
+
+            try:
+                # 3a. Parse the line
+                match = self._SCRIPT_LINE_REGEX.match(line)
+                if not match:
+                    raise ValueError("Invalid syntax. Expected 'recipe_name(args)'.")
+                
+                recipe_name = match.group(1)
+                args_str = match.group(2)
+                
+                params_dict = {}
+                if args_str:
+                    # Use a more robust way to parse args than simple splitting
+                    # This finds all 'key=value' pairs
+                    arg_pairs = re.findall(r"(\w+)\s*=\s*([^,]+)", args_str)
+                    for key, val in arg_pairs:
+                        key = key.strip()
+                        val = val.strip()
+                        # Un-quote strings
+                        if (val.startswith("'") and val.endswith("'")) or \
+                           (val.startswith('"') and val.endswith('"')):
+                            params_dict[key] = val[1:-1]
+                        else:
+                            params_dict[key] = val # Recipes expect strings
+
+                # 3b. Find and run the recipe
+                category = self.recipe_category_map.get(recipe_name)
+                if not category:
+                    raise ValueError(f"Recipe '{recipe_name}' not found.")
+                
+                recipe_instance = getattr(current_processing_state, category)
+                recipe_method = getattr(recipe_instance, recipe_name)
+
+                # Check for multi-session and add alias map if needed
+                if recipe_name in ("apply_expression", "mask_expression"):
+                    if not 'alias_map' in params_dict:
+                        # Build the alias map relative to the *active* session
+                        params_dict['alias_map'] = self.log_scripter_dialog._build_alias_map()
+                
+                new_session_state = recipe_method(**params_dict)
+                
+                if not new_session_state or new_session_state == 0:
+                    raise ValueError(f"Recipe failed to execute.")
+                    
+                # 3c. Success! Add to the new history
+                new_log.add_entry(recipe_name, params_dict)
+                new_history.add_state(new_session_state)
+                current_processing_state = new_session_state
+
+            except Exception as e:
+                logging.error(f"Failed to run script line {i+1}: {line}\nError: {e}", exc_info=True)
+                QMessageBox.critical(
+                    self, 
+                    "Script Error",
+                    f"Failed on line {i+1}:\n{line}\n\nError: {e}"
+                )
+                return # Stop processing
+
+        # 4. Swap the old history with the new one
+        try:
+            old_history_index = self.session_histories.index(self.active_history)
+            self.session_histories[old_history_index] = new_history
+            self.active_history = new_history
+            self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)
+        except ValueError:
+            logging.error("Could not find old history to replace. Appending new history.")
+            self.session_histories.append(new_history)
+            self.active_history = new_history
+            self.session_model.setStringList([h.display_name for h in self.session_histories])
+
+
+        # 5. Refresh everything
+        logging.info("Script run completed successfully.")
+        self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
+        self._update_undo_redo_actions()
+        if self.log_scripter_dialog:
+            self.log_scripter_dialog.set_log_object(new_log)
 
     def _launch_x_convert_dialog(self):
         # Placeholder function called by the QAction
