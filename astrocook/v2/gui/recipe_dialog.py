@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator, QFont
-from PySide6.QtCore import Qt, QLocale
+from PySide6.QtCore import Qt, QLocale, Signal
 
 from ..session import SessionV2
 from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
@@ -16,6 +16,10 @@ class RecipeDialog(QDialog):
     """
     A dynamic dialog box for configuring and running Astrocook V2 recipes.
     """
+
+    # Emits the parameters needed for the worker thread
+    recipe_requested = Signal(str, str, dict, dict) # category, recipe_name, params, alias_map
+
     def __init__(self, recipe_category: str, recipe_name: str,
                  session: SessionV2, parent=None):
         super().__init__(parent)
@@ -406,9 +410,12 @@ class RecipeDialog(QDialog):
         target_widget.setFocus()
 
     def accept(self):
-        """Gathers parameters, calls the recipe, and handles the result."""
+        """
+        Gathers parameters and emits the 'recipe_requested' signal.
+        Does NOT run the recipe.
+        """
         if not self.schema:
-            super().reject() # Just close if schema failed
+            super().reject() 
             return
 
         params_to_pass = {}
@@ -418,112 +425,25 @@ class RecipeDialog(QDialog):
                 if isinstance(widget, QLineEdit):
                     params_to_pass[param_name] = widget.text()
                 elif isinstance(widget, QCheckBox):
-                    # Pass boolean state as string for V1 recipe compatibility for now
                     params_to_pass[param_name] = str(widget.isChecked())
                 elif isinstance(widget, QComboBox):
-                    params_to_pass[param_name] = widget.currentText() # Or currentData()
-                # TODO: Handle other widget types (e.g., file path)
+                    params_to_pass[param_name] = widget.currentText() 
                 logging.debug(f" - {param_name}: {params_to_pass[param_name]}")
         except Exception as e:
             logging.error(f"Error gathering parameters: {e}")
             QMessageBox.critical(self, "Parameter Error", f"Could not read parameters:\n{e}")
             return # Keep dialog open
 
-        if self.recipe_name in ("apply_expression", "mask_expression"):
-            params_to_pass['alias_map'] = self.session_alias_map
-
-        try:
-            # --- Find and Call the V2 Recipe Method ---
-            # Get the recipe class instance from the session (e.g., session.flux)
-            recipe_instance = getattr(self.session, self.recipe_category, None)
-            if not recipe_instance:
-                raise AttributeError(f"Session object has no attribute '{self.recipe_category}'")
-
-            # Get the actual method from the instance
-            recipe_method = getattr(recipe_instance, self.recipe_name, None)
-            if not callable(recipe_method):
-                raise AttributeError(f"Recipe instance has no callable method '{self.recipe_name}'")
-
-            logging.info(f"Running recipe: {self.recipe_category}.{self.recipe_name} with params: {params_to_pass}")
-            new_session_state = recipe_method(**params_to_pass)
-            # -----------------------------------------
-
-            # --- Handle Recipe Result ---
-            if new_session_state == 0:
-                # V1 compatibility: 0 often means validation failure within the recipe
-                logging.warning(f"Recipe {self.recipe_name} indicated failure (returned 0). Check logs.")
-                # Optionally show a message box here
-                # QMessageBox.warning(self, "Recipe Warning", "Recipe failed validation. Check console logs.")
-                # Don't close the dialog on failure, let user correct parameters
-                return # Keep dialog open
-
-            elif isinstance(new_session_state, SessionV2):
-                # Success: Update the main window's state
-                logging.info(f"Recipe {self.recipe_name} completed successfully.")
-                if self.parent_window and hasattr(self.parent_window, 'update_gui_session_state'):
-                    # Find the index of the SessionHistory that was active when dialog opened
-                    original_history_index = -1
-                    try:
-                        # Find the history manager whose *current state* matches the session
-                        # the dialog was launched with. This is safer than relying on active_history directly.
-                        for i, history in enumerate(self.parent_window.session_histories):
-                             # Compare object identity
-                             if history.current_state is self.session:
-                                 original_history_index = i
-                                 break
-                        if original_history_index == -1:
-                             # Fallback or error if the original session wasn't found
-                             logging.error("Could not find original session history manager!")
-                             # Maybe default to current active_history index?
-                             original_history_index = self.parent_window.session_histories.index(self.parent_window.active_history)
-
-                    except (ValueError, AttributeError, IndexError) as find_err:
-                        logging.error(f"Error finding original history index: {find_err}. Using active history.")
-                        try: # Fallback
-                             original_history_index = self.parent_window.session_histories.index(self.parent_window.active_history)
-                        except (ValueError, AttributeError):
-                             original_history_index = -1 # Should not happen
-
-                    if original_history_index != -1:
-                        try:
-                            active_log_manager = self.parent_window.session_histories[original_history_index].log_manager
-                            if isinstance(active_log_manager, HistoryLogV2):
-                                active_log_manager.add_entry(
-                                    recipe_name=self.recipe_name, 
-                                    params=params_to_pass
-                                )
-                                logging.debug(f"Logged successful recipe: {self.recipe_name}")
-                        except Exception as e:
-                            logging.error(f"Failed to log successful recipe: {e}")
-
-                    if original_history_index != -1:
-                        branching = is_branching_recipe(self.recipe_name)
-                        # Call MainWindowV2's update method
-                        self.parent_window.update_gui_session_state(
-                            new_session_state,
-                            original_session_index=original_history_index, # Pass index in session_histories
-                            is_branching=branching
-                        )
-                    else:
-                         logging.error("Could not trigger GUI update: Original history index not found.")
-
-                else:
-                     logging.warning("Parent window reference missing or lacks update method.")
-
-                super().accept() # Close the dialog on success
-
-            else:
-                # Unexpected return type
-                logging.error(f"Recipe {self.recipe_name} returned unexpected type: {type(new_session_state)}")
-                QMessageBox.critical(self, "Recipe Error", "Recipe returned an unexpected result.")
-                return # Keep dialog open
-
-        except Exception as e:
-            logging.error(f"Error running recipe {self.recipe_name}: {e}", exc_info=True) # Log traceback
-            QMessageBox.critical(self, "Recipe Execution Error", f"An error occurred:\n{e}")
-            # Keep dialog open on error
-            return
-
+        # Emit the signal for the main window to catch
+        self.recipe_requested.emit(
+            self.recipe_category,
+            self.recipe_name,
+            params_to_pass,
+            self.session_alias_map
+        )
+        
+        # Close the dialog immediately
+        super().accept()
 
     def reject(self):
         """Closes the dialog without running the recipe."""

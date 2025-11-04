@@ -7,20 +7,21 @@ from PySide6.QtCore import (
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup,
-    QSize, QStringListModel, QTimer
+    QSize, QStringListModel, QThreadPool, QTimer
 )
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, 
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox,
-    QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
+    QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
 import re
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .log_scripter_dialog import LogScripterDialog
 from .pyside_plot import SpectrumPlotWidget
+from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file, LogManager
@@ -78,6 +79,11 @@ class MainWindowV2(QMainWindow):
         self.active_recipe_dialog: Optional[QDialog] = None
 
         self.recipe_category_map = RECIPE_CATEGORY_MAP
+
+        # Initialize threadpool and progress dialog
+        self.thread_pool = QThreadPool()
+        logging.info(f"Main thread pool started with {self.thread_pool.maxThreadCount()} threads.")
+        self.progress_dialog: Optional[QProgressDialog] = None
 
         # ** Initialize animation attributes to None **
         self.left_animation_group = None
@@ -1321,6 +1327,140 @@ class MainWindowV2(QMainWindow):
             self._update_view_for_session(None, set_current_list_item=False)
 
         self._update_undo_redo_actions()
+
+    def _launch_recipe_dialog(self, category, name):
+        if self.active_recipe_dialog:
+            self.active_recipe_dialog.activateWindow()
+            return
+        if not self.active_history or not self.active_history.current_state.spec:
+            QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
+            return
+
+        # --- Fix for Zoom/Pan Bug ---
+        if self.plot_viewer and self.plot_viewer.toolbar:
+            try:
+                self.plot_viewer.toolbar.pan(False)
+                self.plot_viewer.toolbar.zoom(False)
+            except Exception as e:
+                logging.warning(f"Could not reset toolbar state: {e}")
+
+        logging.info(f"Launching dialog for recipe: {category}.{name}")
+        
+        current_state = self.active_history.current_state
+        dialog = RecipeDialog(category, name, current_state, self) 
+        
+        # --- Connect the new signal to our worker-launching slot ---
+        dialog.recipe_requested.connect(self._on_recipe_requested)
+        # ---
+        
+        # Run non-modally so the main window isn't blocked
+        dialog.show() 
+        self.active_recipe_dialog = dialog
+        
+        # We no longer care about the .exec() result
+        QTimer.singleShot(0, self._force_restack_floating_widgets)
+
+    # --- *** 4. NEW: Worker-launching slot for single recipes *** ---
+    def _on_recipe_requested(self, category: str, recipe_name: str, 
+                             params: dict, alias_map: dict):
+        """
+        Slot called when a RecipeDialog emits its 'recipe_requested' signal.
+        Launches the RecipeWorker on a background thread.
+        """
+        if not self.active_history:
+            return # Should not happen
+
+        # 1. Close the dialog that sent the signal
+        if self.active_recipe_dialog:
+            self.active_recipe_dialog.close()
+            self.active_recipe_dialog = None
+
+        # 2. Show the *same* progress dialog as "Run All"
+        if self.progress_dialog:
+            self.progress_dialog.cancel()
+        self.progress_dialog = QProgressDialog(f"Running {recipe_name}...", "Cancel", 0, 0, self)
+        self.progress_dialog.setWindowTitle("Recipe Running")
+        self.progress_dialog.setCancelButton(None) 
+        self.progress_dialog.setModal(True)
+        self.progress_dialog.setFixedWidth(400) # Fix 2
+        self.progress_dialog.show()
+
+        # 3. Set up and run the worker
+        worker = RecipeWorker(
+            session=self.active_history.current_state,
+            category=category,
+            recipe_name=recipe_name,
+            params=params,
+            alias_map=alias_map
+        )
+        
+        # Connect to the *same* slots as the ScriptWorker
+        worker.signals.finished.connect(self._on_recipe_finished)
+        worker.signals.error.connect(self._on_recipe_error)
+        
+        self.thread_pool.start(worker)
+
+    # --- *** 5. NEW: Callback slots for single recipes *** ---
+    def _on_recipe_finished(self, result_data: tuple):
+        """Slot called when the RecipeWorker succeeds."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+
+        # Set the "Wait" cursor for the whole application
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        
+        # Schedule the heavy GUI update to run in 10ms.
+        # This gives the GUI time to breathe and show the cursor
+        # before it freezes for the plot redraw.
+        QTimer.singleShot(10, lambda: self._process_recipe_result(result_data))
+
+    def _process_recipe_result(self, result_data: tuple):
+        """The actual GUI update, now called by a QTimer."""
+        try:
+            new_session_state, recipe_name, params = result_data
+            
+            # 1. Log the successful action
+            try:
+                if isinstance(self.active_history.log_manager, HistoryLogV2):
+                    params_to_log = params.copy()
+                    params_to_log.pop('alias_map', None) 
+                    self.active_history.log_manager.add_entry(
+                        recipe_name=recipe_name, 
+                        params=params_to_log
+                    )
+                    logging.debug(f"Logged successful recipe: {recipe_name}")
+            except Exception as e:
+                logging.error(f"Failed to log successful recipe: {e}")
+
+            # 2. Update the GUI state
+            original_history_index = self.session_histories.index(self.active_history)
+            branching = is_branching_recipe(recipe_name) or recipe_name == 'resample'
+            
+            self.update_gui_session_state(
+                new_session_state,
+                original_session_index=original_history_index, 
+                is_branching=branching
+            )
+            
+        except Exception as e:
+            logging.error(f"Failed to process recipe result: {e}", exc_info=True)
+            QMessageBox.critical(self, "GUI Error", f"Failed to update GUI after recipe:\n{e}")
+
+        finally:
+            # --- *** ALWAYS restore the cursor *** ---
+            QApplication.restoreOverrideCursor()
+
+    def _on_recipe_error(self, error_data: tuple):
+        """Slot called when the RecipeWorker fails."""
+        title, message, trace = error_data
+        
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+            
+        logging.error(f"{title}\n{message}\n{trace}")
+        QMessageBox.critical(self, title, message)
                 
     def _launch_log_scripter(self, history_object: 'SessionHistory'):
         """
@@ -1372,120 +1512,117 @@ class MainWindowV2(QMainWindow):
     _SCRIPT_LINE_REGEX = re.compile(r'(\w+)\((.*)\)')
     
     def run_script(self, script_text: str):
-        """Re-runs an analysis script, replacing the active history."""
+        """
+        Launches the ScriptWorker on a background thread to run the script.
+        """
         
         if not self.active_history:
             QMessageBox.warning(self, "No Session", "Cannot run script: No active session.")
             return
 
+        # 1. Ask for confirmation
+        reply = QMessageBox.question(
+            self,
+            "Run Script",
+            "This will replace your current session history by re-running this script from the original data.\n\nAre you sure you want to proceed?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # --- *** FIX 1: Reset toolbar *** ---
+        if self.plot_viewer and self.plot_viewer.toolbar:
+            try:
+                self.plot_viewer.toolbar.pan(False)
+                self.plot_viewer.toolbar.zoom(False)
+            except Exception as e:
+                logging.warning(f"Could not reset toolbar state: {e}")
+        # --- *** END FIX 1 *** ---
+
         logging.info("Starting script run...")
 
-        # 1. Get the original, pristine state
+        # 2. Get the original, pristine state
         initial_state = self.active_history.states[0]
         
-        # 2. Create a new history to build into
-        new_log = HistoryLogV2()
-        # We must create a true copy of the initial state
-        initial_state_copy = initial_state.with_new_spectrum(
-            initial_state.spec
-        ).with_new_system_list(
-            initial_state.systs
-        )
-        # Re-link the new state to the GUI
-        initial_state_copy._gui = self
-        initial_state_copy.log = GUILog(self.mock_gui_context) 
-        initial_state_copy.defs = Defaults(self.mock_gui_context)
+        # 3. Set up the progress dialog
+        if self.progress_dialog:
+            self.progress_dialog.cancel()
+        self.progress_dialog = QProgressDialog("Running script...", "Cancel", 0, 0, self)
+        self.progress_dialog.setWindowTitle("Script Running")
+        self.progress_dialog.setCancelButton(None) 
+        self.progress_dialog.setModal(True)
+        # --- *** FIX 2: Set fixed width *** ---
+        self.progress_dialog.setFixedWidth(400)
+        # --- *** END FIX 2 *** ---
+        self.progress_dialog.show()
+
+        # 4. Set up and run the worker
+        worker = ScriptWorker(script_text, initial_state, self)
         
-        new_history = SessionHistory(initial_state_copy, new_log)
-        current_processing_state = initial_state_copy
+        # Connect to *different* slots than the recipe worker
+        worker.signals.finished.connect(self._on_script_finished)
+        worker.signals.error.connect(self._on_script_error)
+        worker.signals.progress.connect(self._on_script_progress)
+        
+        self.thread_pool.start(worker)
 
-        # 3. Process the script line by line
-        lines = script_text.splitlines()
-        for i, line in enumerate(lines):
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue # Skip comments and empty lines
+    def _on_script_progress(self, message: str):
+        """Slot to update the progress dialog."""
+        if self.progress_dialog:
+            self.progress_dialog.setLabelText(message)
 
-            try:
-                # 3a. Parse the line
-                match = self._SCRIPT_LINE_REGEX.match(line)
-                if not match:
-                    raise ValueError("Invalid syntax. Expected 'recipe_name(args)'.")
-                
-                recipe_name = match.group(1)
-                args_str = match.group(2)
-                
-                params_dict = {}
-                if args_str:
-                    # Use a more robust way to parse args than simple splitting
-                    # This finds all 'key=value' pairs
-                    arg_pairs = re.findall(r"(\w+)\s*=\s*([^,]+)", args_str)
-                    for key, val in arg_pairs:
-                        key = key.strip()
-                        val = val.strip()
-                        # Un-quote strings
-                        if (val.startswith("'") and val.endswith("'")) or \
-                           (val.startswith('"') and val.endswith('"')):
-                            params_dict[key] = val[1:-1]
-                        else:
-                            params_dict[key] = val # Recipes expect strings
-
-                # 3b. Find and run the recipe
-                category = self.recipe_category_map.get(recipe_name)
-                if not category:
-                    raise ValueError(f"Recipe '{recipe_name}' not found.")
-                
-                recipe_instance = getattr(current_processing_state, category)
-                recipe_method = getattr(recipe_instance, recipe_name)
-
-                # Check for multi-session and add alias map if needed
-                if recipe_name in ("apply_expression", "mask_expression"):
-                    if not 'alias_map' in params_dict:
-                        # Build the alias map relative to the *active* session
-                        params_dict['alias_map'] = self.log_scripter_dialog._build_alias_map()
-                
-                new_session_state = recipe_method(**params_dict)
-                
-                if not new_session_state or new_session_state == 0:
-                    raise ValueError(f"Recipe failed to execute.")
-                    
-                # Create a *copy* for logging and remove runtime-only keys
-                params_to_log = params_dict.copy()
-                params_to_log.pop('alias_map', None)
-
-                # 3c. Success! Add to the new history
-                new_log.add_entry(recipe_name, params_to_log)
-                new_history.add_state(new_session_state)
-                current_processing_state = new_session_state
-
-            except Exception as e:
-                logging.error(f"Failed to run script line {i+1}: {line}\nError: {e}", exc_info=True)
-                QMessageBox.critical(
-                    self, 
-                    "Script Error",
-                    f"Failed on line {i+1}:\n{line}\n\nError: {e}"
-                )
-                return # Stop processing
-
-        # 4. Swap the old history with the new one
-        try:
-            old_history_index = self.session_histories.index(self.active_history)
-            self.session_histories[old_history_index] = new_history
-            self.active_history = new_history
-            self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)
-        except ValueError:
-            logging.error("Could not find old history to replace. Appending new history.")
-            self.session_histories.append(new_history)
-            self.active_history = new_history
-            self.session_model.setStringList([h.display_name for h in self.session_histories])
-
-
-        # 5. Refresh everything
-        logging.info("Script run completed successfully.")
-        self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
-        self._update_undo_redo_actions()
+    def _on_script_error(self, error_data: tuple):
+        """Slot called when the ScriptWorker fails."""
+        line_num, line, error_msg = error_data
+        
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+            
+        logging.error(f"Failed to run script line {line_num}: {line}\nError: {error_msg}")
+        QMessageBox.critical(
+            self, 
+            "Script Error",
+            f"Failed on line {line_num}:\n{line}\n\nError: {error_msg}"
+        )
         if self.log_scripter_dialog:
-            self.log_scripter_dialog.set_log_object(new_log)
+            self.log_scripter_dialog._update_button_state()
+
+    def _on_script_finished(self, new_history: SessionHistory):
+        """Slot called when the ScriptWorker succeeds."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+        
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        # Schedule the heavy GUI update
+        QTimer.singleShot(10, lambda: self._process_script_result(new_history))
+            
+    def _process_script_result(self, new_history: SessionHistory):
+        """The actual GUI update for 'Run All', called by a QTimer."""
+        # 1. Swap the old history with the new one
+        try:
+            try:
+                old_history_index = self.session_histories.index(self.active_history)
+                self.session_histories[old_history_index] = new_history
+                self.active_history = new_history
+                self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)
+            except ValueError:
+                logging.error("Could not find old history to replace. Appending new history.")
+                self.session_histories.append(new_history)
+                self.active_history = new_history
+                self.session_model.setStringList([h.display_name for h in self.session_histories])
+
+            # 2. Refresh everything
+            logging.info("Script run completed successfully.")
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
+            self._update_undo_redo_actions()
+            if self.log_scripter_dialog:
+                self.log_scripter_dialog.set_log_object(new_history.log_manager)
+        finally:
+            # --- *** ALWAYS restore the cursor *** ---
+            QApplication.restoreOverrideCursor()
 
     def _launch_x_convert_dialog(self):
         # Placeholder function called by the QAction

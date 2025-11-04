@@ -263,16 +263,8 @@ class LogScripterDialog(QDialog):
             
         script_text = self.scripter_edit.toPlainText()
         
-        reply = QMessageBox.question(
-            self,
-            "Run Script",
-            "This will replace your current session history by re-running this script from the original data.\n\nAre you sure you want to proceed?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            self.main_window.run_script(script_text)
+        # Confirmation is now handled by the main window
+        self.main_window.run_script(script_text)
 
     def _on_save_log(self):
         """Saves the scripter's text content to a file."""
