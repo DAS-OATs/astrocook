@@ -974,15 +974,17 @@ class MainWindowV2(QMainWindow):
             previous_state = self.active_history.undo()
             if previous_state:
                 logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
-                self._update_view_for_session(previous_state, set_current_list_item=False) # Update view, list selection unchanged
+                self._update_view_for_session(previous_state, set_current_list_item=False) 
                 self._update_undo_redo_actions()
-                if self.active_history in self.open_log_viewers:
-                    self.open_log_viewers[self.active_history].refresh()
+                
+                # --- MODIFIED CHECK ---
+                if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+                    self.log_viewer_dialog.refresh()
+                # --- END MODIFIED CHECK ---
             else:
                 logging.debug("Undo: Already at oldest state for this session.")
         else:
              logging.debug("Undo: No active session.")
-
 
     def _redo_last_action(self):
         """Switches the view to the next state in the active history."""
@@ -992,13 +994,15 @@ class MainWindowV2(QMainWindow):
                 logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
                 self._update_view_for_session(next_state, set_current_list_item=False)
                 self._update_undo_redo_actions()
-                if self.active_history in self.open_log_viewers:
-                    self.open_log_viewers[self.active_history].refresh()
+
+                # --- MODIFIED CHECK ---
+                if self.log_viewer_dialog and self.log_viewer_dialog.isVisible():
+                    self.log_viewer_dialog.refresh()
+                # --- END MODIFIED CHECK ---
             else:
                 logging.debug("Redo: Already at newest state for this session.")
         else:
              logging.debug("Redo: No active session.")
-
 
     def _update_undo_redo_actions(self):
         """Enables/disables Undo/Redo based on the active history manager."""
@@ -1233,7 +1237,7 @@ class MainWindowV2(QMainWindow):
         # Update model
         self.session_model.removeRow(row_to_remove)
 
-        # Clean up any open dialogs for this session
+        # Clean up the single log viewer IF it was showing the closing session
         if self.log_viewer_dialog and self.log_viewer_dialog.log_object is history_to_close.log_manager:
             self.log_viewer_dialog.close() # This will trigger _on_log_viewer_closed
         
