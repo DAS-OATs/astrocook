@@ -1,40 +1,48 @@
 import logging
 from typing import TYPE_CHECKING, Optional
+import astropy.units as au
 
 from ..structures import HistoryLogV2
+from ...v1.message import msg_param_fail
 
 if TYPE_CHECKING:
     from ..session import SessionV2
 
 # --- Schemas for the Continuum Menu ---
 CONTINUUM_RECIPES_SCHEMAS = {
-    "find_unabsorbed": {
-        "brief": "Find unabsorbed regions (kappa-sigma).",
-        "details": "Run a kappa-sigma clipping algorithm to identify unabsorbed regions and create a 'mask_unabs' column.",
+    "estimate_auto": {
+        "brief": "Auto-estimate continuum (single-click).",
+        "details": "A single-click recipe that runs 'find_unabsorbed' and then 'fit_continuum' in sequence, based on the V1 'clip_flux' algorithm.",
         "params": [
-            {"name": "hwindow", "type": int, "default": 100, "doc": "Half-window size for running mean (pixels)"},
+            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
+            {"name": "smooth_len_out", "type": float, "default": 400.0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
             {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
+            {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
+            {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
+            {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
+        ],
+        "url": "continuum_cb.html#estimate_auto"
+    },
+    "find_unabsorbed": {
+        "brief": "Find unabsorbed regions (V1 logic).",
+        "details": "Run the V1 'clip_flux' kappa-sigma algorithm (with Ly-a split) to create a 'mask_unabs' column.",
+        "params": [
+            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
+            {"name": "smooth_len_out", "type": float, "default": 400.0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
+            {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
+            {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
         ],
         "url": "continuum_cb.html#find_unabsorbed"
     },
-    "fit_polynomial": {
-        "brief": "Fit polynomial to mask.",
-        "details": "Fit a polynomial to the regions marked 'True' in the 'mask_unabs' column and save it as 'cont'.",
+    "fit_continuum": {
+        "brief": "Fit continuum to mask (V1 logic).",
+        "details": "Interpolate unabsorbed regions from a mask, apply fudge factor, and smooth the result to create 'cont'.",
         "params": [
-            {"name": "deg", "type": int, "default": 5, "doc": "Degree of the polynomial"},
+            {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
+            {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
             {"name": "mask_col", "type": str, "default": "mask_unabs", "doc": "Mask column to use"},
         ],
-        "url": "continuum_cb.html#fit_polynomial"
-    },
-    "estimate_auto": {
-        "brief": "Auto-estimate continuum (single-click).",
-        "details": "A single-click recipe that runs 'find_unabsorbed' and then 'fit_polynomial' in sequence.",
-        "params": [
-            {"name": "hwindow", "type": int, "default": 100, "doc": "Half-window size for running mean (pixels)"},
-            {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
-            {"name": "deg", "type": int, "default": 5, "doc": "Degree of the polynomial"},
-        ],
-        "url": "continuum_cb.html#estimate_auto"
+        "url": "continuum_cb.html#fit_continuum"
     }
 }
 
@@ -44,75 +52,96 @@ class RecipeContinuumV2:
         self._session = session_v2
         self._tag = 'cont' # V1 tag for this menu
 
-    def find_unabsorbed(self, hwindow: str = '100', kappa: str = '2.0') -> 'SessionV2':
+    def find_unabsorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
+                        kappa: str = '2.0', template: str = 'False') -> 'SessionV2':
         """
-        API: Finds unabsorbed regions.
+        API: Finds unabsorbed regions using V1 'clip_flux' logic.
         """
         try:
-            hwindow_i = int(hwindow)
+            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
+            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
             kappa_f = float(kappa)
+            template_b = str(template) == 'True'
+            z_em_f = self._session.spec._data.z_em # Read z_em from session
         except ValueError:
-            logging.error("Invalid parameters: hwindow must be int, kappa must be float.")
+            logging.error(msg_param_fail)
             return 0
 
+        if z_em_f == 0.0:
+            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' before continuum fitting.")
+            # We don't stop, as the operation function handles z_em=0.0
+            
         try:
-            # 1. Call the API method
             new_spec_v2 = self._session.spec.find_unabsorbed(
-                hwindow=hwindow_i,
-                kappa=kappa_f
+                smooth_len_lya=smooth_len_lya_q,
+                smooth_len_out=smooth_len_out_q,
+                kappa=kappa_f,
+                template=template_b
             )
-            # 2. Return new state
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logging.error(f"Failed during find_unabsorbed: {e}", exc_info=True)
             return 0
 
-    def fit_polynomial(self, deg: str = '5', mask_col: str = 'mask_unabs') -> 'SessionV2':
+    def fit_continuum(self, fudge: str = '1.0', smooth_std: str = '500.0', 
+                       mask_col: str = 'mask_unabs') -> 'SessionV2':
         """
-        API: Fits a polynomial to a mask.
+        API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
         try:
-            deg_i = int(deg)
+            fudge_f = float(fudge)
+            smooth_std_f = float(smooth_std) # This is in km/s
         except ValueError:
-            logging.error("Invalid parameter: deg must be an integer.")
+            logging.error(msg_param_fail)
             return 0
         
         try:
-            # 1. Call the API method
-            new_spec_v2 = self._session.spec.fit_polynomial(
-                deg=deg_i,
+            new_spec_v2 = self._session.spec.fit_continuum(
+                fudge=fudge_f,
+                smooth_std_kms=smooth_std_f,
                 mask_col=mask_col
             )
-            # 2. Return new state
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during fit_polynomial: {e}", exc_info=True)
+            logging.error(f"Failed during fit_continuum: {e}", exc_info=True)
             return 0
             
-    def estimate_auto(self, hwindow: str = '100', kappa: str = '2.0', deg: str = '5') -> 'SessionV2':
+    def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
+                      kappa: str = '2.0', fudge: str = '1.0', 
+                      smooth_std: str = '500.0', template: str = 'False') -> 'SessionV2':
         """
         API: Single-click recipe to estimate continuum.
         """
         try:
-            hwindow_i = int(hwindow)
+            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
+            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
             kappa_f = float(kappa)
-            deg_i = int(deg)
+            template_b = str(template) == 'True'
+            fudge_f = float(fudge)
+            smooth_std_f = float(smooth_std) # This is in km/s
+            z_em_f = self._session.spec._data.z_em # Read z_em from session
         except ValueError:
-            logging.error("Invalid parameters for auto_estimate.")
+            logging.error(msg_param_fail)
             return 0
+            
+        if z_em_f == 0.0:
+            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
 
         try:
             logging.info("Auto-continuum: Finding unabsorbed regions...")
             # 1. Call the first API method
             spec_with_mask = self._session.spec.find_unabsorbed(
-                hwindow=hwindow_i,
-                kappa=kappa_f
+                smooth_len_lya=smooth_len_lya_q,
+                smooth_len_out=smooth_len_out_q,
+                kappa=kappa_f,
+                template=template_b
             )
             
-            logging.info("Auto-continuum: Fitting polynomial to mask...")
+            logging.info("Auto-continuum: Fitting continuum to mask...")
             # 2. Call the second API method *on the result of the first*
-            spec_with_cont = spec_with_mask.fit_polynomial(
-                deg=deg_i,
+            spec_with_cont = spec_with_mask.fit_continuum(
+                fudge=fudge_f,
+                smooth_std_kms=smooth_std_f,
                 mask_col='mask_unabs' # Use the mask we just created
             )
             

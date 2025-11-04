@@ -4,6 +4,7 @@ from astropy.constants import c as c_light
 from astropy.stats import sigma_clip
 import logging
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 from typing import Optional, Tuple
 
 from ..v1.functions import x_convert as x_convert_v1 
@@ -12,54 +13,41 @@ from ..v2.structures import DataColumnV2, SpectrumDataV2
 # We assume 'xem' (the Ly-alpha rest wavelength) is accessible here for the custom equivalency
 # You must ensure this global is either imported or defined here (Technical Debt).
 XEM_LYA = 121.567 * au.nm 
+XEM_LYA_KM_S_ZERO = (XEM_LYA * (1 + 0.0)).to(au.km/au.s, equivalencies=au.equivalencies.doppler_optical(XEM_LYA)).value
 
 def convert_axis_velocity(
     x_quantity: au.Quantity, 
-    zem: float, 
+    z_rf: float, # Renamed from zem
     target_unit: au.Unit
 ) -> au.Quantity:
     """
     Converts X-axis data between wavelength (nm) and velocity (km/s) space,
-    using the V1 zero-point logic (Ly-alpha rest-frame relative to zem).
-    
-    This function handles both forward (Wavelength -> Velocity) and 
-    reverse (Velocity -> Wavelength) conversion paths.
+    using the V1 zero-point logic (Ly-alpha rest-frame relative to z_rf).
     """
     
-    # 1. Define the V1 Custom Equivalency (using Ly-alpha and light speed)
-    # The zero-point (xem) used for the conversion must be defined or accessed.
-    # We use a standard value for the V1 utility dependency for now.
-    
-    # NOTE: The custom equivalency depends on a zero-point (xem). The V1 code 
-    # often used Lya, or calculated xem from the input z. Since this conversion 
-    # relies on a single fixed zero-point for the velocity scale, we'll use Lya for the example.
-    
-    # We must replicate the *effect* of your original custom equiv:
     v_c = c_light.to(au.km/au.s).value
     
-    # Define a custom conversion function using Astropy's equivalence infrastructure
-    # Since you used a fixed zero point for your conversion:
-    
+    # Define a custom conversion function
     # Lambda to Velocity (Forward)
     def lambda_to_v(lambda_val):
-        return np.log(lambda_val / (XEM_LYA.value * (1 + zem))) * v_c
+        # Use z_rf as the zero-point for the velocity conversion
+        return np.log(lambda_val / (XEM_LYA.value * (1 + z_rf))) * v_c
 
     # Velocity to Lambda (Reverse)
     def v_to_lambda(v_val):
-        return np.exp(v_val / v_c) * (XEM_LYA.value * (1 + zem))
+        return np.exp(v_val / v_c) * (XEM_LYA.value * (1 + z_rf))
 
     custom_equiv = [
-        (au.nm, au.km/au.s, lambda_to_v, v_to_lambda)
+        (au.nm, au.km/au.s, lambda_to_v, v_to_lambda),
+        (au.Angstrom, au.km/au.s, lambda_to_v, v_to_lambda) # Add Angstrom
     ]
     
-    # 2. Perform the conversion
     if target_unit.is_equivalent(au.km/au.s) or target_unit.is_equivalent(au.nm):
         return x_quantity.to(target_unit, equivalencies=custom_equiv)
     else:
-        # For simple wavelength-to-wavelength conversion (e.g., Angstrom to nm)
         return x_quantity.to(target_unit)
 
-def convert_x_axis(spec_data: SpectrumDataV2, zem: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
+def convert_x_axis(spec_data: SpectrumDataV2, z_rf: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
     """
     Performs X-axis conversion based on V1 logic and returns new Quantity arrays.
     """
@@ -68,15 +56,14 @@ def convert_x_axis(spec_data: SpectrumDataV2, zem: float, xunit: au.Unit) -> Tup
     xmin = spec_data.xmin.quantity
     xmax = spec_data.xmax.quantity
     
-    # Determine if conversion requires complex velocity math (V1 logic)
     if xunit.is_equivalent(au.km/au.s) or x.unit.is_equivalent(au.km/au.s):
-        # Use the V2 dedicated velocity conversion logic (forward or reverse)
-        x_new = convert_axis_velocity(x, zem, xunit)
-        xmin_new = convert_axis_velocity(xmin, zem, xunit)
-        xmax_new = convert_axis_velocity(xmax, zem, xunit)
+        # Use the V2 dedicated velocity conversion logic
+        x_new = convert_axis_velocity(x, z_rf, xunit)
+        xmin_new = convert_axis_velocity(xmin, z_rf, xunit)
+        xmax_new = convert_axis_velocity(xmax, z_rf, xunit)
         
     else:
-        # Simple wavelength-to-wavelength or velocity-to-velocity conversion (standard Astropy)
+        # Simple wavelength-to-wavelength
         x_new = x.to(xunit)
         xmin_new = xmin.to(xunit)
         xmax_new = xmax.to(xunit)
@@ -262,70 +249,160 @@ def rebin_spectrum(
 def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
     Computes a running mean of an array.
-    This is a standard numpy implementation of the 'h' parameter logic.
     """
-    # Use 'same' mode to keep the array length, handling edges
     window_size = 2 * h + 1
-    # Handle edge case where window is larger than array
     if window_size > len(y):
-        logging.warning("Running mean window is larger than array, returning array mean.")
+        logging.warning(f"Running mean window ({window_size}) is larger than array ({len(y)}), returning array mean.")
         return np.full_like(y, np.mean(y))
         
+    # Use 'same' mode to keep array length, symmetric padding
     return np.convolve(y, np.ones(window_size) / window_size, mode='same')
 
 def find_unabsorbed_regions(
+    x: au.Quantity,
     y: np.ndarray, 
     dy: np.ndarray, 
-    hwindow: int, 
+    z_em: float,
+    smooth_len_lya: au.Quantity, 
+    smooth_len_out: au.Quantity, 
     kappa: float, 
+    template: bool,
     maxiter: int = 100
 ) -> np.ndarray:
     """
-    Pure function to find unabsorbed regions via kappa-sigma clipping.
-    Based on the core logic of V1's 'clip_flux'.
+    Pure function to find unabsorbed regions, porting the V1 'clip_flux' logic.
     
     Returns:
         mask_unabs (np.ndarray): A boolean mask where True means "unabsorbed".
     """
-    # Start with a mask where everything is unabsorbed
-    mask_unabs = np.ones_like(y, dtype=bool)
     
-    # Exclude regions with very low S/N, as they are unreliable
-    # Also exclude NaN values from the start
+    # --- 1. Initial Masking ---
+    mask_unabs = np.ones_like(y, dtype=bool)
     valid_data = ~np.isnan(y) & ~np.isnan(dy) & (dy > 0)
     mask_unabs[~valid_data] = False
     mask_unabs[y <= 3.0 * dy] = False # Low S/N
     
-    for i in range(maxiter):
-        # 1. Get the data from the *current* unabsorbed regions
-        y_unabs = y[mask_unabs]
-        
-        if len(y_unabs) < hwindow * 2 + 1:
-            logging.warning("Clipping stopped: not enough unabsorbed points to continue.")
-            break # Not enough points to calculate a running mean
-            
-        # 2. Compute the running mean *only* on those points
-        y_rm_unabs = running_mean(y_unabs, h=hwindow)
-        
-        # 3. Interpolate this mean back to the *full* array's size
-        indices_full = np.arange(len(y))
-        indices_unabs = indices_full[mask_unabs]
-        y_rm_full = np.interp(indices_full, indices_unabs, y_rm_unabs)
+    if z_em == 0.0:
+        logging.warning("z_em is 0.0. Cannot split at Ly-alpha. Using 'smooth_len_out' for all regions.")
+        lya_prox_nm = -np.inf * au.nm
+    else:
+        # Calculate Ly-alpha proximity region (V1 logic)
+        prox = 5000 * au.km/au.s
+        lya_obs = XEM_LYA * (1 + z_em)
+        lya_prox_nm = (lya_obs * (1 - prox / c_light)).to(au.nm)
 
-        # 4. Find new outliers (absorbed regions)
-        # An outlier is a point *below* the mean by kappa*sigma
-        is_outlier = (y - y_rm_full) < (-kappa * dy)
+    # --- 2. Handle Template (Stubbed) ---
+    y_proc = y.copy()
+    if template:
+        # V1 logic: y_proc = y / template_interp
+        logging.warning("Template correction is not yet implemented. Skipping.")
+        # We would need to pass in the qso_composite data
+        pass
+
+    # --- 3. Calculate pixel size in km/s (dv) ---
+    x_kms = convert_axis_velocity(x, z_rf=0.0, target_unit=au.km/au.s).value
+    dv = np.gradient(x_kms)
+
+    # --- 4. Define Lya-forest and outside regions ---
+    # We must operate on the *full* array, not a slice
+    in_lya_forest = (x < lya_prox_nm) & mask_unabs
+    out_of_forest = (x >= lya_prox_nm) & mask_unabs
+    
+    intervals = [
+        (in_lya_forest, smooth_len_lya),
+        (out_of_forest, smooth_len_out)
+    ]
+    
+    mask_clipped = np.zeros_like(y, dtype=bool) # Mask of *newly* clipped points
+
+    # --- 5. Iterative Clipping Loop ---
+    for i in range(maxiter):
         
-        # 5. Update the mask
-        new_mask_unabs = mask_unabs & ~is_outlier
+        y_rm_full = np.full_like(y, np.nan)
         
-        if np.all(new_mask_unabs == mask_unabs):
-            logging.info(f"Clipping converged after {i+1} iterations.")
-            break # No new outliers found, we are done
+        # --- 6. Process Lya and Outside regions separately ---
+        for mask_interval, smooth_len in intervals:
+            if np.sum(mask_interval) == 0:
+                continue # Skip if this region is empty
+                
+            # Combine current interval mask with *not-yet-clipped* mask
+            current_mask = mask_interval & ~mask_clipped
+            if np.sum(current_mask) < 10: # Safety check
+                continue
+                
+            y_interval = y_proc[current_mask]
             
-        mask_unabs = new_mask_unabs
+            # Convert smoothing length (km/s) to pixel window
+            avg_dv = np.mean(dv[current_mask])
+            hwindow = int(smooth_len.to_value(au.km/au.s) / avg_dv / 8) # V1 logic: h = len/dv/8
+            hwindow = max(1, hwindow) # Ensure window is at least 1
+            
+            if len(y_interval) < hwindow * 2 + 1:
+                y_rm_interval = np.full_like(y_interval, np.mean(y_interval))
+            else:
+                y_rm_interval = running_mean(y_interval, h=hwindow)
+            
+            # Interpolate this mean back to the interval's indices
+            indices_full = np.arange(len(y))
+            indices_interval = indices_full[current_mask]
+            y_rm_interp = np.interp(indices_full[mask_interval], indices_interval, y_rm_interval)
+            
+            # Store the result
+            y_rm_full[mask_interval] = y_rm_interp
+
+        # 7. Find new outliers across the *whole* spectrum
+        is_outlier = (y_proc - y_rm_full) < (-kappa * dy)
+        is_outlier[~mask_unabs] = False # Don't clip already-masked points
+        
+        if np.sum(is_outlier) == 0:
+            logging.info(f"Clipping converged after {i+1} iterations.")
+            break
+        
+        mask_clipped = mask_clipped | is_outlier # Add new outliers to the clipped mask
+        mask_unabs = mask_unabs & ~is_outlier  # Update the master unabsorbed mask
         
         if i == maxiter - 1:
             logging.warning(f"Clipping did not converge after {maxiter} iterations.")
-            
+
     return mask_unabs
+
+def fit_continuum_interp(
+    x: np.ndarray,
+    y: np.ndarray,
+    mask_unabs: np.ndarray,
+    fudge: float = 1.0,
+    smooth_std_kms: float = 500.0, # std in km/s
+    z_rf: float = 0.0
+) -> np.ndarray:
+    """
+    Fits a continuum by interpolating unabsorbed points and smoothing.
+    Based on V1 'clip_flux' logic.
+    """
+    
+    # 1. Get unabsorbed points
+    x_unabs = x[mask_unabs]
+    y_unabs = y[mask_unabs]
+    
+    if len(x_unabs) < 2:
+        raise ValueError("Cannot fit continuum: < 2 unabsorbed points found.")
+        
+    # 2. Interpolate unabsorbed points back to the full grid
+    cont_interp = np.interp(x, x_unabs, y_unabs)
+    
+    # 3. Apply fudge factor
+    cont_interp *= fudge
+    
+    # 4. Smooth the result (V1's _gauss_convolve)
+    if smooth_std_kms > 0:
+        # Convert x-axis to km/s to get pixel size
+        x_kms = convert_axis_velocity(x * au.nm, z_rf=z_rf, target_unit=au.km/au.s).value
+        avg_dv = np.mean(np.gradient(x_kms))
+        
+        # Convert smoothing std (km/s) to pixels
+        smooth_std_pix = smooth_std_kms / avg_dv
+        
+        cont_final = gaussian_filter1d(cont_interp, smooth_std_pix)
+    else:
+        cont_final = cont_interp
+        
+    return cont_final

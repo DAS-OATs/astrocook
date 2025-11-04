@@ -503,24 +503,25 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'CONTINUUM' MENU
 
-        # "Single-Click" recipe
         auto_cont_action = QAction("&Auto-estimate Continuum...", self)
+        auto_cont_action.setToolTip("Find unabsorbed regions and fit a continuum")
         auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_auto"))
         continuum_menu.addAction(auto_cont_action)
         self.auto_cont_action = auto_cont_action; self.auto_cont_action.setEnabled(False)
 
         continuum_menu.addSeparator()
 
-        # "Building Block" recipes
         find_unabs_action = QAction("&Find Unabsorbed Regions...", self)
+        find_unabs_action.setToolTip("Create a 'mask_unabs' column using V1 'clip_flux' logic")
         find_unabs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_unabsorbed"))
         continuum_menu.addAction(find_unabs_action)
         self.find_unabs_action = find_unabs_action; self.find_unabs_action.setEnabled(False)
 
-        fit_poly_action = QAction("Fit &Polynomial to Mask...", self)
-        fit_poly_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_polynomial"))
-        continuum_menu.addAction(fit_poly_action)
-        self.fit_poly_action = fit_poly_action; self.fit_poly_action.setEnabled(False)
+        fit_cont_action = QAction("Fit &Continuum to Mask...", self)
+        fit_cont_action.setToolTip("Fit a continuum to the 'mask_unabs' column (V1 logic)")
+        fit_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_continuum"))
+        continuum_menu.addAction(fit_cont_action)
+        self.fit_cont_action = fit_cont_action; self.fit_cont_action.setEnabled(False)
 
         self._update_undo_redo_actions()
 
@@ -1506,7 +1507,7 @@ class MainWindowV2(QMainWindow):
         
         if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
-        if hasattr(self, 'fit_poly_action'): self.fit_poly_action.setEnabled(enable_recipes)
+        if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

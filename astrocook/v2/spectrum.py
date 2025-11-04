@@ -8,7 +8,7 @@ import numpy as np
 from typing import Dict, Any, Optional, Union
 
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, rebin_spectrum
+    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, rebin_spectrum
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -680,16 +680,21 @@ class SpectrumV2:
                           
         return y_new
     
-    def find_unabsorbed(self, hwindow: int, kappa: float) -> 'SpectrumV2':
+    def find_unabsorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
+                        kappa: float, template: bool) -> 'SpectrumV2':
         """
         API: Finds unabsorbed regions and adds/updates the 'mask_unabs' column.
         """
-        # 1. Call the pure function
+        # 1. Call the pure function with the new signature
         mask = find_unabsorbed_regions(
+            x=self._data.x.quantity,
             y=self._data.y.values,
             dy=self._data.dy.values,
-            hwindow=hwindow,
-            kappa=kappa
+            z_em=self._data.z_em, # Get z_em from self
+            smooth_len_lya=smooth_len_lya,
+            smooth_len_out=smooth_len_out,
+            kappa=kappa,
+            template=template
         )
         
         # 2. Create new data core
@@ -701,14 +706,15 @@ class SpectrumV2:
         )
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
-
+        
         # 3. Return new SpectrumV2
         new_history = self.history + [f"Found unabsorbed regions (kappa={kappa})"]
         return SpectrumV2(data=new_data, history=new_history)
         
-    def fit_polynomial(self, deg: int, mask_col: str = 'mask_unabs') -> 'SpectrumV2':
+    def fit_continuum(self, fudge: float, smooth_std_kms: float, 
+                      mask_col: str = 'mask_unabs') -> 'SpectrumV2':
         """
-        API: Fits a polynomial to regions specified by a mask and adds 'cont' column.
+        API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
@@ -718,32 +724,28 @@ class SpectrumV2:
         if mask.dtype.kind != 'b':
             raise TypeError(f"Mask column '{mask_col}' is not a boolean mask.")
 
-        # 2. Get unabsorbed data points
-        x_unabs = self._data.x.values[mask]
-        y_unabs = self._data.y.values[mask]
+        # 2. Call the pure "interp-and-smooth" function
+        cont_values = fit_continuum_interp(
+            x=self._data.x.values,
+            y=self._data.y.values,
+            mask_unabs=mask,
+            fudge=fudge,
+            smooth_std_kms=smooth_std_kms,
+            z_rf=self._data.z_rf # Pass z_rf for smoothing
+        )
         
-        if len(x_unabs) < deg + 1:
-            raise ValueError(f"Not enough unabsorbed points ({len(x_unabs)}) to fit polynomial of degree {deg}.")
-
-        # 3. Fit polynomial
-        coeffs = np.polyfit(x_unabs, y_unabs, deg)
-        poly = np.poly1d(coeffs)
-        
-        # 4. Evaluate continuum over the *full* grid
-        cont_values = poly(self._data.x.values)
-        
-        # 5. Create new data core
+        # 3. Create new data core
         new_aux_cols = deepcopy(self._data.aux_cols)
         new_aux_cols['cont'] = DataColumnV2(
             values=cont_values,
-            unit=self._data.y.unit, # Continuum has same unit as flux
-            description=f"Polynomial fit (deg={deg}) to '{mask_col}'"
+            unit=self._data.y.unit, 
+            description=f"Continuum fit (interp+smooth) to '{mask_col}'"
         )
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
-        # 6. Return new SpectrumV2
-        new_history = self.history + [f"Fitted continuum (deg={deg})"]
+        # 4. Return new SpectrumV2
+        new_history = self.history + [f"Fitted continuum (smooth={smooth_std_kms} km/s)"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
