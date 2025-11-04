@@ -1,6 +1,8 @@
 
 import astropy.units as au
 from copy import deepcopy
+import logging
+import numexpr as ne
 import numpy as np
 from typing import Dict, Any, Optional, Union
 
@@ -9,6 +11,14 @@ from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
 from ..v1.spectrum import Spectrum as SpectrumV1
 
+_NE_GLOBAL_DICT = {
+    'min': np.nanmin,
+    'max': np.nanmax,
+    'median': np.nanmedian,
+    'mean': np.nanmean,
+    'std': np.nanstd,
+    # numexpr *does* have: sum, prod, mean, std, min, max, log, log10, etc.
+}
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
     def __init__(self, data_dict):
@@ -298,7 +308,199 @@ class SpectrumV2:
             
         return v1_spec
     
-    # Methods implementing the API
+    def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
+        """
+        Helper to create the contexts for numexpr.
+        Returns:
+            all_cols (dict): Map of name -> Astropy Quantity (for unit logic)
+            local_dict (dict): Map of name -> numpy array (for numexpr variables)
+        """
+        all_cols = self.t._data_dict
+        # 1. Pass only the raw numpy arrays to local_dict
+        local_dict = {k: v.value for k, v in all_cols.items()}
+        
+        # 2. The functions are now passed via _NE_GLOBAL_DICT
+        
+        return all_cols, local_dict
+    
+    # --- Methods implementing the API ---
+
+    def apply_expression(self, target_col: str, expression: str, 
+                         extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
+        """
+        API: Applies a numerical expression and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get column data and the numexpr variable dict
+        all_cols, local_dict = self._get_ne_contexts()
+        
+        if extra_vars:
+            local_dict.update(extra_vars)
+
+        try:
+            # 2. Evaluate the expression
+            new_values = ne.evaluate(expression, 
+                                     global_dict=_NE_GLOBAL_DICT,  # <<< *** PASS GLOBALS ***
+                                     local_dict=local_dict)       # <<< PASS LOCALS
+        except Exception as e:
+            logging.error(f"Numexpr evaluation failed for expression: '{expression}'")
+            raise e # Re-raise for the recipe to catch
+
+        # 3. Determine the unit for the new column
+        target_unit = au.dimensionless_unscaled
+        
+        # If the result is a scalar (e.g., from median(y)),
+        # we must broadcast it to the shape of the spectrum
+        if not hasattr(new_values, "shape") or new_values.shape == ():
+            logging.debug("Expression result is a scalar, broadcasting to array.")
+            # Use shape of 'x' as the reference
+            new_values = np.full(self._data.x.values.shape, new_values)
+
+        if target_col in all_cols:
+            target_unit = all_cols[target_col].unit
+            logging.debug(f"Expression result will inherit unit '{target_unit}' from target '{target_col}'")
+        else:
+            logging.debug(f"Expression result for new column '{target_col}' will be dimensionless.")
+
+        # 4. Create new SpectrumDataV2 using the immutable pattern
+        core_cols = {
+            'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
+            'y': self._data.y, 'dy': self._data.dy
+        }
+        aux_cols = deepcopy(self._data.aux_cols)
+
+        # 5. Create the new DataColumnV2
+        new_data_col = DataColumnV2(new_values, target_unit)
+
+        # 6. Overwrite or add the target column
+        if target_col in core_cols:
+            core_cols[target_col] = new_data_col
+        else:
+            aux_cols[target_col] = new_data_col
+
+        # 7. Create the new data core
+        new_data_core = SpectrumDataV2(
+            x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
+            y=core_cols['y'], dy=core_cols['dy'],
+            aux_cols=aux_cols,
+            meta=deepcopy(self._data.meta),
+            rf_z=self._data.rf_z
+        )
+
+        # 8. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Apply: {target_col} = {expression}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+
+    def mask_expression(self, target_col: str, expression: str, 
+                        extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
+        """
+        API: Masks a column based on a boolean expression and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get column data and the numexpr variable dict
+        all_cols, local_dict = self._get_ne_contexts()
+        
+        if extra_vars:
+            local_dict.update(extra_vars)
+
+        # 2. Check that target column exists
+        if target_col not in all_cols: 
+            raise ValueError(f"Target column '{target_col}' not found.")
+            
+        target_q = all_cols[target_col]
+
+        try:
+            # 3. Evaluate the boolean expression to get the mask
+            mask_indices = ne.evaluate(expression, 
+                                       global_dict=_NE_GLOBAL_DICT,  # <<< *** PASS GLOBALS ***
+                                       local_dict=local_dict)       # <<< PASS LOCALS
+            if mask_indices.dtype != bool:
+                raise TypeError("Mask expression did not return a boolean array.")
+        except Exception as e:
+            logging.error(f"Numexpr evaluation failed for mask expression: '{expression}'")
+            raise e # Re-raise for the recipe to catch
+            
+        # ... (rest of the method is unchanged) ...
+        # 4. Create new data array
+        new_values = target_q.value.copy()
+        new_values[mask_indices] = np.nan
+        new_data_col = DataColumnV2(new_values, target_q.unit)
+
+        # 5. Create new SpectrumDataV2 using the immutable pattern
+        core_cols = {
+            'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
+            'y': self._data.y, 'dy': self._data.dy
+        }
+        aux_cols = deepcopy(self._data.aux_cols) 
+
+        # 6. Overwrite the target column
+        if target_col in core_cols:
+            core_cols[target_col] = new_data_col
+        elif target_col in aux_cols:
+            aux_cols[target_col] = new_data_col
+
+        # 7. Create the new data core
+        new_data_core = SpectrumDataV2(
+            x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
+            y=core_cols['y'], dy=core_cols['dy'],
+            aux_cols=aux_cols,
+            meta=deepcopy(self._data.meta),
+            rf_z=self._data.rf_z
+        )
+
+        # 8. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Mask: {target_col} where {expression}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+
+    def split(self, col_check: str, min_val: float, max_val: float) -> 'SpectrumV2':
+        """
+        API: Extracts a slice of the spectrum and returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Get all data columns
+        all_cols = self.t._data_dict
+        if col_check not in all_cols: raise ValueError(f"Check column '{col_check}' not found.")
+        
+        check_q = all_cols[col_check]
+        
+        # 2. Find indices for the slice
+        # This assumes the check column is sorted (like 'x')
+        idx_start = np.searchsorted(check_q.value, min_val, side='left')
+        idx_end = np.searchsorted(check_q.value, max_val, side='right')
+        
+        if idx_start >= idx_end:
+            raise ValueError("Split range resulted in an empty spectrum.")
+            
+        data_slice = slice(idx_start, idx_end)
+
+        # 3. Create a new data core by slicing all columns
+        # We can use the TableAdapterV2's slicing capability
+        
+        # Create a new dictionary to hold the sliced data
+        new_data_cols_dict = {}
+        
+        # Iterate through all columns and apply the slice
+        for col_name, quantity in all_cols.items():
+            new_values = quantity.value[data_slice]
+            new_unit = quantity.unit
+            new_data_cols_dict[col_name] = DataColumnV2(new_values, new_unit)
+
+        # 4. Build new SpectrumDataV2
+        new_data_core = SpectrumDataV2(
+            x=new_data_cols_dict.pop('x'),
+            xmin=new_data_cols_dict.pop('xmin'),
+            xmax=new_data_cols_dict.pop('xmax'),
+            y=new_data_cols_dict.pop('y'),
+            dy=new_data_cols_dict.pop('dy'),
+            aux_cols=new_data_cols_dict, # Remaining items are aux_cols
+            meta=deepcopy(self._data.meta), 
+            rf_z=self._data.rf_z 
+        )
+        
+        # 5. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+    
 
     def rebin(self, xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float], 
@@ -347,6 +549,74 @@ class SpectrumV2:
         # 3. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return SpectrumV2(data=new_data, history=new_history)
+
+    def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
+                         fill_value: float = np.nan) -> 'SpectrumV2':
+        # ... (this method is unchanged, it correctly resamples *everything*) ...
+        x_old = self.x.to_value(au.nm)
+        x_new = target_grid_spec.x.to_value(au.nm)
+        all_cols_old = self.t._data_dict
+        x_col = DataColumnV2(x_new, target_grid_spec.x.unit)
+        xmin_col = DataColumnV2(target_grid_spec.xmin.value, target_grid_spec.xmin.unit)
+        xmax_col = DataColumnV2(target_grid_spec.xmax.value, target_grid_spec.xmax.unit)
+        y_col_new = None
+        dy_col_new = None
+        aux_cols_new = {}
+        for name, col_q in all_cols_old.items():
+            if name in ('x', 'xmin', 'xmax'):
+                continue
+            if col_q.dtype.kind in 'fiu': 
+                logging.debug(f"Resampling column '{name}'...")
+                y_interp = np.interp(x_new, x_old, col_q.value,
+                                     left=fill_value, right=fill_value)
+                new_data_col = DataColumnV2(y_interp, col_q.unit)
+                if name == 'y':
+                    y_col_new = new_data_col
+                elif name == 'dy':
+                    dy_col_new = new_data_col
+                else:
+                    aux_cols_new[name] = new_data_col
+            else:
+                logging.warning(f"Cannot resample non-numerical column '{name}', it will be dropped.")
+        new_data_core = SpectrumDataV2(
+            x=x_col, xmin=xmin_col, xmax=xmax_col, 
+            y=y_col_new, 
+            dy=dy_col_new, 
+            aux_cols=aux_cols_new, 
+            meta=deepcopy(self.meta),
+            rf_z=self._data.rf_z
+        )
+        new_history = self.history + [f"Resampled on grid of '{target_grid_spec.meta.get('name', 'unnamed')}'"]
+        return SpectrumV2(data=new_data_core, history=new_history)
+
+    def get_resampled_column(self, col_name: str, 
+                             target_x_grid: np.ndarray, 
+                             fill_value: float = np.nan) -> np.ndarray:
+        """
+        Lightweight API to interpolate a single column onto a new x-grid.
+        Assumes target_x_grid is already in 'nm'.
+        """
+        all_cols = self.t._data_dict
+        
+        # 1. Get column to interpolate
+        if col_name not in all_cols:
+            raise ValueError(f"Column '{col_name}' not found in spectrum '{self.name}'.")
+        
+        col_to_interp = all_cols[col_name]
+        
+        # 2. Check that it's numerical
+        if col_to_interp.dtype.kind not in 'fiu':
+            raise TypeError(f"Cannot resample non-numerical column '{col_name}'.")
+            
+        # 3. Get old grid (must be in nm)
+        x_old = self.x.to_value(au.nm)
+        y_old = col_to_interp.value
+        
+        # 4. Perform interpolation (target_x_grid is already in nm)
+        y_new = np.interp(target_x_grid, x_old, y_old,
+                          left=fill_value, right=fill_value)
+                          
+        return y_new
 
     def x_convert(self, zem: float, xunit: au.Unit) -> 'SpectrumV2':
         """

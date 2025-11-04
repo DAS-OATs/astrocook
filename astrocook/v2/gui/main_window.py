@@ -24,7 +24,7 @@ from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file, LogManager
 from ..structures import HistoryLogV2, V1LogArtifact
-from ..utils import guarded_deepcopy_v1_state
+from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe # Import recipe helpers
 from ...v1.gui_log import GUILog
 from ...v1.defaults import Defaults
 try:
@@ -448,17 +448,26 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'EDIT' MENU (x_convert, y_convert)
         
-        # x_convert Action
-        x_convert_action = QAction("Convert &X Axis...", self)
-        x_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "x_convert"))
-        edit_menu.addAction(x_convert_action)
-        self.x_convert_action = x_convert_action; x_convert_action.setEnabled(False)
+        # apply_expression Action
+        apply_expr_action = QAction("Apply &Expression...", self)
+        apply_expr_action.setToolTip("Apply a numerical expression to columns (e.g., 'y / 2.0')")
+        apply_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "apply_expression"))
+        edit_menu.addAction(apply_expr_action)
+        self.apply_expression_action = apply_expr_action; self.apply_expression_action.setEnabled(False)
+        
+        # mask_expression Action
+        mask_expr_action = QAction("&Mask by Expression...", self)
+        mask_expr_action.setToolTip("Mask a column using a boolean expression (e.g., 'x < 300')")
+        mask_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "mask_expression"))
+        edit_menu.addAction(mask_expr_action)
+        self.mask_expression_action = mask_expr_action; self.mask_expression_action.setEnabled(False)
 
-        # y_convert Action
-        y_convert_action = QAction("Convert &Y Axis...", self)
-        y_convert_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "y_convert"))
-        edit_menu.addAction(y_convert_action)
-        self.y_convert_action = y_convert_action; y_convert_action.setEnabled(False)
+        # split Action
+        split_action = QAction("S&plit Spectrum...", self)
+        split_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "split"))
+        edit_menu.addAction(split_action)
+        self.split_action = split_action; split_action.setEnabled(False)
+        # --- *** END NEW RECIPES *** ---
 
         # RECIPES FOR 'FLUX' MENU (rebin)
         
@@ -478,12 +487,14 @@ class MainWindowV2(QMainWindow):
             self.active_recipe_dialog.activateWindow()
             return
         
-        if not self.session_manager or not self.session_manager.spec:
+        # ** Get current state from the *active history manager* **
+        if not self.active_history or not self.active_history.current_state.spec:
             QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
             return
 
         logging.info(f"Launching dialog for recipe: {category}.{name}")
         
+        # ** Pass the active history's *current state* to the dialog **
         current_state = self.active_history.current_state
 
         # 1. Use parent=None. This fixes the sidebar event bug.
@@ -498,6 +509,8 @@ class MainWindowV2(QMainWindow):
 
         if result == QDialog.Accepted:
             logging.debug(f"Recipe dialog {name} accepted.")
+            # Note: The dialog's accept() method now handles
+            # calling self.update_gui_session_state()
         else:
             logging.debug(f"Recipe dialog {name} cancelled.")
 
@@ -713,14 +726,18 @@ class MainWindowV2(QMainWindow):
         if not isinstance(new_session, SessionV2):
             logging.error("update_gui_session_state received invalid session.")
             return
-        if self.active_history is None:
+            
+        # ** Use the active_history as the target for the update **
+        target_history = self.active_history
+        
+        if target_history is None:
             logging.error("Cannot update state: No active session history.")
             return # Should not happen if a session is loaded
 
         if is_branching:
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and create a V1-safe deep copy
-            source_log_manager = self.active_history.log_manager
+            source_log_manager = target_history.log_manager
             new_log_copy = guarded_deepcopy_v1_state(source_log_manager)
 
             if new_log_copy is None:
@@ -730,21 +747,74 @@ class MainWindowV2(QMainWindow):
 
             # 2. Update the new state from the recipe to point to the *new* log
             new_session.log_manager = new_log_copy
+            
+            # ** FIX: The new state's .log attribute also needs the *new* log object **
+            if isinstance(new_log_copy, GUILog):
+                new_session.log = new_log_copy
+            elif isinstance(new_log_copy, V1LogArtifact):
+                 # Create a *new* GUILog stub populated from the V1 artifact
+                 new_session.log = GUILog(self.mock_gui_context)
+                 try: new_session.log.str = json.dumps(new_log_copy.v1_json)
+                 except Exception: pass
+            else: # It's a HistoryLogV2
+                 # We still need a V1 .log stub for V1 recipes
+                 new_session.log = GUILog(self.mock_gui_context)
+
 
             # 3. Create the new history manager
-            initial_state_for_branch = self.active_history.states[0]
-            new_history = SessionHistory(initial_state_for_branch, new_log_copy)
-
-            # 4. Copy the *rest* of the states, re-linking their log reference
-            other_states_to_copy = self.active_history.states[1:self.active_history.current_index + 1]
-            for state in other_states_to_copy:
-                state.log_manager = new_log_copy # Re-link to the new log
+            # ** FIX: The new branch *name* should be distinct **
+            # We can get the base name from the original state
+            base_name = target_history.states[0].name
+            # Find a unique name (e.g., "Session-1", "Session-2")
+            i = 1
+            new_branch_name = f"{base_name}-{i}"
+            existing_names = [h.display_name for h in self.session_histories]
+            while new_branch_name in existing_names:
+                i += 1
+                new_branch_name = f"{base_name}-{i}"
             
-            # 5. Manually set the full state list for the new history
-            new_history.states.extend(other_states_to_copy) # Add the re-linked states
-            new_history.current_index = self.active_history.current_index # Set index to match
+            # ** FIX: The *new* session state needs the *new* name **
+            new_session.name = new_branch_name
+            
+            # ** Get a copy of the *initial* state to start the branch **
+            # We must copy it so we can change its name and log links
+            initial_state_for_branch = target_history.states[0]
+            
+            # We need a *full copy* of the session state, not just a reference
+            # Let's try using the .with_new_spectrum() trick
+            initial_state_copy = initial_state_for_branch.with_new_spectrum(
+                initial_state_for_branch.spec
+            )
+            # And copy the systs list too
+            initial_state_copy = initial_state_copy.with_new_system_list(
+                initial_state_for_branch.systs
+            )
 
-            # 6. Add the *new* state from the recipe to this *new* history
+            initial_state_copy.name = new_branch_name
+            initial_state_copy.log_manager = new_log_copy
+            initial_state_copy.log = new_session.log # Use the new log stub
+
+            # 4. Create the new history manager with the *copied* initial state
+            new_history = SessionHistory(initial_state_copy, new_log_copy)
+
+            # 5. Copy the *rest* of the states, re-linking their log reference
+            # We must copy *all* intermediate states
+            other_states_to_copy = []
+            for state in target_history.states[1:target_history.current_index + 1]:
+                # Create a copy of each state
+                state_copy = state.with_new_spectrum(state.spec)
+                state_copy = state_copy.with_new_system_list(state.systs)
+                
+                state_copy.name = new_branch_name # Ensure name consistency
+                state_copy.log_manager = new_log_copy # Re-link to the new log
+                state_copy.log = new_session.log # Re-link V1 stub
+                other_states_to_copy.append(state_copy)
+            
+            # 6. Manually set the full state list for the new history
+            new_history.states.extend(other_states_to_copy) # Add the re-linked states
+            new_history.current_index = target_history.current_index # Set index to match
+
+            # 7. Add the *new* state from the recipe to this *new* history
             new_history.add_state(new_session) # This correctly handles truncation and index update
 
             # Add the new history manager to the main list
@@ -759,21 +829,21 @@ class MainWindowV2(QMainWindow):
         else: # Linear update
             logging.debug(f"Linear update: Adding state to active SessionHistory.")
             # Add state to the *current* history manager
-            self.active_history.add_state(new_session) # Handles truncation and index update
+            target_history.add_state(new_session) # Handles truncation and index update
             # Update the name in the sidebar model *if* the active history corresponds to the last item
             # (This keeps the name updated for the current linear path)
             # Refresh the log viewer if it's open
-            if self.active_history in self.open_log_viewers:
+            if target_history in self.open_log_viewers:
                 try:
-                    self.open_log_viewers[self.active_history].refresh()
+                    self.open_log_viewers[target_history].refresh()
                 except Exception as e:
                     logging.error(f"Failed to refresh log viewer: {e}")
             try:
-                active_list_index = self.session_histories.index(self.active_history)
-                self.session_model.setData(self.session_model.index(active_list_index), self.active_history.display_name) # Update name if needed
+                active_list_index = self.session_histories.index(target_history)
+                self.session_model.setData(self.session_model.index(active_list_index), target_history.display_name) # Update name if needed
             except (ValueError, IndexError): pass
             # Update view for the new state in the current history
-            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True) # List item selection doesn't change
+            self._update_view_for_session(target_history.current_state, set_current_list_item=True) # List item selection doesn't change
 
         self._update_undo_redo_actions()
     
@@ -788,6 +858,7 @@ class MainWindowV2(QMainWindow):
         
         # 2. Manually set the V1 stubs (log and defs) on the new session
         #    This is required for recipes to run
+        new_session._gui = self
         new_session.log = GUILog(self.mock_gui_context)
         new_session.defs = Defaults(self.mock_gui_context)
         
@@ -826,7 +897,24 @@ class MainWindowV2(QMainWindow):
         # reset it to "nm" when a new session is shown, or leave it as is.
         # Let's leave it as is, the plot function will just obey it.
         # We DO need to reset the Normalize/Log toggles to their defaults.
+        
+        # ** FIX: Only reset toggles if the *history* object changed **
+        # Check if the session_state_to_show belongs to the same history as the plot
+        # (This is tricky. Let's just reset if it's a *new* session state)
+        # We need a better way to track "view preferences" per session.
+        # For now, let's reset them *unless* it's an undo/redo.
+        
+        # Let's simplify: _update_view_for_session is called for *any*
+        # view change. We *should* reset the toggles unless we store
+        # the view state somewhere.
+        
         if is_valid:
+            # Check if the plot viewer's *current* session matches the *new* one
+            # If they match, it's just a replot, don't reset toggles.
+            # (This check is imperfect, plot_viewer doesn't store session)
+            
+            # Let's stick to the previous logic: always reset view toggles
+            # when showing a state, as we don't persist view preferences.
             self.norm_y_checkbox.blockSignals(True)
             self.log_x_checkbox.blockSignals(True)
             self.log_y_checkbox.blockSignals(True)
@@ -1246,9 +1334,14 @@ class MainWindowV2(QMainWindow):
         # ** Enable/Disable Recipe Actions **
         enable_recipes = is_valid_session
         # Check if actions exist before enabling/disabling
-        if hasattr(self, 'x_convert_action'): self.x_convert_action.setEnabled(enable_recipes)
-        if hasattr(self, 'y_convert_action'): self.y_convert_action.setEnabled(enable_recipes)
+        if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
+        if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
+        if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
+        
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
+        
+        # --- *** END NEW RECIPES *** ---
+        
         # ... enable/disable other recipe actions ...
 
         # Enable Save action only if valid session
