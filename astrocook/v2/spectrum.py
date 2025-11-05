@@ -8,7 +8,7 @@ import numpy as np
 from typing import Dict, Any, Optional, Union
 
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, rebin_spectrum
+    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, smooth_spectrum, rebin_spectrum
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -528,6 +528,122 @@ class SpectrumV2:
         new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
         return SpectrumV2(data=new_data_core, history=new_history)
     
+    def smooth(self, sigma_kms: float) -> 'SpectrumV2':
+        """
+        API: Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).
+        Returns a NEW SpectrumV2 instance.
+        """
+        
+        # 1. Smooth the core y and dy columns
+        new_y_values = smooth_spectrum(
+            x=self._data.x.quantity,
+            y=self._data.y.values,
+            sigma_kms=sigma_kms,
+            z_rf=self._data.z_rf
+        )
+        new_y_col = DataColumnV2(new_y_values, self._data.y.unit, "Smoothed Flux")
+
+        new_dy_values = smooth_spectrum(
+            x=self._data.x.quantity,
+            y=self._data.dy.values,
+            sigma_kms=sigma_kms,
+            z_rf=self._data.z_rf
+        )
+        new_dy_col = DataColumnV2(new_dy_values, self._data.dy.unit, "Smoothed Error")
+
+        # 2. Smooth flux-like auxiliary columns
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        cols_to_smooth = ['cont', 'model', 'telluric_model']
+        
+        for col_name in cols_to_smooth:
+            if col_name in new_aux_cols:
+                try:
+                    old_col = new_aux_cols[col_name]
+                    # Check if it's a numerical column
+                    if old_col.values.dtype.kind in 'fiu':
+                        logging.debug(f"Smoothing auxiliary column: {col_name}")
+                        new_vals = smooth_spectrum(
+                            self._data.x.quantity,
+                            old_col.values,
+                            sigma_kms,
+                            self._data.z_rf
+                        )
+                        # Replace it in the dictionary
+                        new_aux_cols[col_name] = DataColumnV2(
+                            new_vals, old_col.unit, old_col.description
+                        )
+                except Exception as e:
+                    logging.warning(f"Failed to smooth aux col '{col_name}': {e}")
+
+        # 3. Create new SpectrumDataV2 using dataclasses.replace
+        new_data = dataclasses.replace(
+            self._data, 
+            y=new_y_col, 
+            dy=new_dy_col, 
+            aux_cols=new_aux_cols
+        )
+        
+        # 4. Return new SpectrumV2
+        new_history = self.history + [f"Smoothed spectrum (sigma={sigma_kms} km/s)"]
+        return SpectrumV2(data=new_data, history=new_history)
+
+    def smooth_column(self, target_col: str, sigma_kms: float) -> 'SpectrumV2':
+        """
+        API: Applies Gaussian smoothing to a single target column.
+        Returns a NEW SpectrumV2 instance.
+        """
+        all_cols = self.t._data_dict
+        
+        # 1. Find the target column
+        if target_col not in all_cols:
+            raise ValueError(f"Target column '{target_col}' not found.")
+            
+        old_col_data = all_cols[target_col]
+        
+        # 2. Check if it's numerical
+        if old_col_data.dtype.kind not in 'fiu':
+            raise TypeError(f"Cannot smooth non-numerical column '{target_col}'.")
+
+        # 3. Call the pure function
+        new_values = smooth_spectrum(
+            x=self._data.x.quantity,
+            y=old_col_data.value,
+            sigma_kms=sigma_kms,
+            z_rf=self._data.z_rf
+        )
+        
+        new_data_col = DataColumnV2(
+            values=new_values,
+            unit=old_col_data.unit,
+            description=f"Smoothed {target_col}"
+        )
+        
+        # 4. Create new SpectrumDataV2 using the immutable pattern
+        core_cols = {
+            'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
+            'y': self._data.y, 'dy': self._data.dy
+        }
+        aux_cols = deepcopy(self._data.aux_cols) 
+
+        # 5. Overwrite the target column
+        if target_col in core_cols:
+            core_cols[target_col] = new_data_col
+        elif target_col in aux_cols:
+            aux_cols[target_col] = new_data_col
+
+        # 6. Create the new data core
+        new_data_core = SpectrumDataV2(
+            x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
+            y=core_cols['y'], dy=core_cols['dy'],
+            aux_cols=aux_cols,
+            meta=deepcopy(self._data.meta),
+            z_rf=self._data.z_rf,
+            z_em=self._data.z_em
+        )
+
+        # 7. Return a NEW SpectrumV2 instance
+        new_history = self.history + [f"Smoothed column: {target_col} (sigma={sigma_kms} km/s)"]
+        return SpectrumV2(data=new_data_core, history=new_history)
 
     def rebin(self, xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float], 

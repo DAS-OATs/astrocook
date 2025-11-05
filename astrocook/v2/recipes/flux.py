@@ -12,6 +12,14 @@ if TYPE_CHECKING:
     from ..session import SessionV2 
 
 FLUX_RECIPES_SCHEMAS = {
+    "smooth": {
+        "brief": "Smooth spectrum.",
+        "details": "Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.",
+        "params": [
+            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"}
+        ],
+        "url": "edit_cb.html#smooth" # Placeholder URL
+    },
     "rebin": {
         "brief": "Rebin spectrum.",
         "details": "Apply a new binning to a spectrum, with a constant bin size.",
@@ -53,6 +61,29 @@ class RecipeFluxV2:
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
+
+    def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
+        """
+        API: Applies Gaussian smoothing to the spectrum.
+        """
+        try:
+            sigma_kms_f = float(sigma_kms)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        try:
+            # 1. Call the immutable V2 operation
+            new_spec_v2 = self._session.spec.smooth(
+                sigma_kms=sigma_kms_f
+            )
+            
+            # 2. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+            
+        except Exception as e:
+            logging.error(f"Failed during smooth: {e}", exc_info=True)
+            return 0
 
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
               kappa: str = '5.0', filling: str = 'nan', norm: str = 'False') -> 'SessionV2':

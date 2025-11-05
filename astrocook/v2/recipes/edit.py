@@ -55,6 +55,15 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
+    "smooth_column": {
+        "brief": "Smooth a single column.",
+        "details": "Apply a Gaussian filter to a single data column (e.g., 'dy' or 'snr').",
+        "params": [
+            {"name": "target_col", "type": str, "default": "dy", "doc": "Target column to smooth"},
+            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"}
+        ],
+        "url": "edit_cb.html#smooth_column" # Placeholder URL
+    },
     "split": {
         "brief": "Split spectrum by range.",
         "details": "Extract a portion of the spectrum into a new, separate session.",
@@ -275,6 +284,30 @@ class RecipeEditV2:
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logging.error(f"Failed during mask_expression: {e}", exc_info=True)
+            return 0
+
+    def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0') -> 'SessionV2':
+        """
+        API: Applies Gaussian smoothing to a single column.
+        """
+        try:
+            sigma_kms_f = float(sigma_kms)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+            
+        try:
+            # 1. Call the immutable V2 operation
+            new_spec_v2 = self._session.spec.smooth_column(
+                target_col=target_col,
+                sigma_kms=sigma_kms_f
+            )
+            
+            # 2. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+            
+        except Exception as e:
+            logging.error(f"Failed during smooth_column: {e}", exc_info=True)
             return 0
 
     def split(self, col_check: str, min_val: str, max_val: str) -> 'SessionV2':

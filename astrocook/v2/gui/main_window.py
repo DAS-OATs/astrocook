@@ -538,6 +538,15 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(mask_expr_action)
         self.mask_expression_action = mask_expr_action; self.mask_expression_action.setEnabled(False)
 
+        # smooth_column Action
+        smooth_col_action = QAction("Smooth &Column...", self)
+        smooth_col_action.setToolTip("Apply Gaussian smoothing to a single column")
+        smooth_col_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "smooth_column"))
+        edit_menu.addAction(smooth_col_action)
+        self.smooth_column_action = smooth_col_action; self.smooth_column_action.setEnabled(False)
+
+        edit_menu.addSeparator()
+
         # split Action
         split_action = QAction("S&plit Spectrum...", self)
         split_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "split"))
@@ -546,6 +555,13 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'FLUX' MENU
         
+        # smooth Action
+        smooth_action = QAction("&Smooth Spectrum...", self)
+        smooth_action.setToolTip("Apply Gaussian smoothing to the flux")
+        smooth_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "smooth"))
+        flux_menu.addAction(smooth_action)
+        self.smooth_action = smooth_action; self.smooth_action.setEnabled(False)
+
         # rebin Action
         rebin_action = QAction("&Rebin Spectrum...", self)
         rebin_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "rebin"))
@@ -1785,8 +1801,10 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'set_properties_action'): self.set_properties_action.setEnabled(enable_recipes)
         if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
+        if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         
+        if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
         

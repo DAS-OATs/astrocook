@@ -111,6 +111,38 @@ def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit) -> Tuple[DataColum
 
     return new_y, new_dy, new_aux_cols
 
+def smooth_spectrum(
+    x: au.Quantity,
+    y: np.ndarray,
+    sigma_kms: float, # std in km/s
+    z_rf: float = 0.0
+) -> np.ndarray:
+    """
+    Smooths a flux array using a Gaussian filter with a given std in km/s.
+    """
+    
+    # 1. Smooth the result (V1's _gauss_convolve logic)
+    if sigma_kms > 0:
+        # 2. Convert x-axis to km/s to get pixel size
+        try:
+            # We need the x-axis as a Quantity to convert it
+            x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+            avg_dv = np.mean(np.gradient(x_kms))
+            
+            # 3. Convert smoothing std (km/s) to pixels
+            smooth_std_pix = sigma_kms / avg_dv
+            
+            # 4. Apply the filter
+            y_final = gaussian_filter1d(y, smooth_std_pix)
+        except Exception as e:
+            logging.error(f"Failed to calculate smoothing in km/s: {e}. Returning unsmoothed array.")
+            return y
+    else:
+        # No smoothing requested
+        y_final = y
+        
+    return y_final
+
 def rebin_spectrum(
         x_in: au.Quantity, xmin_in: au.Quantity, xmax_in: au.Quantity,
         spec_data: SpectrumDataV2, # Still pass the full data for y/dy/aux_cols
