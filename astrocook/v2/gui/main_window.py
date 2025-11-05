@@ -1551,7 +1551,7 @@ class MainWindowV2(QMainWindow):
 
             # 2. Update the GUI state
             original_history_index = self.session_histories.index(self.active_history)
-            branching = is_branching_recipe(recipe_name) or recipe_name == 'resample'
+            branching = is_branching_recipe(recipe_name) #or recipe_name == 'resample'
             
             self.update_gui_session_state(
                 new_session_state,
