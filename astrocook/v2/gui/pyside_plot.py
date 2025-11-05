@@ -325,7 +325,7 @@ class SpectrumPlotWidget(QWidget):
         self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
 
     # --- Refactored Plotting Method (Requires an update) ---
-    def plot_spectrum(self, session_state: Optional['SessionV2'], initial_draw=False):
+    def plot_spectrum(self, session_state: Optional['SessionV2'], initial_draw=False, force_autoscale: bool = False):
         """
         Retrieves data from the immutable V2 Session and plots it.
         """
@@ -377,13 +377,17 @@ class SpectrumPlotWidget(QWidget):
         previous_xlim = ax.get_xlim()
         previous_ylim = ax.get_ylim()
         #if previous_ylim == (-0.3, 1.3): previous_ylim = (0.0, 1.0) # Normalize special case
-        was_zoomed = False
-        try: 
-            if previous_xlim != (0.0, 1.0) or previous_ylim != (0.0, 1.0):
-                if all(isinstance(v,(int,float)) for v in previous_xlim+previous_ylim) and \
-                    previous_xlim[0] != previous_xlim[1] and previous_ylim[0] != previous_ylim[1]:
-                    was_zoomed = True
-        except Exception: pass # Ignore if axes not ready
+        if force_autoscale:
+            was_zoomed = False
+            logging.debug("Home button pressed: Forcing autoscale.")
+        else:
+            was_zoomed = False
+            try: 
+                if previous_xlim != (0.0, 1.0) or previous_ylim != (0.0, 1.0):
+                    if all(isinstance(v,(int,float)) for v in previous_xlim+previous_ylim) and \
+                        previous_xlim[0] != previous_xlim[1] and previous_ylim[0] != previous_ylim[1]:
+                        was_zoomed = True
+            except Exception: pass # Ignore if axes not ready
         
         ax.clear() # Now clear axes
 
@@ -730,7 +734,7 @@ class SpectrumPlotWidget(QWidget):
             
             # --- X Limits ---
             # Priority: Autoscale if requested (e.g., by unit change)
-            if was_zoomed:
+            if was_zoomed and not force_autoscale:
                 logging.debug(f"Restoring previous X zoom: {previous_xlim}")
                 ax.set_xlim(previous_xlim)
             # Else (initial draw or zoomed out), let Matplotlib autoscale
@@ -746,7 +750,7 @@ class SpectrumPlotWidget(QWidget):
                 else:
                     logging.debug("Normalization toggled OFF: Autoscaling Y.")
                     ax.autoscale(enable=True, axis='y')
-            elif was_zoomed:
+            elif was_zoomed and not force_autoscale:
                 logging.debug(f"Restoring previous Y zoom: {previous_ylim}")
                 ax.set_ylim(previous_ylim)
             # Else (initial draw or zoomed out), let Matplotlib autoscale
@@ -772,6 +776,11 @@ class SpectrumPlotWidget(QWidget):
 
         # NOTE: You must update the self.session reference here if the session changes.
         # This function will be called by update_plot().
+
+        # Update the limit boxes in the main window *after* plot is drawn
+        if self.main_window:
+            # Schedule this to run just after the draw completes
+            QTimer.singleShot(0, self.main_window._update_limit_boxes_from_plot)
 
     def get_cursor_line_positions_at_z(self, session_state: 'SessionV2', z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
@@ -836,6 +845,25 @@ class AstrocookToolbar(NavigationToolbar):
         for action in self.actions():
             if action.text() in actions_to_remove or action.iconText() in actions_to_remove:
                 self.removeAction(action)
+
+    def home(self):
+        """ Overrides the default 'home' to reset to the *current*
+            data state, respecting normalization.
+        """
+        logging.debug("Custom 'Home' button pressed.")
+        if self.viewer_parent and self.viewer_parent.main_window:
+            session_state = None
+            if self.viewer_parent.main_window.active_history:
+                session_state = self.viewer_parent.main_window.active_history.current_state
+            
+            # Call our plot function with the new flag
+            self.viewer_parent.plot_spectrum(
+                session_state=session_state,
+                force_autoscale=True
+            )
+        else:
+            # Fallback to original behavior
+            super().home()
 
 
 # --- Utility Function to Launch the Viewer for Testing ---

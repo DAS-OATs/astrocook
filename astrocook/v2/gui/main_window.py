@@ -315,6 +315,49 @@ class MainWindowV2(QMainWindow):
         self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
 
+        # --- *** NEW: Axis Limit Controls *** ---
+        limits_layout = QVBoxLayout()
+        limits_layout.setSpacing(8)
+        limits_layout.addWidget(QLabel("<b>Axis Limits:</b>"))
+
+        # Use QFormLayout for label-input pairs
+        form_layout_limits = QFormLayout()
+        form_layout_limits.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        form_layout_limits.setLabelAlignment(Qt.AlignLeft)
+        form_layout_limits.setSpacing(5)
+
+        # Create validators (use C locale for decimal points)
+        validator = QDoubleValidator()
+        validator.setLocale(QLocale.C)
+        validator.setNotation(QDoubleValidator.StandardNotation)
+
+        self.xmin_input = QLineEdit("0.0")
+        self.xmin_input.setValidator(validator)
+        self.xmax_input = QLineEdit("1.0")
+        self.xmax_input.setValidator(validator)
+        self.ymin_input = QLineEdit("0.0")
+        self.ymin_input.setValidator(validator)
+        self.ymax_input = QLineEdit("1.0")
+        self.ymax_input.setValidator(validator)
+
+        self.xmin_input.editingFinished.connect(self._on_set_custom_limits)
+        self.xmax_input.editingFinished.connect(self._on_set_custom_limits)
+        self.ymin_input.editingFinished.connect(self._on_set_custom_limits)
+        self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
+        
+        form_layout_limits.addRow("X Min:", self.xmin_input)
+        form_layout_limits.addRow("X Max:", self.xmax_input)
+        form_layout_limits.addRow("Y Min:", self.ymin_input)
+        form_layout_limits.addRow("Y Max:", self.ymax_input)
+        
+        limits_layout.addLayout(form_layout_limits)
+
+        #self.set_limits_button = QPushButton("Set Custom Limits")
+        #self.set_limits_button.clicked.connect(self._on_set_custom_limits)
+        #limits_layout.addWidget(self.set_limits_button)
+        
+        sidebar_layout.addLayout(limits_layout)
+
         # --- Redshift Cursor Controls ---
         cursor_layout = QVBoxLayout() # Group cursor controls
         cursor_layout.setSpacing(8)
@@ -538,6 +581,84 @@ class MainWindowV2(QMainWindow):
         self.fit_cont_action = fit_cont_action; self.fit_cont_action.setEnabled(False)
 
         self._update_undo_redo_actions()
+
+    def _on_set_custom_limits(self):
+        """ Reads values from limit boxes and applies them to the plot. """
+        if not self.plot_viewer:
+            return
+            
+        try:
+            # Read values as-typed (they are in display units)
+            display_xmin = float(self.xmin_input.text())
+            display_xmax = float(self.xmax_input.text())
+            ymin = float(self.ymin_input.text())
+            ymax = float(self.ymax_input.text())
+        except ValueError:
+            logging.warning("Invalid custom limit values entered.")
+            return # Ignore if values are not valid floats
+            
+        selected_unit = self.x_unit_combo.currentText()
+        
+        if selected_unit == 'Angstrom':
+            xmin_nm = display_xmin / 10.0
+            xmax_nm = display_xmax / 10.0
+        elif selected_unit == 'micron':
+            xmin_nm = display_xmin * 1000.0
+            xmax_nm = display_xmax * 1000.0
+        else: # 'nm'
+            xmin_nm = display_xmin
+            xmax_nm = display_xmax
+
+        if xmax_nm <= xmin_nm or ymax <= ymin:
+            logging.warning("Invalid custom limit range (max <= min).")
+            return
+
+        # Set limits on the Matplotlib axes
+        # This will automatically trigger the 'on_lim_changed' callback
+        # in pyside_plot.py, which schedules a new plot_spectrum draw.
+        self.plot_viewer.canvas.axes.set_xlim(xmin_nm, xmax_nm)
+        self.plot_viewer.canvas.axes.set_ylim(ymin, ymax)
+
+    def _update_limit_boxes_from_plot(self):
+        """ Updates the limit text boxes with the plot's current limits. """
+        if not self.plot_viewer:
+            return
+            
+        try:
+            xlim_nm = self.plot_viewer.canvas.axes.get_xlim() # These are always in nm
+            ylim_plot = self.plot_viewer.canvas.axes.get_ylim()
+            
+            # --- NEW: Convert nm limits to selected display unit ---
+            selected_unit = self.x_unit_combo.currentText()
+
+            if selected_unit == 'Angstrom':
+                display_xlim = (xlim_nm[0] * 10.0, xlim_nm[1] * 10.0)
+            elif selected_unit == 'micron':
+                display_xlim = (xlim_nm[0] / 1000.0, xlim_nm[1] / 1000.0)
+            else: # 'nm'
+                display_xlim = xlim_nm
+            # --- END NEW ---
+            
+            # Block signals to prevent a feedback loop
+            self.xmin_input.blockSignals(True)
+            self.xmax_input.blockSignals(True)
+            self.ymin_input.blockSignals(True)
+            self.ymax_input.blockSignals(True)
+            
+            # Set text using the converted display values
+            self.xmin_input.setText(f"{display_xlim[0]:.4g}")
+            self.xmax_input.setText(f"{display_xlim[1]:.4g}")
+            self.ymin_input.setText(f"{ylim_plot[0]:.4g}")
+            self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
+            
+        except Exception as e:
+            logging.warning(f"Failed to update limit boxes: {e}")
+        finally:
+            # Always unblock signals
+            self.xmin_input.blockSignals(False)
+            self.xmax_input.blockSignals(False)
+            self.ymin_input.blockSignals(False)
+            self.ymax_input.blockSignals(False)
 
     def _force_restack_floating_widgets(self):
         """
