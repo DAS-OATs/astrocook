@@ -268,9 +268,16 @@ class MainWindowV2(QMainWindow):
         self.systems_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.systems_checkbox)
 
-        # self.lines_checkbox = QCheckBox("Lines"); self.lines_checkbox.setChecked(False) # Add if needed
-        # self.lines_checkbox.stateChanged.connect(self._trigger_replot)
-        # plot_toggles_layout.addWidget(self.lines_checkbox)
+        # --- *** NEW: Auxiliary Column Plotter *** ---
+        # (Using a form layout for clean alignment)
+        form_layout_aux = QFormLayout()
+        form_layout_aux.setSpacing(5)
+        self.aux_col_combo = QComboBox()
+        self.aux_col_combo.setToolTip("Select an auxiliary column to plot (e.g., a mask)")
+        self.aux_col_combo.currentTextChanged.connect(self._trigger_replot)
+        form_layout_aux.addRow("Aux Column:", self.aux_col_combo)
+        plot_toggles_layout.addLayout(form_layout_aux)
+        # --- *** END NEW *** ---
 
         sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
     
@@ -352,6 +359,7 @@ class MainWindowV2(QMainWindow):
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
         self.model_checkbox.setObjectName("PlotControlCheckbox")
         self.systems_checkbox.setObjectName("PlotControlCheckbox")
+        self.aux_col_combo.setObjectName("AuxColumnCombo") # <-- NEW
         
         self.x_unit_combo.setObjectName("XUnitCombo")
         self.norm_y_checkbox.setObjectName("PlotControlCheckbox")
@@ -531,47 +539,6 @@ class MainWindowV2(QMainWindow):
 
         self._update_undo_redo_actions()
 
-    def _launch_recipe_dialog(self, category, name):
-        """Creates and executes the RecipeDialog for the specified recipe."""
-        if self.active_recipe_dialog:
-            self.active_recipe_dialog.activateWindow()
-            return
-        
-        # ** Get current state from the *active history manager* **
-        if not self.active_history or not self.active_history.current_state.spec:
-            QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
-            return
-        
-        if self.plot_viewer and self.plot_viewer.toolbar:
-            try:
-                # Toggle them both off to reset the state
-                self.plot_viewer.toolbar.pan(False)
-                self.plot_viewer.toolbar.zoom(False)
-            except Exception as e:
-                logging.warning(f"Could not reset toolbar state: {e}")
-
-        logging.info(f"Launching dialog for recipe: {category}.{name}")
-        
-        # ** Pass the active history's *current state* to the dialog **
-        current_state = self.active_history.current_state
-
-        # 1. Use parent=None. This fixes the sidebar event bug.
-        # We assume RecipeDialog has its __init__ updated to no longer
-        # require the 'main_window_ref' argument.
-        dialog = RecipeDialog(category, name, current_state, self) 
-
-        # 2. Run the modal dialog.
-        result = dialog.exec()
-
-        QTimer.singleShot(0, self._force_restack_floating_widgets)
-
-        if result == QDialog.Accepted:
-            logging.debug(f"Recipe dialog {name} accepted.")
-            # Note: The dialog's accept() method now handles
-            # calling self.update_gui_session_state()
-        else:
-            logging.debug(f"Recipe dialog {name} cancelled.")
-
     def _force_restack_floating_widgets(self):
         """
         Slot to be called by QTimer.
@@ -656,6 +623,24 @@ class MainWindowV2(QMainWindow):
                 background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
                 color: {text_color};
             }}
+            
+            /* --- *** NEW: Style for ComboBoxes *** --- */
+            QWidget#PlotControlsContainer QComboBox {{
+                padding: 3px;
+                border: 1px solid {border_color};
+                border-radius: 3px;
+                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
+                color: {text_color};
+            }}
+            /* Style the dropdown menu items */
+            QComboBox QAbstractItemView {{
+                border: 1px solid {border_color};
+                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
+                color: {text_color};
+                selection-background-color: {item_selected_bg};
+                selection-color: {item_selected_text};
+            }}
+            
             /* Style Form Layout labels */
             QWidget#PlotControlsContainer QFormLayout QLabel {{ /* More specific selector */
                 color: {text_color};
@@ -960,43 +945,56 @@ class MainWindowV2(QMainWindow):
             else:
                 self.log_scripter_dialog.set_log_object(None) # Clear viewer
 
+        # --- *** NEW: Update Aux Column Combo *** ---
+        try:
+            self.aux_col_combo.blockSignals(True)
+            current_selection = self.aux_col_combo.currentText() # Preserve selection
+            self.aux_col_combo.clear()
+            self.aux_col_combo.addItem("None") # Default "off"
+            
+            if is_valid:
+                # Get all columns from the table adapter, excluding main axes
+                all_cols = list(session_state_to_show.spec.t._data_dict.keys())
+                core_cols = {'x', 'xmin', 'xmax', 'y', 'dy'}
+                aux_col_names = sorted([c for c in all_cols if c not in core_cols])
+                
+                if aux_col_names:
+                    self.aux_col_combo.addItems(aux_col_names)
+            
+            # Try to restore the previous selection
+            index = self.aux_col_combo.findText(current_selection)
+            if index != -1:
+                self.aux_col_combo.setCurrentIndex(index)
+            else:
+                self.aux_col_combo.setCurrentIndex(0) # Default to "None"
+        
+        except Exception as e:
+            logging.warning(f"Failed to update Aux Column combobox: {e}")
+        finally:
+            self.aux_col_combo.blockSignals(False)
+        # --- *** END NEW *** ---
+
+
         # Update general UI visibility etc. based on validity
         #self._update_ui_state(is_valid, is_startup=is_startup)
-
-        # ** Update X Unit Combo Box **
-        # This part is different. We don't read from the session (which is always nm).
-        # We *could* store the user's *preference* somewhere, but for now, let's just
-        # reset it to "nm" when a new session is shown, or leave it as is.
-        # Let's leave it as is, the plot function will just obey it.
-        # We DO need to reset the Normalize/Log toggles to their defaults.
         
-        # ** FIX: Only reset toggles if the *history* object changed **
-        # Check if the session_state_to_show belongs to the same history as the plot
-        # (This is tricky. Let's just reset if it's a *new* session state)
-        # We need a better way to track "view preferences" per session.
-        # For now, let's reset them *unless* it's an undo/redo.
-        
-        # Let's simplify: _update_view_for_session is called for *any*
-        # view change. We *should* reset the toggles unless we store
-        # the view state somewhere.
-        
-        if is_valid:
-            # Check if the plot viewer's *current* session matches the *new* one
-            # If they match, it's just a replot, don't reset toggles.
-            # (This check is imperfect, plot_viewer doesn't store session)
-            
-            # Let's stick to the previous logic: always reset view toggles
-            # when showing a state, as we don't persist view preferences.
-            self.norm_y_checkbox.blockSignals(True)
-            self.log_x_checkbox.blockSignals(True)
-            self.log_y_checkbox.blockSignals(True)
-            self.norm_y_checkbox.setChecked(False)
-            self.log_x_checkbox.setChecked(False)
-            self.log_y_checkbox.setChecked(False)
-            self.norm_y_checkbox.blockSignals(False)
-            self.log_x_checkbox.blockSignals(False)
-            self.log_y_checkbox.blockSignals(False)
-            # Let x_unit_combo keep its value.
+        #if is_valid:
+        #    # Check if the plot viewer's *current* session matches the *new* one
+        #    # If they match, it's just a replot, don't reset toggles.
+        #    # (This check is imperfect, plot_viewer doesn't store session)
+        #    
+        #    # Let's stick to the previous logic: always reset view toggles
+        #    # when showing a state, as we don't persist view preferences.
+        #    self.norm_y_checkbox.blockSignals(True)
+        #    self.log_x_checkbox.blockSignals(True)
+        #    self.log_y_checkbox.blockSignals(True)
+        #    self.norm_y_checkbox.setChecked(False)
+        #    self.log_x_checkbox.setChecked(False)
+        #    self.log_y_checkbox.setChecked(False)
+        #    self.norm_y_checkbox.blockSignals(False)
+        #    self.log_x_checkbox.blockSignals(False)
+        #    self.log_y_checkbox.blockSignals(False)
+        #    # Let x_unit_combo keep its value.
 
         # Update Plot Widget
         if is_valid:
@@ -1358,7 +1356,7 @@ class MainWindowV2(QMainWindow):
         self.active_recipe_dialog = dialog
         
         # We no longer care about the .exec() result
-        QTimer.singleShot(0, self._force_restack_floating_widgets)
+        #QTimer.singleShot(0, self._force_restack_floating_widgets)
 
     # --- *** 4. NEW: Worker-launching slot for single recipes *** ---
     def _on_recipe_requested(self, category: str, recipe_name: str, 
@@ -1450,6 +1448,8 @@ class MainWindowV2(QMainWindow):
         finally:
             # --- *** ALWAYS restore the cursor *** ---
             QApplication.restoreOverrideCursor()
+
+            QTimer.singleShot(0, self._force_restack_floating_widgets)
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""
