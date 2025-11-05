@@ -111,6 +111,10 @@ class RecipeDialog(QDialog):
             form_layout.addRow(QLabel("This recipe takes no parameters."))
         else:
             for param in params:
+                # Skip parameters that are meant to be set by the GUI, not the user
+                if param.get('gui_hidden', False):
+                    continue
+                
                 param_name = param['name']
                 param_type = param['type']
                 param_doc = param.get('doc', param_name) # Use name if no doc

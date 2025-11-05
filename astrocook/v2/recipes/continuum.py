@@ -20,6 +20,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
             {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
             {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
+            {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "continuum_cb.html#estimate_auto"
     },
@@ -41,6 +42,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
             {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
             {"name": "mask_col", "type": str, "default": "mask_unabs", "doc": "Mask column to use"},
+            {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "continuum_cb.html#fit_continuum"
     }
@@ -84,13 +86,15 @@ class RecipeContinuumV2:
             return 0
 
     def fit_continuum(self, fudge: str = '1.0', smooth_std: str = '500.0', 
-                       mask_col: str = 'mask_unabs') -> 'SessionV2':
+                       mask_col: str = 'mask_unabs', renorm_model: str = 'True') -> 'SessionV2':
         """
         API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
         try:
             fudge_f = float(fudge)
             smooth_std_f = float(smooth_std) # This is in km/s
+            # --- ADD THIS LINE ---
+            renorm_model_b = str(renorm_model) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -99,7 +103,9 @@ class RecipeContinuumV2:
             new_spec_v2 = self._session.spec.fit_continuum(
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
-                mask_col=mask_col
+                mask_col=mask_col,
+                # --- ADD THIS ARGUMENT (must be added to spectrum.py) ---
+                renorm_model=renorm_model_b 
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
@@ -108,7 +114,7 @@ class RecipeContinuumV2:
             
     def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
                       kappa: str = '2.0', fudge: str = '1.0', 
-                      smooth_std: str = '500.0', template: str = 'False') -> 'SessionV2':
+                      smooth_std: str = '500.0', template: str = 'False', renorm_model: str = 'True') -> 'SessionV2':
         """
         API: Single-click recipe to estimate continuum.
         """
@@ -120,6 +126,7 @@ class RecipeContinuumV2:
             fudge_f = float(fudge)
             smooth_std_f = float(smooth_std) # This is in km/s
             z_em_f = self._session.spec._data.z_em # Read z_em from session
+            renorm_model_b = str(renorm_model) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -138,11 +145,12 @@ class RecipeContinuumV2:
             )
             
             logging.info("Auto-continuum: Fitting continuum to mask...")
-            # 2. Call the second API method *on the result of the first*
             spec_with_cont = spec_with_mask.fit_continuum(
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
-                mask_col='mask_unabs' # Use the mask we just created
+                mask_col='mask_unabs',
+                # --- ADD THIS ARGUMENT ---
+                renorm_model=renorm_model_b
             )
             
             # 3. Return the final new state

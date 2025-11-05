@@ -347,6 +347,40 @@ class SpectrumV2:
         
         return all_cols, local_dict
     
+    def _renormalize_model(self, 
+                           old_cont_vals: np.ndarray, 
+                           new_cont_vals: np.ndarray, 
+                           old_model_col: DataColumnV2) -> Optional[DataColumnV2]:
+        """
+        Private helper to re-normalize an old model to a new continuum
+        by applying the *old* normalized profile to the *new* continuum.
+        
+        Used by fit_continuum and smooth_column.
+        """
+        if old_cont_vals is None or new_cont_vals is None or old_model_col is None:
+            return None
+            
+        logging.info("Re-normalizing 'model' column to new 'cont'...")
+        try:
+            # 1. Get old normalized profile
+            normalized_model = np.divide(
+                old_model_col.values,
+                old_cont_vals,
+                out=np.ones_like(old_model_col.values),
+                where=old_cont_vals != 0
+            )
+            # 2. Recalculate model against *new* continuum
+            new_model_values = new_cont_vals * normalized_model
+            
+            return DataColumnV2(
+                values=new_model_values,
+                unit=old_model_col.unit, # Use old model's unit
+                description=old_model_col.description
+            )
+        except Exception as e:
+            logging.warning(f"Failed to renormalize model column: {e}")
+            return None
+    
     # --- Methods implementing the API ---
 
     def apply_expression(self, target_col: str, expression: str, 
@@ -528,6 +562,7 @@ class SpectrumV2:
         new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
         return SpectrumV2(data=new_data_core, history=new_history)
     
+    
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
         API: Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).
@@ -553,13 +588,13 @@ class SpectrumV2:
 
         # 2. Smooth flux-like auxiliary columns
         new_aux_cols = deepcopy(self._data.aux_cols)
+        # --- RE-ADD 'model' TO THIS LIST ---
         cols_to_smooth = ['cont', 'model', 'telluric_model']
         
         for col_name in cols_to_smooth:
             if col_name in new_aux_cols:
                 try:
                     old_col = new_aux_cols[col_name]
-                    # Check if it's a numerical column
                     if old_col.values.dtype.kind in 'fiu':
                         logging.debug(f"Smoothing auxiliary column: {col_name}")
                         new_vals = smooth_spectrum(
@@ -568,14 +603,16 @@ class SpectrumV2:
                             sigma_kms,
                             self._data.z_rf
                         )
-                        # Replace it in the dictionary
+                        
                         new_aux_cols[col_name] = DataColumnV2(
                             new_vals, old_col.unit, old_col.description
                         )
                 except Exception as e:
                     logging.warning(f"Failed to smooth aux col '{col_name}': {e}")
+        
+        # --- RE-NORMALIZATION BLOCK HAS BEEN REMOVED ---
 
-        # 3. Create new SpectrumDataV2 using dataclasses.replace
+        # 3. Create new SpectrumDataV2
         new_data = dataclasses.replace(
             self._data, 
             y=new_y_col, 
@@ -587,9 +624,10 @@ class SpectrumV2:
         new_history = self.history + [f"Smoothed spectrum (sigma={sigma_kms} km/s)"]
         return SpectrumV2(data=new_data, history=new_history)
 
-    def smooth_column(self, target_col: str, sigma_kms: float) -> 'SpectrumV2':
+    def smooth_column(self, target_col: str, sigma_kms: float, renorm_model: bool = False) -> 'SpectrumV2':
         """
         API: Applies Gaussian smoothing to a single target column.
+        If target_col is 'cont' and renorm_model is True, also updates 'model'.
         Returns a NEW SpectrumV2 instance.
         """
         all_cols = self.t._data_dict
@@ -631,7 +669,22 @@ class SpectrumV2:
         elif target_col in aux_cols:
             aux_cols[target_col] = new_data_col
 
-        # 6. Create the new data core
+        # --- ADD THIS BLOCK (Copied from fit_continuum) ---
+        # 6. If we just smoothed 'cont', check if we should re-normalize 'model'
+        if target_col == 'cont' and renorm_model:
+            old_model_col = self._data.aux_cols.get('model')
+            old_cont_vals = old_col_data.value 
+            
+            new_model_col = self._renormalize_model(
+                old_cont_vals,
+                new_values, # The new smoothed continuum
+                old_model_col
+            )
+            if new_model_col:
+                aux_cols['model'] = new_model_col
+        # --- END ADD ---
+
+        # 7. Create the new data core
         new_data_core = SpectrumDataV2(
             x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
             y=core_cols['y'], dy=core_cols['dy'],
@@ -641,7 +694,7 @@ class SpectrumV2:
             z_em=self._data.z_em
         )
 
-        # 7. Return a NEW SpectrumV2 instance
+        # 8. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Smoothed column: {target_col} (sigma={sigma_kms} km/s)"]
         return SpectrumV2(data=new_data_core, history=new_history)
 
@@ -828,7 +881,7 @@ class SpectrumV2:
         return SpectrumV2(data=new_data, history=new_history)
         
     def fit_continuum(self, fudge: float, smooth_std_kms: float, 
-                      mask_col: str = 'mask_unabs') -> 'SpectrumV2':
+                      mask_col: str = 'mask_unabs', renorm_model: bool = False) -> 'SpectrumV2':
         """
         API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
@@ -861,27 +914,14 @@ class SpectrumV2:
         old_cont_col = self._data.aux_cols.get('cont')
         old_model_col = self._data.aux_cols.get('model')
 
-        if old_cont_col is not None and old_model_col is not None:
-            logging.info("Old 'cont' and 'model' found, renormalizing model...")
-            try:
-                # Use np.divide for zero-division safety
-                normalized_model = np.divide(
-                    old_model_col.values, 
-                    old_cont_col.values, 
-                    out=np.ones_like(old_model_col.values), 
-                    where=old_cont_col.values!=0
-                )
-                
-                # Recalculate model against new continuum
-                new_model_values = cont_values * normalized_model
-                
-                new_aux_cols['model'] = DataColumnV2(
-                    values=new_model_values,
-                    unit=self._data.y.unit, # Model has same unit as flux
-                    description=old_model_col.description
-                )
-            except Exception as e:
-                logging.warning(f"Failed to renormalize model column: {e}")
+        if renorm_model and old_cont_col is not None and old_model_col is not None:
+            new_model_col = self._renormalize_model(
+                old_cont_col.values,
+                cont_values, # The new continuum
+                old_model_col
+            )
+            if new_model_col:
+                new_aux_cols['model'] = new_model_col
 
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         

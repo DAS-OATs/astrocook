@@ -16,7 +16,7 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Smooth spectrum.",
         "details": "Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.",
         "params": [
-            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"}
+            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
         ],
         "url": "edit_cb.html#smooth" # Placeholder URL
     },
@@ -73,14 +73,10 @@ class RecipeFluxV2:
             return 0
 
         try:
-            # 1. Call the immutable V2 operation
             new_spec_v2 = self._session.spec.smooth(
                 sigma_kms=sigma_kms_f
             )
-            
-            # 2. Return a NEW SessionV2 instance
             return self._session.with_new_spectrum(new_spec_v2)
-            
         except Exception as e:
             logging.error(f"Failed during smooth: {e}", exc_info=True)
             return 0

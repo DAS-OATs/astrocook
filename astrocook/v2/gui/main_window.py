@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
 )
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .log_scripter_dialog import LogScripterDialog
 from .pyside_plot import SpectrumPlotWidget
@@ -1505,6 +1505,35 @@ class MainWindowV2(QMainWindow):
         logging.debug(f"Recipe dialog closed (result: {result}), clearing active dialog lock.")
         self.active_recipe_dialog = None
 
+
+    def _ask_to_renormalize_model(self, recipe_name: str, params: Dict[str, Any]):
+        """
+        Checks if a recipe will modify 'cont' and asks the user
+        if they want to re-normalize 'model'. Modifies params in-place.
+        """
+        target_col = params.get('target_col')
+        
+        # Check for:
+        # 1. smooth_column targeting 'cont'
+        is_cont_target = (recipe_name == 'smooth_column' and target_col == 'cont')
+        # 2. Any of these recipes, which *always* create/modify 'cont'
+        is_cont_recipe = recipe_name in ['fit_continuum', 'estimate_auto']
+
+        if (is_cont_target or is_cont_recipe):
+            # If it's a cont recipe, check if a model exists
+            if self.active_history.current_state.spec.has_aux_column('model'):
+                reply = QMessageBox.question(self, 
+                                             "Re-normalize Model?",
+                                             "This will modify the 'cont' column. Do you also want to re-normalize the 'model' column to this new continuum?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                             QMessageBox.StandardButton.Yes)
+                
+                # Set the hidden parameter based on the user's answer
+                if reply == QMessageBox.StandardButton.Yes:
+                    params['renorm_model'] = 'True'
+                else:
+                    params['renorm_model'] = 'False'
+
     # --- *** 4. NEW: Worker-launching slot for single recipes *** ---
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
@@ -1519,6 +1548,8 @@ class MainWindowV2(QMainWindow):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.close()
             self.active_recipe_dialog = None
+
+        self._ask_to_renormalize_model(recipe_name, params)
 
         # 2. Show the *same* progress dialog as "Run All"
         if self.progress_dialog:

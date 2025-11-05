@@ -60,7 +60,8 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Apply a Gaussian filter to a single data column (e.g., 'dy' or 'snr').",
         "params": [
             {"name": "target_col", "type": str, "default": "dy", "doc": "Target column to smooth"},
-            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"}
+            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
+            {"name": "renorm_model", "type": bool, "default": False, "doc": "If smoothing 'cont', also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
@@ -286,12 +287,14 @@ class RecipeEditV2:
             logging.error(f"Failed during mask_expression: {e}", exc_info=True)
             return 0
 
-    def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0') -> 'SessionV2':
+    def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
         """
         API: Applies Gaussian smoothing to a single column.
         """
         try:
             sigma_kms_f = float(sigma_kms)
+            # --- ADD THIS LINE ---
+            renorm_model_b = str(renorm_model) == 'True'
         except ValueError:
             logging.error(msg_param_fail)
             return 0
@@ -300,7 +303,9 @@ class RecipeEditV2:
             # 1. Call the immutable V2 operation
             new_spec_v2 = self._session.spec.smooth_column(
                 target_col=target_col,
-                sigma_kms=sigma_kms_f
+                sigma_kms=sigma_kms_f,
+                # --- ADD THIS ARGUMENT ---
+                renorm_model=renorm_model_b
             )
             
             # 2. Return a NEW SessionV2 instance
