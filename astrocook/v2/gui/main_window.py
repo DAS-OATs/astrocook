@@ -739,28 +739,11 @@ class MainWindowV2(QMainWindow):
             /* Style LineEdits for Cursor */
             QWidget#PlotControlsContainer QLineEdit {{
                 padding: 3px;
-                border: 1px solid {border_color};
-                border-radius: 3px;
+                border-radius: 5px;
                 background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
                 color: {text_color};
             }}
             
-            /* --- *** NEW: Style for ComboBoxes *** --- */
-            QWidget#PlotControlsContainer QComboBox {{
-                padding: 3px;
-                border: 1px solid {border_color};
-                border-radius: 3px;
-                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
-                color: {text_color};
-            }}
-            /* Style the dropdown menu items */
-            QComboBox QAbstractItemView {{
-                border: 1px solid {border_color};
-                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
-                color: {text_color};
-                selection-background-color: {item_selected_bg};
-                selection-color: {item_selected_text};
-            }}
             
             /* Style Form Layout labels */
             QWidget#PlotControlsContainer QFormLayout QLabel {{ /* More specific selector */

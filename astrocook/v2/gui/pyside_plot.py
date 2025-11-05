@@ -633,6 +633,48 @@ class SpectrumPlotWidget(QWidget):
                     ax.plot(x_data, model_data, ls='-', color=colors[1], lw=0.8, label='Absorption model', rasterized=True)
                 # No warning needed
 
+            # 4b. Plot Auxiliary Column (Dynamic)
+            aux_col_to_plot = self.main_window.aux_col_combo.currentText()
+            if aux_col_to_plot and aux_col_to_plot != "None":
+                try:
+                    # Get the *full* original aux column data
+                    full_aux_col_data = spec.get_column(aux_col_to_plot)
+                    if full_aux_col_data is None:
+                        raise ValueError(f"Column '{aux_col_to_plot}' returned None.")
+                    
+                    full_aux_col_data = full_aux_col_data.value # Get numpy array
+                    
+                    # Decimate or slice it just like the other arrays
+                    if use_decimation:
+                        aux_data = decimate_y_min_max(full_aux_col_data, DECIMATION_FACTOR)
+                        # We use the already-decimated x_data for plotting
+                    else:
+                        aux_data = full_aux_col_data[data_slice]
+                    
+                    # Plot based on data type
+                    if aux_data.dtype.kind in 'fi': # Float or Int
+                        if use_decimation:
+                            ax.plot(x_data, aux_data, label=aux_col_to_plot, 
+                                    linestyle=':', lw=1.2, color='purple', 
+                                    rasterized=True)
+                        else:
+                            ax.step(x_data, aux_data, where='mid', label=aux_col_to_plot, 
+                                    linestyle=':', lw=1.2, color='purple', 
+                                    rasterized=True)
+                                    
+                    elif aux_data.dtype.kind == 'b': # Boolean mask
+                        trans = ax.get_xaxis_transform()
+                        ax.fill_between(x_data, 0.95, 1.0, 
+                                        where=aux_data.astype(bool), 
+                                        color='cyan', alpha=0.5, 
+                                        label=f'Mask: {aux_col_to_plot}', 
+                                        transform=trans,
+                                        step='mid' if not use_decimation else None,
+                                        rasterized=True)
+
+                except Exception as e:
+                    logging.warning(f"Could not plot auxiliary column '{aux_col_to_plot}': {e}")
+
             # 5. Plot Systems
             if self.main_window.systems_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE and systs and systs.components:
                 # Get current plot limits to only draw visible lines
