@@ -464,39 +464,17 @@ class SpectrumPlotWidget(QWidget):
             DECIMATION_THRESHOLD = 2000000 # Only decimate if plot has > 20k points
             DECIMATION_FACTOR = 10       # Plot 2 points for every 10
             
-            data_slice = slice(None) # Default
             use_decimation = False
             
-            if not was_zoomed and len(full_x_data) > DECIMATION_THRESHOLD:
+            if not was_zoomed and len(full_x_data) > DECIMATION_THRESHOLD and not force_autoscale:
                 use_decimation = True
                 logging.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}) for full-view plot.")
 
-            # If zoomed in, calculate the slice
-            elif was_zoomed and not initial_draw:
-                try:
-                    # Find indices for the visible range
-                    # Use searchsorted for fast lookup on sorted x data
-                    idx_start = np.searchsorted(full_x_data, previous_xlim[0], side='left')
-                    idx_end = np.searchsorted(full_x_data, previous_xlim[1], side='right')
-
-                    # Add a small buffer (e.g., 50 points) to each side for cleaner edges
-                    buffer = 50 
-                    idx_start = max(0, idx_start - buffer)
-                    idx_end = min(len(full_x_data), idx_end + buffer)
-
-                    if idx_end > idx_start: # Ensure slice is valid
-                        data_slice = slice(idx_start, idx_end)
-                        logging.debug(f"Plotting sliced data: {idx_end - idx_start} points (was {len(full_x_data)})")
-                    else:
-                        logging.debug("Zoom slice is empty, plotting full data.")
-                except Exception as e:
-                    logging.warning(f"Failed to calculate plot slice: {e}")
-
             if is_norm_y:
-                # 1. We want NORMALIZED data. Check for its cache.
+                # 1a. We want NORMALIZED data. Check cache.
                 if self._cached_y_plot_norm is not None:
                     logging.debug("Using cached NORMALIZED plot data.")
-                    x_data = self._cached_x_plot_raw # Note: X is always raw
+                    x_data = self._cached_x_plot_raw
                     y_data = self._cached_y_plot_norm
                     dy_data = self._cached_dy_plot_norm
                     cont_data = self._cached_cont_plot_norm
@@ -504,46 +482,45 @@ class SpectrumPlotWidget(QWidget):
                 
                 else:
                     logging.debug("Cache miss for normalized data. Computing...")
-                    # 2. Need to COMPUTE normalized data.
-                    # First, get the RAW data (from cache or compute it)
+                    # 2a. Need to COMPUTE. First, get RAW data.
                     if self._cached_x_plot_raw is not None:
                         logging.debug("...using cached RAW plot data.")
-                        x_data = self._cached_x_plot_raw
-                        y_data = self._cached_y_plot_raw
-                        dy_data = self._cached_dy_plot_raw
-                        cont_data = self._cached_cont_plot_raw
-                        model_data = self._cached_model_plot_raw
+                        x_data_raw = self._cached_x_plot_raw
+                        y_data_raw = self._cached_y_plot_raw
+                        dy_data_raw = self._cached_dy_plot_raw
+                        cont_data_raw = self._cached_cont_plot_raw
+                        model_data_raw = self._cached_model_plot_raw
                     else:
-                        logging.debug("...RAW plot data cache is also empty. Decimating...")
-                        # 3. TOTAL cache miss. Compute RAW data.
+                        logging.debug("...RAW plot data cache is also empty. Computing...")
+                        # 3a. TOTAL cache miss. Compute RAW data.
                         if use_decimation:
-                            x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
-                            y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
-                            dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
-                            cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
-                            model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
-                        else: # We are zoomed or data is small
-                            x_data = full_x_data[data_slice]
-                            y_data = full_y_data[data_slice]
-                            dy_data = full_dy_data[data_slice]
-                            cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
-                            model_data = full_model_data[data_slice] if full_model_data is not None else None
+                            x_data_raw = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
+                            y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                            dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
+                            cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                            model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
+                        else: # We are zoomed, forcing home, or data is small
+                            x_data_raw = full_x_data
+                            y_data_raw = full_y_data
+                            dy_data_raw = full_dy_data
+                            cont_data_raw = full_cont_data
+                            model_data_raw = full_model_data
                         
                         # Save to RAW cache
-                        self._cached_x_plot_raw = x_data
-                        self._cached_y_plot_raw = y_data
-                        self._cached_dy_plot_raw = dy_data
-                        self._cached_cont_plot_raw = cont_data
-                        self._cached_model_plot_raw = model_data
+                        self._cached_x_plot_raw = x_data_raw
+                        self._cached_y_plot_raw = y_data_raw
+                        self._cached_dy_plot_raw = dy_data_raw
+                        self._cached_cont_plot_raw = cont_data_raw
+                        self._cached_model_plot_raw = model_data_raw
 
-                    # 4. NOW, compute and cache the NORMALIZED data
-                    if cont_data is not None:
-                        cont_val = cont_data
-                        y_data = np.divide(y_data, cont_val, out=np.full_like(y_data, np.nan), where=cont_val!=0)
-                        dy_data = np.divide(dy_data, cont_val, out=np.full_like(dy_data, np.nan), where=cont_val!=0)
-                        if model_data is not None:
-                            model_data = np.divide(model_data, cont_val, out=np.full_like(model_data, np.nan), where=cont_val!=0)
-                        cont_data = np.ones_like(cont_data)
+                    # 4a. NOW, compute and cache the NORMALIZED data
+                    if cont_data_raw is not None:
+                        cont_val = cont_data_raw
+                        y_data = np.divide(y_data_raw, cont_val, out=np.full_like(y_data_raw, np.nan), where=cont_val!=0)
+                        dy_data = np.divide(dy_data_raw, cont_val, out=np.full_like(dy_data_raw, np.nan), where=cont_val!=0)
+                        if model_data_raw is not None:
+                            model_data = np.divide(model_data_raw, cont_val, out=np.full_like(model_data_raw, np.nan), where=cont_val!=0)
+                        cont_data = np.ones_like(cont_data_raw)
                         
                         # Save to NORMALIZED cache
                         self._cached_y_plot_norm = y_data
@@ -551,12 +528,12 @@ class SpectrumPlotWidget(QWidget):
                         self._cached_cont_plot_norm = cont_data
                         self._cached_model_plot_norm = model_data
                     else:
-                        # Cannot normalize, just use raw data
                         logging.warning("Normalize checked, but continuum data is missing.")
-                        pass # y_data, etc. are already set to raw
+                        x_data, y_data, dy_data, cont_data, model_data = \
+                            x_data_raw, y_data_raw, dy_data_raw, cont_data_raw, model_data_raw
 
             else:
-                # 1. We want RAW data. Check for its cache.
+                # 1b. We want RAW data. Check cache.
                 if self._cached_x_plot_raw is not None:
                     logging.debug("Using cached RAW plot data.")
                     x_data = self._cached_x_plot_raw
@@ -566,20 +543,20 @@ class SpectrumPlotWidget(QWidget):
                     model_data = self._cached_model_plot_raw
                 
                 else:
-                    logging.debug("Cache miss for raw plot data. Decimating...")
-                    # 2. Compute RAW data.
+                    logging.debug("Cache miss for raw plot data. Computing...")
+                    # 2b. Compute RAW data.
                     if use_decimation:
                         x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
                         y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
                         dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
                         cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
                         model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
-                    else: # We are zoomed or data is small
-                        x_data = full_x_data[data_slice]
-                        y_data = full_y_data[data_slice]
-                        dy_data = full_dy_data[data_slice]
-                        cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
-                        model_data = full_model_data[data_slice] if full_model_data is not None else None
+                    else: # We are zoomed, forcing home, or data is small
+                        x_data = full_x_data
+                        y_data = full_y_data
+                        dy_data = full_dy_data
+                        cont_data = full_cont_data
+                        model_data = full_model_data
                     
                     # Save to RAW cache
                     self._cached_x_plot_raw = x_data
@@ -588,8 +565,37 @@ class SpectrumPlotWidget(QWidget):
                     self._cached_cont_plot_raw = cont_data
                     self._cached_model_plot_raw = model_data
 
+            # --- 2. SLICING BLOCK (NEW) ---
+            # At this point, x_data, y_data, etc., are ALL full-range.
+            # Now we apply the zoom-slice if necessary.
+            if was_zoomed and not force_autoscale:
+                try:
+                    # Find indices for the visible range *on the plot data*
+                    idx_start = np.searchsorted(x_data, previous_xlim[0], side='left')
+                    idx_end = np.searchsorted(x_data, previous_xlim[1], side='right')
+
+                    # Add a buffer (in *indices*, not data units)
+                    # 10 bins for decimated, 50 for full
+                    buffer = (DECIMATION_FACTOR * 2) if use_decimation else 50
+                    idx_start = max(0, idx_start - buffer)
+                    idx_end = min(len(x_data), idx_end + buffer)
+
+                    if idx_end > idx_start:
+                        logging.debug(f"Applying zoom-slice to plot data: {idx_end - idx_start} points")
+                        # Apply the slice to all arrays
+                        x_data = x_data[idx_start:idx_end]
+                        y_data = y_data[idx_start:idx_end]
+                        dy_data = dy_data[idx_start:idx_end]
+                        if cont_data is not None:
+                            cont_data = cont_data[idx_start:idx_end]
+                        if model_data is not None:
+                            model_data = model_data[idx_start:idx_end]
+                    else:
+                        logging.debug("Zoom slice is empty, plotting full data.")
+                except Exception as e:
+                    logging.warning(f"Failed to apply zoom slice: {e}")
+
             x_unit = str(spec.x.unit)
-            y_unit = str(spec.y.unit)
                     
             colors = get_color_cycle(5, cmap='tab20') # Get colors
 
