@@ -751,7 +751,6 @@ class SpectrumPlotWidget(QWidget):
             if ax.has_data(): # Only add legend if something was plotted
                 ax.legend(loc=legend_loc, markerscale=0.2) # Smaller legend font
             ax.set_xlabel(f"Wavelength ({x_unit})")
-            ax.set_ylabel(f"Flux ({y_unit})")
             ax.set_title(f"Spectrum: {session_state.name}")
             
             # 1. Scales (Log/Linear)
@@ -772,7 +771,7 @@ class SpectrumPlotWidget(QWidget):
             ax.set_xlabel(xlabel)
             
             # 3. Y-Axis Label
-            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux ({str(spec.y.unit)})")
+            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux (arbitrary units)")
             
             # --- X Limits ---
             # Priority: Autoscale if requested (e.g., by unit change)
@@ -846,9 +845,9 @@ class SpectrumPlotWidget(QWidget):
             return []
         return positions
     
-    def update_plot(self, new_session_state: Optional['SessionV2']):
+    def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
-        self.plot_spectrum(session_state=new_session_state, initial_draw=False)
+        self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
 
 # NOTE: The rest of the plotting logic (plot_spectrum content, resizeEvent, etc.) 
 # must be placed into this class, and the old SpectrumViewerPySide class should be deleted.

@@ -31,7 +31,8 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
     t_v1 = v1_spectrum_instance._t 
     meta_v1 = v1_spectrum_instance._meta
     x_unit = v1_spectrum_instance._xunit
-    y_unit = v1_spectrum_instance._yunit
+    v1_y_unit = v1_spectrum_instance._yunit # <-- Get the *original* y_unit
+    y_unit = au.dimensionless_unscaled
 
     x_col = DataColumnV2(t_v1['x'].value, x_unit, description="Channels")
     y_col = DataColumnV2(t_v1['y'].value, y_unit, description="Flux density")
@@ -50,6 +51,10 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
             try:
                 col_data = t_v1[colname]
                 col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
+                if v1_y_unit is not None and col_unit.is_equivalent(v1_y_unit):
+                    col_unit = au.dimensionless_unscaled
+                    logging.debug(f"Forcing y-like column '{colname}' to dimensionless.")
+                    
                 aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             except Exception as e:
                 logging.warning(f"Could not map auxiliary column {colname} from V1 table: {e}")

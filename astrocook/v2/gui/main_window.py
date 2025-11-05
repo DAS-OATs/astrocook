@@ -1033,11 +1033,12 @@ class MainWindowV2(QMainWindow):
         self._add_session_internal(new_session, is_initial=initial_load)
         if self.active_history:
             new_list_index = len(self.session_histories) - 1
-            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index, force_autoscale=True)
         self._update_undo_redo_actions()
 
     def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
-                                 set_current_list_item=False, target_list_index=None, is_startup=False):
+                                 set_current_list_item=False, target_list_index=None, is_startup=False,
+                                 force_autoscale: bool = False):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
@@ -1102,9 +1103,9 @@ class MainWindowV2(QMainWindow):
 
         # Update Plot Widget
         if is_valid:
-            self.plot_viewer.update_plot(session_state_to_show)
+            self.plot_viewer.update_plot(session_state_to_show, force_autoscale=force_autoscale)
         else:
-            self.plot_viewer.update_plot(None) # Clear plot if session is None
+            self.plot_viewer.update_plot(None, force_autoscale=False) # Clear plot if session is None
 
         #    Call this *after* the plot draw has completed,
         #    so that _reposition_floating_widgets is the *last*
@@ -1189,7 +1190,7 @@ class MainWindowV2(QMainWindow):
                     logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
                     self.active_history = new_active_history
                     # Show the state pointed to by the NEW active history's index
-                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False, force_autoscale=False)
                     self._update_undo_redo_actions()
 
                     # Update the log viewer if it's open
