@@ -1456,6 +1456,7 @@ class MainWindowV2(QMainWindow):
         
         # --- Connect the new signal to our worker-launching slot ---
         dialog.recipe_requested.connect(self._on_recipe_requested)
+        dialog.finished.connect(self._on_recipe_dialog_finished)
         # ---
         
         # Run non-modally so the main window isn't blocked
@@ -1464,6 +1465,16 @@ class MainWindowV2(QMainWindow):
         
         # We no longer care about the .exec() result
         #QTimer.singleShot(0, self._force_restack_floating_widgets)
+
+    def _on_recipe_dialog_finished(self, result: int):
+        """
+        Slot called when a RecipeDialog is closed (Accepted, Rejected, or 'X').
+        This is crucial for cleanup.
+        """
+        # We must set this to None so a new dialog can be opened,
+        # regardless of how it was closed.
+        logging.debug(f"Recipe dialog closed (result: {result}), clearing active dialog lock.")
+        self.active_recipe_dialog = None
 
     # --- *** 4. NEW: Worker-launching slot for single recipes *** ---
     def _on_recipe_requested(self, category: str, recipe_name: str, 
