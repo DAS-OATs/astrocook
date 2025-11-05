@@ -20,7 +20,6 @@ from typing import Optional, TYPE_CHECKING
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
     from ..session import SessionV2 
-    from .main_window import MainWindowV2 # Import for type hinting
 
 try:
     from ...v1.functions import trans_parse, x_convert # Need x_convert for systs
@@ -58,6 +57,59 @@ def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
         cmap = plt.get_cmap(fallback_cmap); return [cmap(i / n) for i in range(n)]
 # ----------------------------
 
+def decimate_y_min_max(y: np.ndarray, factor: int) -> np.ndarray:
+    """
+    Performs a min-max decimation on a Y-axis array.
+    Returns an array of [y_min1, y_max1, y_min2, y_max2, ...]
+    """
+    if y is None:
+        return None
+    try:
+        # 1. Trim array to be divisible by factor
+        size = (len(y) // factor) * factor
+        if size == 0:
+            return y # Not enough data to decimate, return original
+            
+        y_trim = y[:size]
+        
+        # 2. Reshape
+        y_reshaped = y_trim.reshape(-1, factor)
+        
+        # 3. Get min/max for y
+        y_mins = y_reshaped.min(axis=1)
+        y_maxs = y_reshaped.max(axis=1)
+        
+        # 4. Interleave
+        return np.stack((y_mins, y_maxs), axis=1).ravel()
+    except Exception as e:
+        logging.warning(f"y-axis decimation failed: {e}")
+        return y # Return original on failure
+        
+def decimate_x_for_min_max(x: np.ndarray, factor: int) -> np.ndarray:
+    """
+    Decimates an X-axis to match a min-max-decimated Y-axis.
+    Returns an array of [x_start1, x_end1, x_start2, x_end2, ...]
+    """
+    try:
+        # 1. Trim array to be divisible by factor
+        size = (len(x) // factor) * factor
+        if size == 0:
+            return x # Not enough data to decimate, return original
+
+        x_trim = x[:size]
+        
+        # 2. Reshape
+        x_reshaped = x_trim.reshape(-1, factor)
+        
+        # 3. Get start/end for x
+        x_starts = x_reshaped[:, 0]  # Get the start x of each bin
+        x_ends = x_reshaped[:, -1] # Get the end x of each bin
+        
+        # 4. Interleave
+        return np.stack((x_starts, x_ends), axis=1).ravel()
+    except Exception as e:
+        logging.warning(f"x-axis decimation failed: {e}")
+        return x # Return original on failure
 
 class MatplotlibCanvas(FigureCanvasQTAgg):
     """A custom Matplotlib canvas enabling blitting for cursor dragging."""
@@ -236,7 +288,7 @@ class SpectrumPlotWidget(QWidget):
     Refactored widget that contains the plot canvas, toolbar, and toggles.
     This replaces the content that was previously inside SpectrumViewerPySide.
     """
-    def __init__(self, initial_session_state: Optional['SessionV2'], main_window_ref: 'MainWindowV2'):
+    def __init__(self, initial_session_state: Optional['SessionV2'], main_window_ref):
         super().__init__()
         self.main_window = main_window_ref
         
@@ -352,25 +404,14 @@ class SpectrumPlotWidget(QWidget):
             full_x_data = spec.x.value
             full_y_data = spec.y.value
             full_dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(full_y_data)
-            full_cont_q = spec.cont   # Returns Quantity or None
-            full_model_q = spec.model # Returns Quantity or None
-            
+            full_cont_data = spec.cont.value if hasattr(spec.cont, 'value') else spec.cont
+            full_model_data = spec.model.value if hasattr(spec.model, 'value') else spec.model
+
             # --- Check View Toggles ---
             is_norm_y = self.main_window.norm_y_checkbox.isChecked()
             is_log_x = self.main_window.log_x_checkbox.isChecked()
             is_log_y = self.main_window.log_y_checkbox.isChecked()
             selected_x_unit = self.main_window.x_unit_combo.currentText()
-            
-            # --- *** NEW: Get Aux Column to Plot *** ---
-            aux_col_to_plot = self.main_window.aux_col_combo.currentText()
-            aux_col_q = None
-            if aux_col_to_plot and aux_col_to_plot != "None":
-                try:
-                    # We get the *full* column quantity first
-                    aux_col_q = session_state.spec.get_column(aux_col_to_plot)
-                except Exception as e:
-                    logging.warning(f"Could not retrieve aux column '{aux_col_to_plot}': {e}")
-            # --- *** END NEW *** ---
 
             # ** Check if normalization state CHANGED since last draw **
             norm_state_changed = (is_norm_y != self._last_draw_norm_state)
@@ -381,8 +422,19 @@ class SpectrumPlotWidget(QWidget):
         
             data_slice = slice(None) # Default: use full array
 
+            # Define decimation parameters
+            DECIMATION_THRESHOLD = 20000 # Only decimate if plot has > 20k points
+            DECIMATION_FACTOR = 10       # Plot 2 points for every 10
+            
+            data_slice = slice(None) # Default
+            use_decimation = False
+            
+            if not was_zoomed and len(full_x_data) > DECIMATION_THRESHOLD:
+                use_decimation = True
+                logging.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}) for full-view plot.")
+
             # If zoomed in, calculate the slice
-            if was_zoomed and not initial_draw:
+            elif was_zoomed and not initial_draw:
                 try:
                     # Find indices for the visible range
                     # Use searchsorted for fast lookup on sorted x data
@@ -403,27 +455,27 @@ class SpectrumPlotWidget(QWidget):
                     logging.warning(f"Failed to calculate plot slice: {e}")
 
             # Apply the slice
-            x_data = full_x_data[data_slice]
-            y_data = full_y_data[data_slice]
-            dy_data = full_dy_data[data_slice]
-            cont_q = full_cont_q[data_slice] if full_cont_q is not None else None
-            model_q = full_model_q[data_slice] if full_model_q is not None else None
+            if use_decimation:
+                # We decimate the main flux using min-max
+                x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
+                y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
+                cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
+            else:
+                x_data = full_x_data[data_slice]
+                y_data = full_y_data[data_slice]
+                dy_data = full_dy_data[data_slice]
+                cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
+                model_data = full_model_data[data_slice] if full_model_data is not None else None
 
-            if is_norm_y and cont_q is not None:
-                # --- *** BUG FIX *** ---
-                # Use .value to divide raw arrays
-                cont_val = cont_q.value
-                y_data = np.divide(y_data, cont_val, out=np.full_like(y_data, np.nan), where=cont_val!=0)
-                dy_data = np.divide(dy_data, cont_val, out=np.full_like(dy_data, np.nan), where=cont_val!=0)
-                if model_q is not None:
-                    model_val = model_q.value
-                    model_q = np.divide(model_val, cont_val, out=np.full_like(model_val, np.nan), where=cont_val!=0)
-                cont_q = np.ones_like(cont_q.value) # Normalized continuum is 1 (as np.ndarray)
-                # --- *** END BUG FIX *** ---
-            
-            # Handle cases where cont/model are still Quantities (not normalized) or are np.ndarrays (normalized)
-            cont_data = cont_q.value if hasattr(cont_q, 'value') else cont_q
-            model_data = model_q.value if hasattr(model_q, 'value') else model_q
+            if is_norm_y and cont_data is not None:
+                # Avoid division by zero
+                y_data = np.divide(y_data, cont_data, out=np.full_like(y_data, np.nan), where=cont_data!=0)
+                dy_data = np.divide(dy_data, cont_data, out=np.full_like(dy_data, np.nan), where=cont_data!=0)
+                if model_data is not None:
+                    model_data = np.divide(model_data, cont_data, out=np.full_like(model_data, np.nan), where=cont_data!=0)
+                cont_data = np.ones_like(cont_data) # Normalized continuum is 1
 
             x_unit = str(spec.x.unit)
             y_unit = str(spec.y.unit)
@@ -431,7 +483,10 @@ class SpectrumPlotWidget(QWidget):
             colors = get_color_cycle(5, cmap='tab20') # Get colors
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
-            ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
+            if use_decimation:
+                ax.plot(x_data, y_data, label="Spectrum (decimated)", lw=0.5, color=colors[0], rasterized=True)
+            else:
+                ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
 
             # --- Check state from main_window reference ---
             # 2. Plot Error Shading (Conditional)
@@ -457,18 +512,6 @@ class SpectrumPlotWidget(QWidget):
                 if model_data is not None:
                     ax.plot(x_data, model_data, ls='-', color=colors[1], lw=0.8, label='Absorption model', rasterized=True)
                 # No warning needed
-                
-            # --- *** NEW: Plot NUMERIC Aux Column *** ---
-            if aux_col_q is not None and aux_col_q.dtype.kind in 'fi': # Float or Int
-                try:
-                    aux_data = aux_col_q.value[data_slice] # Slice the data
-                    ax.plot(x_data, aux_data, 
-                            label=aux_col_to_plot, 
-                            linestyle=':', lw=1.2, color='purple', 
-                            rasterized=True)
-                except Exception as e:
-                    logging.warning(f"Failed to plot numeric aux column '{aux_col_to_plot}': {e}")
-            # --- *** END NEW *** ---
 
             # 5. Plot Systems
             if self.main_window.systems_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE and systs and systs.components:
@@ -517,26 +560,6 @@ class SpectrumPlotWidget(QWidget):
                             marker='|', markersize=12, linestyle='None',
                             color='darkgray', alpha=0.9, label="Metal Systems",
                             transform=trans)
-
-            # --- *** NEW: Plot BOOLEAN Aux (Mask) Column *** ---
-            if aux_col_q is not None and aux_col_q.dtype.kind == 'b': # Boolean
-                try:
-                    if 'trans' not in locals(): # Ensure transform exists
-                        trans = ax.get_xaxis_transform()
-                    
-                    aux_data_mask = aux_col_q.value[data_slice].astype(bool) # Slice and ensure bool
-                    
-                    # Plot as a shaded bar at the top of the plot (more visible)
-                    ax.fill_between(x_data, 0.0, 1.0, 
-                                    where=aux_data_mask, 
-                                    color='cyan', alpha=0.3, 
-                                    label=f'Mask: {aux_col_to_plot}', 
-                                    transform=trans,
-                                    rasterized=True)
-                    logging.debug(f"Plotting boolean mask '{aux_col_to_plot}'")
-                except Exception as e:
-                    logging.warning(f"Failed to plot boolean aux column '{aux_col_to_plot}': {e}")
-            # --- *** END NEW *** ---
 
             # 6. Plot Redshift Cursor
             if self.main_window.cursor_show_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE:

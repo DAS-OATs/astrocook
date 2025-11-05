@@ -1041,6 +1041,7 @@ class MainWindowV2(QMainWindow):
                 if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
                     self.log_scripter_dialog.refresh()
                 # --- END MODIFIED CHECK ---
+                QTimer.singleShot(0, self._force_restack_floating_widgets)
             else:
                 logging.debug("Undo: Already at oldest state for this session.")
         else:
@@ -1059,6 +1060,7 @@ class MainWindowV2(QMainWindow):
                 if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
                     self.log_scripter_dialog.refresh()
                 # --- END MODIFIED CHECK ---
+                QTimer.singleShot(0, self._force_restack_floating_widgets)
             else:
                 logging.debug("Redo: Already at newest state for this session.")
         else:
