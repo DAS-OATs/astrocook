@@ -1,5 +1,3 @@
-# astrocook/v2/gui/pyside_plot.py
-
 from matplotlib import pylab
 import astropy.units as au
 import logging
@@ -305,6 +303,21 @@ class SpectrumPlotWidget(QWidget):
         # ** Store the last-drawn normalization state **
         self._last_draw_norm_state = False # Default to non-normalized
 
+        self._cached_data_id = None # Tracks the ID of the cached data
+
+        # --- NEW: Cache for RAW plot-ready (decimated) arrays ---
+        self._cached_x_plot_raw = None
+        self._cached_y_plot_raw = None
+        self._cached_dy_plot_raw = None
+        self._cached_cont_plot_raw = None
+        self._cached_model_plot_raw = None
+
+        # --- NEW: Cache for NORMALIZED plot-ready (decimated) arrays ---
+        self._cached_y_plot_norm = None
+        self._cached_dy_plot_norm = None
+        self._cached_cont_plot_norm = None
+        self._cached_model_plot_norm = None
+
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
 
@@ -316,6 +329,27 @@ class SpectrumPlotWidget(QWidget):
         """
         Retrieves data from the immutable V2 Session and plots it.
         """
+        # Get the unique ID of the immutable data core
+        current_data_id = None
+        if session_state and session_state.spec:
+            # The ._data object is the frozen SpectrumDataV2
+            current_data_id = id(session_state.spec._data) 
+
+        # If the data has changed, invalidate (clear) the cache
+        if current_data_id != self._cached_data_id:
+            logging.debug("Data change detected, invalidating ALL plot caches.")
+            self._cached_data_id = current_data_id
+            # --- Invalidate ALL caches ---
+            self._cached_x_plot_raw = None
+            self._cached_y_plot_raw = None
+            self._cached_dy_plot_raw = None
+            self._cached_cont_plot_raw = None
+            self._cached_model_plot_raw = None
+            self._cached_y_plot_norm = None
+            self._cached_dy_plot_norm = None
+            self._cached_cont_plot_norm = None
+            self._cached_model_plot_norm = None
+
         if session_state is None:
             logging.debug("plot_spectrum called with no session manager. Clearing plot.")
             ax = self.canvas.axes
@@ -342,7 +376,7 @@ class SpectrumPlotWidget(QWidget):
         # ** Make sure to store current xlim/ylim BEFORE ax.clear() **
         previous_xlim = ax.get_xlim()
         previous_ylim = ax.get_ylim()
-        if previous_ylim == (-0.3, 1.3): previous_ylim = (0.0, 1.0) # Normalize special case
+        #if previous_ylim == (-0.3, 1.3): previous_ylim = (0.0, 1.0) # Normalize special case
         was_zoomed = False
         try: 
             if previous_xlim != (0.0, 1.0) or previous_ylim != (0.0, 1.0):
@@ -423,7 +457,7 @@ class SpectrumPlotWidget(QWidget):
             data_slice = slice(None) # Default: use full array
 
             # Define decimation parameters
-            DECIMATION_THRESHOLD = 20000 # Only decimate if plot has > 20k points
+            DECIMATION_THRESHOLD = 2000000 # Only decimate if plot has > 20k points
             DECIMATION_FACTOR = 10       # Plot 2 points for every 10
             
             data_slice = slice(None) # Default
@@ -454,48 +488,130 @@ class SpectrumPlotWidget(QWidget):
                 except Exception as e:
                     logging.warning(f"Failed to calculate plot slice: {e}")
 
-            # Apply the slice
-            if use_decimation:
-                # We decimate the main flux using min-max
-                x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
-                y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
-                dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
-                cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
-                model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
-            else:
-                x_data = full_x_data[data_slice]
-                y_data = full_y_data[data_slice]
-                dy_data = full_dy_data[data_slice]
-                cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
-                model_data = full_model_data[data_slice] if full_model_data is not None else None
+            if is_norm_y:
+                # 1. We want NORMALIZED data. Check for its cache.
+                if self._cached_y_plot_norm is not None:
+                    logging.debug("Using cached NORMALIZED plot data.")
+                    x_data = self._cached_x_plot_raw # Note: X is always raw
+                    y_data = self._cached_y_plot_norm
+                    dy_data = self._cached_dy_plot_norm
+                    cont_data = self._cached_cont_plot_norm
+                    model_data = self._cached_model_plot_norm
+                
+                else:
+                    logging.debug("Cache miss for normalized data. Computing...")
+                    # 2. Need to COMPUTE normalized data.
+                    # First, get the RAW data (from cache or compute it)
+                    if self._cached_x_plot_raw is not None:
+                        logging.debug("...using cached RAW plot data.")
+                        x_data = self._cached_x_plot_raw
+                        y_data = self._cached_y_plot_raw
+                        dy_data = self._cached_dy_plot_raw
+                        cont_data = self._cached_cont_plot_raw
+                        model_data = self._cached_model_plot_raw
+                    else:
+                        logging.debug("...RAW plot data cache is also empty. Decimating...")
+                        # 3. TOTAL cache miss. Compute RAW data.
+                        if use_decimation:
+                            x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
+                            y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                            dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
+                            cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                            model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
+                        else: # We are zoomed or data is small
+                            x_data = full_x_data[data_slice]
+                            y_data = full_y_data[data_slice]
+                            dy_data = full_dy_data[data_slice]
+                            cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
+                            model_data = full_model_data[data_slice] if full_model_data is not None else None
+                        
+                        # Save to RAW cache
+                        self._cached_x_plot_raw = x_data
+                        self._cached_y_plot_raw = y_data
+                        self._cached_dy_plot_raw = dy_data
+                        self._cached_cont_plot_raw = cont_data
+                        self._cached_model_plot_raw = model_data
 
-            if is_norm_y and cont_data is not None:
-                # Avoid division by zero
-                y_data = np.divide(y_data, cont_data, out=np.full_like(y_data, np.nan), where=cont_data!=0)
-                dy_data = np.divide(dy_data, cont_data, out=np.full_like(dy_data, np.nan), where=cont_data!=0)
-                if model_data is not None:
-                    model_data = np.divide(model_data, cont_data, out=np.full_like(model_data, np.nan), where=cont_data!=0)
-                cont_data = np.ones_like(cont_data) # Normalized continuum is 1
+                    # 4. NOW, compute and cache the NORMALIZED data
+                    if cont_data is not None:
+                        cont_val = cont_data
+                        y_data = np.divide(y_data, cont_val, out=np.full_like(y_data, np.nan), where=cont_val!=0)
+                        dy_data = np.divide(dy_data, cont_val, out=np.full_like(dy_data, np.nan), where=cont_val!=0)
+                        if model_data is not None:
+                            model_data = np.divide(model_data, cont_val, out=np.full_like(model_data, np.nan), where=cont_val!=0)
+                        cont_data = np.ones_like(cont_data)
+                        
+                        # Save to NORMALIZED cache
+                        self._cached_y_plot_norm = y_data
+                        self._cached_dy_plot_norm = dy_data
+                        self._cached_cont_plot_norm = cont_data
+                        self._cached_model_plot_norm = model_data
+                    else:
+                        # Cannot normalize, just use raw data
+                        logging.warning("Normalize checked, but continuum data is missing.")
+                        pass # y_data, etc. are already set to raw
+
+            else:
+                # 1. We want RAW data. Check for its cache.
+                if self._cached_x_plot_raw is not None:
+                    logging.debug("Using cached RAW plot data.")
+                    x_data = self._cached_x_plot_raw
+                    y_data = self._cached_y_plot_raw
+                    dy_data = self._cached_dy_plot_raw
+                    cont_data = self._cached_cont_plot_raw
+                    model_data = self._cached_model_plot_raw
+                
+                else:
+                    logging.debug("Cache miss for raw plot data. Decimating...")
+                    # 2. Compute RAW data.
+                    if use_decimation:
+                        x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
+                        y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                        dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
+                        cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                        model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
+                    else: # We are zoomed or data is small
+                        x_data = full_x_data[data_slice]
+                        y_data = full_y_data[data_slice]
+                        dy_data = full_dy_data[data_slice]
+                        cont_data = full_cont_data[data_slice] if full_cont_data is not None else None
+                        model_data = full_model_data[data_slice] if full_model_data is not None else None
+                    
+                    # Save to RAW cache
+                    self._cached_x_plot_raw = x_data
+                    self._cached_y_plot_raw = y_data
+                    self._cached_dy_plot_raw = dy_data
+                    self._cached_cont_plot_raw = cont_data
+                    self._cached_model_plot_raw = model_data
 
             x_unit = str(spec.x.unit)
             y_unit = str(spec.y.unit)
                     
             colors = get_color_cycle(5, cmap='tab20') # Get colors
 
+            # --- Check state from main_window reference ---
+            # 2. Plot Error Shading (Conditional)
+            if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
+                #ax.fill_between(
+                #    x_data, y_data - dy_data, y_data + dy_data,
+                #    step='mid', color='#aaaaaa', alpha=0.5,
+                #    label='1-sigma error', rasterized=True
+                #)
+                label = '1-sigma error'
+                if use_decimation:
+                    # Use plot() for decimated data (fast)
+                    ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                    ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                else:
+                    # Use step() for non-decimated data (correct)
+                    ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                    ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
+
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
             if use_decimation:
                 ax.plot(x_data, y_data, label="Spectrum (decimated)", lw=0.5, color=colors[0], rasterized=True)
             else:
                 ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
-
-            # --- Check state from main_window reference ---
-            # 2. Plot Error Shading (Conditional)
-            if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
-                ax.fill_between(
-                    x_data, y_data - dy_data, y_data + dy_data,
-                    step='mid', color='#aaaaaa', alpha=0.5,
-                    label='1-sigma error', rasterized=True
-                )
 
             # 3. Plot Continuum (Conditional)
             if self.main_window.continuum_checkbox.isChecked(): # <<< Check main window's checkbox
