@@ -6,7 +6,7 @@ from typing import Any, List, Dict
 # These operations typically involve extraction, combination, or file export,
 # requiring the original session state to be preserved and a new entry to be created.
 BRANCHING_RECIPES: List[str] = [
-    'region_extract',       # Extracts a sub-region
+    'split',    "Split spectrum by range."
     #'part_extract',         # Extracts a sub-part (e.g., specific order/slice)
     'combine',              # Combines multiple sessions
     #'equalize',             # Equalizes multiple sessions

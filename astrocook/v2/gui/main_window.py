@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import logging
 import os
@@ -888,7 +889,19 @@ class MainWindowV2(QMainWindow):
             logging.debug(f"Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and create a V1-safe deep copy
             source_log_manager = target_history.log_manager
-            new_log_copy = guarded_deepcopy_v1_state(source_log_manager)
+            new_log_copy = None
+            # Check if it's a V1-style log that needs special handling
+            if hasattr(source_log_manager, '_gui'):
+                logging.debug("Branching: Found V1-style log, using guarded_deepcopy_v1_state.")
+                new_log_copy = guarded_deepcopy_v1_state(source_log_manager)
+            else:
+                # It's a V2-style log (like HistoryLogV2), which is safe to deepcopy
+                logging.debug("Branching: Found V2-style log, using standard deepcopy.")
+                try:
+                    new_log_copy = deepcopy(source_log_manager)
+                except Exception as e:
+                    logging.error(f"Standard deepcopy failed on log manager: {e}")
+                    new_log_copy = None # Ensure it's None on failure
 
             if new_log_copy is None:
                 logging.error("Failed to deepcopy GUILog for branching, aborting.")
