@@ -12,10 +12,10 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, 
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox,
-    QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle
+    QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
 import re
 from typing import Any, Dict, List, Optional
@@ -224,7 +224,7 @@ class MainWindowV2(QMainWindow):
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
         font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
-
+        
         # 1. Set the context menu policy
         self.session_list_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         
@@ -232,6 +232,15 @@ class MainWindowV2(QMainWindow):
         self.session_list_view.customContextMenuRequested.connect(self._on_session_list_context_menu)
 
         self.session_list_view.clicked.connect(self._on_session_switched)
+
+        # 3a. Enable in-place editing
+        self.session_list_view.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked | 
+            QAbstractItemView.EditTrigger.EditKeyPressed
+        )
+        
+        # 3b. Connect the signal that fires *after* editing is done
+        self.session_model.dataChanged.connect(self._on_session_name_changed)
 
         sidebar_layout.addWidget(self.session_list_view)
         self.left_sidebar_widget.setObjectName("SessionContainer")
@@ -738,13 +747,13 @@ class MainWindowV2(QMainWindow):
             QListView#SessionListView {{ background-color: transparent; border: none; }}
             /* Ensure list items are NOT transparent */
             QListView#SessionListView::item {{
-                padding: 6px 10px; border: none;
+                padding: 16px 10px; border: none;
                 background-color: transparent; /* Inherit sidebar bg initially */
                 color: {button_fg}; /* Use button text color for readability */
              }}
             /* Selected/Hover items should be opaque */
             QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
-            
+
             /* Right Sidebar Checkboxes & Labels */
             QWidget#PlotControlsContainer QLabel {{ /* Style section labels */
                 margin-bottom: 4px; /* Space below label */
@@ -1293,29 +1302,150 @@ class MainWindowV2(QMainWindow):
         session_name = history_item.display_name
         menu = QMenu(self)
 
+        # --- *** NEW: Info action *** ---
+        info_action = QAction(f"Info", self)
+        info_action.triggered.connect(
+            # Use lambda to pass the specific history item
+            lambda checked=False, item=history_item: self._on_session_info(item)
+        )
+        menu.addAction(info_action)
+
         # --- View Log action ---
-        view_action = QAction(f"View Log for '{session_name}'", self)
+        view_action = QAction(f"View Log", self)
         view_action.triggered.connect(
             lambda: self._launch_log_scripter(history_item)
         )
         menu.addAction(view_action)
 
+        menu.addSeparator()
+        
         # --- Save Session Action ---
-        save_action = QAction(f"Save '{session_name}' as...", self)
+        save_action = QAction(f"Save as...", self)
         save_action.triggered.connect(
             lambda: self._on_save_session_context(history_item)
         )
         menu.addAction(save_action)
 
         # --- Close Session Action ---
-        menu.addSeparator()
-        close_action = QAction(f"Close '{session_name}'", self)
+        close_action = QAction(f"Close", self)
         close_action.triggered.connect(
             lambda: self._on_close_session_requested(history_item)
         )
         menu.addAction(close_action)
         
         menu.exec(self.session_list_view.mapToGlobal(pos))
+    
+    def _on_session_info(self, history_item: SessionHistory):
+        """ Displays an info box for the selected session. """
+        if not history_item:
+            return
+        
+        try:
+            state = history_item.current_state
+            spec = state.spec
+            systs = state.systs
+            meta = spec.meta if spec else {}
+
+            # --- Build an HTML table for alignment ---
+            # We can control the font and style here reliably.
+            info_html = (
+                "<style>"
+                "table { border: none; font-size: 13px; }"
+                "td { border: none; padding-right: 15px; }"
+                "b { font-weight: bold; }"
+                "</style>"
+                "<table>"
+            )
+
+            # Helper for clean table rows
+            def add_row(key: str, value, sub_key: bool = False):
+                indent = "&nbsp;" * (4 if sub_key else 0)
+                return (f"<tr>"
+                        f"<td>{indent}<b>{key}:</b></td>"
+                        f"<td>{value}</td>"
+                        f"</tr>")
+            
+            def add_header(title: str):
+                 return (f"<tr>"
+                        f"<td colspan='2'><br><b>{title}:</b></td>"
+                        f"</tr>")
+
+            info_html += add_row("Session", history_item.display_name)
+            
+            info_html += add_header("FITS Header")
+            info_html += add_row("Object", meta.get('OBJECT', 'N/A'), sub_key=True)
+            info_html += add_row("Instrument", meta.get('INSTRUME', 'N/A'), sub_key=True)
+            info_html += add_row("Date Obs", meta.get('DATE-OBS', 'N/A'), sub_key=True)
+            
+            info_html += add_header("Astrocook Properties")
+            info_html += add_row("z_em", f"{spec._data.z_em:.5f}", sub_key=True)
+            info_html += add_row("z_rf", f"{spec._data.z_rf:.5f}", sub_key=True)
+            
+            info_html += add_header("Data Summary")
+            info_html += add_row("Data Points", len(spec.x), sub_key=True)
+            info_html += add_row("Components", len(systs.components), sub_key=True)
+            
+            info_html += "</table>"
+            # --- End HTML string ---
+
+            # --- Create the custom dialog ---
+            dialog = QDialog(self)
+            dialog.setWindowTitle(f"Session Info: {history_item.display_name}")
+            
+            layout = QVBoxLayout(dialog)
+            
+            text_edit = QTextEdit()
+            text_edit.setReadOnly(True)
+            text_edit.setHtml(info_html) # Set the HTML content
+            
+            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            button_box.rejected.connect(dialog.reject)
+            
+            layout.addWidget(text_edit)
+            layout.addWidget(button_box)
+            
+            # --- Set the size you want ---
+            dialog.resize(450, 350)
+            dialog.exec() # Show the modal dialog
+
+        except Exception as e:
+            logging.error(f"Could not generate session info: {e}")
+            QMessageBox.warning(self, "Error", f"Could not retrieve session info:\n{e}")
+
+    def _on_session_name_changed(self, index_top_left, index_bottom_right):
+        """ Slot called when data in the session_model changes (i.e., rename). """
+        
+        row = index_top_left.row()
+        if not (0 <= row < len(self.session_histories)):
+            return
+            
+        try:
+            # 1. Get the history item
+            history_item = self.session_histories[row]
+            
+            # 2. Get the new name from the model
+            new_name = self.session_model.data(index_top_left, Qt.ItemDataRole.DisplayRole)
+            
+            if new_name and new_name != history_item.display_name:
+                old_name = history_item.display_name
+                
+                # 3. Update the history object's display name
+                history_item.display_name = new_name
+                
+                # 4. If this is the active session, update the log scripter title
+                if history_item is self.active_history and self.log_scripter_dialog:
+                    self.log_scripter_dialog.setWindowTitle(f"Log Scripter: {new_name}")
+                    
+                logging.info(f"Renamed session '{old_name}' to '{new_name}'")
+        
+        except AttributeError as e:
+            # This is the error you were seeing
+            logging.error(f"Error during in-place session rename: {e}")
+            QMessageBox.critical(self, "Rename Error", 
+                                 f"Failed to set display_name property.\n"
+                                 f"Please check 'session_manager.py'.\nError: {e}")
+        except Exception as e:
+            logging.error(f"Error during in-place session rename: {e}")
 
     def _on_view_log(self):
         """

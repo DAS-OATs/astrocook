@@ -515,6 +515,7 @@ class SpectrumPlotWidget(QWidget):
 
                     # 4a. NOW, compute and cache the NORMALIZED data
                     if cont_data_raw is not None:
+                        x_data = x_data_raw
                         cont_val = cont_data_raw
                         y_data = np.divide(y_data_raw, cont_val, out=np.full_like(y_data_raw, np.nan), where=cont_val!=0)
                         dy_data = np.divide(dy_data_raw, cont_val, out=np.full_like(dy_data_raw, np.nan), where=cont_val!=0)
@@ -523,6 +524,7 @@ class SpectrumPlotWidget(QWidget):
                         cont_data = np.ones_like(cont_data_raw)
                         
                         # Save to NORMALIZED cache
+                        self._cached_x_plot_norm = x_data
                         self._cached_y_plot_norm = y_data
                         self._cached_dy_plot_norm = dy_data
                         self._cached_cont_plot_norm = cont_data

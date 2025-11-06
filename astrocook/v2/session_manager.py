@@ -22,13 +22,14 @@ class SessionHistory:
         self.states: List[SessionV2] = [initial_state]
         self.current_index: int = 0 # Points to the active state
         self.log_manager: LogManager = log_object
+        self._display_name: str = self.states[0].name if self.states else "Unnamed Session"
 
         # Link the log manager to the session state for recipes to access
         # We use a new attribute 'log_manager' to avoid V1 conflicts
         initial_state.log_manager = self.log_manager
         # Also set the old .log for V1 recipes if they're still used
         if isinstance(log_object, GUILog):
-             initial_state.log = log_object
+            initial_state.log = log_object
 
     @property
     def current_state(self) -> SessionV2:
@@ -41,7 +42,14 @@ class SessionHistory:
     @property
     def display_name(self) -> str:
         """Returns the name of the session (e.g., from the initial state)."""
-        return self.states[0].name if self.states else "Unnamed Session"
+        return self._display_name
+    
+    @display_name.setter
+    def display_name(self, new_name: str):
+        """ Allows the GUI to set the display name. """
+        # --- THIS IS THE FIX ---
+        self._display_name = new_name
+        # --- END FIX ---
 
     def add_state(self, new_state: SessionV2):
         """
