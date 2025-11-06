@@ -93,6 +93,8 @@ class MainWindowV2(QMainWindow):
         # ** Add History Index **
         self.history_index = -1 # Index of the currently active session in active_sessions
 
+        self._pending_recipe_on_properties_set: Optional[tuple] = None
+
         self.setGeometry(100, 100, 450, 150) # Initial small size
         screen_geometry = QApplication.primaryScreen().geometry()
         x = (screen_geometry.width() - self.width()) // 2
@@ -619,6 +621,14 @@ class MainWindowV2(QMainWindow):
         fit_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_continuum"))
         continuum_menu.addAction(fit_cont_action)
         self.fit_cont_action = fit_cont_action; self.fit_cont_action.setEnabled(False)
+
+        continuum_menu.addSeparator()
+
+        fit_pl_action = QAction("Fit &Power-Law...", self)
+        fit_pl_action.setToolTip("Fit a power-law to specified rest-frame regions")
+        fit_pl_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_powerlaw"))
+        continuum_menu.addAction(fit_pl_action)
+        self.fit_powerlaw_action = fit_pl_action; self.fit_powerlaw_action.setEnabled(False)
 
         self._update_undo_redo_actions()
 
@@ -1637,6 +1647,9 @@ class MainWindowV2(QMainWindow):
 
         self._update_undo_redo_actions()
 
+    # --- DEFINE THE LIST OF RECIPES THAT NEED Z_EM ---
+    _RECIPES_REQUIRING_Z_EM = {'fit_powerlaw', 'estimate_auto', 'find_unabsorbed'}
+
     def _launch_recipe_dialog(self, category, name):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
@@ -1644,6 +1657,30 @@ class MainWindowV2(QMainWindow):
         if not self.active_history or not self.active_history.current_state.spec:
             QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
             return
+
+        # 1. Check if this recipe needs z_em
+        if name in self._RECIPES_REQUIRING_Z_EM:
+            current_z_em = self.active_history.current_state.spec._data.z_em
+            
+            # 2. Check if z_em is not set
+            if current_z_em == 0.0:
+                reply = QMessageBox.question(self,
+                                             "Emission Redshift Required",
+                                             "This recipe requires an emission redshift (z_em) to run.\n\n"
+                                             "Do you want to open the 'Set Properties' dialog to set it now?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                                             QMessageBox.StandardButton.Yes)
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    # 3. SET THE PENDING ACTION FLAG
+                    logging.info(f"Setting '{name}' as pending, launching 'set_properties' first.")
+                    self._pending_recipe_on_properties_set = (category, name)
+                    
+                    # 4. Launch 'set_properties'
+                    self._launch_recipe_dialog("edit", "set_properties")
+                else:
+                    logging.info(f"User cancelled '{name}' due to missing z_em.")
+                return # Stop here
 
         # --- Fix for Zoom/Pan Bug ---
         if self.plot_viewer and self.plot_viewer.toolbar:
@@ -1675,6 +1712,16 @@ class MainWindowV2(QMainWindow):
         Slot called when a RecipeDialog is closed (Accepted, Rejected, or 'X').
         This is crucial for cleanup.
         """
+        # If the user clicked "Cancel" or "X" (result=Rejected) AND
+        # we were waiting for them to set properties, clear the pending recipe.
+        if (result == QDialog.Rejected and 
+            self._pending_recipe_on_properties_set is not None and
+            self.active_recipe_dialog and 
+            self.active_recipe_dialog.recipe_name == 'set_properties'):
+            
+            logging.info("User cancelled 'set_properties', clearing pending recipe.")
+            self._pending_recipe_on_properties_set = None
+
         # We must set this to None so a new dialog can be opened,
         # regardless of how it was closed.
         logging.debug(f"Recipe dialog closed (result: {result}), clearing active dialog lock.")
@@ -1720,9 +1767,9 @@ class MainWindowV2(QMainWindow):
             return # Should not happen
 
         # 1. Close the dialog that sent the signal
-        if self.active_recipe_dialog:
-            self.active_recipe_dialog.close()
-            self.active_recipe_dialog = None
+        #if self.active_recipe_dialog:
+        #    self.active_recipe_dialog.close()
+        #    self.active_recipe_dialog = None
 
         self._ask_to_renormalize_model(recipe_name, params)
 
@@ -1794,6 +1841,20 @@ class MainWindowV2(QMainWindow):
                 is_branching=branching
             )
             
+            # 3. Check if a recipe was pending on this action
+            if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
+                pending_category, pending_name = self._pending_recipe_on_properties_set
+                self._pending_recipe_on_properties_set = None # Clear the flag
+                
+                # Check if user *actually* set z_em
+                new_z_em = new_session_state.spec._data.z_em
+                if new_z_em != 0.0:
+                    logging.info(f"'set_properties' complete, now launching pending recipe: {pending_name}")
+                    # Use a QTimer to launch the dialog in the next event loop
+                    QTimer.singleShot(0, lambda: self._launch_recipe_dialog(pending_category, pending_name))
+                else:
+                    logging.warning(f"User ran 'set_properties' but left z_em=0.0. Aborting pending recipe.")
+
         except Exception as e:
             logging.error(f"Failed to process recipe result: {e}", exc_info=True)
             QMessageBox.critical(self, "GUI Error", f"Failed to update GUI after recipe:\n{e}")
@@ -2017,6 +2078,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
+        if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

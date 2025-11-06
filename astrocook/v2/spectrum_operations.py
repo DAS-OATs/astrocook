@@ -4,6 +4,7 @@ from astropy.constants import c as c_light
 from astropy.stats import sigma_clip
 import logging
 import numpy as np
+from numpy.polynomial.polynomial import polyfit
 from scipy.ndimage import gaussian_filter1d
 from typing import Optional, Tuple
 
@@ -438,3 +439,61 @@ def fit_continuum_interp(
         cont_final = cont_interp
         
     return cont_final
+
+def fit_powerlaw_to_regions(
+    x: np.ndarray,
+    y: np.ndarray,
+    z_em: float,
+    regions_str: str
+) -> np.ndarray:
+    """
+    Fits a power-law continuum (linear in log-log space) to specified
+    rest-frame regions.
+    """
+    
+    # 1. Parse the regions string
+    # e.g., "125.0-135.0, 145.0-168.0"
+    all_x_points = []
+    all_y_points = []
+    
+    try:
+        for region in regions_str.split(','):
+            if '-' not in region:
+                continue
+            
+            # 2. Convert rest-frame (nm) to observed-frame (nm)
+            rf_min, rf_max = map(float, region.split('-'))
+            obs_min = rf_min * (1.0 + z_em)
+            obs_max = rf_max * (1.0 + z_em)
+            
+            # 3. Find all data points within this observed region
+            indices = np.where(
+                (x >= obs_min) & (x <= obs_max) &
+                (y > 0) & (np.isfinite(y)) # Only use positive, finite data
+            )[0]
+            
+            if len(indices) > 0:
+                all_x_points.append(x[indices])
+                all_y_points.append(y[indices])
+        
+        if not all_x_points:
+            raise ValueError("No valid data points found in any of the specified regions.")
+            
+        # 4. Concatenate all points and convert to log-space
+        x_fit = np.log10(np.concatenate(all_x_points))
+        y_fit = np.log10(np.concatenate(all_y_points))
+        
+        # 5. Perform a linear (1st degree) fit in log-log space
+        # polyfit returns [intercept, slope]
+        intercept, slope = polyfit(x_fit, y_fit, 1)
+        
+        logging.info(f"Power-law fit complete: slope={slope:.3f}, intercept={intercept:.3f}")
+        
+        # 6. Generate the model over the *entire* x-axis
+        y_pl = (10**intercept) * (x**slope)
+        
+        return y_pl
+        
+    except Exception as e:
+        logging.error(f"Failed to fit power-law: {e}")
+        raise # Re-raise for the recipe to catch

@@ -8,7 +8,7 @@ import numpy as np
 from typing import Dict, Any, Optional, Union
 
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, smooth_spectrum, rebin_spectrum
+    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -324,12 +324,12 @@ class SpectrumV2:
             
         return v1_spec
     
-    def with_properties(self, z_em: float, z_rf: float) -> 'SpectrumV2':
+    def with_properties(self, z_em: float) -> 'SpectrumV2':
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
         """
-        new_data = dataclasses.replace(self._data, z_em=z_em, z_rf=z_rf)
-        new_history = self.history + [f"Set properties (z_em={z_em}, z_rf={z_rf})"]
+        new_data = dataclasses.replace(self._data, z_em=z_em)
+        new_history = self.history + [f"Set properties (z_em={z_em})"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
@@ -560,8 +560,7 @@ class SpectrumV2:
         
         # 5. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
-        return SpectrumV2(data=new_data_core, history=new_history)
-    
+        return SpectrumV2(data=new_data_core, history=new_history)   
     
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
@@ -927,6 +926,34 @@ class SpectrumV2:
         
         # 4. Return new SpectrumV2
         new_history = self.history + [f"Fitted continuum (smooth={smooth_std_kms} km/s)"]
+        return SpectrumV2(data=new_data, history=new_history)
+
+    def fit_powerlaw(self, regions_str: str) -> 'SpectrumV2':
+        """
+        API: Fits a power-law to specified rest-frame regions and adds/updates
+        the 'cont_pl' column.
+        """
+        
+        # 1. Call the pure function
+        pl_values = fit_powerlaw_to_regions(
+            x=self._data.x.values,
+            y=self._data.y.values,
+            z_em=self._data.z_em, # Get z_em from self
+            regions_str=regions_str
+        )
+        
+        # 2. Create new data core
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        new_aux_cols['cont_pl'] = DataColumnV2(
+            values=pl_values,
+            unit=self._data.y.unit, # Power-law has same unit as flux
+            description=f"Power-law fit to regions: {regions_str}"
+        )
+        
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        
+        # 3. Return new SpectrumV2
+        new_history = self.history + [f"Fitted power-law (regions={regions_str})"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':

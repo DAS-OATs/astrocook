@@ -16,7 +16,6 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).",
         "params": [
             {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
-            {"name": "z_rf", "type": float, "default": "_current_", "doc": "Rest-Frame Redshift (z_rf)"},
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -175,24 +174,23 @@ class RecipeEditV2:
 
         return final_expression, extra_vars
     
-    def set_properties(self, z_em: str = '0.0', z_rf: str = '0.0') -> Optional['SessionV2']:
+    def set_properties(self, z_em: str = '0.0') -> Optional['SessionV2']:
         """
         API: Sets the core properties (z_em, z_rf) on the spectrum.
         """
         try:
             z_em_f = float(z_em)
-            z_rf_f = float(z_rf)
         except ValueError:
             logging.error(msg_param_fail)
             return 0
             
         try:
             # Check if values actually changed
-            if z_em_f == self._session.spec._data.z_em and z_rf_f == self._session.spec._data.z_rf:
-                logging.info("Properties are the same, no changes made.")
+            if z_em_f == self._session.spec._data.z_em:
+                logging.info("z_em is the same, no changes made.")
                 return 0 # Return 0 to indicate no state change
                 
-            new_spec = self._session.spec.with_properties(z_em=z_em_f, z_rf=z_rf_f)
+            new_spec = self._session.spec.with_properties(z_em=z_em_f)
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
             logging.error(f"Failed during set_properties: {e}", exc_info=True)

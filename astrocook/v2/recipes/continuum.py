@@ -45,6 +45,14 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "continuum_cb.html#fit_continuum"
+    },
+    "fit_powerlaw": {
+        "brief": "Fit power-law continuum.",
+        "details": "Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates 'cont_pl' column.",
+        "params": [
+            {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"}
+        ],
+        "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
     }
 }
 
@@ -157,4 +165,22 @@ class RecipeContinuumV2:
             return self._session.with_new_spectrum(spec_with_cont)
         except Exception as e:
             logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
+            return 0
+        
+    def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0') -> 'SessionV2':
+        """
+        API: Fits a power-law continuum to specified rest-frame regions.
+        """
+        if self._session.spec._data.z_em == 0.0:
+            logging.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "
+                          "Run 'Edit > Set Properties' first.")
+            return 0
+            
+        try:
+            new_spec_v2 = self._session.spec.fit_powerlaw(
+                regions_str=regions
+            )
+            return self._session.with_new_spectrum(new_spec_v2)
+        except Exception as e:
+            logging.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
             return 0
