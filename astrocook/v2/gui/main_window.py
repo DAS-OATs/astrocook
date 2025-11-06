@@ -308,7 +308,20 @@ class MainWindowV2(QMainWindow):
         # X/Y Toggles
         self.norm_y_checkbox = QCheckBox("Normalize flux")
         self.norm_y_checkbox.setToolTip("Plot Y / Continuum and set Y-limits.")
+        self.norm_y_checkbox.toggled.connect(self._on_view_toggle) # <-- CHANGE THIS
         view_layout.addWidget(self.norm_y_checkbox)
+
+        self.snr_checkbox = QCheckBox("Show SNR (y / error)")
+        self.snr_checkbox.setToolTip("Plot Y / Error Column.")
+        self.snr_checkbox.toggled.connect(self._on_view_toggle) # <-- NEW
+        view_layout.addWidget(self.snr_checkbox)
+        form_layout_snr = QFormLayout()
+        form_layout_snr.setSpacing(5)
+        self.snr_col_combo = QComboBox()
+        self.snr_col_combo.setToolTip("Select column to use as error for SNR")
+        self.snr_col_combo.currentTextChanged.connect(self._trigger_replot)
+        form_layout_snr.addRow("  Error Col:", self.snr_col_combo)
+        view_layout.addLayout(form_layout_snr)
 
         self.log_x_checkbox = QCheckBox("Logarithmic X-Axis")
         view_layout.addWidget(self.log_x_checkbox)
@@ -321,7 +334,7 @@ class MainWindowV2(QMainWindow):
 
         # Connect new signals
         self.x_unit_combo.currentTextChanged.connect(self._trigger_replot)
-        self.norm_y_checkbox.stateChanged.connect(self._trigger_replot)
+        #self.norm_y_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
 
@@ -416,6 +429,7 @@ class MainWindowV2(QMainWindow):
         
         self.x_unit_combo.setObjectName("XUnitCombo")
         self.norm_y_checkbox.setObjectName("PlotControlCheckbox")
+        self.snr_checkbox.setObjectName("PlotControlCheckbox")
         self.log_x_checkbox.setObjectName("PlotControlCheckbox")
         self.log_y_checkbox.setObjectName("PlotControlCheckbox")
         
@@ -1117,27 +1131,37 @@ class MainWindowV2(QMainWindow):
             self.aux_col_combo.blockSignals(False)
         # --- *** END NEW *** ---
 
-
-        # Update general UI visibility etc. based on validity
-        #self._update_ui_state(is_valid, is_startup=is_startup)
+        # --- *** NEW: Update SNR Column Combo *** ---
+        try:
+            self.snr_col_combo.blockSignals(True)
+            current_snr_col = self.snr_col_combo.currentText()
+            self.snr_col_combo.clear()
+            self.snr_col_combo.addItem("dy") # 'dy' is always the default
+            
+            if is_valid:
+                # Add other potential error columns (e.g., 'rms', 'cont_err')
+                all_cols = list(session_state_to_show.spec.t._data_dict.keys())
+                # Find columns that are not 'dy' but might be errors
+                potential_err_cols = sorted([
+                    c for c in all_cols 
+                    if ('err' in c or 'rms' in c) and c != 'dy'
+                ])
+                if potential_err_cols:
+                    self.snr_col_combo.addItems(potential_err_cols)
+            
+            index = self.snr_col_combo.findText(current_snr_col)
+            if index != -1:
+                self.snr_col_combo.setCurrentIndex(index)
+            else:
+                self.snr_col_combo.setCurrentIndex(0) # Default to 'dy'
         
-        #if is_valid:
-        #    # Check if the plot viewer's *current* session matches the *new* one
-        #    # If they match, it's just a replot, don't reset toggles.
-        #    # (This check is imperfect, plot_viewer doesn't store session)
-        #    
-        #    # Let's stick to the previous logic: always reset view toggles
-        #    # when showing a state, as we don't persist view preferences.
-        #    self.norm_y_checkbox.blockSignals(True)
-        #    self.log_x_checkbox.blockSignals(True)
-        #    self.log_y_checkbox.blockSignals(True)
-        #    self.norm_y_checkbox.setChecked(False)
-        #    self.log_x_checkbox.setChecked(False)
-        #    self.log_y_checkbox.setChecked(False)
-        #    self.norm_y_checkbox.blockSignals(False)
-        #    self.log_x_checkbox.blockSignals(False)
-        #    self.log_y_checkbox.blockSignals(False)
-        #    # Let x_unit_combo keep its value.
+        except Exception as e:
+            logging.warning(f"Failed to update SNR Column combobox: {e}")
+        finally:
+            self.snr_col_combo.blockSignals(False)
+            
+        # Also set the visibility of the combo box
+        #self.snr_col_combo.parentWidget().setVisible(self.snr_checkbox.isChecked())
 
         # Update Plot Widget
         if is_valid:
@@ -1170,6 +1194,27 @@ class MainWindowV2(QMainWindow):
         self.right_sidebar_widget.raise_()
         self.session_collapse_button.raise_()
         self.plot_controls_collapse_button.raise_()
+
+    def _on_view_toggle(self, checked: bool):
+        """ Handles toggling the main view (Norm vs SNR vs Raw). """
+        sender = self.sender()
+        
+        # 1. Enforce mutual exclusion
+        if checked:
+            if sender is self.norm_y_checkbox:
+                self.snr_checkbox.blockSignals(True)
+                self.snr_checkbox.setChecked(False)
+                self.snr_checkbox.blockSignals(False)
+            elif sender is self.snr_checkbox:
+                self.norm_y_checkbox.blockSignals(True)
+                self.norm_y_checkbox.setChecked(False)
+                self.norm_y_checkbox.blockSignals(False)
+        
+        # 2. Show/hide the SNR error column selector
+        #self.snr_col_combo.parentWidget().setVisible(self.snr_checkbox.isChecked())
+        
+        # 3. Trigger the redraw
+        self._trigger_replot()
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""

@@ -302,6 +302,7 @@ class SpectrumPlotWidget(QWidget):
 
         # ** Store the last-drawn normalization state **
         self._last_draw_norm_state = False # Default to non-normalized
+        self._last_draw_snr_state = False
 
         self._cached_data_id = None # Tracks the ID of the cached data
 
@@ -317,6 +318,13 @@ class SpectrumPlotWidget(QWidget):
         self._cached_dy_plot_norm = None
         self._cached_cont_plot_norm = None
         self._cached_model_plot_norm = None
+
+        # --- NEW: Cache for SNR plot-ready (decimated) arrays ---
+        self._cached_y_plot_snr = None
+        self._cached_dy_plot_snr = None
+        self._cached_model_plot_snr = None # (e.g., model / dy)
+        self._cached_cont_plot_snr = None # (e.g., cont / dy)
+        self._cached_snr_error_col = "" # Tracks which error col was used
 
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
@@ -335,9 +343,23 @@ class SpectrumPlotWidget(QWidget):
             # The ._data object is the frozen SpectrumDataV2
             current_data_id = id(session_state.spec._data) 
 
-        # If the data has changed, invalidate (clear) the cache
-        if current_data_id != self._cached_data_id:
-            logging.debug("Data change detected, invalidating ALL plot caches.")
+        # --- Get the selected SNR error column ---
+        selected_snr_col = self.main_window.snr_col_combo.currentText()
+
+        # If data changed OR the SNR error col changed, invalidate caches
+        if (current_data_id != self._cached_data_id or 
+            force_autoscale or
+            (self.main_window.snr_checkbox.isChecked() and 
+             self._cached_snr_error_col != selected_snr_col)
+           ):
+            
+            if force_autoscale:
+                logging.debug("Home button pressed, invalidating plot caches.")
+            elif current_data_id != self._cached_data_id:
+                logging.debug("Data change detected, invalidating ALL plot caches.")
+            else:
+                logging.debug("SNR error column changed, invalidating plot caches.")
+
             self._cached_data_id = current_data_id
             # --- Invalidate ALL caches ---
             self._cached_x_plot_raw = None
@@ -349,6 +371,11 @@ class SpectrumPlotWidget(QWidget):
             self._cached_dy_plot_norm = None
             self._cached_cont_plot_norm = None
             self._cached_model_plot_norm = None
+            self._cached_y_plot_snr = None
+            self._cached_dy_plot_snr = None
+            self._cached_cont_plot_snr = None
+            self._cached_model_plot_snr = None
+            self._cached_snr_error_col = "" # Clear the cached col name
 
         if session_state is None:
             logging.debug("plot_spectrum called with no session manager. Clearing plot.")
@@ -447,16 +474,19 @@ class SpectrumPlotWidget(QWidget):
 
             # --- Check View Toggles ---
             is_norm_y = self.main_window.norm_y_checkbox.isChecked()
+            is_snr = self.main_window.snr_checkbox.isChecked() # <-- NEW
             is_log_x = self.main_window.log_x_checkbox.isChecked()
             is_log_y = self.main_window.log_y_checkbox.isChecked()
             selected_x_unit = self.main_window.x_unit_combo.currentText()
 
             # ** Check if normalization state CHANGED since last draw **
-            norm_state_changed = (is_norm_y != self._last_draw_norm_state)
+            norm_state_changed = (is_norm_y != self._last_draw_norm_state) or \
+                             (is_snr != self._last_draw_snr_state)
             if norm_state_changed:
-                logging.debug(f"Normalization state changed to: {is_norm_y}")
+                logging.debug(f"View state changed (Norm: {is_norm_y}, SNR: {is_snr})")
             # ** Update the stored state for the next draw **
             self._last_draw_norm_state = is_norm_y
+            self._last_draw_snr_state = is_snr
         
             data_slice = slice(None) # Default: use full array
 
@@ -534,6 +564,90 @@ class SpectrumPlotWidget(QWidget):
                         x_data, y_data, dy_data, cont_data, model_data = \
                             x_data_raw, y_data_raw, dy_data_raw, cont_data_raw, model_data_raw
 
+            elif is_snr:
+                # --- *** NEW BLOCK FOR SNR *** ---
+                if self._cached_y_plot_snr is not None:
+                    logging.debug("Using cached SNR plot data.")
+                    x_data = self._cached_x_plot_raw
+                    y_data = self._cached_y_plot_snr
+                    dy_data = self._cached_dy_plot_snr
+                    cont_data = self._cached_cont_plot_snr
+                    model_data = self._cached_model_plot_snr
+                
+                else:
+                    logging.debug("Cache miss for SNR data. Computing...")
+                    # 1. Get RAW plot data (from cache or compute)
+                    if self._cached_x_plot_raw is not None:
+                        # ... (read from _cached_x_plot_raw, etc.) ...
+                        x_data_raw = self._cached_x_plot_raw
+                        y_data_raw = self._cached_y_plot_raw
+                        dy_data_raw = self._cached_dy_plot_raw
+                        cont_data_raw = self._cached_cont_plot_raw
+                        model_data_raw = self._cached_model_plot_raw
+                    else:
+                        # ... (compute raw decimated data) ...
+                        if use_decimation:
+                            # ... (decimate_x_for_min_max, decimate_y_min_max) ...
+                            x_data_raw = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
+                            y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                            dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
+                            cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                            model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
+                        else:
+                            # ... (get from data_slice) ...
+                            x_data_raw = full_x_data[data_slice]
+                            y_data_raw = full_y_data[data_slice]
+                            dy_data_raw = full_dy_data[data_slice]
+                            cont_data_raw = full_cont_data[data_slice] if full_cont_data is not None else None
+                            model_data_raw = full_model_data[data_slice] if full_model_data is not None else None
+                        
+                        # Save to RAW cache
+                        self._cached_x_plot_raw = x_data_raw
+                        self._cached_y_plot_raw = y_data_raw
+                        self._cached_dy_plot_raw = dy_data_raw
+                        self._cached_cont_plot_raw = cont_data_raw
+                        self._cached_model_plot_raw = model_data_raw
+
+                    # 2. Get the ERROR array to use
+                    error_col_name = self.main_window.snr_col_combo.currentText()
+                    full_error_data = None
+                    try:
+                        if error_col_name == 'dy':
+                            full_error_data = full_dy_data
+                        else:
+                            # This path is for 'rms', 'cont_err', etc.
+                            full_error_data = spec.get_column(error_col_name).value
+                    except Exception as e:
+                        logging.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
+                        full_error_data = full_dy_data # Fallback
+                        self.main_window.snr_col_combo.setCurrentIndex(0) # Reset combo
+                    
+                    # 3. Decimate/slice the error array
+                    if use_decimation:
+                        error_data_raw = decimate_y_min_max(full_error_data, DECIMATION_FACTOR)
+                    else:
+                        error_data_raw = full_error_data[data_slice]
+                    
+                    # 4. NOW, compute and cache the SNR data
+                    y_data = np.divide(y_data_raw, error_data_raw, out=np.full_like(y_data_raw, np.nan), where=error_data_raw!=0)
+                    dy_data = np.ones_like(y_data) # Error on SNR is (dy/dy) = 1.0
+                    
+                    cont_data = None
+                    if cont_data_raw is not None:
+                        cont_data = np.divide(cont_data_raw, error_data_raw, out=np.full_like(cont_data_raw, np.nan), where=error_data_raw!=0)
+                    
+                    model_data = None
+                    if model_data_raw is not None:
+                        model_data = np.divide(model_data_raw, error_data_raw, out=np.full_like(model_data_raw, np.nan), where=error_data_raw!=0)
+
+                    # Save to SNR cache
+                    x_data = x_data_raw # X is always the same
+                    self._cached_y_plot_snr = y_data
+                    self._cached_dy_plot_snr = dy_data
+                    self._cached_cont_plot_snr = cont_data
+                    self._cached_model_plot_snr = model_data
+                    self._cached_snr_error_col = error_col_name # Store the col used
+
             else:
                 # 1b. We want RAW data. Check cache.
                 if self._cached_x_plot_raw is not None:
@@ -609,15 +723,18 @@ class SpectrumPlotWidget(QWidget):
                 #    step='mid', color='#aaaaaa', alpha=0.5,
                 #    label='1-sigma error', rasterized=True
                 #)
-                label = '1-sigma error'
-                if use_decimation:
-                    # Use plot() for decimated data (fast)
-                    ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                    ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                if dy_data is not None:
+                    label = '1-sigma error'
+                    if use_decimation:
+                        # Use plot() for decimated data (fast)
+                        ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                        ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                    else:
+                        # Use step() for non-decimated data (correct)
+                        ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                        ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
                 else:
-                    # Use step() for non-decimated data (correct)
-                    ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                    ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
+                    logging.warning("Skipping error plot because dy_data is None (this may be a cache bug).")
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
             if use_decimation:
