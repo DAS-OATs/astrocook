@@ -12,7 +12,7 @@ import matplotlib.ticker as plt_ticker
 import numpy as np
 from PySide6.QtCore import QPoint, QTimer
 from PySide6.QtGui import QAction, QCursor
-from PySide6.QtWidgets import QApplication, QToolTip, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QMenu, QToolTip, QVBoxLayout, QWidget
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
@@ -146,6 +146,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
         # Connect Matplotlib events
         self.mpl_connect('motion_notify_event', self.on_motion)
+        self.mpl_connect('button_press_event', self.on_press)
         self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
         self.ylim_cid = self.axes.callbacks.connect('ylim_changed', self.on_lim_changed)
 
@@ -201,18 +202,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
 
 
-    def on_press(self, event):
-        """Initiates cursor drag OR handles other clicks."""
-        # ... (Safety check for plot_widget/main_window) ...
-        if not self.plot_widget or not hasattr(self.plot_widget, 'main_window') or not self.plot_widget.main_window: return
-
-        main_window = self.plot_widget.main_window
-
-        if event.button == 3 and event.inaxes == self.axes:
-             logging.debug("Right-click detected.")
-             # Add context menu logic here if needed later
-
-
     def on_motion(self, event):
         """Handles mouse motion: Updates cursor position if active."""
         # 1. Always restart the hover timer on any motion
@@ -250,15 +239,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             if not spec: return
 
             try:
-                # Calculate new_z based on mouse_x
-                series_str = main_window.cursor_series_input.text(); transitions = trans_parse(series_str)
-                if not transitions or not V1_FUNCTIONS_AVAILABLE: return
-                ref_transition = None; ref_xem_nm = None
-                for t in transitions:
-                    if t in xem_d: ref_transition = t; ref_xem_nm = xem_d[t].to_value(au.nm); break
-                if ref_xem_nm is None: return
-                zem_spec = getattr(spec, '_zem', 0.0); x_unit = spec.x.unit
-                new_z = z_convert_inverse(mouse_x, ref_xem_nm)
+                new_z = self.plot_widget.calculate_z_from_x(event.xdata)
 
                 if new_z is not None:
                     # Update QLineEdit (no need for blockSignals if not dragging)
@@ -294,6 +275,40 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         """Called when the mouse has stopped moving for a while."""
         if self.plot_widget and self._last_mouse_event and self._last_mouse_event.inaxes == self.axes:
             self.plot_widget.show_data_tooltip(self._last_mouse_event)
+
+    def on_press(self, event):
+        """
+        Handle mouse clicks. Right-click (Button 3) opens a context menu
+        with actions relevant to the clicked position.
+        """
+        if not self.plot_widget or not self.plot_widget.main_window: return
+        main_win = self.plot_widget.main_window
+
+        # Only handle Right-Click (Button 3) inside the axes
+        if event.button == 3 and event.inaxes == self.axes:
+            
+            menu = QMenu(self)
+            
+            # --- Feature 1: Set z_em (only if cursor is active) ---
+            if main_win.cursor_show_checkbox.isChecked():
+                new_z = self.plot_widget.calculate_z_from_x(event.xdata)
+                if new_z is not None:
+                    # Create the action with a clear label
+                    z_action = QAction(f"Set emission redshift to z={new_z:.5f}", menu)
+                    z_action.triggered.connect(lambda: main_win._on_recipe_requested(
+                        category="edit",
+                        recipe_name="set_properties",
+                        params={"z_em": str(new_z)},
+                        alias_map={}
+                    ))
+                    menu.addAction(z_action)
+
+            # --- (Future features will go here: Fit Line, Mask Region, etc.) ---
+
+            # Show the menu if it has any actions
+            if not menu.isEmpty():
+                # Use QCursor.pos() to show menu at the global mouse coordinates
+                menu.exec(QCursor.pos())
 
     def on_release(self, event):
         """Handles mouse button release events to stop cursor drag."""
@@ -999,6 +1014,31 @@ class SpectrumPlotWidget(QWidget):
             return []
         return positions
     
+    def calculate_z_from_x(self, mouse_x_nm: float) -> Optional[float]:
+        """
+        Helper to calculate redshift from a wavelength (nm) based on
+        the currently active cursor series.
+        """
+        if not self.main_window or not V1_FUNCTIONS_AVAILABLE:
+            return None
+        try:
+            series_str = self.main_window.cursor_series_input.text()
+            transitions = trans_parse(series_str)
+            if not transitions: return None
+            
+            # Find first valid transition to use as reference
+            ref_xem_nm = None
+            for t in transitions:
+                if t in xem_d:
+                    ref_xem_nm = xem_d[t].to_value(au.nm)
+                    break
+            if ref_xem_nm is None: return None
+
+            return z_convert_inverse(mouse_x_nm, ref_xem_nm)
+        except Exception as e:
+            logging.error(f"Error calculating Z from X: {e}")
+            return None
+        
     def show_data_tooltip(self, event):
         """
         Finds the data point nearest to the mouse event and shows a tooltip
