@@ -10,8 +10,9 @@ from matplotlib.figure import Figure
 import matplotlib.style as mplstyle
 import matplotlib.ticker as plt_ticker
 import numpy as np
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PySide6.QtCore import QPoint, QTimer
+from PySide6.QtGui import QAction, QCursor
+from PySide6.QtWidgets import QApplication, QToolTip, QVBoxLayout, QWidget
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
@@ -136,6 +137,13 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.cursor_artists = [] # Store references to the cursor axvline objects
         self.draw_event_cid = None # Store connection ID for draw_event
 
+        # Hover Timer for Tooltips
+        self.hover_timer = QTimer(self)
+        self.hover_timer.setSingleShot(True)
+        self.hover_timer.setInterval(500) # 500ms delay before showing tooltip
+        self.hover_timer.timeout.connect(self._on_hover_timeout)
+        self._last_mouse_event = None
+
         # Connect Matplotlib events
         self.mpl_connect('motion_notify_event', self.on_motion)
         self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
@@ -207,6 +215,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
     def on_motion(self, event):
         """Handles mouse motion: Updates cursor position if active."""
+        # 1. Always restart the hover timer on any motion
+        self._last_mouse_event = event
+        self.hover_timer.start()
+
         # Safety checks
         if (not self.plot_widget or not hasattr(self.plot_widget, 'main_window')
             or not self.plot_widget.main_window):
@@ -273,6 +285,11 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # Optional: Clear coordinate display if outside axes or cursor off?
             # Toolbar should handle clearing coordinate display by default.
             # pass
+
+    def _on_hover_timeout(self):
+        """Called when the mouse has stopped moving for a while."""
+        if self.plot_widget and self._last_mouse_event and self._last_mouse_event.inaxes == self.axes:
+            self.plot_widget.show_data_tooltip(self._last_mouse_event)
 
     def on_release(self, event):
         """Handles mouse button release events to stop cursor drag."""
@@ -970,6 +987,99 @@ class SpectrumPlotWidget(QWidget):
             return []
         return positions
     
+    def show_data_tooltip(self, event):
+        """
+        Finds the data point nearest to the mouse event and shows a tooltip
+        if it's close enough.
+        """
+        if not event or not event.xdata or not event.ydata:
+            return
+            
+        # 1. Get current spectrum
+        session = None
+        if self.main_window and self.main_window.active_history:
+             session = self.main_window.active_history.current_state
+        
+        if not session or not session.spec:
+            return
+            
+        spec = session.spec
+        x_full = spec.x.value
+        y_full = spec.y.value
+
+        # Calculate how many points are currently visible.
+        xlim = self.canvas.axes.get_xlim()
+        
+        # Use searchsorted to quickly find the visible range indices
+        idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
+        idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
+        n_visible = idx_end_vis - idx_start_vis
+        
+        # Threshold: if more than 5000 points are visible, it's too dense.
+        # (You can adjust this number based on your preference)
+        TOOLTIP_MAX_POINTS = 5000 
+        if n_visible > TOOLTIP_MAX_POINTS:
+            return
+
+        # 2. Find nearest index in X (fast search on sorted array)
+        # np.searchsorted finds the insertion point to maintain order
+        idx = np.searchsorted(x_full, event.xdata)
+        
+        # Check the neighboring point to find the *true* nearest
+        if idx > 0 and (idx == len(x_full) or 
+                        np.abs(event.xdata - x_full[idx-1]) < np.abs(event.xdata - x_full[idx])):
+            idx -= 1
+            
+        # Safety check for empty/out-of-bounds
+        if idx < 0 or idx >= len(x_full):
+            return
+
+        # 3. Check proximity in PIXELS (crucial for usability)
+        # Convert the data point back to screen coordinates
+        data_point_screen = self.canvas.axes.transData.transform((x_full[idx], y_full[idx]))
+        mouse_screen = (event.x, event.y)
+        
+        # Calculate euclidean distance in pixels
+        dist_pix = np.hypot(data_point_screen[0] - mouse_screen[0], 
+                            data_point_screen[1] - mouse_screen[1])
+        
+        THRESHOLD_PIX = 20 # Only show if within 20 pixels of the actual line
+        
+        logging.debug(f"Tooltip check: Mouse=({event.x:.1f}, {event.y:.1f}), "
+                      f"DataPoint=({data_point_screen[0]:.1f}, {data_point_screen[1]:.1f}), "
+                      f"Distance={dist_pix:.1f} pix")
+
+        if dist_pix < THRESHOLD_PIX:
+            # 4. Build the tooltip text (using HTML table for neatness)
+            try:
+                # Determine the unit for X based on the current plot label/combo
+                x_unit_str = self.main_window.x_unit_combo.currentText()
+                # (We could do the actual unit conversion here if we wanted 100% accuracy,
+                #  but reading the raw value is faster and usually sufficient. 
+                #  Let's stick to raw 'nm' for now to be safe and fast.)
+                x_val = x_full[idx]
+                y_val = y_full[idx]
+                dy_val = spec.dy.value[idx]
+                
+                tip_html = (
+                    "<table>"
+                    f"<tr><td><b>x:</b></td><td>{x_val:.4f} {spec.x.unit}</td></tr>"
+                    f"<tr><td><b>y:</b></td><td>{y_val:.4e} {spec.y.unit}</td></tr>"
+                    f"<tr><td><b>dy:</b></td><td>{dy_val:.4e} {spec.dy.unit}</td></tr>"
+                )
+                
+                # Optional: Add Aux columns if they are currently relevant?
+                # For now, keep it simple.
+                
+                tip_html += "</table>"
+
+                # 5. Show it using global coordinates from the Qt event
+                # We need the QMouseEvent from Matplotlib's event.guiEvent
+                QToolTip.showText(QCursor.pos(), tip_html, self)
+                    
+            except Exception as e:
+                logging.warning(f"Error building tooltip: {e}")
+
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
