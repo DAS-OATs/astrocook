@@ -243,7 +243,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.selection_artist.remove()
             
             self.selection_artist = self.axes.axvspan(
-                self.selection_start_x, event.xdata, color='orange', alpha=0.3
+                self.selection_start_x, event.xdata, color='yellow', alpha=0.3
             )
             self.draw_idle()
             return # Don't do cursor updates while selecting
