@@ -216,6 +216,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     def on_motion(self, event):
         """Handles mouse motion: Updates cursor position if active."""
         # 1. Always restart the hover timer on any motion
+        # Immediately hide any existing tooltip when the mouse moves.
+        # It will reappear only when the user stops again (timer timeout).
+        QToolTip.hideText()
+        
         self._last_mouse_event = event
         self.hover_timer.start()
 
@@ -1043,42 +1047,56 @@ class SpectrumPlotWidget(QWidget):
         dist_pix = np.hypot(data_point_screen[0] - mouse_screen[0], 
                             data_point_screen[1] - mouse_screen[1])
         
-        THRESHOLD_PIX = 20 # Only show if within 20 pixels of the actual line
+        THRESHOLD_PIX = 40 # Slightly tighter threshold for better separation
         
-        logging.debug(f"Tooltip check: Mouse=({event.x:.1f}, {event.y:.1f}), "
-                      f"DataPoint=({data_point_screen[0]:.1f}, {data_point_screen[1]:.1f}), "
-                      f"Distance={dist_pix:.1f} pix")
+        # Helper to check distance
+        def check_dist(y_array):
+            if y_array is None: return False
+            data_pos = self.canvas.axes.transData.transform((x_full[idx], y_array[idx]))
+            mouse_pos = (event.x, event.y)
+            return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
 
-        if dist_pix < THRESHOLD_PIX:
-            # 4. Build the tooltip text (using HTML table for neatness)
-            try:
-                # Determine the unit for X based on the current plot label/combo
-                x_unit_str = self.main_window.x_unit_combo.currentText()
-                # (We could do the actual unit conversion here if we wanted 100% accuracy,
-                #  but reading the raw value is faster and usually sufficient. 
-                #  Let's stick to raw 'nm' for now to be safe and fast.)
-                x_val = x_full[idx]
-                y_val = y_full[idx]
-                dy_val = spec.dy.value[idx]
-                
-                tip_html = (
-                    "<table>"
-                    f"<tr><td><b>x:</b></td><td>{x_val:.4f} {spec.x.unit}</td></tr>"
-                    f"<tr><td><b>y:</b></td><td>{y_val:.4e} {spec.y.unit}</td></tr>"
-                    f"<tr><td><b>dy:</b></td><td>{dy_val:.4e} {spec.dy.unit}</td></tr>"
-                )
-                
-                # Optional: Add Aux columns if they are currently relevant?
-                # For now, keep it simple.
-                
-                tip_html += "</table>"
+        # List of (label, value, unit) tuples to display
+        rows_to_show = []
 
-                # 5. Show it using global coordinates from the Qt event
-                # We need the QMouseEvent from Matplotlib's event.guiEvent
-                QToolTip.showText(QCursor.pos(), tip_html, self)
+        # 1. Check Flux
+        if check_dist(spec.y.value):
+            rows_to_show.append(("y", spec.y.value[idx], spec.y.unit))
+            rows_to_show.append(("dy", spec.dy.value[idx], spec.dy.unit))
+            
+        # 2. Check Continuum (if visible AND exists)
+        if self.main_window.continuum_checkbox.isChecked():
+            cont_col = spec._data.aux_cols.get('cont')
+            if cont_col and check_dist(cont_col.values):
+                rows_to_show.append(("cont", cont_col.values[idx], cont_col.unit))
+
+        # 3. Check Model (if visible AND exists)
+        if self.main_window.model_checkbox.isChecked():
+            model_col = spec._data.aux_cols.get('model')
+            if model_col and check_dist(model_col.values):
+                rows_to_show.append(("model", model_col.values[idx], model_col.unit))
+        
+        # --- If no lines are near, don't show anything ---
+        if not rows_to_show:
+            return
+
+        # 4. Build the HTML table
+        try:
+            tip_html = "<table style='font-size: 13px'>"
+            
+            # Always show X at the top if we are showing anything
+            tip_html += f"<tr><td style='padding-right:10px'><b>x:</b></td><td>{x_full[idx]:.4f} {spec.x.unit}</td></tr>"
+            
+            # Add the dynamic rows
+            for label, val, unit in rows_to_show:
+                 tip_html += f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val:.4e} {unit}</td></tr>"
+
+            tip_html += "</table>"
+
+            QToolTip.showText(QCursor.pos(), tip_html, self)
                     
-            except Exception as e:
-                logging.warning(f"Error building tooltip: {e}")
+        except Exception as e:
+            logging.warning(f"Error building tooltip: {e}")
 
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
