@@ -1083,6 +1083,19 @@ class SpectrumPlotWidget(QWidget):
             model_col = spec._data.aux_cols.get('model')
             if model_col and check_dist(model_col.values):
                 rows_to_show.append(("model", model_col.values[idx], model_col.unit))
+
+        # 4. Check Dynamic Aux Column
+        selected_aux = self.main_window.aux_col_combo.currentText()
+        if selected_aux and selected_aux != "None":
+             # Avoid double-showing if it's already covered by the checkboxes
+             is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
+                            (selected_aux == 'model' and self.main_window.model_checkbox.isChecked())
+             
+             if not is_redundant:
+                 aux_col = spec._data.aux_cols.get(selected_aux)
+                 # We only show numerical columns in the tooltip for now
+                 if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
+                      rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
         
         # --- If no lines are near, don't show anything ---
         if not rows_to_show:
