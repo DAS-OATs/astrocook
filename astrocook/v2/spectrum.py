@@ -537,7 +537,7 @@ class SpectrumV2:
 
         # 3. Check if the resulting spectrum would be empty
         if np.sum(mask) == 0:
-            raise ValueError("Split expression resulted in an empty spectrum.")
+            raise ValueError("Split expression resulted in an empty spectrum. Aborted.")
 
         # 4. Create new data core by boolean-indexing all columns
         new_data_cols = {}

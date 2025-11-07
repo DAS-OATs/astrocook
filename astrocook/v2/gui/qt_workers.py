@@ -88,14 +88,31 @@ class RecipeWorker(QRunnable):
 
         except Exception as e:
             # 5. Failure! Emit the error
-            logging.error(f"RecipeWorker: Failed on {self.recipe_name}\nError: {e}", exc_info=True)
-            # Send a 3-tuple: (error_title, error_message, full_traceback_string)
+            
             import traceback
-            self.signals.error.emit((
-                f"Recipe Execution Error: {self.recipe_name}",
-                f"An error occurred:\n{e}",
-                traceback.format_exc()
-            ))
+            
+            # Check if this is a standard "user error" (like empty split, bad input)
+            is_user_error = isinstance(e, (ValueError, TypeError))
+            
+            if is_user_error:
+                # Case A: User Error. Log mildly, send NO traceback.
+                logging.warning(f"Recipe '{self.recipe_name}' aborted: {e}")
+                
+                # Signal: (Title, Message, Traceback)
+                self.signals.error.emit((
+                    "Recipe Aborted",  # Milder title
+                    str(e),           # Simple message
+                    ""                # Empty traceback
+                ))
+            else:
+                # Case B: Real Bug. Log severely, send FULL traceback.
+                logging.error(f"RecipeWorker crashed on {self.recipe_name}: {e}", exc_info=True)
+                
+                self.signals.error.emit((
+                    f"Recipe Error: {self.recipe_name}", # Scary title
+                    f"An unexpected error occurred:\n{e}",
+                    traceback.format_exc() # Full traceback
+                ))
             
 class ScriptWorker(QRunnable):
     """

@@ -185,14 +185,14 @@ class RecipeEditV2:
         try:
             # Check if values actually changed
             if z_em_f == self._session.spec._data.z_em:
-                logging.info("z_em is the same, no changes made.")
-                return 0 # Return 0 to indicate no state change
+                # Instead of returning 0 (generic fail), raise a specific, friendly error
+                raise ValueError("No changes were made to the properties.")
                 
             new_spec = self._session.spec.with_properties(z_em=z_em_f)
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
-            logging.error(f"Failed during set_properties: {e}", exc_info=True)
-            return 0
+            # (Re-raising allows the worker to catch it and separate User vs System errors)
+            raise e
 
     def x_convert(self, z_rf: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
@@ -320,19 +320,14 @@ class RecipeEditV2:
             logging.error("Expression cannot be empty.")
             return 0
             
-        try:
-            # 1. Prepare multi-session vars (re-using our existing helper!)
-            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
-            
-            # 2. Call the immutable V2 operation
-            new_spec_v2 = self._session.spec.split(
-                expression=final_expression,
-                extra_vars=extra_vars
-            )
-            
-            # 3. Return a NEW SessionV2 instance (GUI handles branching)
-            return self._session.with_new_spectrum(new_spec_v2)
-            
-        except Exception as e:
-            logging.error(f"Failed during split: {e}", exc_info=True)
-            raise e
+        # 1. Prepare multi-session vars (re-using our existing helper!)
+        final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+        
+        # 2. Call the immutable V2 operation
+        new_spec_v2 = self._session.spec.split(
+            expression=final_expression,
+            extra_vars=extra_vars
+        )
+        
+        # 3. Return a NEW SessionV2 instance (GUI handles branching)
+        return self._session.with_new_spectrum(new_spec_v2)

@@ -95,6 +95,8 @@ class MainWindowV2(QMainWindow):
 
         self._pending_recipe_on_properties_set: Optional[tuple] = None
 
+        self._last_attempted_recipe: Optional[dict] = None
+
         self.setGeometry(100, 100, 450, 150) # Initial small size
         screen_geometry = QApplication.primaryScreen().geometry()
         x = (screen_geometry.width() - self.width()) // 2
@@ -1776,6 +1778,15 @@ class MainWindowV2(QMainWindow):
         if not self.active_history:
             return # Should not happen
 
+        self._last_attempted_recipe = {
+            'category': category,
+            'recipe_name': recipe_name,
+            # We don't save 'params' here because we want the dialog 
+            # to reload fresh defaults or current values, not the failed ones.
+            # If you DO want to preserve their typed-in values, it's much harder.
+            # Re-opening the dialog standard way is usually sufficient.
+        }
+
         # 1. Close the dialog that sent the signal
         #if self.active_recipe_dialog:
         #    self.active_recipe_dialog.close()
@@ -1811,9 +1822,7 @@ class MainWindowV2(QMainWindow):
     # --- *** 5. NEW: Callback slots for single recipes *** ---
     def _on_recipe_finished(self, result_data: tuple):
         """Slot called when the RecipeWorker succeeds."""
-        if self.progress_dialog:
-            self.progress_dialog.close()
-            self.progress_dialog = None
+        self._safely_close_progress_dialog()
 
         # Set the "Wait" cursor for the whole application
         QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -1879,12 +1888,34 @@ class MainWindowV2(QMainWindow):
         """Slot called when the RecipeWorker fails."""
         title, message, trace = error_data
         
-        if self.progress_dialog:
-            self.progress_dialog.close()
-            self.progress_dialog = None
+        self._safely_close_progress_dialog()
             
-        logging.error(f"{title}\n{message}\n{trace}")
-        QMessageBox.critical(self, title, message)
+        if trace:
+            # Critical bug: just show standard error
+            QMessageBox.critical(self, title, message)
+        else:
+            # User error: Offer to try again
+            # --- *** START MODIFICATION *** ---
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            
+            # Add standard buttons + a custom "Try Again"
+            try_again_btn = msg_box.addButton("Try Again", QMessageBox.AcceptRole)
+            msg_box.addButton(QMessageBox.Cancel)
+            msg_box.setDefaultButton(try_again_btn)
+            
+            msg_box.exec()
+            
+            if msg_box.clickedButton() == try_again_btn:
+                if self._last_attempted_recipe:
+                    logging.info("User clicked 'Try Again', re-launching dialog.")
+                    # Re-launch the dialog
+                    self._launch_recipe_dialog(
+                        self._last_attempted_recipe['category'],
+                        self._last_attempted_recipe['recipe_name']
+                    )
                 
     def _launch_log_scripter(self, history_object: 'SessionHistory'):
         """
@@ -2000,9 +2031,7 @@ class MainWindowV2(QMainWindow):
         """Slot called when the ScriptWorker fails."""
         line_num, line, error_msg = error_data
         
-        if self.progress_dialog:
-            self.progress_dialog.close()
-            self.progress_dialog = None
+        self._safely_close_progress_dialog()
             
         logging.error(f"Failed to run script line {line_num}: {line}\nError: {error_msg}")
         QMessageBox.critical(
@@ -2015,9 +2044,7 @@ class MainWindowV2(QMainWindow):
 
     def _on_script_finished(self, new_history: SessionHistory):
         """Slot called when the ScriptWorker succeeds."""
-        if self.progress_dialog:
-            self.progress_dialog.close()
-            self.progress_dialog = None
+        self._safely_close_progress_dialog()
         
         QApplication.setOverrideCursor(Qt.WaitCursor)
         # Schedule the heavy GUI update
@@ -2145,3 +2172,16 @@ class MainWindowV2(QMainWindow):
         self._reposition_floating_widgets() # Try immediate reposition first
 
         self._update_undo_redo_actions()
+
+    def _safely_close_progress_dialog(self):
+        """
+        Helper to close the progress dialog safely, deferring the action
+        to avoid macOS 'modalSession exited prematurely' warnings.
+        """
+        if self.progress_dialog:
+            # 1. Grab a local reference and clear the main attribute immediately
+            dlg = self.progress_dialog
+            self.progress_dialog = None
+            
+            # 2. Defer the actual .close() call to the next event loop iteration
+            QTimer.singleShot(0, dlg.close)
