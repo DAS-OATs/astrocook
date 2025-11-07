@@ -10,9 +10,9 @@ from matplotlib.figure import Figure
 import matplotlib.style as mplstyle
 import matplotlib.ticker as plt_ticker
 import numpy as np
-from PySide6.QtCore import QPoint, QTimer
-from PySide6.QtGui import QAction, QCursor
-from PySide6.QtWidgets import QApplication, QMenu, QToolTip, QVBoxLayout, QWidget
+from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtGui import QAction, QCursor, QIcon
+from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
@@ -144,9 +144,14 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.hover_timer.timeout.connect(self._on_hover_timeout)
         self._last_mouse_event = None
 
+        # Region Selection State
+        self.selection_artist = None # Will hold the axvspan
+        self.selection_start_x = None
+
         # Connect Matplotlib events
         self.mpl_connect('motion_notify_event', self.on_motion)
         self.mpl_connect('button_press_event', self.on_press)
+        self.mpl_connect('button_release_event', self.on_release)
         self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
         self.ylim_cid = self.axes.callbacks.connect('ylim_changed', self.on_lim_changed)
 
@@ -219,6 +224,28 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             return
 
         main_window = self.plot_widget.main_window # type: MainWindowV2
+
+        # Update Selection Span while dragging
+        if (self.plot_widget and self.plot_widget._is_selecting_region and
+            self.selection_start_x is not None and event.inaxes == self.axes):
+            
+            # Update the span's extent
+            # axvspan is a Polygon, we convert it to a simple Rect for easy updating if needed,
+            # but .set_xy is the standard way to update a Polygon.
+            # Actually, for axvspan it's easier to just update the vertices.
+            # A simpler way for axvspan: it works by setting xmin/xmax.
+            # BUT axvspan doesn't have simple set_xlim methods.
+            # Re-drawing might be easiest, or using a Rectangle instead.
+            
+            # Let's use a simpler approach: remove old, draw new (fast enough for this)
+            if self.selection_artist:
+                self.selection_artist.remove()
+            
+            self.selection_artist = self.axes.axvspan(
+                self.selection_start_x, event.xdata, color='orange', alpha=0.3
+            )
+            self.draw_idle()
+            return # Don't do cursor updates while selecting
         
         # Check if inside axes and cursor checkbox is checked
         if (event.inaxes == self.axes and event.xdata is not None
@@ -284,6 +311,17 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         if not self.plot_widget or not self.plot_widget.main_window: return
         main_win = self.plot_widget.main_window
 
+        if (event.button == 1 and event.inaxes == self.axes and 
+            self.plot_widget._is_selecting_region):
+            
+            self.selection_start_x = event.xdata
+            # Create the visual artist (invisible at first, 0 width)
+            self.selection_artist = self.axes.axvspan(
+                event.xdata, event.xdata, color='orange', alpha=0.3
+            )
+            self.draw_idle() # Force a draw to show it starts
+            return # Don't do other click actions
+
         # Only handle Right-Click (Button 3) inside the axes
         if event.button == 3 and event.inaxes == self.axes:
             
@@ -311,11 +349,40 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 menu.exec(QCursor.pos())
 
     def on_release(self, event):
-        """Handles mouse button release events to stop cursor drag."""
-        # ... (Safety checks) ...
-        if not self.plot_widget: return
+        """Handle mouse button release events."""
+        # Check if we were selecting a region
+        if self.selection_start_x is not None:
+            start = self.selection_start_x
+            end = event.xdata
+            
+            # 1. Cleanup the visual
+            self.cleanup_selection()
+            
+            # 2. Validate the selection
+            if start is None or end is None or start == end:
+                 return # Just a click, not a drag
+            
+            # Ensure min/max order
+            xmin, xmax = sorted([start, end])
+            
+            # 3. Trigger the action in the main window
+            if self.plot_widget and self.plot_widget.main_window:
+                logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
+                # Call a new helper in main_window to launch split
+                self.plot_widget.main_window.launch_split_from_region(xmin, xmax)
+                
+            # 4. Optional: Auto-exit select mode?
+            # self.plot_widget.toggle_region_selector() 
 
-        pass
+    def cleanup_selection(self):
+        """Helper to remove selection artist and reset state."""
+        self.selection_start_x = None
+        if self.selection_artist:
+            try:
+                self.selection_artist.remove()
+            except Exception: pass # Might already be gone
+            self.selection_artist = None
+            self.draw_idle()
 
 class SpectrumPlotWidget(QWidget):
     """
@@ -349,18 +416,21 @@ class SpectrumPlotWidget(QWidget):
         self._cached_cont_plot_raw = None
         self._cached_model_plot_raw = None
 
-        # --- NEW: Cache for NORMALIZED plot-ready (decimated) arrays ---
+        # Cache for NORMALIZED plot-ready (decimated) arrays
         self._cached_y_plot_norm = None
         self._cached_dy_plot_norm = None
         self._cached_cont_plot_norm = None
         self._cached_model_plot_norm = None
 
-        # --- NEW: Cache for SNR plot-ready (decimated) arrays ---
+        # Cache for SNR plot-ready (decimated) arrays
         self._cached_y_plot_snr = None
         self._cached_dy_plot_snr = None
         self._cached_model_plot_snr = None # (e.g., model / dy)
         self._cached_cont_plot_snr = None # (e.g., cont / dy)
         self._cached_snr_error_col = "" # Tracks which error col was used
+
+        # Selection Mode State
+        self._is_selecting_region = False
 
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
@@ -991,6 +1061,26 @@ class SpectrumPlotWidget(QWidget):
         if self.main_window:
             # Schedule this to run just after the draw completes
             QTimer.singleShot(0, self.main_window._update_limit_boxes_from_plot)
+    
+    def toggle_region_selector(self):
+        """ Enables/disables the region selection mode. """
+        # 1. Toggle state
+        self._is_selecting_region = not self._is_selecting_region
+        
+        if self._is_selecting_region:
+            logging.info("Region selection mode ACTIVE.")
+            # Disable standard Matplotlib tools to avoid conflicts
+            if self.toolbar.mode != '':
+                self.toolbar.zoom() # Toggles off if active
+                self.toolbar.pan()  # Toggles off if active
+            
+            # Change cursor to indicate mode
+            self.setCursor(Qt.CrossCursor)
+        else:
+            logging.info("Region selection mode DEACTIVATED.")
+            self.setCursor(Qt.ArrowCursor)
+            # Clean up any half-drawn selection
+            self.canvas.cleanup_selection()
 
     def get_cursor_line_positions_at_z(self, session_state: 'SessionV2', z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
@@ -1183,7 +1273,8 @@ class AstrocookToolbar(NavigationToolbar):
         # We rely on the base class finding 'hand' and 'magnifying_glass' equivalent icons.
         ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'), 
         ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-        
+        ('Select', 'Select region', 'toggle_select_mode', 'toggle_select_mode'),
+
         (None, None, None, None), # Separator placeholder
         ('Save', 'Save the figure', 'filesave', 'save_figure'),
     ]
@@ -1200,6 +1291,29 @@ class AstrocookToolbar(NavigationToolbar):
         for action in self.actions():
             if action.text() in actions_to_remove or action.iconText() in actions_to_remove:
                 self.removeAction(action)
+
+        for action in self.actions():
+            if action.text() == 'Select':
+                # Use a standard Qt icon. 
+                # SP_FileDialogDetailedView often looks like a list/selection.
+                # You can try others like SP_ArrowRight or SP_ToolBarHorizontalExtensionButton
+                icon = QApplication.style().standardIcon(QStyle.SP_FileDialogDetailedView)
+                action.setIcon(icon)
+                break
+            
+    def toggle_select_mode(self):
+        """Toggles the region selection mode on/off."""
+        if not self.viewer_parent: return
+        
+        # Toggle the mode in the parent widget
+        self.viewer_parent.toggle_region_selector()
+        
+        # Visual feedback: "press" or "unpress" the button based on new state
+        # (We need to find our action in the toolbar list)
+        for action in self.actions():
+             if action.text() == 'Select':
+                 action.setChecked(self.viewer_parent._is_selecting_region)
+                 break
 
     def home(self):
         """ Overrides the default 'home' to reset to the *current*

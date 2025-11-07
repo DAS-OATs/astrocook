@@ -1662,7 +1662,7 @@ class MainWindowV2(QMainWindow):
     # --- DEFINE THE LIST OF RECIPES THAT NEED Z_EM ---
     _RECIPES_REQUIRING_Z_EM = {'fit_powerlaw', 'estimate_auto', 'find_unabsorbed'}
 
-    def _launch_recipe_dialog(self, category, name):
+    def _launch_recipe_dialog(self, category, name, initial_params: dict = None):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
             return
@@ -1706,6 +1706,14 @@ class MainWindowV2(QMainWindow):
         
         current_state = self.active_history.current_state
         dialog = RecipeDialog(category, name, current_state, self) 
+
+        if initial_params:
+            for param_name, value in initial_params.items():
+                if param_name in dialog.input_widgets:
+                    widget = dialog.input_widgets[param_name]
+                    if isinstance(widget, QLineEdit):
+                        widget.setText(str(value))
+                    # (Add other widget types here if needed later, e.g., QCheckBox)
         
         # --- Connect the new signal to our worker-launching slot ---
         dialog.recipe_requested.connect(self._on_recipe_requested)
@@ -2086,6 +2094,27 @@ class MainWindowV2(QMainWindow):
     def _launch_rebin_dialog(self):
         # Placeholder function called by the QAction
         print("Launching Rebin Dialog...")
+
+    def launch_split_from_region(self, xmin: float, xmax: float):
+        """
+        Launches the 'split' recipe dialog pre-filled with a region expression.
+        """
+        # 1. Turn off the selection mode in the plot widget
+        if self.plot_viewer:
+             self.plot_viewer.toggle_region_selector()
+             
+        # 2. Build the expression string
+        # Using the current x-axis unit label from the plot for clarity,
+        # although the data 'x' is always native (likely nm).
+        # Assuming xmin/xmax passed here are already in native units from the plot.
+        expression = f"(x > {xmin:.4f}) & (x < {xmax:.4f})"
+        
+        # 3. Launch the dialog with these params pre-filled
+        self._launch_recipe_dialog(
+            "edit", 
+            "split", 
+            initial_params={"expression": expression} # We need to support this!
+        )
 
     def _update_ui_state(self, is_valid_session, is_startup=False):
         is_valid_session = bool(is_valid_session)
