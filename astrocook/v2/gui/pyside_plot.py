@@ -705,6 +705,9 @@ class SpectrumPlotWidget(QWidget):
             # --- 2. SLICING BLOCK (NEW) ---
             # At this point, x_data, y_data, etc., are ALL full-range.
             # Now we apply the zoom-slice if necessary.
+            
+            final_slice = slice(None) # Default to no extra slicing
+
             if was_zoomed and not force_autoscale:
                 try:
                     # Find indices for the visible range *on the plot data*
@@ -719,14 +722,17 @@ class SpectrumPlotWidget(QWidget):
 
                     if idx_end > idx_start:
                         logging.debug(f"Applying zoom-slice to plot data: {idx_end - idx_start} points")
+                        
+                        final_slice = slice(idx_start, idx_end)
+
                         # Apply the slice to all arrays
-                        x_data = x_data[idx_start:idx_end]
-                        y_data = y_data[idx_start:idx_end]
-                        dy_data = dy_data[idx_start:idx_end]
+                        x_data = x_data[final_slice]
+                        y_data = y_data[final_slice]
+                        dy_data = dy_data[final_slice]
                         if cont_data is not None:
-                            cont_data = cont_data[idx_start:idx_end]
+                            cont_data = cont_data[final_slice]
                         if model_data is not None:
-                            model_data = model_data[idx_start:idx_end]
+                            model_data = model_data[final_slice]
                     else:
                         logging.debug("Zoom slice is empty, plotting full data.")
                 except Exception as e:
@@ -790,12 +796,14 @@ class SpectrumPlotWidget(QWidget):
                     
                     full_aux_col_data = full_aux_col_data.value # Get numpy array
                     
-                    # Decimate or slice it just like the other arrays
+                    # 1. Apply Decimation (if it was applied to x_data)
                     if use_decimation:
                         aux_data = decimate_y_min_max(full_aux_col_data, DECIMATION_FACTOR)
-                        # We use the already-decimated x_data for plotting
                     else:
-                        aux_data = full_aux_col_data[data_slice]
+                        aux_data = full_aux_col_data
+                        
+                    # 2. Apply Zoom Slicing (must match x_data's final state)
+                    aux_data = aux_data[final_slice]
                     
                     # Plot based on data type
                     if aux_data.dtype.kind in 'fi': # Float or Int
