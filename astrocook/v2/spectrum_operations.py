@@ -291,6 +291,22 @@ def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     # Use 'same' mode to keep array length, symmetric padding
     return np.convolve(y, np.ones(window_size) / window_size, mode='same')
 
+def running_rms(y: np.ndarray, h: int) -> np.ndarray:
+    """
+    Computes a running root-mean-square of an array.
+    """
+    window_size = 2 * h + 1
+    if window_size > len(y):
+        logging.warning(f"Running RMS window ({window_size}) is larger than array ({len(y)}), returning array RMS.")
+        rms_val = np.sqrt(np.nanmean(y**2))
+        return np.full_like(y, rms_val)
+        
+    # Calculate the running mean of the *square* of the signal
+    running_mean_sq = np.convolve(y**2, np.ones(window_size) / window_size, mode='same')
+    
+    # Return the square root
+    return np.sqrt(running_mean_sq)
+
 def find_unabsorbed_regions(
     x: au.Quantity,
     y: np.ndarray, 

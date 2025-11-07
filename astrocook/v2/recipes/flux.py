@@ -12,6 +12,16 @@ if TYPE_CHECKING:
     from ..session import SessionV2 
 
 FLUX_RECIPES_SCHEMAS = {
+    "calculate_running_rms": {
+        "brief": "Calculate running RMS.",
+        "details": "Calculate a running Root-Mean-Square on a column (e.g., 'dy') to estimate local error.",
+        "params": [
+            {"name": "input_col", "type": str, "default": "dy", "doc": "Column to use for RMS calculation (e.g., dy)"},
+            {"name": "output_col", "type": str, "default": "rms", "doc": "Name of the new column to create (e.g., rms)"},
+            {"name": "window_pix", "type": int, "default": 21, "doc": "Total window size in pixels (should be odd)"}
+        ],
+        "url": "edit_cb.html#calculate_running_rms" # Placeholder URL
+    },
     "smooth": {
         "brief": "Smooth spectrum.",
         "details": "Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.",
@@ -61,6 +71,39 @@ class RecipeFluxV2:
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
+
+    def calculate_running_rms(self, 
+                              input_col: str = 'dy', 
+                              output_col: str = 'rms', 
+                              window_pix: str = '21') -> 'SessionV2':
+        """
+        API: Calculates a running RMS on a column.
+        """
+        try:
+            window_pix_i = int(window_pix)
+            if window_pix_i < 3:
+                window_pix_i = 3
+            if window_pix_i % 2 == 0: # Ensure it's odd
+                window_pix_i += 1
+                
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+            
+        try:
+            # 1. Call the immutable V2 operation
+            new_spec_v2 = self._session.spec.calculate_running_rms(
+                input_col=input_col,
+                output_col=output_col,
+                window_pix=window_pix_i
+            )
+            
+            # 2. Return a NEW SessionV2 instance
+            return self._session.with_new_spectrum(new_spec_v2)
+            
+        except Exception as e:
+            logging.error(f"Failed during calculate_running_rms: {e}", exc_info=True)
+            return 0
 
     def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
         """

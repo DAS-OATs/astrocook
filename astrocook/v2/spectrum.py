@@ -8,7 +8,8 @@ import numpy as np
 from typing import Dict, Any, Optional, Union
 
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum
+    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, 
+    fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_rms
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -562,6 +563,50 @@ class SpectrumV2:
         new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
         return SpectrumV2(data=new_data_core, history=new_history)   
     
+    def calculate_running_rms(self, 
+                              input_col: str, 
+                              output_col: str, 
+                              window_pix: int) -> 'SpectrumV2':
+        """
+        API: Calculates a running RMS on a column and saves it as a new column.
+        Returns a NEW SpectrumV2 instance.
+        """
+        
+        all_cols = self.t._data_dict
+        
+        # 1. Find the target column
+        if input_col not in all_cols:
+            raise ValueError(f"Input column '{input_col}' not found.")
+            
+        input_col_data = all_cols[input_col]
+        
+        # 2. Check if it's numerical
+        if input_col_data.dtype.kind not in 'fiu':
+            raise TypeError(f"Cannot calculate RMS on non-numerical column '{input_col}'.")
+
+        # 3. Call the pure function (h is half-window)
+        h_window = int(window_pix / 2)
+        rms_values = running_rms(
+            y=input_col_data.value,
+            h=h_window
+        )
+        
+        new_rms_col = DataColumnV2(
+            values=rms_values,
+            unit=input_col_data.unit, # RMS has same unit as the input
+            description=f"Running RMS (window={window_pix}pix) of {input_col}"
+        )
+
+        # 4. Create new SpectrumDataV2 by adding the new column
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        new_aux_cols[output_col] = new_rms_col
+        
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        
+        # 5. Return new SpectrumV2
+        new_history = self.history + [f"Calculated running RMS (window={window_pix}pix) on {input_col}"]
+        return SpectrumV2(data=new_data, history=new_history)
+
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
         API: Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).

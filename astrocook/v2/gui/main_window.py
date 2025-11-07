@@ -580,6 +580,16 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'FLUX' MENU
         
+        rms_action = QAction("Calculate Running &RMS...", self)
+        rms_action.setToolTip("Calculate running RMS on a column (e.g., dy)")
+        rms_action.triggered.connect(
+            lambda: self._launch_recipe_dialog("flux", "calculate_running_rms")
+        )
+        flux_menu.addAction(rms_action)
+        self.calculate_running_rms_action = rms_action; self.calculate_running_rms_action.setEnabled(False)
+
+        flux_menu.addSeparator()
+
         # smooth Action
         smooth_action = QAction("&Smooth Spectrum...", self)
         smooth_action.setToolTip("Apply Gaussian smoothing to the flux")
@@ -2071,6 +2081,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         
+        if hasattr(self, 'calculate_running_rms_action'): self.calculate_running_rms_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
