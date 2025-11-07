@@ -927,7 +927,7 @@ class MainWindowV2(QMainWindow):
         button.setIcon(icon); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
-                                 is_branching: bool):
+                                 is_branching: bool, auto_show_aux: Optional[str] = None):
         """
         Updates the GUI state AND history after a recipe returns a new session.
         Operates on the currently active SessionHistory.
@@ -1052,7 +1052,12 @@ class MainWindowV2(QMainWindow):
             self.session_model.setStringList([h.display_name for h in self.session_histories])
             new_list_index = len(self.session_histories) - 1
             # Update view for the state in the new history
-            self._update_view_for_session(new_history.current_state, set_current_list_item=True, target_list_index=new_list_index)
+            self._update_view_for_session(
+                new_history.current_state, 
+                set_current_list_item=True, 
+                target_list_index=new_list_index,
+                auto_show_aux=auto_show_aux
+            )
 
         else: # Linear update
             logging.debug(f"Linear update: Adding state to active SessionHistory.")
@@ -1073,7 +1078,11 @@ class MainWindowV2(QMainWindow):
                 self.session_model.setData(self.session_model.index(active_list_index), target_history.display_name) # Update name if needed
             except (ValueError, IndexError): pass
             # Update view for the new state in the current history
-            self._update_view_for_session(target_history.current_state, set_current_list_item=True) # List item selection doesn't change
+            self._update_view_for_session(
+                target_history.current_state, 
+                set_current_list_item=True,
+                auto_show_aux=auto_show_aux
+            ) # List item selection doesn't change
 
         self._update_undo_redo_actions()
     
@@ -1112,7 +1121,7 @@ class MainWindowV2(QMainWindow):
 
     def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
                                  set_current_list_item=False, target_list_index=None, is_startup=False,
-                                 force_autoscale: bool = False):
+                                 force_autoscale: bool = False, auto_show_aux: Optional[str] = None):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
@@ -1127,25 +1136,30 @@ class MainWindowV2(QMainWindow):
         # --- *** NEW: Update Aux Column Combo *** ---
         try:
             self.aux_col_combo.blockSignals(True)
-            current_selection = self.aux_col_combo.currentText() # Preserve selection
+            current_selection = self.aux_col_combo.currentText()
             self.aux_col_combo.clear()
-            self.aux_col_combo.addItem("None") # Default "off"
+            self.aux_col_combo.addItem("None")
             
             if is_valid:
-                # Get all columns from the table adapter, excluding main axes
                 all_cols = list(session_state_to_show.spec.t._data_dict.keys())
                 core_cols = {'x', 'xmin', 'xmax', 'y', 'dy'}
                 aux_col_names = sorted([c for c in all_cols if c not in core_cols])
-                
                 if aux_col_names:
                     self.aux_col_combo.addItems(aux_col_names)
             
-            # Try to restore the previous selection
-            index = self.aux_col_combo.findText(current_selection)
-            if index != -1:
-                self.aux_col_combo.setCurrentIndex(index)
-            else:
-                self.aux_col_combo.setCurrentIndex(0) # Default to "None"
+
+            target_index = 0
+            if auto_show_aux:
+                idx = self.aux_col_combo.findText(auto_show_aux)
+                if idx != -1:
+                    target_index = idx
+            
+            if target_index == 0 and current_selection != "None":
+                 idx = self.aux_col_combo.findText(current_selection)
+                 if idx != -1:
+                     target_index = idx
+            
+            self.aux_col_combo.setCurrentIndex(target_index)
         
         except Exception as e:
             logging.warning(f"Failed to update Aux Column combobox: {e}")
@@ -1858,6 +1872,28 @@ class MainWindowV2(QMainWindow):
             except Exception as e:
                 logging.error(f"Failed to log successful recipe: {e}")
 
+            auto_show_col = None
+            if self.active_history:
+                old_spec = self.active_history.current_state.spec
+                if old_spec:
+                    old_cols = set(old_spec._data.aux_cols.keys())
+                    new_cols = set(new_session_state.spec._data.aux_cols.keys())
+                    added_cols = new_cols - old_cols
+                    
+                    if added_cols:
+                        # Pick one to show. Prefer 'cont_pl', 'model', 'cont' in that order,
+                        # otherwise just pick an arbitrary new one.
+                        preferred_order = ['cont_pl', 'model', 'cont']
+                        for pref in preferred_order:
+                            if pref in added_cols:
+                                auto_show_col = pref
+                                break
+                        else:
+                            # If none of the preferred ones are new, just take the first one
+                            auto_show_col = list(added_cols)[0]
+                        
+                        logging.info(f"Recipe '{recipe_name}' added column '{auto_show_col}', auto-displaying.")
+
             # 2. Update the GUI state
             original_history_index = self.session_histories.index(self.active_history)
             branching = is_branching_recipe(recipe_name) #or recipe_name == 'resample'
@@ -1865,7 +1901,8 @@ class MainWindowV2(QMainWindow):
             self.update_gui_session_state(
                 new_session_state,
                 original_session_index=original_history_index, 
-                is_branching=branching
+                is_branching=branching,
+                auto_show_aux=auto_show_col
             )
             
             # 3. Check if a recipe was pending on this action
