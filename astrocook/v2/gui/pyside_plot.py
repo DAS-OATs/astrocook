@@ -121,9 +121,9 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
             plt.style.use('fast')
 
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
         self.axes = fig.add_subplot(111)
-        fig.tight_layout()
+        #fig.tight_layout()
 
         super(MatplotlibCanvas, self).__init__(fig)
 
@@ -432,6 +432,9 @@ class SpectrumPlotWidget(QWidget):
 
         # Selection Mode State
         self._is_selecting_region = False
+
+        # Store the original Matplotlib coordinate formatter ONCE
+        self._default_format_coord = self.canvas.axes.format_coord
 
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
@@ -1001,15 +1004,65 @@ class SpectrumPlotWidget(QWidget):
             
             # 2. X-Axis Formatting
             xlabel = "Wavelength (nm)" # Default
+            xaxis_formatter = None  # Store the formatter to re-use it
+
             if selected_x_unit == 'Angstrom':
-                ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x * 10:g}"))
+                xaxis_formatter = plt_ticker.FuncFormatter(lambda x, pos: f"{x * 10:g}")
+                ax.xaxis.set_major_formatter(xaxis_formatter)
                 xlabel = "Wavelength (Angstrom)"
             elif selected_x_unit == 'micron':
-                ax.xaxis.set_major_formatter(plt_ticker.FuncFormatter(lambda x, pos: f"{x / 1000:g}"))
+                xaxis_formatter = plt_ticker.FuncFormatter(lambda x, pos: f"{x / 1000:g}")
+                ax.xaxis.set_major_formatter(xaxis_formatter)
                 xlabel = "Wavelength (micron)"
             # else: no formatter needed for nm
             ax.set_xlabel(xlabel)
             
+            # Secondary Axis & Hover
+
+            z_em = spec._data.z_em
+            
+            # 1. Define the custom hover-text formatter
+            # We do this *before* adding the secondary axis so it works even if z_em=0
+            base_formatter = self._default_format_coord
+
+            def new_format_coord(x, y):
+                # Use the base formatter to get the standard string first
+                main_str = base_formatter(x, y)
+                
+                if z_em > 0.0 and spec.x.unit.is_equivalent(au.nm):
+                    # Calculate rest-frame value in native units (nm)
+                    x_rf_nm = x / (1 + z_em)
+                    
+                    # Apply the same display scaling as the main axis
+                    if selected_x_unit == 'Angstrom':
+                        x_rf_disp = x_rf_nm * 10.0
+                    elif selected_x_unit == 'micron':
+                        x_rf_disp = x_rf_nm / 1000.0
+                    else:
+                        x_rf_disp = x_rf_nm
+                        
+                    return f"{main_str}  (Rest: {x_rf_disp:.4g})"
+                else:
+                    return main_str
+
+            ax.format_coord = new_format_coord
+
+            # 2. Add Secondary Rest-Frame Axis (if applicable)
+            if z_em > 0.0 and spec.x.unit.is_equivalent(au.nm):
+                
+                def obs_to_rf(x): return x / (1 + z_em)
+                def rf_to_obs(x): return x * (1 + z_em)
+                
+                sec_ax = ax.secondary_xaxis('top', functions=(obs_to_rf, rf_to_obs))
+                sec_ax.set_xlabel(f"Rest-frame ({selected_x_unit})")
+                
+                # Apply the unit formatter (or reset to default scalar if None)
+                if xaxis_formatter:
+                    sec_ax.xaxis.set_major_formatter(xaxis_formatter)
+                else:
+                    # Explicitly reset to default if we switched back to 'nm'
+                    sec_ax.xaxis.set_major_locator(plt_ticker.AutoLocator())
+
             # 3. Y-Axis Label
             ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux (arbitrary units)")
             
