@@ -65,14 +65,12 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
     "split": {
-        "brief": "Split spectrum by range.",
-        "details": "Extract a portion of the spectrum into a new, separate session.",
+        "brief": "Split spectrum by expression.",
+        "details": "Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(x > 400) & (x < 500)'.",
         "params": [
-            {"name": "col_check", "type": str, "default": "x", "doc": "Column to check for range (e.g., x)"},
-            {"name": "min_val", "type": float, "default": 400.0, "doc": "Minimum value to keep (in column's units)"},
-            {"name": "max_val", "type": float, "default": 500.0, "doc": "Maximum value to keep (in column's units)"},
+            {"name": "expression", "type": str, "default": "(x > 400) & (x < 500)", "doc": "Boolean expression to select data"}
         ],
-        "url": "edit_cb.html#split" # Placeholder URL
+        "url": "edit_cb.html#split"
     }
 }
 
@@ -313,26 +311,28 @@ class RecipeEditV2:
             logging.error(f"Failed during smooth_column: {e}", exc_info=True)
             return 0
 
-    def split(self, col_check: str, min_val: str, max_val: str) -> 'SessionV2':
+    def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Splits the spectrum, returning a new spectrum of the sub-range.
+        API: Splits the spectrum using a boolean expression.
         """
-        try:
-            # 1. Type casting
-            min_val_f = float(min_val)
-            max_val_f = float(max_val)
+        expression = expression.strip()
+        if not expression:
+            logging.error("Expression cannot be empty.")
+            return 0
             
-            # 2. Execute the immutable V2 operation
+        try:
+            # 1. Prepare multi-session vars (re-using our existing helper!)
+            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+            
+            # 2. Call the immutable V2 operation
             new_spec_v2 = self._session.spec.split(
-                col_check=col_check,
-                min_val=min_val_f,
-                max_val=max_val_f
+                expression=final_expression,
+                extra_vars=extra_vars
             )
             
-            # 3. Return a NEW SessionV2 instance
-            # The GUI will handle this as a "branching" action
+            # 3. Return a NEW SessionV2 instance (GUI handles branching)
             return self._session.with_new_spectrum(new_spec_v2)
+            
         except Exception as e:
             logging.error(f"Failed during split: {e}", exc_info=True)
-            return 0
-
+            raise e

@@ -513,55 +513,55 @@ class SpectrumV2:
         new_history = self.history + [f"Mask: {target_col} where {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
 
-    def split(self, col_check: str, min_val: float, max_val: float) -> 'SpectrumV2':
+    def split(self, expression: str, extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2':
         """
-        API: Extracts a slice of the spectrum and returns a NEW SpectrumV2 instance.
+        API: Splits the spectrum based on a boolean expression.
+        Returns a NEW SpectrumV2 instance containing only the rows where
+        the expression evaluates to True.
         """
-        
-        # 1. Get all data columns
-        all_cols = self.t._data_dict
-        if col_check not in all_cols: raise ValueError(f"Check column '{col_check}' not found.")
-        
-        check_q = all_cols[col_check]
-        
-        # 2. Find indices for the slice
-        # This assumes the check column is sorted (like 'x')
-        idx_start = np.searchsorted(check_q.value, min_val, side='left')
-        idx_end = np.searchsorted(check_q.value, max_val, side='right')
-        
-        if idx_start >= idx_end:
-            raise ValueError("Split range resulted in an empty spectrum.")
-            
-        data_slice = slice(idx_start, idx_end)
+        # 1. Get contexts for numexpr
+        all_cols, local_dict = self._get_ne_contexts()
+        if extra_vars:
+            local_dict.update(extra_vars)
 
-        # 3. Create a new data core by slicing all columns
-        # We can use the TableAdapterV2's slicing capability
-        
-        # Create a new dictionary to hold the sliced data
-        new_data_cols_dict = {}
-        
-        # Iterate through all columns and apply the slice
+        try:
+            # 2. Evaluate expression to get a boolean mask
+            mask = ne.evaluate(expression, 
+                               global_dict=_NE_GLOBAL_DICT,
+                               local_dict=local_dict)
+            if mask.dtype.kind != 'b':
+                 raise TypeError("Split expression must return a boolean mask.")
+        except Exception as e:
+            logging.error(f"Numexpr evaluation failed for split: '{expression}'")
+            raise e
+
+        # 3. Check if the resulting spectrum would be empty
+        if np.sum(mask) == 0:
+            raise ValueError("Split expression resulted in an empty spectrum.")
+
+        # 4. Create new data core by boolean-indexing all columns
+        new_data_cols = {}
         for col_name, quantity in all_cols.items():
-            new_values = quantity.value[data_slice]
-            new_unit = quantity.unit
-            new_data_cols_dict[col_name] = DataColumnV2(new_values, new_unit)
+            # Apply the mask to get the subset of data
+            new_values = quantity.value[mask]
+            new_data_cols[col_name] = DataColumnV2(new_values, quantity.unit)
 
-        # 4. Build new SpectrumDataV2
+        # 5. Build new SpectrumDataV2
         new_data_core = SpectrumDataV2(
-            x=new_data_cols_dict.pop('x'),
-            xmin=new_data_cols_dict.pop('xmin'),
-            xmax=new_data_cols_dict.pop('xmax'),
-            y=new_data_cols_dict.pop('y'),
-            dy=new_data_cols_dict.pop('dy'),
-            aux_cols=new_data_cols_dict, # Remaining items are aux_cols
-            meta=deepcopy(self._data.meta), 
-            z_rf=self._data.z_rf,  # Propagate
-            z_em=self._data.z_em   # Propagate
+            x=new_data_cols.pop('x'),
+            xmin=new_data_cols.pop('xmin'),
+            xmax=new_data_cols.pop('xmax'),
+            y=new_data_cols.pop('y'),
+            dy=new_data_cols.pop('dy'),
+            aux_cols=new_data_cols, # Remaining items are aux_cols
+            meta=deepcopy(self._data.meta),
+            z_rf=self._data.z_rf,
+            z_em=self._data.z_em
         )
         
-        # 5. Return a NEW SpectrumV2 instance
-        new_history = self.history + [f"Split: {col_check} from {min_val} to {max_val}"]
-        return SpectrumV2(data=new_data_core, history=new_history)   
+        # 6. Return NEW SpectrumV2
+        new_history = self.history + [f"Split with expression: {expression}"]
+        return SpectrumV2(data=new_data_core, history=new_history)
     
     def calculate_running_rms(self, 
                               input_col: str, 

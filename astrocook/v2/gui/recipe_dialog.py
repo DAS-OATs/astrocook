@@ -29,7 +29,7 @@ class RecipeDialog(QDialog):
         self.parent_window = parent # Reference to MainWindowV2
 
         self.input_widgets = {} # Dictionary to store input widgets {param_name: widget}
-        
+                
         # 1. Operators (from your code)
         self.operator_list = ["+", "-", "*", "/", "**"]
         
@@ -155,6 +155,7 @@ class RecipeDialog(QDialog):
                 elif param_type == str:
                     widget = QLineEdit(param_default)
                     widget.setToolTip(param_doc)
+                    widget.setMinimumWidth(200)
                 elif param_type == int:
                     widget = QLineEdit(param_default)
                     widget.setValidator(QIntValidator())
