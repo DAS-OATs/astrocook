@@ -199,7 +199,7 @@ class RecipeDialog(QDialog):
         main_layout.addWidget(form_widget)
 
         # --- *** NEW USABILITY PANE *** ---
-        if self.recipe_name in ("apply_expression", "mask_expression"):
+        if self.recipe_name in ("apply_expression", "mask_expression", "split"):
             
             available_cols = self._get_available_columns()
             
@@ -310,7 +310,7 @@ class RecipeDialog(QDialog):
     
                     ref_layout.addWidget(func_button_grid_widget)
 
-                elif self.recipe_name == "mask_expression":
+                elif self.recipe_name in ("mask_expression", "split"):
                     # --- Boolean Operators (Buttons) ---
                     bool_title = QLabel("<b>Boolean Operators:</b>")
                     bool_title.setContentsMargins(0, 8, 0, 0)
@@ -322,7 +322,8 @@ class RecipeDialog(QDialog):
                     bool_button_grid.setContentsMargins(0, 0, 0, 0)
 
                     for i, bool_name in enumerate(self.boolean_list):
-                        button = QPushButton(bool_name)
+                        display_text = bool_name.replace('&', '&&')
+                        button = QPushButton(display_text)
                         button.setStyleSheet("QPushButton { text-align: center; padding: 3px 5px; }")
                         button.clicked.connect(
                             lambda checked=False, text=bool_name: self._insert_text_into_expression(text)
@@ -392,6 +393,8 @@ class RecipeDialog(QDialog):
         if self.recipe_name == "apply_expression":
             target_widget = self.input_widgets.get('expression')
         elif self.recipe_name == "mask_expression":
+            target_widget = self.input_widgets.get('expression')
+        elif self.recipe_name in ("mask_expression", "split"):
             target_widget = self.input_widgets.get('expression')
         
         if not (target_widget and isinstance(target_widget, QLineEdit)):
