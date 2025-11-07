@@ -13,6 +13,7 @@ import numpy as np
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCursor, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget
+import qtawesome as qta
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
@@ -1297,7 +1298,7 @@ class AstrocookToolbar(NavigationToolbar):
                 # Use a standard Qt icon. 
                 # SP_FileDialogDetailedView often looks like a list/selection.
                 # You can try others like SP_ArrowRight or SP_ToolBarHorizontalExtensionButton
-                icon = QApplication.style().standardIcon(QStyle.SP_FileDialogDetailedView)
+                icon = qta.icon('mdi.selection-drag', color='black')
                 action.setIcon(icon)
                 break
             

@@ -53,6 +53,7 @@ dependencies = [
     "cycler>=0.10",
     "statsmodels>=0.10.1",   # Plotting library
     "numexpr",
+    "qtawesome",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
