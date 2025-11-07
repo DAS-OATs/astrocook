@@ -71,6 +71,15 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "expression", "type": str, "default": "(x > 400) & (x < 500)", "doc": "Boolean expression to select data"}
         ],
         "url": "edit_cb.html#split"
+    },
+    "extract_preset": {
+        "brief": "Extract region by preset.",
+        "details": "Extract a specific standard region (like the Ly-alpha forest) into a new session, based on the current emission redshift (z_em).",
+        "params": [
+            # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
+            {"name": "region", "type": str, "default": "lya_forest", "doc": "Preset region ('lya_forest', 'all_ly_forest', 'red_side')"}
+        ],
+        "url": "edit_cb.html#extract_preset"
     }
 }
 
@@ -331,3 +340,39 @@ class RecipeEditV2:
         
         # 3. Return a NEW SessionV2 instance (GUI handles branching)
         return self._session.with_new_spectrum(new_spec_v2)
+    
+    def extract_preset(self, region: str = 'lya_forest') -> 'SessionV2':
+        """
+        API: Extracts a region based on standard presets and z_em.
+        """
+        z_em = self._session.spec._data.z_em
+        if z_em == 0.0:
+             logging.error("Cannot extract preset region: z_em is 0.0. Run 'Set Properties' first.")
+             return 0
+
+        # 1. Define Presets (Rest-Frame Wavelengths in nm)
+        # These are standard approximations.
+        # Ly-alpha is ~121.567 nm, Ly-beta is ~102.57 nm, Lyman limit is ~91.18 nm
+        presets = {
+            'lya_forest': (102.57, 121.567),   # Between Ly-beta and Ly-alpha emissions (with buffer)
+            'all_ly_forest': (91.18, 121.567),  # Full series down to the limit
+            'red_side': (121.567, 10000.0)    # Everything redward of Ly-alpha emission
+        }
+        
+        if region not in presets:
+            logging.error(f"Unknown preset region '{region}'. Available: {list(presets.keys())}")
+            return 0
+            
+        rf_min, rf_max = presets[region]
+        
+        # 2. Convert to Observed Frame
+        obs_min = rf_min * (1.0 + z_em)
+        obs_max = rf_max * (1.0 + z_em)
+        
+        # 3. Build the split expression
+        expression = f"(x > {obs_min:.4f}) & (x < {obs_max:.4f})"
+        logging.info(f"Extracting '{region}': {expression} (z_em={z_em:.4f})")
+        
+        # 4. Re-use the existing split logic
+        # We can call our own split method directly!
+        return self.split(expression=expression)

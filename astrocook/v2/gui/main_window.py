@@ -580,6 +580,13 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(split_action)
         self.split_action = split_action; split_action.setEnabled(False)
 
+        # extract_preset Action
+        extract_preset_action = QAction("Extract &Preset Region...", self)
+        extract_preset_action.setToolTip("Extract standard regions (Forest, etc.) based on z_em")
+        extract_preset_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "extract_preset"))
+        edit_menu.addAction(extract_preset_action)
+        self.extract_preset_action = extract_preset_action; self.extract_preset_action.setEnabled(False)
+
         # RECIPES FOR 'FLUX' MENU
         
         rms_action = QAction("Calculate Running &RMS...", self)
@@ -1674,7 +1681,12 @@ class MainWindowV2(QMainWindow):
         self._update_undo_redo_actions()
 
     # --- DEFINE THE LIST OF RECIPES THAT NEED Z_EM ---
-    _RECIPES_REQUIRING_Z_EM = {'fit_powerlaw', 'estimate_auto', 'find_unabsorbed'}
+    _RECIPES_REQUIRING_Z_EM = {
+        'fit_powerlaw', 
+        'estimate_auto', 
+        'find_unabsorbed',
+        'extract_preset'
+    }
 
     def _launch_recipe_dialog(self, category, name, initial_params: dict = None):
         if self.active_recipe_dialog:
@@ -2173,6 +2185,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
+        if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)
         
         if hasattr(self, 'calculate_running_rms_action'): self.calculate_running_rms_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
