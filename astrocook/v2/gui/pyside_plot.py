@@ -731,7 +731,7 @@ class SpectrumPlotWidget(QWidget):
                         if error_col_name == 'dy':
                             full_error_data = full_dy_data
                         else:
-                            # This path is for 'rms', 'cont_err', etc.
+                            # This path is for 'running_std', 'cont_err', etc.
                             full_error_data = spec.get_column(error_col_name).value
                     except Exception as e:
                         logging.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")

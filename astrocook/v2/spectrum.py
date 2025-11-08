@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, Union
 
 from .spectrum_operations import (
     convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, 
-    fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_rms
+    fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -563,7 +563,7 @@ class SpectrumV2:
         new_history = self.history + [f"Split with expression: {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
     
-    def calculate_running_rms(self, 
+    def calculate_running_std(self, 
                               input_col: str, 
                               output_col: str, 
                               window_pix: int) -> 'SpectrumV2':
@@ -586,20 +586,20 @@ class SpectrumV2:
 
         # 3. Call the pure function (h is half-window)
         h_window = int(window_pix / 2)
-        rms_values = running_rms(
+        rms_values = running_std(
             y=input_col_data.value,
             h=h_window
         )
         
-        new_rms_col = DataColumnV2(
+        new_std_col = DataColumnV2(
             values=rms_values,
             unit=input_col_data.unit, # RMS has same unit as the input
-            description=f"Running RMS (window={window_pix}pix) of {input_col}"
+            description=f"Running StdDev (window={window_pix}pix) of {input_col}"
         )
 
         # 4. Create new SpectrumDataV2 by adding the new column
         new_aux_cols = deepcopy(self._data.aux_cols)
-        new_aux_cols[output_col] = new_rms_col
+        new_aux_cols[output_col] = new_std_col
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         

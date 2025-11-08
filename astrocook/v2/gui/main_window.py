@@ -598,13 +598,13 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'FLUX' MENU
         
-        rms_action = QAction("Calculate Running &RMS...", self)
-        rms_action.setToolTip("Calculate running RMS on a column (e.g., dy)")
-        rms_action.triggered.connect(
-            lambda: self._launch_recipe_dialog("flux", "calculate_running_rms")
+        std_action = QAction("Calculate Running &StdDev...", self)
+        std_action.setToolTip("Calculate running standard deviation on a column (e.g., y)")
+        std_action.triggered.connect(
+            lambda: self._launch_recipe_dialog("flux", "calculate_running_std")
         )
-        flux_menu.addAction(rms_action)
-        self.calculate_running_rms_action = rms_action; self.calculate_running_rms_action.setEnabled(False)
+        flux_menu.addAction(std_action)
+        self.calculate_running_std_action = std_action; self.calculate_running_std_action.setEnabled(False)
 
         flux_menu.addSeparator()
 
@@ -1191,12 +1191,12 @@ class MainWindowV2(QMainWindow):
             self.snr_col_combo.addItem("dy") # 'dy' is always the default
             
             if is_valid:
-                # Add other potential error columns (e.g., 'rms', 'cont_err')
+                # Add other potential error columns (e.g., 'running_std', 'cont_err')
                 all_cols = list(session_state_to_show.spec.t._data_dict.keys())
                 # Find columns that are not 'dy' but might be errors
                 potential_err_cols = sorted([
                     c for c in all_cols 
-                    if ('err' in c or 'rms' in c) and c != 'dy'
+                    if ('err' in c or 'running_std' in c) and c != 'dy'
                 ])
                 if potential_err_cols:
                     self.snr_col_combo.addItems(potential_err_cols)
@@ -2196,7 +2196,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)
         
-        if hasattr(self, 'calculate_running_rms_action'): self.calculate_running_rms_action.setEnabled(enable_recipes)
+        if hasattr(self, 'calculate_running_std_action'): self.calculate_running_std_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
