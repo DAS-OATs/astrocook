@@ -1288,41 +1288,49 @@ class MainWindowV2(QMainWindow):
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""
-        if self.active_history:
-            previous_state = self.active_history.undo()
-            if previous_state:
-                logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
-                self._update_view_for_session(previous_state, set_current_list_item=False) 
-                self._update_undo_redo_actions()
-                
-                # --- MODIFIED CHECK ---
-                if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
-                    self.log_scripter_dialog.refresh()
-                # --- END MODIFIED CHECK ---
-                QTimer.singleShot(0, self._force_restack_floating_widgets)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            if self.active_history:
+                previous_state = self.active_history.undo()
+                if previous_state:
+                    logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
+                    self._update_view_for_session(previous_state, set_current_list_item=False) 
+                    self._update_undo_redo_actions()
+
+                    # --- MODIFIED CHECK ---
+                    if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                        self.log_scripter_dialog.refresh()
+                    # --- END MODIFIED CHECK ---
+                    QTimer.singleShot(0, self._force_restack_floating_widgets)
+                else:
+                    logging.debug("Undo: Already at oldest state for this session.")
             else:
-                logging.debug("Undo: Already at oldest state for this session.")
-        else:
-             logging.debug("Undo: No active session.")
+                 logging.debug("Undo: No active session.")
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def _redo_last_action(self):
         """Switches the view to the next state in the active history."""
-        if self.active_history:
-            next_state = self.active_history.redo()
-            if next_state:
-                logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
-                self._update_view_for_session(next_state, set_current_list_item=False)
-                self._update_undo_redo_actions()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            if self.active_history:
+                next_state = self.active_history.redo()
+                if next_state:
+                    logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
+                    self._update_view_for_session(next_state, set_current_list_item=False)
+                    self._update_undo_redo_actions()
 
-                # --- MODIFIED CHECK ---
-                if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
-                    self.log_scripter_dialog.refresh()
-                # --- END MODIFIED CHECK ---
-                QTimer.singleShot(0, self._force_restack_floating_widgets)
+                    # --- MODIFIED CHECK ---
+                    if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                        self.log_scripter_dialog.refresh()
+                    # --- END MODIFIED CHECK ---
+                    QTimer.singleShot(0, self._force_restack_floating_widgets)
+                else:
+                    logging.debug("Redo: Already at newest state for this session.")
             else:
-                logging.debug("Redo: Already at newest state for this session.")
-        else:
-             logging.debug("Redo: No active session.")
+                 logging.debug("Redo: No active session.")
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def _update_undo_redo_actions(self):
         """Enables/disables Undo/Redo based on the active history manager."""
