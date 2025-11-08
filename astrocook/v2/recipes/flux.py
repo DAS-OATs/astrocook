@@ -63,6 +63,16 @@ FLUX_RECIPES_SCHEMAS = {
             {"name": "target_session", "type": str, "default": "None", "doc": "Name of the session to use as the grid"}
         ],
         "url": "edit_cb.html#resample" # Placeholder URL
+    },
+    "calibrate_from_magnitude": {
+        "brief": "Flux calibrate from magnitude.",
+        "details": "Rescale the spectrum so its synthetic magnitude through a given filter matches a known value.",
+        "params": [
+            {"name": "filter_name", "type": str, "default": "SDSS_r", "doc": "Filter name (e.g., SDSS_r, Johnson_V)"},
+            {"name": "target_mag", "type": float, "default": 17.0, "doc": "Known magnitude of the object in this filter"},
+            {"name": "mag_system", "type": str, "default": "AB", "doc": "Magnitude system (AB or Vega)"}
+        ],
+        "url": "edit_cb.html#calibrate"
     }
 }
 
@@ -191,3 +201,16 @@ class RecipeFluxV2:
         except Exception as e:
             logging.error(f"Failed during resample: {e}", exc_info=True)
             return 0
+        
+    def calibrate_from_magnitude(self, filter_name: str = "SDSS_r", 
+                                 target_mag: str = "17.0", mag_system: str = "AB") -> 'SessionV2':
+        """
+        API: Rescales the spectrum to match a target magnitude.
+        """
+        # 1. Validation
+        # 2. Calculate current synthetic mag (using new photometry module)
+        # 3. Determine scaling factor: ratio = 10**(-0.4 * (target_mag - current_mag))
+        # 4. Apply scaling factor to all flux-like columns (using apply_expression logic internally)
+        
+        logging.warning("Recipe 'calibrate_from_magnitude' is currently a draft placeholder.")
+        return 0
