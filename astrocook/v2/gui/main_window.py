@@ -628,6 +628,15 @@ class MainWindowV2(QMainWindow):
         flux_menu.addAction(resample_action)
         self.resample_action = resample_action; self.resample_action.setEnabled(False)
 
+        flux_menu.addSeparator()
+
+        # flux calibrate Action
+        calib_action = QAction("Flux &Calibrate...", self)
+        calib_action.setToolTip("Rescale spectrum to match a photometric magnitude")
+        calib_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "calibrate_from_magnitudes"))
+        flux_menu.addAction(calib_action)
+        self.calibrate_action = calib_action; self.calibrate_action.setEnabled(False)
+
         # RECIPES FOR 'CONTINUUM' MENU
 
         auto_cont_action = QAction("&Auto-estimate Continuum...", self)
@@ -943,7 +952,8 @@ class MainWindowV2(QMainWindow):
         button.setIcon(icon); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
-                                 is_branching: bool, auto_show_aux: Optional[str] = None):
+                                 is_branching: bool, auto_show_aux: Optional[str] = None,
+                                 force_autoscale: bool = False):
         """
         Updates the GUI state AND history after a recipe returns a new session.
         Operates on the currently active SessionHistory.
@@ -1072,7 +1082,8 @@ class MainWindowV2(QMainWindow):
                 new_history.current_state, 
                 set_current_list_item=True, 
                 target_list_index=new_list_index,
-                auto_show_aux=auto_show_aux
+                auto_show_aux=auto_show_aux,
+                force_autoscale=True
             )
 
         else: # Linear update
@@ -1097,7 +1108,8 @@ class MainWindowV2(QMainWindow):
             self._update_view_for_session(
                 target_history.current_state, 
                 set_current_list_item=True,
-                auto_show_aux=auto_show_aux
+                auto_show_aux=auto_show_aux,
+                force_autoscale=force_autoscale
             ) # List item selection doesn't change
 
         self._update_undo_redo_actions()
@@ -1915,6 +1927,10 @@ class MainWindowV2(QMainWindow):
                         
                         logging.info(f"Recipe '{recipe_name}' added column '{auto_show_col}', auto-displaying.")
 
+            # List recipes that drastically change vertical scale
+            RECIPES_REQUIRING_AUTOSCALE = {'calibrate_from_magnitudes'}
+            should_autoscale = recipe_name in RECIPES_REQUIRING_AUTOSCALE
+
             # 2. Update the GUI state
             original_history_index = self.session_histories.index(self.active_history)
             branching = is_branching_recipe(recipe_name) #or recipe_name == 'resample'
@@ -1923,7 +1939,8 @@ class MainWindowV2(QMainWindow):
                 new_session_state,
                 original_session_index=original_history_index, 
                 is_branching=branching,
-                auto_show_aux=auto_show_col
+                auto_show_aux=auto_show_col,
+                force_autoscale=should_autoscale
             )
             
             # 3. Check if a recipe was pending on this action
@@ -2200,7 +2217,8 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
-        
+        if hasattr(self, 'calibrate_action'): self.calibrate_action.setEnabled(enable_recipes)
+
         if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)

@@ -1009,7 +1009,7 @@ class SpectrumPlotWidget(QWidget):
             ax.grid(True, linestyle=':')
             
             # 2. X-Axis Formatting
-            xlabel = "Wavelength (nm)" # Default
+            #xlabel = "Wavelength (nm)" # Default
             xaxis_formatter = None  # Store the formatter to re-use it
 
             if selected_x_unit == 'Angstrom':
@@ -1021,6 +1021,8 @@ class SpectrumPlotWidget(QWidget):
                 ax.xaxis.set_major_formatter(xaxis_formatter)
                 xlabel = "Wavelength (micron)"
             # else: no formatter needed for nm
+            unit_str = au.Unit(selected_x_unit).to_string('latex_inline')
+            xlabel = f"Wavelength ({unit_str})"
             ax.set_xlabel(xlabel)
             
             # Secondary Axis & Hover
@@ -1123,7 +1125,20 @@ class SpectrumPlotWidget(QWidget):
                         continue # Skip lines with incompatible units (rare)
 
             # 3. Y-Axis Label
-            ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux (arbitrary units)")
+            if is_norm_y:
+                y_label_text = "Normalized Flux"
+            elif is_snr:
+                y_label_text = f"Signal-to-Noise Ratio (y / {selected_snr_col})"
+            else:
+                # Check if we have a real physical unit
+                if spec.y.unit is None or spec.y.unit == au.dimensionless_unscaled:
+                     y_label_text = "Flux (arbitrary units)"
+                else:
+                     # Use Astropy's pretty formatter for the unit string
+                     unit_str = spec.y.unit.to_string('latex_inline')
+                     y_label_text = f"Flux ({unit_str})"
+                
+            ax.set_ylabel(y_label_text)
             
             # --- X Limits ---
             # Priority: Autoscale if requested (e.g., by unit change)
