@@ -293,7 +293,15 @@ class MainWindowV2(QMainWindow):
         plot_toggles_layout.addLayout(form_layout_aux)
         # --- *** END NEW *** ---
 
+        self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
+        self.strong_lines_checkbox.setToolTip("Show only major emission lines when z_em is active.")
+        self.strong_lines_checkbox.setChecked(True) # Default to clean view
+        self.strong_lines_checkbox.stateChanged.connect(self._trigger_replot)
+        plot_toggles_layout.addWidget(self.strong_lines_checkbox)
+
         sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
+
+
     
         # --- ** Axis & View Controls ** ---
         view_layout = QVBoxLayout()
@@ -430,6 +438,7 @@ class MainWindowV2(QMainWindow):
         self.model_checkbox.setObjectName("PlotControlCheckbox")
         self.systems_checkbox.setObjectName("PlotControlCheckbox")
         self.aux_col_combo.setObjectName("AuxColumnCombo") # <-- NEW
+        self.strong_lines_checkbox.setObjectName("PlotControlCheckbox")
         
         self.x_unit_combo.setObjectName("XUnitCombo")
         self.norm_y_checkbox.setObjectName("PlotControlCheckbox")

@@ -28,7 +28,13 @@ try:
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
     logging.error("V1 functions/vars not found, cursor/system plotting may fail.")
-    
+
+# Keys must match exactly what is in your v1.vars.xem_d dictionary
+STRONG_EMISSION_LINES = {
+    'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 
+    'CIII_1908', 'MgII_2796', 'H_b', 'OIII_5008', 'H_a'
+}
+
 # The x_plot it receives is *always* in the data's native units (nm)
 def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
     """Converts plot X coordinate (in data units, nm) back to redshift."""
@@ -1062,6 +1068,59 @@ class SpectrumPlotWidget(QWidget):
                 else:
                     # Explicitly reset to default if we switched back to 'nm'
                     sec_ax.xaxis.set_major_locator(plt_ticker.AutoLocator())
+
+            # 3. Emission Line Labels
+            if z_em > 0.0 and V1_FUNCTIONS_AVAILABLE and spec.x.unit.is_equivalent(au.nm):
+                # Get current view limits (native units, usually nm)
+                # We use the limits *we are about to set* if we know them, 
+                # otherwise we rely on what Matplotlib will autoscale to.
+                # For simplicity, let's use the full data range if autoscaling,
+                # or the zoomed range if known.
+                if force_autoscale:
+                     view_xmin, view_xmax = full_x_data[0], full_x_data[-1]
+                elif was_zoomed:
+                     view_xmin, view_xmax = previous_xlim
+                else:
+                     view_xmin, view_xmax = full_x_data[0], full_x_data[-1]
+
+                # Transformation: X is data coords, Y is axes coords (0=bottom, 1=top)
+                trans = ax.get_xaxis_transform()
+                
+                strong_only = self.main_window.strong_lines_checkbox.isChecked()
+
+                # Loop through standard emission lines
+                for label, rest_wave_q in xem_d.items():
+                    if strong_only and label not in STRONG_EMISSION_LINES:
+                        continue
+
+                    if label not in STRONG_EMISSION_LINES:
+                        color = 'gray'
+                        alpha_text = 0.5
+                        alpha_line = 0.15
+                    else:
+                        color = 'black'
+                        alpha_text = 1.0
+                        alpha_line = 0.3
+
+                    # Calculate observed wavelength in native units (nm)
+                    try:
+                        rest_nm = rest_wave_q.to_value(au.nm)
+                        obs_nm = rest_nm * (1.0 + z_em)
+                        
+                        # Only plot if within the current view
+                        if view_xmin <= obs_nm <= view_xmax:
+                            ax.text(obs_nm, 0.95, label, 
+                                    transform=trans,
+                                    rotation=90,
+                                    verticalalignment='top',
+                                    horizontalalignment='center',
+                                    color=color, alpha=alpha_text,
+                                    fontsize=8, clip_on=True)
+                            # Optional: Add a faint vertical line
+                            ax.axvline(obs_nm, color=color, alpha=alpha_line, lw=1.0, ls=':')
+                            
+                    except Exception:
+                        continue # Skip lines with incompatible units (rare)
 
             # 3. Y-Axis Label
             ax.set_ylabel("Normalized Flux" if is_norm_y else f"Flux (arbitrary units)")
