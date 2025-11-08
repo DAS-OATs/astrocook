@@ -1,4 +1,5 @@
 from matplotlib import pylab
+import astropy.constants as const
 import astropy.units as au
 import logging
 import matplotlib
@@ -16,6 +17,8 @@ from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip, QVBoxLayout
 import qtawesome as qta
 import scienceplots
 from typing import Optional, TYPE_CHECKING
+
+from ..photometry import STANDARD_FILTERS, get_filter_transmission
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
@@ -435,6 +438,10 @@ class SpectrumPlotWidget(QWidget):
         self._cached_model_plot_snr = None # (e.g., model / dy)
         self._cached_cont_plot_snr = None # (e.g., cont / dy)
         self._cached_snr_error_col = "" # Tracks which error col was used
+
+        # List to store active iso-mag curves
+        self._show_isomag_grid = False
+        self.isomag_artists = []
 
         # Selection Mode State
         self._is_selecting_region = False
@@ -1165,6 +1172,9 @@ class SpectrumPlotWidget(QWidget):
             else:
                 logging.debug("Allowing default Y autoscale.")
 
+        # Draw the iso-mag grid last. It will self-manage its impact on limits.
+        self._draw_isomag_grid()
+
         if not plot_occurred:
             ax = self.canvas.axes # Ensure ax is defined
             ax.clear() # Clear axes even if no data
@@ -1257,6 +1267,98 @@ class SpectrumPlotWidget(QWidget):
             logging.error(f"Error calculating Z from X: {e}")
             return None
         
+    def _draw_isomag_grid(self):
+        """
+        Helper to draw the iso-magnitude grid.
+        Crucially, it saves and restores axis limits so these lines
+        do NOT affect autoscaling or the 'Home' view.
+        """
+        # 1. Clear old artists first
+        for artist in self.isomag_artists:
+            try: artist.remove()
+            except: pass
+        self.isomag_artists = []
+
+        if not self._show_isomag_grid:
+            return
+
+        # 2. Get data and perform checks
+        if not self.main_window.active_history: return
+        spec = self.main_window.active_history.current_state.spec
+        if not spec: return
+
+        standard_flux = au.erg / (au.cm**2 * au.s * au.Angstrom)
+        if spec.y.unit is None or not spec.y.unit.is_equivalent(standard_flux):
+             return
+
+        # 3. SAVE CURRENT LIMITS (The secret to acting like a passive grid)
+        current_xlim = self.canvas.axes.get_xlim()
+        current_ylim = self.canvas.axes.get_ylim()
+
+        # 4. Calculate and Plot
+        try:
+            x_aa = spec.x.to(au.Angstrom).value
+            x_plot = spec.x.value
+            current_y_unit = spec.y.unit
+            
+            c_aa_s = const.c.to(au.Angstrom/au.s).value
+            jy_to_cgs_fnu = (1.0 * au.Jy).to(au.erg / (au.cm**2 * au.s * au.Hz)).value
+            
+            grid_mags = [15, 16, 17, 18, 19, 20, 21, 22]
+            
+            x_label_pos = min(current_xlim[1], x_plot[-1])
+
+            for mag in grid_mags:
+                # Calculate curve
+                f_nu_val = 3631.0 * (10**(-0.4 * mag)) * jy_to_cgs_fnu
+                f_lambda_val = f_nu_val * c_aa_s / (x_aa**2)
+                y_plot_iso = (f_lambda_val * standard_flux).to(current_y_unit).value
+
+                # Plot curve
+                artist, = self.canvas.axes.plot(x_plot, y_plot_iso, 
+                                                ls=':', lw=1.0, color='orange', alpha=0.4,
+                                                zorder=0.1) 
+                self.isomag_artists.append(artist)
+                
+                # --- NEW: Smart Labeling ---
+                # Interpolate to find Y at our chosen X position
+                # We can safely use the last data point as 'right' fill value because
+                # we ensured x_label_pos <= x_plot[-1]
+                y_label_pos = np.interp(x_label_pos, x_plot, y_plot_iso)
+                
+                # Only draw label if it's vertically within the current view
+                if current_ylim[0] <= y_label_pos <= current_ylim[1]:
+                    # Use annotate to place text exactly at (x_label_pos, y_label_pos)
+                    # and then offset it slightly to the right (10 points) so it doesn't overlap.
+                    lbl = self.canvas.axes.annotate(
+                        f"m={mag}", 
+                        xy=(x_label_pos, y_label_pos), 
+                        xytext=(5, 0),                 # 5 points to the right
+                        textcoords="offset points", 
+                        color='orange', fontsize=9, alpha=0.8,
+                        verticalalignment='center',
+                        clip_on=False # Allow it to spill into the margin if needed
+                    )
+                    self.isomag_artists.append(lbl)
+                # ----------------------------------------------------
+
+        except Exception as e:
+            logging.error(f"Error drawing iso-mag grid: {e}")
+
+        # 5. RESTORE LIMITS
+        self.canvas.axes.set_xlim(current_xlim)
+        self.canvas.axes.set_ylim(current_ylim)   
+
+    def toggle_isomag_grid(self, visible: bool):
+        """ Toggles the state and triggers a redraw. """
+        self._show_isomag_grid = visible
+        # We call plot_spectrum to ensure everything (including limits) 
+        # is in a consistent state.
+        self.plot_spectrum(
+            session_state=self.main_window.active_history.current_state,
+            force_autoscale=False 
+        )
+    
     def show_data_tooltip(self, event):
         """
         Finds the data point nearest to the mouse event and shows a tooltip

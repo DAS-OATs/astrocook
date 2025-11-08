@@ -13,7 +13,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
-    QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
@@ -21,6 +21,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from .log_scripter_dialog import LogScripterDialog
+from ..photometry import STANDARD_FILTERS
 from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
@@ -301,7 +302,11 @@ class MainWindowV2(QMainWindow):
 
         sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
 
-
+        self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
+        self.isomag_checkbox.setToolTip("Show lines of constant AB magnitude")
+        self.isomag_checkbox.toggled.connect(lambda b: self.plot_viewer.toggle_isomag_grid(b))
+        self.isomag_checkbox.setObjectName("PlotControlCheckbox") # Ensure styling
+        plot_toggles_layout.addWidget(self.isomag_checkbox)
     
         # --- ** Axis & View Controls ** ---
         view_layout = QVBoxLayout()
@@ -439,7 +444,8 @@ class MainWindowV2(QMainWindow):
         self.systems_checkbox.setObjectName("PlotControlCheckbox")
         self.aux_col_combo.setObjectName("AuxColumnCombo") # <-- NEW
         self.strong_lines_checkbox.setObjectName("PlotControlCheckbox")
-        
+        self.isomag_checkbox.setObjectName("PlotControlCheckbox")
+
         self.x_unit_combo.setObjectName("XUnitCombo")
         self.norm_y_checkbox.setObjectName("PlotControlCheckbox")
         self.snr_checkbox.setObjectName("PlotControlCheckbox")
