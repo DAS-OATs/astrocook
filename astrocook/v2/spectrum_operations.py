@@ -469,57 +469,80 @@ def fit_continuum_interp(
 def fit_powerlaw_to_regions(
     x: np.ndarray,
     y: np.ndarray,
+    dy: np.ndarray, # <-- ADD dy
     z_em: float,
-    regions_str: str
+    regions_str: str,
+    kappa: float = 3.0, # <-- ADD kappa
+    max_iter: int = 10  # Safety limit for iterations
 ) -> np.ndarray:
     """
     Fits a power-law continuum (linear in log-log space) to specified
     rest-frame regions.
     """
     
-    # 1. Parse the regions string
-    # e.g., "125.0-135.0, 145.0-168.0"
-    all_x_points = []
-    all_y_points = []
+    # 1. Parse regions and select initial data
+    all_x = []
+    all_y = []
+    all_dy = [] # We need dy for clipping
     
     try:
         for region in regions_str.split(','):
-            if '-' not in region:
-                continue
-            
-            # 2. Convert rest-frame (nm) to observed-frame (nm)
+            if '-' not in region: continue
             rf_min, rf_max = map(float, region.split('-'))
             obs_min = rf_min * (1.0 + z_em)
             obs_max = rf_max * (1.0 + z_em)
             
-            # 3. Find all data points within this observed region
-            indices = np.where(
-                (x >= obs_min) & (x <= obs_max) &
-                (y > 0) & (np.isfinite(y)) # Only use positive, finite data
-            )[0]
-            
+            # Select valid, positive data within region
+            indices = np.where((x >= obs_min) & (x <= obs_max) & (y > 0) & np.isfinite(y))[0]
             if len(indices) > 0:
-                all_x_points.append(x[indices])
-                all_y_points.append(y[indices])
+                all_x.append(x[indices])
+                all_y.append(y[indices])
+                all_dy.append(dy[indices])
         
-        if not all_x_points:
-            raise ValueError("No valid data points found in any of the specified regions.")
+        if not all_x:
+            raise ValueError("No valid data points found in specified regions.")
             
-        # 4. Concatenate all points and convert to log-space
-        x_fit = np.log10(np.concatenate(all_x_points))
-        y_fit = np.log10(np.concatenate(all_y_points))
+        x_sel = np.concatenate(all_x)
+        y_sel = np.concatenate(all_y)
+        dy_sel = np.concatenate(all_dy)
         
-        # 5. Perform a linear (1st degree) fit in log-log space
-        # polyfit returns [intercept, slope]
-        intercept, slope = polyfit(x_fit, y_fit, 1)
+        # 2. Iterative Fit and Clip Loop
+        mask = np.ones(len(x_sel), dtype=bool) # Start with all selected points
+        intercept, slope = 0.0, 0.0
+
+        for i in range(max_iter):
+            if np.sum(mask) < 2:
+                raise ValueError("Kappa-sigma clipping removed too many points to fit.")
+
+            # A. Fit in log-log space using ONLY currently unmasked points
+            x_fit = np.log10(x_sel[mask])
+            y_fit = np.log10(y_sel[mask])
+            intercept, slope = polyfit(x_fit, y_fit, 1)
+            
+            # B. Evaluate model on ALL selected points to check for outliers
+            y_model_sel = (10**intercept) * (x_sel**slope)
+            
+            # C. Identify outliers: data is below model by more than kappa * sigma
+            # We primarily care about clipping absorption (negative outliers)
+            resid = y_sel - y_model_sel
+            is_outlier = resid < (-kappa * dy_sel)
+            
+            # D. Update mask
+            n_old = np.sum(mask)
+            mask = mask & ~is_outlier # Keep only points that were good AND are not new outliers
+            n_new = np.sum(mask)
+            
+            logging.debug(f"Power-law iter {i+1}: slope={slope:.3f}, clipped {n_old - n_new} points.")
+            
+            if n_new == n_old:
+                break # Converged
+
+        logging.info(f"Power-law fit converged: slope={slope:.3f}, intercept={intercept:.3f}, used {np.sum(mask)}/{len(x_sel)} points.")
         
-        logging.info(f"Power-law fit complete: slope={slope:.3f}, intercept={intercept:.3f}")
-        
-        # 6. Generate the model over the *entire* x-axis
+        # 3. Generate final model over the FULL x-axis
         y_pl = (10**intercept) * (x**slope)
-        
         return y_pl
         
     except Exception as e:
         logging.error(f"Failed to fit power-law: {e}")
-        raise # Re-raise for the recipe to catch
+        raise

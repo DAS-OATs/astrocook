@@ -672,6 +672,7 @@ class SpectrumPlotWidget(QWidget):
                         cont_val = cont_data_raw
                         y_data = np.divide(y_data_raw, cont_val, out=np.full_like(y_data_raw, np.nan), where=cont_val!=0)
                         dy_data = np.divide(dy_data_raw, cont_val, out=np.full_like(dy_data_raw, np.nan), where=cont_val!=0)
+                        model_data = None
                         if model_data_raw is not None:
                             model_data = np.divide(model_data_raw, cont_val, out=np.full_like(model_data_raw, np.nan), where=cont_val!=0)
                         cont_data = np.ones_like(cont_data_raw)

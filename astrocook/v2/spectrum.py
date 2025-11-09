@@ -973,7 +973,7 @@ class SpectrumV2:
         new_history = self.history + [f"Fitted continuum (smooth={smooth_std_kms} km/s)"]
         return SpectrumV2(data=new_data, history=new_history)
 
-    def fit_powerlaw(self, regions_str: str) -> 'SpectrumV2':
+    def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> 'SpectrumV2':
         """
         API: Fits a power-law to specified rest-frame regions and adds/updates
         the 'cont_pl' column.
@@ -983,8 +983,10 @@ class SpectrumV2:
         pl_values = fit_powerlaw_to_regions(
             x=self._data.x.values,
             y=self._data.y.values,
+            dy=self._data.dy.values,
             z_em=self._data.z_em, # Get z_em from self
-            regions_str=regions_str
+            regions_str=regions_str,
+            kappa=kappa
         )
         
         # 2. Create new data core

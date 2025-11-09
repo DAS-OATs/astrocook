@@ -50,7 +50,8 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "brief": "Fit power-law continuum.",
         "details": "Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates 'cont_pl' column.",
         "params": [
-            {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"}
+            {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"},
+            {"name": "kappa", "type": float, "default": 3.0, "doc": "Sigma threshold for clipping outliers"},
         ],
         "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
     }
@@ -94,7 +95,7 @@ class RecipeContinuumV2:
             return 0
 
     def fit_continuum(self, fudge: str = '1.0', smooth_std: str = '500.0', 
-                       mask_col: str = 'mask_unabs', renorm_model: str = 'True') -> 'SessionV2':
+                      mask_col: str = 'mask_unabs', renorm_model: str = 'True') -> 'SessionV2':
         """
         API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
@@ -167,7 +168,8 @@ class RecipeContinuumV2:
             logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
             return 0
         
-    def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0') -> 'SessionV2':
+    def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
+                     kappa: str = '3.0') -> 'SessionV2':
         """
         API: Fits a power-law continuum to specified rest-frame regions.
         """
@@ -177,8 +179,11 @@ class RecipeContinuumV2:
             return 0
             
         try:
+            kappa_f = float(kappa) # Parse kappa
+
             new_spec_v2 = self._session.spec.fit_powerlaw(
-                regions_str=regions
+                regions_str=regions,
+                kappa=kappa_f
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
