@@ -4,6 +4,7 @@ import numpy as np
 import astropy.units as au
 import astropy.constants as const
 import logging
+from scipy.interpolate import interp1d
 from typing import Dict, Optional
 
 # --- Approximate Standard Filter Definitions ---
@@ -86,3 +87,62 @@ def calculate_synthetic_ab_mag(x: au.Quantity, y: au.Quantity, filter_name: str)
     ab_mag = -2.5 * np.log10(avg_fnu_jy / 3631.0)
     
     return ab_mag
+
+def generate_calibration_curve(x: au.Quantity, y: au.Quantity, 
+                               magnitudes_str: str) -> np.ndarray:
+    """
+    Parses a 'Filter=Mag,Filter=Mag' string, calculates required scale factors
+    at each filter's effective wavelength, and returns a smooth correction
+    curve (NumPy array) interpolated over the x-axis.
+    """
+    # 1. Parse Input
+    targets = []
+    try:
+        for pair in magnitudes_str.split(','):
+            filt, mag = pair.split('=')
+            targets.append((filt.strip(), float(mag.strip())))
+    except ValueError:
+        raise ValueError("Invalid format. Use 'Filter=Mag, Filter=Mag'.")
+
+    if not targets:
+         raise ValueError("No valid magnitudes provided.")
+
+    # 2. Calculate Scale Factors
+    eff_waves = []
+    scale_factors = []
+
+    for filter_name, target_mag in targets:
+        # calculate_synthetic_ab_mag handles validation of filter_name
+        current_mag = calculate_synthetic_ab_mag(x, y, filter_name)
+        
+        if np.isnan(current_mag):
+             logging.warning(f"Could not calculate mag for {filter_name}, skipping.")
+             continue
+             
+        # Factor = 10^(-0.4 * (target - current))
+        factor = 10**(-0.4 * (target_mag - current_mag))
+        
+        lambda_eff = STANDARD_FILTERS[filter_name][0]
+        eff_waves.append(lambda_eff)
+        scale_factors.append(factor)
+        logging.info(f"Calibration point: {filter_name} (@{lambda_eff:.0f}nm) factor={factor:.3e}")
+
+    if not scale_factors:
+        raise RuntimeError("Could not determine any valid scale factors.")
+
+    # 3. Generate Curve
+    x_nm = x.to_value(au.nm)
+    
+    if len(scale_factors) == 1:
+        # Constant scaling
+        return np.full_like(x_nm, scale_factors[0])
+    else:
+        # Interpolation (Warping)
+        sorted_pairs = sorted(zip(eff_waves, scale_factors))
+        waves_sorted, factors_sorted = zip(*sorted_pairs)
+        
+        # Use linear interpolation with constant extrapolation
+        interp_func = interp1d(waves_sorted, factors_sorted, 
+                               kind='linear', bounds_error=False, 
+                               fill_value=(factors_sorted[0], factors_sorted[-1]))
+        return interp_func(x_nm)

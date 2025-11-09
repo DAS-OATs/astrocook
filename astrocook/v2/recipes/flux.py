@@ -3,7 +3,6 @@ from copy import deepcopy
 import dataclasses
 import logging
 import numpy as np
-from scipy.interpolate import interp1d
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..photometry import calculate_synthetic_ab_mag, STANDARD_FILTERS
@@ -208,98 +207,12 @@ class RecipeFluxV2:
         """
         API: Rescales (and warps) the spectrum to match target magnitudes.
         """
-        spec = self._session.spec
-        x_nm = spec.x.to_value(au.nm)
-        
-        # 1. Parse Input
-        targets = []
         try:
-            for pair in magnitudes.split(','):
-                filt, mag = pair.split('=')
-                targets.append((filt.strip(), float(mag.strip())))
-        except ValueError:
-            logging.error("Invalid format. Use 'Filter=Mag, Filter=Mag'.")
-            return 0
-
-        if not targets:
-             logging.error("No valid magnitudes provided.")
-             return 0
-
-        # 2. Calculate Scale Factors at Effective Wavelengths
-        eff_waves = []
-        scale_factors = []
-
-        logging.info("Calculating synthetic magnitudes...")
-        try:
-            for filter_name, target_mag in targets:
-                if filter_name not in STANDARD_FILTERS:
-                     raise ValueError(f"Unknown filter '{filter_name}'")
-                     
-                # Get effective wavelength of this filter
-                lambda_eff = STANDARD_FILTERS[filter_name][0]
-                
-                # Calculate current mag
-                current_mag = calculate_synthetic_ab_mag(spec.x, spec.y, filter_name)
-                if np.isnan(current_mag):
-                     logging.warning(f"Could not calculate mag for {filter_name}, skipping.")
-                     continue
-                     
-                # Calculate required scale factor at this wavelength
-                mag_diff = target_mag - current_mag
-                factor = 10**(-0.4 * mag_diff)
-                
-                eff_waves.append(lambda_eff)
-                scale_factors.append(factor)
-                logging.info(f" - {filter_name} (@{lambda_eff:.1f}nm): {current_mag:.3f} -> {target_mag:.3f} (factor={factor:.3e})")
-
+            # The API layer now handles all the complexity
+            new_spec_v2 = self._session.spec.calibrate(magnitudes)
+            return self._session.with_new_spectrum(new_spec_v2)
+            
         except Exception as e:
-            logging.error(f"Photometry failed: {e}")
+            # Standard error logging for the worker
+            logging.error(f"Failed during calibrate_from_magnitudes: {e}", exc_info=True)
             return 0
-
-        if not scale_factors:
-            logging.error("No valid scale factors could be determined.")
-            return 0
-
-        # 3. Generate Correction Curve
-        if len(scale_factors) == 1:
-            # Single point: Constant scaling (matches old behavior)
-            correction_curve = scale_factors[0]
-            logging.info(f"Single-band calibration: applying constant factor {correction_curve:.3e}")
-        else:
-            # Multi-point: Interpolate to create a warping curve
-            # Sort by wavelength for interpolation
-            sorted_pairs = sorted(zip(eff_waves, scale_factors))
-            waves_sorted, factors_sorted = zip(*sorted_pairs)
-            
-            # Use linear interpolation between points, and constant extrapolation outside
-            # (Splines can oscillate wildly if points are sparse, linear is safer for SEDs)
-            interp_func = interp1d(waves_sorted, factors_sorted, 
-                                   kind='linear', 
-                                   bounds_error=False, 
-                                   fill_value=(factors_sorted[0], factors_sorted[-1]))
-            
-            correction_curve = interp_func(x_nm)
-            logging.info(f"Multi-band calibration: SED warped using {len(scale_factors)} points.")
-
-        # 4. Apply Correction Curve to all flux-like columns
-        new_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
-        
-        # Helper to apply curve and unit
-        def apply_corr(col: DataColumnV2) -> DataColumnV2:
-            return DataColumnV2(col.values * correction_curve, new_unit, col.description)
-
-        new_y = apply_corr(spec._data.y)
-        new_dy = apply_corr(spec._data.dy)
-        
-        new_aux_cols = deepcopy(spec._data.aux_cols)
-        cols_to_scale = ['cont', 'model', 'cont_pl', 'telluric_model']
-        for col_name in cols_to_scale:
-            if col_name in new_aux_cols:
-                 new_aux_cols[col_name] = apply_corr(new_aux_cols[col_name])
-
-        # 5. Create new state
-        new_data = dataclasses.replace(spec._data, y=new_y, dy=new_dy, aux_cols=new_aux_cols)
-        new_hist = self._session.spec.history + [f"Flux calibrated with: {magnitudes}"]
-        new_spec = SpectrumV2(new_data, new_hist)
-        
-        return self._session.with_new_spectrum(new_spec)

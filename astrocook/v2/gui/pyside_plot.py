@@ -1305,7 +1305,7 @@ class SpectrumPlotWidget(QWidget):
             c_aa_s = const.c.to(au.Angstrom/au.s).value
             jy_to_cgs_fnu = (1.0 * au.Jy).to(au.erg / (au.cm**2 * au.s * au.Hz)).value
             
-            grid_mags = [15, 16, 17, 18, 19, 20, 21, 22]
+            grid_mags = [15, 16, 17, 18, 19, 20, 21]
             
             x_label_pos = min(current_xlim[1], x_plot[-1])
 

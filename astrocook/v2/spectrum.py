@@ -7,6 +7,7 @@ import numexpr as ne
 import numpy as np
 from typing import Dict, Any, Optional, Union
 
+from .photometry import generate_calibration_curve
 from .spectrum_operations import (
     convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, 
     fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std
@@ -892,6 +893,41 @@ class SpectrumV2:
                           left=fill_value, right=fill_value)
                           
         return y_new
+    
+    def calibrate(self, magnitudes: str) -> 'SpectrumV2':
+        """
+        API: Calibrates (and warps) the flux to match target magnitudes.
+        """
+        # 1. Get the pure numerical correction curve
+        try:
+            correction_curve = generate_calibration_curve(
+                self.x, self.y, magnitudes
+            )
+        except Exception as e:
+            logging.error(f"Calibration failed: {e}")
+            raise e
+
+        # 2. Define standard physical unit
+        new_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
+
+        # 3. Helper to apply curve and unit to a column
+        def apply_corr(col: DataColumnV2) -> DataColumnV2:
+            return DataColumnV2(col.values * correction_curve, new_unit, col.description)
+
+        # 4. Apply to all relevant columns
+        new_y = apply_corr(self._data.y)
+        new_dy = apply_corr(self._data.dy)
+        
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        cols_to_scale = ['cont', 'model', 'cont_pl', 'telluric_model']
+        for col_name in cols_to_scale:
+            if col_name in new_aux_cols:
+                 new_aux_cols[col_name] = apply_corr(new_aux_cols[col_name])
+
+        # 5. Return new state
+        new_data = dataclasses.replace(self._data, y=new_y, dy=new_dy, aux_cols=new_aux_cols)
+        new_history = self.history + [f"Flux calibrated with: {magnitudes}"]
+        return SpectrumV2(data=new_data, history=new_history)
     
     def find_unabsorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
                         kappa: float, template: bool) -> 'SpectrumV2':
