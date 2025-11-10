@@ -1057,7 +1057,7 @@ class SpectrumPlotWidget(QWidget):
                     else:
                         x_rf_disp = x_rf_nm
                         
-                    return f"{main_str}  (Rest: {x_rf_disp:.4g})"
+                    return f"{main_str}  (Rest: {x_rf_disp:.7g})"
                 else:
                     return main_str
 
