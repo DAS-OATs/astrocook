@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, Union
 
 from .photometry import generate_calibration_curve
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, find_unabsorbed_regions, 
+    convert_axis_velocity, convert_x_axis, convert_y_axis, detect_regions, find_unabsorbed_regions, 
     fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std
 )
 from .structures import SpectrumDataV2, DataColumnV2
@@ -1038,6 +1038,52 @@ class SpectrumV2:
         # 3. Return new SpectrumV2
         new_history = self.history + [f"Fitted power-law (regions={regions_str})"]
         return SpectrumV2(data=new_data, history=new_history)
+
+    def detect_absorptions(self, mask_col: str = 'mask_unabs', min_pix: int = 3) -> 'SpectrumV2':
+        """
+        API: Detects absorption regions based on a continuum mask.
+        Creates/updates the 'region_id' auxiliary column.
+        """
+        # 1. Get the mask
+        if mask_col not in self._data.aux_cols:
+            raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_unabsorbed' first.")
+        
+        mask_data = self._data.aux_cols[mask_col].values
+        
+        if mask_data.dtype.kind == 'b':
+            # It's already boolean, perfect.
+            unabs_mask = mask_data
+        elif mask_data.dtype.kind in 'iu': # Integer or Unsigned Integer
+            # It's likely 0/1 from a file load. Cast it.
+            logging.debug(f"Casting integer column '{mask_col}' to boolean mask.")
+            unabs_mask = mask_data.astype(bool)
+        else:
+            # It's float or string, which is probably wrong for a mask.
+            raise TypeError(f"Column '{mask_col}' has dtype '{mask_data.dtype}', expected boolean or integer mask.")
+             
+        abs_mask = ~unabs_mask
+        
+        # 2. Call pure function
+        region_map, num_regions = detect_regions(abs_mask, min_pix=min_pix)
+        
+        logging.info(f"Detected {num_regions} absorption regions (min_pix={min_pix}).")
+
+        # 3. Create new DataColumnV2 for the IDs
+        # We use a dimensionless unit for IDs
+        region_col = DataColumnV2(
+            values=region_map,
+            unit=au.dimensionless_unscaled,
+            description=f"Detected regions from '{mask_col}' (ID 0 = continuum)"
+        )
+        
+        # 4. Create new state
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        new_aux_cols['region_id'] = region_col
+        
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        new_hist = self.history + [f"Detected {num_regions} absorbers from {mask_col}"]
+        
+        return SpectrumV2(data=new_data, history=new_hist)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
         """

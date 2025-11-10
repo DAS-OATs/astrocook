@@ -40,10 +40,13 @@ except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
 
 # --- *** RECIPE LOOKUP MAP *** ---
+from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..recipes.edit import EDIT_RECIPES_SCHEMAS
 from ..recipes.flux import FLUX_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
+for name in ABSORBERS_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'absorbers'
 for name in CONTINUUM_RECIPES_SCHEMAS: 
     RECIPE_CATEGORY_MAP[name] = 'continuum'
 for name in EDIT_RECIPES_SCHEMAS:
@@ -672,6 +675,14 @@ class MainWindowV2(QMainWindow):
         fit_pl_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_powerlaw"))
         continuum_menu.addAction(fit_pl_action)
         self.fit_powerlaw_action = fit_pl_action; self.fit_powerlaw_action.setEnabled(False)
+
+        # RECIPES FOR 'ABSORBERS' MENU
+
+        detect_reg_action = QAction("&Detect Regions...", self)
+        detect_reg_action.setToolTip("Detect absorption regions above a significance threshold")
+        detect_reg_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "detect_regions"))
+        absorbers_menu.addAction(detect_reg_action)
+        self.detect_regions_action = detect_reg_action; self.detect_regions_action.setEnabled(False)
 
         self._update_undo_redo_actions()
 
@@ -2237,6 +2248,8 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
+
+        if hasattr(self, 'detect_regions_action'): self.detect_regions_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

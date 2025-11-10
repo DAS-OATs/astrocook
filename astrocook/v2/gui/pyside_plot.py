@@ -1362,70 +1362,52 @@ class SpectrumPlotWidget(QWidget):
     
     def show_data_tooltip(self, event):
         """
-        Finds the data point nearest to the mouse event and shows a tooltip
-        if it's close enough.
+        Finds the data point nearest to the mouse and shows a tooltip
+        containing ONLY the data for lines near the cursor.
         """
         if not event or not event.xdata or not event.ydata:
+            return
+        # Don't show data tooltip if redshift cursor is active
+        if self.main_window.cursor_show_checkbox.isChecked():
             return
             
         # 1. Get current spectrum
         session = None
         if self.main_window and self.main_window.active_history:
-             session = self.main_window.active_history.current_state
-        
+            session = self.main_window.active_history.current_state
         if not session or not session.spec:
             return
             
         spec = session.spec
         x_full = spec.x.value
-        y_full = spec.y.value
 
-        # Calculate how many points are currently visible.
+        # --- Density Check ---
         xlim = self.canvas.axes.get_xlim()
-        
-        # Use searchsorted to quickly find the visible range indices
         idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
         idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
         n_visible = idx_end_vis - idx_start_vis
-        
-        # Threshold: if more than 5000 points are visible, it's too dense.
-        # (You can adjust this number based on your preference)
         TOOLTIP_MAX_POINTS = 5000 
         if n_visible > TOOLTIP_MAX_POINTS:
-            return
+             return
+        # ---------------------
 
-        # 2. Find nearest index in X (fast search on sorted array)
-        # np.searchsorted finds the insertion point to maintain order
+        # 2. Find nearest index in X
         idx = np.searchsorted(x_full, event.xdata)
-        
-        # Check the neighboring point to find the *true* nearest
         if idx > 0 and (idx == len(x_full) or 
                         np.abs(event.xdata - x_full[idx-1]) < np.abs(event.xdata - x_full[idx])):
             idx -= 1
-            
-        # Safety check for empty/out-of-bounds
         if idx < 0 or idx >= len(x_full):
             return
 
-        # 3. Check proximity in PIXELS (crucial for usability)
-        # Convert the data point back to screen coordinates
-        data_point_screen = self.canvas.axes.transData.transform((x_full[idx], y_full[idx]))
-        mouse_screen = (event.x, event.y)
-        
-        # Calculate euclidean distance in pixels
-        dist_pix = np.hypot(data_point_screen[0] - mouse_screen[0], 
-                            data_point_screen[1] - mouse_screen[1])
-        
-        THRESHOLD_PIX = 40 # Slightly tighter threshold for better separation
-        
-        # Helper to check distance
+        # --- Dynamic Proximity Check ---
+        THRESHOLD_PIX = 40
         def check_dist(y_array):
             if y_array is None: return False
             data_pos = self.canvas.axes.transData.transform((x_full[idx], y_array[idx]))
             mouse_pos = (event.x, event.y)
             return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
 
-        # List of (label, value, unit) tuples to display
+        # List of (label, value, unit) to display
         rows_to_show = []
 
         # 1. Check Flux
@@ -1433,13 +1415,13 @@ class SpectrumPlotWidget(QWidget):
             rows_to_show.append(("y", spec.y.value[idx], spec.y.unit))
             rows_to_show.append(("dy", spec.dy.value[idx], spec.dy.unit))
             
-        # 2. Check Continuum (if visible AND exists)
+        # 2. Check Continuum
         if self.main_window.continuum_checkbox.isChecked():
             cont_col = spec._data.aux_cols.get('cont')
             if cont_col and check_dist(cont_col.values):
                 rows_to_show.append(("cont", cont_col.values[idx], cont_col.unit))
 
-        # 3. Check Model (if visible AND exists)
+        # 3. Check Model
         if self.main_window.model_checkbox.isChecked():
             model_col = spec._data.aux_cols.get('model')
             if model_col and check_dist(model_col.values):
@@ -1448,33 +1430,41 @@ class SpectrumPlotWidget(QWidget):
         # 4. Check Dynamic Aux Column
         selected_aux = self.main_window.aux_col_combo.currentText()
         if selected_aux and selected_aux != "None":
-             # Avoid double-showing if it's already covered by the checkboxes
-             is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
-                            (selected_aux == 'model' and self.main_window.model_checkbox.isChecked())
-             
-             if not is_redundant:
-                 aux_col = spec._data.aux_cols.get(selected_aux)
-                 # We only show numerical columns in the tooltip for now
-                 if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
-                      rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
+            is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
+                            (selected_aux == 'model' and self.main_window.model_checkbox.isChecked()) or \
+                            (selected_aux == 'region_id')
+            if not is_redundant:
+                aux_col = spec._data.aux_cols.get(selected_aux)
+                if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
+                    rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
         
-        # --- If no lines are near, don't show anything ---
         if not rows_to_show:
             return
 
-        # 4. Build the HTML table
+        # 4. Build HTML
         try:
             tip_html = "<table style='font-size: 13px'>"
             
-            # Always show X at the top if we are showing anything
-            tip_html += f"<tr><td style='padding-right:10px'><b>x:</b></td><td>{x_full[idx]:.4f} {spec.x.unit}</td></tr>"
+            # --- HELPER DEFINED HERE ---
+            def add_row(label, val_str):
+                return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
+            # ---------------------------
+
+            # Always show X
+            tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
             
-            # Add the dynamic rows
+            # Add dynamic rows
             for label, val, unit in rows_to_show:
-                 tip_html += f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val:.4e} {unit}</td></tr>"
+                 # Use scientific notation for flux-like values
+                 tip_html += add_row(label, f"{val:.4e} {unit}")
+
+            # Add Region ID if present
+            if 'region_id' in spec._data.aux_cols:
+                rid = spec._data.aux_cols['region_id'].values[idx]
+                if rid != 0:
+                    tip_html += add_row("Region ID", str(int(rid)))
 
             tip_html += "</table>"
-
             QToolTip.showText(QCursor.pos(), tip_html, self)
                     
         except Exception as e:

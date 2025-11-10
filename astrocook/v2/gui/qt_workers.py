@@ -5,9 +5,10 @@ from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
 # --- Import all schemas and the map ---
+from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
+from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..recipes.edit import EDIT_RECIPES_SCHEMAS
 from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..session import SessionV2
 from ..session_manager import SessionHistory
 from ..structures import HistoryLogV2
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
 ALL_SCHEMAS = {
     'edit': EDIT_RECIPES_SCHEMAS,
     'flux': FLUX_RECIPES_SCHEMAS,
-    'continuum': CONTINUUM_RECIPES_SCHEMAS
+    'continuum': CONTINUUM_RECIPES_SCHEMAS,
+    'absorbers': ABSORBERS_RECIPES_SCHEMAS
 }
 # Define the regex for parsing script lines
 SCRIPT_LINE_REGEX = re.compile(r'(\w+)\((.*)\)')
@@ -67,7 +69,8 @@ class RecipeWorker(QRunnable):
             recipe_instance = getattr(self.session, self.category, None)
             if not recipe_instance:
                 raise AttributeError(f"Session object has no attribute '{self.category}'")
-            
+
+
             recipe_method = getattr(recipe_instance, self.recipe_name, None)
             if not callable(recipe_method):
                 raise AttributeError(f"Recipe instance has no callable method '{self.recipe_name}'")

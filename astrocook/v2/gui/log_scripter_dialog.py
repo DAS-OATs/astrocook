@@ -9,9 +9,10 @@ from PySide6.QtGui import QColor, QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Union, Optional
 
 # --- V2 Imports ---
+from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from ..recipes.edit import EDIT_RECIPES_SCHEMAS
 from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from ..structures import HistoryLogV2, V1LogArtifact
 from ..utils import get_recipe_schema # For inserting recipes
 # --- V1 Imports ---
@@ -21,9 +22,10 @@ if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
 
 ALL_SCHEMAS = {
+    'absorbers': ABSORBERS_RECIPES_SCHEMAS,
+    'continuum': CONTINUUM_RECIPES_SCHEMAS,
     'edit': EDIT_RECIPES_SCHEMAS,
-    'flux': FLUX_RECIPES_SCHEMAS,
-    'continuum': CONTINUUM_RECIPES_SCHEMAS
+    'flux': FLUX_RECIPES_SCHEMAS
     # Add new schema imports here
 }
 
@@ -300,7 +302,7 @@ class LogScripterDialog(QDialog):
         menu = QMenu(self)
         
         # Define the main menu order
-        category_order = ['edit', 'flux', 'continuum']
+        category_order = ['edit', 'flux', 'continuum', 'absorbers']
         
         try:
             # Loop in the defined order

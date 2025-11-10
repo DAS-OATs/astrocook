@@ -5,7 +5,7 @@ from astropy.stats import sigma_clip
 import logging
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
-from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d, label
 from typing import Optional, Tuple
 
 from ..v1.functions import x_convert as x_convert_v1 
@@ -546,3 +546,37 @@ def fit_powerlaw_to_regions(
     except Exception as e:
         logging.error(f"Failed to fit power-law: {e}")
         raise
+
+def detect_regions(
+    mask: np.ndarray,
+    min_pix: int = 3
+) -> Tuple[np.ndarray, int]:
+    """
+    Detects contiguous regions in a boolean mask (where True = region to detect).
+    Returns an integer mask (0=background, 1, 2, 3...=regions) and the count.
+    """
+    # 1. Label contiguous regions
+    # scipy.ndimage.label treats 0/False as background, non-zero as objects.
+    region_map, num_regions = label(mask)
+    
+    # 2. Filter by minimum size
+    if min_pix > 1 and num_regions > 0:
+        # bincount gives the size of each region (index 0 is background)
+        sizes = np.bincount(region_map.ravel())
+        
+        # Find labels that are too small
+        # (Start from 1 because 0 is background)
+        bad_labels = np.where((sizes < min_pix) & (np.arange(len(sizes)) > 0))[0]
+        
+        if len(bad_labels) > 0:
+            # Set pixels of bad regions back to 0
+            # np.isin is fast for checking multiple values
+            mask_to_remove = np.isin(region_map, bad_labels)
+            region_map[mask_to_remove] = 0
+            
+            # Re-label to ensure consecutive IDs (optional but nice)
+            # (If we don't re-label, we might have gaps like 1, 3, 4...)
+            # A quick way to re-label is just to run label() again on the cleaned mask
+            region_map, num_regions = label(region_map > 0)
+
+    return region_map, num_regions
