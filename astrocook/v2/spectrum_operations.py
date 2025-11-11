@@ -5,9 +5,14 @@ from astropy.stats import sigma_clip
 import logging
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
+from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter1d, label
-from typing import Optional, Tuple
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks, savgol_filter
+from scipy.special import erf, erfinv
+from typing import Dict, List, Optional, Tuple
 
+from .atomic_data import STANDARD_MULTIPLETS, xem_d
 from ..v1.functions import x_convert as x_convert_v1 
 from ..v2.structures import DataColumnV2, SpectrumDataV2 
 
@@ -580,3 +585,159 @@ def detect_regions(
             region_map, num_regions = label(region_map > 0)
 
     return region_map, num_regions
+
+def compute_identification_signal(
+    spectrum: 'SpectrumV2',
+    series_name: str,
+    z_grid: np.ndarray,
+    modul: float
+) -> np.ndarray:
+    """
+    Computes the "squashed significance product" signal for a given series.
+    Replicates the core logic of V1's _abs_like.
+    
+    Args:
+        spectrum (SpectrumV2): The V2 spectrum object.
+        series_name (str): The name of the series (e.g., 'CIV', 'Ly_a').
+        z_grid (np.ndarray): The common, regular redshift grid to interpolate onto.
+        modul (float): The V1 modulation parameter.
+        
+    Returns:
+        np.ndarray: The computed signal on the z_grid.
+    """
+    try:
+        from ..v1.functions import trans_parse
+    except ImportError:
+        logging.error("V1 'trans_parse' not available. Cannot compute signal.")
+        return np.full_like(z_grid, np.nan)
+
+    if series_name not in STANDARD_MULTIPLETS:
+        logging.error(f"Series '{series_name}' not in STANDARD_MULTIPLETS.")
+        return np.full_like(z_grid, np.nan)
+    transitions = STANDARD_MULTIPLETS[series_name]
+    if not transitions:
+        logging.warning(f"No transitions found for series '{series_name}'.")
+        return np.full_like(z_grid, np.nan)
+
+    # 1. Get spectral data
+    x_nm = spectrum.x.to_value(au.nm)
+    y = spectrum.y.value
+    dy = spectrum.dy.value
+    
+    # Use continuum if present, otherwise assume 1.0
+    cont = spectrum.cont.value if spectrum.cont is not None else np.ones_like(y)
+    
+    # 2. Calculate "squashed significance"
+    safe_dy = dy.copy()
+    safe_dy[safe_dy <= 0] = np.nan
+    with np.errstate(invalid='ignore', divide='ignore'):
+        significance = (cont - y) / safe_dy
+    
+    # V1 _abs_like uses erf(np.abs(...))
+    squashed_sig = erf(np.abs(significance) / np.sqrt(2) / modul)
+    squashed_sig = np.nan_to_num(squashed_sig, nan=0.0) # V1 logic treats NaNs as 0
+
+    # 3. Interpolate each transition onto the common z_grid
+    abs_int = []
+    for t in transitions:
+        if t not in xem_d:
+            logging.warning(f"Transition '{t}' not in xem_d. Skipping.")
+            continue
+        
+        # Convert native x-axis (nm) to z for this transition
+        xem_nm = xem_d[t].to_value(au.nm)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            z_native = (x_nm / xem_nm) - 1.0
+        
+        # Interpolate the squashed significance onto the z_grid
+        # (Handle unsorted z_native, which can happen with e.g. echelle)
+        sort_idx = np.argsort(z_native)
+        interp_sig = np.interp(
+            z_grid, 
+            z_native[sort_idx], 
+            squashed_sig[sort_idx],
+            left=np.nan, right=np.nan # Use NaN for areas outside spectral range
+        )
+        abs_int.append(interp_sig)
+
+    # 4. Compute the signal product
+    if not abs_int:
+        logging.error(f"No valid transitions found for '{series_name}'.")
+        return np.full_like(z_grid, np.nan)
+        
+    with np.errstate(invalid='ignore'):
+        signal_prod = np.nanprod(abs_int, axis=0)
+        
+    signal = erfinv(signal_prod) * np.sqrt(2) * modul
+    signal[np.isinf(signal)] = -np.inf # Handle erfinv(0)
+
+    return signal
+
+def find_signal_peaks(
+    signals_dict: Dict[str, np.ndarray],
+    z_grid: np.ndarray,
+    sigma: float,
+    distance_pix: int,
+    prominence: Optional[float]
+) -> List[Tuple[str, float, float]]:
+    """
+    Finds and filters peaks in the identification signals.
+    Replicates the core logic of V1's _systs_like.
+    
+    Args:
+        signals_dict: Dict of {series_name: signal_array}
+        z_grid: The common redshift grid.
+        sigma: The minimum peak height (signal score).
+        distance_pix: Minimum distance between peaks in *pixels* (indices).
+        prominence: Minimum prominence of peaks (absolute signal value).
+        
+    Returns:
+        List of (series_name, z_peak, score)
+    """
+    all_peaks_list = []
+    
+    # 1. Create the "total signal" envelope for best-guess filtering
+    # (Find the max signal at each z bin across all series)
+    with np.errstate(invalid='ignore'): # Ignore warnings from all-NaN slices
+        total_signal = np.nanmax(
+            [s for s in signals_dict.values() if s is not None], 
+            axis=0
+        )
+    total_signal = np.nan_to_num(total_signal, nan=-np.inf) # Use -inf for comparisons
+
+    # 2. Find peaks for each series
+    for series_name, signal in signals_dict.items():
+        if signal is None:
+            continue
+            
+        # V1 logic used a light smoothing
+        smoothed_signal = savgol_filter(signal, window_length=5, polyorder=1)
+        smoothed_signal = np.nan_to_num(smoothed_signal, nan=-np.inf)
+
+        # 3. Find peaks
+        peaks_idx, _ = find_peaks(
+            smoothed_signal, 
+            distance=distance_pix, 
+            prominence=prominence
+        )
+        
+        if not peaks_idx.size:
+            continue
+            
+        # 4. Filter by sigma (height threshold)
+        peaks_idx = peaks_idx[smoothed_signal[peaks_idx] > sigma]
+        
+        # 5. Best-Guess Filter
+        for p_idx in peaks_idx:
+            peak_score = smoothed_signal[p_idx]
+            
+            # Check if this peak is the highest signal at this redshift
+            # (V1 'like_s' == 'like' check)
+            if np.isclose(peak_score, total_signal[p_idx]):
+                z_peak = z_grid[p_idx]
+                all_peaks_list.append((series_name, z_peak, peak_score))
+
+    # 6. Sort final list by redshift
+    all_peaks_list.sort(key=lambda x: x[1])
+    
+    return all_peaks_list

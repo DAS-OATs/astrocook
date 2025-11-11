@@ -1,6 +1,7 @@
 from matplotlib import pylab
 import astropy.constants as const
 import astropy.units as au
+import json
 import logging
 import matplotlib
 matplotlib.use('QtAgg')
@@ -908,8 +909,24 @@ class SpectrumPlotWidget(QWidget):
                     # 2. Apply Zoom Slicing (must match x_data's final state)
                     aux_data = aux_data[final_slice]
                     
+                    if aux_col_to_plot in ['mask_unabs', 'region_id']:
+                        # Create a boolean mask where regions exist
+                        region_mask = (aux_data > 0)
+                        
+                        # Use a blended transform to shade the full vertical extent
+                        # X in data coordinates, Y in axes coordinates (0 to 1)
+                        trans = ax.get_xaxis_transform()
+                        
+                        # Fill with a subtle color (e.g., teal/cyan with low alpha)
+                        ax.fill_between(x_data, 0.05, 0.95, # 0 to 1 in axes coords covers full height
+                                        where=region_mask,
+                                        color='teal', alpha=0.05, 
+                                        transform=trans,
+                                        label='Detected Regions',
+                                        rasterized=True)
+
                     # Plot based on data type
-                    if aux_data.dtype.kind in 'fi': # Float or Int
+                    elif aux_data.dtype.kind in 'fiu': # Float or Int
                         if use_decimation:
                             ax.plot(x_data, aux_data, label=aux_col_to_plot, 
                                     linestyle=':', lw=1.2, color='purple', 
@@ -1463,6 +1480,34 @@ class SpectrumPlotWidget(QWidget):
                 rid = spec._data.aux_cols['region_id'].values[idx]
                 if rid != 0:
                     tip_html += add_row("Region ID", str(int(rid)))
+
+                    ident_labels_json = spec.meta.get('region_identifications')
+                    ident_labels = None
+                    if ident_labels_json:
+                        try:
+                            # Must convert integer-keys back from strings
+                            ident_labels_raw = json.loads(ident_labels_json)
+                            ident_labels = {int(k): v for k, v in ident_labels_raw.items()}
+                        except Exception as e:
+                            logging.warning(f"Could not parse region_identifications JSON: {e}")
+
+                    # Check if metadata exists and this rid is a key
+                    if ident_labels and rid in ident_labels:
+                        # Get the list of (name, score) tuples
+                        ids_for_region = ident_labels[rid] 
+                        
+                        label_str = ""
+                        for i, (name, score) in enumerate(ids_for_region):
+                            if i > 1: # Show max 2
+                                label_str += ", ..."
+                                break
+                            if i > 0:
+                                label_str += ", "
+                            label_str += f"{name} ({score:.2f})"
+                        
+                        if label_str:
+                             tip_html += add_row("<b>Likely ID</b>", f"<b>{label_str}</b>")
+                    # --- *** END NEW *** ---
 
             tip_html += "</table>"
             QToolTip.showText(QCursor.pos(), tip_html, self)

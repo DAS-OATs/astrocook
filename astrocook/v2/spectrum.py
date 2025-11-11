@@ -2,15 +2,18 @@
 import astropy.units as au
 from copy import deepcopy
 import dataclasses
+import json
 import logging
 import numexpr as ne
 import numpy as np
-from typing import Dict, Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
+from .atomic_data import get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from .photometry import generate_calibration_curve
 from .spectrum_operations import (
-    convert_axis_velocity, convert_x_axis, convert_y_axis, detect_regions, find_unabsorbed_regions, 
-    fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std
+    compute_identification_signal, convert_axis_velocity, 
+    convert_x_axis, convert_y_axis, detect_regions, find_unabsorbed_regions, 
+    find_signal_peaks, fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std,
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -1084,6 +1087,115 @@ class SpectrumV2:
         new_hist = self.history + [f"Detected {num_regions} absorbers from {mask_col}"]
         
         return SpectrumV2(data=new_data, history=new_hist)
+    
+    def identify_lines(self, 
+                         multiplet_list: List[str],
+                         z_grid_dz: float,
+                         modul: float,
+                         sigma: float,
+                         distance_pix: int,
+                         prominence: Optional[float],
+                         mask_col: str = 'mask_unabs', 
+                         min_pix_region: int = 3) -> 'SpectrumV2':
+        """
+        API: Orchestrator method to identify absorption lines.
+        1. Detects absorption regions (creates 'region_id').
+        2. Computes identification signals for all multiplets.
+        3. Finds significant peaks in the signals.
+        4. Cross-matches peaks to regions.
+        5. Saves results to spec.meta['region_identifications'].
+        """
+        
+        # This is the 'self' spectrum object
+        spec = self
+        
+        # --- 1. Detect Absorption Regions ---
+        try:
+            # This returns a *new* spec with the 'region_id' column
+            spec_with_regions = spec.detect_absorptions(
+                mask_col=mask_col,
+                min_pix=min_pix_region
+            )
+            region_id_map = spec_with_regions.get_column('region_id').value
+            x_nm = spec_with_regions.x.to_value(au.nm)
+        except Exception as e:
+            logging.error(f"Failed to detect absorption regions: {e}", exc_info=True)
+            raise e # Re-raise for the recipe to catch
+            
+        # --- 2. Compute Identification Signals ---
+        # Define a common, high-resolution z_grid
+        z_min_spec = np.min((x_nm / 600.0) - 1.0) # Approx z_min at 600nm
+        z_max_spec = np.max((x_nm / 121.6) - 1.0) # Approx z_max at Lya
+        z_grid = np.arange(max(0.0, z_min_spec), z_max_spec, z_grid_dz)
+        
+        signals_dict = {}
+        
+        logging.info(f"Computing identification signals for: {multiplet_list}")
+        for series_name in multiplet_list:
+            if series_name not in STANDARD_MULTIPLETS:
+                logging.warning(f"Skipping '{series_name}': Not in STANDARD_MULTIPLETS.")
+                continue
+            
+            signal = compute_identification_signal(
+                spec_with_regions, series_name, z_grid, modul
+            )
+            signals_dict[series_name] = signal
+
+        # --- 3. Find Significant Peaks ---
+        logging.info("Finding peaks in signals...")
+        peaks_list = find_signal_peaks(
+            signals_dict, z_grid, sigma, distance_pix, prominence
+        )
+        logging.info(f"Found {len(peaks_list)} candidate peaks.")
+        
+        # --- 4. Cross-match Peaks with Regions ---
+        # region_identifications maps: region_id -> List[(series, score)]
+        region_identifications: Dict[int, List[Tuple[str, float]]] = {}
+
+        for (series_name, z_peak, score) in peaks_list:
+            try:
+                # Use the *first* (strongest) transition as the reference
+                ref_trans = STANDARD_MULTIPLETS[series_name][0]
+                x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
+                
+                # Find the spectrum index corresponding to this peak
+                idx = np.abs(x_nm - x_peak_nm).argmin()
+                
+                # Get the region ID at that index
+                rid = int(region_id_map[idx])
+                
+                # Assign this peak to the region
+                if rid > 0: # (Ignore background region 0)
+                    if rid not in region_identifications:
+                        region_identifications[rid] = []
+                    
+                    region_identifications[rid].append((series_name, float(score)))
+
+            except Exception as e:
+                logging.warning(f"Failed to cross-match peak {series_name} at z={z_peak}: {e}")
+
+        # --- 5. Sort and Save Results to Metadata ---
+        for rid in region_identifications:
+            # Sort identifications for each region by score (descending)
+            region_identifications[rid].sort(key=lambda x: x[1], reverse=True)
+
+        new_meta = spec_with_regions.meta
+        if not region_identifications:
+            # If the dict is empty, save None (which FITS headers can handle)
+            new_meta['region_identifications'] = None
+        else:
+            try:
+                # If dict is not empty, serialize to a JSON string
+                new_meta['region_identifications'] = json.dumps(region_identifications)
+            except Exception as e:
+                logging.error(f"Failed to serialize region identifications to JSON: {e}")
+                new_meta['region_identifications'] = None # Save None on error
+        
+        final_data_core = dataclasses.replace(spec_with_regions._data, meta=new_meta)
+        
+        # 6. Return new SpectrumV2
+        new_history = self.history + [f"Identified {len(peaks_list)} candidates"]
+        return SpectrumV2(data=final_data_core, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
         """

@@ -1,6 +1,7 @@
 from copy import deepcopy
 import json
 import logging
+import numpy as np
 import os
 from PySide6.QtCore import (
     Qt,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 import re
 from typing import Any, Dict, List, Optional
 
+from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
 from ..photometry import STANDARD_FILTERS
 from .pyside_plot import SpectrumPlotWidget
@@ -81,6 +83,7 @@ class MainWindowV2(QMainWindow):
         self.session_model = QStringListModel()
         
         self.log_scripter_dialog: Optional[LogScripterDialog] = None
+        self.identification_viewer_dialog: Optional[IdentificationViewerDialog] = None # <<< *** ADD ***
         self.active_recipe_dialog: Optional[QDialog] = None
 
         self.recipe_category_map = RECIPE_CATEGORY_MAP
@@ -545,6 +548,13 @@ class MainWindowV2(QMainWindow):
         self.view_log_action.setEnabled(False) # Disabled by default
         view_menu.addAction(self.view_log_action)
 
+        self.view_identifications_action = QAction("View &Identifications", self)
+        self.view_identifications_action.triggered.connect(self._on_view_identifications)
+        self.view_identifications_action.setEnabled(False) # Disabled by default
+        view_menu.addAction(self.view_identifications_action)
+
+        # 'EDIT' MENU ACTIONS
+
         # ** Undo Action **
         self.undo_action = QAction("&Undo", self)
         self.undo_action.setShortcut(QKeySequence.Undo) # Standard shortcut (Ctrl+Z / Cmd+Z)
@@ -678,12 +688,12 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'ABSORBERS' MENU
 
-        detect_reg_action = QAction("&Detect Regions...", self)
-        detect_reg_action.setToolTip("Detect absorption regions above a significance threshold")
-        detect_reg_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "detect_regions"))
-        absorbers_menu.addAction(detect_reg_action)
-        self.detect_regions_action = detect_reg_action; self.detect_regions_action.setEnabled(False)
-
+        identify_action = QAction("&Identify Absorption Lines...", self)
+        identify_action.setToolTip("Automatically identify absorption regions using correlation signals")
+        identify_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "identify_lines"))
+        absorbers_menu.addAction(identify_action)
+        self.identify_lines_action = identify_action; self.identify_lines_action.setEnabled(False)
+        
         self._update_undo_redo_actions()
 
     def _on_set_custom_limits(self):
@@ -1451,6 +1461,17 @@ class MainWindowV2(QMainWindow):
         )
         menu.addAction(view_action)
 
+        view_ids_action = QAction(f"View Identifications", self)
+        view_ids_action.triggered.connect(
+            lambda: self._launch_identification_viewer(history_item)
+        )
+        # Enable only if identifications exist on this item's *current* state
+        has_ids = False
+        if history_item and history_item.current_state and history_item.current_state.spec:
+            has_ids = history_item.current_state.spec.meta.get('region_identifications') is not None
+        view_ids_action.setEnabled(has_ids)
+        menu.addAction(view_ids_action)
+
         menu.addSeparator()
         
         # --- Save Session Action ---
@@ -1590,6 +1611,56 @@ class MainWindowV2(QMainWindow):
             self._launch_log_scripter(self.active_history)
         else:
             logging.warning("View Log called with no active history.")
+    
+    def _on_view_identifications(self):
+        """
+        Handles the "View > View Identifications" menu action.
+        """
+        if self.active_history:
+            self._launch_identification_viewer(self.active_history)
+        else:
+            logging.warning("View Identifications called with no active history.")
+
+    def _launch_identification_viewer(self, history_object: 'SessionHistory'):
+        """
+        Creates and shows the *single, persistent* IdentificationViewerDialog.
+        """
+        if not history_object or not history_object.current_state.spec:
+            QMessageBox.warning(self, "No Spectrum", "No spectrum data to analyze.")
+            return
+
+        spec_to_view = history_object.current_state.spec
+        session_name = history_object.display_name
+
+        # Close the old dialog if it exists (it's read-only, safer to recreate)
+        if self.identification_viewer_dialog:
+            try:
+                self.identification_viewer_dialog.close()
+            except Exception:
+                pass
+            self.identification_viewer_dialog = None
+
+        try:
+            dialog = IdentificationViewerDialog(
+                spec_to_view, 
+                session_name, 
+                self
+            )
+            self.identification_viewer_dialog = dialog
+            dialog.finished.connect(
+                lambda: self._on_identification_viewer_closed() 
+            )
+            dialog.show()
+            logging.debug(f"Creating new identification viewer for {session_name}")
+        except Exception as e:
+            logging.error(f"Failed to launch identification viewer: {e}", exc_info=True)
+
+    def _on_identification_viewer_closed(self):
+        """
+        Slot called when the IdentificationViewerDialog is closed.
+        """
+        self.identification_viewer_dialog = None
+        logging.debug("Identification viewer closed, reference removed.")
 
     def _on_save_session_context(self, history_item: SessionHistory):
         """
@@ -1931,26 +2002,52 @@ class MainWindowV2(QMainWindow):
                 logging.error(f"Failed to log successful recipe: {e}")
 
             auto_show_col = None
-            if self.active_history:
-                old_spec = self.active_history.current_state.spec
-                if old_spec:
-                    old_cols = set(old_spec._data.aux_cols.keys())
-                    new_cols = set(new_session_state.spec._data.aux_cols.keys())
-                    added_cols = new_cols - old_cols
+            # Special handling for identify_lines
+            if recipe_name == 'identify_lines':
+                # Show an info dialog instead of auto-plotting the mask
+                try:
+                    json_str = new_session_state.spec.meta.get('region_identifications')
+                    num_identified = 0
+                    if json_str:
+                        num_identified = len(json.loads(json_str))
                     
-                    if added_cols:
-                        # Pick one to show. Prefer 'cont_pl', 'model', 'cont' in that order,
-                        # otherwise just pick an arbitrary new one.
-                        preferred_order = ['cont_pl', 'model', 'cont']
-                        for pref in preferred_order:
-                            if pref in added_cols:
-                                auto_show_col = pref
-                                break
-                        else:
-                            # If none of the preferred ones are new, just take the first one
-                            auto_show_col = list(added_cols)[0]
-                        
-                        logging.info(f"Recipe '{recipe_name}' added column '{auto_show_col}', auto-displaying.")
+                    total_regions = 0
+                    if new_session_state.spec.has_aux_column('region_id'):
+                        total_regions = np.max(new_session_state.spec.get_column('region_id').value)
+
+                    QMessageBox.information(
+                        self, 
+                        "Identification Complete", 
+                        f"Found identifications for <b>{num_identified}</b> of <b>{total_regions}</b> total absorption regions.\n\n"
+                        "Hover over regions for details or use 'View > View Identifications' for a full list."
+                    )
+                except Exception as e:
+                    logging.warning(f"Could not show identification summary: {e}")
+                
+                auto_show_col = None # Explicitly prevent auto-plotting
+            
+            # Original logic for all other recipes
+            else:
+                if self.active_history:
+                    old_spec = self.active_history.current_state.spec
+                    if old_spec:
+                        old_cols = set(old_spec._data.aux_cols.keys())
+                        new_cols = set(new_session_state.spec._data.aux_cols.keys())
+                        added_cols = new_cols - old_cols
+
+                        if added_cols:
+                            # Pick one to show. Prefer 'cont_pl', 'model', 'cont' in that order,
+                            # otherwise just pick an arbitrary new one.
+                            preferred_order = ['cont_pl', 'model', 'cont']
+                            for pref in preferred_order:
+                                if pref in added_cols:
+                                    auto_show_col = pref
+                                    break
+                            else:
+                                # If none of the preferred ones are new, just take the first one
+                                auto_show_col = list(added_cols)[0]
+
+                            logging.info(f"Recipe '{recipe_name}' added column '{auto_show_col}', auto-displaying.")
 
             # List recipes that drastically change vertical scale
             RECIPES_REQUIRING_AUTOSCALE = {'calibrate_from_magnitudes'}
@@ -2227,6 +2324,12 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
         if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
         if hasattr(self, 'view_log_action'): self.view_log_action.setEnabled(is_valid_session)
+        has_ids = False
+        if is_valid_session and self.active_history.current_state.spec:
+            # Check if the key exists AND is not None
+            has_ids = self.active_history.current_state.spec.meta.get('region_identifications') is not None
+        if hasattr(self, 'view_identifications_action'): 
+            self.view_identifications_action.setEnabled(has_ids)
 
         # ** Enable/Disable Recipe Actions **
         enable_recipes = is_valid_session
@@ -2249,7 +2352,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 
-        if hasattr(self, 'detect_regions_action'): self.detect_regions_action.setEnabled(enable_recipes)
+        if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...
