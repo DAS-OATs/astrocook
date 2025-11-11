@@ -19,6 +19,7 @@ ATOM_DATA = {
     'Ly_8': {'wave': 923.1503, 'f': 0.002216, 'gamma': 5.785e6, 'mass': 1.00794},
     'Ly_9': {'wave': 920.9630, 'f': 0.001605, 'gamma': 4.210e6, 'mass': 1.00794},
     'Ly_10': {'wave': 919.3513, 'f': 0.001201, 'gamma': 3.160e6, 'mass': 1.00794},
+    'Ly_lim': {'wave': 911.75, 'f': 0.0, 'gamma': 0.0, 'mass': 1.00794},
 
     # --- Carbon ---
     'CII_1036': {'wave': 1036.3367, 'f': 0.118, 'gamma': 2.200e9, 'mass': 12.011},
@@ -85,7 +86,7 @@ STANDARD_MULTIPLETS = {
     # Complex multiplets
     'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII_1304', 'SiII_1808'],
     'FeII': ['FeII_2382', 'FeII_2600', 'FeII_2344', 'FeII_2586', 'FeII_1608', 'FeII_2374'],
-    'NI_triplet': ['NI_1200', 'NI_1199', 'NI_1201'],
+    'NI': ['NI_1200', 'NI_1199', 'NI_1201'],
 
     # Series
     'Lyman': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7', 'Ly_8']
@@ -97,6 +98,15 @@ xem_d = {
     key: data['wave'] * au.Angstrom
     for key, data in ATOM_DATA.items()
 }
+
+def is_hydrogen_line(transition_name: str) -> bool:
+    """
+    Checks if a transition is a Hydrogen line based on atomic mass.
+    """
+    if transition_name not in ATOM_DATA:
+        return False
+    # Check if mass is < 2.0 (i.e., H or D)
+    return ATOM_DATA[transition_name]['mass'] < 2.0
 
 def get_multiplet_velocity_lags(multiplet_name: str) -> Dict[str, float]:
     """

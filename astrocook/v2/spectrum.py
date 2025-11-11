@@ -8,7 +8,7 @@ import numexpr as ne
 import numpy as np
 from typing import Any, Dict, List, Optional, Union
 
-from .atomic_data import get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
+from .atomic_data import get_multiplet_velocity_lags, is_hydrogen_line, STANDARD_MULTIPLETS, xem_d
 from .photometry import generate_calibration_curve
 from .spectrum_operations import (
     compute_identification_signal, convert_axis_velocity, 
@@ -1089,14 +1089,14 @@ class SpectrumV2:
         return SpectrumV2(data=new_data, history=new_hist)
     
     def identify_lines(self, 
-                         multiplet_list: List[str],
-                         z_grid_dz: float,
-                         modul: float,
-                         sigma: float,
-                         distance_pix: int,
-                         prominence: Optional[float],
-                         mask_col: str = 'mask_unabs', 
-                         min_pix_region: int = 3) -> 'SpectrumV2':
+                       multiplet_list: List[str],
+                       z_grid_dz: float,
+                       modul: float,
+                       sigma: float,
+                       distance_pix: int,
+                       prominence: Optional[float],
+                       mask_col: str = 'mask_unabs', 
+                       min_pix_region: int = 3) -> 'SpectrumV2':
         """
         API: Orchestrator method to identify absorption lines.
         1. Detects absorption regions (creates 'region_id').
@@ -1108,6 +1108,10 @@ class SpectrumV2:
         
         # This is the 'self' spectrum object
         spec = self
+        z_em = spec._data.z_em # <<< *** GET z_em ***
+        if z_em == 0.0:
+            # This should be caught by the GUI, but as a safeguard:
+            raise ValueError("z_em must be set before running identify_lines.")
         
         logging.debug(f"identify_lines: Starting identification...")
         logging.debug(f"  Params: sigma={sigma}, distance={distance_pix}, prominence={prominence}")
@@ -1120,9 +1124,9 @@ class SpectrumV2:
                 mask_col=mask_col,
                 min_pix=min_pix_region
             )
-            region_id_map = spec_with_regions.get_column('region_id').value
+            region_id_map_full = spec_with_regions.get_column('region_id').value
             x_nm = spec_with_regions.x.to_value(au.nm)
-            total_regions = np.max(region_id_map)
+            total_regions = np.max(region_id_map_full)
             logging.debug(f" Found {total_regions} absorption regions.")
             if total_regions == 0:
                 logging.warning("  No regions found, identification will be empty.")
@@ -1164,13 +1168,50 @@ class SpectrumV2:
         )
         logging.info(f"Found {len(peaks_list)} candidate peaks.")
         
+        # --- *** NEW: Step 3b - Apply Physical Constraints *** ---
+        logging.info(f"Found {len(peaks_list)} raw peaks. Applying physical constraints...")
+        
+        # Get boundary wavelengths in OBSERVED frame (nm)
+        lya_limit_obs_nm = (1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)
+        lya_obs_nm = (1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)
+        
+        filtered_peaks = []
+        for (series_name, z_peak, score) in peaks_list:
+            try:
+                ref_trans = STANDARD_MULTIPLETS[series_name][0]
+                x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
+
+                # Rule 1: Reject *anything* below the Lyman Limit
+                if x_peak_nm < lya_limit_obs_nm:
+                    continue
+                    
+                # Rule 2: Penalize metals in the Ly-alpha forest
+                is_h = is_hydrogen_line(ref_trans)
+                is_in_forest = x_peak_nm < lya_obs_nm
+                
+                # Rule 2: Penalize metals in the Ly-alpha forest
+                if not is_h and is_in_forest:
+                    # Require a much higher score (e.g., 3x sigma)
+                    if score < (sigma * 10.0): 
+                        continue # Reject low-confidence metal in forest
+                
+                # Rule 3: Reject H lines redward of Lya emission
+                if is_h and not is_in_forest:
+                    continue # Reject H lines found redward of Lya
+                
+                filtered_peaks.append((series_name, z_peak, score))
+                
+            except Exception:
+                continue # Skip peaks that fail lookup
+
+        logging.info(f"Found {len(filtered_peaks)} physically valid peaks.")
+
         # --- 4. Cross-match Peaks with Regions ---
         # region_identifications maps: region_id -> List[(series, score)]
         region_identifications: Dict[int, List[Tuple[str, float]]] = {}
 
-        for (series_name, z_peak, score) in peaks_list:
+        for (series_name, z_peak, score) in filtered_peaks: # <<< *** Use filtered_peaks ***
             try:
-                # Use the *first* (strongest) transition as the reference
                 ref_trans = STANDARD_MULTIPLETS[series_name][0]
                 x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
                 
@@ -1178,7 +1219,7 @@ class SpectrumV2:
                 idx = np.abs(x_nm - x_peak_nm).argmin()
                 
                 # Get the region ID at that index
-                rid = int(region_id_map[idx])
+                rid = int(region_id_map_full[idx])
                 
                 # Assign this peak to the region
                 if rid > 0: # (Ignore background region 0)
@@ -1196,6 +1237,38 @@ class SpectrumV2:
             region_identifications[rid].sort(key=lambda x: x[1], reverse=True)
 
         new_meta = spec_with_regions.meta
+
+        new_meta = spec_with_regions.meta
+        
+        # Create a new set of aux_cols based on the spec_with_regions
+        new_aux_cols = dataclasses.replace(spec_with_regions._data).aux_cols
+        
+        # --- *** NEW: Create region_id_identified column *** ---
+        identified_rids = set(region_identifications.keys())
+        if identified_rids:
+            # Create a copy of the region map
+            vis_map = region_id_map_full.copy()
+            
+            # Find all unique region IDs
+            all_rids = np.unique(vis_map)
+            
+            # Find RIDs to set to 0 (unidentified)
+            rids_to_zero = [rid for rid in all_rids if rid > 0 and rid not in identified_rids]
+
+            if rids_to_zero:
+                # Use np.isin for fast masking
+                mask_to_zero = np.isin(vis_map, rids_to_zero)
+                vis_map[mask_to_zero] = 0
+            
+            # Add this new map as an auxiliary column
+            vis_col = DataColumnV2(
+                values=vis_map,
+                unit=au.dimensionless_unscaled,
+                description="Absorption regions with identifications"
+            )
+            new_aux_cols['region_id_identified'] = vis_col
+
+        # --- 6. Save Metadata (as JSON) ---
         if not region_identifications:
             # If the dict is empty, save None (which FITS headers can handle)
             new_meta['region_identifications'] = None
@@ -1207,7 +1280,11 @@ class SpectrumV2:
                 logging.error(f"Failed to serialize region identifications to JSON: {e}")
                 new_meta['region_identifications'] = None # Save None on error
         
-        final_data_core = dataclasses.replace(spec_with_regions._data, meta=new_meta)
+        final_data_core = dataclasses.replace(
+            spec_with_regions._data, 
+            meta=new_meta,
+            aux_cols=new_aux_cols
+        )
         
         # 6. Return new SpectrumV2
         new_history = self.history + [f"Identified {len(peaks_list)} candidates"]

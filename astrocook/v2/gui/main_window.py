@@ -1802,7 +1802,8 @@ class MainWindowV2(QMainWindow):
         'fit_powerlaw', 
         'estimate_auto', 
         'find_unabsorbed',
-        'extract_preset'
+        'extract_preset',
+        'identify_lines'
     }
 
     def _launch_recipe_dialog(self, category, name, initial_params: dict = None):

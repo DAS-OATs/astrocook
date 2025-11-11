@@ -19,6 +19,7 @@ import qtawesome as qta
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
+from ..atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
 from ..photometry import STANDARD_FILTERS, get_filter_transmission
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
@@ -26,12 +27,12 @@ if TYPE_CHECKING:
     from ..session import SessionV2 
 
 try:
-    from ...v1.functions import trans_parse, x_convert # Need x_convert for systs
-    from ...v1.vars import xem_d
+    from ...v1.functions import trans_parse
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
-    logging.error("V1 functions/vars not found, cursor/system plotting may fail.")
+    trans_parse = lambda s: [s] # Dummy function
+    logging.error("V1 'trans_parse' not found. Displaying V1-style systems may fail.")
 
 # Keys must match exactly what is in your v1.vars.xem_d dictionary
 STRONG_EMISSION_LINES = {
@@ -909,7 +910,7 @@ class SpectrumPlotWidget(QWidget):
                     # 2. Apply Zoom Slicing (must match x_data's final state)
                     aux_data = aux_data[final_slice]
                     
-                    if aux_col_to_plot in ['mask_unabs', 'region_id']:
+                    if aux_col_to_plot in ['mask_unabs', 'region_id', 'region_id_identified']:
                         # Create a boolean mask where regions exist
                         region_mask = (aux_data > 0)
                         
@@ -968,8 +969,27 @@ class SpectrumPlotWidget(QWidget):
 
                 for comp in systs.components:
                     z = comp.z
-                    # Use V1 function to get transitions for the series
-                    transitions = trans_parse(comp.series)
+                    
+                    # V1/V2 Fallback Logic for Transitions
+                    transitions = []
+                    try:
+                        # 1. Try V2-native lookup (e.g., "CIV")
+                        transitions = STANDARD_MULTIPLETS[comp.series]
+                    except KeyError:
+                        if V1_FUNCTIONS_AVAILABLE:
+                            # 2. Try V1 trans_parse (e.g., "CIV_1548,CIV_1550")
+                            try:
+                                transitions = trans_parse(comp.series)
+                            except Exception:
+                                pass # Will be caught by logging below
+                        
+                        # 3. Fallback for single lines (e.g., "Ly_a")
+                        if not transitions and comp.series in xem_d:
+                            transitions = [comp.series]
+                    
+                    if not transitions:
+                        logging.warning(f"Could not parse series '{comp.series}' for system plot.")
+
                     for t in transitions:
                         if t in xem_d:
                             try:
@@ -1245,8 +1265,24 @@ class SpectrumPlotWidget(QWidget):
         main_window = self.main_window # type: MainWindowV2
         if not spec or not V1_FUNCTIONS_AVAILABLE: return []
         try:
+            # V1/V2 Fallback Logic for Transitions
             series_str = main_window.cursor_series_input.text()
-            transitions = trans_parse(series_str)
+            transitions = []
+            try:
+                # 1. Try V2-native lookup
+                transitions = STANDARD_MULTIPLETS[series_str]
+            except KeyError:
+                if V1_FUNCTIONS_AVAILABLE:
+                    # 2. Try V1 trans_parse
+                    try:
+                        transitions = trans_parse(series_str)
+                    except Exception:
+                        pass
+                        
+                # 3. Fallback for single lines
+                if not transitions and series_str in xem_d:
+                    transitions = [series_str]
+
             zem = getattr(spec, '_zem', 0.0) # Get spec RF z
             x_unit = spec.x.unit # Get spec current x unit
 
@@ -1268,8 +1304,24 @@ class SpectrumPlotWidget(QWidget):
         if not self.main_window or not V1_FUNCTIONS_AVAILABLE:
             return None
         try:
+            # V1/V2 Fallback Logic for Transitions
             series_str = self.main_window.cursor_series_input.text()
-            transitions = trans_parse(series_str)
+            transitions = []
+            try:
+                # 1. Try V2-native lookup
+                transitions = STANDARD_MULTIPLETS[series_str]
+            except KeyError:
+                if V1_FUNCTIONS_AVAILABLE:
+                    # 2. Try V1 trans_parse
+                    try:
+                        transitions = trans_parse(series_str)
+                    except Exception:
+                        pass
+
+                # 3. Fallback for single lines
+                if not transitions and series_str in xem_d:
+                    transitions = [series_str]
+
             if not transitions: return None
             
             # Find first valid transition to use as reference
@@ -1398,16 +1450,6 @@ class SpectrumPlotWidget(QWidget):
         spec = session.spec
         x_full = spec.x.value
 
-        # --- Density Check ---
-        xlim = self.canvas.axes.get_xlim()
-        idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
-        idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
-        n_visible = idx_end_vis - idx_start_vis
-        TOOLTIP_MAX_POINTS = 5000 
-        if n_visible > TOOLTIP_MAX_POINTS:
-             return
-        # ---------------------
-
         # 2. Find nearest index in X
         idx = np.searchsorted(x_full, event.xdata)
         if idx > 0 and (idx == len(x_full) or 
@@ -1415,6 +1457,67 @@ class SpectrumPlotWidget(QWidget):
             idx -= 1
         if idx < 0 or idx >= len(x_full):
             return
+        
+        region_id_val = 0
+        region_id_str = ""
+        region_id_labels = ""
+
+        # 1. Check for Region ID first
+        if 'region_id' in spec._data.aux_cols:
+            try:
+                region_id_val = int(spec._data.aux_cols['region_id'].values[idx])
+                if region_id_val != 0:
+                    region_id_str = str(region_id_val)
+                    
+                    # Check for identification labels
+                    ident_labels_json = spec.meta.get('region_identifications')
+                    if ident_labels_json:
+                        ident_labels_raw = json.loads(ident_labels_json)
+                        ident_labels_dict = {int(k): v for k, v in ident_labels_raw.items()}
+                        
+                        if region_id_val in ident_labels_dict:
+                            ids_for_region = ident_labels_dict[region_id_val]
+                            label_str = ""
+                            for i, (name, score) in enumerate(ids_for_region):
+                                if i > 1: label_str += ", ..."; break
+                                if i > 0: label_str += ", "
+                                label_str += f"{name} ({score:.2f})"
+                            if label_str:
+                                region_id_labels = label_str
+            except Exception as e:
+                logging.warning(f"Could not parse region ID/labels: {e}")
+
+        # 2. If a region is found, build the simple tooltip
+        if region_id_val != 0:
+            try:
+                tip_html = "<table style='font-size: 13px'>"
+                def add_row(label, val_str):
+                    return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
+                
+                tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
+                tip_html += add_row("Region ID", region_id_str)
+                if region_id_labels:
+                    tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
+                
+                tip_html += "</table>"
+                QToolTip.showText(QCursor.pos(), tip_html, self)
+                return # <<< *** EXIT EARLY ***
+            except Exception as e:
+                logging.warning(f"Error building region tooltip: {e}")
+                return # Fail safe
+
+        # 3. If no region, proceed to proximity check (don't show if cursor is on)
+        if self.main_window.cursor_show_checkbox.isChecked():
+            return
+
+        # --- Density Check ---
+        xlim = self.canvas.axes.get_xlim()
+        idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
+        idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
+        n_visible = idx_end_vis - idx_start_vis
+        TOOLTIP_MAX_POINTS = 20000 
+        if n_visible > TOOLTIP_MAX_POINTS:
+             return
 
         # --- Dynamic Proximity Check ---
         THRESHOLD_PIX = 40

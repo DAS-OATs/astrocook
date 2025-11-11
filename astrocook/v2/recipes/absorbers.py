@@ -21,7 +21,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Identify likely absorption systems.",
         "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
         "params": [
-            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Lyman", "doc": "Multiplets to search for (comma-separated)."},
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_a,Ly_b", "doc": "Multiplets to search for (comma-separated)."},
             {"name": "z_grid_dz", "type": float, "default": 1e-4, "doc": "Redshift grid spacing (dz)."},
             {"name": "modul", "type": float, "default": 10.0, "doc": "Significance modulation factor."},
             {"name": "sigma", "type": float, "default": 2.0, "doc": "Minimum S/N peak to be considered."},
@@ -40,7 +40,7 @@ class RecipeAbsorbersV2:
         self._tag = 'abs'
 
     def identify_lines(self, 
-                         multiplets: str = "CIV,SiIV,MgII,Lyman",
+                         multiplets: str = "CIV,SiIV,MgII,Ly_a,Ly_b",
                          z_grid_dz: str = "1e-4",
                          modul: str = "10.0",
                          sigma: str = "2.0",
