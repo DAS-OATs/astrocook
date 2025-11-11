@@ -1109,6 +1109,10 @@ class SpectrumV2:
         # This is the 'self' spectrum object
         spec = self
         
+        logging.debug(f"identify_lines: Starting identification...")
+        logging.debug(f"  Params: sigma={sigma}, distance={distance_pix}, prominence={prominence}")
+        logging.debug(f"  Params: mask_col={mask_col}, min_pix_region={min_pix_region}")
+
         # --- 1. Detect Absorption Regions ---
         try:
             # This returns a *new* spec with the 'region_id' column
@@ -1118,6 +1122,10 @@ class SpectrumV2:
             )
             region_id_map = spec_with_regions.get_column('region_id').value
             x_nm = spec_with_regions.x.to_value(au.nm)
+            total_regions = np.max(region_id_map)
+            logging.debug(f" Found {total_regions} absorption regions.")
+            if total_regions == 0:
+                logging.warning("  No regions found, identification will be empty.")
         except Exception as e:
             logging.error(f"Failed to detect absorption regions: {e}", exc_info=True)
             raise e # Re-raise for the recipe to catch
@@ -1131,7 +1139,7 @@ class SpectrumV2:
         signals_dict = {}
         
         logging.info(f"Computing identification signals for: {multiplet_list}")
-        for series_name in multiplet_list:
+        for i, series_name in enumerate(multiplet_list):
             if series_name not in STANDARD_MULTIPLETS:
                 logging.warning(f"Skipping '{series_name}': Not in STANDARD_MULTIPLETS.")
                 continue
@@ -1140,6 +1148,14 @@ class SpectrumV2:
                 spec_with_regions, series_name, z_grid, modul
             )
             signals_dict[series_name] = signal
+
+            if i == 0: # Log stats for the *first* signal only
+                logging.debug(f" Stats for first signal ('{series_name}'):")
+                try:
+                    valid_signal = signal[np.isfinite(signal)]
+                    logging.debug(f"   Signal (min/mean/max): {np.min(valid_signal):.2f} / {np.mean(valid_signal):.2f} / {np.max(valid_signal):.2f}")
+                except Exception as e:
+                    logging.debug(f"   Could not compute signal stats: {e}")
 
         # --- 3. Find Significant Peaks ---
         logging.info("Finding peaks in signals...")

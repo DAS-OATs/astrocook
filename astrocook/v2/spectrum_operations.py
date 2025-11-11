@@ -695,49 +695,76 @@ def find_signal_peaks(
         List of (series_name, z_peak, score)
     """
     all_peaks_list = []
-    
-    # 1. Create the "total signal" envelope for best-guess filtering
-    # (Find the max signal at each z bin across all series)
-    with np.errstate(invalid='ignore'): # Ignore warnings from all-NaN slices
-        total_signal = np.nanmax(
-            [s for s in signals_dict.values() if s is not None], 
-            axis=0
-        )
-    total_signal = np.nan_to_num(total_signal, nan=-np.inf) # Use -inf for comparisons
 
-    # 2. Find peaks for each series
+    smoothed_signals = {} # Store smoothed signals
+    
+    # 1. Smooth each signal individually
     for series_name, signal in signals_dict.items():
         if signal is None:
             continue
             
+        # --- *** FIXED: Clean NaNs before smoothing *** ---
+        # The input signal contains NaNs from interpolation edges.
+        # Replace NaNs with 0.0 (neutral) before smoothing.
+        signal_clean = np.nan_to_num(signal, nan=0.0)
+        
         # V1 logic used a light smoothing
-        smoothed_signal = savgol_filter(signal, window_length=5, polyorder=1)
-        smoothed_signal = np.nan_to_num(smoothed_signal, nan=-np.inf)
+        smoothed_signal = savgol_filter(signal_clean, window_length=5, polyorder=1)
+        smoothed_signals[series_name] = smoothed_signal
+        # --- *** END FIX *** ---
 
-        # 3. Find peaks
+    # 2. Create the "total signal" envelope from the *SMOOTHED* signals
+    if not smoothed_signals:
+        logging.warning("find_signal_peaks: No valid signals to process.")
+        return []
+        
+    with np.errstate(invalid='ignore'): # Ignore warnings from all-NaN slices
+        total_signal = np.nanmax(
+            [s for s in smoothed_signals.values()], 
+            axis=0
+        )
+    # Replace any remaining NaNs (if all signals were NaN) with -inf
+    total_signal = np.nan_to_num(total_signal, nan=-np.inf)
+
+    # 3. Find peaks for each *SMOOTHED* series
+    for series_name, smoothed_signal in smoothed_signals.items():
+
+        logging.debug(f"find_signal_peaks: Searching '{series_name}'...")
+        logging.debug(f"  Signal stats (min/mean/max): {np.min(smoothed_signal):.2f} / {np.mean(smoothed_signal):.2f} / {np.max(smoothed_signal):.2f}")
+        logging.debug(f"  Thresholds: sigma={sigma}, distance_pix={distance_pix}, prominence={prominence}")
+        
+        # 4. Find peaks
         peaks_idx, _ = find_peaks(
-            smoothed_signal, 
+            smoothed_signal, # <<< Use the smoothed signal
             distance=distance_pix, 
             prominence=prominence
         )
         
+        # --- *** ADDED DEBUGGING *** ---
+        logging.debug(f" Found {len(peaks_idx)} raw peaks (before sigma/best-guess filter).")
+        # --- *** END DEBUGGING *** ---
+        
         if not peaks_idx.size:
             continue
             
-        # 4. Filter by sigma (height threshold)
+        # 5. Filter by sigma (height threshold)
         peaks_idx = peaks_idx[smoothed_signal[peaks_idx] > sigma]
         
-        # 5. Best-Guess Filter
+        # --- *** ADDED DEBUGGING *** ---
+        logging.debug(f"  Found {len(peaks_idx)} peaks after 'sigma' filter.")
+        # --- *** END DEBUGGING *** ---
+
+        # 6. Best-Guess Filter
         for p_idx in peaks_idx:
             peak_score = smoothed_signal[p_idx]
             
             # Check if this peak is the highest signal at this redshift
-            # (V1 'like_s' == 'like' check)
+            # --- *** FIXED: Comparing smoothed_score to smoothed_total_signal *** ---
             if np.isclose(peak_score, total_signal[p_idx]):
                 z_peak = z_grid[p_idx]
                 all_peaks_list.append((series_name, z_peak, peak_score))
 
-    # 6. Sort final list by redshift
+    # 7. Sort final list by redshift
     all_peaks_list.sort(key=lambda x: x[1])
     
     return all_peaks_list
