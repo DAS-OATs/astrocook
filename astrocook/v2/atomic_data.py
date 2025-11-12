@@ -161,7 +161,7 @@ STANDARD_MULTIPLETS = {
     # Series
     'Lyman': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7', 'Ly_8'],
     'Ly_a': ['Ly_a'], 
-    'Ly_b': ['Ly_b'], 
+    'Ly_ab': ['Ly_a', 'Ly_b'], 
 }
 
 # Built from ATOM_DATA to be used by V2 functions.

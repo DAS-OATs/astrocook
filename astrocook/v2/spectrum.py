@@ -1,4 +1,5 @@
 
+import astropy.constants as const
 import astropy.units as au
 from copy import deepcopy
 import dataclasses
@@ -1181,42 +1182,48 @@ class SpectrumV2:
         )
         logging.info(f"Found {len(peaks_list)} candidate peaks.")
         
-        # 4b - Apply Physical Constraints
+        # 4b - Apply Physical Constraints (NEW: z_max filter + Lya Forest Penalization)
         logging.info(f"Found {len(peaks_list)} raw peaks. Applying physical constraints...")
         
-        # Get boundary wavelengths in OBSERVED frame (nm)
-        lya_limit_obs_nm = (1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)
+        # --- Define Boundaries ---
+        # 1. Hard Redshift Cutoff (z_max)
+        proximity_dv = 5000.0 * au.km / au.s
+        c_kms = const.c.to(au.km / au.s).value
+        delta_z = (1.0 + z_em) * (proximity_dv.value / c_kms)
+        z_max = z_em + delta_z
+        
+        # 2. Lya Forest Boundary (for penalization)
         lya_obs_nm = (1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)
         
+        logging.info(f"z_em = {z_em:.4f}, z_max = {z_max:.4f}, Lya_obs = {lya_obs_nm:.2f} nm")
+
+        # --- Filter Peaks ---
         filtered_peaks = []
         for (series_name, z_peak, score) in peaks_list:
+            
+            # Rule 1: Hard cutoff (replaces all other H/Lyman limit rules)
+            if z_peak >= z_max:
+                continue
+                
             try:
+                # Rule 2: Penalize low-confidence metals in the Lya Forest
                 ref_trans = STANDARD_MULTIPLETS[series_name][0]
                 x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
 
-                # Rule 1: Reject *anything* below the Lyman Limit
-                if x_peak_nm < lya_limit_obs_nm:
-                    continue
-                    
-                # Rule 2: Penalize metals in the Ly-alpha forest
                 is_h = is_hydrogen_line(ref_trans)
                 is_in_forest = x_peak_nm < lya_obs_nm
                 
-                # Rule 2: Penalize metals in the Ly-alpha forest
                 if not is_h and is_in_forest:
-                    # Require a much higher score (e.g., 3x sigma)
+                    # This is a metal line in the forest.
+                    # It must have a very high score to be trusted.
                     if score < (sigma * 10.0): 
-                        continue # Reject low-confidence metal in forest
+                        continue # Reject low-confidence metal
                 
-                # Rule 3: Reject H lines redward of Lya emission
-                if is_h and not is_in_forest:
-                    continue # Reject H lines found redward of Lya
-                
+                # If it passes all checks, add it
                 filtered_peaks.append((series_name, z_peak, score))
-                
+
             except Exception:
                 continue # Skip peaks that fail lookup
-
         logging.info(f"Found {len(filtered_peaks)} physically valid peaks.")
 
         # 5. Cross-match Peaks with Regions
