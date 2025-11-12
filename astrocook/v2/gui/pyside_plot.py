@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from ..session import SessionV2 
 
 try:
-    from ...v1.functions import trans_parse
+    from ...v1.functions import trans_parse, x_convert
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
@@ -1475,11 +1475,8 @@ class SpectrumPlotWidget(QWidget):
                         
                         if region_id_val in ident_labels_dict:
                             ids_for_region = ident_labels_dict[region_id_val]
-                            label_str = ""
-                            for i, (name, score) in enumerate(ids_for_region):
-                                if i > 1: label_str += ", ..."; break
-                                if i > 0: label_str += ", "
-                                label_str += f"{name} ({score:.2f})"
+                            # Only show the names, not scores
+                            label_str = ", ".join([name for (name, score) in ids_for_region])
                             if label_str:
                                 region_id_labels = label_str
             except Exception as e:
@@ -1550,11 +1547,12 @@ class SpectrumPlotWidget(QWidget):
             
             # Add dynamic data rows
             for label, val, unit in rows_to_show:
-                 tip_html += add_row(label, f"{val:.4e} {unit}")
+                tip_html += add_row(label, f"{val:.4e} {unit}")
 
             # Add Region ID if found
             if region_id_str:
-                tip_html += add_row("Abs. ID", region_id_str)
+                # Do not show the numerical Abs. ID
+                # tip_html += add_row("Abs. ID", region_id_str) 
                 if region_id_labels:
                     tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
 
