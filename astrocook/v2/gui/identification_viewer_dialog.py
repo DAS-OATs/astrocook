@@ -48,6 +48,16 @@ class IdentificationViewerDialog(QDialog):
             return
 
         json_string = spec.meta.get('region_identifications')
+
+        total_regions = 0
+        if spec.has_aux_column('abs_ids'): # <<< *** Use new column name 'abs_ids' ***
+            try:
+                region_map = spec.get_column('abs_ids').value
+                # Find all unique non-zero IDs
+                total_regions = len(np.unique(region_map[region_map > 0]))
+            except Exception as e:
+                logging.warning(f"Could not count regions from 'abs_ids': {e}")
+
         if not json_string:
             self.summary_label.setText("No identifications found in session metadata.")
             self.results_edit.setPlainText("# Run 'Absorbers > Identify Absorption Lines' first.")
@@ -61,16 +71,13 @@ class IdentificationViewerDialog(QDialog):
             
             num_regions_identified = len(ident_dict)
             
-            # 2. Get total number of regions
-            total_regions = 0
-            if spec.has_aux_column('region_id'):
-                region_map = spec.get_column('region_id').value
-                total_regions = int(np.max(region_map))
+            # 2. Get total number of regions (This is now a check)
+            if total_regions != num_regions_identified:
+                logging.warning(f"Mismatch: {num_regions_identified} IDs in metadata, but {total_regions} regions in 'abs_ids' column.")
                 
             # 3. Update summary
             self.summary_label.setText(
-                f"Found identifications for <b>{num_regions_identified}</b> of "
-                f"<b>{total_regions}</b> total absorption regions."
+                f"Found <b>{num_regions_identified}</b> identified absorption regions."
             )
             
             # 4. Pretty-print the dictionary

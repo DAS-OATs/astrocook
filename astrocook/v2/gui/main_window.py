@@ -659,21 +659,21 @@ class MainWindowV2(QMainWindow):
         # RECIPES FOR 'CONTINUUM' MENU
 
         auto_cont_action = QAction("&Auto-estimate Continuum...", self)
-        auto_cont_action.setToolTip("Find unabsorbed regions and fit a continuum")
+        auto_cont_action.setToolTip("Find Absorbed regions and fit a continuum")
         auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_auto"))
         continuum_menu.addAction(auto_cont_action)
         self.auto_cont_action = auto_cont_action; self.auto_cont_action.setEnabled(False)
 
         continuum_menu.addSeparator()
 
-        find_unabs_action = QAction("&Find Unabsorbed Regions...", self)
-        find_unabs_action.setToolTip("Create a 'mask_unabs' column using V1 'clip_flux' logic")
-        find_unabs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_unabsorbed"))
-        continuum_menu.addAction(find_unabs_action)
-        self.find_unabs_action = find_unabs_action; self.find_unabs_action.setEnabled(False)
+        find_abs_action = QAction("&Find Aabsorbed Regions...", self)
+        find_abs_action.setToolTip("Create a 'abs_mask' column using V1 'clip_flux' logic")
+        find_abs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_absorbed"))
+        continuum_menu.addAction(find_abs_action)
+        self.find_abs_action = find_abs_action; self.find_abs_action.setEnabled(False)
 
         fit_cont_action = QAction("Fit &Continuum to Mask...", self)
-        fit_cont_action.setToolTip("Fit a continuum to the 'mask_unabs' column (V1 logic)")
+        fit_cont_action.setToolTip("Fit a continuum to the 'abs_mask' column (V1 logic)")
         fit_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_continuum"))
         continuum_menu.addAction(fit_cont_action)
         self.fit_cont_action = fit_cont_action; self.fit_cont_action.setEnabled(False)
@@ -1801,7 +1801,7 @@ class MainWindowV2(QMainWindow):
     _RECIPES_REQUIRING_Z_EM = {
         'fit_powerlaw', 
         'estimate_auto', 
-        'find_unabsorbed',
+        'find_absorbed',
         'extract_preset',
         'identify_lines'
     }
@@ -2013,9 +2013,11 @@ class MainWindowV2(QMainWindow):
                         num_identified = len(json.loads(json_str))
                     
                     total_regions = 0
-                    if new_session_state.spec.has_aux_column('region_id'):
-                        total_regions = np.max(new_session_state.spec.get_column('region_id').value)
-
+                    if new_session_state.spec.has_aux_column('abs_ids'):
+                        region_map = new_session_state.spec.get_column('abs_ids').value
+                        # Get unique, non-zero IDs
+                        total_regions = len(np.unique(region_map[region_map > 0]))
+                        
                     QMessageBox.information(
                         self, 
                         "Identification Complete", 
@@ -2349,7 +2351,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'calibrate_action'): self.calibrate_action.setEnabled(enable_recipes)
 
         if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
-        if hasattr(self, 'find_unabs_action'): self.find_unabs_action.setEnabled(enable_recipes)
+        if hasattr(self, 'find_abs_action'): self.find_abs_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 

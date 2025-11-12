@@ -910,7 +910,7 @@ class SpectrumPlotWidget(QWidget):
                     # 2. Apply Zoom Slicing (must match x_data's final state)
                     aux_data = aux_data[final_slice]
                     
-                    if aux_col_to_plot in ['mask_unabs', 'region_id', 'region_id_identified']:
+                    if aux_col_to_plot in ['abs_mask', 'abs_ids']:
                         # Create a boolean mask where regions exist
                         region_mask = (aux_data > 0)
                         
@@ -1462,10 +1462,10 @@ class SpectrumPlotWidget(QWidget):
         region_id_str = ""
         region_id_labels = ""
 
-        # 1. Check for Region ID first
-        if 'region_id' in spec._data.aux_cols:
+        # 1. Check for Region ID first (using new 'abs_ids' column)
+        if 'abs_ids' in spec._data.aux_cols:
             try:
-                region_id_val = int(spec._data.aux_cols['region_id'].values[idx])
+                region_id_val = int(spec._data.aux_cols['abs_ids'].values[idx])
                 if region_id_val != 0:
                     region_id_str = str(region_id_val)
                     
@@ -1495,7 +1495,7 @@ class SpectrumPlotWidget(QWidget):
                     return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
                 
                 tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
-                tip_html += add_row("Region ID", region_id_str)
+                tip_html += add_row("Abs. ID", region_id_str)
                 if region_id_labels:
                     tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
                 
@@ -1506,7 +1506,8 @@ class SpectrumPlotWidget(QWidget):
                 logging.warning(f"Error building region tooltip: {e}")
                 return # Fail safe
 
-        # 3. If no region, proceed to proximity check (don't show if cursor is on)
+        # ONLY hide data-proximity tooltip if cursor is on.
+        # Region tooltip (above) shows regardless.
         if self.main_window.cursor_show_checkbox.isChecked():
             return
 
@@ -1517,7 +1518,7 @@ class SpectrumPlotWidget(QWidget):
         n_visible = idx_end_vis - idx_start_vis
         TOOLTIP_MAX_POINTS = 20000 
         if n_visible > TOOLTIP_MAX_POINTS:
-             return
+            return
 
         # --- Dynamic Proximity Check ---
         THRESHOLD_PIX = 40

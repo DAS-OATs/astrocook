@@ -12,7 +12,7 @@ from .atomic_data import get_multiplet_velocity_lags, is_hydrogen_line, STANDARD
 from .photometry import generate_calibration_curve
 from .spectrum_operations import (
     compute_identification_signal, convert_axis_velocity, 
-    convert_x_axis, convert_y_axis, detect_regions, find_unabsorbed_regions, 
+    convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, 
     find_signal_peaks, fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std,
 )
 from .structures import SpectrumDataV2, DataColumnV2
@@ -932,13 +932,13 @@ class SpectrumV2:
         new_history = self.history + [f"Flux calibrated with: {magnitudes}"]
         return SpectrumV2(data=new_data, history=new_history)
     
-    def find_unabsorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
-                        kappa: float, template: bool) -> 'SpectrumV2':
+    def find_absorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
+                      kappa: float, template: bool) -> 'SpectrumV2':
         """
         API: Finds unabsorbed regions and adds/updates the 'mask_unabs' column.
         """
         # 1. Call the pure function with the new signature
-        mask = find_unabsorbed_regions(
+        mask = find_absorbed_regions(
             x=self._data.x.quantity,
             y=self._data.y.values,
             dy=self._data.dy.values,
@@ -951,36 +951,36 @@ class SpectrumV2:
         
         # 2. Create new data core
         new_aux_cols = deepcopy(self._data.aux_cols)
-        new_aux_cols['mask_unabs'] = DataColumnV2(
+        new_aux_cols['abs_mask'] = DataColumnV2(
             values=mask,
             unit=au.dimensionless_unscaled,
-            description="Mask of unabsorbed regions (True=unabsorbed)"
+            description="Mask of absorbed regions (True=absorbed)"
         )
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
         # 3. Return new SpectrumV2
-        new_history = self.history + [f"Found unabsorbed regions (kappa={kappa})"]
+        new_history = self.history + [f"Found absorbed regions (kappa={kappa})"]
         return SpectrumV2(data=new_data, history=new_history)
         
     def fit_continuum(self, fudge: float, smooth_std_kms: float, 
-                      mask_col: str = 'mask_unabs', renorm_model: bool = False) -> 'SpectrumV2':
+                      mask_col: str = 'abs_mask', renorm_model: bool = False) -> 'SpectrumV2':
         """
         API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
-            raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_unabsorbed' first.")
+            raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_absorbed' first.")
         
-        mask = self._data.aux_cols[mask_col].values
-        if mask.dtype.kind != 'b':
+        mask_abs = self._data.aux_cols[mask_col].values
+        if mask_abs.dtype.kind != 'b':
             raise TypeError(f"Mask column '{mask_col}' is not a boolean mask.")
 
         # 2. Call the pure "interp-and-smooth" function
         cont_values = fit_continuum_interp(
             x=self._data.x.values,
             y=self._data.y.values,
-            mask_unabs=mask,
+            mask_abs=mask_abs,
             fudge=fudge,
             smooth_std_kms=smooth_std_kms,
             z_rf=self._data.z_rf # Pass z_rf for smoothing
@@ -1042,30 +1042,28 @@ class SpectrumV2:
         new_history = self.history + [f"Fitted power-law (regions={regions_str})"]
         return SpectrumV2(data=new_data, history=new_history)
 
-    def detect_absorptions(self, mask_col: str = 'mask_unabs', min_pix: int = 3) -> 'SpectrumV2':
+    def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> 'SpectrumV2':
         """
         API: Detects absorption regions based on a continuum mask.
         Creates/updates the 'region_id' auxiliary column.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
-            raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_unabsorbed' first.")
+            raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_absorbed' first.")
         
         mask_data = self._data.aux_cols[mask_col].values
         
         if mask_data.dtype.kind == 'b':
             # It's already boolean, perfect.
-            unabs_mask = mask_data
+            abs_mask = mask_data
         elif mask_data.dtype.kind in 'iu': # Integer or Unsigned Integer
             # It's likely 0/1 from a file load. Cast it.
             logging.debug(f"Casting integer column '{mask_col}' to boolean mask.")
-            unabs_mask = mask_data.astype(bool)
+            abs_mask = mask_data.astype(bool)
         else:
             # It's float or string, which is probably wrong for a mask.
             raise TypeError(f"Column '{mask_col}' has dtype '{mask_data.dtype}', expected boolean or integer mask.")
              
-        abs_mask = ~unabs_mask
-        
         # 2. Call pure function
         region_map, num_regions = detect_regions(abs_mask, min_pix=min_pix)
         
@@ -1095,7 +1093,7 @@ class SpectrumV2:
                        sigma: float,
                        distance_pix: int,
                        prominence: Optional[float],
-                       mask_col: str = 'mask_unabs', 
+                       mask_col: str = 'abs_mask', 
                        min_pix_region: int = 3) -> 'SpectrumV2':
         """
         API: Orchestrator method to identify absorption lines.
@@ -1117,24 +1115,39 @@ class SpectrumV2:
         logging.debug(f"  Params: sigma={sigma}, distance={distance_pix}, prominence={prominence}")
         logging.debug(f"  Params: mask_col={mask_col}, min_pix_region={min_pix_region}")
 
-        # --- 1. Detect Absorption Regions ---
+        print(mask_col)
+
+        # 1. Silently create abs_mask if it doesn't exist
+        if not spec.has_aux_column(mask_col):
+            logging.info(f"Mask '{mask_col}' not found. Running 'find_absorbed' with defaults.")
+            try:
+                # Use reasonable defaults from the continuum recipe
+                spec = spec.find_absorbed(
+                    smooth_len_lya=5000.0 * au.km/au.s,
+                    smooth_len_out=400.0 * au.km/au.s,
+                    kappa=2.0,
+                    template=False
+                )
+            except Exception as e:
+                logging.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
+                raise e
+
+        # 2. Detect Absorption Regions (using the now-guaranteed mask)
         try:
             # This returns a *new* spec with the 'region_id' column
-            spec_with_regions = spec.detect_absorptions(
-                mask_col=mask_col,
-                min_pix=min_pix_region
-            )
-            region_id_map_full = spec_with_regions.get_column('region_id').value
-            x_nm = spec_with_regions.x.to_value(au.nm)
-            total_regions = np.max(region_id_map_full)
-            logging.debug(f" Found {total_regions} absorption regions.")
-            if total_regions == 0:
-                logging.warning("  No regions found, identification will be empty.")
+            # Call detect_regions *internally*, don't create the full 'region_id' column
+            mask_data = spec.get_column(mask_col).value
+            if mask_data.dtype.kind != 'b':
+                 mask_data = mask_data.astype(bool)
+            
+            region_id_map_full, num_regions = detect_regions(mask_data, min_pix_region)
+            x_nm = spec.x.to_value(au.nm)
+            logging.info(f"identify_lines: Found {num_regions} regions to analyze.")
         except Exception as e:
             logging.error(f"Failed to detect absorption regions: {e}", exc_info=True)
             raise e # Re-raise for the recipe to catch
             
-        # --- 2. Compute Identification Signals ---
+        # 3. Compute Identification Signals
         # Define a common, high-resolution z_grid
         z_min_spec = np.min((x_nm / 600.0) - 1.0) # Approx z_min at 600nm
         z_max_spec = np.max((x_nm / 121.6) - 1.0) # Approx z_max at Lya
@@ -1149,7 +1162,7 @@ class SpectrumV2:
                 continue
             
             signal = compute_identification_signal(
-                spec_with_regions, series_name, z_grid, modul
+                spec, series_name, z_grid, modul
             )
             signals_dict[series_name] = signal
 
@@ -1161,14 +1174,14 @@ class SpectrumV2:
                 except Exception as e:
                     logging.debug(f"   Could not compute signal stats: {e}")
 
-        # --- 3. Find Significant Peaks ---
+        # 4. Find Significant Peaks
         logging.info("Finding peaks in signals...")
         peaks_list = find_signal_peaks(
             signals_dict, z_grid, sigma, distance_pix, prominence
         )
         logging.info(f"Found {len(peaks_list)} candidate peaks.")
         
-        # --- *** NEW: Step 3b - Apply Physical Constraints *** ---
+        # 4b - Apply Physical Constraints
         logging.info(f"Found {len(peaks_list)} raw peaks. Applying physical constraints...")
         
         # Get boundary wavelengths in OBSERVED frame (nm)
@@ -1206,69 +1219,76 @@ class SpectrumV2:
 
         logging.info(f"Found {len(filtered_peaks)} physically valid peaks.")
 
-        # --- 4. Cross-match Peaks with Regions ---
-        # region_identifications maps: region_id -> List[(series, score)]
+        # 5. Cross-match Peaks with Regions
         region_identifications: Dict[int, List[Tuple[str, float]]] = {}
-
-        for (series_name, z_peak, score) in filtered_peaks: # <<< *** Use filtered_peaks ***
+        regions_found: set[int] = set() # <<< *** ADDED for Point 3 ***
+            
+        for (series_name, z_peak, score) in filtered_peaks:
             try:
-                ref_trans = STANDARD_MULTIPLETS[series_name][0]
-                x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
+                # --- *** REFACTORED: Point 3 *** ---
+                # Iterate over ALL transitions in the multiplet
+                transitions_in_multiplet = STANDARD_MULTIPLETS[series_name]
                 
-                # Find the spectrum index corresponding to this peak
-                idx = np.abs(x_nm - x_peak_nm).argmin()
-                
-                # Get the region ID at that index
-                rid = int(region_id_map_full[idx])
-                
-                # Assign this peak to the region
-                if rid > 0: # (Ignore background region 0)
-                    if rid not in region_identifications:
-                        region_identifications[rid] = []
+                for ref_trans in transitions_in_multiplet:
+                    x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
                     
-                    region_identifications[rid].append((series_name, float(score)))
+                    # Find the spectrum index corresponding to this peak
+                    idx = np.abs(x_nm - x_peak_nm).argmin()
+                    
+                    # Get the region ID at that index
+                    rid = int(region_id_map_full[idx])
+                    
+                    # Assign this peak to the region
+                    if rid > 0: # (Ignore background region 0)
+                        regions_found.add(rid) # Add to set of all identified regions
+                        
+                        if rid not in region_identifications:
+                            region_identifications[rid] = []
+                        
+                        # Add the main series name, not the individual transition
+                        region_identifications[rid].append((series_name, float(score)))
 
             except Exception as e:
                 logging.warning(f"Failed to cross-match peak {series_name} at z={z_peak}: {e}")
 
-        # --- 5. Sort and Save Results to Metadata ---
+        # 5b. De-duplicate entries per region
         for rid in region_identifications:
-            # Sort identifications for each region by score (descending)
+            # Sort identifications by score (descending)
             region_identifications[rid].sort(key=lambda x: x[1], reverse=True)
+            # Keep only unique series names (highest score version)
+            unique_ids = []
+            seen_series = set()
+            for (series, score) in region_identifications[rid]:
+                if series not in seen_series:
+                    unique_ids.append((series, score))
+                    seen_series.add(series)
+            region_identifications[rid] = unique_ids
 
-        new_meta = spec_with_regions.meta
+        # 6. Create Visualization Column
+        new_meta = spec.meta
+        new_aux_cols = deepcopy(spec._data.aux_cols)
 
-        new_meta = spec_with_regions.meta
-        
-        # Create a new set of aux_cols based on the spec_with_regions
-        new_aux_cols = dataclasses.replace(spec_with_regions._data).aux_cols
-        
-        # --- *** NEW: Create region_id_identified column *** ---
-        identified_rids = set(region_identifications.keys())
-        if identified_rids:
+        if regions_found:
             # Create a copy of the region map
             vis_map = region_id_map_full.copy()
             
-            # Find all unique region IDs
-            all_rids = np.unique(vis_map)
-            
             # Find RIDs to set to 0 (unidentified)
-            rids_to_zero = [rid for rid in all_rids if rid > 0 and rid not in identified_rids]
+            all_rids = np.unique(vis_map)
+            rids_to_zero = [rid for rid in all_rids if rid > 0 and rid not in regions_found]
 
             if rids_to_zero:
-                # Use np.isin for fast masking
                 mask_to_zero = np.isin(vis_map, rids_to_zero)
                 vis_map[mask_to_zero] = 0
             
-            # Add this new map as an auxiliary column
+            # Add this new map as the 'abs_ids' column
             vis_col = DataColumnV2(
                 values=vis_map,
                 unit=au.dimensionless_unscaled,
                 description="Absorption regions with identifications"
             )
-            new_aux_cols['region_id_identified'] = vis_col
+            new_aux_cols['abs_ids'] = vis_col # <<< *** RENAMED ***
 
-        # --- 6. Save Metadata (as JSON) ---
+        # 7. Save Metadata (as JSON)
         if not region_identifications:
             # If the dict is empty, save None (which FITS headers can handle)
             new_meta['region_identifications'] = None
@@ -1281,13 +1301,20 @@ class SpectrumV2:
                 new_meta['region_identifications'] = None # Save None on error
         
         final_data_core = dataclasses.replace(
-            spec_with_regions._data, 
+            spec._data, 
             meta=new_meta,
             aux_cols=new_aux_cols
         )
         
-        # 6. Return new SpectrumV2
-        new_history = self.history + [f"Identified {len(peaks_list)} candidates"]
+        # 8. Create Final Data Core
+        final_data_core = dataclasses.replace(
+            spec._data, # <<< *** Use original spec's data ***
+            meta=new_meta,
+            aux_cols=new_aux_cols 
+        )
+        
+        # 9. Return new SpectrumV2
+        new_history = self.history + [f"Identified {len(filtered_peaks)} candidates"]
         return SpectrumV2(data=final_data_core, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':

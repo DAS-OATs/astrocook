@@ -27,7 +27,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "sigma", "type": float, "default": 2.0, "doc": "Minimum S/N peak to be considered."},
             {"name": "distance_pix", "type": int, "default": 3, "doc": "Minimum distance between peaks (pixels)."},
             {"name": "prominence", "type": str, "default": "None", "doc": "Minimum prominence of peaks (e.g., '0.1' or 'None')."},
-            {"name": "mask_col", "type": str, "default": "mask_unabs", "doc": "Mask column (True=Unabsorbed)"},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column (True=Unabsorbed)"},
             {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"}
         ],
         "url": "absorbers_cb.html#identify_lines"
@@ -46,7 +46,7 @@ class RecipeAbsorbersV2:
                          sigma: str = "2.0",
                          distance_pix: str = "3",
                          prominence: str = "None",
-                         mask_col: str = 'mask_unabs', 
+                         mask_col: str = 'abs_mask', 
                          min_pix_region: str = '3') -> 'SessionV2':
         """
         API: Orchestrator recipe to identify absorption lines.

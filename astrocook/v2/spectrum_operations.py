@@ -322,7 +322,7 @@ def running_std(y: np.ndarray, h: int) -> np.ndarray:
     
     return np.sqrt(running_var)
 
-def find_unabsorbed_regions(
+def find_absorbed_regions(
     x: au.Quantity,
     y: np.ndarray, 
     dy: np.ndarray, 
@@ -334,10 +334,10 @@ def find_unabsorbed_regions(
     maxiter: int = 100
 ) -> np.ndarray:
     """
-    Pure function to find unabsorbed regions, porting the V1 'clip_flux' logic.
+    Pure function to find absorbed regions, porting the V1 'clip_flux' logic.
     
     Returns:
-        mask_unabs (np.ndarray): A boolean mask where True means "unabsorbed".
+        mask_abs (np.ndarray): A boolean mask where True means "unabsorbed".
     """
     
     # --- 1. Initial Masking ---
@@ -428,12 +428,12 @@ def find_unabsorbed_regions(
         if i == maxiter - 1:
             logging.warning(f"Clipping did not converge after {maxiter} iterations.")
 
-    return mask_unabs
+    return ~mask_unabs
 
 def fit_continuum_interp(
     x: np.ndarray,
     y: np.ndarray,
-    mask_unabs: np.ndarray,
+    mask_abs: np.ndarray,
     fudge: float = 1.0,
     smooth_std_kms: float = 500.0, # std in km/s
     z_rf: float = 0.0
@@ -443,6 +443,8 @@ def fit_continuum_interp(
     Based on V1 'clip_flux' logic.
     """
     
+    mask_unabs = ~mask_abs
+
     # 1. Get unabsorbed points
     x_unabs = x[mask_unabs]
     y_unabs = y[mask_unabs]
