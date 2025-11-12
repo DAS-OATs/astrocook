@@ -1437,8 +1437,8 @@ class SpectrumPlotWidget(QWidget):
         if not event or not event.xdata or not event.ydata:
             return
         # Don't show data tooltip if redshift cursor is active
-        if self.main_window.cursor_show_checkbox.isChecked():
-            return
+        #if self.main_window.cursor_show_checkbox.isChecked():
+        #    return
             
         # 1. Get current spectrum
         session = None
@@ -1458,11 +1458,9 @@ class SpectrumPlotWidget(QWidget):
         if idx < 0 or idx >= len(x_full):
             return
         
-        region_id_val = 0
+        # 1. Gather Region Info
         region_id_str = ""
         region_id_labels = ""
-
-        # 1. Check for Region ID first (using new 'abs_ids' column)
         if 'abs_ids' in spec._data.aux_cols:
             try:
                 region_id_val = int(spec._data.aux_cols['abs_ids'].values[idx])
@@ -1487,137 +1485,84 @@ class SpectrumPlotWidget(QWidget):
             except Exception as e:
                 logging.warning(f"Could not parse region ID/labels: {e}")
 
-        # 2. If a region is found, build the simple tooltip
-        if region_id_val != 0:
-            try:
-                tip_html = "<table style='font-size: 13px'>"
-                def add_row(label, val_str):
-                    return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
-                
-                tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
-                tip_html += add_row("Abs. ID", region_id_str)
-                if region_id_labels:
-                    tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
-                
-                tip_html += "</table>"
-                QToolTip.showText(QCursor.pos(), tip_html, self)
-                return # <<< *** EXIT EARLY ***
-            except Exception as e:
-                logging.warning(f"Error building region tooltip: {e}")
-                return # Fail safe
-
-        # ONLY hide data-proximity tooltip if cursor is on.
-        # Region tooltip (above) shows regardless.
-        if self.main_window.cursor_show_checkbox.isChecked():
-            return
-
-        # --- Density Check ---
-        xlim = self.canvas.axes.get_xlim()
-        idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
-        idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
-        n_visible = idx_end_vis - idx_start_vis
-        TOOLTIP_MAX_POINTS = 20000 
-        if n_visible > TOOLTIP_MAX_POINTS:
-            return
-
-        # --- Dynamic Proximity Check ---
-        THRESHOLD_PIX = 40
-        def check_dist(y_array):
-            if y_array is None: return False
-            data_pos = self.canvas.axes.transData.transform((x_full[idx], y_array[idx]))
-            mouse_pos = (event.x, event.y)
-            return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
-
-        # List of (label, value, unit) to display
+        # 2. Gather Data Proximity Info
         rows_to_show = []
-
-        # 1. Check Flux
-        if check_dist(spec.y.value):
-            rows_to_show.append(("y", spec.y.value[idx], spec.y.unit))
-            rows_to_show.append(("dy", spec.dy.value[idx], spec.dy.unit))
+        # Only check for data proximity if the cursor is OFF
+        if not self.main_window.cursor_show_checkbox.isChecked():
             
-        # 2. Check Continuum
-        if self.main_window.continuum_checkbox.isChecked():
-            cont_col = spec._data.aux_cols.get('cont')
-            if cont_col and check_dist(cont_col.values):
-                rows_to_show.append(("cont", cont_col.values[idx], cont_col.unit))
+            # Density Check
+            xlim = self.canvas.axes.get_xlim()
+            idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
+            idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
+            n_visible = idx_end_vis - idx_start_vis
+            TOOLTIP_MAX_POINTS = 20000 
+            if n_visible <= TOOLTIP_MAX_POINTS:
+            
+                # Dynamic Proximity Check
+                THRESHOLD_PIX = 40
+                def check_dist(y_array):
+                    if y_array is None: return False
+                    data_pos = self.canvas.axes.transData.transform((x_full[idx], y_array[idx]))
+                    mouse_pos = (event.x, event.y)
+                    return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
 
-        # 3. Check Model
-        if self.main_window.model_checkbox.isChecked():
-            model_col = spec._data.aux_cols.get('model')
-            if model_col and check_dist(model_col.values):
-                rows_to_show.append(("model", model_col.values[idx], model_col.unit))
+                # Check Flux
+                if check_dist(spec.y.value):
+                    rows_to_show.append(("y", spec.y.value[idx], spec.y.unit))
+                    rows_to_show.append(("dy", spec.dy.value[idx], spec.dy.unit))
+                    
+                # Check Continuum
+                if self.main_window.continuum_checkbox.isChecked():
+                    cont_col = spec._data.aux_cols.get('cont')
+                    if cont_col and check_dist(cont_col.values):
+                        rows_to_show.append(("cont", cont_col.values[idx], cont_col.unit))
 
-        # 4. Check Dynamic Aux Column
-        selected_aux = self.main_window.aux_col_combo.currentText()
-        if selected_aux and selected_aux != "None":
-            is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
-                            (selected_aux == 'model' and self.main_window.model_checkbox.isChecked()) or \
-                            (selected_aux == 'region_id')
-            if not is_redundant:
-                aux_col = spec._data.aux_cols.get(selected_aux)
-                if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
-                    rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
+                # Check Model
+                if self.main_window.model_checkbox.isChecked():
+                    model_col = spec._data.aux_cols.get('model')
+                    if model_col and check_dist(model_col.values):
+                        rows_to_show.append(("model", model_col.values[idx], model_col.unit))
+
+                # Check Dynamic Aux Column
+                selected_aux = self.main_window.aux_col_combo.currentText()
+                if selected_aux and selected_aux != "None":
+                    is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
+                                    (selected_aux == 'model' and self.main_window.model_checkbox.isChecked()) or \
+                                    (selected_aux == 'abs_ids') # <<< *** Use new name ***
+                    if not is_redundant:
+                        aux_col = spec._data.aux_cols.get(selected_aux)
+                        if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
+                            rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
         
-        if not rows_to_show:
+        # 3. Build Tooltip
+        # Only show tooltip if we found *something* (region or data)
+        if not rows_to_show and not region_id_str:
             return
 
-        # 4. Build HTML
         try:
             tip_html = "<table style='font-size: 13px'>"
             
-            # --- HELPER DEFINED HERE ---
             def add_row(label, val_str):
                 return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
-            # ---------------------------
 
             # Always show X
             tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
             
-            # Add dynamic rows
+            # Add dynamic data rows
             for label, val, unit in rows_to_show:
-                 # Use scientific notation for flux-like values
                  tip_html += add_row(label, f"{val:.4e} {unit}")
 
-            # Add Region ID if present
-            if 'region_id' in spec._data.aux_cols:
-                rid = spec._data.aux_cols['region_id'].values[idx]
-                if rid != 0:
-                    tip_html += add_row("Region ID", str(int(rid)))
-
-                    ident_labels_json = spec.meta.get('region_identifications')
-                    ident_labels = None
-                    if ident_labels_json:
-                        try:
-                            # Must convert integer-keys back from strings
-                            ident_labels_raw = json.loads(ident_labels_json)
-                            ident_labels = {int(k): v for k, v in ident_labels_raw.items()}
-                        except Exception as e:
-                            logging.warning(f"Could not parse region_identifications JSON: {e}")
-
-                    # Check if metadata exists and this rid is a key
-                    if ident_labels and rid in ident_labels:
-                        # Get the list of (name, score) tuples
-                        ids_for_region = ident_labels[rid] 
-                        
-                        label_str = ""
-                        for i, (name, score) in enumerate(ids_for_region):
-                            if i > 1: # Show max 2
-                                label_str += ", ..."
-                                break
-                            if i > 0:
-                                label_str += ", "
-                            label_str += f"{name} ({score:.2f})"
-                        
-                        if label_str:
-                             tip_html += add_row("<b>Likely ID</b>", f"<b>{label_str}</b>")
-                    # --- *** END NEW *** ---
+            # Add Region ID if found
+            if region_id_str:
+                tip_html += add_row("Abs. ID", region_id_str)
+                if region_id_labels:
+                    tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
 
             tip_html += "</table>"
             QToolTip.showText(QCursor.pos(), tip_html, self)
                     
         except Exception as e:
-            logging.warning(f"Error building tooltip: {e}")
+            logging.warning(f"Error building combined tooltip: {e}")
 
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
