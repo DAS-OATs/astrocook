@@ -384,7 +384,7 @@ class Format(object):
 
         x = x/10
         xmin, xmax = self._create_xmin_xmax(x)
-        w = np.where(xmax-xmin > 0)
+        w = np.where(x > 0)
         x,xmin,xmax = x[w],xmin[w],xmax[w]
         y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
         dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
