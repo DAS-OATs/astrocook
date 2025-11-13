@@ -198,6 +198,10 @@ class Session(object):
             self.spec = format.efosc2_spectrum(hdul)
             return 0
 
+        if instr == 'XSHOOTER' and orig == 'PYP_SPEC':
+            self.spec = format.xshooter_pypeit_spectrum(hdul)
+            return 0
+
         # ESPRESSO S1D spectrum
         if instr == 'ESPRESSO' and catg[0:3] == 'S1D':
             self.spec = format.espresso_s1d_spectrum(hdul)
@@ -415,8 +419,8 @@ class Session(object):
             hdr = hdul[0].header
 
         self._data_iden(hdul, hdr)
-        #print(self._instr, self._catg, self._orig, self._telesc)
-
+        if 'PYP_SPEC' in hdr: self._orig = 'PYP_SPEC'
+        
         # Astrocook structures
         format = Format()
         only_constr = False

@@ -367,6 +367,38 @@ class Format(object):
         return Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
 
 
+    def xshooter_pypeit_spectrum(self, hdul, row=None, slice=None):
+
+
+        """ ESPRESSO DRS S2D format """
+        logging.info(msg_format('X-shooter PypeIt'))
+        hdr = hdul[0].header
+
+        x = np.array([])
+        y = np.array([])
+        dy = np.array([])
+        for hdu in hdul[1:-1]:
+            x = np.append(x, hdu.data['OPT_WAVE'])
+            y = np.append(y, hdu.data['OPT_COUNTS'])
+            dy = np.append(dy, hdu.data['OPT_COUNTS_SIG'])
+
+        x = x/10
+        xmin, xmax = self._create_xmin_xmax(x)
+        w = np.where(xmax-xmin > 0)
+        x,xmin,xmax = x[w],xmin[w],xmax[w]
+        y = y[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+        dy = dy[w]/(xmax-xmin)#*10#au.nm/au.Angstrom
+        argsort = np.argsort(x)
+        x,xmin,xmax,y,dy = x[argsort],xmin[argsort],xmax[argsort],y[argsort],dy[argsort]
+
+        resol = []*len(x)
+        xunit = au.nm
+        yunit = au.dimensionless_unscaled
+        meta = hdr
+        spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit, meta)
+        return spec
+
+
     def espresso_s2d_spectrum(self, hdul, row=None, slice=None):
 
 
