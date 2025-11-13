@@ -14,7 +14,8 @@ from .photometry import generate_calibration_curve
 from .spectrum_operations import (
     compute_identification_signal, convert_axis_velocity, 
     convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, 
-    find_signal_peaks, fit_continuum_interp, fit_powerlaw_to_regions, smooth_spectrum, rebin_spectrum, running_std,
+    find_signal_peaks, fit_continuum_interp, fit_powerlaw_to_regions, 
+    merge_regions_by_velocity, smooth_spectrum, rebin_spectrum, running_std,
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -1095,7 +1096,8 @@ class SpectrumV2:
                        distance_pix: int,
                        prominence: Optional[float],
                        mask_col: str = 'abs_mask', 
-                       min_pix_region: int = 3) -> 'SpectrumV2':
+                       min_pix_region: int = 3,
+                       merge_dv: float = 200.0) -> 'SpectrumV2':
         """
         API: Orchestrator method to identify absorption lines.
         1. Detects absorption regions (creates 'region_id').
@@ -1114,7 +1116,7 @@ class SpectrumV2:
         
         logging.debug(f"identify_lines: Starting identification...")
         logging.debug(f"  Params: sigma={sigma}, distance={distance_pix}, prominence={prominence}")
-        logging.debug(f"  Params: mask_col={mask_col}, min_pix_region={min_pix_region}")
+        logging.debug(f"  Params: mask_col={mask_col}, min_pix_region={min_pix_region}, merge_dv={merge_dv}")
 
         print(mask_col)
 
@@ -1144,6 +1146,15 @@ class SpectrumV2:
             region_id_map_full, num_regions = detect_regions(mask_data, min_pix_region)
             x_nm = spec.x.to_value(au.nm)
             logging.info(f"identify_lines: Found {num_regions} regions to analyze.")
+
+            if merge_dv > 0:
+                region_id_map_full, num_regions = merge_regions_by_velocity(
+                    region_id_map_full,
+                    spec.x,
+                    spec._data.z_rf, # Use z_rf for velocity conversion
+                    merge_dv
+                )
+                logging.info(f"identify_lines: {num_regions} regions remain after merging.")
         except Exception as e:
             logging.error(f"Failed to detect absorption regions: {e}", exc_info=True)
             raise e # Re-raise for the recipe to catch
@@ -1321,7 +1332,7 @@ class SpectrumV2:
         )
         
         # 9. Return new SpectrumV2
-        new_history = self.history + [f"Identified {len(filtered_peaks)} candidates"]
+        new_history = self.history + [f"Identified {len(filtered_peaks)} candidates in {num_regions} regions"]
         return SpectrumV2(data=final_data_core, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':

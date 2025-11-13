@@ -588,6 +588,124 @@ def detect_regions(
 
     return region_map, num_regions
 
+def merge_regions_by_velocity(
+    region_map: np.ndarray,
+    x: au.Quantity,
+    z_rf: float,
+    merge_dv: float
+) -> Tuple[np.ndarray, int]:
+    """
+    Merges contiguous absorption regions separated by less than a given
+    velocity (dv) threshold.
+    """
+    if merge_dv <= 0:
+        # No merging requested
+        num_regions = len(np.unique(region_map)) - 1
+        return region_map, num_regions
+
+    try:
+        # 1. Get velocity axis
+        x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+    except Exception as e:
+        logging.error(f"Cannot merge regions: failed to convert x-axis to km/s: {e}")
+        num_regions = len(np.unique(region_map)) - 1
+        return region_map, num_regions # Return original
+
+    # 2. Find the start/end *indices* of each region
+    # Find where the region ID changes
+    change_indices = np.where(np.diff(region_map) != 0)[0] + 1
+    
+    # Add start (0) and end (len-1)
+    region_boundaries = np.unique(np.concatenate(([0], change_indices, [len(region_map)])))
+    
+    if len(region_boundaries) < 2:
+        # No regions or only one region
+        num_regions = len(np.unique(region_map)) - 1
+        return region_map, num_regions
+
+    # 3. Store region properties: {id: (v_min, v_max, [indices])}
+    region_info = {}
+    
+    for i in range(len(region_boundaries) - 1):
+        idx_start = region_boundaries[i]
+        idx_end = region_boundaries[i+1] - 1 # Inclusive end index
+        
+        region_id = region_map[idx_start]
+        if region_id == 0:
+            continue # Skip continuum gaps
+
+        # Get velocity range
+        v_min = x_kms[idx_start]
+        v_max = x_kms[idx_end]
+        
+        if region_id not in region_info:
+            region_info[region_id] = {
+                'v_min': v_min, 
+                'v_max': v_max, 
+                'indices': [idx_start, idx_end] # Store as min/max index
+            }
+        else:
+            # This handles regions split by a single pixel
+            info = region_info[region_id]
+            info['v_min'] = min(info['v_min'], v_min)
+            info['v_max'] = max(info['v_max'], v_max)
+            info['indices'][0] = min(info['indices'][0], idx_start)
+            info['indices'][1] = max(info['indices'][1], idx_end)
+
+    if not region_info:
+        logging.debug("merge_regions: No regions found to merge.")
+        return region_map, 0
+
+    # 4. Sort regions by starting velocity
+    sorted_regions = sorted(region_info.items(), key=lambda item: item[1]['v_min'])
+    
+    # 5. Iterate and merge
+    merged_map = np.zeros_like(region_map, dtype=int)
+    if not sorted_regions:
+        return merged_map, 0
+        
+    new_id_counter = 1
+    
+    # Start with the first region
+    current_id, current_info = sorted_regions[0]
+    current_v_max = current_info['v_max']
+    current_idx_min = current_info['indices'][0]
+    current_idx_max = current_info['indices'][1]
+    
+    for i in range(1, len(sorted_regions)):
+        next_id, next_info = sorted_regions[i]
+        
+        # Calculate velocity gap
+        v_gap = next_info['v_min'] - current_v_max
+        
+        if v_gap < merge_dv:
+            # --- Merge ---
+            # Extend the v_max and index_max of the current merged region
+            current_v_max = max(current_v_max, next_info['v_max'])
+            current_idx_max = max(current_idx_max, next_info['indices'][1])
+        else:
+            # --- Finalize previous region ---
+            # Fill the merged_map with the new ID
+            merged_map[current_idx_min:current_idx_max+1] = new_id_counter
+            new_id_counter += 1
+            
+            # Start a new region
+            current_v_max = next_info['v_max']
+            current_idx_min = next_info['indices'][0]
+            current_idx_max = next_info['indices'][1]
+
+    # Finalize the last region
+    merged_map[current_idx_min:current_idx_max+1] = new_id_counter
+    
+    # 6. Re-run 'detect_regions' to clean up any pixels in the map
+    # that were part of the *original* mask but *outside* the new
+    # min/max indices (e.g., gaps we just filled).
+    final_map, final_num_regions = detect_regions(merged_map > 0, min_pix=1)
+
+    logging.info(f"Merged {len(sorted_regions)} regions into {final_num_regions} (dv={merge_dv} km/s).")
+    
+    return final_map, final_num_regions
+
 def compute_identification_signal(
     spectrum: 'SpectrumV2',
     series_name: str,

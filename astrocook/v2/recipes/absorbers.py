@@ -28,7 +28,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "distance_pix", "type": int, "default": 3, "doc": "Minimum distance between peaks (pixels)."},
             {"name": "prominence", "type": str, "default": "None", "doc": "Minimum prominence of peaks (e.g., '0.1' or 'None')."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column (True=Unabsorbed)"},
-            {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"}
+            {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"},
+            {"name": "merge_dv", "type": float, "default": 200.0, "doc": "Max velocity (km/s) to merge adjacent regions."}
         ],
         "url": "absorbers_cb.html#identify_lines"
     }
@@ -40,14 +41,15 @@ class RecipeAbsorbersV2:
         self._tag = 'abs'
 
     def identify_lines(self, 
-                         multiplets: str = "CIV,SiIV,MgII,Ly_ab,Ly_a",
-                         z_grid_dz: str = "1e-4",
-                         modul: str = "10.0",
-                         sigma: str = "2.0",
-                         distance_pix: str = "3",
-                         prominence: str = "None",
-                         mask_col: str = 'abs_mask', 
-                         min_pix_region: str = '3') -> 'SessionV2':
+                       multiplets: str = "CIV,SiIV,MgII,Ly_ab,Ly_a",
+                       z_grid_dz: str = "1e-4",
+                       modul: str = "10.0",
+                       sigma: str = "2.0",
+                       distance_pix: str = "3",
+                       prominence: str = "None",
+                       mask_col: str = 'abs_mask', 
+                       min_pix_region: str = '3',
+                       merge_dv: str = '200.0') -> 'SessionV2':
         """
         API: Orchestrator recipe to identify absorption lines.
         (Thin wrapper for SpectrumV2.identify_lines)
@@ -59,6 +61,7 @@ class RecipeAbsorbersV2:
             dist_i = int(distance_pix)
             prom_f = float(prominence) if prominence.lower() != 'none' else None
             min_pix_i = int(min_pix_region)
+            merge_dv_f = float(merge_dv)
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
@@ -72,7 +75,8 @@ class RecipeAbsorbersV2:
                 distance_pix=dist_i,
                 prominence=prom_f,
                 mask_col=mask_col,
-                min_pix_region=min_pix_i
+                min_pix_region=min_pix_i,
+                merge_dv=merge_dv_f
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
