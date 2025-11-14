@@ -1,4 +1,5 @@
 import astropy.units as au
+import json
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -21,15 +22,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Identify likely absorption systems.",
         "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
         "params": [
-            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab,Ly_a", "doc": "Multiplets to search for (comma-separated)."},
-            {"name": "z_grid_dz", "type": float, "default": 1e-4, "doc": "Redshift grid spacing (dz)."},
-            {"name": "modul", "type": float, "default": 10.0, "doc": "Significance modulation factor."},
-            {"name": "sigma", "type": float, "default": 2.0, "doc": "Minimum S/N peak to be considered."},
-            {"name": "distance_pix", "type": int, "default": 3, "doc": "Minimum distance between peaks (pixels)."},
-            {"name": "prominence", "type": str, "default": "None", "doc": "Minimum prominence of peaks (e.g., '0.1' or 'None')."},
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for (comma-separated)."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column (True=Unabsorbed)"},
             {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"},
-            {"name": "merge_dv", "type": float, "default": 200.0, "doc": "Max velocity (km/s) to merge adjacent regions."}
+            {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
+            {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."}
         ],
         "url": "absorbers_cb.html#identify_lines"
     }
@@ -41,44 +39,114 @@ class RecipeAbsorbersV2:
         self._tag = 'abs'
 
     def identify_lines(self, 
-                       multiplets: str = "CIV,SiIV,MgII,Ly_ab,Ly_a",
-                       z_grid_dz: str = "1e-4",
-                       modul: str = "10.0",
-                       sigma: str = "2.0",
-                       distance_pix: str = "3",
-                       prominence: str = "None",
+                       multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                        mask_col: str = 'abs_mask', 
                        min_pix_region: str = '3',
-                       merge_dv: str = '200.0') -> 'SessionV2':
+                       merge_dv: str = '10.0',
+                       score_threshold: str = '0.5',
+                       bypass_scoring: str = 'False') -> 'SessionV2':
         """
         API: Orchestrator recipe to identify absorption lines.
         (Thin wrapper for SpectrumV2.identify_lines)
         """
         try:
-            dz_f = float(z_grid_dz)
-            modul_f = float(modul)
-            sigma_f = float(sigma)
-            dist_i = int(distance_pix)
-            prom_f = float(prominence) if prominence.lower() != 'none' else None
             min_pix_i = int(min_pix_region)
             merge_dv_f = float(merge_dv)
+            score_thresh_f = float(score_threshold)
+            bypass_scoring_b = bypass_scoring.lower() == 'true'
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
         
         try:
+            # 1. Run the identification, which returns a new spectrum
+            #    with the identification maps in its metadata.
+            logging.debug("identify_lines recipe: Calling spec.identify_lines...")
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
-                z_grid_dz=dz_f,
-                modul=modul_f,
-                sigma=sigma_f,
-                distance_pix=dist_i,
-                prominence=prom_f,
                 mask_col=mask_col,
                 min_pix_region=min_pix_i,
-                merge_dv=merge_dv_f
+                merge_dv=merge_dv_f,
+                score_threshold=score_thresh_f,
+                bypass_scoring=bypass_scoring_b
             )
-            return self._session.with_new_spectrum(new_spec_v2)
+            
+            # 2. Get the maps from the new spectrum's metadata
+            series_map_json = new_spec_v2.meta.get('series_map_json')
+            z_map_json = new_spec_v2.meta.get('z_map_json')
+
+            if not series_map_json or not z_map_json:
+                logging.warning("identify_lines: Identification ran but produced no component maps. Only spectrum was updated.")
+                return self._session.with_new_spectrum(new_spec_v2)
+
+            logging.debug("identify_lines recipe: Calling systs.add_components_from_regions...")
+            
+            # 3. Deserialize maps (they are JSON strings)
+            try:
+                series_map = json.loads(series_map_json)
+                z_map = json.loads(z_map_json)
+                # Convert string keys back to int
+                series_map = {int(k): v for k, v in series_map.items()}
+                z_map = {int(k): v for k, v in z_map.items()}
+            except Exception as e:
+                logging.error(f"identify_lines: Failed to deserialize component maps: {e}")
+                # Return the spectrum-only update
+                return self._session.with_new_spectrum(new_spec_v2)
+
+            # 4. Call the SystemList API to add components
+            #    This uses the *original* session's system list as the base.
+            new_systs_v2 = self._session.systs.add_components_from_regions(
+                spec=new_spec_v2, # Pass the *new* spectrum for its region map
+                region_id_col='abs_ids',
+                series_map=series_map,
+                z_map=z_map
+            )
+
+            # 5. Return a *new* session with *both* the new spectrum and new system list
+            # We must use the base .with_new_spectrum() and .with_new_system_list()
+            # to create the final, fully updated SessionV2 state.
+            
+            # Start from the original session
+            session_with_new_spec = self._session.with_new_spectrum(new_spec_v2)
+            final_session = session_with_new_spec.with_new_system_list(new_systs_v2)
+            
+            return final_session
         except Exception as e:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
+            return 0
+    
+    def add_components(self,
+                       region_id_col: str = 'abs_ids',
+                       series_map_json: str = None,
+                       z_map_json: str = None) -> 'SessionV2':
+        """
+        API: Populates the SystemList with components found by identify_lines.
+        (This is called internally by the identify_lines orchestrator)
+        """
+        if not series_map_json or not z_map_json:
+            logging.error("add_components: Missing series_map or z_map.")
+            return 0
+            
+        try:
+            # Deserialize the maps
+            series_map = json.loads(series_map_json)
+            z_map = json.loads(z_map_json)
+            # Convert string keys back to int
+            series_map = {int(k): v for k, v in series_map.items()}
+            z_map = {int(k): v for k, v in z_map.items()}
+
+        except Exception as e:
+            logging.error(f"add_components: Failed to deserialize maps: {e}")
+            return 0
+
+        try:
+            new_systs_v2 = self._session.systs.add_components_from_regions(
+                spec=self._session.spec,
+                region_id_col=region_id_col,
+                series_map=series_map,
+                z_map=z_map
+            )
+            return self._session.with_new_system_list(new_systs_v2)
+        except Exception as e:
+            logging.error(f"Failed during add_components: {e}", exc_info=True)
             return 0

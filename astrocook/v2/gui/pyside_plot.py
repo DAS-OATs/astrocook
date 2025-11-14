@@ -1475,8 +1475,15 @@ class SpectrumPlotWidget(QWidget):
                         
                         if region_id_val in ident_labels_dict:
                             ids_for_region = ident_labels_dict[region_id_val]
-                            # Only show the names, not scores
-                            label_str = ", ".join([name for (name, score) in ids_for_region])
+                            labels = []
+                            for (name, score) in ids_for_region:
+                                # Only show R2 score if it's a real, positive score
+                                # This hides (R2=0.00) for Ly_a cleanup lines
+                                if score > 0.0 or True:
+                                    labels.append(f"{name} (R2={score:.2f})")
+                                else:
+                                    labels.append(name)
+                            label_str = ", ".join(labels)
                             if label_str:
                                 region_id_labels = label_str
             except Exception as e:

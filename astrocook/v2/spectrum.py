@@ -9,13 +9,13 @@ import numexpr as ne
 import numpy as np
 from typing import Any, Dict, List, Optional, Union
 
-from .atomic_data import get_multiplet_velocity_lags, is_hydrogen_line, STANDARD_MULTIPLETS, xem_d
+from .atomic_data import STANDARD_MULTIPLETS, xem_d
 from .photometry import generate_calibration_curve
 from .spectrum_operations import (
-    compute_identification_signal, convert_axis_velocity, 
+    convert_axis_velocity, 
     convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, 
-    find_signal_peaks, fit_continuum_interp, fit_powerlaw_to_regions, 
-    merge_regions_by_velocity, smooth_spectrum, rebin_spectrum, running_std,
+    _find_kinematic_doublet_candidates, fit_continuum_interp, fit_powerlaw_to_regions, 
+    merge_regions_by_velocity, rate_doublet_candidate, smooth_spectrum, rebin_spectrum, running_std,
 )
 from .structures import SpectrumDataV2, DataColumnV2
 from ..v1.frame import Frame as FrameV1
@@ -1090,41 +1090,29 @@ class SpectrumV2:
     
     def identify_lines(self, 
                        multiplet_list: List[str],
-                       z_grid_dz: float,
-                       modul: float,
-                       sigma: float,
-                       distance_pix: int,
-                       prominence: Optional[float],
                        mask_col: str = 'abs_mask', 
                        min_pix_region: int = 3,
-                       merge_dv: float = 200.0) -> 'SpectrumV2':
+                       merge_dv: float = 10.0,
+                       score_threshold: float = 0.5,
+                       bypass_scoring: bool = False) -> 'SpectrumV2':
         """
         API: Orchestrator method to identify absorption lines.
-        1. Detects absorption regions (creates 'region_id').
-        2. Computes identification signals for all multiplets.
-        3. Finds significant peaks in the signals.
-        4. Cross-matches peaks to regions.
-        5. Saves results to spec.meta['region_identifications'].
+        (NEW ALGORITHM: Kinematic pre-filter + R^2 rating)
         """
         
         # This is the 'self' spectrum object
         spec = self
         z_em = spec._data.z_em # <<< *** GET z_em ***
         if z_em == 0.0:
-            # This should be caught by the GUI, but as a safeguard:
             raise ValueError("z_em must be set before running identify_lines.")
         
-        logging.debug(f"identify_lines: Starting identification...")
-        logging.debug(f"  Params: sigma={sigma}, distance={distance_pix}, prominence={prominence}")
-        logging.debug(f"  Params: mask_col={mask_col}, min_pix_region={min_pix_region}, merge_dv={merge_dv}")
-
-        print(mask_col)
+        logging.info(f"identify_lines (New Algorithm): Starting identification...")
+        logging.debug(f"  Params: merge_dv={merge_dv}, score_threshold={score_threshold}")
 
         # 1. Silently create abs_mask if it doesn't exist
         if not spec.has_aux_column(mask_col):
             logging.info(f"Mask '{mask_col}' not found. Running 'find_absorbed' with defaults.")
             try:
-                # Use reasonable defaults from the continuum recipe
                 spec = spec.find_absorbed(
                     smooth_len_lya=5000.0 * au.km/au.s,
                     smooth_len_out=400.0 * au.km/au.s,
@@ -1134,189 +1122,219 @@ class SpectrumV2:
             except Exception as e:
                 logging.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
                 raise e
-
-        # 2. Detect Absorption Regions (using the now-guaranteed mask)
+        
+        # --- *** START: NEW ALGORITHM (Steps 1-5) *** ---
+        
+        # 1. Get Merged Regions
         try:
-            # This returns a *new* spec with the 'region_id' column
-            # Call detect_regions *internally*, don't create the full 'region_id' column
             mask_data = spec.get_column(mask_col).value
             if mask_data.dtype.kind != 'b':
                  mask_data = mask_data.astype(bool)
             
-            region_id_map_full, num_regions = detect_regions(mask_data, min_pix_region)
-            x_nm = spec.x.to_value(au.nm)
-            logging.info(f"identify_lines: Found {num_regions} regions to analyze.")
+            region_id_map_raw, num_raw = detect_regions(mask_data, min_pix_region)
+            logging.info(f"identify_lines: Found {num_raw} raw regions.")
 
-            if merge_dv > 0:
-                region_id_map_full, num_regions = merge_regions_by_velocity(
-                    region_id_map_full,
-                    spec.x,
-                    spec._data.z_rf, # Use z_rf for velocity conversion
-                    merge_dv
-                )
-                logging.info(f"identify_lines: {num_regions} regions remain after merging.")
-        except Exception as e:
-            logging.error(f"Failed to detect absorption regions: {e}", exc_info=True)
-            raise e # Re-raise for the recipe to catch
-            
-        # 3. Compute Identification Signals
-        # Define a common, high-resolution z_grid
-        z_min_spec = np.min((x_nm / 600.0) - 1.0) # Approx z_min at 600nm
-        z_max_spec = np.max((x_nm / 121.6) - 1.0) # Approx z_max at Lya
-        z_grid = np.arange(max(0.0, z_min_spec), z_max_spec, z_grid_dz)
-        
-        signals_dict = {}
-        
-        logging.info(f"Computing identification signals for: {multiplet_list}")
-        for i, series_name in enumerate(multiplet_list):
-            if series_name not in STANDARD_MULTIPLETS:
-                logging.warning(f"Skipping '{series_name}': Not in STANDARD_MULTIPLETS.")
-                continue
-            
-            signal = compute_identification_signal(
-                spec, series_name, z_grid, modul
+            region_id_map_merged, num_merged = merge_regions_by_velocity(
+                region_id_map_raw,
+                spec.x,
+                spec._data.z_rf,
+                merge_dv
             )
-            signals_dict[series_name] = signal
+            logging.info(f"identify_lines: {num_merged} regions remain after merging.")
+        except Exception as e:
+            logging.error(f"Failed to detect or merge absorption regions: {e}", exc_info=True)
+            raise e
 
-            if i == 0: # Log stats for the *first* signal only
-                logging.debug(f" Stats for first signal ('{series_name}'):")
-                try:
-                    valid_signal = signal[np.isfinite(signal)]
-                    logging.debug(f"   Signal (min/mean/max): {np.min(valid_signal):.2f} / {np.mean(valid_signal):.2f} / {np.max(valid_signal):.2f}")
-                except Exception as e:
-                    logging.debug(f"   Could not compute signal stats: {e}")
+        # Define AOD profile (for Step 5)
+        cont = spec.cont.value if spec.cont is not None else np.ones_like(spec.y.value)
+        flux = spec.y.value
+        with np.errstate(divide='ignore', invalid='ignore'):
+            aod = -np.log(flux / cont)
+        aod[~np.isfinite(aod)] = 0.0 # Clean NaNs/Infs
 
-        # 4. Find Significant Peaks
-        logging.info("Finding peaks in signals...")
-        peaks_list = find_signal_peaks(
-            signals_dict, z_grid, sigma, distance_pix, prominence
-        )
-        logging.info(f"Found {len(peaks_list)} candidate peaks.")
-        
-        # 4b - Apply Physical Constraints (NEW: z_max filter + Lya Forest Penalization)
-        logging.info(f"Found {len(peaks_list)} raw peaks. Applying physical constraints...")
-        
-        # --- Define Boundaries ---
-        # 1. Hard Redshift Cutoff (z_max)
-        proximity_dv = 5000.0 * au.km / au.s
-        c_kms = const.c.to(au.km / au.s).value
-        delta_z = (1.0 + z_em) * (proximity_dv.value / c_kms)
-        z_max = z_em + delta_z
-        
-        # 2. Lya Forest Boundary (for penalization)
+        # Define boundaries
+        x_nm = spec.x.to_value(au.nm)
+        lya_limit_obs_nm = (1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)
         lya_obs_nm = (1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)
         
-        logging.info(f"z_em = {z_em:.4f}, z_max = {z_max:.4f}, Lya_obs = {lya_obs_nm:.2f} nm")
+        # Split region map into Forest and Redward
+        forest_mask = (x_nm < lya_obs_nm) & (x_nm > lya_limit_obs_nm)
+        redward_mask = (x_nm >= lya_obs_nm)
+        
+        forest_map = region_id_map_merged.copy()
+        forest_map[~forest_mask] = 0 # Zero out non-forest regions
+        
+        redward_map = region_id_map_merged.copy()
+        redward_map[~redward_mask] = 0 # Zero out non-redward regions
 
-        # --- Filter Peaks ---
-        filtered_peaks = []
-        for (series_name, z_peak, score) in peaks_list:
+        # ---
+        # 2. Kinematic check for Metal Doublets (Red Side)
+        # ---
+        all_candidates = [] # List of (rid, z_test, series_name)
+        metal_doublets = [
+            m for m in multiplet_list 
+            if m in STANDARD_MULTIPLETS and len(STANDARD_MULTIPLETS[m]) == 2 and m != 'Ly_ab'
+        ]
+        logging.info(f"Checking for metal doublets: {metal_doublets}")
+        
+        for series_name in metal_doublets:
+            # --- *** MODIFIED: Only check redward_map *** ---
+            candidates_red = _find_kinematic_doublet_candidates(
+                redward_map, spec.x, spec._data.z_rf, series_name, z_em
+            )
+            for (rid_1, rid_2, z_test) in candidates_red:
+                # --- *** Append the threshold *** ---
+                all_candidates.append((rid_1, rid_2, z_test, series_name, score_threshold))
+        
+        # ---
+        # 3. Kinematic check for Ly_ab (Forest)
+        # ---
+        if 'Ly_ab' in multiplet_list:
+            logging.info("Checking for Ly_ab doublet...")
+            lyab_candidates = _find_kinematic_doublet_candidates(
+                forest_map, spec.x, spec._data.z_rf, 'Ly_ab', z_em
+            )
+            for (rid_1, rid_2, z_test) in lyab_candidates:
+                # --- *** Append the threshold *** ---
+                all_candidates.append((rid_1, rid_2, z_test, 'Ly_ab', score_threshold))
+
+        logging.info(f"Found {len(all_candidates)} total kinematic candidates.")
+
+        # ---
+        # 4. Rate Candidates with R^2 Score
+        # ---
+        reliable_ids = {} # {rid: (series_name, score, z_test)}
+        logging.info(f"Rating {len(all_candidates)} kinematic candidates with R^2 score...")
+
+        for (rid_1, rid_2, z_test, series_name, threshold) in all_candidates:
             
-            # Rule 1: Hard cutoff (replaces all other H/Lyman limit rules)
-            if z_peak >= z_max:
-                continue
+            # --- *** Get the masks for the PAIR *** ---
+            if series_name == 'Ly_ab':
+                threshold = score_threshold # Use normal threshold for Ly_ab
+            else:
+                # It's a metal line. Check if it's in the forest.
+                region_mask_for_check = (region_id_map_merged == rid_1)
+                x_region_mean = np.mean(x_nm[region_mask_for_check])
+                if x_region_mean < lya_obs_nm:
+                    threshold = 1.1 # Set threshold to 1.1 (impossible to pass)
+                else:
+                    threshold = score_threshold # Use normal threshold
                 
-            try:
-                # Rule 2: Penalize low-confidence metals in the Lya Forest
-                ref_trans = STANDARD_MULTIPLETS[series_name][0]
-                x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
-
-                is_h = is_hydrogen_line(ref_trans)
-                is_in_forest = x_peak_nm < lya_obs_nm
-                
-                if not is_h and is_in_forest:
-                    # This is a metal line in the forest.
-                    # It must have a very high score to be trusted.
-                    if score < (sigma * 10.0): 
-                        continue # Reject low-confidence metal
-                
-                # If it passes all checks, add it
-                filtered_peaks.append((series_name, z_peak, score))
-
-            except Exception:
-                continue # Skip peaks that fail lookup
-        logging.info(f"Found {len(filtered_peaks)} physically valid peaks.")
-
-        # 5. Cross-match Peaks with Regions
-        region_identifications: Dict[int, List[Tuple[str, float]]] = {}
-        regions_found: set[int] = set() # <<< *** ADDED for Point 3 ***
+            mask_1 = (region_id_map_merged == rid_1)
+            mask_2 = (region_id_map_merged == rid_2)
             
-        for (series_name, z_peak, score) in filtered_peaks:
-            try:
-                # --- *** REFACTORED: Point 3 *** ---
-                # Iterate over ALL transitions in the multiplet
-                transitions_in_multiplet = STANDARD_MULTIPLETS[series_name]
+            if not np.any(mask_1) or not np.any(mask_2):
+                continue # Skip if a region is empty (shouldn't happen)
+            
+            # --- *** Call the R^2 rater on the PAIR *** ---
+            r2_score = rate_doublet_candidate(
+                spec, mask_1, mask_2, series_name, z_test
+            )
+            
+            if r2_score > threshold or bypass_scoring:
+                log_msg = f"PASSED > {threshold}"
+                if bypass_scoring and r2_score <= threshold:
+                    log_msg = f"BYPASSED (Score: {r2_score:.3f})"
                 
-                for ref_trans in transitions_in_multiplet:
-                    x_peak_nm = (1.0 + z_peak) * xem_d[ref_trans].to_value(au.nm)
+                logging.debug(f"  > Pair ({rid_1}, {rid_2}): {series_name} at z={z_test:.4f} scored R^2 = {r2_score:.3f} ({log_msg})")
                     
-                    # Find the spectrum index corresponding to this peak
-                    idx = np.abs(x_nm - x_peak_nm).argmin()
-                    
-                    # Get the region ID at that index
-                    rid = int(region_id_map_full[idx])
-                    
-                    # Assign this peak to the region
-                    if rid > 0: # (Ignore background region 0)
-                        regions_found.add(rid) # Add to set of all identified regions
-                        
-                        if rid not in region_identifications:
-                            region_identifications[rid] = []
-                        
-                        # Add the main series name, not the individual transition
-                        region_identifications[rid].append((series_name, float(score)))
+                # Get the component names
+                lines = STANDARD_MULTIPLETS[series_name]
+                comp_1, comp_2 = lines[0], lines[1]
+                rid_1_int = int(rid_1)
+                rid_2_int = int(rid_2)
+                
+                # Add Red Line (comp_2) to Red Region (rid_1)
+                if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []
+                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test))
 
-            except Exception as e:
-                logging.warning(f"Failed to cross-match peak {series_name} at z={z_peak}: {e}")
+                # Add Blue Line (comp_1) to Blue Region (rid_2)
+                if rid_2_int not in reliable_ids: reliable_ids[rid_2_int] = []
+                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test))
+            
+            # (If score < threshold, we just drop the candidate)
 
-        # 5b. De-duplicate entries per region
-        for rid in region_identifications:
-            # Sort identifications by score (descending)
-            region_identifications[rid].sort(key=lambda x: x[1], reverse=True)
-            # Keep only unique series names (highest score version)
-            unique_ids = []
-            seen_series = set()
-            for (series, score) in region_identifications[rid]:
-                if series not in seen_series:
-                    unique_ids.append((series, score))
-                    seen_series.add(series)
-            region_identifications[rid] = unique_ids
+        # ---
+        # 5. Forest Cleanup (Label un-ID'd regions as Ly_a)
+        # ---
+        forest_rids = np.unique(forest_map)
+        forest_rids = forest_rids[forest_rids > 0]
+        
+        for rid in forest_rids:
+            rid_int = int(rid)
+            if rid_int not in reliable_ids:
+                # This region is in the forest but was not ID'd as Ly_ab
+                # Label it as Ly_a
+                # We need a z_test. We'll use the AOD peak.
+                region_mask = (region_id_map_merged == rid_int)
+                aod_region = aod.copy()
+                aod_region[~region_mask] = -np.inf
+                
+                aod_peak_idx = np.argmax(aod_region)
+                if aod_peak_idx > 0:
+                    x_peak_nm = x_nm[aod_peak_idx]
+                    z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
+                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test)] # Give it 0 score
+                    logging.debug(f"  > Region {rid_int}: Labeled as Ly_a (cleanup) at z={z_test:.4f}")
 
-        # 6. Create Visualization Column
+        logging.info(f"Finalized {len(reliable_ids)} identified regions.")
+        
+        # ---
+        # 6. Save results for populating
+        # ---
+        final_vis_map = np.zeros_like(region_id_map_merged)
+        series_map_for_populating = {} # {rid: series_name}
+        z_map_for_populating = {}      # {rid: z_test}
+        
+        identifications_for_meta = {} # {rid: [(series, score)]}
+
+        comp_id_counter = 1
+        for rid, candidates in reliable_ids.items():
+            final_vis_map[region_id_map_merged == rid] = rid
+            
+            # --- *** MODIFIED: Flatten list for component creation *** ---
+            meta_cands = []
+            for (component_name, score, z_test) in candidates:
+                # Use a *new* unique ID for each component, not the region ID
+                series_map_for_populating[comp_id_counter] = component_name
+                z_map_for_populating[comp_id_counter] = z_test
+                meta_cands.append((component_name, score))
+                comp_id_counter += 1
+            
+            identifications_for_meta[rid] = meta_cands
+
+        # ---
+        # 7. Create Final Data Core (saving maps for Step 6)
+        # ---
         new_meta = spec.meta
         new_aux_cols = deepcopy(spec._data.aux_cols)
 
-        if regions_found:
-            # Create a copy of the region map
-            vis_map = region_id_map_full.copy()
-            
-            # Find RIDs to set to 0 (unidentified)
-            all_rids = np.unique(vis_map)
-            rids_to_zero = [rid for rid in all_rids if rid > 0 and rid not in regions_found]
+        new_meta['num_regions_raw'] = int(num_raw)
+        new_meta['num_regions_merged'] = int(num_merged)
+        new_meta['num_regions_identified'] = len(reliable_ids)
 
-            if rids_to_zero:
-                mask_to_zero = np.isin(vis_map, rids_to_zero)
-                vis_map[mask_to_zero] = 0
-            
-            # Add this new map as the 'abs_ids' column
-            vis_col = DataColumnV2(
-                values=vis_map,
-                unit=au.dimensionless_unscaled,
-                description="Absorption regions with identifications"
-            )
-            new_aux_cols['abs_ids'] = vis_col # <<< *** RENAMED ***
+        # Add the 'abs_ids' column
+        vis_col = DataColumnV2(
+            values=final_vis_map,
+            unit=au.dimensionless_unscaled,
+            description="Absorption regions with identifications"
+        )
+        new_aux_cols['abs_ids'] = vis_col
 
-        # 7. Save Metadata (as JSON)
-        if not region_identifications:
-            # If the dict is empty, save None (which FITS headers can handle)
+        # Save metadata
+        try:
+            new_meta['region_identifications'] = json.dumps(identifications_for_meta)
+        except Exception as e:
+            logging.error(f"Failed to serialize region identifications: {e}")
             new_meta['region_identifications'] = None
-        else:
-            try:
-                # If dict is not empty, serialize to a JSON string
-                new_meta['region_identifications'] = json.dumps(region_identifications)
-            except Exception as e:
-                logging.error(f"Failed to serialize region identifications to JSON: {e}")
-                new_meta['region_identifications'] = None # Save None on error
+
+        # --- *** Store maps for Step 6 (Populating) *** ---
+        try:
+            new_meta['series_map_json'] = json.dumps(series_map_for_populating)
+            new_meta['z_map_json'] = json.dumps(z_map_for_populating)
+        except Exception as e:
+             logging.error(f"Failed to serialize component maps: {e}")
+        # --- *** END *** ---
         
         final_data_core = dataclasses.replace(
             spec._data, 
@@ -1324,15 +1342,8 @@ class SpectrumV2:
             aux_cols=new_aux_cols
         )
         
-        # 8. Create Final Data Core
-        final_data_core = dataclasses.replace(
-            spec._data, # <<< *** Use original spec's data ***
-            meta=new_meta,
-            aux_cols=new_aux_cols 
-        )
-        
         # 9. Return new SpectrumV2
-        new_history = self.history + [f"Identified {len(filtered_peaks)} candidates in {num_regions} regions"]
+        new_history = self.history + [f"Identified {len(reliable_ids)} regions"]
         return SpectrumV2(data=final_data_core, history=new_history)
 
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':

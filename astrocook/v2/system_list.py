@@ -1,5 +1,6 @@
 from astropy.table import Table, Column
 import astropy.units as au
+import dataclasses
 import logging
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
@@ -175,3 +176,69 @@ class SystemListV2:
         # TODO: Add V1 constraint logic (e.g., self.constraint_model.to_v1_header())
         
         return v1_table
+    
+    def add_components_from_regions(self,
+                                  spec: 'SpectrumV2',
+                                  region_id_col: str,
+                                  series_map: Dict[int, str],
+                                  z_map: Dict[int, float]) -> 'SystemListV2':
+        """
+        Finds peaks in AOD within identified regions and adds them as
+        new components to the system list.
+        """
+        from .spectrum_operations import find_signal_peaks # Local import for pureness
+
+        if not spec.has_aux_column(region_id_col):
+            logging.warning(f"add_components: '{region_id_col}' not in spectrum. No components added.")
+            return self # Return self (no change)
+
+        region_map = spec.get_column(region_id_col).value
+        
+        # 1. Get AOD profile for peak finding
+        #cont = spec.cont.value if spec.cont is not None else np.ones_like(spec.y.value)
+        #flux = spec.y.value
+        #with np.errstate(divide='ignore', invalid='ignore'):
+        #    aod = -np.log(flux / cont)
+        #aod[~np.isfinite(aod)] = 0.0 # Clean NaNs/Infs
+
+        new_components = list(self._data.components)
+        
+        # 2. Find next available component ID
+        next_id = 1
+        if new_components:
+            next_id = max(c.id for c in new_components) + 1
+
+        # 3. Replace peak finding with simple loop *** ---
+        logging.info(f"Populating SystemList with {len(series_map)} components...")
+        
+        # 3. Loop through regions that have an ID
+        for rid, series in series_map.items():
+            if rid not in z_map:
+                continue
+            
+            z_region = z_map[rid]
+            
+            # 4. Create ONE new ComponentDataV2 object per region
+            new_comp = ComponentDataV2(
+                id=next_id,
+                z=z_region, # All components in region get same guess-z
+                dz=0.001,
+                logN=14.0,  # Default guess
+                dlogN=0.5,
+                b=10.0,     # Default guess
+                db=5.0,
+                btur=0.0,
+                dbtur=None,
+                func='voigt',
+                series=series # Use the series ID (e.g., 'CIV_1548')
+            )
+            new_components.append(new_comp)
+            next_id += 1
+
+        # 6. Create new immutable SystemListDataV2
+        new_data = dataclasses.replace(
+            self._data, 
+            components=new_components,
+            # We'll need to handle constraints later
+        )
+        return SystemListV2(data=new_data)

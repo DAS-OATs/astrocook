@@ -2007,16 +2007,12 @@ class MainWindowV2(QMainWindow):
             if recipe_name == 'identify_lines':
                 # Show an info dialog instead of auto-plotting the mask
                 try:
-                    json_str = new_session_state.spec.meta.get('region_identifications')
-                    num_identified = 0
-                    if json_str:
-                        num_identified = len(json.loads(json_str))
+                    num_identified = new_session_state.spec.meta.get('num_regions_identified', 0)
+                    total_regions = new_session_state.spec.meta.get('num_regions_merged', 0)
                     
-                    total_regions = 0
-                    if new_session_state.spec.has_aux_column('abs_ids'):
-                        region_map = new_session_state.spec.get_column('abs_ids').value
-                        # Get unique, non-zero IDs
-                        total_regions = len(np.unique(region_map[region_map > 0]))
+                    if total_regions == 0:
+                        # Fallback just in case, though num_merged should always be >= 0
+                        total_regions = new_session_state.spec.meta.get('num_regions_raw', 0)
                         
                     QMessageBox.information(
                         self, 

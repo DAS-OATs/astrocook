@@ -8,6 +8,7 @@ from typing import Any, List, Dict
 BRANCHING_RECIPES: List[str] = [
     'split',                # Split spectrum by range
     'extract_preset',
+    'identify_lines',
     #'part_extract',         # Extracts a sub-part (e.g., specific order/slice)
     'combine',              # Combines multiple sessions
     #'equalize',             # Equalizes multiple sessions

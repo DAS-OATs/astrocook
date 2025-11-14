@@ -12,7 +12,7 @@ from scipy.signal import find_peaks, savgol_filter
 from scipy.special import erf, erfinv
 from typing import Dict, List, Optional, Tuple
 
-from .atomic_data import STANDARD_MULTIPLETS, xem_d
+from .atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from ..v1.functions import x_convert as x_convert_v1 
 from ..v2.structures import DataColumnV2, SpectrumDataV2 
 
@@ -793,6 +793,176 @@ def compute_identification_signal(
 
     return signal
 
+def _find_kinematic_doublet_candidates(
+    region_map: np.ndarray,
+    x: au.Quantity,
+    z_rf: float,
+    multiplet_name: str,
+    z_em: float
+) -> List[Tuple[int, float]]:
+    """
+    Performs a kinematic region-overlap check to find doublet candidates.
+    This is Step 2 & 3 of the new algorithm.
+    """
+    if not multiplet_name in STANDARD_MULTIPLETS:
+        return []
+    
+    lines = STANDARD_MULTIPLETS[multiplet_name]
+    if len(lines) < 2:
+        return [] # Not a doublet
+
+    try:
+        # 1. Get velocity lags
+        lags_kms = get_multiplet_velocity_lags(multiplet_name)
+        primary_line, secondary_line = lines[0], lines[1]
+        dv_kms = lags_kms[secondary_line] # e.g., ~498 km/s for CIV
+        
+        # 2. Get x-axis in velocity space
+        x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+        
+        # 3. Create a "shifted" region map
+        # Interpolate the region map onto an axis shifted by dv_kms
+        # We use 'nearest' to preserve integer region IDs
+        interp = interp1d(x_kms + dv_kms, region_map, kind='nearest', 
+                          bounds_error=False, fill_value=0)
+        shifted_map = interp(x_kms).astype(int)
+        
+        # 4. Find overlaps
+        # Find where both original and shifted maps have a *non-zero* region ID
+        overlap_mask = (region_map > 0) & (shifted_map > 0)
+        if not np.any(overlap_mask):
+            return []
+            
+        # 5. Get all (region_id, shifted_region_id) pairs
+        overlapping_pairs = np.unique(
+            np.stack((region_map[overlap_mask], shifted_map[overlap_mask])), 
+            axis=1
+        )
+        
+        # 6. For each unique pair, calculate the best-guess redshift
+        candidates = []
+        x_nm = x.to_value(au.nm)
+        primary_wave_nm = xem_d[primary_line].to_value(au.nm)
+        
+        for (rid_1, rid_2) in overlapping_pairs.T:
+            # Find the pixels corresponding to this specific overlap
+            primary_line = lines[0]
+            primary_wave_nm = xem_d[primary_line].to_value(au.nm)
+
+            pair_mask = (region_map == rid_1) & (shifted_map == rid_2)
+            
+            # Calculate the geometric mean of the x-range of this overlap
+            x_overlap_nm = x_nm[pair_mask]
+            if len(x_overlap_nm) == 0: continue
+            
+            x_min = np.min(x_overlap_nm)
+            x_max = np.max(x_overlap_nm)
+            x_center = np.sqrt(x_min * x_max) # Geometric mean is good for log-space
+            
+            # Calculate the z_test for this overlap
+            z_test = (x_center / primary_wave_nm) - 1.0
+            
+            # Add (region_id_of_primary, z_test)
+            candidates.append((rid_1, rid_2, z_test))
+
+        return candidates
+        
+    except Exception as e:
+        logging.error(f"Failed kinematic check for {multiplet_name}: {e}", exc_info=True)
+        return []
+
+def rate_doublet_candidate(
+    spectrum: 'SpectrumV2',
+    region_mask_1: np.ndarray,
+    region_mask_2: np.ndarray,
+    multiplet_name: str,
+    z_test: float
+) -> float:
+    """
+    Rates a doublet candidate (a *pair* of regions) using the R^2 score
+    on the Apparent Optical Depth (AOD) profiles.
+    
+    NOTE: region_mask_1 is the REDDER region (e.g., CIV_1550)
+          region_mask_2 is the BLUER region (e.g., CIV_1548)
+    """
+    try:
+        # 1. Get lines, lags, and f-ratio
+        lines = STANDARD_MULTIPLETS[multiplet_name]
+        primary_line, secondary_line = lines[0], lines[1] # primary=blue, secondary=red
+        
+        lags_kms = get_multiplet_velocity_lags(multiplet_name)
+        dv_kms = lags_kms[secondary_line] # e.g., ~+498 km/s (shift from blue to red)
+
+        f_1 = ATOM_DATA[primary_line]['f']
+        f_2 = ATOM_DATA[secondary_line]['f']
+        if f_2 == 0: return 0.0
+        f_ratio = f_1 / f_2 # e.g., ~2.0 for CIV
+
+        # 2. Get AOD profile in a correct velocity space
+        #    (relative to the *primary* blue line)
+        primary_wave_obs = xem_d[primary_line] * (1.0 + z_test)
+        c_kms = c_light.to(au.km/au.s)
+        
+        x_kms_test_frame = (spectrum.x - primary_wave_obs).to(
+            au.km/au.s, equivalencies=au.equivalencies.doppler_optical(primary_wave_obs)
+        ).value
+
+        cont = spectrum.cont.value if spectrum.cont is not None else np.ones_like(spectrum.y.value)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            aod = -np.log(spectrum.y.value / cont)
+        aod[~np.isfinite(aod)] = 0.0 # Clean NaNs/Infs
+        
+        # 3. Create Data and Model vectors
+        
+        # --- *** START BUG FIX: Use correct regions/shifts *** ---
+        
+        # Y_data is the AOD from the BLUE region (mask_2)
+        v_region_blue = x_kms_test_frame[region_mask_2] # e.g., [0, 1, 2...]
+        if len(v_region_blue) < 2: return 0.0
+        
+        interp_aod = interp1d(x_kms_test_frame, aod, kind='linear', bounds_error=False, fill_value=0.0)
+        Y_data_raw = interp_aod(v_region_blue)
+        Y_data = Y_data_raw - np.mean(Y_data_raw)
+
+        # Y_model is the AOD from the RED region (mask_1), shifted and scaled
+        
+        # Get AOD from the RED region
+        v_region_red = x_kms_test_frame[region_mask_1] # e.g., [498, 499, 500...]
+        if len(v_region_red) < 2: return 0.0
+        tau_red_raw = interp_aod(v_region_red)
+
+        # Shift the RED velocity grid *back* to the BLUE frame
+        v_red_shifted = v_region_red - dv_kms # e.g., [498-498, 499-498, ...] = [0, 1, 2...]
+        
+        # Create a new interpolator *just for the secondary's data*
+        interp_aod_red = interp1d(v_red_shifted, tau_red_raw, kind='linear', bounds_error=False, fill_value=0.0)
+        
+        # Sample the shifted red AOD at the BLUE region's velocities
+        tau_red_model_raw = interp_aod_red(v_region_blue)
+        
+        # Mean-subtract this model
+        tau_red_model = tau_red_model_raw - np.mean(tau_red_model_raw)
+        
+        Y_model = tau_red_model * f_ratio
+        # --- *** END BUG FIX *** ---
+        
+        # 4. Calculate R^2 score
+        ss_res = np.sum((Y_data - Y_model)**2)
+        ss_tot = np.sum(Y_data**2) # Y_data is already mean-subtracted
+        
+        if ss_tot == 0:
+            return 0.0 # Cannot divide by zero (flat line)
+            
+        r2_score = 1.0 - (ss_res / ss_tot)
+        
+        # print(f"{multiplet_name} z={z_test:.4f}, R2={r2_score:.3f}, ss_tot={ss_tot:.2f}, ss_res={ss_res:.2f}")
+        
+        return max(0.0, r2_score) # Clip at 0, don't allow negative scores
+
+    except Exception as e:
+        logging.warning(f"Failed to rate {multiplet_name} at z={z_test}: {e}", exc_info=True)
+        return 0.0
+    
 def find_signal_peaks(
     signals_dict: Dict[str, np.ndarray],
     z_grid: np.ndarray,
@@ -803,6 +973,9 @@ def find_signal_peaks(
     """
     Finds and filters peaks in the identification signals.
     Replicates the core logic of V1's _systs_like.
+    
+    *** MODIFIED to be a generic peak finder. ***
+    *** It no longer smooths or runs a 'best-guess' filter. ***
     
     Args:
         signals_dict: Dict of {series_name: signal_array}
@@ -816,75 +989,46 @@ def find_signal_peaks(
     """
     all_peaks_list = []
 
-    smoothed_signals = {} # Store smoothed signals
-    
-    # 1. Smooth each signal individually
+    # 1. Find peaks for each series
     for series_name, signal in signals_dict.items():
         if signal is None:
             continue
-            
-        # --- *** FIXED: Clean NaNs before smoothing *** ---
-        # The input signal contains NaNs from interpolation edges.
-        # Replace NaNs with 0.0 (neutral) before smoothing.
-        signal_clean = np.nan_to_num(signal, nan=0.0)
         
-        # V1 logic used a light smoothing
-        smoothed_signal = savgol_filter(signal_clean, window_length=5, polyorder=1)
-        smoothed_signals[series_name] = smoothed_signal
-        # --- *** END FIX *** ---
-
-    # 2. Create the "total signal" envelope from the *SMOOTHED* signals
-    if not smoothed_signals:
-        logging.warning("find_signal_peaks: No valid signals to process.")
-        return []
-        
-    with np.errstate(invalid='ignore'): # Ignore warnings from all-NaN slices
-        total_signal = np.nanmax(
-            [s for s in smoothed_signals.values()], 
-            axis=0
-        )
-    # Replace any remaining NaNs (if all signals were NaN) with -inf
-    total_signal = np.nan_to_num(total_signal, nan=-np.inf)
-
-    # 3. Find peaks for each *SMOOTHED* series
-    for series_name, smoothed_signal in smoothed_signals.items():
+        # --- *** MODIFIED: Clean NaNs but do NOT smooth *** ---
+        signal_clean = np.nan_to_num(signal, nan=-np.inf)
+        # --- *** END MODIFIED *** ---
 
         logging.debug(f"find_signal_peaks: Searching '{series_name}'...")
-        logging.debug(f"  Signal stats (min/mean/max): {np.min(smoothed_signal):.2f} / {np.mean(smoothed_signal):.2f} / {np.max(smoothed_signal):.2f}")
+        logging.debug(f"  Signal stats (min/mean/max): {np.min(signal_clean):.2f} / {np.mean(signal_clean):.2f} / {np.max(signal_clean):.2f}")
         logging.debug(f"  Thresholds: sigma={sigma}, distance_pix={distance_pix}, prominence={prominence}")
         
         # 4. Find peaks
         peaks_idx, _ = find_peaks(
-            smoothed_signal, # <<< Use the smoothed signal
+            signal_clean,
             distance=distance_pix, 
-            prominence=prominence
+            prominence=prominence,
+            height=sigma # Use 'height' for simple threshold
         )
         
         # --- *** ADDED DEBUGGING *** ---
-        logging.debug(f" Found {len(peaks_idx)} raw peaks (before sigma/best-guess filter).")
+        logging.debug(f" Found {len(peaks_idx)} raw peaks (after height/distance/prominence).")
         # --- *** END DEBUGGING *** ---
         
         if not peaks_idx.size:
             continue
             
         # 5. Filter by sigma (height threshold)
-        peaks_idx = peaks_idx[smoothed_signal[peaks_idx] > sigma]
+        # (This is now handled by the 'height' param in find_peaks)
         
-        # --- *** ADDED DEBUGGING *** ---
-        logging.debug(f"  Found {len(peaks_idx)} peaks after 'sigma' filter.")
-        # --- *** END DEBUGGING *** ---
+        # 6. Best-Guess Filter (REMOVED)
 
-        # 6. Best-Guess Filter
+        # 7. Add all found peaks
         for p_idx in peaks_idx:
-            peak_score = smoothed_signal[p_idx]
-            
-            # Check if this peak is the highest signal at this redshift
-            # --- *** FIXED: Comparing smoothed_score to smoothed_total_signal *** ---
-            if np.isclose(peak_score, total_signal[p_idx]):
-                z_peak = z_grid[p_idx]
-                all_peaks_list.append((series_name, z_peak, peak_score))
+            peak_score = signal_clean[p_idx]
+            z_peak = z_grid[p_idx]
+            all_peaks_list.append((series_name, z_peak, peak_score))
 
-    # 7. Sort final list by redshift
+    # 8. Sort final list by redshift
     all_peaks_list.sort(key=lambda x: x[1])
     
     return all_peaks_list
