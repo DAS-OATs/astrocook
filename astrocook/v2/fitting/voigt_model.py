@@ -2,21 +2,29 @@ from astropy.table import Table
 import logging
 import numpy as np
 import re
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING, Tuple
 
 # We assume SystemListV2 and ComponentDataV2 are importable from the V2 structure
 from ..structures import ComponentDataV2, ParameterConstraintV2 
 if TYPE_CHECKING:
     from ..system_list import SystemListV2
+
 class VoigtModelConstraintV2:
     """
     Manages parameter constraints and converts component data into a flat P_free 
     vector required by SciPy optimization routines.
-    (Replaces lmfit's Parameters object functionality)
     """
     
     # Define the order of parameters in the P_free vector (V2 Standard)
     PARAMETER_ORDER = ['z', 'logN', 'b', 'btur'] 
+
+    # Default Physical Limits (Min, Max)
+    DEFAULT_BOUNDS = {
+        'z':    (-0.5, 10.0),    # Redshift usually positive, but allow small neg for calibration
+        'logN': (10.0, 23.0),    # Column density limits
+        'b':    (1.0, 300.0),    # Doppler param (km/s)
+        'btur': (0.0, 100.0)     # Turbulence
+    }
 
     # V1 expression regex (e.g., p[12], p[4], etc.)
     V1_ID_REGEX = re.compile(r"p\[(\d+)\]")
@@ -26,10 +34,12 @@ class VoigtModelConstraintV2:
         Initializes the constraint model using data from SystemListV2.
         """
         self._system_list = system_list
-        self._param_names = ['z', 'logN', 'b', 'btur']
 
         # This will hold the new, V2-native (UUID-keyed) constraint map
         self.v2_constraints_by_uuid: Dict[str, Dict[str, ParameterConstraintV2]] = {}          
+
+        # If this set is populated, ONLY these UUIDs are free. Others are fixed.
+        self._active_uuids: Optional[Set[str]] = None
 
         # 1. NEW: Group components
         self._component_groups = self._build_groups() 
@@ -37,28 +47,24 @@ class VoigtModelConstraintV2:
         # 2. Build the initial parameter vector (P_full) based on groups
         self._initial_p_vector = self._build_initial_vector()
         
-        # 3. Build the constraint map
-        if self._system_list:
-            self._build_constraint_map()
+        # 3. Build the constraint map (CRITICAL: Must set self._param_map here)
+        self._param_map = self._build_constraint_map()
+
+        # 4. Cache the P_free vector (the result used by SciPy)
+        self._p_free_vector = self._initial_p_vector[self._param_map['is_free']]
         
-        #logging.info(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
+        logging.info(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
     def _build_groups(self, overlap_threshold=0.005) -> List[List[ComponentDataV2]]:
         """
         Groups components based on V1 criteria (constraints or overlapping profiles).
         Returns a list of lists, where each inner list is a group of components to be fitted together.
-        
-        Note: This is simplified and currently assumes all components form a single group 
-        until the full profile calculation logic is integrated.
         """
-        
         # --- PHASE 1: Simple Grouping (All components in one group) ---
-        # This will be replaced by the complex profile overlap check later.
         if not self._system_list.components:
             return []
             
         return [list(self._system_list.components)]
-        # ---------------------------------------------------------------
         
     def _build_initial_vector(self) -> np.ndarray:
         """
@@ -80,13 +86,9 @@ class VoigtModelConstraintV2:
         v1_id_to_uuid_map: Dict[int, str]
     ) -> ParameterConstraintV2:
         """
-        Translates a single V1 constraint dict (from parsed_constraints) into
-        a V2-native ParameterConstraintV2 object, converting ID-based
-        expressions to UUID-based expressions.
+        Translates a single V1 constraint dict into a V2-native ParameterConstraintV2 object.
         """
-        
         v1_expression = v1_state['expression']
-        
         target_uuid: str = None
         v1_target_id: int = None
         v2_expression: str = v1_expression
@@ -119,113 +121,87 @@ class VoigtModelConstraintV2:
             v1_target_id=v1_target_id
         )
     
-    def _build_constraint_map(self):
+    def _build_constraint_map(self) -> Dict[str, np.ndarray]:
         """
-        Initializes or loads the constraint map.
-        - If V2 data is present, load it.
-        - If V1 data is present, migrate it.
-        - If neither, create a default (all free) map.
+        Builds the mapping, incorporating loaded V1 constraints.
+        Returns a dictionary containing boolean masks and index maps.
         """
-        data = self._system_list._data # Get the immutable data core
+        # Get the V1-style constraint map (keyed by V1 ID)
+        v1_parsed_constraints = self._system_list._data.parsed_constraints
         
-        # 1. Initialize all parameters as free by default
-        self._initialize_all_params()
+        # Get the V1->V2 ID-UUID map
+        v1_id_to_uuid_map = self._system_list._data.v1_id_to_uuid_map
+
+        num_params = len(self._initial_p_vector)
+        is_free = np.ones(num_params, dtype=bool)
+        link_target_index = np.arange(num_params) # Placeholder for future logic
         
-        # 2. Check for and load V2 or V1 constraints
-        if data.v2_constraints_map:
-            logging.info(f"Loading {len(data.v2_constraints_map)} V2 constraint sets from metadata...")
-            loaded_map = {}
-            for comp_uuid, params_dict in data.v2_constraints_map.items():
-                loaded_map[comp_uuid] = {}
-                for param_name, constr_dict in params_dict.items():
-                    try:
-                        # Create the dataclass instance from the dictionary
-                        loaded_map[comp_uuid][param_name] = ParameterConstraintV2(**constr_dict)
-                    except TypeError as e:
-                        logging.warning(f"Failed to load constraint for {comp_uuid}.{param_name}: {e}. Setting as 'free'.")
-                        loaded_map[comp_uuid][param_name] = ParameterConstraintV2(is_free=True)
+        # Iterate over all parameters in the vector order
+        for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):
             
-            # Now assign the map of *ParameterConstraintV2 objects*
-            self.v2_constraints_by_uuid = loaded_map
-
-        elif data.parsed_constraints:
-            # This is a V1-migrated session.
-            # Call the *existing* V1 migration helper.
-            logging.info(f"Migrating {len(data.parsed_constraints)} V1 constraints...")
-            self.load_v1_constraints_as_v2(data.parsed_constraints, data.v1_id_to_uuid_map)
+            # 1. Use the V1 ID to look up the constraint
+            v1_key = (comp.id, param_name)
+            v2_uuid = comp.uuid
             
-        # 3. Count free parameters
-        free_param_count = self._count_free_params()
-        logging.info(f"Initialized VoigtModelConstraintV2 with {free_param_count} free parameters.")
+            # Fluid Group Logic:
+            # If we have an active set, and this component is NOT in it, FORCE FREEZE.
+            force_freeze = False
+            if self._active_uuids is not None:
+                if v2_uuid not in self._active_uuids:
+                    force_freeze = True
 
-    def _initialize_all_params(self):
-        """Sets all parameters for all components to 'free' by default."""
-        self.v2_constraints_by_uuid = {}
-        default_constraint = ParameterConstraintV2(is_free=True)
-        
-        for comp in self._system_list.components:
-            uuid = comp.uuid
-            self.v2_constraints_by_uuid[uuid] = {}
-            for param in self._param_names:
-                self.v2_constraints_by_uuid[uuid][param] = default_constraint
-
-    def _count_free_params(self) -> int:
-        """Counts the number of parameters marked as 'is_free'."""
-        count = 0
-        for comp_uuid, params in self.v2_constraints_by_uuid.items():
-            for param_name, constraint in params.items():
-                if constraint.is_free:
-                    count += 1
-        return count
-
-    def load_v1_constraints_as_v2(self, 
-                                  v1_parsed_constraints: Dict[tuple, Dict], 
-                                  v1_id_to_uuid_map: Dict[int, str]):
-        """
-        Migrates V1-style constraints (from .acs header) into the
-        V2-native (UUID-based) constraint map.
-        """
-        self.v1_parsed_constraints = v1_parsed_constraints
-        self.v1_id_to_uuid_map = v1_id_to_uuid_map
-
-        for (v1_id, param_name), constr_data in v1_parsed_constraints.items():
-            try:
-                # Find the UUID for this V1 ID
-                comp_uuid = self.v1_id_to_uuid_map.get(v1_id)
-                if not comp_uuid:
-                    logging.warning(f"V1 constraint for ID {v1_id} skipped: No matching UUID.")
-                    continue
+            v2_constraint_obj: ParameterConstraintV2
+            
+            if v1_key in v1_parsed_constraints:
+                # 2a. A constraint EXISTS for this parameter
+                v1_state = v1_parsed_constraints[v1_key]
                 
-                # Find the UUID for the *target* V1 ID
-                target_v1_id = constr_data.get('target_id') # V1 used 'target_id'
-                target_uuid = None
-                if target_v1_id is not None:
-                    target_uuid = self.v1_id_to_uuid_map.get(target_v1_id)
-                    if not target_uuid:
-                        logging.warning(f"V1 constraint target ID {target_v1_id} skipped: No matching UUID.")
+                # 3a. Update the SciPy 'is_free' array
+                is_free[i] = v1_state['is_free'] and (not force_freeze)
+                if v1_state['expression'] is not None:
+                    # Linked/fixed parameters are not "free" in the SciPy vector
+                    is_free[i] = False 
                 
-                # Create the V2 ParameterConstraintV2 object
-                v2_constraint = ParameterConstraintV2(
-                    is_free=bool(constr_data.get('is_free', True)),
-                    target_uuid=target_uuid,
-                    expression=constr_data.get('expr'),
-                    v1_target_id=target_v1_id
+                # 4a. Convert this V1 state to a V2 object
+                v2_constraint_obj = self._convert_v1_state_to_v2_constraint(
+                    v1_state, v1_id_to_uuid_map
                 )
                 
-                # Overwrite the default "free" constraint in our map
-                if comp_uuid in self.v2_constraints_by_uuid:
-                    self.v2_constraints_by_uuid[comp_uuid][param_name] = v2_constraint
-                else:
-                    logging.warning(f"V1 constraint for UUID {comp_uuid} skipped: UUID not in component list.")
+            else:
+                # 2b. No constraint found. This is a default FREE parameter.
+                is_free[i] = True and (not force_freeze)
+                v2_constraint_obj = ParameterConstraintV2(is_free=True)
 
-            except Exception as e:
-                logging.error(f"Error migrating V1 constraint {(v1_id, param_name)}: {e}")
+            # 5. Store the V2 object in the new UUID-keyed map
+            if v2_uuid not in self.v2_constraints_by_uuid:
+                self.v2_constraints_by_uuid[v2_uuid] = {}
+                
+            self.v2_constraints_by_uuid[v2_uuid][param_name] = v2_constraint_obj
+
+        return {
+            'is_free': is_free,
+            'link_target_index': link_target_index
+        }
+
+    def _convert_v1_to_v2(self, v1_state, v1_id_map):
+        """Helper to convert V1 constraint dict to V2 object."""
+        expr = v1_state['expression']
+        tgt_uuid = None
+        if expr:
+            match = self.V1_ID_REGEX.search(expr)
+            if match:
+                vid = int(match.group(1))
+                tgt_uuid = v1_id_map.get(vid)
+                if tgt_uuid:
+                    expr = expr.replace(f"p[{vid}]", f"p['{tgt_uuid}']")
+        return ParameterConstraintV2(v1_state['is_free'], tgt_uuid, expr, None)
 
     def _get_component_param_iterator(self):
         """Helper to yield (ComponentDataV2, param_name) tuple for P_full mapping."""
-        for component in self._system_list.components:
-            for param_name in self.PARAMETER_ORDER:
-                yield component, param_name
+        for group in self._component_groups:
+            for component in group:
+                for param_name in self.PARAMETER_ORDER:
+                    yield component, param_name
 
     @property
     def p_free_vector(self) -> np.ndarray:
@@ -245,8 +221,7 @@ class VoigtModelConstraintV2:
         p_full[self._param_map['is_free']] = p_free_fitted
         
         # 2. Apply linking logic (simplified, assuming direct indexing for now)
-        # This step would apply linked values based on link_target_index.
-        # For our default state (no links), this step is a simple identity function.
+        # TODO: Implement expression evaluation for linked parameters here
         
         return p_full
     
@@ -256,3 +231,54 @@ class VoigtModelConstraintV2:
         Exposes the V2-native, UUID-keyed constraint map for serialization.
         """
         return self.v2_constraints_by_uuid
+    
+    def set_active_components(self, uuids: List[str] = None):
+        """
+        Defines the "Fluid Group". 
+        If uuids is provided, only these components will be FREE.
+        All others will be FIXED (but still contribute to the model).
+        Pass None to free all components.
+        """
+        if uuids is None:
+            self._active_uuids = None
+        else:
+            self._active_uuids = set(uuids)
+        
+        # Rebuild the parameter map based on the new selection
+        self._refresh_state()
+
+    def _refresh_state(self):
+        """Rebuilds internal vectors and maps."""
+        self._initial_p_vector = self._build_initial_vector()
+        self._param_map = self._build_constraint_map()
+        self._p_free_vector = self._initial_p_vector[self._param_map['is_free']]
+
+    def get_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Returns the (lower_bounds, upper_bounds) vectors for the FREE parameters.
+        Used by scipy.optimize.least_squares.
+        """
+        lower = []
+        upper = []
+        
+        # Iterate exactly as we do for building the p_vector
+        for group in self._component_groups:
+            for component in group:
+                for param_name in self.PARAMETER_ORDER:
+                    
+                    # 1. Check if this parameter is FREE
+                    # We need to check the map we built in __init__
+                    # Efficient way: We iterate in the same order, so we can check the constraint obj
+                    # in self.v2_constraints_by_uuid
+                    
+                    uuid = component.uuid
+                    constraint = self.v2_constraints_by_uuid[uuid][param_name]
+                    
+                    if constraint.is_free:
+                        # 2. Apply Bounds
+                        # TODO: In the future, allow per-parameter custom bounds from V1 data
+                        def_min, def_max = self.DEFAULT_BOUNDS[param_name]
+                        lower.append(def_min)
+                        upper.append(def_max)
+        
+        return np.array(lower), np.array(upper)
