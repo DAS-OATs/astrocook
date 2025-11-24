@@ -31,7 +31,21 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."}
         ],
         "url": "absorbers_cb.html#identify_lines"
-    }
+    },
+    "add_component": {
+        "brief": "Add a single component.",
+        "details": "Adds a new manual Voigt component at a specific redshift.",
+        "params": [
+            {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or Multiplet name (e.g. 'CIV')"},
+            {"name": "z", "type": float, "default": 0.0, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": 13.5, "doc": "Column Density (log)"},
+            {"name": "b", "type": float, "default": 10.0, "doc": "Doppler parameter (km/s)"},
+            {"name": "btur", "type": float, "default": 0.0, "doc": "Turbulent broadening (km/s)"}
+        ],
+        # We hide this from the menu because it's usually triggered by mouse, 
+        # but keeping it in the schema allows scripting/logging.
+        "url": "absorbers_cb.html#add_component" 
+    },
 }
 
 class RecipeAbsorbersV2:
@@ -153,4 +167,40 @@ class RecipeAbsorbersV2:
             return self._session.with_new_system_list(new_systs_v2)
         except Exception as e:
             logging.error(f"Failed during add_components: {e}", exc_info=True)
+            return 0
+        
+    def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
+                      logN: str = '13.5', b: str = '10.0', btur: str = '0.0') -> 'SessionV2':
+        """
+        API: Recipe to add a single component.
+        """
+        try:
+            z_f = float(z)
+            logN_f = float(logN)
+            b_f = float(b)
+            btur_f = float(btur)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+            
+        try:
+            # Handle case where session has no system list yet
+            if self._session.systs is None:
+                # We need to bootstrap an empty system list. 
+                # Ideally SessionV2 should handle this, but for now we can handle it here 
+                # or assume the session creation initialized an empty one.
+                # If 'systs' is None, we can't call add_component on it.
+                # Let's check `session.py`. If it allows None, we must create one.
+                from ..structures import SystemListDataV2
+                from ..system_list import SystemListV2
+                empty_systs = SystemListV2(SystemListDataV2())
+                new_systs = empty_systs.add_component(series, z_f, logN_f, b_f, btur_f)
+            else:
+                # Call the API layer
+                new_systs = self._session.systs.add_component(series, z_f, logN_f, b_f, btur_f)
+            
+            return self._session.with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed during add_component: {e}", exc_info=True)
             return 0

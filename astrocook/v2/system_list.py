@@ -242,3 +242,53 @@ class SystemListV2:
             # We'll need to handle constraints later
         )
         return SystemListV2(data=new_data)
+    
+    def add_component(self, 
+                      series: str, 
+                      z: float, 
+                      logN: float = 13.5, 
+                      b: float = 10.0, 
+                      btur: float = 0.0) -> 'SystemListV2':
+        """
+        API: Adds a single component to the list.
+        Returns a NEW SystemListV2 instance.
+        """
+        # 1. Get existing components
+        current_components = self._data.components
+        
+        # 2. Determine new ID (V1 integer compatibility)
+        next_id = 1
+        if current_components:
+            next_id = max(c.id for c in current_components) + 1
+            
+        # 3. Create the immutable Component object
+        new_comp = ComponentDataV2(
+            id=next_id,
+            z=z,
+            dz=None,
+            logN=logN,
+            dlogN=None,
+            b=b,
+            db=None,
+            btur=btur,
+            dbtur=None,
+            func='voigt',
+            series=series
+        )
+        
+        # 4. Create the new list
+        new_component_list = current_components + [new_comp]
+        
+        # 5. Create new Data Core (preserving meta/constraints)
+        # We need to update the UUID map for the new component
+        new_id_map = dict(self._data.v1_id_to_uuid_map)
+        new_id_map[next_id] = new_comp.uuid
+        
+        new_data_core = dataclasses.replace(
+            self._data,
+            components=new_component_list,
+            v1_id_to_uuid_map=new_id_map
+        )
+        
+        # 6. Return new API Object
+        return SystemListV2(new_data_core)

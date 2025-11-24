@@ -360,6 +360,28 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 # Use QCursor.pos() to show menu at the global mouse coordinates
                 menu.exec(QCursor.pos())
 
+        # --- Shift + Left Click: Add Component ---
+        if (event.button == 1 and event.inaxes == self.axes and 
+            event.key == 'shift' and 
+            main_win.cursor_show_checkbox.isChecked()): 
+            
+            new_z = self.plot_widget.calculate_z_from_x(event.xdata)
+            
+            if new_z is not None:
+                series_str = main_win.cursor_series_input.text()
+                
+                logging.info(f"Shift+Click: Requesting add_component: {series_str} at z={new_z:.5f}")
+                
+                # Trigger the recipe via MainWindow
+                # Note: category is 'absorbers' now
+                main_win._on_recipe_requested(
+                    category="absorbers", 
+                    recipe_name="add_component",
+                    params={'series': series_str, 'z': new_z},
+                    alias_map={}
+                )
+            return
+
     def on_release(self, event):
         """Handle mouse button release events."""
         # Check if we were selecting a region
