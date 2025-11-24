@@ -1094,7 +1094,8 @@ class SpectrumV2:
                        min_pix_region: int = 3,
                        merge_dv: float = 10.0,
                        score_threshold: float = 0.5,
-                       bypass_scoring: bool = False) -> 'SpectrumV2':
+                       bypass_scoring: bool = False,
+                       debug_rating: bool = False) -> 'SpectrumV2':
         """
         API: Orchestrator method to identify absorption lines.
         (NEW ALGORITHM: Kinematic pre-filter + R^2 rating)
@@ -1228,7 +1229,8 @@ class SpectrumV2:
             
             # --- *** Call the R^2 rater on the PAIR *** ---
             r2_score = rate_doublet_candidate(
-                spec, mask_1, mask_2, series_name, z_test
+                spec, mask_1, mask_2, series_name, z_test,
+                debug_rating=debug_rating
             )
             
             if r2_score > threshold or bypass_scoring:
@@ -1237,12 +1239,12 @@ class SpectrumV2:
                     log_msg = f"BYPASSED (Score: {r2_score:.3f})"
                 
                 logging.debug(f"  > Pair ({rid_1}, {rid_2}): {series_name} at z={z_test:.4f} scored R^2 = {r2_score:.3f} ({log_msg})")
-                    
+
                 # Get the component names
                 lines = STANDARD_MULTIPLETS[series_name]
                 comp_1, comp_2 = lines[0], lines[1]
-                rid_1_int = int(rid_1)
-                rid_2_int = int(rid_2)
+                rid_1_int = int(rid_1) # rid_1 is the red region
+                rid_2_int = int(rid_2) # rid_2 is the blue region
                 
                 # Add Red Line (comp_2) to Red Region (rid_1)
                 if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []

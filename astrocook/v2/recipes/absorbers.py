@@ -27,7 +27,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"},
             {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
             {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
-            {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."}
+            {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."},
+            {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."}
         ],
         "url": "absorbers_cb.html#identify_lines"
     }
@@ -44,7 +45,8 @@ class RecipeAbsorbersV2:
                        min_pix_region: str = '3',
                        merge_dv: str = '10.0',
                        score_threshold: str = '0.5',
-                       bypass_scoring: str = 'False') -> 'SessionV2':
+                       bypass_scoring: str = 'False',
+                       debug_rating: str = 'False') -> 'SessionV2':
         """
         API: Orchestrator recipe to identify absorption lines.
         (Thin wrapper for SpectrumV2.identify_lines)
@@ -54,6 +56,7 @@ class RecipeAbsorbersV2:
             merge_dv_f = float(merge_dv)
             score_thresh_f = float(score_threshold)
             bypass_scoring_b = bypass_scoring.lower() == 'true'
+            debug_rating_b = debug_rating.lower() == 'true'
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
@@ -68,7 +71,8 @@ class RecipeAbsorbersV2:
                 min_pix_region=min_pix_i,
                 merge_dv=merge_dv_f,
                 score_threshold=score_thresh_f,
-                bypass_scoring=bypass_scoring_b
+                bypass_scoring=bypass_scoring_b,
+                debug_rating=debug_rating_b
             )
             
             # 2. Get the maps from the new spectrum's metadata

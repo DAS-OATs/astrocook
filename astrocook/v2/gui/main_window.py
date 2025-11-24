@@ -1,6 +1,7 @@
 from copy import deepcopy
 import json
 import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from PySide6.QtCore import (
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
 import re
 from typing import Any, Dict, List, Optional
 
+from .debug_utils import GLOBAL_PLOTTER
 from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
 from ..photometry import STANDARD_FILTERS
@@ -163,6 +165,8 @@ class MainWindowV2(QMainWindow):
             self._update_view_for_session(None, set_current_list_item=False, is_startup=True)
 
         self._update_undo_redo_actions() # Set initial state
+
+        GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
 
     def resizeEvent(self, event):
         """Handle window resizing to reposition floating elements."""
@@ -2420,3 +2424,33 @@ class MainWindowV2(QMainWindow):
             
             # 2. Defer the actual .close() call to the next event loop iteration
             QTimer.singleShot(0, dlg.close)
+
+    def _on_debug_plot_requested(self, plot_data: dict):
+        """
+        SLOT: Receives data from a worker thread and plots it in
+        a new Matplotlib window. Runs on the main GUI thread.
+        """
+        try:
+            logging.info(f"Received debug plot request: {plot_data['title']}")
+            
+            # Create a new, separate figure
+            fig, ax = plt.subplots()
+            
+            # Plot the data
+            ax.plot(plot_data['v_compare'], plot_data['Y_data'], 
+                    label='Y_data (Blue Line AOD)', drawstyle='steps-mid')
+            ax.plot(plot_data['v_compare'], plot_data['Y_model'], 
+                    label='Y_model (Red Line AOD * f_ratio)', linestyle='--', drawstyle='steps-mid')
+            
+            # Format the plot
+            ax.set_title(plot_data['title'])
+            ax.set_xlabel("Velocity (km/s) [relative to primary line]")
+            ax.set_ylabel("Mean-Subtracted AOD")
+            ax.legend()
+            ax.grid(True, linestyle=':')
+            
+            # Show the plot (non-blocking)
+            plt.show()
+
+        except Exception as e:
+            logging.error(f"Failed to create debug plot: {e}", exc_info=True)

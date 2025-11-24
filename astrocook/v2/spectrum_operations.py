@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Tuple
 from .atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from ..v1.functions import x_convert as x_convert_v1 
 from ..v2.structures import DataColumnV2, SpectrumDataV2 
+from .gui.debug_utils import GLOBAL_PLOTTER
 
 # We assume 'xem' (the Ly-alpha rest wavelength) is accessible here for the custom equivalency
 # You must ensure this global is either imported or defined here (Technical Debt).
@@ -842,13 +843,10 @@ def _find_kinematic_doublet_candidates(
         # 6. For each unique pair, calculate the best-guess redshift
         candidates = []
         x_nm = x.to_value(au.nm)
-        primary_wave_nm = xem_d[primary_line].to_value(au.nm)
+        secondary_wave_nm = xem_d[lines[1]].to_value(au.nm)
         
         for (rid_1, rid_2) in overlapping_pairs.T:
             # Find the pixels corresponding to this specific overlap
-            primary_line = lines[0]
-            primary_wave_nm = xem_d[primary_line].to_value(au.nm)
-
             pair_mask = (region_map == rid_1) & (shifted_map == rid_2)
             
             # Calculate the geometric mean of the x-range of this overlap
@@ -860,7 +858,7 @@ def _find_kinematic_doublet_candidates(
             x_center = np.sqrt(x_min * x_max) # Geometric mean is good for log-space
             
             # Calculate the z_test for this overlap
-            z_test = (x_center / primary_wave_nm) - 1.0
+            z_test = (x_center / secondary_wave_nm) - 1.0
             
             # Add (region_id_of_primary, z_test)
             candidates.append((rid_1, rid_2, z_test))
@@ -876,30 +874,37 @@ def rate_doublet_candidate(
     region_mask_1: np.ndarray,
     region_mask_2: np.ndarray,
     multiplet_name: str,
-    z_test: float
+    z_test: float,
+    debug_rating: bool = False
 ) -> float:
     """
-    Rates a doublet candidate (a *pair* of regions) using the R^2 score
-    on the Apparent Optical Depth (AOD) profiles.
+    Rates a doublet candidate using the R^2 score on the 
+    NORMALIZED FLUX profiles (Power-Law Model).
     
-    NOTE: region_mask_1 is the REDDER region (e.g., CIV_1550)
-          region_mask_2 is the BLUER region (e.g., CIV_1548)
+    Physics: tau_1 = gamma * tau_2  ==>  F_1 = F_2 ^ gamma
+    
+    NOTE: region_mask_1 is the BLUER region (e.g., CIV_1548)
+          region_mask_2 is the REDDER region (e.g., CIV_1550)
     """
     try:
-        # 1. Get lines, lags, and f-ratio
+        # 1. Get lines and data
         lines = STANDARD_MULTIPLETS[multiplet_name]
-        primary_line, secondary_line = lines[0], lines[1] # primary=blue, secondary=red
+        primary_line, secondary_line = lines[0], lines[1] 
         
         lags_kms = get_multiplet_velocity_lags(multiplet_name)
-        dv_kms = lags_kms[secondary_line] # e.g., ~+498 km/s (shift from blue to red)
+        dv_kms = lags_kms[secondary_line] 
 
         f_1 = ATOM_DATA[primary_line]['f']
         f_2 = ATOM_DATA[secondary_line]['f']
+        lam_1 = ATOM_DATA[primary_line]['wave']
+        lam_2 = ATOM_DATA[secondary_line]['wave']
+        
         if f_2 == 0: return 0.0
-        f_ratio = f_1 / f_2 # e.g., ~2.0 for CIV
+        
+        # Exponent for the flux relationship: tau_1/tau_2 = (f1*lam1)/(f2*lam2)
+        gamma_exp = (f_1 * lam_1) / (f_2 * lam_2)
 
-        # 2. Get AOD profile in a correct velocity space
-        #    (relative to the *primary* blue line)
+        # 2. Get Velocity Grid (relative to primary)
         primary_wave_obs = xem_d[primary_line] * (1.0 + z_test)
         c_kms = c_light.to(au.km/au.s)
         
@@ -907,57 +912,76 @@ def rate_doublet_candidate(
             au.km/au.s, equivalencies=au.equivalencies.doppler_optical(primary_wave_obs)
         ).value
 
+        # 3. Get Global Normalized Flux
         cont = spectrum.cont.value if spectrum.cont is not None else np.ones_like(spectrum.y.value)
-        with np.errstate(divide='ignore', invalid='ignore'):
-            aod = -np.log(spectrum.y.value / cont)
-        aod[~np.isfinite(aod)] = 0.0 # Clean NaNs/Infs
         
-        # 3. Create Data and Model vectors
+        # Handle bad continuum or zero division
+        norm_flux = np.ones_like(spectrum.y.value)
+        valid_cont = (cont > 0)
+        norm_flux[valid_cont] = spectrum.y.value[valid_cont] / cont[valid_cont]
         
-        # --- *** START BUG FIX: Use correct regions/shifts *** ---
-        
-        # Y_data is the AOD from the BLUE region (mask_2)
-        v_region_blue = x_kms_test_frame[region_mask_2] # e.g., [0, 1, 2...]
-        if len(v_region_blue) < 2: return 0.0
-        
-        interp_aod = interp1d(x_kms_test_frame, aod, kind='linear', bounds_error=False, fill_value=0.0)
-        Y_data_raw = interp_aod(v_region_blue)
-        Y_data = Y_data_raw - np.mean(Y_data_raw)
+        # Clip unphysical values for stability (flux must be >= 0 for power law)
+        norm_flux = np.clip(norm_flux, 0.0, 1.5)
 
-        # Y_model is the AOD from the RED region (mask_1), shifted and scaled
-        
-        # Get AOD from the RED region
-        v_region_red = x_kms_test_frame[region_mask_1] # e.g., [498, 499, 500...]
-        if len(v_region_red) < 2: return 0.0
-        tau_red_raw = interp_aod(v_region_red)
+        # Global Interpolator
+        interp_flux = interp1d(x_kms_test_frame, norm_flux, kind='linear', bounds_error=False, fill_value=1.0)
 
-        # Shift the RED velocity grid *back* to the BLUE frame
-        v_red_shifted = v_region_red - dv_kms # e.g., [498-498, 499-498, ...] = [0, 1, 2...]
+        # 4. Define Intersection Window
+        v_region_blue = x_kms_test_frame[region_mask_2]
+        v_region_red = x_kms_test_frame[region_mask_1]
+        if len(v_region_blue) < 2 or len(v_region_red) < 2: return 0.0
+
+        v_red_shifted = v_region_red - dv_kms 
+
+        v_start = max(np.min(v_region_blue), np.min(v_red_shifted))
+        v_end = min(np.max(v_region_blue), np.max(v_red_shifted))
         
-        # Create a new interpolator *just for the secondary's data*
-        interp_aod_red = interp1d(v_red_shifted, tau_red_raw, kind='linear', bounds_error=False, fill_value=0.0)
+        padding_kms = 30.0
+        v_start -= padding_kms
+        v_end += padding_kms
+
+        if v_start >= v_end: return 0.0
+
+        # Select grid points
+        mask_compare = (x_kms_test_frame >= v_start) & (x_kms_test_frame <= v_end)
+        v_compare = x_kms_test_frame[mask_compare]
+        if len(v_compare) < 3: return 0.0
+
+        # 5. Construct Vectors (Absorption Signal: 1 - F)
         
-        # Sample the shifted red AOD at the BLUE region's velocities
-        tau_red_model_raw = interp_aod_red(v_region_blue)
+        # Y_data: The Blue Flux (Observed)
+        flux_blue_raw = interp_flux(v_compare)
+        Y_data = 1.0 - flux_blue_raw
+
+        # Y_model: The Red Flux transformed to look like Blue
+        # We sample Red at (v + dv)
+        flux_red_raw = interp_flux(v_compare + dv_kms)
         
-        # Mean-subtract this model
-        tau_red_model = tau_red_model_raw - np.mean(tau_red_model_raw)
+        # Apply Physics: F_blue_model = (F_red)^(gamma)
+        flux_blue_model = np.power(flux_red_raw, gamma_exp)
         
-        Y_model = tau_red_model * f_ratio
-        # --- *** END BUG FIX *** ---
-        
-        # 4. Calculate R^2 score
+        # Convert to "Absorption Signal" for correlation
+        Y_model = 1.0 - flux_blue_model
+
+        # 6. Calculate R^2
+        # Note: We do NOT mean-subtract here. We want to match the absolute zero-point (continuum).
         ss_res = np.sum((Y_data - Y_model)**2)
-        ss_tot = np.sum(Y_data**2) # Y_data is already mean-subtracted
+        ss_tot = np.sum((Y_data - np.mean(Y_data))**2)
         
-        if ss_tot == 0:
-            return 0.0 # Cannot divide by zero (flat line)
+        if ss_tot == 0: return 0.0
             
         r2_score = 1.0 - (ss_res / ss_tot)
         
-        # print(f"{multiplet_name} z={z_test:.4f}, R2={r2_score:.3f}, ss_tot={ss_tot:.2f}, ss_res={ss_res:.2f}")
-        
-        return max(0.0, r2_score) # Clip at 0, don't allow negative scores
+        if debug_rating:
+            plot_data = {
+                'title': f"{multiplet_name} z={z_test:.4f} (R2={r2_score:.3f})",
+                'v_compare': v_compare,
+                'Y_data': Y_data,   # Blue Absorption (1-F)
+                'Y_model': Y_model, # Modeled Blue Absorption
+            }
+            GLOBAL_PLOTTER.plot_requested.emit(plot_data)
+
+        return max(0.0, r2_score)
 
     except Exception as e:
         logging.warning(f"Failed to rate {multiplet_name} at z={z_test}: {e}", exc_info=True)
