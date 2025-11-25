@@ -3,12 +3,12 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize, Signal
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QHeaderView, QAbstractItemView, QMenu,
-    QScrollArea, QSizePolicy, QMessageBox
+    QPushButton, QHeaderView, QAbstractItemView,
+    QScrollArea, QSizePolicy, QMenu
 )
 from typing import List, Optional
 
@@ -17,7 +17,6 @@ from ..atomic_data import STANDARD_MULTIPLETS, xem_d
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- 1. Table Configuration ---
-# Note: 'series' maps to "Transitions" in UI
 COL_MAP = {
     "ID": "id",
     "Transitions": "series", 
@@ -30,15 +29,10 @@ COL_MAP = {
     "db": "db"
 }
 COLUMNS = list(COL_MAP.keys())
-# Columns that are editable
 EDITABLE_COLS = {"Transitions", "z", "logN", "b", "btur"}
 
 class SystemTableModel(QAbstractTableModel):
-    """ 
-    Model for ComponentDataV2. Supports editing by emitting signals.
-    """
     # Signal: (action_name, params_dict)
-    # e.g. ("update_component", {"uuid": "...", "z": 2.5})
     data_changed_request = Signal(str, dict)
 
     def __init__(self, components: List[ComponentDataV2] = None):
@@ -64,8 +58,7 @@ class SystemTableModel(QAbstractTableModel):
         return base_flags
 
     def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid():
-            return None
+        if not index.isValid(): return None
         
         comp = self._components[index.row()]
         col_label = COLUMNS[index.column()]
@@ -81,39 +74,23 @@ class SystemTableModel(QAbstractTableModel):
             
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
-
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
-        if not index.isValid() or role != Qt.EditRole:
-            return False
-
+        if not index.isValid() or role != Qt.EditRole: return False
         col_label = COLUMNS[index.column()]
         attr_name = COL_MAP[col_label]
         comp = self._components[index.row()]
-        
         try:
-            # Validate input type
             if attr_name in ['z', 'logN', 'b', 'btur']:
-                # Try float conversion
                 float_val = float(value)
                 params = {attr_name: float_val}
             else:
-                # String input (series)
                 params = {attr_name: str(value)}
-                
-            # Add UUID for identification
             params['uuid'] = comp.uuid
-            
-            logging.info(f"Table edit: Requesting update for {comp.uuid}: {params}")
-            
-            # Emit signal to controller (MainWindow)
             self.data_changed_request.emit("update_component", params)
-            
-            return True # Accept the edit (UI updates temporarily)
-            
+            return True 
         except ValueError:
-            logging.warning(f"Invalid input for {col_label}: {value}")
             return False
 
     def headerData(self, section, orientation, role):
@@ -128,19 +105,15 @@ class SystemTableModel(QAbstractTableModel):
         return None
 
 class VelocityPlotWidget(QWidget):
-    # ... (Same as previous version, omitted for brevity, DO NOT DELETE) ...
-    # ... (Copy the exact VelocityPlotWidget from the previous answer) ...
-    """
-    Unified Matplotlib widget for stacked velocity panels.
-    Features: Scrolling, Shared Zoom, Bottom Toolbar, Custom Z-Cursor.
-    """
-    def __init__(self):
+    def __init__(self, inspector_parent): 
         super().__init__()
+        self.inspector = inspector_parent
+        
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
         self.layout.setSpacing(9) 
 
-        self.fig = Figure(figsize=(5, 8), dpi=100) 
+        self.fig = Figure(figsize=(5, 8), dpi=100, constrained_layout=True) 
         self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -161,17 +134,31 @@ class VelocityPlotWidget(QWidget):
                 self.toolbar.removeAction(action); break
         self.layout.addWidget(self.toolbar, 0) 
 
+        # Internal State
         self.axes = []
         self.cursor_lines = [] 
         self.bg_cache = None
-        self._current_z_sys = 0.0 
+        self._current_z_sys = 0.0
+        self._panel_map = {} 
+        self._last_xlim = None # For zoom persistence
+        self._last_ylim = None
         
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('draw_event', self.on_draw)
+        self.canvas.mpl_connect('button_press_event', self.on_press)
+
+    # --- Property for Toolbar compatibility ---
+    @property
+    def main_window(self):
+        return self.inspector.main_window
 
     def toggle_region_selector(self): pass
         
     def plot_spectrum(self, session_state=None, force_autoscale=False):
+        """Called by Toolbar Home button."""
+        if force_autoscale:
+            self._last_xlim = None
+            self._last_ylim = None
         if hasattr(self, '_last_session') and hasattr(self, '_last_component'):
             self.plot_system(self._last_session, self._last_component)
 
@@ -218,8 +205,7 @@ class VelocityPlotWidget(QWidget):
         # 3. Create Subplots
         axs = self.fig.subplots(nrows=num_plots, ncols=1, sharex=True, sharey=True)
         if num_plots == 1: axs = [axs] 
-        self.fig.subplots_adjust(hspace=0, left=0.1, right=0.95, top=0.95, bottom=0.05)
-
+        
         # 4. Prepare Data
         has_cont = session.spec.cont is not None
         y_full = session.spec.y.value
@@ -253,6 +239,7 @@ class VelocityPlotWidget(QWidget):
         # 5. Plot Loop
         for i, (ax, trans_name) in enumerate(zip(axs, transitions)):
             self.axes.append(ax)
+            self._panel_map[ax] = trans_name
 
             # This closure captures 'self._current_z_sys'
             def make_format_coord(current_z_sys):
@@ -331,13 +318,10 @@ class VelocityPlotWidget(QWidget):
             self.cursor_lines.append(line)
 
         # 6. Final Formatting
-        axs[-1].set_xlabel("Velocity (km/s)")
-        middle_idx = len(axs)//2
-        axs[middle_idx].set_ylabel("Normalized Flux")
-        
+        self.fig.supxlabel("Velocity (km/s)")
+        self.fig.supylabel("Normalized Flux")
         axs[0].set_xlim(-window_kms, window_kms)
         axs[0].set_ylim(-0.1, 1.2) 
-
         self.canvas.draw()
 
     def on_draw(self, event):
@@ -355,11 +339,29 @@ class VelocityPlotWidget(QWidget):
             line.axes.draw_artist(line)
         self.canvas.blit(self.fig.bbox)
 
+    def on_press(self, event):
+        if event.button == 3 and event.inaxes in self.axes:
+            ax = event.inaxes
+            trans_name = self._panel_map.get(ax)
+            
+            if trans_name and self.inspector.main_window:
+                v_click = event.xdata
+                c_kms = 299792.458
+                z_new = (1 + self._current_z_sys) * (1 + v_click / c_kms) - 1
+                
+                menu = QMenu(self)
+                add_act = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
+                add_act.triggered.connect(lambda checked=False: self.inspector.main_window._on_recipe_requested(
+                    "absorbers", "add_component", 
+                    {'series': trans_name, 'z': z_new}, {}
+                ))
+                menu.addAction(add_act)
+                menu.exec(QCursor.pos())
+
 
 class SystemInspector(QWidget):
     """
     Floating window for inspecting systems.
-    Layout: Table (Left) | Velocity Plots (Right)
     """
     def __init__(self, main_window):
         super().__init__()
@@ -375,7 +377,7 @@ class SystemInspector(QWidget):
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
         
-        # --- Top Toolbar ---
+        """
         toolbar = QHBoxLayout()
         self.btn_refit = QPushButton("Refit Selected")
         self.btn_delete = QPushButton("Delete")
@@ -385,7 +387,6 @@ class SystemInspector(QWidget):
         self.btn_delete.setEnabled(False)
         self.btn_freeze.setEnabled(False)
         
-        # Connect Toolbar Buttons
         self.btn_refit.clicked.connect(self._on_refit_clicked)
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         
@@ -394,11 +395,10 @@ class SystemInspector(QWidget):
         toolbar.addWidget(self.btn_delete)
         toolbar.addStretch()
         main_layout.addLayout(toolbar)
+        """
         
-        # --- Main Splitter ---
         splitter = QSplitter(Qt.Horizontal)
         
-        # 1. Table View
         self.table_view = QTableView()
         self.table_model = SystemTableModel()
         self.table_view.setModel(self.table_model)
@@ -410,18 +410,13 @@ class SystemInspector(QWidget):
         header = self.table_view.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         
-        # Connect signals
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
-        
-        # Connect Model Signal (Edit -> Recipe)
-        # We forward this to MainWindow's recipe runner
         self.table_model.data_changed_request.connect(self._forward_recipe_request)
         
         splitter.addWidget(self.table_view)
         
-        # 2. Velocity Plot Widget
-        self.vel_plot = VelocityPlotWidget()
+        self.vel_plot = VelocityPlotWidget(self)
         splitter.addWidget(self.vel_plot)
         
         splitter.setStretchFactor(0, 5)
@@ -429,13 +424,39 @@ class SystemInspector(QWidget):
         main_layout.addWidget(splitter)
 
     def set_session(self, session):
+        """ Updates the inspector with a new session state. """
+        # 1. Store previous selection
+        previous_uuid = None
+        indexes = self.table_view.selectionModel().selectedRows()
+        if indexes:
+            row = indexes[0].row()
+            comp = self.table_model.get_component_at(row)
+            if comp: previous_uuid = comp.uuid
+
         self.current_session = session
         if session and session.systs:
             self.table_model.update_data(session.systs.components)
         else:
             self.table_model.update_data([])
             
-        if self.table_model.rowCount() == 0:
+        # 2. Try to restore selection
+        if previous_uuid:
+            found = False
+            for r in range(self.table_model.rowCount()):
+                c = self.table_model.get_component_at(r)
+                if c.uuid == previous_uuid:
+                    # Found it! Re-select.
+                    idx = self.table_model.index(r, 0)
+                    self.table_view.selectionModel().select(idx, QAbstractItemView.SelectRows | QAbstractItemView.Clear)
+                    # Force plot update (selection signal might not fire if row index is same?)
+                    # Ideally signal fires on change, but if data reset, we should manually update.
+                    self.vel_plot.plot_system(session, c)
+                    found = True
+                    break
+            if not found:
+                self.vel_plot.fig.clear()
+                self.vel_plot.canvas.draw()
+        elif self.table_model.rowCount() == 0:
             self.vel_plot.fig.clear()
             self.vel_plot.canvas.draw()
 
@@ -448,43 +469,31 @@ class SystemInspector(QWidget):
         
         if comp and self.current_session:
             self.vel_plot.plot_system(self.current_session, comp)
-            self.btn_refit.setEnabled(True)
-            self.btn_delete.setEnabled(True)
-
-    # --- Interaction Slots ---
+            #self.btn_refit.setEnabled(True)
+            #self.btn_delete.setEnabled(True)
 
     def _forward_recipe_request(self, recipe_name, params):
-        """Forward table edit signals to MainWindow."""
         if self.main_window:
             self.main_window._on_recipe_requested("absorbers", recipe_name, params, {})
 
     def _on_context_menu(self, pos):
-        """Handle Right-Click on Table."""
         index = self.table_view.indexAt(pos)
         if not index.isValid(): return
-        
         menu = QMenu(self)
         refit_act = QAction("Refit Selected", self)
-        freeze_act = QAction("Freeze (Not Implemented)", self); freeze_act.setEnabled(False)
         delete_act = QAction("Delete", self)
-        
         refit_act.triggered.connect(self._on_refit_clicked)
         delete_act.triggered.connect(self._on_delete_clicked)
-        
         menu.addAction(refit_act)
-        menu.addAction(freeze_act)
         menu.addSeparator()
         menu.addAction(delete_act)
-        
         menu.exec(self.table_view.mapToGlobal(pos))
 
     def _on_delete_clicked(self):
-        """Trigger delete recipe for selected row."""
         indexes = self.table_view.selectionModel().selectedRows()
         if not indexes: return
         row = indexes[0].row()
         comp = self.table_model.get_component_at(row)
-        
         if comp and self.main_window:
             confirm = QMessageBox.question(self, "Delete Component", 
                                            f"Delete component {comp.series} at z={comp.z:.4f}?",
@@ -494,13 +503,10 @@ class SystemInspector(QWidget):
                     "absorbers", "delete_component", {"uuid": comp.uuid}, {})
 
     def _on_refit_clicked(self):
-        """Trigger fit recipe for selected row."""
         indexes = self.table_view.selectionModel().selectedRows()
         if not indexes: return
         row = indexes[0].row()
         comp = self.table_model.get_component_at(row)
-        
         if comp and self.main_window:
-            logging.info(f"Requesting fit for {comp.uuid}")
             self.main_window._on_recipe_requested(
                 "absorbers", "fit_component", {"uuid": comp.uuid}, {})
