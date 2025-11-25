@@ -3,12 +3,12 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QItemSelectionModel
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QHeaderView, QAbstractItemView,
-    QScrollArea, QSizePolicy, QMenu
+    QPushButton, QHeaderView, QAbstractItemView, QMenu,
+    QScrollArea, QSizePolicy, QMessageBox
 )
 from typing import List, Optional
 
@@ -32,7 +32,6 @@ COLUMNS = list(COL_MAP.keys())
 EDITABLE_COLS = {"Transitions", "z", "logN", "b", "btur"}
 
 class SystemTableModel(QAbstractTableModel):
-    # Signal: (action_name, params_dict)
     data_changed_request = Signal(str, dict)
 
     def __init__(self, components: List[ComponentDataV2] = None):
@@ -59,7 +58,6 @@ class SystemTableModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid(): return None
-        
         comp = self._components[index.row()]
         col_label = COLUMNS[index.column()]
         attr_name = COL_MAP[col_label] 
@@ -71,7 +69,6 @@ class SystemTableModel(QAbstractTableModel):
                 elif attr_name in ['logN', 'dlogN']: return f"{val:.3f}"
                 else: return f"{val:.2f}"
             return str(val) if val is not None else ""
-            
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
         return None
@@ -140,14 +137,13 @@ class VelocityPlotWidget(QWidget):
         self.bg_cache = None
         self._current_z_sys = 0.0
         self._panel_map = {} 
-        self._last_xlim = None # For zoom persistence
+        self._last_xlim = None
         self._last_ylim = None
         
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('draw_event', self.on_draw)
         self.canvas.mpl_connect('button_press_event', self.on_press)
 
-    # --- Property for Toolbar compatibility ---
     @property
     def main_window(self):
         return self.inspector.main_window
@@ -155,7 +151,6 @@ class VelocityPlotWidget(QWidget):
     def toggle_region_selector(self): pass
         
     def plot_spectrum(self, session_state=None, force_autoscale=False):
-        """Called by Toolbar Home button."""
         if force_autoscale:
             self._last_xlim = None
             self._last_ylim = None
@@ -221,7 +216,7 @@ class VelocityPlotWidget(QWidget):
             
         x_full = session.spec.x.value
         c_kms = 299792.458
-        window_kms = 1000 
+        window_kms = 200 
 
         # --- GET COLORS ---
         colors = get_color_cycle(5, cmap='tab20')
@@ -323,7 +318,7 @@ class VelocityPlotWidget(QWidget):
         axs[0].set_xlim(-window_kms, window_kms)
         axs[0].set_ylim(-0.1, 1.2) 
         self.canvas.draw()
-
+    
     def on_draw(self, event):
         if self.axes:
             self.bg_cache = self.canvas.copy_from_bbox(self.fig.bbox)
@@ -349,53 +344,37 @@ class VelocityPlotWidget(QWidget):
                 c_kms = 299792.458
                 z_new = (1 + self._current_z_sys) * (1 + v_click / c_kms) - 1
                 
+                # --- FIX: Detect Multiplet for New Component ---
+                # If clicked transition is part of a multiplet, add the MULTIPLET series name
+                series_to_add = trans_name
+                for group, lines in STANDARD_MULTIPLETS.items():
+                    if trans_name in lines:
+                        series_to_add = group # Use "CIV" instead of "CIV_1548"
+                        break
+                # ------------------------------------------------
+                
                 menu = QMenu(self)
-                add_act = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
+                add_act = QAction(f"Add {series_to_add} at z={z_new:.5f}", menu)
                 add_act.triggered.connect(lambda checked=False: self.inspector.main_window._on_recipe_requested(
                     "absorbers", "add_component", 
-                    {'series': trans_name, 'z': z_new}, {}
+                    {'series': series_to_add, 'z': z_new}, {}
                 ))
                 menu.addAction(add_act)
                 menu.exec(QCursor.pos())
 
 
 class SystemInspector(QWidget):
-    """
-    Floating window for inspecting systems.
-    """
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
         self.current_session = None
-        
         self.setWindowTitle("System Inspector")
         self.resize(1200, 800) 
         self.setWindowFlags(Qt.Window)
-        
         self._setup_ui()
         
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
-        
-        """
-        toolbar = QHBoxLayout()
-        self.btn_refit = QPushButton("Refit Selected")
-        self.btn_delete = QPushButton("Delete")
-        self.btn_freeze = QPushButton("Freeze") 
-        
-        self.btn_refit.setEnabled(False)
-        self.btn_delete.setEnabled(False)
-        self.btn_freeze.setEnabled(False)
-        
-        self.btn_refit.clicked.connect(self._on_refit_clicked)
-        self.btn_delete.clicked.connect(self._on_delete_clicked)
-        
-        toolbar.addWidget(self.btn_refit)
-        toolbar.addWidget(self.btn_freeze)
-        toolbar.addWidget(self.btn_delete)
-        toolbar.addStretch()
-        main_layout.addLayout(toolbar)
-        """
         
         splitter = QSplitter(Qt.Horizontal)
         
@@ -424,8 +403,7 @@ class SystemInspector(QWidget):
         main_layout.addWidget(splitter)
 
     def set_session(self, session):
-        """ Updates the inspector with a new session state. """
-        # 1. Store previous selection
+        # 1. Store previous UUID to restore selection
         previous_uuid = None
         indexes = self.table_view.selectionModel().selectedRows()
         if indexes:
@@ -445,17 +423,18 @@ class SystemInspector(QWidget):
             for r in range(self.table_model.rowCount()):
                 c = self.table_model.get_component_at(r)
                 if c.uuid == previous_uuid:
-                    # Found it! Re-select.
                     idx = self.table_model.index(r, 0)
-                    self.table_view.selectionModel().select(idx, QAbstractItemView.SelectRows | QAbstractItemView.Clear)
-                    # Force plot update (selection signal might not fire if row index is same?)
-                    # Ideally signal fires on change, but if data reset, we should manually update.
+                    # FIX: Force the table to acknowledge selection change
+                    self.table_view.selectionModel().setCurrentIndex(idx, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                    # Explicitly update plot (in case signal didn't fire if row # is same)
                     self.vel_plot.plot_system(session, c)
                     found = True
                     break
-            if not found:
-                self.vel_plot.fig.clear()
-                self.vel_plot.canvas.draw()
+            # Fallback: If not found, select the last one? (Good for "Add" workflow)
+            if not found and self.table_model.rowCount() > 0:
+                 idx = self.table_model.index(self.table_model.rowCount()-1, 0)
+                 self.table_view.selectionModel().setCurrentIndex(idx, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                 
         elif self.table_model.rowCount() == 0:
             self.vel_plot.fig.clear()
             self.vel_plot.canvas.draw()
@@ -463,14 +442,10 @@ class SystemInspector(QWidget):
     def _on_selection_changed(self, selected, deselected):
         indexes = self.table_view.selectionModel().selectedRows()
         if not indexes: return
-            
         row = indexes[0].row()
         comp = self.table_model.get_component_at(row)
-        
         if comp and self.current_session:
             self.vel_plot.plot_system(self.current_session, comp)
-            #self.btn_refit.setEnabled(True)
-            #self.btn_delete.setEnabled(True)
 
     def _forward_recipe_request(self, recipe_name, params):
         if self.main_window:

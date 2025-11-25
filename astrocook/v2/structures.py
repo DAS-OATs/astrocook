@@ -63,6 +63,7 @@ class SpectrumDataV2:
     # Session properties
     z_rf: float = 0.0 # Redshift del rest frame (was rf_z)
     z_em: float = 0.0 # Emission redshift
+    resol: float = 0.0 # Median resolution
 
     @classmethod
     def from_flat_data(cls, 

@@ -16,6 +16,7 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).",
         "params": [
             {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
+            {"name": "resol_fwhm", "type": float, "default": "_current_", "doc": "Instrumental Resolution FWHM (km/s). Set to 0 if 'resol' column exists."}
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -181,23 +182,24 @@ class RecipeEditV2:
 
         return final_expression, extra_vars
     
-    def set_properties(self, z_em: str = '0.0') -> Optional['SessionV2']:
+    def set_properties(self, z_em: str = '0.0', resol_fwhm: str = '0.0') -> Optional['SessionV2']:
         """
         API: Sets the core properties (z_em, z_rf) on the spectrum.
         """
         try:
             z_em_f = float(z_em)
+            resol_fwhm_f = float(resol_fwhm)
         except ValueError:
             logging.error(msg_param_fail)
             return 0
             
         try:
             # Check if values actually changed
-            if z_em_f == self._session.spec._data.z_em:
+            if z_em_f == self._session.spec._data.z_em and self._session.spec._data.resol:
                 # Instead of returning 0 (generic fail), raise a specific, friendly error
                 raise ValueError("No changes were made to the properties.")
                 
-            new_spec = self._session.spec.with_properties(z_em=z_em_f)
+            new_spec = self._session.spec.with_properties(z_em=z_em_f, resol_fwhm=resol_fwhm_f)
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
             # (Re-raising allows the worker to catch it and separate User vs System errors)

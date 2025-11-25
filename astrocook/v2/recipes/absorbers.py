@@ -53,7 +53,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z", "type": float, "default": 0.0, "doc": "Redshift"},
             {"name": "logN", "type": float, "default": 13.5, "doc": "Column Density (log)"},
             {"name": "b", "type": float, "default": 10.0, "doc": "Doppler parameter (km/s)"},
-            {"name": "btur", "type": float, "default": 0.0, "doc": "Turbulent broadening (km/s)"}
+            {"name": "btur", "type": float, "default": 0.0, "doc": "Turbulent broadening (km/s)"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max shift for initial fit (km/s)"}
         ],
         # We hide this from the menu because it's usually triggered by mouse, 
         # but keeping it in the schema allows scripting/logging.
@@ -86,7 +87,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
-            {"name": "max_nfev", "type": int, "default": 2000, "doc": "Max iterations"}
+            {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max velocity shift allowed (km/s)"}
         ],
         "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
@@ -220,18 +222,14 @@ class RecipeAbsorbersV2:
             return 0
         
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
-                      logN: str = '13.5', b: str = '10.0', btur: str = '0.0') -> 'SessionV2':
-        """
-        API: Recipe to add a single component (Manual).
-        Automatically fits the component after addition.
-        """
+                      logN: str = '13.5', b: str = '10.0', btur: str = '0.0',
+                      z_window_kms: str = '20.0') -> 'SessionV2':
         try:
             z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
-        except ValueError:
-            logging.error(msg_param_fail); return 0
-            
+            z_win_f = float(z_window_kms)
+        except ValueError: return 0
+        
         try:
-            # 1. Add the component
             if self._session.systs is None:
                 from ..structures import SystemListDataV2
                 from ..system_list import SystemListV2
@@ -240,24 +238,16 @@ class RecipeAbsorbersV2:
             else:
                 new_systs = self._session.systs.add_component(series, z_f, logN_f, b_f, btur_f)
             
-            # Get the added component's UUID (it's the last one)
             added_comp = new_systs.components[-1]
-            
-            # Update session with the unfitted component first (so fit_component can find it)
             temp_session = self._session.with_new_system_list(new_systs)
-            
-            # 2. Run Fit immediately
-            # We create a new recipe instance on the temp session to call fit
             temp_recipe = RecipeAbsorbersV2(temp_session)
             
             logging.info(f"Auto-fitting new component {added_comp.series}...")
-            final_session = temp_recipe.fit_component(added_comp.uuid)
-            
+            # Pass window
+            final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=str(z_win_f))
             return final_session
-            
         except Exception as e:
-            logging.error(f"Failed during add_component: {e}", exc_info=True)
-            return 0
+            logging.error(f"Failed add_component: {e}"); return 0
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
                          b: str = 'None', series: str = 'None') -> 'SessionV2':
@@ -280,25 +270,21 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed delete_component: {e}"); return 0
 
-    def fit_component(self, uuid: str, max_nfev: str = '2000') -> 'SessionV2':
+    def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0') -> 'SessionV2':
         try:
             max_nfev_i = int(max_nfev)
+            z_win_f = float(z_window_kms)
             if not self._session.systs: return 0
             
-            # 1. Configure Fluid Group
             self._session.systs.constraint_model.set_active_components([uuid])
-            
-            # 2. Initialize Fitter
             fitter = VoigtFitterV2(self._session.spec, self._session.systs)
             
-            # 3. Run Fit (Unpacking model_flux now)
-            new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i)
+            # Pass window to fit
+            new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
             
             if not res or not res.success:
                 logging.warning(f"Fit failed: {res.message if res else 'No result'}")
             
-            # 4. Update Spectrum Model
-            # We need to create a DataColumnV2 for the model and update the spectrum
             from ..structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
@@ -309,11 +295,9 @@ class RecipeAbsorbersV2:
                 unit=self._session.spec.y.unit,
                 description="Voigt Fit Model"
             )
-            
             new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
-            new_spec = self._session.spec.__class__(new_spec_data) # SpectrumV2(new_data)
+            new_spec = self._session.spec.__class__(new_spec_data) 
             
-            # 5. Return session with BOTH updated
             session_with_spec = self._session.with_new_spectrum(new_spec)
             return session_with_spec.with_new_system_list(new_systs)
             

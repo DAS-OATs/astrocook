@@ -331,10 +331,18 @@ class SpectrumV2:
             
         return v1_spec
     
-    def with_properties(self, z_em: float) -> 'SpectrumV2':
+    def with_properties(self, z_em: float, resol_fwhm: float = 0.0) -> 'SpectrumV2':
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
         """
+        print('here')
+        new_meta = deepcopy(self._data.meta)
+        
+        # Store resolution in metadata
+        if resol_fwhm > 0:
+            new_meta['resol_fwhm'] = resol_fwhm
+            logging.info(f"Set global resolution FWHM: {resol_fwhm} km/s")
+
         new_data = dataclasses.replace(self._data, z_em=z_em)
         new_history = self.history + [f"Set properties (z_em={z_em})"]
         return SpectrumV2(data=new_data, history=new_history)
