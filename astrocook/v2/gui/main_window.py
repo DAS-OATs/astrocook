@@ -32,6 +32,7 @@ from .recipe_dialog import RecipeDialog
 from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file, LogManager
 from ..structures import HistoryLogV2, V1LogArtifact
+from .system_inspector import SystemInspector
 from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe # Import recipe helpers
 from ...v1.gui_log import GUILog
 from ...v1.defaults import Defaults
@@ -545,6 +546,12 @@ class MainWindowV2(QMainWindow):
         view_menu.addAction(toggle_right_action)
         self.toggle_left_action = toggle_left_action
         self.toggle_right_action = toggle_right_action
+
+        view_menu.addSeparator()
+        self.view_system_inspector_action = QAction("View System &Inspector", self)
+        self.view_system_inspector_action.triggered.connect(self._on_view_system_inspector)
+        self.view_system_inspector_action.setEnabled(False) # Disabled by default
+        view_menu.addAction(self.view_system_inspector_action)
 
         view_menu.addSeparator()
         self.view_log_action = QAction("View Session &Log", self)
@@ -1269,6 +1276,10 @@ class MainWindowV2(QMainWindow):
         #    operation, resetting any corrupted state.
         self._update_ui_state(is_valid, is_startup=is_startup)
 
+        # Update System Inspector if open
+        if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible():
+            self.system_inspector.set_session(session_state_to_show)
+
         # Update List View Selection
         if set_current_list_item:
             list_index_to_select = target_list_index # Use specific index if provided (for branching/add)
@@ -1605,6 +1616,17 @@ class MainWindowV2(QMainWindow):
                                  f"Please check 'session_manager.py'.\nError: {e}")
         except Exception as e:
             logging.error(f"Error during in-place session rename: {e}")
+
+    def _on_view_system_inspector(self):
+        if not hasattr(self, 'system_inspector') or self.system_inspector is None:
+            self.system_inspector = SystemInspector(self)
+        
+        # Initialize with current session
+        if self.active_history:
+            self.system_inspector.set_session(self.active_history.current_state)
+            
+        self.system_inspector.show()
+        self.system_inspector.raise_()
 
     def _on_view_log(self):
         """
@@ -2326,6 +2348,7 @@ class MainWindowV2(QMainWindow):
         # ... (Enable/Disable View menu actions) ...
         if hasattr(self, 'toggle_left_action'): self.toggle_left_action.setEnabled(is_valid_session)
         if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
+        if hasattr(self, 'view_system_inspector_action'): self.view_system_inspector_action.setEnabled(is_valid_session)
         if hasattr(self, 'view_log_action'): self.view_log_action.setEnabled(is_valid_session)
         has_ids = False
         if is_valid_session and self.active_history.current_state.spec:
