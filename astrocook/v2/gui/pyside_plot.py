@@ -40,6 +40,59 @@ STRONG_EMISSION_LINES = {
     'CIII_1908', 'MgII_2796', 'H_b', 'OIII_5008', 'H_a'
 }
 
+# --- Centralized Plot Style Configuration ---
+PLOT_STYLE = {
+    'flux': {
+        'color_idx': 0,       # Index in color cycle (tab20)
+        'lw': 0.5,
+        'alpha': 1.0,
+        'label': 'Flux'
+    },
+    'model': {
+        'color_idx': 1,       # Index 2 is usually Orange/Red in tab20
+        'ls': '-',
+        'lw': 0.8,
+        'alpha': 1.0,
+        'label': 'Model'
+    },
+    'error': {
+        'color': '#aaaaaa',   # Grey shading
+        'lw': 0.3,
+        'alpha': 1.0
+    },
+    'continuum': {
+        'color': 'black',
+        'ls': '--',
+        'lw': 0.8
+    },
+    'cursor': {
+        'color_idx': 3,
+        'ls': '--',
+        'lw': 1.0,
+        'alpha': 0.8
+    },
+    'zero_line': {
+        'color': 'gray',
+        'ls': '-',
+        'lw': 0.5,
+        'alpha': 1.0
+    },
+    'center_line': {
+        'color': 'gray',
+        'ls': '-',
+        'lw': 0.5,
+        'alpha': 1.0
+    }
+}
+
+def get_style_color(key: str, cycle: list):
+    """Helper to get color from style dict or cycle."""
+    if 'color' in PLOT_STYLE[key]:
+        return PLOT_STYLE[key]['color']
+    else:
+        idx = PLOT_STYLE[key].get('color_idx', 0)
+        return cycle[idx % len(cycle)]
+
 # The x_plot it receives is *always* in the data's native units (nm)
 def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
     """Converts plot X coordinate (in data units, nm) back to redshift."""

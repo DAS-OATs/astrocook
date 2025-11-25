@@ -270,7 +270,7 @@ class MainWindowV2(QMainWindow):
         """Creates the right sidebar widget with plot toggles and cursor controls."""
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setContentsMargins(10, 10, 15, 10)
         sidebar_layout.setSpacing(15) # Increase spacing between sections
 
         # --- Plot Element Toggles ---

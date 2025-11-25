@@ -1,18 +1,19 @@
 import logging
 import numpy as np
-from typing import List, Optional
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QLabel, QHeaderView, QAbstractItemView, QFrame,
-    QScrollArea, QSizePolicy, QCheckBox
-)
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
+    QPushButton, QHeaderView, QAbstractItemView,
+    QScrollArea, QSizePolicy
+)
+from typing import List, Optional
 
 from ..structures import ComponentDataV2
 from ..atomic_data import STANDARD_MULTIPLETS, xem_d
+from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- 1. Table Configuration ---
 COL_MAP = {
@@ -79,43 +80,72 @@ class SystemTableModel(QAbstractTableModel):
 
 class VelocityPlotWidget(QWidget):
     """
-    A unified Matplotlib widget that handles multiple stacked panels
-    with shared X-axis, synchronization, and cursor tracking.
+    Unified Matplotlib widget for stacked velocity panels.
+    Features: Scrolling, Shared Zoom, Bottom Toolbar, Custom Z-Cursor.
     """
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(5) # 1. Add spacing between plot and toolbar
 
         # 1. Create Figure and Canvas
-        self.fig = Figure(figsize=(5, 8), dpi=100) # Default tall size
+        self.fig = Figure(figsize=(5, 8), dpi=100, constrained_layout=True) 
         self.canvas = FigureCanvasQTAgg(self.fig)
         
-        # 2. Add Toolbar
-        self.toolbar = NavigationToolbar2QT(self.canvas, self)
-        self.layout.addWidget(self.toolbar)
-        
-        # 3. Scroll Area for the Canvas (to handle many panels)
+        # 2. Setup Scrolling Logic
+        # We wrap the canvas in a plain QWidget. This is the standard Qt trick 
+        # to ensure QScrollArea respects minimum sizes correctly.
         self.scroll = QScrollArea()
-        self.scroll.setWidget(self.canvas)
-        self.scroll.setWidgetResizable(True)
-        self.layout.addWidget(self.scroll)
+        self.scroll.setWidgetResizable(True) 
+        
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(0,0,0,0)
+        self.content_layout.addWidget(self.canvas)
+        
+        self.scroll.setWidget(self.content_widget)
+        
+        # Add Scroll Area to Main Layout FIRST (Top) with stretch
+        self.layout.addWidget(self.scroll, 1) 
+
+        # 3. Toolbar (Bottom)
+        self.toolbar = AstrocookToolbar(self.canvas, self)
+        # Remove unwanted actions
+        for action in self.toolbar.actions():
+            if action.text() == 'Select':
+                self.toolbar.removeAction(action); break
+        
+        # Add Toolbar LAST (Bottom) with 0 stretch
+        self.layout.addWidget(self.toolbar, 0) 
 
         # Internal State
         self.axes = []
-        self.cursor_lines = [] # Vertical lines for cursor
-        self.bg_cache = None   # Background for blitting
+        self.cursor_lines = [] 
+        self.bg_cache = None
+        self._current_z_sys = 0.0 # Store for cursor calculation
         
-        # Connect events for cursor
+        # Events
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('draw_event', self.on_draw)
 
+    # --- Dummy interface for AstrocookToolbar ---
+    def toggle_region_selector(self): pass
+        
+    def plot_spectrum(self, session_state=None, force_autoscale=False):
+        if hasattr(self, '_last_session') and hasattr(self, '_last_component'):
+            self.plot_system(self._last_session, self._last_component)
+    # --------------------------------------------
+
     def plot_system(self, session, component: ComponentDataV2):
         """
-        Main plotting routine. Calculates velocity, normalizes flux, 
-        and sets up the subplot grid.
+        Main plotting routine.
         """
+        self._last_session = session
+        self._last_component = component
+
+        self._current_z_sys = component.z if component else 0.0
+
         self.fig.clear()
         self.axes = []
         self.cursor_lines = []
@@ -130,7 +160,6 @@ class VelocityPlotWidget(QWidget):
         if series_name in STANDARD_MULTIPLETS:
             transitions = STANDARD_MULTIPLETS[series_name]
         else:
-            # Check for single line fallback
             found = False
             for group, lines in STANDARD_MULTIPLETS.items():
                 if series_name in lines:
@@ -143,37 +172,60 @@ class VelocityPlotWidget(QWidget):
         num_plots = len(transitions)
         if num_plots == 0: return
 
-        # 2. Resize Canvas Height dynamically based on number of panels
-        # 150px per panel minimum
-        total_height = max(600, num_plots * 150) 
+        # 2. Resize Canvas Height
+        total_height = max(600, num_plots * 250) 
+        self.content_widget.setMinimumHeight(total_height)
         self.canvas.setMinimumHeight(total_height)
         
-        # 3. Create Subplots with Shared X and No Gap
-        # sharex=True enables synchronized zooming!
+        # 3. Create Subplots
         axs = self.fig.subplots(nrows=num_plots, ncols=1, sharex=True, sharey=True)
-        if num_plots == 1: axs = [axs] # Ensure list
-        
-        # Remove vertical space between plots
+        if num_plots == 1: axs = [axs] 
         self.fig.subplots_adjust(hspace=0, left=0.1, right=0.95, top=0.95, bottom=0.05)
 
         # 4. Prepare Data
-        # Check for Continuum
         has_cont = session.spec.cont is not None
         y_full = session.spec.y.value
+        dy_full = session.spec.dy.value if session.spec.dy is not None else np.zeros_like(y_full)
+        
         if has_cont:
             cont_full = session.spec.cont.value
-            # Normalize (avoid div by zero)
             y_norm = np.divide(y_full, cont_full, out=np.ones_like(y_full), where=cont_full!=0)
+            dy_norm = np.divide(dy_full, cont_full, out=np.zeros_like(dy_full), where=cont_full!=0)
         else:
-            y_norm = y_full # Fallback to raw if no cont
+            y_norm = y_full 
+            dy_norm = dy_full
             
         x_full = session.spec.x.value
         c_kms = 299792.458
-        window_kms = 600 # Default view window
+        window_kms = 1000 
+
+        # --- GET COLORS ---
+        colors = get_color_cycle(5, cmap='tab20')
+        
+        col_flux = get_style_color('flux', colors)
+        col_model = get_style_color('model', colors)
+        col_err = PLOT_STYLE['error']['color']
+        col_cursor = get_style_color('cursor', colors)
+        alpha_err = PLOT_STYLE['error']['alpha']
+        
+        style_flux = PLOT_STYLE['flux']
+        style_error = PLOT_STYLE['error']
+        style_model = PLOT_STYLE['model']
 
         # 5. Plot Loop
         for i, (ax, trans_name) in enumerate(zip(axs, transitions)):
             self.axes.append(ax)
+
+            # This closure captures 'self._current_z_sys'
+            def make_format_coord(current_z_sys):
+                def format_coord(x, y):
+                    # x is velocity in km/s
+                    # Formula: z_local = (1 + z_sys) * (1 + v/c) - 1
+                    z_val = (1 + current_z_sys) * (1 + x / c_kms) - 1
+                    return f"v={x:.1f} km/s, y={y:.2f}, z={z_val:.5f}"
+                return format_coord
+            
+            ax.format_coord = make_format_coord(self._current_z_sys)
             
             if trans_name not in xem_d:
                 ax.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center', transform=ax.transAxes)
@@ -184,21 +236,23 @@ class VelocityPlotWidget(QWidget):
             except: continue
 
             lambda_obs = lambda_0 * (1.0 + component.z)
-            
-            # Convert X to Velocity relative to this line
-            # Optimization: Only process data roughly in the window to save memory/time? 
-            # Actually, for zoom to work, we usually plot more. 
-            # Let's plot a generous chunk (e.g. +/- 20000 km/s) to allow panning.
-            
             v_full = c_kms * (x_full - lambda_obs) / lambda_obs
             
-            # Limit plotting range to avoid rendering millions of points
             mask = (v_full > -5000) & (v_full < 5000)
             v_plot = v_full[mask]
             y_plot = y_norm[mask]
+            dy_plot = dy_norm[mask]
             
-            # --- Draw Data (Step style like main plot) ---
-            ax.step(v_plot, y_plot, where='mid', color='black', lw=0.8)
+            # --- Draw Error Shading ---
+            ax.step(v_plot, y_plot - dy_plot, where='mid', 
+                    color=col_err, lw=style_error['lw'], alpha=alpha_err, label='Error')
+            ax.step(v_plot, y_plot + dy_plot, where='mid', 
+                    color=col_err, lw=style_error['lw'], alpha=alpha_err)
+
+            # --- Draw Flux (Step Style) ---
+            ax.step(v_plot, y_plot, where='mid', 
+                    color=col_flux, lw=style_flux['lw'], 
+                    label=style_flux['label'])
             
             # --- Draw Model ---
             if session.spec.model is not None:
@@ -207,59 +261,66 @@ class VelocityPlotWidget(QWidget):
                     mod_plot = np.divide(mod_full[mask], cont_full[mask], out=np.ones_like(y_plot), where=cont_full[mask]!=0)
                 else:
                     mod_plot = mod_full[mask]
-                ax.plot(v_plot, mod_plot, color='red', lw=1.2, alpha=0.8)
+                
+                ax.plot(v_plot, mod_plot, 
+                        color=col_model, lw=style_model['lw'], alpha=style_model['alpha'],
+                        label=style_model['label'])
 
             # --- Decorations ---
-            ax.axvline(0, color='blue', ls='--', alpha=0.4) # Center
-            ax.axhline(1.0, color='green', ls=':', alpha=0.5, lw=0.8) # Continuum level
-            ax.axhline(0.0, color='gray', lw=0.5) # Zero level
+            # Center Line
+            ax.axvline(0, color=PLOT_STYLE['center_line']['color'], 
+                       ls=PLOT_STYLE['center_line']['ls'], lw=PLOT_STYLE['center_line']['lw'], alpha=PLOT_STYLE['center_line']['alpha']) 
+            
+            # Continuum (1.0) and Zero (0.0)
+            # (Assuming normalized plot)
+            ax.axhline(1.0, color='green', ls=':', alpha=0.5, lw=0.8) 
+            ax.axhline(0.0, color=PLOT_STYLE['zero_line']['color'], 
+                       ls=PLOT_STYLE['zero_line']['ls'], lw=PLOT_STYLE['zero_line']['lw'], alpha=PLOT_STYLE['zero_line']['alpha']) 
 
-            # Add Label inside the plot (Top Right)
+            # Label
             ax.text(0.98, 0.85, trans_name, transform=ax.transAxes, 
                     ha='right', fontsize=10, fontweight='bold',
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
 
-            # Grid
             ax.grid(True, linestyle=':', alpha=0.6)
             
-            # Initialize Cursor Line (invisible at start)
-            line = ax.axvline(0, color='orange', ls='-', alpha=0.7, lw=1.0, visible=False)
+            # Cursor Line
+            line = ax.axvline(0, color=col_cursor, 
+                              ls=PLOT_STYLE['cursor']['ls'], 
+                              lw=PLOT_STYLE['cursor']['lw'], 
+                              alpha=PLOT_STYLE['cursor']['alpha'], 
+                              visible=False)
             self.cursor_lines.append(line)
 
         # 6. Final Formatting
         axs[-1].set_xlabel("Velocity (km/s)")
-        axs[len(axs)//2].set_ylabel("Normalized Flux") # Middle label
+        middle_idx = len(axs)//2
+        axs[middle_idx].set_ylabel("Normalized Flux")
         
-        # Set default view
         axs[0].set_xlim(-window_kms, window_kms)
-        axs[0].set_ylim(-0.1, 1.2) # Standard normalized view
+        axs[0].set_ylim(-0.1, 1.2) 
 
         self.canvas.draw()
 
-    # --- Cursor Logic (Blitting) ---
+    # --- Cursor Logic ---
     def on_draw(self, event):
-        """Capture background for fast cursor updates."""
         if self.axes:
             self.bg_cache = self.canvas.copy_from_bbox(self.fig.bbox)
             for line in self.cursor_lines:
                 line.set_visible(False)
 
     def on_mouse_move(self, event):
-        """Update crosshair cursor across all panels."""
         if not self.axes or not event.inaxes: return
         
-        # 1. Restore background
         if self.bg_cache:
             self.canvas.restore_region(self.bg_cache)
             
-        # 2. Move all lines to mouse X (Velocity)
         v_mouse = event.xdata
         for line in self.cursor_lines:
             line.set_xdata([v_mouse])
             line.set_visible(True)
             line.axes.draw_artist(line)
             
-        # 3. Blit
         self.canvas.blit(self.fig.bbox)
 
 
@@ -274,7 +335,7 @@ class SystemInspector(QWidget):
         self.current_session = None
         
         self.setWindowTitle("System Inspector")
-        self.resize(1200, 700) # Larger default size
+        self.resize(1200, 800) 
         self.setWindowFlags(Qt.Window)
         
         self._setup_ui()
@@ -288,7 +349,6 @@ class SystemInspector(QWidget):
         self.btn_delete = QPushButton("Delete")
         self.btn_freeze = QPushButton("Freeze") 
         
-        # Placeholders
         self.btn_refit.setEnabled(False)
         self.btn_delete.setEnabled(False)
         self.btn_freeze.setEnabled(False)
@@ -299,10 +359,10 @@ class SystemInspector(QWidget):
         toolbar.addStretch()
         main_layout.addLayout(toolbar)
         
-        # --- Main Splitter (Table Left, Plot Right) ---
+        # --- Main Splitter ---
         splitter = QSplitter(Qt.Horizontal)
         
-        # 1. Left: Table View
+        # 1. Table View
         self.table_view = QTableView()
         self.table_model = SystemTableModel()
         self.table_view.setModel(self.table_model)
@@ -310,22 +370,20 @@ class SystemInspector(QWidget):
         self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table_view.setAlternatingRowColors(True)
         
-        # Styling columns
         header = self.table_view.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents) # Compact columns
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
         
-        # Connect selection
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         
         splitter.addWidget(self.table_view)
         
-        # 2. Right: Velocity Plot Widget
+        # 2. Velocity Plot Widget
         self.vel_plot = VelocityPlotWidget()
         splitter.addWidget(self.vel_plot)
         
-        # Set splitter ratio (Table 40%, Plot 60% for better visibility)
-        splitter.setStretchFactor(0, 4)
-        splitter.setStretchFactor(1, 6)
+        # Set splitter ratio: Table 50%, Plot 50%
+        splitter.setStretchFactor(0, 5)
+        splitter.setStretchFactor(1, 5)
         
         main_layout.addWidget(splitter)
 
@@ -336,8 +394,6 @@ class SystemInspector(QWidget):
         else:
             self.table_model.update_data([])
             
-        # Clear plot if data reset
-        # (Optional: Keep last plot or clear? Clearing is safer)
         if self.table_model.rowCount() == 0:
             self.vel_plot.fig.clear()
             self.vel_plot.canvas.draw()
@@ -352,6 +408,5 @@ class SystemInspector(QWidget):
         if comp and self.current_session:
             self.vel_plot.plot_system(self.current_session, comp)
             
-            # Enable buttons
             self.btn_refit.setEnabled(True)
             self.btn_delete.setEnabled(True)
