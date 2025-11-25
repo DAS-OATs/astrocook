@@ -292,3 +292,46 @@ class SystemListV2:
         
         # 6. Return new API Object
         return SystemListV2(new_data_core)
+    
+    def get_component_by_uuid(self, uuid: str) -> Optional[ComponentDataV2]:
+        for c in self.components:
+            if c.uuid == uuid:
+                return c
+        return None
+
+    def update_component(self, uuid: str, **changes) -> 'SystemListV2':
+        """
+        API: Returns a new SystemListV2 with one component modified.
+        """
+        new_components = []
+        found = False
+        for c in self.components:
+            if c.uuid == uuid:
+                # Apply changes using dataclasses.replace
+                # We need to filter 'changes' to match field names (e.g. remove 'id')
+                valid_fields = {f.name for f in dataclasses.fields(c)}
+                filtered_changes = {k: v for k, v in changes.items() if k in valid_fields}
+                
+                new_c = dataclasses.replace(c, **filtered_changes)
+                new_components.append(new_c)
+                found = True
+            else:
+                new_components.append(c)
+        
+        if not found:
+            logging.warning(f"Component {uuid} not found for update.")
+            return self
+
+        # Return new container
+        new_data = dataclasses.replace(self._data, components=new_components)
+        return SystemListV2(new_data)
+
+    def delete_component(self, uuid: str) -> 'SystemListV2':
+        """
+        API: Returns a new SystemListV2 with the component removed.
+        """
+        new_components = [c for c in self.components if c.uuid != uuid]
+        
+        # Return new container
+        new_data = dataclasses.replace(self._data, components=new_components)
+        return SystemListV2(new_data)

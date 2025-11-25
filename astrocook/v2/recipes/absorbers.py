@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from ...v1.vars import xem_d
 from ..atomic_data import STANDARD_MULTIPLETS
+from ..fitting.voigt_fitter import VoigtFitterV2
 from ..spectrum import SpectrumV2
 from ..structures import HistoryLogV2
 try:
@@ -58,6 +59,38 @@ ABSORBERS_RECIPES_SCHEMAS = {
         # but keeping it in the schema allows scripting/logging.
         "url": "absorbers_cb.html#add_component" 
     },
+    "update_component": {
+        "brief": "Update component.",
+        "details": "Modify parameters of an existing component.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
+            {"name": "z", "type": float, "default": None, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": None, "doc": "logN"},
+            {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
+            {"name": "series", "type": str, "default": None, "doc": "Series"}
+        ],
+        "url": "absorbers_cb.html#update_component",
+        "gui_hidden": True # Usually triggered by table edit
+    },
+    "delete_component": {
+        "brief": "Delete component.",
+        "details": "Remove a component from the list.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True}
+        ],
+        "url": "absorbers_cb.html#delete_component",
+        "gui_hidden": True
+    },
+    "fit_component": {
+        "brief": "Fit component.",
+        "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
+            {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations"}
+        ],
+        "url": "absorbers_cb.html#fit_component",
+        "gui_hidden": True
+    }
 }
 
 class RecipeAbsorbersV2:
@@ -221,3 +254,48 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed during add_component: {e}", exc_info=True)
             return 0
+        
+    def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
+                         b: str = 'None', series: str = 'None') -> 'SessionV2':
+        try:
+            changes = {}
+            if z != 'None': changes['z'] = float(z)
+            if logN != 'None': changes['logN'] = float(logN)
+            if b != 'None': changes['b'] = float(b)
+            if series != 'None': changes['series'] = str(series)
+            
+            new_systs = self._session.systs.update_component(uuid, **changes)
+            return self._session.with_new_system_list(new_systs)
+        except Exception as e:
+            logging.error(f"Failed update_component: {e}"); return 0
+
+    def delete_component(self, uuid: str) -> 'SessionV2':
+        try:
+            new_systs = self._session.systs.delete_component(uuid)
+            return self._session.with_new_system_list(new_systs)
+        except Exception as e:
+            logging.error(f"Failed delete_component: {e}"); return 0
+
+    def fit_component(self, uuid: str, max_nfev: str = '200') -> 'SessionV2':
+        try:
+            max_nfev_i = int(max_nfev)
+            if not self._session.systs: return 0
+            
+            # 1. Configure "Fluid Group"
+            # Only the selected component is free (Target). All others are fixed (Background).
+            # TODO: Add neighbors to this list later.
+            self._session.systs.constraint_model.set_active_components([uuid])
+            
+            # 2. Initialize Fitter
+            fitter = VoigtFitterV2(self._session.spec, self._session.systs)
+            
+            # 3. Run Fit
+            new_systs, res = fitter.fit(max_nfev=max_nfev_i)
+            
+            if not res.success:
+                logging.warning(f"Fit failed: {res.message}")
+            
+            return self._session.with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed fit_component: {e}", exc_info=True); return 0

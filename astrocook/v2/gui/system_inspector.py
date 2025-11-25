@@ -3,11 +3,12 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize, Signal
+from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QHeaderView, QAbstractItemView,
-    QScrollArea, QSizePolicy
+    QPushButton, QHeaderView, QAbstractItemView, QMenu,
+    QScrollArea, QSizePolicy, QMessageBox
 )
 from typing import List, Optional
 
@@ -16,6 +17,7 @@ from ..atomic_data import STANDARD_MULTIPLETS, xem_d
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- 1. Table Configuration ---
+# Note: 'series' maps to "Transitions" in UI
 COL_MAP = {
     "ID": "id",
     "Transitions": "series", 
@@ -28,9 +30,17 @@ COL_MAP = {
     "db": "db"
 }
 COLUMNS = list(COL_MAP.keys())
+# Columns that are editable
+EDITABLE_COLS = {"Transitions", "z", "logN", "b", "btur"}
 
 class SystemTableModel(QAbstractTableModel):
-    """ Read-only model for ComponentDataV2. """
+    """ 
+    Model for ComponentDataV2. Supports editing by emitting signals.
+    """
+    # Signal: (action_name, params_dict)
+    # e.g. ("update_component", {"uuid": "...", "z": 2.5})
+    data_changed_request = Signal(str, dict)
+
     def __init__(self, components: List[ComponentDataV2] = None):
         super().__init__()
         self._components = components if components else []
@@ -46,6 +56,13 @@ class SystemTableModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return len(COLUMNS)
 
+    def flags(self, index):
+        base_flags = super().flags(index)
+        col_label = COLUMNS[index.column()]
+        if col_label in EDITABLE_COLS:
+            return base_flags | Qt.ItemIsEditable
+        return base_flags
+
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
@@ -54,9 +71,9 @@ class SystemTableModel(QAbstractTableModel):
         col_label = COLUMNS[index.column()]
         attr_name = COL_MAP[col_label] 
 
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole or role == Qt.EditRole:
             val = getattr(comp, attr_name, None)
-            if isinstance(val, float):
+            if role == Qt.DisplayRole and isinstance(val, float):
                 if attr_name == 'z': return f"{val:.6f}"
                 elif attr_name in ['logN', 'dlogN']: return f"{val:.3f}"
                 else: return f"{val:.2f}"
@@ -66,6 +83,38 @@ class SystemTableModel(QAbstractTableModel):
             return Qt.AlignCenter
 
         return None
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if not index.isValid() or role != Qt.EditRole:
+            return False
+
+        col_label = COLUMNS[index.column()]
+        attr_name = COL_MAP[col_label]
+        comp = self._components[index.row()]
+        
+        try:
+            # Validate input type
+            if attr_name in ['z', 'logN', 'b', 'btur']:
+                # Try float conversion
+                float_val = float(value)
+                params = {attr_name: float_val}
+            else:
+                # String input (series)
+                params = {attr_name: str(value)}
+                
+            # Add UUID for identification
+            params['uuid'] = comp.uuid
+            
+            logging.info(f"Table edit: Requesting update for {comp.uuid}: {params}")
+            
+            # Emit signal to controller (MainWindow)
+            self.data_changed_request.emit("update_component", params)
+            
+            return True # Accept the edit (UI updates temporarily)
+            
+        except ValueError:
+            logging.warning(f"Invalid input for {col_label}: {value}")
+            return False
 
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole:
@@ -79,6 +128,8 @@ class SystemTableModel(QAbstractTableModel):
         return None
 
 class VelocityPlotWidget(QWidget):
+    # ... (Same as previous version, omitted for brevity, DO NOT DELETE) ...
+    # ... (Copy the exact VelocityPlotWidget from the previous answer) ...
     """
     Unified Matplotlib widget for stacked velocity panels.
     Features: Scrolling, Shared Zoom, Bottom Toolbar, Custom Z-Cursor.
@@ -87,15 +138,12 @@ class VelocityPlotWidget(QWidget):
         super().__init__()
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
-        self.layout.setSpacing(5) # 1. Add spacing between plot and toolbar
+        self.layout.setSpacing(9) 
 
-        # 1. Create Figure and Canvas
-        self.fig = Figure(figsize=(5, 8), dpi=100, constrained_layout=True) 
+        self.fig = Figure(figsize=(5, 8), dpi=100) 
         self.canvas = FigureCanvasQTAgg(self.fig)
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
-        # 2. Setup Scrolling Logic
-        # We wrap the canvas in a plain QWidget. This is the standard Qt trick 
-        # to ensure QScrollArea respects minimum sizes correctly.
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True) 
         
@@ -105,37 +153,27 @@ class VelocityPlotWidget(QWidget):
         self.content_layout.addWidget(self.canvas)
         
         self.scroll.setWidget(self.content_widget)
-        
-        # Add Scroll Area to Main Layout FIRST (Top) with stretch
         self.layout.addWidget(self.scroll, 1) 
 
-        # 3. Toolbar (Bottom)
         self.toolbar = AstrocookToolbar(self.canvas, self)
-        # Remove unwanted actions
         for action in self.toolbar.actions():
             if action.text() == 'Select':
                 self.toolbar.removeAction(action); break
-        
-        # Add Toolbar LAST (Bottom) with 0 stretch
         self.layout.addWidget(self.toolbar, 0) 
 
-        # Internal State
         self.axes = []
         self.cursor_lines = [] 
         self.bg_cache = None
-        self._current_z_sys = 0.0 # Store for cursor calculation
+        self._current_z_sys = 0.0 
         
-        # Events
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('draw_event', self.on_draw)
 
-    # --- Dummy interface for AstrocookToolbar ---
     def toggle_region_selector(self): pass
         
     def plot_spectrum(self, session_state=None, force_autoscale=False):
         if hasattr(self, '_last_session') and hasattr(self, '_last_component'):
             self.plot_system(self._last_session, self._last_component)
-    # --------------------------------------------
 
     def plot_system(self, session, component: ComponentDataV2):
         """
@@ -302,25 +340,19 @@ class VelocityPlotWidget(QWidget):
 
         self.canvas.draw()
 
-    # --- Cursor Logic ---
     def on_draw(self, event):
         if self.axes:
             self.bg_cache = self.canvas.copy_from_bbox(self.fig.bbox)
-            for line in self.cursor_lines:
-                line.set_visible(False)
+            for line in self.cursor_lines: line.set_visible(False)
 
     def on_mouse_move(self, event):
         if not self.axes or not event.inaxes: return
-        
-        if self.bg_cache:
-            self.canvas.restore_region(self.bg_cache)
-            
+        if self.bg_cache: self.canvas.restore_region(self.bg_cache)
         v_mouse = event.xdata
         for line in self.cursor_lines:
             line.set_xdata([v_mouse])
             line.set_visible(True)
             line.axes.draw_artist(line)
-            
         self.canvas.blit(self.fig.bbox)
 
 
@@ -353,6 +385,10 @@ class SystemInspector(QWidget):
         self.btn_delete.setEnabled(False)
         self.btn_freeze.setEnabled(False)
         
+        # Connect Toolbar Buttons
+        self.btn_refit.clicked.connect(self._on_refit_clicked)
+        self.btn_delete.clicked.connect(self._on_delete_clicked)
+        
         toolbar.addWidget(self.btn_refit)
         toolbar.addWidget(self.btn_freeze)
         toolbar.addWidget(self.btn_delete)
@@ -369,11 +405,18 @@ class SystemInspector(QWidget):
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table_view.setAlternatingRowColors(True)
+        self.table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         
         header = self.table_view.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         
+        # Connect signals
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
+        self.table_view.customContextMenuRequested.connect(self._on_context_menu)
+        
+        # Connect Model Signal (Edit -> Recipe)
+        # We forward this to MainWindow's recipe runner
+        self.table_model.data_changed_request.connect(self._forward_recipe_request)
         
         splitter.addWidget(self.table_view)
         
@@ -381,10 +424,8 @@ class SystemInspector(QWidget):
         self.vel_plot = VelocityPlotWidget()
         splitter.addWidget(self.vel_plot)
         
-        # Set splitter ratio: Table 50%, Plot 50%
         splitter.setStretchFactor(0, 5)
         splitter.setStretchFactor(1, 5)
-        
         main_layout.addWidget(splitter)
 
     def set_session(self, session):
@@ -407,6 +448,59 @@ class SystemInspector(QWidget):
         
         if comp and self.current_session:
             self.vel_plot.plot_system(self.current_session, comp)
-            
             self.btn_refit.setEnabled(True)
             self.btn_delete.setEnabled(True)
+
+    # --- Interaction Slots ---
+
+    def _forward_recipe_request(self, recipe_name, params):
+        """Forward table edit signals to MainWindow."""
+        if self.main_window:
+            self.main_window._on_recipe_requested("absorbers", recipe_name, params, {})
+
+    def _on_context_menu(self, pos):
+        """Handle Right-Click on Table."""
+        index = self.table_view.indexAt(pos)
+        if not index.isValid(): return
+        
+        menu = QMenu(self)
+        refit_act = QAction("Refit Selected", self)
+        freeze_act = QAction("Freeze (Not Implemented)", self); freeze_act.setEnabled(False)
+        delete_act = QAction("Delete", self)
+        
+        refit_act.triggered.connect(self._on_refit_clicked)
+        delete_act.triggered.connect(self._on_delete_clicked)
+        
+        menu.addAction(refit_act)
+        menu.addAction(freeze_act)
+        menu.addSeparator()
+        menu.addAction(delete_act)
+        
+        menu.exec(self.table_view.mapToGlobal(pos))
+
+    def _on_delete_clicked(self):
+        """Trigger delete recipe for selected row."""
+        indexes = self.table_view.selectionModel().selectedRows()
+        if not indexes: return
+        row = indexes[0].row()
+        comp = self.table_model.get_component_at(row)
+        
+        if comp and self.main_window:
+            confirm = QMessageBox.question(self, "Delete Component", 
+                                           f"Delete component {comp.series} at z={comp.z:.4f}?",
+                                           QMessageBox.Yes | QMessageBox.No)
+            if confirm == QMessageBox.Yes:
+                self.main_window._on_recipe_requested(
+                    "absorbers", "delete_component", {"uuid": comp.uuid}, {})
+
+    def _on_refit_clicked(self):
+        """Trigger fit recipe for selected row."""
+        indexes = self.table_view.selectionModel().selectedRows()
+        if not indexes: return
+        row = indexes[0].row()
+        comp = self.table_model.get_component_at(row)
+        
+        if comp and self.main_window:
+            logging.info(f"Requesting fit for {comp.uuid}")
+            self.main_window._on_recipe_requested(
+                "absorbers", "fit_component", {"uuid": comp.uuid}, {})

@@ -376,6 +376,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         if not self.plot_widget or not self.plot_widget.main_window: return
         main_win = self.plot_widget.main_window
 
+        # 1. Region Selection (Left Click)
         if (event.button == 1 and event.inaxes == self.axes and 
             self.plot_widget._is_selecting_region):
             
@@ -384,56 +385,61 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.selection_artist = self.axes.axvspan(
                 event.xdata, event.xdata, color='orange', alpha=0.3
             )
-            self.draw_idle() # Force a draw to show it starts
-            return # Don't do other click actions
+            self.draw_idle() 
+            return 
 
-        # Only handle Right-Click (Button 3) inside the axes
+        # 2. Context Menu (Right Click)
         if event.button == 3 and event.inaxes == self.axes:
             
             menu = QMenu(self)
             
-            # --- Feature 1: Set z_em (only if cursor is active) ---
-            if main_win.cursor_show_checkbox.isChecked():
-                new_z = self.plot_widget.calculate_z_from_x(event.xdata)
-                if new_z is not None:
-                    # Create the action with a clear label
-                    z_action = QAction(f"Set emission redshift to z={new_z:.5f}", menu)
-                    z_action.triggered.connect(lambda: main_win._on_recipe_requested(
-                        category="edit",
-                        recipe_name="set_properties",
-                        params={"z_em": str(new_z)},
-                        alias_map={}
-                    ))
-                    menu.addAction(z_action)
-
-            # --- (Future features will go here: Fit Line, Mask Region, etc.) ---
-
-            # Show the menu if it has any actions
-            if not menu.isEmpty():
-                # Use QCursor.pos() to show menu at the global mouse coordinates
-                menu.exec(QCursor.pos())
-
-        # --- Shift + Left Click: Add Component ---
-        if (event.button == 1 and event.inaxes == self.axes and 
-            event.key == 'shift' and 
-            main_win.cursor_show_checkbox.isChecked()): 
+            # Calculate Z from X (if possible)
+            # We use the helper logic to get z based on the current cursor series (if active)
+            # or raw wavelength if not.
             
-            new_z = self.plot_widget.calculate_z_from_x(event.xdata)
+            # A. Set Emission Redshift (Standard feature)
+            # For z_em, we usually assume the click is on Ly-alpha or H-alpha, 
+            # but for now let's just use the raw cursor Z if valid, 
+            # or perhaps just offer to set z_em based on Ly_a at this position?
+            # The previous logic relied on 'calculate_z_from_x' which uses the active cursor series.
             
-            if new_z is not None:
+            z_click = self.plot_widget.calculate_z_from_x(event.xdata)
+            
+            if z_click is not None and main_win.cursor_show_checkbox.isChecked():
+                
+                # --- OPTION 1: Add Component (The requested feature) ---
                 series_str = main_win.cursor_series_input.text()
                 
-                logging.info(f"Shift+Click: Requesting add_component: {series_str} at z={new_z:.5f}")
-                
-                # Trigger the recipe via MainWindow
-                # Note: category is 'absorbers' now
-                main_win._on_recipe_requested(
-                    category="absorbers", 
+                add_action = QAction(f"Add {series_str} at z={z_click:.5f}", menu)
+                # We need to capture values in default args to avoid lambda scope issues
+                add_action.triggered.connect(lambda checked=False, z=z_click, s=series_str: main_win._on_recipe_requested(
+                    category="absorbers",
                     recipe_name="add_component",
-                    params={'series': series_str, 'z': new_z},
+                    params={'series': s, 'z': z},
                     alias_map={}
-                )
-            return
+                ))
+                menu.addAction(add_action)
+                
+                menu.addSeparator()
+
+                # --- OPTION 2: Set z_em ---
+                z_em_action = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
+                z_em_action.triggered.connect(lambda checked=False, z=z_click: main_win._on_recipe_requested(
+                    category="edit",
+                    recipe_name="set_properties",
+                    params={"z_em": str(z)},
+                    alias_map={}
+                ))
+                menu.addAction(z_em_action)
+
+            else:
+                # Fallback if cursor is NOT active:
+                # We can still calculate z assuming the click was on Ly_a (common use case)
+                # or just show a generic message.
+                menu.addAction("Enable 'Show Cursor Lines' to add components").setEnabled(False)
+
+            if not menu.isEmpty():
+                menu.exec(QCursor.pos())
 
     def on_release(self, event):
         """Handle mouse button release events."""
