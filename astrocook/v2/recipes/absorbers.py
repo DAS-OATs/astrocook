@@ -28,9 +28,21 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
             {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
             {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."},
-            {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."}
+            {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."},
+            {"name": "auto_populate", "type": bool, "default": True, "doc": "Automatically add identified components to the system list?"}
         ],
         "url": "absorbers_cb.html#identify_lines"
+    },
+    "populate_from_identification": {
+        "brief": "Populate components from identification.",
+        "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
+        "params": [
+            {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column containing region IDs."},
+            {"name": "series_map_json", "type": str, "default": "", "doc": "JSON mapping Region ID -> Series."},
+            {"name": "z_map_json", "type": str, "default": "", "doc": "JSON mapping Region ID -> Redshift."}
+        ],
+        "url": "absorbers_cb.html#populate_from_identification",
+        "gui_hidden": True
     },
     "add_component": {
         "brief": "Add a single component.",
@@ -60,7 +72,8 @@ class RecipeAbsorbersV2:
                        merge_dv: str = '10.0',
                        score_threshold: str = '0.5',
                        bypass_scoring: str = 'False',
-                       debug_rating: str = 'False') -> 'SessionV2':
+                       debug_rating: str = 'False',
+                       auto_populate: str = 'True') -> 'SessionV2':
         """
         API: Orchestrator recipe to identify absorption lines.
         (Thin wrapper for SpectrumV2.identify_lines)
@@ -71,6 +84,7 @@ class RecipeAbsorbersV2:
             score_thresh_f = float(score_threshold)
             bypass_scoring_b = bypass_scoring.lower() == 'true'
             debug_rating_b = debug_rating.lower() == 'true'
+            auto_populate_b = str(auto_populate).lower() == 'true'
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
@@ -111,38 +125,41 @@ class RecipeAbsorbersV2:
                 # Return the spectrum-only update
                 return self._session.with_new_spectrum(new_spec_v2)
 
-            # 4. Call the SystemList API to add components
-            #    This uses the *original* session's system list as the base.
-            new_systs_v2 = self._session.systs.add_components_from_regions(
-                spec=new_spec_v2, # Pass the *new* spectrum for its region map
-                region_id_col='abs_ids',
-                series_map=series_map,
-                z_map=z_map
-            )
+            if not auto_populate_b:
+                logging.info("identify_lines: Auto-populate disabled. Returning spectrum with suggestions.")
+                return self._session.with_new_spectrum(new_spec_v2)
 
-            # 5. Return a *new* session with *both* the new spectrum and new system list
-            # We must use the base .with_new_spectrum() and .with_new_system_list()
-            # to create the final, fully updated SessionV2 state.
+            # 3. LINKAGE: Call populate_from_identification
+            temp_session = self._session.with_new_spectrum(new_spec_v2)
             
-            # Start from the original session
-            session_with_new_spec = self._session.with_new_spectrum(new_spec_v2)
-            final_session = session_with_new_spec.with_new_system_list(new_systs_v2)
+            # Ensure systs is initialized
+            if temp_session.systs is None:
+                from ..structures import SystemListDataV2
+                from ..system_list import SystemListV2
+                temp_session = temp_session.with_new_system_list(SystemListV2(SystemListDataV2()))
+
+            temp_recipe = RecipeAbsorbersV2(temp_session)
+            
+            final_session = temp_recipe.populate_from_identification(
+                region_id_col='abs_ids',
+                series_map_json=series_map_json,
+                z_map_json=z_map_json
+            )
             
             return final_session
         except Exception as e:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
             return 0
     
-    def add_components(self,
+    def populate_from_identification(self,
                        region_id_col: str = 'abs_ids',
                        series_map_json: str = None,
                        z_map_json: str = None) -> 'SessionV2':
         """
-        API: Populates the SystemList with components found by identify_lines.
-        (This is called internally by the identify_lines orchestrator)
+        API: Populates the SystemList using results from identification.
         """
         if not series_map_json or not z_map_json:
-            logging.error("add_components: Missing series_map or z_map.")
+            logging.error("populate_from_identification: Missing maps.")
             return 0
             
         try:
@@ -154,7 +171,7 @@ class RecipeAbsorbersV2:
             z_map = {int(k): v for k, v in z_map.items()}
 
         except Exception as e:
-            logging.error(f"add_components: Failed to deserialize maps: {e}")
+            logging.error(f"populate_from_identification: Failed to deserialize maps: {e}")
             return 0
 
         try:
@@ -166,7 +183,7 @@ class RecipeAbsorbersV2:
             )
             return self._session.with_new_system_list(new_systs_v2)
         except Exception as e:
-            logging.error(f"Failed during add_components: {e}", exc_info=True)
+            logging.error(f"Failed during populate_from_identification: {e}", exc_info=True)
             return 0
         
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
