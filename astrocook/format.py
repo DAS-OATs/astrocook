@@ -379,8 +379,12 @@ class Format(object):
         dy = np.array([])
         for hdu in hdul[1:-1]:
             x = np.append(x, hdu.data['OPT_WAVE'])
-            y = np.append(y, hdu.data['OPT_COUNTS'])
-            dy = np.append(dy, hdu.data['OPT_COUNTS_SIG'])
+            if 'OPT_FLAM' in hdu.data.colnames:
+                y = np.append(y, hdu.data['OPT_FLAM'])
+                dy = np.append(dy, hdu.data['OPT_FLAM_SIG'])
+            else:
+                y = np.append(y, hdu.data['OPT_COUNTS'])
+                dy = np.append(dy, hdu.data['OPT_COUNTS_SIG'])
 
         x = x/10
         xmin, xmax = self._create_xmin_xmax(x)
