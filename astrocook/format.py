@@ -379,7 +379,8 @@ class Format(object):
         dy = np.array([])
         for hdu in hdul[1:-1]:
             x = np.append(x, hdu.data['OPT_WAVE'])
-            if 'OPT_FLAM' in hdu.data.colnames:
+            t = Table(hdu.data)
+            if 'OPT_FLAM' in t.colnames:
                 y = np.append(y, hdu.data['OPT_FLAM'])
                 dy = np.append(dy, hdu.data['OPT_FLAM_SIG'])
             else:
