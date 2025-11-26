@@ -68,7 +68,7 @@ class VoigtModelConstraintV2:
                         dz = abs(comp.z - z_target)
                         dv = c_kms * dz / (1 + z_target)
                         
-                        if dv < 150.0: 
+                        if dv < 30.0: 
                             is_neighbor = True
                             break
                     
