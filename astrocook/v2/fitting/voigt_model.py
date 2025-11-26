@@ -5,6 +5,7 @@ import re
 from typing import List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
 
 from ..structures import ComponentDataV2, ParameterConstraintV2 
+
 if TYPE_CHECKING:
     from ..system_list import SystemListV2
 
@@ -39,7 +40,7 @@ class VoigtModelConstraintV2:
         """
         Defines the "Fluid Group". 
         1. Starts with target_uuids.
-        2. AUTO-ADDS neighbors within +/- 300 km/s.
+        2. AUTO-ADDS neighbors within +/- 150 km/s.
         3. Only these components will be FREE.
         """
         if target_uuids is None:
@@ -48,11 +49,6 @@ class VoigtModelConstraintV2:
             # 1. Start with explicit targets
             active_set = set(target_uuids)
             
-            # 2. Find Neighbors (Simple Z-distance check)
-            # Threshold: 500 km/s (approx dz = 0.005 at z=2)
-            # Better: Use explicit velocity conversion logic if possible, 
-            # but for selection, a rough z-diff is fast and sufficient.
-            # dz = (1+z) * dv/c
             c_kms = 299792.458
             
             # Get Z of targets
@@ -71,7 +67,8 @@ class VoigtModelConstraintV2:
                     for z_target in target_zs:
                         dz = abs(comp.z - z_target)
                         dv = c_kms * dz / (1 + z_target)
-                        if dv < 50.0: # Neighbor Threshold
+                        
+                        if dv < 150.0: 
                             is_neighbor = True
                             break
                     

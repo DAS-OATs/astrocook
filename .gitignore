@@ -29,3 +29,4 @@ tests/data/*.acs2
 tests/data/*.acs
 astrocook.egg-info/requires.txt
 tests/data/J0103-1305_red-side_meta.json
+tests/data/J0103-1305_metallines_lya_new_meta.json
