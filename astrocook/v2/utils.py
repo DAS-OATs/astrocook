@@ -1,5 +1,7 @@
 from copy import deepcopy
 import importlib
+from pathlib import Path
+import sys
 from typing import Any, List, Dict
 
 # List of recipes considered 'Branching' or 'Destructive' in Astrocook V2.
@@ -70,3 +72,12 @@ def is_branching_recipe(recipe_name: str) -> bool:
     (Branching/Destructive operation) or update the current session (Linear operation).
     """
     return recipe_name in BRANCHING_RECIPES
+
+def resource_path(relative_path):
+    if getattr(sys, 'frozen', False):
+        base_path = Path(sys._MEIPASS)
+    else:
+        # Adatta questo path in base a dove si trova launch_pyside_app.py
+        # Se è nella root del progetto:
+        base_path = Path(__file__).resolve().parent.parent.parent
+    return str(base_path / relative_path)

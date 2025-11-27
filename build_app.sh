@@ -4,7 +4,7 @@ pyinstaller --clean \
             --noconfirm \
             --name="Astrocook" \
             --windowed \
-            --icon="logo/icon_3d.icns" \
+            --icon="assets/icon_3d_HR.icns" \
             --paths="." \
             --collect-all asdf \
             --collect-all scienceplots \
