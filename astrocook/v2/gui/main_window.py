@@ -107,11 +107,22 @@ class MainWindowV2(QMainWindow):
 
         self._last_attempted_recipe: Optional[dict] = None
 
-        self.setGeometry(100, 100, 450, 150) # Initial small size
-        screen_geometry = QApplication.primaryScreen().geometry()
-        x = (screen_geometry.width() - self.width()) // 2
-        y = (screen_geometry.height() - self.height()) // 2
-        self.move(x, y)
+        #self.setGeometry(100, 100, 450, 150) # Initial small size
+        self.resize(1400,900)
+        # Centratura robusta (Fix per macOS)
+        screen = QApplication.primaryScreen()
+        if screen:
+            # geometry() include la barra dei menu, availableGeometry() no (meglio!)
+            screen_rect = screen.availableGeometry() 
+            
+            # Prendiamo il rettangolo della nostra finestra
+            window_rect = self.frameGeometry()
+            
+            # Spostiamo il centro del rettangolo finestra al centro dello schermo
+            window_rect.moveCenter(screen_rect.center())
+            
+            # Muoviamo la finestra vera e propria nella nuova posizione calcolata
+            self.move(window_rect.topLeft())
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
@@ -2391,6 +2402,7 @@ class MainWindowV2(QMainWindow):
             if self.central_stack.currentIndex() != 0: # If switching from empty
                 self.central_stack.setCurrentIndex(0)
             
+            """
             # 2. Resize logic (DE-NESTED from the stack index check)
             # Check if this is the very first session being loaded
             was_previously_empty = len(self.session_histories) <= 1
@@ -2402,6 +2414,7 @@ class MainWindowV2(QMainWindow):
                 x = (screen_geometry.width() - self.width()) // 2
                 y = (screen_geometry.height() - self.height()) // 2
                 self.move(x, y)
+            """
 
             # Show buttons
             self.session_collapse_button.setVisible(True)
