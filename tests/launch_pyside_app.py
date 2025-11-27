@@ -7,7 +7,7 @@ import time
 # PySide6 Imports
 from PySide6.QtWidgets import QApplication, QSplashScreen
 from PySide6.QtGui import QPixmap, QColor, QPainter
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent, Signal
 
 # Astrocook Imports
 # Assuming your session and GUI modules are correctly set up on the path
@@ -16,7 +16,7 @@ from astrocook.v2.gui.main_window import MainWindowV2
 from astrocook.v2.utils import resource_path
 
 
-# --- Minimal V1/V2 Context Mocks ---
+# Minimal V1/V2 Context Mocks
 class MockGUI:
     """A minimal mock for the V1 GUI object to satisfy V2 session initialization."""
     def __init__(self):
@@ -26,8 +26,30 @@ class MockGUI:
     def _flags_extr(self, flag):
         return None
 
-# ----------------------------------------------------------------------
+# Class to handle macOS file open events
+class AstroCookApp(QApplication):
+    # Segnale emesso quando macOS chiede di aprire un file a runtime
+    file_open_requested = Signal(str)
 
+    def __init__(self, argv):
+        super().__init__(argv)
+        self.startup_file = None # Per salvare il file se arriva durante l'avvio
+
+    def event(self, event):
+        # Intercettiamo l'evento specifico di macOS
+        if event.type() == QEvent.FileOpen:
+            file_path = event.file()
+            logging.info(f"MacOS FileOpen Event received: {file_path}")
+            
+            # Se la main window non è ancora pronta, salviamo il path per dopo
+            self.startup_file = file_path
+            
+            # Emettiamo comunque il segnale (utile se l'app è già aperta)
+            self.file_open_requested.emit(file_path)
+            return True
+            
+        return super().event(event)
+    
 def main():
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(module)s: %(message)s')
     
@@ -40,7 +62,7 @@ def main():
     # 2. Initialize PySide Application (Must be first for Splash Screen)
     app = QApplication.instance()
     if not app:
-        app = QApplication(sys.argv)
+        app = AstroCookApp(sys.argv)
 
     # --- 3. SPLASH SCREEN SETUP ---
     try:
@@ -50,11 +72,12 @@ def main():
 
         if not logo_pixmap.isNull():
             # CONFIGURAZIONE MARGINI
-            padding = 30  # 30px di spazio extra su ogni lato
+            hpadding = 80
+            vpadding = 40
             
             # Calcoliamo le nuove dimensioni totali
-            new_width = logo_pixmap.width() + (padding * 2)
-            new_height = logo_pixmap.height() + (padding * 2)
+            new_width = logo_pixmap.width() + (hpadding * 2)
+            new_height = logo_pixmap.height() + (vpadding * 2)
             
             # A. Creiamo una "tela" più grande
             splash_pixmap = QPixmap(new_width, new_height)
@@ -65,7 +88,7 @@ def main():
             painter.setRenderHint(QPainter.Antialiasing)
 
             # Sfondo semitrasparente (Alpha 100 come richiesto)
-            bg_color = QColor(255, 255, 255, 100) 
+            bg_color = QColor(255, 255, 255, 150) 
             
             painter.setBrush(bg_color)
             painter.setPen(Qt.NoPen) 
@@ -76,7 +99,7 @@ def main():
 
             # --- DISEGNO LOGO CENTRATO ---
             # Disegniamo il logo spostato di (padding, padding)
-            painter.drawPixmap(padding, padding, logo_pixmap)
+            painter.drawPixmap(hpadding, vpadding, logo_pixmap)
             
             painter.end() 
 
@@ -99,42 +122,34 @@ def main():
     # --- 4. Load Session Logic ---
     mock_gui = MockGUI()
     initial_session = None # Default is None (triggers Empty View in MainWindow)
+    file_to_load = None
 
+    # A. Priorità: Argomento da riga di comando (Windows/Linux/Debug)
     if args.session_file:
-        file_path = os.path.realpath(args.session_file)
-        if os.path.exists(file_path):
-            logging.info(f"Attempting to load session from: {file_path}")
-            
-            # Aggiorna messaggio sullo splash
-            if splash:
-                splash.showMessage(f"Loading {os.path.basename(file_path)}...", 
-                                   Qt.AlignBottom | Qt.AlignCenter, Qt.white)
-                app.processEvents()
+        file_to_load = os.path.realpath(args.session_file)
+    
+    # B. Se vuoto, controlliamo se macOS ha inviato un evento durante lo splash
+    elif hasattr(app, 'startup_file') and app.startup_file:
+        file_to_load = app.startup_file
 
-            try:
-                session_name = os.path.splitext(os.path.basename(file_path))[0]
-                session = load_session_from_file(
-                    archive_path=file_path,
-                    name=session_name,
-                    format_name='generic_spectrum', 
-                    gui_context=mock_gui
-                )
-                if session != 0:
-                    initial_session = session
-                else:
-                    logging.error(f"Failed to load initial session from {file_path}.")
-            except Exception as e:
-                logging.error(f"Failed to load session file {file_path}: {e}", exc_info=True)
-                initial_session = None 
-        else:
-            logging.warning(f"File not found: {args.session_file}. Starting empty.")
+    # Caricamento effettivo
+    if file_to_load and os.path.exists(file_to_load):
+        if splash:
+            splash.showMessage(f"Loading {os.path.basename(file_to_load)}...", 
+                               Qt.AlignBottom | Qt.AlignCenter, Qt.white)
+            app.processEvents()
+        try:
+            name = os.path.splitext(os.path.basename(file_to_load))[0]
+            initial_session = load_session_from_file(file_to_load, name, mock_gui, 'generic_spectrum')
+        except Exception as e:
+            logging.error(f"Error loading {file_to_load}: {e}")
 
-    # NOTA: Se initial_session è None, passiamo None alla MainWindow.
-    # La MainWindowV2 è programmata per mostrare la schermata di benvenuto in questo caso.
-
-    # 5. Initialize the Main Window
-    # initial_log_object is passed as None for now based on previous context
+    # 3. AVVIO GUI
     main_window = MainWindowV2(initial_session, None)
+
+    # Connecting the signal to open files when requested by macOS
+    app.file_open_requested.connect(lambda path: main_window.open_session_from_path(path))
+
     main_window.show()
 
     # 6. Close Splash Screen

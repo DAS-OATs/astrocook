@@ -33,4 +33,6 @@ tests/data/J0103-1305_metallines_lya_new_meta.json
 build/
 dist/
 assets/full_set/
-*.spec
+containers/
+*.key
+*.dmg

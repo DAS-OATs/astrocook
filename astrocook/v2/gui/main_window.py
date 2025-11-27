@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     QParallelAnimationGroup,
     QSize, QStringListModel, QThreadPool, QTimer
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence 
+from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
@@ -33,7 +33,7 @@ from ..session_manager import SessionHistory
 from ..session import SessionV2, load_session_from_file, LogManager
 from ..structures import HistoryLogV2, V1LogArtifact
 from .system_inspector import SystemInspector
-from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe # Import recipe helpers
+from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe, resource_path # Import recipe helpers
 from ...v1.gui_log import GUILog
 from ...v1.defaults import Defaults
 try:
@@ -123,6 +123,14 @@ class MainWindowV2(QMainWindow):
             
             # Muoviamo la finestra vera e propria nella nuova posizione calcolata
             self.move(window_rect.topLeft())
+
+        try:
+            # Usa pure logo_3d.png per ora. 
+            # Se in futuro crei un 'logo_small.png' o 'logo_bw.png', cambia qui il nome.
+            icon_path = resource_path(os.path.join("assets", "logo_3d.png"))
+            self.setWindowIcon(QIcon(icon_path))
+        except Exception as e:
+            logging.warning(f"Could not set window icon: {e}")
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
@@ -231,7 +239,7 @@ class MainWindowV2(QMainWindow):
     def _setup_empty_view(self):
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-        label = QLabel("Welcome to Astrocook v2.\n\nUse 'File > Open Spectrum...'")
+        label = QLabel("Welcome to Astrocook v2!\n\nUse 'File > Open Spectrum...'")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         font = label.font() # Get the current font
@@ -902,6 +910,14 @@ class MainWindowV2(QMainWindow):
         self.setStyleSheet(qss)
         # Set object names after creation if not done elsewhere
 
+    def _update_window_title(self, session_name: Optional[str] = None):
+        """Updates the main window title."""
+        app_name = "Astrocook"
+        if session_name:
+            self.setWindowTitle(f"{session_name} - {app_name}")
+        else:
+            self.setWindowTitle(app_name)
+
     # --- ** NEW Toggle & Animation Methods ** ---
 
     def _toggle_left_sidebar(self):
@@ -1209,6 +1225,11 @@ class MainWindowV2(QMainWindow):
                 self.log_scripter_dialog.set_log_object(self.active_history.log_manager)
             else:
                 self.log_scripter_dialog.set_log_object(None) # Clear viewer
+
+        if session_state_to_show:
+            self._update_window_title(session_state_to_show.name)
+        else:
+            self._update_window_title(None)
 
         # --- *** NEW: Update Aux Column Combo *** ---
         try:
@@ -1616,6 +1637,8 @@ class MainWindowV2(QMainWindow):
                 # 4. If this is the active session, update the log scripter title
                 if history_item is self.active_history and self.log_scripter_dialog:
                     self.log_scripter_dialog.setWindowTitle(f"Log Scripter: {new_name}")
+
+                    self._update_window_title(new_name)
                     
                 logging.info(f"Renamed session '{old_name}' to '{new_name}'")
         
@@ -2490,3 +2513,46 @@ class MainWindowV2(QMainWindow):
 
         except Exception as e:
             logging.error(f"Failed to create debug plot: {e}", exc_info=True)
+
+    def open_session_from_path(self, file_path: str):
+        """
+        Public method to load a session directly from a path string.
+        Used by macOS FileOpen events and Drag & Drop.
+        """
+        if not os.path.exists(file_path):
+            logging.error(f"Cannot open file: {file_path} does not exist.")
+            return
+
+        logging.info(f"Direct load requested for: {file_path}")
+        
+        format_name = 'generic_spectrum'
+        session_name = os.path.splitext(os.path.basename(file_path))[0]
+        gui_context = self.mock_gui_context
+
+        try:
+            # Mostra cursore di attesa
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            
+            new_session = load_session_from_file(
+                archive_path=file_path, 
+                name=session_name, 
+                format_name=format_name,
+                gui_context=gui_context
+            )
+
+            if new_session and new_session != 0:
+                self.add_session(new_session)
+                # Se la finestra era in stato "vuoto", aggiorniamo UI
+                self._update_ui_state(is_valid_session=True)
+            else:
+                logging.error("Session load returned failure.")
+                QMessageBox.warning(self, "Load Error", "Failed to load session.")
+
+        except Exception as e:
+            logging.error(f"Failed to load file direct: {e}")
+            QMessageBox.critical(self, "Error Loading File", f"Could not load {file_path}:\n{e}")
+        finally:
+            QApplication.restoreOverrideCursor()
+            # Forza il focus sulla finestra (utile su macOS se l'app era in background)
+            self.activateWindow()
+            self.raise_()
