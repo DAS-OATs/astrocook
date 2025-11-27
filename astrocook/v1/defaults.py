@@ -3,6 +3,7 @@ import numpy as np
 import os
 import pathlib
 import wx
+import sys  # <--- AGGIUNTO: Necessario per PyInstaller
 
 class Defaults(object):
 
@@ -18,9 +19,21 @@ class Defaults(object):
     def open(self, path=None, file='defaults.json'):
 
         if path is None:
-            path = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) \
-                   + '/../data/' + file
-        with open(path) as json_file:
+            # --- FIX START ---
+            # Rileva se stiamo correndo dentro PyInstaller o in sviluppo
+            if getattr(sys, 'frozen', False):
+                # Se "congelato" (App), la root e' la cartella temporanea _MEIPASS
+                base_dir = pathlib.Path(sys._MEIPASS)
+            else:
+                # Se in sviluppo (astrocook/v1/defaults.py), risaliamo di 3 livelli alla root
+                base_dir = pathlib.Path(__file__).resolve().parent.parent.parent
+            
+            # Costruiamo il percorso assoluto: root -> astrocook -> data -> file
+            path = base_dir / 'astrocook' / 'data' / file
+            # --- FIX END ---
+
+        # Convertiamo path in stringa per sicurezza
+        with open(str(path)) as json_file:
             self.str = json_file.read()
             self.str = self.str.replace('“', '"')
             self.str = self.str.replace('”', '"')

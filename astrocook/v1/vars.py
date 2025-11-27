@@ -6,10 +6,10 @@ import numpy as np
 import os
 import operator as op
 import pathlib
- #c, e, m_e
+import sys  # <--- AGGIUNTO: Necessario per PyInstaller
 
-import pathlib
-from astropy.io import ascii
+#c, e, m_e
+
 try:
     # Python 3.9+
     from importlib.resources import files
@@ -168,23 +168,31 @@ filt_x_skymap = {'u': 348.0, 'v': 382.5, 'g': 493.0, 'r': 629.4, 'i': 770.2,
 zero_point_skymap = {'u': 29.005687, 'v': 28.481306, 'g': 29.55393973,
                      'r': 29.0143769, 'i': 28.4342476, 'z': 27.9522006}
 
-p = '/'.join(pathlib.PurePath(os.path.realpath(__file__)).parts[0:-1]) + '/../../'
+# --- FIX START ---
+# Gestione robusta dei percorsi per PyInstaller e Sviluppo
 
-# Assuming atom_par.dat is now in astrocook/data/atom_par.dat
-#data_file_path = files('astrocook').joinpath('data', 'atom_par.dat')
+if getattr(sys, 'frozen', False):
+    # Se siamo dentro l'eseguibile di PyInstaller, la root è sys._MEIPASS
+    base_dir = pathlib.Path(sys._MEIPASS)
+else:
+    # Se siamo in sviluppo (astrocook/v1/vars.py), risaliamo di 3 livelli alla root del repo
+    base_dir = pathlib.Path(__file__).resolve().parent.parent.parent
 
-#with data_file_path.open('rt') as f:
-#    atom_par = ascii.read(f)
-atom_par = ascii.read(pathlib.Path(p+'/astrocook/data/atom_par.dat'))
+# Costruiamo il percorso alla cartella dati
+data_dir = base_dir / 'astrocook' / 'data'
 
-qso_composite = ascii.read(pathlib.Path(p+'/astrocook/data/qso_composite.dat'))
-inoue = ascii.read(pathlib.Path(p+'/astrocook/data/table2_inoue.dat'))
+# Carichiamo i file (convertendo i Path in stringa per compatibilità Astropy)
+# Nota: astropy.io.ascii.read a volte fallisce con oggetti Path puri nell'ambiente compilato
+atom_par = ascii.read(str(data_dir / 'atom_par.dat'))
+qso_composite = ascii.read(str(data_dir / 'qso_composite.dat'))
+inoue = ascii.read(str(data_dir / 'table2_inoue.dat'))
+sky_telluric = fits.open(str(data_dir / 'sky_telluric.fits'))[1].data
+# --- FIX END ---
+
 xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 mass_d = {k: v for (k, v) in atom_par['col1', 'col5']}
-
-sky_telluric = fits.open(pathlib.Path(p+'/astrocook/data/sky_telluric.fits'))[1].data
 
 pars_d = {'lines_voigt_d': lines_voigt_d,
           'psf_gauss_d': psf_gauss_d}
