@@ -43,10 +43,10 @@ create-dmg \
   --window-pos 200 120 \
   --window-size 500 320 \
   --icon-size 100 \
-  --icon "Astrocook.app" 100 150 \
+  --icon "Astrocook.app" 100 180 \
   --background "assets/logo_background_flat_HR.png" \
   --hide-extension "Astrocook.app" \
-  --app-drop-link 380 150 \
+  --app-drop-link 380 180 \
   "release/Astrocook.dmg" \
   "dist/Astrocook.app"
 
