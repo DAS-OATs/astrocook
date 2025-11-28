@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
-    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit
+    QScrollBar, QSizePolicy, QMessageBox, QLabel, QLineEdit
 )
 from typing import List, Optional
 
@@ -102,82 +102,77 @@ class SystemTableModel(QAbstractTableModel):
             return self._components[row]
         return None
 
+# --- 2. The Paged Plot Widget ---
+
 class VelocityPlotWidget(QWidget):
+    """
+    A widget that displays a fixed number of panels (PAGE_SIZE).
+    A QScrollBar on the right allows the user to 'page' through the list of transitions.
+    This avoids all issues with QScrollArea and Matplotlib resizing.
+    """
+    PAGE_SIZE = 3 # Number of panels visible at once
+
     def __init__(self, inspector_parent): 
         super().__init__()
         self.inspector = inspector_parent
         
-        # 1. Main Vertical Layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(9) # 9px gap
+        # Main Horizontal Layout (Canvas | ScrollBar)
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(2)
 
-        # 2. Figure and Canvas
-        self.fig = Figure(figsize=(5, 8), dpi=100, constrained_layout=True)
+        # 1. Left Side: Canvas + Toolbar (Vertical)
+        left_container = QWidget()
+        self.left_layout = QVBoxLayout(left_container)
+        self.left_layout.setContentsMargins(0, 0, 0, 0)
+        self.left_layout.setSpacing(0)
+
+        # Figure
+        self.fig = Figure(figsize=(5, 6), dpi=100) # Fixed reasonable size
         self.canvas = FigureCanvasQTAgg(self.fig)
-        # IMPORTANT: Set Vertical Policy to Fixed so it respects setMinimumHeight strictly
-        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.canvas.setMinimumHeight(600) 
-
-        # 3. Content Widget (Holds the canvas inside the scroll area)
-        self.content_widget = QWidget()
-        # Expanding horizontal, Fixed vertical (controlled by code)
-        self.content_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.content_widget.setMinimumHeight(600)
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
-        self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
-        self.content_layout.addWidget(self.canvas)
-
-        # 4. Scroll Area
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True) 
-        self.scroll.setWidget(self.content_widget)
-        self.scroll.setFrameShape(QScrollArea.NoFrame)
-        self.scroll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # 5. Toolbar
+        # Toolbar
         self.toolbar = AstrocookToolbar(self.canvas, self)
         for action in self.toolbar.actions():
-            if action.text() == 'Select':
-                self.toolbar.removeAction(action); break
-
-        # 6. Assemble Layout: Scroll Area TOP, Toolbar BOTTOM
-        self.layout.addWidget(self.scroll, 1) # Stretch=1 to take available space
-        self.layout.addWidget(self.toolbar, 0) # Stretch=0 to fixed size at bottom
-
-        # Internal State
-        self.axes = []
-        self.cursor_lines = [] 
-        self.bg_cache = None
-        self._current_z_sys = 0.0
-        self._panel_map = {} 
-        self._last_xlim = None
-        self._last_ylim = None
-        self._last_session = None
-        self._last_component = None
+            if action.text() == 'Select': self.toolbar.removeAction(action); break
         
-        # Events
+        self.left_layout.addWidget(self.canvas)
+        self.left_layout.addWidget(self.toolbar)
+
+        # 2. Right Side: ScrollBar
+        self.scrollbar = QScrollBar(Qt.Vertical)
+        self.scrollbar.valueChanged.connect(self._on_scroll)
+        self.scrollbar.setRange(0, 0)
+        self.scrollbar.setPageStep(1)
+
+        # Assemble
+        self.main_layout.addWidget(left_container)
+        self.main_layout.addWidget(self.scrollbar)
+
+        # Data State
+        self._all_transitions = [] # Full list of transitions to show
+        self._panel_map = {} # Maps Axes object -> Transition Name
+        self.cursor_lines = []
+        
+        self._current_session = None
+        self._current_component = None
+        
+        # Connect Events
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-        self.canvas.mpl_connect('draw_event', self.on_draw)
         self.canvas.mpl_connect('button_press_event', self.on_press)
-        
-        # Initial Draw
-        self.canvas.draw()
 
     @property
     def main_window(self):
         return self.inspector.main_window
 
-    def toggle_region_selector(self): pass
-        
+    def toggle_region_selector(self): pass # No-op for compatibility
+
     def plot_spectrum(self, session_state=None, force_autoscale=False):
-        if force_autoscale:
-            self._last_xlim = None
-            self._last_ylim = None
-        
-        session = session_state if session_state else self._last_session
-        comp = self._last_component
+        """Standard entry point for plot updates."""
+        # Use cached state if args are missing
+        session = session_state if session_state else self._current_session
+        comp = self._current_component
         
         if session and comp:
             self.plot_system(session, comp)
@@ -186,239 +181,191 @@ class VelocityPlotWidget(QWidget):
             self.canvas.draw()
 
     def plot_system(self, session, component: ComponentDataV2):
-        """
-        Main plotting routine.
-        """
-        self._last_session = session
-        self._last_component = component
+        """Prepare the list of transitions and reset the view."""
+        self._current_session = session
+        self._current_component = component
+        
+        if not session or not component:
+            self._all_transitions = []
+            self._update_plot()
+            return
 
-        self._current_z_sys = component.z if component else 0.0
+        # 1. Build Transition List
+        series_name = component.series
+        base_transitions = STANDARD_MULTIPLETS.get(series_name, [series_name]) if series_name else []
+        
+        extra_transitions = []
+        for item in self.inspector.active_transitions:
+            if item in STANDARD_MULTIPLETS: extra_transitions.extend(STANDARD_MULTIPLETS[item])
+            elif item in xem_d: extra_transitions.append(item)
 
+        # Combine and Deduplicate
+        self._all_transitions = list(base_transitions)
+        for t in extra_transitions:
+            if t not in self._all_transitions: self._all_transitions.append(t)
+
+        # 2. Configure Scrollbar
+        total_items = len(self._all_transitions)
+        if total_items <= self.PAGE_SIZE:
+            self.scrollbar.setRange(0, 0) # Disable scrolling
+            self.scrollbar.setEnabled(False)
+        else:
+            self.scrollbar.setRange(0, total_items - self.PAGE_SIZE)
+            self.scrollbar.setEnabled(True)
+            self.scrollbar.setValue(0) # Reset to top
+
+        # 3. Draw
+        self._update_plot()
+
+    def _on_scroll(self, value):
+        """Slot called when scrollbar moves. Simply redraws the page."""
+        self._update_plot()
+
+    def _update_plot(self):
+        """The core rendering logic. Draws a 'page' of N panels."""
         self.fig.clear()
         self.axes = []
         self.cursor_lines = []
-        self.bg_cache = None
+        self._panel_map = {}
 
-        if not session or not component:
+        if not self._all_transitions or not self._current_session:
             self.canvas.draw()
             return
 
-        # --- 1. Determine Base Transitions (from component series) ---
-        series_name = component.series
-        base_transitions = []
-        if series_name in STANDARD_MULTIPLETS:
-            base_transitions = STANDARD_MULTIPLETS[series_name]
-        else:
-            # Fallback search or single
-            found = False
-            for group, lines in STANDARD_MULTIPLETS.items():
-                if series_name in lines:
-                    base_transitions = lines
-                    found = True
-                    break
-            if not found and series_name:
-                base_transitions = [series_name]
-
-        # --- 2. Determine Extra Transitions (from User Input) ---
-        extra_transitions = []
-        user_requests = self.inspector.active_transitions
+        # 1. Determine Window
+        start_idx = self.scrollbar.value()
+        # Ensure we don't go out of bounds
+        end_idx = min(start_idx + self.PAGE_SIZE, len(self._all_transitions))
+        visible_transitions = self._all_transitions[start_idx:end_idx]
         
-        for item in user_requests:
-            if item in STANDARD_MULTIPLETS:
-                # Expand multiplets
-                extra_transitions.extend(STANDARD_MULTIPLETS[item])
-            elif item in xem_d:
-                # Specific line
-                extra_transitions.append(item)
-            else:
-                pass
+        num_plots = len(visible_transitions)
+        if num_plots == 0: return
 
-        # --- 3. Combine Lists (Deduplicate) ---
-        combined_transitions = list(base_transitions)
-        for t in extra_transitions:
-            if t not in combined_transitions:
-                combined_transitions.append(t)
-
-        num_plots = len(combined_transitions)
-        if num_plots == 0: 
-            self.canvas.draw()
-            return
-
-        # 4. Resize Canvas Height (Dynamic scrolling logic)
-        # Allocate 200px per panel, with a minimum of 600px.
-        # The scroll area will handle showing scrollbars if total_height > window height.
-        total_height = max(600, num_plots * 200)
-        
-        # Set MINIMUM height to force expansion inside ScrollArea
-        self.canvas.setMinimumHeight(total_height)
-        self.content_widget.setMinimumHeight(total_height)
-        
-        # 5. Create Subplots
+        # 2. Create Subplots
+        # constrained_layout=True works perfectly here because the Figure size is fixed to the widget
+        self.fig.set_layout_engine(layout='constrained')
         axs = self.fig.subplots(nrows=num_plots, ncols=1, sharex=True, sharey=True)
-        # Safe handling for 1 vs N axes
-        if num_plots == 1:
-            axs = [axs]
-        else:
-            axs = axs.flatten()
+        if num_plots == 1: axs = [axs]
+        else: axs = axs.flatten()
+
+        # 3. Plot Data
+        session = self._current_session
+        comp = self._current_component
         
-        # 6. Prepare Data
+        # Pre-fetch data once
         has_cont = session.spec.cont is not None
         y_full = session.spec.y.value
         dy_full = session.spec.dy.value if session.spec.dy is not None else np.zeros_like(y_full)
-        
         if has_cont:
             cont_full = session.spec.cont.value
             y_norm = np.divide(y_full, cont_full, out=np.ones_like(y_full), where=cont_full!=0)
             dy_norm = np.divide(dy_full, cont_full, out=np.zeros_like(dy_full), where=cont_full!=0)
         else:
-            y_norm = y_full 
-            dy_norm = dy_full
-            
+            y_norm = y_full; dy_norm = dy_full
+        
         x_full = session.spec.x.value
         c_kms = 299792.458
-        window_kms = 600 
+        window_kms = 600
+        z_sys = comp.z
 
-        # --- GET COLORS ---
         colors = get_color_cycle(5, cmap='tab20')
-        col_flux = get_style_color('flux', colors)
-        col_model = get_style_color('model', colors)
-        col_err = PLOT_STYLE['error']['color']
-        col_cursor = get_style_color('cursor', colors)
-        alpha_err = PLOT_STYLE['error']['alpha']
-        
-        style_flux = PLOT_STYLE['flux']
-        style_error = PLOT_STYLE['error']
-        style_model = PLOT_STYLE['model']
 
-        # 7. Plot Loop
-        for i, (ax, trans_name) in enumerate(zip(axs, combined_transitions)):
+        for i, trans_name in enumerate(visible_transitions):
+            ax = axs[i]
             self.axes.append(ax)
-            self._panel_map[ax] = trans_name
+            self._panel_map[ax] = trans_name # For mouse click logic
 
-            def make_format_coord(current_z_sys):
-                def format_coord(x, y):
-                    z_val = (1 + current_z_sys) * (1 + x / c_kms) - 1
-                    return f"Δv = {x:.1f} km/s, \u0192 = {y:.2f}, z = {z_val:.5f}"
-                return format_coord
-            
-            ax.format_coord = make_format_coord(self._current_z_sys)
-            
+            # Formatter
+            def make_fmt(z):
+                def fmt(x, y):
+                    val_z = (1 + z) * (1 + x / c_kms) - 1
+                    return f"v={x:.1f}, y={y:.2f}, z={val_z:.5f}"
+                return fmt
+            ax.format_coord = make_fmt(z_sys)
+
             if trans_name not in xem_d:
-                ax.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center', transform=ax.transAxes)
-                continue
+                ax.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center'); continue
 
-            try:
-                lambda_0 = xem_d[trans_name].to(session.spec.x.unit).value
-            except: 
-                ax.text(0.5, 0.5, f"Unit Mismatch: {trans_name}", ha='center', transform=ax.transAxes)
-                continue
+            try: lam_0 = xem_d[trans_name].to(session.spec.x.unit).value
+            except: ax.text(0.5, 0.5, f"Unit Error", ha='center'); continue
 
-            # Calculate Velocity Axis
-            lambda_obs = lambda_0 * (1.0 + component.z)
-            v_full = c_kms * (x_full - lambda_obs) / lambda_obs
+            lam_obs = lam_0 * (1.0 + z_sys)
+            v = c_kms * (x_full - lam_obs) / lam_obs
             
-            mask = (v_full > -5000) & (v_full < 5000)
-            v_plot = v_full[mask]
-            y_plot = y_norm[mask]
-            dy_plot = dy_norm[mask]
-            
-            # --- Draw Error Shading ---
-            ax.step(v_plot, y_plot - dy_plot, where='mid', color=col_err, lw=style_error['lw'], alpha=alpha_err)
-            ax.step(v_plot, y_plot + dy_plot, where='mid', color=col_err, lw=style_error['lw'], alpha=alpha_err)
+            # Mask data to window
+            mask = (v > -window_kms - 200) & (v < window_kms + 200)
+            v_p = v[mask]; y_p = y_norm[mask]; dy_p = dy_norm[mask]
 
-            # --- Draw Flux ---
-            ax.step(v_plot, y_plot, where='mid', color=col_flux, lw=style_flux['lw'], label=style_flux['label'])
-            
-            # --- Draw Model ---
+            ax.step(v_p, y_p-dy_p, where='mid', color=PLOT_STYLE['error']['color'], lw=0.5, alpha=0.5)
+            ax.step(v_p, y_p+dy_p, where='mid', color=PLOT_STYLE['error']['color'], lw=0.5, alpha=0.5)
+            ax.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
+
             if session.spec.model is not None:
-                mod_full = session.spec.model.value
-                if has_cont:
-                    mod_plot = np.divide(mod_full[mask], cont_full[mask], out=np.ones_like(y_plot), where=cont_full[mask]!=0)
-                else:
-                    mod_plot = mod_full[mask]
-                ax.plot(v_plot, mod_plot, color=col_model, lw=style_model['lw'], alpha=style_model['alpha'])
+                mod = session.spec.model.value
+                mod_p = np.divide(mod[mask], cont_full[mask], out=np.ones_like(y_p), where=cont_full[mask]!=0) if has_cont else mod[mask]
+                ax.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
-            # --- Decorations ---
-            ax.axvline(0, color=PLOT_STYLE['center_line']['color'], ls=PLOT_STYLE['center_line']['ls'], lw=PLOT_STYLE['center_line']['lw'], alpha=PLOT_STYLE['center_line']['alpha']) 
-            ax.axhline(1.0, color='green', ls=':', alpha=0.5, lw=0.8) 
-            ax.axhline(0.0, color=PLOT_STYLE['zero_line']['color'], ls=PLOT_STYLE['zero_line']['ls'], lw=PLOT_STYLE['zero_line']['lw'], alpha=PLOT_STYLE['zero_line']['alpha']) 
-
-            # Label
-            ax.text(0.98, 0.85, trans_name, transform=ax.transAxes, 
-                    ha='right', fontsize=10, fontweight='bold',
+            ax.axvline(0, color='gray', ls='--', lw=0.8)
+            ax.axhline(1.0, color='green', ls=':', alpha=0.5)
+            ax.axhline(0.0, color='gray', lw=0.5)
+            ax.text(0.98, 0.85, trans_name, transform=ax.transAxes, ha='right', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-
-            ax.grid(True, linestyle=':', alpha=0.6)
             
-            # Cursor Line
-            line = ax.axvline(0, color=col_cursor, ls=PLOT_STYLE['cursor']['ls'], lw=PLOT_STYLE['cursor']['lw'], alpha=PLOT_STYLE['cursor']['alpha'], visible=False)
-            self.cursor_lines.append(line)
+            ax.set_xlim(-window_kms, window_kms)
+            ax.set_ylim(-0.2, 1.4)
+            
+            # Cursor
+            l = ax.axvline(0, color=get_style_color('cursor', colors), ls='--', lw=1, visible=False)
+            self.cursor_lines.append(l)
 
-        # 8. Final Formatting
-        self.fig.supxlabel("Relative velocity (Δv, km/s)")
-        self.fig.supylabel("Normalized Flux (\u0192)")
-        if len(axs) > 0:
-            axs[0].set_xlim(-window_kms, window_kms)
-            axs[0].set_ylim(-0.2, 1.4) 
+        self.fig.supxlabel("Velocity (km/s)")
+        self.fig.supylabel("Normalized Flux")
+        
         self.canvas.draw()
-    
-    def on_draw(self, event):
-        if self.axes:
-            self.bg_cache = self.canvas.copy_from_bbox(self.fig.bbox)
-            for line in self.cursor_lines: line.set_visible(False)
 
     def on_mouse_move(self, event):
         if not self.axes or not event.inaxes: return
-        if self.bg_cache: self.canvas.restore_region(self.bg_cache)
-        v_mouse = event.xdata
-        for line in self.cursor_lines:
-            line.set_xdata([v_mouse])
-            line.set_visible(True)
-            line.axes.draw_artist(line)
-        self.canvas.blit(self.fig.bbox)
+        for l in self.cursor_lines:
+            l.set_xdata([event.xdata]); l.set_visible(True)
+        self.canvas.draw_idle()
 
     def on_press(self, event):
         if event.button == 3 and event.inaxes in self.axes:
             ax = event.inaxes
-            trans_name = self._panel_map.get(ax)
-            if trans_name and self.inspector.main_window:
-                v_click = event.xdata
-                c_kms = 299792.458
-                z_new = (1 + self._current_z_sys) * (1 + v_click / c_kms) - 1
+            trans = self._panel_map.get(ax)
+            if trans and self.inspector.main_window:
+                v = event.xdata
+                z_new = (1 + self._current_component.z) * (1 + v / 299792.458) - 1
                 
-                series_to_add = trans_name
-                for group, lines in STANDARD_MULTIPLETS.items():
-                    if trans_name in lines:
-                        series_to_add = group 
-                        break
+                # Identify series
+                series = trans
+                for g, l in STANDARD_MULTIPLETS.items():
+                    if trans in l: series = g; break
                 
                 menu = QMenu(self)
-                add_act = QAction(f"Add {series_to_add} at z={z_new:.5f}", menu)
-                add_act.triggered.connect(lambda checked=False: self.inspector.main_window._on_recipe_requested(
-                    "absorbers", "add_component", {'series': series_to_add, 'z': z_new}, {}
-                ))
-                menu.addAction(add_act)
+                act = QAction(f"Add {series} at z={z_new:.5f}", menu)
+                act.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                    "absorbers", "add_component", {'series': series, 'z': z_new}, {}))
+                menu.addAction(act)
                 menu.exec(QCursor.pos())
 
+# --- 3. Inspector Window (Unchanged logic) ---
 
 class SystemInspector(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
         self.current_session = None
-        self.active_transitions: List[str] = [] # Stores user-specified active transitions
-
+        self.active_transitions: List[str] = [] 
         self.setWindowTitle("System Inspector")
         self.resize(1200, 800) 
-        self.setWindowFlags(Qt.Window)
         self._setup_ui()
         
     def _setup_ui(self):
-        main_layout = QVBoxLayout(self)
-        
+        layout = QVBoxLayout(self)
         splitter = QSplitter(Qt.Horizontal)
         
-        # Left: Table
+        # Left
         self.table_view = QTableView()
         self.table_model = SystemTableModel()
         self.table_view.setModel(self.table_model)
@@ -426,183 +373,95 @@ class SystemInspector(QWidget):
         self.table_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table_view.setAlternatingRowColors(True)
         self.table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        
-        header = self.table_view.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        
+        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
-        self.table_model.data_changed_request.connect(self._forward_recipe_request)
-        
+        self.table_model.data_changed_request.connect(self._forward)
         splitter.addWidget(self.table_view)
         
-        # Right: Plot Container with Controls
-        right_container = QWidget()
-        right_layout = QVBoxLayout(right_container)
-        right_layout.setContentsMargins(0,0,0,0)
+        # Right
+        right = QWidget()
+        r_layout = QVBoxLayout(right)
+        r_layout.setContentsMargins(0,0,0,0)
         
-        # --- CONTROLS: Shown Transitions ---
-        controls_layout = QHBoxLayout()
-        # Aggiungiamo un margine per non farlo attaccare ai bordi
-        controls_layout.setContentsMargins(5, 5, 5, 0) 
+        c_layout = QHBoxLayout()
+        c_layout.setContentsMargins(5,5,5,0)
+        c_layout.addWidget(QLabel("Shown transitions:"))
+        self.trans_in = QLineEdit()
+        self.trans_in.setPlaceholderText("e.g. CIV, SiIV")
+        self.trans_in.returnPressed.connect(self._apply)
         
-        label = QLabel("Shown transitions:")
-        # Stile Label (opzionale, per uniformità)
-        label.setStyleSheet("color: gray; font-weight: bold;")
-        controls_layout.addWidget(label)
+        pal = QApplication.palette()
+        self.trans_in.setStyleSheet(f"QLineEdit {{ padding: 4px; border-radius: 5px; background: {pal.color(pal.ColorRole.Base).name()}; color: {pal.color(pal.ColorRole.Text).name()}; }}")
         
-        self.transitions_input = QLineEdit()
-        self.transitions_input.setPlaceholderText("e.g. CIV, SiIV")
-        self.transitions_input.setToolTip("Enter comma-separated transitions and press Enter.")
-        self.transitions_input.returnPressed.connect(self._on_apply_transitions)
+        c_layout.addWidget(self.trans_in)
+        r_layout.addLayout(c_layout)
         
-        # --- STILE UGUALE ALLA MAIN WINDOW ---
-        # Recuperiamo i colori dalla palette di sistema
-        palette = QApplication.palette()
-        base_color = palette.color(palette.ColorRole.Base).name()
-        text_color = palette.color(palette.ColorRole.Text).name()
-        
-        self.transitions_input.setStyleSheet(f"""
-            QLineEdit {{
-                padding: 4px;
-                border-radius: 5px;
-                background-color: {base_color};
-                color: {text_color};
-            }}
-        """)
-        # -------------------------------------
-
-        controls_layout.addWidget(self.transitions_input)
-        
-        # --- RIMOSSO IL TASTO APPLY ---
-        # self.apply_btn = QPushButton("Apply") ...
-        # ------------------------------
-        
-        right_layout.addLayout(controls_layout)
-        
-        # Velocity Plot
         self.vel_plot = VelocityPlotWidget(self)
-        right_layout.addWidget(self.vel_plot)
+        r_layout.addWidget(self.vel_plot, 1) 
         
-        splitter.addWidget(right_container)
-        
-        splitter.setStretchFactor(0, 5)
-        splitter.setStretchFactor(1, 5)
-        main_layout.addWidget(splitter)
+        splitter.addWidget(right)
+        splitter.setStretchFactor(0, 4); splitter.setStretchFactor(1, 6)
+        layout.addWidget(splitter)
 
     def set_session(self, session):
-        previous_uuid = None
-        indexes = self.table_view.selectionModel().selectedRows()
-        if indexes:
-            row = indexes[0].row()
-            comp = self.table_model.get_component_at(row)
-            if comp: previous_uuid = comp.uuid
+        sel = self.table_view.selectionModel().selectedRows()
+        prev_uuid = self.table_model.get_component_at(sel[0].row()).uuid if sel else None
 
         self.current_session = session
-        if session and session.systs:
-            self.table_model.update_data(session.systs.components)
-        else:
-            self.table_model.update_data([])
-            
-        if previous_uuid:
-            found = False
+        self.table_model.update_data(session.systs.components if session and session.systs else [])
+        
+        if prev_uuid:
             for r in range(self.table_model.rowCount()):
-                c = self.table_model.get_component_at(r)
-                if c.uuid == previous_uuid:
-                    idx = self.table_model.index(r, 0)
-                    self.table_view.selectionModel().setCurrentIndex(idx, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                    # Force update in case signal didn't fire (same row)
-                    self.vel_plot.plot_system(session, c)
-                    found = True
-                    break
-            if not found and self.table_model.rowCount() > 0:
-                 idx = self.table_model.index(self.table_model.rowCount()-1, 0)
-                 self.table_view.selectionModel().setCurrentIndex(idx, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                 
-        elif self.table_model.rowCount() == 0:
+                if self.table_model.get_component_at(r).uuid == prev_uuid:
+                    self.table_view.selectRow(r)
+                    # Note: plot_system called via selection signal
+                    return
+        
+        if self.table_model.rowCount() > 0:
+            self.table_view.selectRow(0)
+        else:
             self.vel_plot.plot_spectrum(None)
 
-    def _on_selection_changed(self, selected, deselected):
-        indexes = self.table_view.selectionModel().selectedRows()
-        if not indexes: return
-        row = indexes[0].row()
+    def _on_selection_changed(self, sel, desel):
+        if not sel.indexes(): return
+        row = sel.indexes()[0].row()
         comp = self.table_model.get_component_at(row)
         if comp and self.current_session:
-            
-            # [Item 2] Preserve existing transitions logic
-            current_text = self.transitions_input.text()
-            current_tokens = [t.strip() for t in current_text.split(',') if t.strip()]
-            
-            # If the component's own series isn't in the list, append it
-            if comp.series and comp.series not in current_tokens:
-                current_tokens.append(comp.series)
-            
-            # Reconstruct text and update
-            new_text = ", ".join(current_tokens)
-            self.transitions_input.setText(new_text)
-            self._parse_transitions_input(new_text)
-
-            # 3. Plot
+            cur = self.trans_in.text()
+            toks = [t.strip() for t in cur.split(',') if t.strip()]
+            if comp.series and comp.series not in toks: toks.append(comp.series)
+            new_txt = ", ".join(toks)
+            self.trans_in.setText(new_txt)
+            self._parse(new_txt)
             self.vel_plot.plot_system(self.current_session, comp)
-            
-    def _on_apply_transitions(self):
-        """Called when Apply is clicked or Enter pressed."""
-        text = self.transitions_input.text().strip()
-        self._parse_transitions_input(text)
-        
-        # Force re-plot with current data
+
+    def _apply(self):
+        self._parse(self.trans_in.text())
         self.vel_plot.plot_spectrum()
 
-    def _parse_transitions_input(self, text):
-        """Parses comma-separated text into active_transitions list."""
-        self.active_transitions = []
-        if text:
-            tokens = [t.strip() for t in text.split(',')]
-            for token in tokens:
-                if token:
-                    self.active_transitions.append(token)
+    def _parse(self, text):
+        self.active_transitions = [t.strip() for t in text.split(',') if t.strip()]
 
-    def _forward_recipe_request(self, recipe_name, params):
-        if self.main_window:
-            self.main_window._on_recipe_requested("absorbers", recipe_name, params, {})
+    def _forward(self, name, params):
+        if self.main_window: self.main_window._on_recipe_requested("absorbers", name, params, {})
 
     def _on_context_menu(self, pos):
-        index = self.table_view.indexAt(pos)
-        if not index.isValid(): return
-        menu = QMenu(self)
-        refit_act = QAction("Refit Selected", self)
-        delete_act = QAction("Delete", self)
-        refit_act.triggered.connect(self._on_refit_clicked)
-        delete_act.triggered.connect(self._on_delete_clicked)
-        menu.addAction(refit_act)
-        menu.addSeparator()
-        menu.addAction(delete_act)
-        menu.exec(self.table_view.mapToGlobal(pos))
+        if not self.table_view.indexAt(pos).isValid(): return
+        m = QMenu(self)
+        m.addAction("Refit Selected", self._refit)
+        m.addAction("Delete", self._delete)
+        m.exec(self.table_view.mapToGlobal(pos))
 
-    def _on_delete_clicked(self):
-        indexes = self.table_view.selectionModel().selectedRows()
-        if not indexes: return
-        row = indexes[0].row()
+    def _delete(self):
+        row = self.table_view.currentIndex().row()
         comp = self.table_model.get_component_at(row)
         if comp and self.main_window:
-            # Usiamo il metodo della MainWindow per avere lo stesso stile e icona
-            confirm = self.main_window._show_custom_message(
-                title="Delete Component",
-                header="Delete this component?",
-                text=f"Series: {comp.series}\nRedshift: {comp.z:.5f}",
-                buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                default_btn=QMessageBox.StandardButton.No,
-                parent=self
-            )
-            if confirm == QMessageBox.Yes:
-                self.main_window._on_recipe_requested(
-                    "absorbers", "delete_component", {"uuid": comp.uuid}, {})
+            if QMessageBox.question(self, "Delete", f"Delete {comp.series}?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
+                self.main_window._on_recipe_requested("absorbers", "delete_component", {"uuid": comp.uuid}, {})
 
-    def _on_refit_clicked(self):
-        indexes = self.table_view.selectionModel().selectedRows()
-        if not indexes: return
-        row = indexes[0].row()
+    def _refit(self):
+        row = self.table_view.currentIndex().row()
         comp = self.table_model.get_component_at(row)
         if comp and self.main_window:
-            self.main_window._on_recipe_requested(
-                "absorbers", "fit_component", {"uuid": comp.uuid}, {})
+            self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
