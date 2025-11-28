@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     QParallelAnimationGroup,
     QSize, QStringListModel, QThreadPool, QTimer
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon
+from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
@@ -461,6 +461,7 @@ class MainWindowV2(QMainWindow):
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) # Just replot on show/hide
+        self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
         # --- Spacer ---
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -917,6 +918,62 @@ class MainWindowV2(QMainWindow):
             self.setWindowTitle(f"{session_name} - {app_name}")
         else:
             self.setWindowTitle(app_name)
+
+    def _show_custom_message(self, title, header, text, icon_name="icon_3d_HR.png", 
+                             buttons=QMessageBox.StandardButton.Ok, 
+                             default_btn=None, 
+                             parent=None):
+        """
+        Crea una Message Box con icona personalizzata, usando HTML per la formattazione
+        e CSS per correggere i margini su macOS.
+        """
+        # Determina il genitore corretto
+        target_parent = parent if parent else self
+        
+        msg_box = QMessageBox(target_parent)
+        msg_box.setWindowTitle(title)
+        
+        # --- 1. FORMATTAZIONE HTML (Risolve il problema "Tutto Grassetto") ---
+        # Uniamo Header e Text in un unico blocco HTML.
+        # header: font-size leggermente più grande e bold.
+        # text: font-weight normal e un po' di margine sopra (<br> o margin-top).
+        
+        formatted_text = (
+            f"<p style='font-size: 13pt; font-weight: bold; margin: 0px;'>{header}</p>"
+            f"<p style='font-size: 12pt; font-weight: normal; margin-top: 8px;'>{text}</p>"
+        )
+        msg_box.setText(formatted_text)
+        
+        # --- 2. ICONA ---
+        try:
+            icon_path = resource_path(os.path.join("assets", icon_name))
+            pixmap = QPixmap(icon_path)
+            if not pixmap.isNull():
+                # Scaliamo a 64x64 (dimensione standard per dialoghi Mac)
+                pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                msg_box.setIconPixmap(pixmap)
+        except Exception as e:
+            logging.warning(f"Impossibile caricare pixmap messaggio: {e}")
+            msg_box.setIcon(QMessageBox.Icon.Information)
+
+        msg_box.setStandardButtons(buttons)
+        if default_btn:
+            msg_box.setDefaultButton(default_btn)
+
+        msg_box.setWindowModality(Qt.WindowModal)
+        
+        # --- 3. CORREZIONE MARGINI (Risolve il problema "Bordo piccolo") ---
+        # Usiamo i fogli di stile Qt (QSS) per dare aria alla finestra.
+        # min-width: evita che la finestra sia troppo stretta.
+        # padding-top: spinge tutto il contenuto verso il basso (crea il bordo superiore).
+        msg_box.setStyleSheet("""
+            QLabel {
+                padding-top: 10px;
+            }
+        """)
+        
+        return msg_box.exec()
+     
 
     # --- ** NEW Toggle & Animation Methods ** ---
 
@@ -1787,16 +1844,13 @@ class MainWindowV2(QMainWindow):
         is_dirty = history_to_close.can_undo() or history_to_close.can_redo()
         
         if is_dirty:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Close Session")
-            msg_box.setText(f"Session '{session_name}' has unsaved changes.")
-            msg_box.setInformativeText("Do you want to save your changes before closing?")
-            msg_box.setStandardButtons(QMessageBox.StandardButton.Save |
-                                       QMessageBox.StandardButton.Discard |
-                                       QMessageBox.StandardButton.Cancel)
-            msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
-            
-            ret = msg_box.exec()
+            ret = self._show_custom_message(
+                title="Close Session",
+                header=f"Do you want to save changes to '{session_name}'?",  # Grassetto
+                text="Your changes will be lost if you don't save them.",     # Normale
+                buttons=QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+                default_btn=QMessageBox.StandardButton.Save
+            )
 
             if ret == QMessageBox.StandardButton.Save:
                 saved_ok = self._save_session(history_to_close)
@@ -1880,14 +1934,15 @@ class MainWindowV2(QMainWindow):
             
             # 2. Check if z_em is not set
             if current_z_em == 0.0:
-                reply = QMessageBox.question(self,
-                                             "Emission Redshift Required",
-                                             "This recipe requires an emission redshift (z_em) to run.\n\n"
-                                             "Do you want to open the 'Set Properties' dialog to set it now?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                                             QMessageBox.StandardButton.Yes)
+                ret = self._show_custom_message(
+                    title="Emission Redshift Required",
+                    header="Emission Redshift (z_em) is required.", # Grassetto
+                    text="This recipe cannot run without z_em.\nDo you want to open 'Set Properties' to set it now?", # Normale
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                    default_btn=QMessageBox.StandardButton.Yes
+                )
                 
-                if reply == QMessageBox.StandardButton.Yes:
+                if ret == QMessageBox.StandardButton.Yes:
                     # 3. SET THE PENDING ACTION FLAG
                     logging.info(f"Setting '{name}' as pending, launching 'set_properties' first.")
                     self._pending_recipe_on_properties_set = (category, name)
@@ -1968,14 +2023,16 @@ class MainWindowV2(QMainWindow):
         if (is_cont_target or is_cont_recipe):
             # If it's a cont recipe, check if a model exists
             if self.active_history.current_state.spec.has_aux_column('model'):
-                reply = QMessageBox.question(self, 
-                                             "Re-normalize Model?",
-                                             "This will modify the 'cont' column. Do you also want to re-normalize the 'model' column to this new continuum?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.Yes)
-                
+                ret = self._show_custom_message(
+                    title="Re-normalize Model?",
+                    header="Update Model normalization?", # Grassetto
+                    text="You are modifying the continuum. Do you want to automatically re-normalize the 'model' column to match?", # Normale
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    default_btn=QMessageBox.StandardButton.Yes
+                )
+
                 # Set the hidden parameter based on the user's answer
-                if reply == QMessageBox.StandardButton.Yes:
+                if ret == QMessageBox.StandardButton.Yes:
                     params['renorm_model'] = 'True'
                 else:
                     params['renorm_model'] = 'False'
@@ -2161,10 +2218,12 @@ class MainWindowV2(QMainWindow):
             # User error: Offer to try again
             # --- *** START MODIFICATION *** ---
             msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle(title)
-            msg_box.setText(message)
             
+            msg_box.setText(title) # Grassetto (es. "Recipe Failed")
+            msg_box.setInformativeText(message) # Normale (es. "Param X is invalid...")
+            msg_box.setIconPixmap(QPixmap(resource_path(os.path.join("assets", "icon_3d_HR.png"))).scaled(64,64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
             # Add standard buttons + a custom "Try Again"
             try_again_btn = msg_box.addButton("Try Again", QMessageBox.AcceptRole)
             msg_box.addButton(QMessageBox.Cancel)
@@ -2240,14 +2299,14 @@ class MainWindowV2(QMainWindow):
             return
 
         # 1. Ask for confirmation
-        reply = QMessageBox.question(
-            self,
-            "Run Script",
-            "This will replace your current session history by re-running this script from the original data.\n\nAre you sure you want to proceed?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel
+        ret = self._show_custom_message(
+            title="Run Script",
+            header="Run script and replace history?", # Grassetto
+            text="This action will clear your current session history and re-run the script from the original data.\n\nAre you sure?", # Normale
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            default_btn=QMessageBox.StandardButton.Cancel
         )
-        if reply != QMessageBox.StandardButton.Yes:
+        if ret != QMessageBox.StandardButton.Yes:
             return
 
         # --- *** FIX 1: Reset toolbar *** ---

@@ -1125,7 +1125,6 @@ class SpectrumPlotWidget(QWidget):
             # 4. Final Touches
             if ax.has_data(): # Only add legend if something was plotted
                 ax.legend(loc=legend_loc, markerscale=0.2) # Smaller legend font
-            ax.set_xlabel(f"Wavelength ({x_unit})")
             ax.set_title(f"Spectrum: {session_state.name}")
             
             # 1. Scales (Log/Linear)
@@ -1156,28 +1155,67 @@ class SpectrumPlotWidget(QWidget):
             z_em = spec._data.z_em
             
             # 1. Define the custom hover-text formatter
-            # We do this *before* adding the secondary axis so it works even if z_em=0
-            base_formatter = self._default_format_coord
+            # Rimpiazziamo completamente il formatter di default per avere il formato:
+            # Wave=... nm, Flux=... erg/..., Rest=... nm
+            
+            # Symbols
+            SYM_LAMBDA = "\u03bb"      # λ
+            SYM_LAMBDA_R = "\u03bb\u1d63" # λᵣ (lambda sub r)
+            SYM_FLUX = "F"        # 
+            SYM_FLUX_NORM = "\u0192"        # ƒ (hook f for flux/function)
+            SYM_ANGSTROM = "\u00c5"    # Å
+            SYM_MICRON = "\u00b5m"     # µm
+
+            # Helper per le unità X
+            x_label_unit = "nm"
+            if selected_x_unit == 'Angstrom': x_label_unit = SYM_ANGSTROM
+            elif selected_x_unit == 'micron': x_label_unit = SYM_MICRON
+            if is_norm_y: y_label_symbol = SYM_FLUX_NORM
+            else: y_label_symbol = SYM_FLUX
+            
+            # Helper per le unità Y (pulizia stringa Astropy)
+            y_label_unit = ""
+            if is_norm_y:
+                y_label_unit = "" 
+            elif is_snr:
+                y_label_unit = "" 
+            elif spec.y.unit:
+                # Convertiamo l'unità astropy in stringa
+                # Sostituiamo le notazioni "brutte" con caratteri Unicode se possibile
+                unit_str = f"{spec.y.unit:s}"
+                unit_str = unit_str.replace("Angstrom", SYM_ANGSTROM)
+                unit_str = unit_str.replace("**", "^") # Es. cm^2
+                y_label_unit = unit_str
 
             def new_format_coord(x, y):
-                # Use the base formatter to get the standard string first
-                main_str = base_formatter(x, y)
+                # x è in nm (unità nativa dei dati)
+                # y è il valore visualizzato (flusso, norm o snr)
                 
+                # 1. Calcolo X Visualizzato
+                x_disp = x
+                if selected_x_unit == 'Angstrom': x_disp = x * 10.0
+                elif selected_x_unit == 'micron': x_disp = x / 1000.0
+                
+                # 2. Costruzione Stringa Base
+                if is_norm_y or is_snr:
+                    y_fmt = f"{y:.3f}"
+                else:
+                    y_fmt = f"{y:.3e}"
+                
+                # Formato: λ=1215.67 Å, ƒ=1.23e-17 ...
+                coord_str = f"{SYM_LAMBDA} = {x_disp:.4f} {x_label_unit}, {y_label_symbol} = {y_fmt} {y_label_unit}"
+                
+                # 3. Aggiunta Rest Frame
                 if z_em > 0.0 and spec.x.unit.is_equivalent(au.nm):
-                    # Calculate rest-frame value in native units (nm)
                     x_rf_nm = x / (1 + z_em)
                     
-                    # Apply the same display scaling as the main axis
-                    if selected_x_unit == 'Angstrom':
-                        x_rf_disp = x_rf_nm * 10.0
-                    elif selected_x_unit == 'micron':
-                        x_rf_disp = x_rf_nm / 1000.0
-                    else:
-                        x_rf_disp = x_rf_nm
+                    if selected_x_unit == 'Angstrom': x_rf_disp = x_rf_nm * 10.0
+                    elif selected_x_unit == 'micron': x_rf_disp = x_rf_nm / 1000.0
+                    else: x_rf_disp = x_rf_nm
                         
-                    return f"{main_str}  (Rest: {x_rf_disp:.7g})"
-                else:
-                    return main_str
+                    coord_str += f", {SYM_LAMBDA_R} = {x_rf_disp:.4f} {x_label_unit}"
+                
+                return coord_str
 
             ax.format_coord = new_format_coord
 
@@ -1188,7 +1226,7 @@ class SpectrumPlotWidget(QWidget):
                 def rf_to_obs(x): return x * (1 + z_em)
                 
                 sec_ax = ax.secondary_xaxis('top', functions=(obs_to_rf, rf_to_obs))
-                sec_ax.set_xlabel(f"Rest-frame ({selected_x_unit})")
+                sec_ax.set_xlabel(f"Rest-frame ({SYM_LAMBDA_R}, {x_label_unit})")
                 
                 # Apply the unit formatter (or reset to default scalar if None)
                 if xaxis_formatter:
@@ -1250,19 +1288,21 @@ class SpectrumPlotWidget(QWidget):
                     except Exception:
                         continue # Skip lines with incompatible units (rare)
 
-            # 3. Y-Axis Label
+            # 3. X/Y-Axis Label
+            ax.set_xlabel(f"Wavelength ({SYM_LAMBDA}, {x_label_unit})")
+            
             if is_norm_y:
-                y_label_text = "Normalized Flux"
+                y_label_text = f"Normalized Flux ({SYM_FLUX_NORM})"
             elif is_snr:
-                y_label_text = f"Signal-to-Noise Ratio (y / {selected_snr_col})"
+                y_label_text = f"Signal-to-Noise Ratio ({SYM_FLUX} / {selected_snr_col})"
             else:
                 # Check if we have a real physical unit
                 if spec.y.unit is None or spec.y.unit == au.dimensionless_unscaled:
-                     y_label_text = "Flux (arbitrary units)"
+                     y_label_text = f"Flux ({SYM_FLUX}, arbitrary units)"
                 else:
                      # Use Astropy's pretty formatter for the unit string
                      unit_str = spec.y.unit.to_string('latex_inline')
-                     y_label_text = f"Flux ({unit_str})"
+                     y_label_text = f"Flux ({SYM_FLUX}, {unit_str})"
                 
             ax.set_ylabel(y_label_text)
             

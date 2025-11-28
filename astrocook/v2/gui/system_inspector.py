@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QItemSelectionModel
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
     QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit
 )
@@ -298,7 +298,7 @@ class VelocityPlotWidget(QWidget):
             def make_format_coord(current_z_sys):
                 def format_coord(x, y):
                     z_val = (1 + current_z_sys) * (1 + x / c_kms) - 1
-                    return f"v={x:.1f} km/s, y={y:.2f}, z={z_val:.5f}"
+                    return f"Δv = {x:.1f} km/s, \u0192 = {y:.2f}, z = {z_val:.5f}"
                 return format_coord
             
             ax.format_coord = make_format_coord(self._current_z_sys)
@@ -355,8 +355,8 @@ class VelocityPlotWidget(QWidget):
             self.cursor_lines.append(line)
 
         # 8. Final Formatting
-        self.fig.supxlabel("Velocity (km/s)")
-        self.fig.supylabel("Normalized Flux")
+        self.fig.supxlabel("Relative velocity (Δv, km/s)")
+        self.fig.supylabel("Normalized Flux (\u0192)")
         if len(axs) > 0:
             axs[0].set_xlim(-window_kms, window_kms)
             axs[0].set_ylim(-0.2, 1.4) 
@@ -443,20 +443,42 @@ class SystemInspector(QWidget):
         
         # --- CONTROLS: Shown Transitions ---
         controls_layout = QHBoxLayout()
-        controls_layout.addWidget(QLabel("Shown transitions:"))
+        # Aggiungiamo un margine per non farlo attaccare ai bordi
+        controls_layout.setContentsMargins(5, 5, 5, 0) 
+        
+        label = QLabel("Shown transitions:")
+        # Stile Label (opzionale, per uniformità)
+        label.setStyleSheet("color: gray; font-weight: bold;")
+        controls_layout.addWidget(label)
         
         self.transitions_input = QLineEdit()
         self.transitions_input.setPlaceholderText("e.g. CIV, SiIV")
-        self.transitions_input.setToolTip("Enter comma-separated transitions (e.g. 'CIV') to display additional panels.")
+        self.transitions_input.setToolTip("Enter comma-separated transitions and press Enter.")
         self.transitions_input.returnPressed.connect(self._on_apply_transitions)
+        
+        # --- STILE UGUALE ALLA MAIN WINDOW ---
+        # Recuperiamo i colori dalla palette di sistema
+        palette = QApplication.palette()
+        base_color = palette.color(palette.ColorRole.Base).name()
+        text_color = palette.color(palette.ColorRole.Text).name()
+        
+        self.transitions_input.setStyleSheet(f"""
+            QLineEdit {{
+                padding: 4px;
+                border-radius: 5px;
+                background-color: {base_color};
+                color: {text_color};
+            }}
+        """)
+        # -------------------------------------
+
         controls_layout.addWidget(self.transitions_input)
         
-        self.apply_btn = QPushButton("Apply")
-        self.apply_btn.clicked.connect(self._on_apply_transitions)
-        controls_layout.addWidget(self.apply_btn)
+        # --- RIMOSSO IL TASTO APPLY ---
+        # self.apply_btn = QPushButton("Apply") ...
+        # ------------------------------
         
         right_layout.addLayout(controls_layout)
-        # -------------------------------
         
         # Velocity Plot
         self.vel_plot = VelocityPlotWidget(self)
@@ -563,9 +585,15 @@ class SystemInspector(QWidget):
         row = indexes[0].row()
         comp = self.table_model.get_component_at(row)
         if comp and self.main_window:
-            confirm = QMessageBox.question(self, "Delete Component", 
-                                           f"Delete component {comp.series} at z={comp.z:.4f}?",
-                                           QMessageBox.Yes | QMessageBox.No)
+            # Usiamo il metodo della MainWindow per avere lo stesso stile e icona
+            confirm = self.main_window._show_custom_message(
+                title="Delete Component",
+                header="Delete this component?",
+                text=f"Series: {comp.series}\nRedshift: {comp.z:.5f}",
+                buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                default_btn=QMessageBox.StandardButton.No,
+                parent=self
+            )
             if confirm == QMessageBox.Yes:
                 self.main_window._on_recipe_requested(
                     "absorbers", "delete_component", {"uuid": comp.uuid}, {})

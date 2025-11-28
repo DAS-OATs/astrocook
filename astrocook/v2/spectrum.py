@@ -335,7 +335,6 @@ class SpectrumV2:
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
         """
-        print('here')
         new_meta = deepcopy(self._data.meta)
         
         # Store resolution in metadata
