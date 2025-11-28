@@ -116,7 +116,7 @@ class VelocityPlotWidget(QWidget):
         left_container = QWidget()
         self.left_layout = QVBoxLayout(left_container)
         self.left_layout.setContentsMargins(0, 0, 0, 0)
-        self.left_layout.setSpacing(0)
+        self.left_layout.setSpacing(9)
 
         self.fig = Figure(figsize=(5, 6), dpi=100)
         self.canvas = FigureCanvasQTAgg(self.fig)
@@ -299,13 +299,13 @@ class VelocityPlotWidget(QWidget):
             ax = axs[i]
             self.axes.append(ax)
             
-            cursor_line, = ax.plot([], [], color='purple', lw=1.5, alpha=0.8, zorder=10)
+            cursor_line, = ax.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
             self._panel_map[ax] = (trans_name, cursor_line)
 
             def make_fmt(z):
                 def fmt(x, y):
                     val_z = (1 + z) * (1 + x / c_kms) - 1
-                    return f"v={x:.1f}, y={y:.2f}, z={val_z:.5f}"
+                    return f"Δv = {x:.1f} km/s, \u0192 = {y:.2f}, z = {val_z:.5f}"
                 return fmt
             ax.format_coord = make_fmt(z_sys)
 
@@ -371,17 +371,17 @@ class VelocityPlotWidget(QWidget):
                     ax.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
                             transform=trans_axis, color=col, lw=lw, alpha=alpha, zorder=zorder)
 
-            ax.axvline(0, color='gray', ls='--', lw=0.8)
-            ax.axhline(1.0, color='green', ls=':', alpha=0.5)
-            ax.axhline(0.0, color='gray', lw=0.5)
+            ax.axvline(0, color='gray', ls=':', lw=0.8)
+            ax.axhline(1.0, color='gray', ls=':', lw=0.8)
+            ax.axhline(0.0, color='gray', ls=':', lw=0.8)
             ax.text(0.98, 0.85, trans_name, transform=ax.transAxes, ha='right', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             
             ax.set_xlim(self._xlim)
             ax.set_ylim(-0.4 if show_resid else -0.2, 1.4)
 
-        self.fig.supxlabel("Velocity (km/s)")
-        self.fig.supylabel("Normalized Flux")
+        self.fig.supxlabel("Relative velocity (Δv, km/s)")
+        self.fig.supylabel("Normalized Flux (\u0192)")
         self.canvas.draw()
 
     def on_mouse_move(self, event):
@@ -569,7 +569,7 @@ class SystemInspector(QWidget):
         r_layout.addWidget(self.vel_plot, 1) 
         
         splitter.addWidget(right)
-        splitter.setStretchFactor(0, 4); splitter.setStretchFactor(1, 6)
+        splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
         layout.addWidget(splitter)
 
     def set_session(self, session):
@@ -691,8 +691,17 @@ class SystemInspector(QWidget):
         src = self.proxy_model.mapToSource(idx)
         comp = self.table_model.get_component_at(src.row())
         if comp and self.main_window:
-            if QMessageBox.question(self, "Delete", f"Delete {comp.series}?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
-                self.main_window._on_recipe_requested("absorbers", "delete_component", {"uuid": comp.uuid}, {})
+            confirm = self.main_window._show_custom_message(
+                title="Delete Component",
+                header="Delete this component?",
+                text=f"Series: {comp.series}\nRedshift: {comp.z:.5f}",
+                buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                default_btn=QMessageBox.StandardButton.No,
+                parent=self
+            )
+            if confirm == QMessageBox.Yes:
+                self.main_window._on_recipe_requested(
+                    "absorbers", "delete_component", {"uuid": comp.uuid}, {})
 
     def _refit(self):
         idx = self.table_view.currentIndex()
