@@ -489,6 +489,14 @@ class VelocityPlotWidget(QWidget):
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
             for other_c in session.systs.components:
+                # Filter: Only show ticks if the component matches the panel's transition
+                is_relevant = (other_c.series == trans_name)
+                if not is_relevant and other_c.series in STANDARD_MULTIPLETS:
+                    if trans_name in STANDARD_MULTIPLETS[other_c.series]:
+                        is_relevant = True
+                
+                if not is_relevant: continue
+
                 v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                 if v_min <= v_shift <= v_max:
                     is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
@@ -711,7 +719,7 @@ class SystemInspector(QWidget):
         self.z_in.returnPressed.connect(self._apply_z)
         c_layout.addWidget(self.z_in)
 
-        c_layout.addWidget(QLabel("v:"))
+        c_layout.addWidget(QLabel("Δv:"))
         self.vmin_in = QLineEdit("-300")
         self.vmin_in.setFixedWidth(50)
         self.vmin_in.setValidator(validator)
