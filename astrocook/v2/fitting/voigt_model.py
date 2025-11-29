@@ -39,44 +39,15 @@ class VoigtModelConstraintV2:
     def set_active_components(self, target_uuids: List[str] = None):
         """
         Defines the "Fluid Group". 
-        1. Starts with target_uuids.
-        2. AUTO-ADDS neighbors within +/- 150 km/s.
-        3. Only these components will be FREE.
+        Uses the shared logic from SystemListV2 (Kinematic + Blends, Shallow).
         """
         if target_uuids is None:
             self._active_uuids = None
         else:
-            # 1. Start with explicit targets
-            active_set = set(target_uuids)
+            # Use the shared logic from the SystemList
+            self._active_uuids = self._system_list.get_connected_group(target_uuids)
             
-            c_kms = 299792.458
-            
-            # Get Z of targets
-            target_zs = []
-            for comp in self._system_list.components:
-                if comp.uuid in active_set:
-                    target_zs.append(comp.z)
-            
-            if target_zs:
-                # Check all other components
-                for comp in self._system_list.components:
-                    if comp.uuid in active_set: continue
-                    
-                    # Calculate min distance to any target
-                    is_neighbor = False
-                    for z_target in target_zs:
-                        dz = abs(comp.z - z_target)
-                        dv = c_kms * dz / (1 + z_target)
-                        
-                        if dv < 30.0: 
-                            is_neighbor = True
-                            break
-                    
-                    if is_neighbor:
-                        active_set.add(comp.uuid)
-                        
-            self._active_uuids = active_set
-            logging.info(f"Fluid Group: {len(target_uuids)} targets + {len(active_set)-len(target_uuids)} neighbors activated.")
+            logging.info(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
 

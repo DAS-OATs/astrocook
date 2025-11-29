@@ -6,7 +6,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
-from PySide6.QtGui import QAction, QCursor, QDoubleValidator
+from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QColor
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
@@ -28,18 +28,47 @@ EDITABLE_COLS = {"Transitions", "z", "logN", "b", "btur"}
 
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
+
     def __init__(self, components: List[ComponentDataV2] = None):
         super().__init__()
         self._components = components if components else []
+        self._highlighted_uuids = set() # Store the group UUIDs
+
     def update_data(self, components: List[ComponentDataV2]):
-        self.beginResetModel(); self._components = components; self.endResetModel()
+        self.beginResetModel()
+        self._components = components
+        self.endResetModel()
+
+    def set_highlighted_uuids(self, uuids: set):
+        """Sets the UUIDs that should be highlighted as a group."""
+        # [FIX] Optimization: Avoid repainting if nothing changed
+        if self._highlighted_uuids == uuids: 
+            return
+
+        self._highlighted_uuids = uuids
+        # Trigger a repaint of the visible area
+        if self._components:
+            top_left = self.index(0, 0)
+            bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
+            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
+
     def rowCount(self, parent=QModelIndex()): return len(self._components)
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
+    
     def flags(self, index):
         return super().flags(index) | Qt.ItemIsEditable if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
+
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid(): return None
         comp = self._components[index.row()]
+        
+        # --- NEW: Group Highlighting ---
+        if role == Qt.BackgroundRole:
+            if comp.uuid in self._highlighted_uuids:
+                return QColor("lightblue")
+            return None
+        # -------------------------------
+
         attr = COL_MAP[COLUMNS[index.column()]]
         if role in (Qt.DisplayRole, Qt.EditRole):
             val = getattr(comp, attr, None)
@@ -47,6 +76,7 @@ class SystemTableModel(QAbstractTableModel):
                 return f"{val:.6f}" if attr == 'z' else f"{val:.3f}" if attr in ['logN', 'dlogN'] else f"{val:.2f}"
             return str(val) if val is not None else ""
         return Qt.AlignCenter if role == Qt.TextAlignmentRole else None
+
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or role != Qt.EditRole: return False
         attr = COL_MAP[COLUMNS[index.column()]]
@@ -55,34 +85,52 @@ class SystemTableModel(QAbstractTableModel):
             self.data_changed_request.emit("update_component", {attr: val, 'uuid': self._components[index.row()].uuid})
             return True
         except ValueError: return False
+
     def headerData(self, section, orientation, role):
         return COLUMNS[section] if role == Qt.DisplayRole and orientation == Qt.Horizontal else None
-    def get_component_at(self, row: int): return self._components[row] if 0 <= row < len(self._components) else None
-
+    
+    def get_component_at(self, row: int): 
+        return self._components[row] if 0 <= row < len(self._components) else None
+    
 # --- Proxy Model ---
 class SystemSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.group_filtering_enabled = False
-        self.target_group_id = None
+        self.allowed_uuids = set()
 
-    def set_group_filter(self, enabled: bool, group_id: int = None):
+    def set_group_filter_enabled(self, enabled: bool):
         self.group_filtering_enabled = enabled
-        self.target_group_id = group_id
         self.invalidateFilter()
+        
+    def set_allowed_uuids(self, uuids: set):
+        """Updates the list of visible UUIDs (Fluid Group)."""
+        # Break recursion: If the group hasn't changed, do nothing.
+        if self.allowed_uuids == uuids: 
+            return
+        
+        self.allowed_uuids = uuids
+        # Only re-filter if the checkbox is actually checked
+        if self.group_filtering_enabled:
+            self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
-        if not self.group_filtering_enabled or self.target_group_id is None: return True
+        # If filtering is off, show everything
+        if not self.group_filtering_enabled: return True
+        
+        # If filtering is on, only show components in the Fluid Group
         model = self.sourceModel()
         comp = model.get_component_at(source_row)
-        return True if comp and comp.id == self.target_group_id else False
+        if not comp: return False
+        
+        return comp.uuid in self.allowed_uuids
 
     def lessThan(self, left, right):
         l_data = self.sourceModel().data(left, Qt.DisplayRole)
         r_data = self.sourceModel().data(right, Qt.DisplayRole)
         try: return float(l_data) < float(r_data)
         except (ValueError, TypeError): return str(l_data) < str(r_data)
-
+        
 # --- Helper for Voigt Profile ---
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
@@ -472,10 +520,18 @@ class SystemInspector(QWidget):
         self._setup_ui()
         
     def _setup_ui(self):
+        # [Task 3] Zero margins for the main window to match Main Window style
         layout = QVBoxLayout(self)
-        splitter = QSplitter(Qt.Horizontal)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(0)
         
-        # Left: Table
+        # [Task 1] Reduce splitter size
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.setHandleWidth(9)
+        # Optional: Light gray line to make the thin split visible
+        #splitter.setStyleSheet("QSplitter::handle { background-color: #D3D3D3; }")
+        
+        # --- Left Side: Table ---
         self.table_view = QTableView()
         self.table_model = SystemTableModel()
         
@@ -484,7 +540,6 @@ class SystemInspector(QWidget):
         
         self.table_view.setModel(self.proxy_model)
         self.table_view.setSortingEnabled(True)
-        
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table_view.setAlternatingRowColors(True)
@@ -496,24 +551,34 @@ class SystemInspector(QWidget):
         
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0,0,0,0)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
         
-        self.group_cb = QCheckBox("Group View (Same ID)")
+        # [Task 2] Create a layout for the checkbox that matches the Right Toolbar's height/margins
+        self.group_cb = QCheckBox("Group View (Selected Component Only)")
         self.group_cb.toggled.connect(self._on_group_toggled)
-        left_layout.addWidget(self.group_cb)
+        
+        l_toolbar = QHBoxLayout()
+        l_toolbar.setContentsMargins(5, 5, 15, 15) # Exact match to Right Toolbar
+        l_toolbar.addWidget(self.group_cb)
+        l_toolbar.addStretch() # Push checkbox to the left
+        
+        left_layout.addLayout(l_toolbar)
         left_layout.addWidget(self.table_view)
         
         splitter.addWidget(left_widget)
         
-        # Right Side
-        right = QWidget()
-        r_layout = QVBoxLayout(right)
-        r_layout.setContentsMargins(0,0,0,0)
+        # --- Right Side: Plot & Controls ---
+        right_widget = QWidget() # Renamed locally for clarity
+        r_layout = QVBoxLayout(right_widget)
+        r_layout.setContentsMargins(0, 0, 0, 0)
+        r_layout.setSpacing(0)
         
-        # --- Toolbar Controls ---
+        # Right Toolbar
         c_layout = QHBoxLayout()
-        c_layout.setContentsMargins(5,5,5,0)
-        
+        c_layout.setContentsMargins(5, 5, 5, 5) # Exact match to Left Toolbar
+        c_layout.setSpacing(5)
+
         c_layout.addWidget(QLabel("Trans:"))
         self.trans_in = QLineEdit()
         self.trans_in.setPlaceholderText("CIV, SiIV")
@@ -524,7 +589,7 @@ class SystemInspector(QWidget):
         self.z_in = QLineEdit()
         self.z_in.setFixedWidth(70)
         validator = QDoubleValidator()
-        validator.setLocale(QLocale.C) # [FIX] Enforce dot decimal
+        validator.setLocale(QLocale.C) 
         self.z_in.setValidator(validator)
         self.z_in.returnPressed.connect(self._apply_z)
         c_layout.addWidget(self.z_in)
@@ -532,26 +597,26 @@ class SystemInspector(QWidget):
         c_layout.addWidget(QLabel("V:"))
         self.vmin_in = QLineEdit("-300")
         self.vmin_in.setFixedWidth(50)
-        self.vmin_in.setValidator(validator) # Use C locale
+        self.vmin_in.setValidator(validator)
         self.vmin_in.returnPressed.connect(self._apply_limits)
         c_layout.addWidget(self.vmin_in)
         self.vmax_in = QLineEdit("300")
         self.vmax_in.setFixedWidth(50)
-        self.vmax_in.setValidator(validator) # Use C locale
+        self.vmax_in.setValidator(validator)
         self.vmax_in.returnPressed.connect(self._apply_limits)
         c_layout.addWidget(self.vmax_in)
         
-        c_layout.addWidget(QLabel("N:"))
+        c_layout.addWidget(QLabel("logN:"))
         self.logn_in = QLineEdit("13.5")
         self.logn_in.setFixedWidth(40)
-        self.logn_in.setValidator(validator) # Use C locale
+        self.logn_in.setValidator(validator)
         self.logn_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.logn_in)
         
         c_layout.addWidget(QLabel("b:"))
         self.b_in = QLineEdit("10.0")
         self.b_in.setFixedWidth(40)
-        self.b_in.setValidator(validator) # Use C locale
+        self.b_in.setValidator(validator)
         self.b_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.b_in)
         
@@ -568,31 +633,66 @@ class SystemInspector(QWidget):
         self.vel_plot = VelocityPlotWidget(self)
         r_layout.addWidget(self.vel_plot, 1) 
         
-        splitter.addWidget(right)
+        splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
         layout.addWidget(splitter)
 
     def set_session(self, session):
+        """
+        Updates the table with data from the session and handles row selection logic.
+        Prioritizes the 'latest added' component if a new one is detected.
+        """
+        # 1. Capture previous state (Selection & Max ID)
         sel = self.table_view.selectionModel().selectedRows()
         prev_uuid = None
         if sel:
             idx_source = self.proxy_model.mapToSource(sel[0])
-            prev_uuid = self.table_model.get_component_at(idx_source.row()).uuid
-
-        self.current_session = session
-        self.table_model.update_data(session.systs.components if session and session.systs else [])
+            comp = self.table_model.get_component_at(idx_source.row())
+            if comp:
+                prev_uuid = comp.uuid
         
-        if prev_uuid:
-            for r in range(self.table_model.rowCount()):
-                if self.table_model.get_component_at(r).uuid == prev_uuid:
-                    idx_proxy = self.proxy_model.mapFromSource(self.table_model.index(r, 0))
-                    self.table_view.selectRow(idx_proxy.row())
-                    return
-        if self.proxy_model.rowCount() > 0:
-            self.table_view.selectRow(0)
-        else:
-            self.vel_plot.plot_spectrum(None)
+        # Detect existing max ID to identify if a new component is added later
+        old_comps = self.table_model._components
+        max_id_old = max([c.id for c in old_comps], default=0) if old_comps else 0
 
+        # 2. Update Model with new data
+        self.current_session = session
+        new_comps = session.systs.components if session and session.systs else []
+        self.table_model.update_data(new_comps)
+        
+        # 3. Determine Selection Target
+        max_id_new = max([c.id for c in new_comps], default=0) if new_comps else 0
+        target_uuid = prev_uuid
+        
+        # Rule: If the max ID increased, a component was likely added. Select it.
+        if max_id_new > max_id_old:
+            for c in new_comps:
+                if c.id == max_id_new:
+                    target_uuid = c.uuid
+                    break
+        
+        # 4. Apply Selection (Find row by UUID)
+        selection_applied = False
+        if target_uuid:
+            for r in range(self.table_model.rowCount()):
+                comp = self.table_model.get_component_at(r)
+                if comp and comp.uuid == target_uuid:
+                    idx_src = self.table_model.index(r, 0)
+                    idx_proxy = self.proxy_model.mapFromSource(idx_src)
+                    
+                    if idx_proxy.isValid():
+                        self.table_view.selectRow(idx_proxy.row())
+                        self.table_view.scrollTo(idx_proxy) # Ensure it's visible
+                        selection_applied = True
+                    break
+
+        # 5. Fallback (Default to top row if no target found or table empty)
+        if not selection_applied:
+            if self.proxy_model.rowCount() > 0:
+                self.table_view.selectRow(0)
+            else:
+                self.vel_plot.plot_spectrum(None)
+                
     def update_limit_boxes(self, v_min, v_max):
         self.vmin_in.blockSignals(True)
         self.vmax_in.blockSignals(True)
@@ -628,19 +728,14 @@ class SystemInspector(QWidget):
             logging.error(f"Error applying z: {e}")
 
     def _on_group_toggled(self, checked):
-        if checked:
-            sel = self.table_view.selectionModel().selectedRows()
-            if sel:
-                idx_src = self.proxy_model.mapToSource(sel[0])
-                comp = self.table_model.get_component_at(idx_src.row())
-                if comp:
-                    self.proxy_model.set_group_filter(True, comp.id)
-        else:
-            self.proxy_model.set_group_filter(False)
+        self.proxy_model.set_group_filter_enabled(checked)
 
     def _on_selection_changed(self, sel, desel):
         indexes = self.table_view.selectionModel().selectedRows()
-        if not indexes: return
+        if not indexes: 
+            # Clear group if selection is cleared
+            self._update_group_definition([])
+            return
         
         idx_proxy = indexes[0]
         idx_source = self.proxy_model.mapToSource(idx_proxy)
@@ -654,6 +749,9 @@ class SystemInspector(QWidget):
             c = self.table_model.get_component_at(src.row())
             if c: selected_comps.append(c)
 
+        # Update the Group Logic (Highlighter + Filter List)
+        self._update_group_definition(selected_comps)
+
         if primary_comp and self.current_session:
             cur = self.trans_in.text()
             toks = [t.strip() for t in cur.split(',') if t.strip()]
@@ -663,11 +761,8 @@ class SystemInspector(QWidget):
             self.z_in.setText(f"{primary_comp.z:.5f}")
             self._parse(new_txt)
             
-            if self.group_cb.isChecked():
-                self.proxy_model.set_group_filter(True, primary_comp.id)
-            
             self.vel_plot.plot_system(self.current_session, primary_comp, selected_comps)
-
+            
     def _apply(self):
         self._parse(self.trans_in.text())
         self._apply_limits()
@@ -709,3 +804,21 @@ class SystemInspector(QWidget):
         comp = self.table_model.get_component_at(src.row())
         if comp and self.main_window:
             self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
+    
+    def _update_group_definition(self, selected_comps: List[ComponentDataV2]):
+        """
+        Calculates the 'Fluid Group' using the SSOT in SystemListV2.
+        """
+        if not selected_comps or not self.current_session:
+            self.table_model.set_highlighted_uuids(set())
+            self.proxy_model.set_allowed_uuids(set())
+            return
+
+        seed_uuids = [c.uuid for c in selected_comps]
+        
+        # Delegate to the API (Single Source of Truth)
+        group_uuids = self.current_session.systs.get_connected_group(seed_uuids)
+
+        # Apply to Models
+        self.table_model.set_highlighted_uuids(group_uuids)
+        self.proxy_model.set_allowed_uuids(group_uuids)

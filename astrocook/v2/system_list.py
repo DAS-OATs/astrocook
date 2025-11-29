@@ -3,8 +3,9 @@ import astropy.units as au
 import dataclasses
 import logging
 import numpy as np
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
+from .atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 from .fitting.voigt_model import VoigtModelConstraintV2
 from .structures import ComponentDataV2, SystemListDataV2
 from .system_list_migration import migrate_component_v2_to_v1
@@ -335,3 +336,111 @@ class SystemListV2:
         # Return new container
         new_data = dataclasses.replace(self._data, components=new_components)
         return SystemListV2(new_data)
+    
+    def get_connected_group(self, seed_uuids: List[str]) -> Set[str]:
+        """
+        Returns a set of UUIDs that are 'Fluid Neighbors' of the seed components.
+        
+        Logic: 
+        - Shallow Grouping (Seed + Immediate Neighbors only).
+        - Dynamic Threshold: 4.0 * max(b_seed, b_candidate) (Min 30 km/s).
+        - Multiplet-Aware: Checks ALL lines in a series for overlaps (e.g. 1548 vs 1550).
+        """
+        if not seed_uuids:
+            return set()
+        
+        c_kms = 299792.458
+        
+        # 1. Identify Seed Objects
+        seeds = []
+        comp_map = {c.uuid: c for c in self.components}
+        
+        for uuid in seed_uuids:
+            if uuid in comp_map:
+                seeds.append(comp_map[uuid])
+        
+        group_uuids = set(seed_uuids)
+
+        # Helper: Get ALL rest wavelengths for a series
+        # Returns a list, e.g., [1548.2, 1550.7] for 'CIV'
+        def get_all_w_rest(series_name: str) -> List[float]:
+            # 1. Check if it's a specific line (e.g., 'CIV_1548') in ATOM_DATA
+            if series_name in ATOM_DATA:
+                return [ATOM_DATA[series_name]['wave']]
+            
+            # 2. Check if it's a Multiplet group (e.g., 'CIV') in STANDARD_MULTIPLETS
+            if series_name in STANDARD_MULTIPLETS:
+                waves = []
+                for line_name in STANDARD_MULTIPLETS[series_name]:
+                    if line_name in ATOM_DATA:
+                        waves.append(ATOM_DATA[line_name]['wave'])
+                if waves: return waves
+
+            return []
+
+        for seed in seeds:
+            # Prepare Seed Wavelengths (List of all potential lines)
+            seed_waves_rest = get_all_w_rest(seed.series)
+            if not seed_waves_rest:
+                logging.warning(f"[GROUP] No atomic data for {seed.series}")
+            
+            seed_z = seed.z
+            seed_b = seed.b
+            
+            # Calculate observed wavelengths for ALL lines in the seed multiplet
+            seed_waves_obs = [w * (1 + seed_z) for w in seed_waves_rest]
+
+            for other in self.components:
+                if other.uuid in group_uuids: continue 
+                
+                # --- THRESHOLD CALCULATION ---
+                # 4.0 sigma + 30 km/s floor
+                threshold_kms = max(4.0 * max(seed_b, other.b), 30.0)
+
+                is_connected = False
+                
+                # --- Criterion 1: Kinematic Proximity (Same System) ---
+                # Simple redshift check
+                dz = abs(seed_z - other.z)
+                dv_kin = c_kms * dz / (1 + seed_z)
+                
+                if dv_kin < threshold_kms:
+                    is_connected = True
+                
+                # --- Criterion 2: Spectral Overlap (Blends) ---
+                # Check EVERY line in Seed vs EVERY line in Other
+                dv_blend_min = 99999.0
+                
+                if not is_connected and seed_waves_obs:
+                    other_waves_rest = get_all_w_rest(other.series)
+                    other_waves_obs = [w * (1 + other.z) for w in other_waves_rest]
+                    
+                    # Nested loop: Does ANY line of Seed overlap ANY line of Other?
+                    for w1_obs in seed_waves_obs:
+                        for w2_obs in other_waves_obs:
+                            lam_avg = (w1_obs + w2_obs) / 2.0
+                            dv = c_kms * abs(w1_obs - w2_obs) / lam_avg
+                            
+                            if dv < dv_blend_min:
+                                dv_blend_min = dv
+                            
+                            if dv < threshold_kms:
+                                is_connected = True
+                                break # Found an overlap
+                        if is_connected: break
+
+                # --- DEBUG LOGGING ---
+                # Log if it's a match OR if it's a close miss (e.g. within 200 km/s)
+                debug_condition = is_connected or (dv_kin < 200.0) or (dv_blend_min < 200.0)
+                
+                if debug_condition:
+                    status = "MATCH" if is_connected else "SKIP"
+                    logging.debug(
+                        f"[GROUP] {seed.series}({seed.z:.4f}) vs {other.series}({other.z:.4f}) | "
+                        f"Limit: {threshold_kms:.1f} | dV_kin: {dv_kin:.1f} | dV_blend: {dv_blend_min:.1f} -> {status}"
+                    )
+
+                if is_connected:
+                    group_uuids.add(other.uuid)
+                    
+        return group_uuids
