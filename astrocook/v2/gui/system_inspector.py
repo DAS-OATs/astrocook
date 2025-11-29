@@ -70,7 +70,8 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                return QColor("#FFF8DC") # Cornsilk
+                #return QColor("#FFF8DC") # Cornsilk
+                return QColor("deepskyblue") # Light Blue
             return None
 
         # 2. Constraint Visuals (Font Styles)
@@ -710,7 +711,7 @@ class SystemInspector(QWidget):
         self.z_in.returnPressed.connect(self._apply_z)
         c_layout.addWidget(self.z_in)
 
-        c_layout.addWidget(QLabel("V:"))
+        c_layout.addWidget(QLabel("v:"))
         self.vmin_in = QLineEdit("-300")
         self.vmin_in.setFixedWidth(50)
         self.vmin_in.setValidator(validator)
@@ -900,53 +901,115 @@ class SystemInspector(QWidget):
         index = self.table_view.indexAt(pos)
         if not index.isValid(): return
         
-        # Map to source to get data
+        # 1. Identify Context (Clicked Cell)
         idx_source = self.proxy_model.mapToSource(index)
-        comp = self.table_model.get_component_at(idx_source.row())
+        clicked_comp = self.table_model.get_component_at(idx_source.row())
         col_name = COLUMNS[idx_source.column()]
         param_attr = COL_MAP.get(col_name)
 
-        if not comp: return
+        if not clicked_comp: return
         
         m = QMenu(self)
         
-        # --- Constraint Actions (Only for parameters) ---
+        # 2. Check Selection State (Is it a Link Operation?)
+        # Get all selected rows (mapped to source model)
+        sel_rows = self.table_view.selectionModel().selectedRows()
+        source_rows = [self.proxy_model.mapToSource(idx).row() for idx in sel_rows]
+        unique_rows = list(set(source_rows))
+        
+        # LINKING LOGIC: Exactly 2 rows selected, and we clicked on a parameter column
+        if len(unique_rows) == 2 and col_name in ['z', 'logN', 'b', 'btur']:
+            # Identify Dependent (Clicked) vs Independent (The other one)
+            other_row = unique_rows[0] if unique_rows[0] != idx_source.row() else unique_rows[1]
+            source_comp = self.table_model.get_component_at(other_row)
+            
+            if source_comp:
+                m.addSection("Parameter Linking")
+                
+                # A. Link by Value (Identity)
+                expr_val = f"p['{source_comp.uuid}'].{param_attr}"
+                act_link = QAction(f"Link {col_name} to {source_comp.series} (Value)", m)
+                act_link.triggered.connect(
+                    lambda: self._toggle_constraint(
+                        clicked_comp.uuid, param_attr, False, expr_val, source_comp.uuid # <--- Pass Source UUID
+                    )
+                )
+                m.addAction(act_link)
+                
+                # B. Link by Temperature (Thermal) - Only for 'b'
+                if col_name == 'b':
+                    m_dep = self._get_mass(clicked_comp.series)
+                    m_src = self._get_mass(source_comp.series)
+                    
+                    if m_dep and m_src:
+                        mass_ratio = np.sqrt(m_src / m_dep)
+                        expr_therm = f"p['{source_comp.uuid}'].b * {mass_ratio:.4f}"
+                        
+                        act_therm = QAction(f"Link {col_name} to {source_comp.series} (Thermal)", m)
+                        act_therm.triggered.connect(
+                            lambda: self._toggle_constraint(
+                                clicked_comp.uuid, param_attr, False, expr_therm, source_comp.uuid # <--- Pass Source UUID
+                            )
+                        )
+                        m.addAction(act_therm)
+                
+                m.addSeparator()
+
+        # 3. Standard Constraint Actions (Freeze/Unfreeze)
+        # (Only show if we are NOT in linking mode, or as secondary options)
         if col_name in ['z', 'logN', 'b', 'btur']:
-            # Check current status
             is_frozen = False
-            # We can read from the model's internal map or the session
-            # Reading from session is safer (SSOT)
+            is_linked = False
+            
             if self.current_session and self.current_session.systs.constraint_model:
                 c_map = self.current_session.systs.constraint_model.v2_constraints_by_uuid
-                if comp.uuid in c_map and param_attr in c_map[comp.uuid]:
-                    if not c_map[comp.uuid][param_attr].is_free:
-                        is_frozen = True
+                if clicked_comp.uuid in c_map and param_attr in c_map[clicked_comp.uuid]:
+                    cons = c_map[clicked_comp.uuid][param_attr]
+                    if not cons.is_free: is_frozen = True
+                    if cons.expression: is_linked = True
             
-            if is_frozen:
+            if is_linked:
+                # Option to break link
+                act = QAction(f"Unlink '{col_name}' (Set Free)", m)
+                # Pass None for target_uuid to clear it
+                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None, None))
+                m.addAction(act)
+            elif is_frozen:
                 act = QAction(f"Unfreeze '{col_name}'", m)
-                act.triggered.connect(lambda: self._toggle_constraint(comp.uuid, param_attr, True))
+                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None))
                 m.addAction(act)
             else:
                 act = QAction(f"Freeze '{col_name}'", m)
-                act.triggered.connect(lambda: self._toggle_constraint(comp.uuid, param_attr, False))
+                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, False, None))
                 m.addAction(act)
             
             m.addSeparator()
 
-        # --- Standard Actions ---
         m.addAction("Refit Selected", self._refit)
         m.addAction("Delete", self._delete)
         m.exec(self.table_view.mapToGlobal(pos))
 
-    def _toggle_constraint(self, uuid, param, set_free):
+    # Helper for Mass
+    def _get_mass(self, series_name):
+        # 1. Direct
+        if series_name in ATOM_DATA: return ATOM_DATA[series_name]['mass']
+        # 2. Multiplet
+        if series_name in STANDARD_MULTIPLETS:
+            prim = STANDARD_MULTIPLETS[series_name][0]
+            if prim in ATOM_DATA: return ATOM_DATA[prim]['mass']
+        return None
+
+    def _toggle_constraint(self, uuid, param, set_free, expression=None, target_uuid=None): # <--- Added Arg
         if self.main_window:
-            # We call a generic recipe. 
-            # Note: You need to register a recipe wrapper for 'update_constraint' 
-            # or map it to 'update_component' if that handles constraints too.
-            # Assuming a new recipe 'update_constraint':
             self.main_window._on_recipe_requested(
                 "absorbers", "update_constraint", 
-                {"uuid": uuid, "param": param, "is_free": set_free}, 
+                {
+                    "uuid": uuid, 
+                    "param": param, 
+                    "is_free": set_free,
+                    "expression": expression,
+                    "target_uuid": target_uuid # <--- Pass it
+                }, 
                 {}
             )
     

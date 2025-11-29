@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class VoigtModelConstraintV2:
     """
     Manages parameter constraints and converts component data into vectors.
-    Supports "Selective Fitting" with Neighbor Activation.
+    Supports "Selective Fitting" with Neighbor Activation and Parameter Linking.
     """
     
     PARAMETER_ORDER = ['z', 'logN', 'b', 'btur'] 
@@ -32,6 +32,11 @@ class VoigtModelConstraintV2:
 
         self._active_uuids: Optional[Set[str]] = None
         self._component_groups = [list(self._system_list.components)]
+        
+        # Linking State
+        self._compiled_links: List[Tuple[int, Any]] = [] # [(target_index, code_object)]
+        self._uuid_to_idx: Dict[str, int] = {}
+        
         self._refresh_state()
         
         logging.info(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
@@ -46,7 +51,6 @@ class VoigtModelConstraintV2:
         else:
             # Use the shared logic from the SystemList
             self._active_uuids = self._system_list.get_connected_group(target_uuids)
-            
             logging.info(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
@@ -55,17 +59,23 @@ class VoigtModelConstraintV2:
         self._initial_p_vector = self._build_initial_vector()
         self._param_map = self._build_constraint_map()
         self._p_free_vector = self._initial_p_vector[self._param_map['is_free']]
+        self._compile_links()
 
     def _build_initial_vector(self) -> np.ndarray:
         initial_values = []
+        # Also build the UUID -> Index map here for linking
+        self._uuid_to_idx = {}
+        idx_counter = 0
+        
         for group in self._component_groups:
             for component in group:
+                self._uuid_to_idx[component.uuid] = idx_counter
                 for param_name in self.PARAMETER_ORDER:
                     value = getattr(component, param_name)
                     initial_values.append(value if value is not None else 0.0) 
+                    idx_counter += 1
         return np.array(initial_values)
     
-    # [NEW HELPER] Add this method to the class
     def _sanitize_data_structures(self):
         """
         Robustly fixes JSON serialization artifacts in the data core.
@@ -87,22 +97,18 @@ class VoigtModelConstraintV2:
         for k, v in constraints.items():
             final_key = k
             
-            # Handle Stringified Tuples: "('uuid', 'param')" or "('123', 'param')"
+            # Handle Stringified Tuples
             if isinstance(k, str) and k.startswith('(') and k.endswith(')'):
                 try:
-                    # Strip parens and split
                     content = k[1:-1]
-                    # Simple CSV parse respecting quotes
                     parts = [p.strip().strip("'").strip('"') for p in content.split(',')]
                     if len(parts) == 2:
                         p0, p1 = parts
-                        # Try to restore Integer ID
                         if p0.isdigit(): p0 = int(p0)
                         final_key = (p0, p1)
-                except:
-                    pass # Keep original if parse fails
+                except: pass
 
-            # Handle Stringified Integers in Tuple: (123, 'z') vs ("123", 'z')
+            # Handle Stringified Integers in Tuple
             if isinstance(final_key, tuple):
                  p0, p1 = final_key
                  if isinstance(p0, str) and p0.isdigit():
@@ -110,20 +116,14 @@ class VoigtModelConstraintV2:
 
             fixed_constraints[final_key] = v
 
-        # Apply fixes to the data object (in memory only, affects this session)
-        # Note: We can't modify frozen dataclass, but we can update the local refs
-        # used by this class. Ideally, we would update the system_list, but 
-        # patching locally is sufficient for the fitter/view logic.
         return fixed_map, fixed_constraints
 
     def _build_constraint_map(self) -> Dict[str, np.ndarray]:
-        # [FIX] Run sanitization first
         v1_id_map, v1_parsed = self._sanitize_data_structures()
 
         num_params = len(self._initial_p_vector)
         is_free = np.ones(num_params, dtype=bool)
         
-        # Helper: Local import to ensure we can check types
         from ..structures import ParameterConstraintV2
         import dataclasses
 
@@ -160,7 +160,7 @@ class VoigtModelConstraintV2:
                 
                 effective_is_free = c_free and (not force_freeze)
                 if c_expr is not None:
-                    effective_is_free = False 
+                    effective_is_free = False # Linked parameters are not free
                 
                 is_free[i] = effective_is_free
                 
@@ -176,11 +176,34 @@ class VoigtModelConstraintV2:
             self.v2_constraints_by_uuid[v2_uuid][param_name] = v2_constraint_obj
 
         return {'is_free': is_free}
+    
+    def _compile_links(self):
+        """Pre-compiles expressions for linked parameters to speed up fitting."""
+        self._compiled_links = []
+        
+        for uuid, p_map in self.v2_constraints_by_uuid.items():
+            if uuid not in self._uuid_to_idx: continue
+            comp_idx = self._uuid_to_idx[uuid]
+            
+            for param, constraint in p_map.items():
+                if not constraint.is_free and constraint.expression:
+                    # Determine target index in p_full
+                    try:
+                        param_offset = self.PARAMETER_ORDER.index(param)
+                        target_idx = comp_idx + param_offset
+                        
+                        # Compile expression
+                        # We use 'p' as the dictionary of components, e.g. p['uuid'].b
+                        code = compile(constraint.expression, f"<link {uuid}.{param}>", 'eval')
+                        self._compiled_links.append((target_idx, code))
+                    except Exception as e:
+                        logging.error(f"Failed to compile link for {uuid}.{param}: {e}")
 
     def _convert_v1_to_v2(self, v1_state, v1_id_map, effective_is_free: bool):
         expr = v1_state['expression']
         tgt_uuid = None
         if expr:
+            # Convert "p[123]" -> "p['uuid']"
             match = self.V1_ID_REGEX.search(expr)
             if match:
                 vid = int(match.group(1))
@@ -200,8 +223,53 @@ class VoigtModelConstraintV2:
         return self._p_free_vector
         
     def map_p_free_to_full(self, p_free_fitted: np.ndarray) -> np.ndarray:
+        """
+        Reconstructs the full parameter vector from the free parameters.
+        Evaluates linked parameter expressions dynamically.
+        """
+        # 1. Fill Free Parameters
         p_full = self._initial_p_vector.copy()
         p_full[self._param_map['is_free']] = p_free_fitted
+        
+        # 2. Evaluate Links
+        if self._compiled_links:
+            # Create a lightweight context for 'p["uuid"].param' access
+            # We map p['uuid'] to a proxy object that reads from p_full
+            
+            class ComponentProxy:
+                __slots__ = ('_arr', '_idx')
+                def __init__(self, arr, idx):
+                    self._arr = arr
+                    self._idx = idx
+                @property
+                def z(self): return self._arr[self._idx]
+                @property
+                def logN(self): return self._arr[self._idx+1]
+                @property
+                def b(self): return self._arr[self._idx+2]
+                @property
+                def btur(self): return self._arr[self._idx+3]
+
+            # Create the 'p' dictionary
+            # Note: uuid_to_idx is computed in _refresh_state
+            p_dict = {
+                u: ComponentProxy(p_full, i) 
+                for u, i in self._uuid_to_idx.items()
+            }
+            
+            # Common math functions for expressions
+            eval_globals = {'p': p_dict, 'np': np, 'log': np.log10, 'ln': np.log}
+            
+            # Execute compiled expressions
+            # Note: If chains exist (A->B->C), we might need multiple passes or topological sort.
+            # For now, we assume standard depth-1 links or ordered calculation.
+            for target_idx, code in self._compiled_links:
+                try:
+                    val = eval(code, eval_globals)
+                    p_full[target_idx] = float(val)
+                except Exception:
+                    pass # Keep initial value if evaluation fails
+
         return p_full
     
     def get_bounds(self) -> Tuple[np.ndarray, np.ndarray]:

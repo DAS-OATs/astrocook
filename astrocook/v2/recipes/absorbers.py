@@ -100,7 +100,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
             {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b)"},
             {"name": "is_free", "type": bool, "default": None, "doc": "Is the parameter free to vary?"},
-            {"name": "expression", "type": str, "default": None, "doc": "Math expression for linking"}
+            {"name": "expression", "type": str, "default": None, "doc": "Math expression for linking"},
+            {"name": "target_uuid", "type": str, "default": None, "doc": "UUID of the source component (for linking)"} # <--- Added
         ],
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
@@ -316,13 +317,50 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
         
-    def update_constraint(self, uuid: str, param: str, is_free: bool = None, expression: str = None) -> 'SessionV2':
+    def update_constraint(self, uuid: str, param: str, 
+                          is_free: bool = None, 
+                          expression: str = None, 
+                          target_uuid: str = None) -> 'SessionV2':
         try:
-            # 1. Delegate to the API in SystemListV2
-            # Note: We access self._session directly, consistent with other recipes.
-            new_systs = self._session.systs.update_constraint(uuid, param, is_free, expression)
+            # 1. Update the Constraint
+            new_systs = self._session.systs.update_constraint(
+                uuid, param, is_free, expression, target_uuid
+            )
+            
+            # 2. [FIX] Immediate Value Update
+            # If we just set a link (expression exists), calculate and apply the value now.
+            if expression and not is_free:
+                import numpy as np
+                
+                # A. Build Evaluation Context
+                # We need a dict 'p' where p['uuid'].param works.
+                class CompProxy:
+                    def __init__(self, c): self.c = c
+                    @property
+                    def z(self): return self.c.z
+                    @property
+                    def logN(self): return self.c.logN
+                    @property
+                    def b(self): return self.c.b
+                    @property
+                    def btur(self): return self.c.btur
 
-            # 2. Return a new Session State with the modified system list
+                comp_map = {c.uuid: CompProxy(c) for c in new_systs.components}
+                eval_globals = {'p': comp_map, 'np': np, 'sqrt': np.sqrt, 'log': np.log10}
+                
+                try:
+                    # B. Evaluate
+                    new_val = float(eval(expression, eval_globals))
+                    
+                    # C. Update the component value
+                    # We reuse the update_component logic available in SystemListV2
+                    logging.info(f"Link established. Auto-updating {param} to {new_val:.4f}")
+                    new_systs = new_systs.update_component(uuid, **{param: new_val})
+                    
+                except Exception as e:
+                    logging.warning(f"Could not auto-update linked value: {e}")
+
+            # 3. Return a new Session State
             return self._session.with_new_system_list(new_systs)
             
         except Exception as e:
