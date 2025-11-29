@@ -4,6 +4,7 @@ import astropy.units as au
 from scipy.special import wofz 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QColor
@@ -156,6 +157,9 @@ class VelocityPlotWidget(QWidget):
         self.cursor_logN = 13.5
         self.cursor_b = 10.0
         
+        # Store the 'Home' view state
+        self._home_xlim = (-300, 300)
+
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(2)
@@ -171,8 +175,27 @@ class VelocityPlotWidget(QWidget):
         self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         self.toolbar = AstrocookToolbar(self.canvas, self)
+        
+        # --- Toolbar Customization ---
+        # 1. Remove 'Select' and 'Subplots' if present
+        # 2. Hook up the 'Home' button to our custom logic
         for action in self.toolbar.actions():
-            if action.text() == 'Select': self.toolbar.removeAction(action); break
+            txt = action.text()
+            tip = action.toolTip()
+            
+            if txt == 'Select': 
+                self.toolbar.removeAction(action)
+            
+            # Identify Home button by text or tooltip (standard mpl is 'Reset original view')
+            elif txt == 'Home' or 'Reset original view' in tip:
+                try:
+                    # Disconnect the original matplotlib 'home' method
+                    action.triggered.disconnect()
+                except RuntimeError:
+                    pass # Was not connected or already disconnected
+                
+                # Connect our custom handler
+                action.triggered.connect(self.on_home)
         
         self.left_layout.addWidget(self.canvas)
         self.left_layout.addWidget(self.toolbar)
@@ -188,17 +211,19 @@ class VelocityPlotWidget(QWidget):
         # State
         self._all_transitions = [] 
         self._panel_map = {} 
-        self.cursor_lines = []
         self.axes = [] 
         
         self._current_session = None
         self._current_component = None
         self._selected_components = []
-        self._plot_center_z = 0.0 # NEW: Controls the 0 km/s reference
+        self._plot_center_z = 0.0
 
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('button_press_event', self.on_press)
         self.canvas.mpl_connect('draw_event', self.on_draw_update_limits)
+        
+        # Detect end of pan/zoom to refetch data
+        self.canvas.mpl_connect('button_release_event', self.on_mouse_release)
 
     @property
     def main_window(self):
@@ -206,9 +231,34 @@ class VelocityPlotWidget(QWidget):
 
     def toggle_region_selector(self): pass
 
+    # [FIX 2] Custom Home Logic
+    def on_home(self):
+        """Restores the view to the initial state for the current component."""
+        if not self._current_component: return
+        
+        # 1. Reset Internal State
+        self._xlim = self._home_xlim
+        self._plot_center_z = self._current_component.z
+        
+        # 2. Update UI Boxes
+        self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
+        self.inspector.update_z_box(self._plot_center_z)
+        
+        # 3. Force Re-plot
+        self._update_plot()
+
+    # [FIX 1] Smart Refetch on Pan Release
+    def on_mouse_release(self, event):
+        """Triggers a data refresh when the mouse is released during Panning."""
+        # Check if the toolbar is in Pan or Zoom mode
+        if self.toolbar.mode:
+            # We delay slightly or just call update to ensure limits are finalized
+            self._update_plot()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.PAGE_SIZE = max(1, event.size().height() // 200)
+        row_height = 300 if self.inspector.resid_cb.isChecked() else 200
+        self.PAGE_SIZE = max(1, event.size().height() // row_height)
         self._update_scrollbar_range()
         self._update_plot()
 
@@ -232,10 +282,8 @@ class VelocityPlotWidget(QWidget):
 
     def set_center_redshift(self, z):
         self._plot_center_z = z
-        # Reset velocity limits to default window around new center
         width = self._xlim[1] - self._xlim[0]
         self._xlim = (-width/2, width/2)
-        # Update UI to reflect the reset limits (optional, but good for sync)
         self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
         self._update_plot()
 
@@ -248,12 +296,14 @@ class VelocityPlotWidget(QWidget):
         
         self._plot_center_z = component.z
 
-        # If it's a new component, recenter the view on 0 km/s
-        # while keeping the user's preferred zoom width.
         if is_new_component:
+            # Center on 0 km/s, preserving current width preference
             width = self._xlim[1] - self._xlim[0]
             self._xlim = (-width/2, width/2)
-            # Update the UI text boxes to match
+            
+            # [FIX 2] Capture this as the "Home" state
+            self._home_xlim = self._xlim
+            
             self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
 
         if not session or not component:
@@ -308,62 +358,72 @@ class VelocityPlotWidget(QWidget):
         end = min(start + self.PAGE_SIZE, len(self._all_transitions))
         visible_trans = self._all_transitions[start:end]
         
-        num_plots = len(visible_trans)
-        if num_plots == 0: self.canvas.draw(); return
+        num_trans = len(visible_trans)
+        if num_trans == 0: self.canvas.draw(); return
+        
+        show_resid = self.inspector.resid_cb.isChecked()
+        
+        if show_resid:
+            gs_ratios = []
+            for _ in range(num_trans): gs_ratios.extend([3, 1])
+            axs = self.fig.subplots(nrows=num_trans*2, ncols=1, sharex=True, 
+                                    gridspec_kw={'height_ratios': gs_ratios, 'hspace': 0.05})
+        else:
+            axs = self.fig.subplots(nrows=num_trans, ncols=1, sharex=True)
+            if num_trans == 1: axs = [axs]
 
         self.fig.set_layout_engine(layout='constrained')
-        axs = self.fig.subplots(nrows=num_plots, ncols=1, sharex=True, sharey=True)
-        if num_plots == 1: axs = [axs]
-        else: axs = axs.flatten()
-
-        session = self._current_session
-        comp = self._current_component
-        all_comps = session.systs.components
         
+        session = self._current_session
         x_full = session.spec.x.value
         c_kms = 299792.458
         z_sys = self._plot_center_z
         
         has_cont = session.spec.cont is not None
         y = session.spec.y.value
-        dy = session.spec.dy.value if session.spec.dy is not None else np.zeros_like(y)
+        dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(y)
         cont = session.spec.cont.value if has_cont else np.ones_like(y)
         
         with np.errstate(divide='ignore', invalid='ignore'):
             y_norm = np.divide(y, cont, where=cont!=0)
             dy_norm = np.divide(dy, cont, where=cont!=0)
-        
-        show_resid = self.inspector.resid_cb.isChecked()
+            
         y_resid = None
-        if show_resid and session.spec.model is not None:
+        if session.spec.model is not None:
             mod = session.spec.model.value
             with np.errstate(divide='ignore', invalid='ignore'):
                 mod_norm = np.divide(mod, cont, where=cont!=0) if has_cont else mod
-                y_resid = y_norm - mod_norm
-        
+                y_resid = np.divide(y_norm - mod_norm, dy_norm, where=dy_norm!=0)
+
         colors = get_color_cycle(5, cmap='tab20')
 
         for i, trans_name in enumerate(visible_trans):
-            ax = axs[i]
-            self.axes.append(ax)
+            if show_resid:
+                ax_main = axs[i*2]
+                ax_resid = axs[i*2+1]
+                self.axes.extend([ax_main, ax_resid])
+            else:
+                ax_main = axs[i] if num_trans > 1 else axs[0]
+                ax_resid = None
+                self.axes.append(ax_main)
+
+            cursor_line_main, = ax_main.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
+            cursor_line_resid = None
+            if show_resid:
+                cursor_line_resid, = ax_resid.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
             
-            cursor_line, = ax.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
-            self._panel_map[ax] = (trans_name, cursor_line)
+            self._panel_map[ax_main] = (trans_name, cursor_line_main, cursor_line_resid)
 
             def make_fmt(z):
                 def fmt(x, y):
                     val_z = (1 + z) * (1 + x / c_kms) - 1
-                    return f"Δv = {x:.1f} km/s, \u0192 = {y:.2f}, z = {val_z:.5f}"
+                    return f"Δv={x:.0f}, y={y:.2f}, z={val_z:.5f}"
                 return fmt
-            ax.format_coord = make_fmt(z_sys)
+            ax_main.format_coord = make_fmt(z_sys)
 
             if trans_name not in xem_d:
-                ax.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center'); continue
-            try: 
-                lam_0 = xem_d[trans_name].to(session.spec.x.unit).value
-            except: 
-                ax.text(0.5, 0.5, f"Unit Error", ha='center'); continue
-
+                ax_main.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center'); continue
+            lam_0 = xem_d[trans_name].to(session.spec.x.unit).value
             lam_obs = lam_0 * (1.0 + z_sys)
             v = c_kms * (x_full - lam_obs) / lam_obs
             
@@ -371,70 +431,80 @@ class VelocityPlotWidget(QWidget):
             mask = (v > v_min - 500) & (v < v_max + 500)
             v_p = v[mask]; y_p = y_norm[mask]; dy_p = dy_norm[mask]
             
-            if len(v_p) == 0:
-                ax.text(0.5, 0.5, "No Data", ha='center', transform=ax.transAxes)
-                continue
+            if len(v_p) == 0: continue
 
-            ax.step(v_p, y_p-dy_p, where='mid', color=PLOT_STYLE['error']['color'], lw=0.5, alpha=0.5)
-            ax.step(v_p, y_p+dy_p, where='mid', color=PLOT_STYLE['error']['color'], lw=0.5, alpha=0.5)
-            ax.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
-
+            ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
+            ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
+            ax_main.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
+            #ax_main.fill_between(v_p, y_p-dy_p, y_p+dy_p, step='mid', color='gray', alpha=0.15)
+            
             if session.spec.model is not None:
-                mod = session.spec.model.value
-                with np.errstate(divide='ignore', invalid='ignore'):
-                    mod_p = np.divide(mod[mask], cont[mask], where=cont[mask]!=0) if has_cont else mod[mask]
-                ax.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
+                mod_p = mod_norm[mask]
+                ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
-            if show_resid and y_resid is not None:
-                resid_p = y_resid[mask]
-                offset = -0.2
-                ax.axhline(offset, color='gray', ls=':', lw=0.8, alpha=0.5)
-                ax.step(v_p, offset + resid_p - dy_p, where='mid', color='#cccccc', lw=0.3, alpha=0.4)
-                ax.step(v_p, offset + resid_p + dy_p, where='mid', color='#cccccc', lw=0.3, alpha=0.4)
-                ax.step(v_p, offset + resid_p, where='mid', color='black', lw=0.6, alpha=0.7)
-
-            atom_info = ATOM_DATA.get(trans_name)
-            if atom_info and self._selected_components:
-                x_ang_p = session.spec.x.to(au.Angstrom).value[mask]
-                for sel_c in self._selected_components:
-                    is_match = (sel_c.series == trans_name) or \
-                               (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
-                    if not is_match: continue 
-                    prof = calc_voigt_profile(
-                        x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
-                        sel_c.z, 10**sel_c.logN, sel_c.b
-                    )
-                    ax.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
+            if self._selected_components:
+                atom_info = ATOM_DATA.get(trans_name)
+                if atom_info:
+                    x_ang_p = session.spec.x.to(au.Angstrom).value[mask]
+                    for sel_c in self._selected_components:
+                        is_match = (sel_c.series == trans_name) or \
+                                   (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
+                        if is_match:
+                            prof = calc_voigt_profile(
+                                x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
+                                sel_c.z, 10**sel_c.logN, sel_c.b
+                            )
+                            ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
             tick_ymin, tick_ymax = 0.02, 0.08 
-            trans_axis = ax.get_xaxis_transform()
-            for other_c in all_comps:
+            trans_axis = ax_main.get_xaxis_transform()
+            for other_c in session.systs.components:
                 v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                 if v_min <= v_shift <= v_max:
                     is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
                     col = 'red' if is_h else 'gray'
-                    alpha = 0.8 if is_h else 0.5
-                    lw = 1.5 if is_h else 1.0
-                    zorder = 5 if is_h else 4
-                    ax.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
-                            transform=trans_axis, color=col, lw=lw, alpha=alpha, zorder=zorder)
-
-            ax.axvline(0, color='gray', ls=':', lw=0.8)
-            ax.axhline(1.0, color='gray', ls=':', lw=0.8)
-            ax.axhline(0.0, color='gray', ls=':', lw=0.8)
-            ax.text(0.98, 0.85, trans_name, transform=ax.transAxes, ha='right', fontweight='bold', 
-                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+                    ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
+                            transform=trans_axis, color=col, lw=1.5 if is_h else 1.0, alpha=0.8)
             
-            ax.set_xlim(self._xlim)
-            ax.set_ylim(-0.4 if show_resid else -0.2, 1.4)
+            ax_main.axvline(0, color='gray', ls=':', lw=0.8)
+            ax_main.axhline(1.0, color='gray', ls=':', lw=0.8)
+            ax_main.axhline(0.0, color='gray', ls=':', lw=0.8)
+            ax_main.text(0.98, 0.85, trans_name, transform=ax_main.transAxes, ha='right', fontweight='bold', 
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+            ax_main.set_xlim(self._xlim)
+            ax_main.set_ylim(-0.1, 1.4) 
+
+            if show_resid and y_resid is not None:
+                resid_p = y_resid[mask]
+                ax_resid.fill_between(v_p, - 1.0, 1.0, step='mid', color='#aaaaaa', alpha=0.15)
+                ax_resid.step(v_p, resid_p, where='mid', color='red', lw=0.8)
+                ax_resid.axhline(0, color=get_style_color('model', colors), lw=1.0, alpha=0.5)
+                #ax_resid.axhline(1, color='gray', lw=0.8)
+                #ax_resid.axhline(-1, color='gray', lw=0.8)
+                ax_resid.set_ylim(-5, 5)
+                ax_resid.set_ylabel(r"χ")
+                ax_main.tick_params(labelbottom=False)
 
         self.fig.supxlabel("Relative velocity (Δv, km/s)")
-        self.fig.supylabel("Normalized Flux (\u0192)")
+        if not show_resid:
+            self.fig.supylabel("Normalized Flux")
         self.canvas.draw()
 
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return
         
+        main_ax = event.inaxes
+        
+        if main_ax not in self._panel_map:
+            found = False
+            for k, val in self._panel_map.items():
+                resid_line = val[2]
+                if resid_line is not None and resid_line.axes == event.inaxes:
+                    main_ax = k
+                    found = True
+                    break
+            if not found: return
+
         v_mouse = event.xdata
         c_kms = 299792.458
         z_new = (1 + self._plot_center_z) * (1 + v_mouse / c_kms) - 1
@@ -442,51 +512,70 @@ class VelocityPlotWidget(QWidget):
         N = 10**self.cursor_logN
         b = self.cursor_b
         
-        show_resid = self.inspector.resid_cb.isChecked()
+        session = self._current_session
+        x_unit = session.spec.x.unit
 
-        for ax in self.axes:
-            if ax not in self._panel_map: continue
-            trans_name, line_artist = self._panel_map[ax]
-            # [FIX] Ensure the profile calculation also uses the correct center logic
-            # The profile function takes z_new (calculated above), so it is correct.
-            # However, we must ensure lam_obs_sys is defined relative to the PLOT CENTER
-            # so the grid aligns.
-            
-            # Actually, atom_info['wave'] * (1+z) gives the obs wavelength of the line.
-            # The grid 'v_grid' is relative to z_sys (_plot_center_z).
-            # So lam_grid = lam_0 * (1+z_sys) * (1 + v/c).
-            # This logic below needs to match _update_plot's grid definition:
+        for ax in self._panel_map:
+            trans_name, line_main, line_resid = self._panel_map[ax]
             
             atom_info = ATOM_DATA.get(trans_name)
             if not atom_info: continue
 
-            lam_0 = atom_info['wave']
-            lam_obs_center = lam_0 * (1 + self._plot_center_z) # [FIX] Center on plot Z
+            lam_0_ang = atom_info['wave']
+            lam_obs_center_ang = lam_0_ang * (1 + self._plot_center_z)
             
             v_min, v_max = ax.get_xlim()
             v_grid = np.linspace(v_min, v_max, 300)
             
-            # Grid in Angstroms corresponding to the plot's V pixels
-            lam_grid = lam_obs_center * (1 + v_grid / c_kms)
+            lam_grid_ang = lam_obs_center_ang * (1 + v_grid / c_kms)
             
             prof = calc_voigt_profile(
-                lam_grid, lam_0, atom_info['f'], atom_info['gamma'],
+                lam_grid_ang, lam_0_ang, atom_info['f'], atom_info['gamma'],
                 z_new, N, b
             )
             
-            if show_resid:
-                offset = -0.2
-                resid_prof = offset - (1.0 - prof)
-                line_artist.set_data(v_grid, resid_prof)
-            else:
-                line_artist.set_data(v_grid, prof)
+            line_main.set_data(v_grid, prof)
+            
+            if line_resid:
+                lam_0_spec = (lam_0_ang * au.Angstrom).to(x_unit).value
+                lam_obs_center_spec = lam_0_spec * (1 + self._plot_center_z)
+
+                x_full = session.spec.x.value
+                v_full = c_kms * (x_full - lam_obs_center_spec) / lam_obs_center_spec
+                
+                dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(x_full)
+                cont = session.spec.cont.value if session.spec.cont is not None else np.ones_like(x_full)
+                
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    dy_norm = np.divide(dy, cont, where=cont!=0)
+                
+                dy_interp = np.interp(v_grid, v_full, dy_norm, left=1.0, right=1.0)
+                
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    prof_sigma = np.divide(prof - 1.0, dy_interp, where=dy_interp>1e-9)
+                    prof_sigma[~np.isfinite(prof_sigma)] = 0.0
+                
+                line_resid.set_data(v_grid, prof_sigma)
             
         self.canvas.draw_idle()
 
     def on_press(self, event):
-        if event.button == 3 and event.inaxes:
-            if event.inaxes not in self._panel_map: return
-            trans_name, _ = self._panel_map[event.inaxes]
+        if event.button == 3 and event.inaxes: 
+            ax_clicked = event.inaxes
+            
+            main_ax = None
+            if ax_clicked in self._panel_map:
+                main_ax = ax_clicked
+            else:
+                for ax_m, val in self._panel_map.items():
+                    resid_line = val[2]
+                    if resid_line is not None and resid_line.axes == ax_clicked:
+                        main_ax = ax_m
+                        break
+            
+            if not main_ax: return
+
+            trans_name, _, _ = self._panel_map[main_ax]
             
             if self.inspector.main_window:
                 v = event.xdata
@@ -494,8 +583,9 @@ class VelocityPlotWidget(QWidget):
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
                 series = trans_name
-                for g, l in STANDARD_MULTIPLETS.items():
-                    if trans_name in l: series = g; break
+                if series not in STANDARD_MULTIPLETS:
+                     for g, l in STANDARD_MULTIPLETS.items():
+                        if series in l: series = g; break
                 
                 menu = QMenu(self)
                 act = QAction(f"Add {series} at z={z_new:.5f}", menu)
@@ -506,9 +596,6 @@ class VelocityPlotWidget(QWidget):
                     }, {}))
                 menu.addAction(act)
                 menu.exec(QCursor.pos())
-
-# --- 3. The Inspector Window ---
-
 class SystemInspector(QWidget):
     def __init__(self, main_window):
         super().__init__()
