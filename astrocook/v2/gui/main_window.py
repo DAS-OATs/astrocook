@@ -348,18 +348,18 @@ class MainWindowV2(QMainWindow):
         self.x_unit_combo = QComboBox()
         self.x_unit_options = ["nm", "Angstrom", "micron"] # Simplified units
         self.x_unit_combo.addItems(self.x_unit_options)
-        self.x_unit_combo.setToolTip("Change X-axis display units (data remains nm).")
-        form_layout_x.addRow("X-Unit:", self.x_unit_combo)
+        self.x_unit_combo.setToolTip("Change λ display units (data remains nm).")
+        form_layout_x.addRow("λ Unit:", self.x_unit_combo)
         view_layout.addLayout(form_layout_x)
         
         # X/Y Toggles
-        self.norm_y_checkbox = QCheckBox("Normalize flux")
-        self.norm_y_checkbox.setToolTip("Plot Y / Continuum and set Y-limits.")
+        self.norm_y_checkbox = QCheckBox("Normalize F")
+        self.norm_y_checkbox.setToolTip("Plot F / Continuum and set F limits.")
         self.norm_y_checkbox.toggled.connect(self._on_view_toggle) # <-- CHANGE THIS
         view_layout.addWidget(self.norm_y_checkbox)
 
-        self.snr_checkbox = QCheckBox("Show SNR (y / error)")
-        self.snr_checkbox.setToolTip("Plot Y / Error Column.")
+        self.snr_checkbox = QCheckBox("Show SNR (F / error)")
+        self.snr_checkbox.setToolTip("Plot F / Error Column.")
         self.snr_checkbox.toggled.connect(self._on_view_toggle) # <-- NEW
         view_layout.addWidget(self.snr_checkbox)
         form_layout_snr = QFormLayout()
@@ -370,10 +370,10 @@ class MainWindowV2(QMainWindow):
         form_layout_snr.addRow("  Error Col:", self.snr_col_combo)
         view_layout.addLayout(form_layout_snr)
 
-        self.log_x_checkbox = QCheckBox("Logarithmic X-Axis")
+        self.log_x_checkbox = QCheckBox("Logarithmic λ")
         view_layout.addWidget(self.log_x_checkbox)
         
-        self.log_y_checkbox = QCheckBox("Logarithmic Y-Axis")
+        self.log_y_checkbox = QCheckBox("Logarithmic F")
         #view_layout.addWidget(self.log_y_checkbox)
         
         sidebar_layout.addLayout(view_layout)
@@ -415,10 +415,10 @@ class MainWindowV2(QMainWindow):
         self.ymin_input.editingFinished.connect(self._on_set_custom_limits)
         self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
         
-        form_layout_limits.addRow("X Min:", self.xmin_input)
-        form_layout_limits.addRow("X Max:", self.xmax_input)
-        form_layout_limits.addRow("Y Min:", self.ymin_input)
-        form_layout_limits.addRow("Y Max:", self.ymax_input)
+        form_layout_limits.addRow("λ Min:", self.xmin_input)
+        form_layout_limits.addRow("λ Max:", self.xmax_input)
+        form_layout_limits.addRow("F Min:", self.ymin_input)
+        form_layout_limits.addRow("F Max:", self.ymax_input)
         
         limits_layout.addLayout(form_layout_limits)
 

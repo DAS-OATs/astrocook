@@ -70,33 +70,60 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                #return QColor("#FFF8DC") # Cornsilk
-                return QColor("deepskyblue") # Light Blue
+                return QColor("#FFF8DC") # Cornsilk
             return None
 
-        # 2. Constraint Visuals (Font Styles)
-        if col_name in ['z', 'logN', 'b', 'btur']:
-            is_free = True
-            is_linked = False
-            
-            if comp.uuid in self._constraints_map:
-                c_data = self._constraints_map[comp.uuid].get(attr)
-                if c_data:
-                    is_free = c_data.is_free
-                    is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
-            
-            # Apply Font Styles (Overrides Text Color issues)
-            if role == Qt.FontRole:
-                font = QFont()
-                if is_linked:
-                    font.setBold(True)
-                    return font
-                elif not is_free:
-                    font.setItalic(True) # Frozen = Italic
-                    return font
-                return None
+        # --- CONSTRAINTS LOGIC ---
+        is_constrained_col = col_name in ['z', 'logN', 'b', 'btur']
+        c_data = None
+        is_free = True
+        is_linked = False
 
-        # 3. Standard Text Display
+        if is_constrained_col and comp.uuid in self._constraints_map:
+            c_data = self._constraints_map[comp.uuid].get(attr)
+            if c_data:
+                is_free = c_data.is_free
+                is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
+
+        # 2. Font Styles (Visual Feedback)
+        if role == Qt.FontRole and is_constrained_col:
+            font = QFont()
+            if is_linked:
+                font.setBold(True)
+                return font
+            elif not is_free:
+                font.setItalic(True)
+                return font
+            return None
+
+        # 3. [NEW] Tooltips (Detailed Info)
+        if role == Qt.ToolTipRole and is_constrained_col:
+            if is_linked:
+                # Find the human-readable name of the target
+                target_name = "Unknown ID"
+                target_z = ""
+                if c_data.target_uuid:
+                    # Quick lookup for the tooltip
+                    for c_ref in self._components:
+                        if c_ref.uuid == c_data.target_uuid:
+                            target_name = c_ref.series
+                            target_z = f" (z={c_ref.z:.5f})"
+                            break
+                
+                # Format Expression for display (truncate UUIDs if needed)
+                expr_display = c_data.expression if c_data.expression else "Direct Link"
+                
+                return (f"<b>Status:</b> Linked Parameter<br>"
+                        f"<b>Target:</b> {target_name}{target_z}<br>"
+                        f"<b>Formula:</b> <code>{expr_display}</code>")
+            
+            elif not is_free:
+                return "<b>Status:</b> Frozen<br>This parameter is fixed during fitting."
+            
+            else:
+                return "<b>Status:</b> Free<br>This parameter will vary during fitting."
+
+        # 4. Standard Text Display
         if role in (Qt.DisplayRole, Qt.EditRole):
             val = getattr(comp, attr, None)
             if role == Qt.DisplayRole and isinstance(val, float):
