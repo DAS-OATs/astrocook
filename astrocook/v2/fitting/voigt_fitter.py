@@ -50,29 +50,75 @@ class VoigtFitterV2:
         self._fit_mask_calc = None
         self._cached_tau_static = None
 
-        # Resolution Logic
-        self._resol_sigma_pix = None
+        # --- RESOLUTION LOGIC ---
+        # We determine R and sigma_pix here.
+        # This allows us to use the exact same logic for fitting and saving.
+        self._resol_val, self._resol_sigma_pix = self._determine_resolution()
+        
+        if self._resol_sigma_pix:
+            logging.info(f"VoigtFitter: Resolution R={self._resol_val:.0f} (sigma_pix={self._resol_sigma_pix:.3f})")
+        else:
+            logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
+
+    def _determine_resolution(self) -> Tuple[float, Optional[float]]:
+        """
+        Robustly finds resolution from Columns, Attributes, or Metadata.
+        Returns: (R_value, sigma_pix)
+        """
+        # 1. Try Column ('resol')
         if self._spectrum.has_aux_column('resol'):
-            resol_col = self._spectrum.get_column('resol')
-            if resol_col is not None:
-                vals = resol_col.value
-                median_resol = np.nanmedian(vals)
-                if median_resol > 0:
-                    mid_wave = np.median(self._x_ang)
-                    fwhm_ang = mid_wave / median_resol
-                    sigma_ang = fwhm_ang / 2.35482
-                    dx_avg = np.mean(np.diff(self._x_ang))
-                    self._resol_sigma_pix = sigma_ang / dx_avg
-                    logging.info(f"VoigtFitter: R={median_resol:.0f} -> sigma_pix={self._resol_sigma_pix:.3f}")
-        elif self._spectrum.meta.get('resol_fwhm', 0.0) > 0:
-            resol_fwhm_kms = self._spectrum.meta['resol_fwhm']
-            mid_wave = np.median(self._x_ang)
-            c_kms = 299792.458
-            fwhm_ang = (resol_fwhm_kms / c_kms) * mid_wave
-            sigma_ang = fwhm_ang / 2.35482
-            dx_avg = np.mean(np.diff(self._x_ang))
-            self._resol_sigma_pix = sigma_ang / dx_avg
-            logging.info(f"VoigtFitter: Meta FWHM={resol_fwhm_kms} km/s -> sigma_pix={self._resol_sigma_pix:.3f}")
+            col = self._spectrum.get_column('resol')
+            if col is not None:
+                val = np.nanmedian(col.value)
+                if np.isfinite(val) and val > 0:
+                    return val, self._calc_sigma_pix_from_R(val)
+
+        # 2. Try Attribute (spec.resol) - covers SpectrumDataV2 field
+        # Check wrapper property first, then data core
+        val = getattr(self._spectrum, 'resol', 0.0)
+        if (not np.isfinite(val) or val <= 0) and hasattr(self._spectrum, '_data'):
+            val = getattr(self._spectrum._data, 'resol', 0.0)
+        
+        if np.isfinite(val) and val > 0:
+            return val, self._calc_sigma_pix_from_R(val)
+
+        # 3. Try Metadata ('resol' or 'resol_fwhm')
+        meta = self._spectrum.meta
+        
+        # 3a. 'resol' (R)
+        if 'resol' in meta:
+            val = float(meta['resol'])
+            if np.isfinite(val) and val > 0:
+                return val, self._calc_sigma_pix_from_R(val)
+        
+        # 3b. 'resol_fwhm' (Velocity km/s)
+        if 'resol_fwhm' in meta:
+            val_kms = float(meta['resol_fwhm'])
+            if np.isfinite(val_kms) and val_kms > 0:
+                # Convert FWHM km/s to R approx for return value
+                # R = c / FWHM
+                c_kms = 299792.458
+                r_approx = c_kms / val_kms
+                return r_approx, self._calc_sigma_pix_from_fwhm_kms(val_kms)
+
+        return 0.0, None
+
+    def _calc_sigma_pix_from_R(self, R: float) -> float:
+        """Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""
+        mid_wave = np.median(self._x_ang)
+        fwhm_ang = mid_wave / R
+        sigma_ang = fwhm_ang / 2.35482
+        dx_avg = np.mean(np.diff(self._x_ang))
+        return sigma_ang / dx_avg
+
+    def _calc_sigma_pix_from_fwhm_kms(self, fwhm_kms: float) -> float:
+        """Helper: Convert FWHM (km/s) to Gaussian Sigma in pixels."""
+        mid_wave = np.median(self._x_ang)
+        c_kms = 299792.458
+        fwhm_ang = (fwhm_kms / c_kms) * mid_wave
+        sigma_ang = fwhm_ang / 2.35482
+        dx_avg = np.mean(np.diff(self._x_ang))
+        return sigma_ang / dx_avg
 
     def _voigt_optical_depth(self, wave_grid_ang: np.ndarray, 
                              lambda_0: float, f_val: float, gamma: float,
@@ -175,10 +221,6 @@ class VoigtFitterV2:
         return final_resid
 
     def _find_feature_limits(self, z_center: float, trans_name: str, z_window_kms: float = 150.0) -> Tuple[Optional[float], Optional[float]]:
-        """
-        Identifies feature limits based on SIGNIFICANT peaks (local noise).
-        Ignores noise bumps in saturated troughs.
-        """
         atom = ATOM_DATA.get(trans_name)
         if not atom: return None, None
         
@@ -187,10 +229,8 @@ class VoigtFitterV2:
         
         dx_search = (z_window_kms / c_kms) * lambda_obs
         
-        # Use index search for speed
         idx_center = np.searchsorted(self._x_ang, lambda_obs)
         
-        # Estimate pixel window width
         if len(self._x_ang) > 10:
              sample_dx = np.mean(np.diff(self._x_ang[max(0, idx_center-10):min(len(self._x_ang), idx_center+10)]))
         else: sample_dx = 1.0
@@ -204,86 +244,39 @@ class VoigtFitterV2:
         
         y_window = self._y_norm[start_idx:end_idx]
         dy_window = self._dy_norm[start_idx:end_idx]
-        
-        # Smooth
         y_smooth = gaussian_filter1d(y_window, sigma=2.0)
-        
-        # Find Peaks
-        peaks_rel = argrelextrema(y_smooth, np.greater)[0]
-        
-        # Filter out peaks in saturated troughs (must be > 0.6 or > noise floor)
-        # But we also want to respect peaks that are significant rises from the bottom
-        # The loop below handles the significance check relative to the trough floor.
-        # Here we just filter peaks that are clearly "noise in zero flux" if they are tiny
-        # relative to global continuum.
-        # Let's keep all peaks here and filter by significance in the scan.
         
         center_rel = idx_center - start_idx
         center_rel = max(0, min(len(y_window)-1, center_rel))
 
-        # --- SCAN LEFT ---
+        # Scan Left
         left_boundary = 0
         lowest_point = y_smooth[center_rel]
-        
         for i in range(center_rel, -1, -1):
             val = y_smooth[i]
             err = dy_window[i]
-            
             if val < lowest_point: lowest_point = val
-                
-            is_local_max = False
-            if i > 0 and i < len(y_smooth)-1:
-                if y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]:
-                    is_local_max = True
-            elif i == 0: is_local_max = True
-            
-            if val > 0.9:
-                left_boundary = i
-                break
-            
+            is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == 0)
+            if val > 0.9: left_boundary = i; break
             if is_local_max:
-                rise = val - lowest_point
-                sigma_threshold = 4.0 * err
-                if rise > sigma_threshold:
-                    left_boundary = i
-                    break
+                if (val - lowest_point) > 4.0 * err: left_boundary = i; break
                 
-        # --- SCAN RIGHT ---
+        # Scan Right
         right_boundary = len(y_window) - 1
         lowest_point = y_smooth[center_rel]
-        
         for i in range(center_rel, len(y_window)):
             val = y_smooth[i]
             err = dy_window[i]
-            
             if val < lowest_point: lowest_point = val
-                
-            is_local_max = False
-            if i > 0 and i < len(y_smooth)-1:
-                if y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]:
-                    is_local_max = True
-            elif i == len(y_window)-1: is_local_max = True
-            
-            if val > 0.9:
-                right_boundary = i
-                break
-                
+            is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == len(y_window)-1)
+            if val > 0.9: right_boundary = i; break
             if is_local_max:
-                rise = val - lowest_point
-                sigma_threshold = 4.0 * err
-                if rise > sigma_threshold:
-                    right_boundary = i
-                    break
+                if (val - lowest_point) > 4.0 * err: right_boundary = i; break
 
-        idx_min = start_idx + left_boundary
-        idx_max = start_idx + right_boundary
-        
-        # Buffer
-        idx_min = max(0, idx_min - 1)
-        idx_max = min(len(self._x_ang), idx_max + 1)
+        idx_min = max(0, start_idx + left_boundary - 1)
+        idx_max = min(len(self._x_ang), start_idx + right_boundary + 1)
         
         if idx_max <= idx_min: return None, None
-        
         return self._x_ang[idx_min], self._x_ang[idx_max]
 
     def _smart_guess(self, p0: np.ndarray, z_window_kms: float) -> np.ndarray:
@@ -314,8 +307,7 @@ class VoigtFitterV2:
             y_feat = self._y_norm[mask_feat]
             atom = ATOM_DATA[primary]
             
-            A = 1.0 - y_feat
-            A = np.clip(A, 0.0, 1.0)
+            A = np.clip(1.0 - y_feat, 0.0, 1.0)
             if np.sum(A) == 0: continue
 
             centroid = np.average(x_feat, weights=A)
@@ -323,10 +315,7 @@ class VoigtFitterV2:
             variance = np.average((x_feat - centroid)**2, weights=A)
             sigma_ang = np.sqrt(variance)
             
-            # Conservative Guesses
-            b_guess = (sigma_ang / centroid) * c_kms * 1.414
-            b_guess = np.clip(b_guess, 5.0, 25.0) 
-            
+            b_guess = np.clip((sigma_ang / centroid) * c_kms * 1.414, 5.0, 25.0) 
             peak_flux = np.min(y_feat)
             safe_peak = max(0.01, min(0.98, peak_flux))
             tau0 = -np.log(safe_peak)
@@ -345,10 +334,9 @@ class VoigtFitterV2:
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 1) -> Tuple[SystemListV2, np.ndarray, Any]:
         logging.info(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
-        
         p0 = self._constraints.p_free_vector
         
-        # --- 1. DYNAMIC FIT MASK ---
+        # 1. DYNAMIC FIT MASK
         self._fit_mask = np.zeros_like(self._valid_mask, dtype=bool)
         c_kms = 299792.458
         active_uuids = self._constraints._active_uuids
@@ -358,11 +346,7 @@ class VoigtFitterV2:
             if series in ATOM_DATA: return [series]
             return []
 
-        active_components = []
-        if active_uuids is not None:
-            active_components = [c for c in self._system_list.components if c.uuid in active_uuids]
-        else:
-            active_components = self._system_list.components
+        active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
 
         if not active_components:
             self._fit_mask = self._valid_mask
@@ -370,27 +354,20 @@ class VoigtFitterV2:
             for comp in active_components:
                 for trans in get_trans_list(comp.series):
                     lam_min, lam_max = self._find_feature_limits(comp.z, trans, z_window_kms=z_window_kms)
-                    
                     if lam_min is not None:
                         mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
                         self._fit_mask |= mask_feat
                     else:
-                        # Fallback
                         lam_0 = ATOM_DATA.get(trans, {}).get('wave')
                         if lam_0:
                             lam_obs = lam_0 * (1.0 + comp.z)
                             dw = (z_window_kms / c_kms) * lam_obs
-                            mask_win = (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
-                            self._fit_mask |= mask_win
-
+                            self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
             self._fit_mask &= self._valid_mask
         
-        # Define Slice
         if np.any(self._fit_mask):
             indices = np.where(self._fit_mask)[0]
-            min_idx = max(0, np.min(indices) - 50)
-            max_idx = min(len(self._x_ang), np.max(indices) + 51)
-            self._sl = slice(min_idx, max_idx)
+            self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
         else:
             self._sl = slice(None)
 
@@ -398,22 +375,18 @@ class VoigtFitterV2:
         self._y_norm_calc = self._y_norm[self._sl]
         self._dy_norm_calc = self._dy_norm[self._sl]
         self._fit_mask_calc = self._fit_mask[self._sl]
-        
-        # Use logged size here
         logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}).")
 
-        # --- 2. PRE-CALCULATE BACKGROUND ---
+        # 2. PRE-CALCULATE BACKGROUND
         if active_uuids is not None:
             self._cached_tau_static = np.zeros_like(self._x_calc)
             for comp in self._system_list.components:
                 if comp.uuid not in active_uuids:
-                    self._cached_tau_static += self._compute_tau_component(
-                        comp, comp.z, comp.logN, comp.b, comp.btur
-                    )
+                    self._cached_tau_static += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
         else:
             self._cached_tau_static = None
 
-        # Bounds
+        # Bounds Logic
         lower_bounds, upper_bounds = self._constraints.get_bounds()
         p_full = self._constraints.map_p_free_to_full(p0)
         is_free_mask = self._constraints._param_map['is_free']
@@ -428,18 +401,14 @@ class VoigtFitterV2:
             else: continue
             
             dz_window = (1.0 + comp.z) * (z_window_kms / c_kms)
-            z_min_win = comp.z - dz_window
-            z_max_win = comp.z + dz_window
-            
+            z_min_win, z_max_win = comp.z - dz_window, comp.z + dz_window
             lam_min, lam_max = self._find_feature_limits(comp.z, primary, z_window_kms=z_window_kms)
             
             z_final_min, z_final_max = z_min_win, z_max_win
             if lam_min is not None:
                 atom = ATOM_DATA[primary]
-                z_min_feat = (lam_min / atom['wave']) - 1.0
-                z_max_feat = (lam_max / atom['wave']) - 1.0
-                z_final_min = max(z_min_win, z_min_feat)
-                z_final_max = min(z_max_win, z_max_feat)
+                z_final_min = max(z_min_win, (lam_min / atom['wave']) - 1.0)
+                z_final_max = min(z_max_win, (lam_max / atom['wave']) - 1.0)
 
             idx_z = free_idx_map[base_idx]
             cur = p0[idx_z]
@@ -450,13 +419,9 @@ class VoigtFitterV2:
         p0 = self._smart_guess(p0, z_window_kms)
 
         # Fit
-        res = least_squares(
-            self._residual_function, p0, bounds=bounds, 
-            method=method, loss='linear', max_nfev=max_nfev, 
-            x_scale='jac', verbose=verbose
-        )
+        res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
         
-        # Errors
+        # Statistics
         p_free_errors = np.zeros_like(res.x)
         chi2 = 0; red_chi2 = 0
         try:
@@ -476,6 +441,10 @@ class VoigtFitterV2:
         p_full_errors = np.zeros_like(p_fitted_full)
         p_full_errors[is_free_mask] = p_free_errors
         
+        # [FIX] Use the exact resolution calculated in __init__
+        # This ensures the metadata saved matches the fit physics.
+        fit_resol_val = self._resol_val
+
         new_components = []
         old_components = self._system_list.components
         for i, old_comp in enumerate(old_components):
@@ -486,13 +455,13 @@ class VoigtFitterV2:
             
             new_comp = dataclasses.replace(old_comp,
                 z=p_fitted_full[idx], logN=p_fitted_full[idx+1], b=p_fitted_full[idx+2], btur=p_fitted_full[idx+3],
-                dz=dz_new, dlogN=dlogN_new, db=db_new)
+                dz=dz_new, dlogN=dlogN_new, db=db_new,
+                chi2=red_chi2, resol=fit_resol_val)
             new_components.append(new_comp)
             
         new_data_core = dataclasses.replace(self._system_list._data, components=new_components)
         new_system_list = SystemListV2(new_data_core)
         
-        # Final Generation
         self._cached_tau_static = None
         temp_x = self._x_calc
         self._x_calc = self._x_ang

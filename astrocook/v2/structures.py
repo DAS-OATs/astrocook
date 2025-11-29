@@ -124,6 +124,10 @@ class ComponentDataV2:
     func: str = 'voigt'
     series: str = 'Ly_a'    
 
+    # Fit Metadata
+    chi2: Optional[float] = None # Reduced Chi-Squared of the fit group
+    resol: Optional[float] = None # Resolution used for the fit
+
     # V2 IDENTIFIER: Stable, Global, Immutable
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()))
 

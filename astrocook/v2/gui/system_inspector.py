@@ -6,12 +6,12 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale, QPoint
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
-    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox
+    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip
 )
 from typing import List, Optional
 
@@ -70,7 +70,8 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                return QColor("#FFF8DC") # Cornsilk
+                #return QColor("#FFF8DC") # Cornsilk
+                return QColor("deepskyblue") # Deepskyblue
             return None
 
         # --- CONSTRAINTS LOGIC ---
@@ -96,26 +97,49 @@ class SystemTableModel(QAbstractTableModel):
                 return font
             return None
 
-        # 3. [NEW] Tooltips (Detailed Info)
+        # 3. Tooltips (Detailed Info)
+        if role == Qt.ToolTipRole:
+            # [NEW] Component-Wide Tooltip on ID Column
+            if col_name == 'ID':
+                c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+                c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+                return (f"<b>Component ID:</b> {comp.id}<br>"
+                        f"<b>Series:</b> {comp.series}<br>"
+                        f"<b>Redshift:</b> {comp.z:.5f}<br>"
+                        f"<b>Chi2 (Red):</b> {c_chi2}<br>"
+                        f"<b>Resolution:</b> {c_resol}")
+            
         if role == Qt.ToolTipRole and is_constrained_col:
             if is_linked:
                 # Find the human-readable name of the target
                 target_name = "Unknown ID"
                 target_z = ""
                 if c_data.target_uuid:
-                    # Quick lookup for the tooltip
                     for c_ref in self._components:
                         if c_ref.uuid == c_data.target_uuid:
                             target_name = c_ref.series
-                            target_z = f" (z={c_ref.z:.5f})"
+                            target_z = f" (z={c_ref.z:.6f})"
                             break
                 
-                # Format Expression for display (truncate UUIDs if needed)
+                # [FIX] Beautify the Expression
                 expr_display = c_data.expression if c_data.expression else "Direct Link"
+                
+                # Regex to replace p['UUID'] with SeriesName
+                import re
+                def replacer(match):
+                    uid = match.group(1)
+                    for c_ref in self._components:
+                        if c_ref.uuid == uid:
+                            return c_ref.series
+                    return "Unknown"
+                
+                # Matches p['...'] or p["..."]
+                expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
+                expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
                 
                 return (f"<b>Status:</b> Linked Parameter<br>"
                         f"<b>Target:</b> {target_name}{target_z}<br>"
-                        f"<b>Formula:</b> <code>{expr_display}</code>")
+                        f"<b>Formula:</b> <code>{expr_pretty}</code>")
             
             elif not is_free:
                 return "<b>Status:</b> Frozen<br>This parameter is fixed during fitting."
@@ -407,6 +431,7 @@ class VelocityPlotWidget(QWidget):
         self.fig.clear()
         self.axes = []
         self._panel_map = {} 
+        self._tick_map_visuals = []
 
         if not self._all_transitions or not self._current_session:
             self.canvas.draw(); return
@@ -526,6 +551,8 @@ class VelocityPlotWidget(QWidget):
 
                 v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                 if v_min <= v_shift <= v_max:
+                    self._tick_map_visuals.append((ax_main, v_shift, other_c))
+
                     is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
                     col = 'red' if is_h else 'gray'
                     ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
@@ -558,6 +585,35 @@ class VelocityPlotWidget(QWidget):
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return
         
+        # [NEW] Check for Tick Tooltips
+        closest_dist = 10.0 # pixels tolerance
+        tooltip_text = ""
+
+        # Convert mouse data coords to display coords for distance check?
+        # Simpler: check data coords width.
+        # 10 pixels in data coords depends on zoom. 
+        # Let's use a velocity threshold, e.g., 5 km/s or 1% of view.
+        view_width = self._xlim[1] - self._xlim[0]
+        tol_v = view_width * 0.015 
+        
+        for ax, v_pos, comp in self._tick_map_visuals:
+            if event.inaxes == ax:
+                dist = abs(event.xdata - v_pos)
+                if dist < tol_v:
+                    c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+                    c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+                    tooltip_text = (f"ID: {comp.id} | {comp.series}\n"
+                                    f"z: {comp.z:.5f}\n"
+                                    f"Chi2: {c_chi2}\n"
+                                    f"Res: {c_resol}")
+                    break
+        
+        if tooltip_text:
+            # Use global mouse position directly to avoid HiDPI scaling issues
+            QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
+        else:
+            QToolTip.hideText()
+
         main_ax = event.inaxes
         
         if main_ax not in self._panel_map:
