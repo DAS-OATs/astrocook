@@ -1,3 +1,4 @@
+import ast
 from astropy.table import Table, Column
 import astropy.units as au
 import dataclasses
@@ -18,6 +19,10 @@ class SystemListV2:
     def __init__(self, data: SystemListDataV2):
         self._data = data
         
+        # Sanitize data immediately (Fix JSON artifacts)
+        # This ensures self._data always has proper Tuples/Ints as keys
+        self._ensure_clean_data()
+
         # 1. Initialize the attribute to None first
         self.constraint_model = None 
         
@@ -444,3 +449,146 @@ class SystemListV2:
                     group_uuids.add(other.uuid)
                     
         return group_uuids
+    
+    def _ensure_clean_data(self):
+        """
+        Robustly initializes data core.
+        1. Sanitize artifacts in ID map.
+        2. [NEW] Recover constraints from JSON-friendly 'v2_constraints_map' if present.
+        3. [NEW] Backfill 'v2_constraints_map' if missing (so next save is clean).
+        """
+        dirty = False
+        
+        # A. Fix ID Map (Str "123" -> Int 123)
+        id_map = self._data.v1_id_to_uuid_map
+        clean_id_map = {}
+        for k, v in id_map.items():
+            if isinstance(k, str) and k.isdigit():
+                clean_id_map[int(k)] = v
+                dirty = True
+            else:
+                clean_id_map[k] = v
+        
+        # B. Robust Constraint Recovery
+        # Strategy: Trust 'v2_constraints_map' (clean JSON) over 'parsed_constraints' (tuple keys)
+        # if the former exists.
+        
+        clean_parsed = dict(self._data.parsed_constraints)
+        clean_v2_map = dict(self._data.v2_constraints_map)
+        constraints_dirty = False
+
+        # 1. If we have the Clean Map (from a good save), rebuild Parsed Map from it.
+        if clean_v2_map:
+            # Rebuild parsed constraints from the clean nested source
+            # This completely bypasses the "Stringified Tuple" issue.
+            new_parsed = {}
+            for u, p_map in clean_v2_map.items():
+                for p, c in p_map.items():
+                    new_parsed[(u, p)] = c
+            
+            # If they differ, update parsed (Logic: Clean Map is the Master)
+            if len(new_parsed) != len(clean_parsed): # Simple check, could be more thorough
+                clean_parsed = new_parsed
+                constraints_dirty = True
+                logging.info("SystemListV2: Restored constraints from clean JSON map.")
+        
+        # 2. If Clean Map is empty but Parsed Map exists (Legacy Load), 
+        #    Sanitize Parsed Map and Populated Clean Map.
+        elif clean_parsed:
+            sanitized_parsed = {}
+            new_v2_map = {}
+            
+            for k, v in clean_parsed.items():
+                final_key = k
+                
+                # Fix Stringified Tuples "('u', 'z')"
+                if isinstance(k, str) and k.startswith('('):
+                    try:
+                        val = ast.literal_eval(k)
+                        if isinstance(val, tuple): final_key = val
+                    except: pass
+                
+                # Fix Stringified Ints in Tuples ("123", 'z')
+                if isinstance(final_key, tuple) and len(final_key) == 2:
+                    p0, p1 = final_key
+                    if isinstance(p0, str) and p0.isdigit():
+                        final_key = (int(p0), p1)
+                
+                sanitized_parsed[final_key] = v
+                
+                # Populate the V2 Nested Map (uuid -> param -> constraint)
+                # This ensures the NEXT save will be clean.
+                uuid_key, param_key = final_key
+                # Note: If key is (int_id, param), we can't put it in v2_map (needs uuid).
+                # We skip legacy ID keys for the v2 map unless we can resolve the UUID.
+                # (Skipping legacy backfill complexity for now to keep it safe)
+                if isinstance(uuid_key, str): # valid UUID
+                    if uuid_key not in new_v2_map: new_v2_map[uuid_key] = {}
+                    new_v2_map[uuid_key][param_key] = v
+
+            clean_parsed = sanitized_parsed
+            clean_v2_map = new_v2_map
+            constraints_dirty = True
+            logging.info("SystemListV2: Sanitized legacy constraints and populated clean map.")
+
+        if dirty or constraints_dirty:
+            self._data = dataclasses.replace(
+                self._data, 
+                v1_id_to_uuid_map=clean_id_map,
+                parsed_constraints=clean_parsed,
+                v2_constraints_map=clean_v2_map
+            )
+
+    def update_constraint(self, uuid: str, param: str, 
+                          is_free: Optional[bool] = None,
+                          expression: Optional[str] = None) -> 'SystemListV2':
+        """
+        API: Updates the constraint for a specific component parameter.
+        Updates BOTH the parsed_constraints (tuple key) and v2_constraints_map (clean structure).
+        """
+        current_parsed = dict(self._data.parsed_constraints)
+        
+        # 1. Determine Key (Use UUID for V2)
+        key = (uuid, param)
+        
+        # 2. Retrieve Existing State (Check V2 key, then V1 ID key)
+        existing = current_parsed.get(key)
+        if not existing:
+             comp = self.get_component_by_uuid(uuid)
+             if comp:
+                 legacy_key = (comp.id, param)
+                 existing = current_parsed.get(legacy_key)
+        
+        from .structures import ParameterConstraintV2
+        
+        # 3. Handle Dict (Legacy) vs Object (V2)
+        if existing:
+            if isinstance(existing, dict):
+                 old_free = existing.get('is_free', True)
+                 old_expr = existing.get('expression')
+                 base_constraint = ParameterConstraintV2(is_free=old_free, expression=old_expr)
+            else:
+                 base_constraint = existing
+
+            new_free = is_free if is_free is not None else base_constraint.is_free
+            new_expr = expression if expression is not None else base_constraint.expression
+            new_constraint = dataclasses.replace(base_constraint, is_free=new_free, expression=new_expr)
+        else:
+            new_free = is_free if is_free is not None else True
+            new_constraint = ParameterConstraintV2(is_free=new_free, expression=expression)
+
+        # 4. Update Parsed Map (Tuple Key)
+        current_parsed[key] = new_constraint
+        
+        # 5. [NEW] Update V2 Nested Map (Clean JSON Structure)
+        # We assume the user saving logic will pick this up.
+        current_v2_map = {k: v.copy() for k, v in self._data.v2_constraints_map.items()}
+        if uuid not in current_v2_map:
+            current_v2_map[uuid] = {}
+        current_v2_map[uuid][param] = new_constraint
+        
+        new_data = dataclasses.replace(self._data, 
+                                       parsed_constraints=current_parsed,
+                                       v2_constraints_map=current_v2_map)
+        
+        return SystemListV2(new_data)

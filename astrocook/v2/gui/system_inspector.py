@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
-from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QColor
+from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
@@ -33,21 +33,22 @@ class SystemTableModel(QAbstractTableModel):
     def __init__(self, components: List[ComponentDataV2] = None):
         super().__init__()
         self._components = components if components else []
-        self._highlighted_uuids = set() # Store the group UUIDs
+        self._highlighted_uuids = set()
+        # Store constraints: {uuid: {param: ConstraintObj}}
+        self._constraints_map = {} 
 
-    def update_data(self, components: List[ComponentDataV2]):
+    def update_data(self, components: List[ComponentDataV2], constraints_map: dict = None):
+        """
+        Updates the model with new components and constraint data.
+        """
         self.beginResetModel()
         self._components = components
+        self._constraints_map = constraints_map if constraints_map else {}
         self.endResetModel()
 
     def set_highlighted_uuids(self, uuids: set):
-        """Sets the UUIDs that should be highlighted as a group."""
-        # [FIX] Optimization: Avoid repainting if nothing changed
-        if self._highlighted_uuids == uuids: 
-            return
-
+        if self._highlighted_uuids == uuids: return
         self._highlighted_uuids = uuids
-        # Trigger a repaint of the visible area
         if self._components:
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
@@ -57,26 +58,54 @@ class SystemTableModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
     
     def flags(self, index):
+        if not index.isValid(): return Qt.NoItemFlags
         return super().flags(index) | Qt.ItemIsEditable if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid(): return None
         comp = self._components[index.row()]
+        col_name = COLUMNS[index.column()]
+        attr = COL_MAP[col_name]
         
-        # --- NEW: Group Highlighting ---
+        # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                return QColor("lightblue")
+                return QColor("#FFF8DC") # Cornsilk
             return None
-        # -------------------------------
 
-        attr = COL_MAP[COLUMNS[index.column()]]
+        # 2. Constraint Visuals (Font Styles)
+        if col_name in ['z', 'logN', 'b', 'btur']:
+            is_free = True
+            is_linked = False
+            
+            if comp.uuid in self._constraints_map:
+                c_data = self._constraints_map[comp.uuid].get(attr)
+                if c_data:
+                    is_free = c_data.is_free
+                    is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
+            
+            # Apply Font Styles (Overrides Text Color issues)
+            if role == Qt.FontRole:
+                font = QFont()
+                if is_linked:
+                    font.setBold(True)
+                    return font
+                elif not is_free:
+                    font.setItalic(True) # Frozen = Italic
+                    return font
+                return None
+
+        # 3. Standard Text Display
         if role in (Qt.DisplayRole, Qt.EditRole):
             val = getattr(comp, attr, None)
             if role == Qt.DisplayRole and isinstance(val, float):
                 return f"{val:.6f}" if attr == 'z' else f"{val:.3f}" if attr in ['logN', 'dlogN'] else f"{val:.2f}"
             return str(val) if val is not None else ""
-        return Qt.AlignCenter if role == Qt.TextAlignmentRole else None
+        
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignCenter
+            
+        return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or role != Qt.EditRole: return False
@@ -89,7 +118,7 @@ class SystemTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role):
         return COLUMNS[section] if role == Qt.DisplayRole and orientation == Qt.Horizontal else None
-    
+
     def get_component_at(self, row: int): 
         return self._components[row] if 0 <= row < len(self._components) else None
     
@@ -745,7 +774,13 @@ class SystemInspector(QWidget):
         # 2. Update Model with new data
         self.current_session = session
         new_comps = session.systs.components if session and session.systs else []
-        self.table_model.update_data(new_comps)
+        
+        # Extract Constraints Map from the Session
+        constraints = {}
+        if session and session.systs and session.systs.constraint_model:
+            constraints = session.systs.constraint_model.v2_constraints_by_uuid
+            
+        self.table_model.update_data(new_comps, constraints)
         
         # 3. Determine Selection Target
         max_id_new = max([c.id for c in new_comps], default=0) if new_comps else 0
@@ -862,12 +897,59 @@ class SystemInspector(QWidget):
         if self.main_window: self.main_window._on_recipe_requested("absorbers", name, params, {})
 
     def _on_context_menu(self, pos):
-        if not self.table_view.indexAt(pos).isValid(): return
+        index = self.table_view.indexAt(pos)
+        if not index.isValid(): return
+        
+        # Map to source to get data
+        idx_source = self.proxy_model.mapToSource(index)
+        comp = self.table_model.get_component_at(idx_source.row())
+        col_name = COLUMNS[idx_source.column()]
+        param_attr = COL_MAP.get(col_name)
+
+        if not comp: return
+        
         m = QMenu(self)
+        
+        # --- Constraint Actions (Only for parameters) ---
+        if col_name in ['z', 'logN', 'b', 'btur']:
+            # Check current status
+            is_frozen = False
+            # We can read from the model's internal map or the session
+            # Reading from session is safer (SSOT)
+            if self.current_session and self.current_session.systs.constraint_model:
+                c_map = self.current_session.systs.constraint_model.v2_constraints_by_uuid
+                if comp.uuid in c_map and param_attr in c_map[comp.uuid]:
+                    if not c_map[comp.uuid][param_attr].is_free:
+                        is_frozen = True
+            
+            if is_frozen:
+                act = QAction(f"Unfreeze '{col_name}'", m)
+                act.triggered.connect(lambda: self._toggle_constraint(comp.uuid, param_attr, True))
+                m.addAction(act)
+            else:
+                act = QAction(f"Freeze '{col_name}'", m)
+                act.triggered.connect(lambda: self._toggle_constraint(comp.uuid, param_attr, False))
+                m.addAction(act)
+            
+            m.addSeparator()
+
+        # --- Standard Actions ---
         m.addAction("Refit Selected", self._refit)
         m.addAction("Delete", self._delete)
         m.exec(self.table_view.mapToGlobal(pos))
 
+    def _toggle_constraint(self, uuid, param, set_free):
+        if self.main_window:
+            # We call a generic recipe. 
+            # Note: You need to register a recipe wrapper for 'update_constraint' 
+            # or map it to 'update_component' if that handles constraints too.
+            # Assuming a new recipe 'update_constraint':
+            self.main_window._on_recipe_requested(
+                "absorbers", "update_constraint", 
+                {"uuid": uuid, "param": param, "is_free": set_free}, 
+                {}
+            )
+    
     def _delete(self):
         idx = self.table_view.currentIndex()
         src = self.proxy_model.mapToSource(idx)

@@ -92,6 +92,18 @@ ABSORBERS_RECIPES_SCHEMAS = {
         ],
         "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
+    },
+    "update_constraint": {
+        "brief": "Update constraint.",
+        "details": "Freeze, unfreeze, or link component parameters.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
+            {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b)"},
+            {"name": "is_free", "type": bool, "default": None, "doc": "Is the parameter free to vary?"},
+            {"name": "expression", "type": str, "default": None, "doc": "Math expression for linking"}
+        ],
+        "url": "absorbers_cb.html#update_constraint",
+        "gui_hidden": True
     }
 }
 
@@ -303,3 +315,16 @@ class RecipeAbsorbersV2:
             
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
+        
+    def update_constraint(self, uuid: str, param: str, is_free: bool = None, expression: str = None) -> 'SessionV2':
+        try:
+            # 1. Delegate to the API in SystemListV2
+            # Note: We access self._session directly, consistent with other recipes.
+            new_systs = self._session.systs.update_constraint(uuid, param, is_free, expression)
+
+            # 2. Return a new Session State with the modified system list
+            return self._session.with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed update_constraint: {e}", exc_info=True)
+            return 0

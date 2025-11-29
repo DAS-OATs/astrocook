@@ -65,15 +65,72 @@ class VoigtModelConstraintV2:
                     initial_values.append(value if value is not None else 0.0) 
         return np.array(initial_values)
     
+    # [NEW HELPER] Add this method to the class
+    def _sanitize_data_structures(self):
+        """
+        Robustly fixes JSON serialization artifacts in the data core.
+        1. Converts stringified ID keys "123" -> 123 in the ID map.
+        2. Converts stringified Tuple keys "('uuid', 'param')" -> ('uuid', 'param') in constraints.
+        """
+        # A. Fix ID Map
+        id_map = self._system_list._data.v1_id_to_uuid_map
+        fixed_map = {}
+        for k, v in id_map.items():
+            if isinstance(k, str) and k.isdigit():
+                fixed_map[int(k)] = v
+            else:
+                fixed_map[k] = v
+        
+        # B. Fix Parsed Constraints
+        constraints = self._system_list._data.parsed_constraints
+        fixed_constraints = {}
+        for k, v in constraints.items():
+            final_key = k
+            
+            # Handle Stringified Tuples: "('uuid', 'param')" or "('123', 'param')"
+            if isinstance(k, str) and k.startswith('(') and k.endswith(')'):
+                try:
+                    # Strip parens and split
+                    content = k[1:-1]
+                    # Simple CSV parse respecting quotes
+                    parts = [p.strip().strip("'").strip('"') for p in content.split(',')]
+                    if len(parts) == 2:
+                        p0, p1 = parts
+                        # Try to restore Integer ID
+                        if p0.isdigit(): p0 = int(p0)
+                        final_key = (p0, p1)
+                except:
+                    pass # Keep original if parse fails
+
+            # Handle Stringified Integers in Tuple: (123, 'z') vs ("123", 'z')
+            if isinstance(final_key, tuple):
+                 p0, p1 = final_key
+                 if isinstance(p0, str) and p0.isdigit():
+                     final_key = (int(p0), p1)
+
+            fixed_constraints[final_key] = v
+
+        # Apply fixes to the data object (in memory only, affects this session)
+        # Note: We can't modify frozen dataclass, but we can update the local refs
+        # used by this class. Ideally, we would update the system_list, but 
+        # patching locally is sufficient for the fitter/view logic.
+        return fixed_map, fixed_constraints
+
     def _build_constraint_map(self) -> Dict[str, np.ndarray]:
-        v1_parsed = self._system_list._data.parsed_constraints
-        v1_id_map = self._system_list._data.v1_id_to_uuid_map
+        # [FIX] Run sanitization first
+        v1_id_map, v1_parsed = self._sanitize_data_structures()
 
         num_params = len(self._initial_p_vector)
         is_free = np.ones(num_params, dtype=bool)
         
+        # Helper: Local import to ensure we can check types
+        from ..structures import ParameterConstraintV2
+        import dataclasses
+
         for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):
+            # Keys: Check both V1 (ID) and V2 (UUID) formats
             v1_key = (comp.id, param_name)
+            v2_key = (comp.uuid, param_name)
             v2_uuid = comp.uuid
             
             # FLUID GROUP LOGIC
@@ -82,19 +139,37 @@ class VoigtModelConstraintV2:
                 if v2_uuid not in self._active_uuids:
                     force_freeze = True
 
+            # LOOKUP: Prioritize V2 key, fallback to V1 key
+            raw_state = None
+            if v2_key in v1_parsed:
+                raw_state = v1_parsed[v2_key]
+            elif v1_key in v1_parsed:
+                raw_state = v1_parsed[v1_key]
+
             v2_constraint_obj: ParameterConstraintV2
             
-            if v1_key in v1_parsed:
-                v1_state = v1_parsed[v1_key]
-                effective_is_free = v1_state['is_free'] and (not force_freeze)
-                if v1_state['expression'] is not None:
+            if raw_state:
+                if isinstance(raw_state, dict):
+                    c_free = raw_state.get('is_free', True)
+                    v2_constraint_obj = self._convert_v1_to_v2(raw_state, v1_id_map, c_free)
+                    c_expr = v2_constraint_obj.expression 
+                else:
+                    v2_constraint_obj = raw_state
+                    c_free = v2_constraint_obj.is_free
+                    c_expr = v2_constraint_obj.expression
+                
+                effective_is_free = c_free and (not force_freeze)
+                if c_expr is not None:
                     effective_is_free = False 
                 
                 is_free[i] = effective_is_free
-                v2_constraint_obj = self._convert_v1_to_v2(v1_state, v1_id_map, effective_is_free)
+                
+                if v2_constraint_obj.is_free != effective_is_free:
+                     v2_constraint_obj = dataclasses.replace(v2_constraint_obj, is_free=effective_is_free)
             else:
-                is_free[i] = True and (not force_freeze)
-                v2_constraint_obj = ParameterConstraintV2(is_free=is_free[i])
+                effective_is_free = True and (not force_freeze)
+                is_free[i] = effective_is_free
+                v2_constraint_obj = ParameterConstraintV2(is_free=effective_is_free)
 
             if v2_uuid not in self.v2_constraints_by_uuid:
                 self.v2_constraints_by_uuid[v2_uuid] = {}
