@@ -9,6 +9,8 @@ specutils>=0.6
 numpy>=1.17.3
 cycler>=0.10
 statsmodels>=0.10.1
+numexpr
+qtawesome
 
 [test]
 pytest
