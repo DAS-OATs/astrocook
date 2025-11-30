@@ -70,11 +70,10 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                #return QColor("#FFF8DC") # Cornsilk
-                return QColor("deepskyblue") # Deepskyblue
+                return QColor("#FFF8DC") # Cornsilk
             return None
 
-        # --- CONSTRAINTS LOGIC ---
+        # --- CONSTRAINTS CHECK ---
         is_constrained_col = col_name in ['z', 'logN', 'b', 'btur']
         c_data = None
         is_free = True
@@ -86,77 +85,62 @@ class SystemTableModel(QAbstractTableModel):
                 is_free = c_data.is_free
                 is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
 
-        # 2. Font Styles (Visual Feedback)
+        # 2. Font Styles
         if role == Qt.FontRole and is_constrained_col:
             font = QFont()
             if is_linked:
-                font.setBold(True)
-                return font
+                font.setBold(True); return font
             elif not is_free:
-                font.setItalic(True)
-                return font
+                font.setItalic(True); return font
             return None
 
-        # 3. Tooltips (Detailed Info)
+        # 3. [FIX] Unified Tooltips
         if role == Qt.ToolTipRole:
-            # [NEW] Component-Wide Tooltip on ID Column
-            if col_name == 'ID':
-                c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-                c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
-                return (f"<b>Component ID:</b> {comp.id}<br>"
-                        f"<b>Series:</b> {comp.series}<br>"
-                        f"<b>Redshift:</b> {comp.z:.5f}<br>"
-                        f"<b>Chi2 (Red):</b> {c_chi2}<br>"
-                        f"<b>Resolution:</b> {c_resol}")
+            # Build Base Info (ID, Series, Z, Stats)
+            c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+            c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
             
-        if role == Qt.ToolTipRole and is_constrained_col:
-            if is_linked:
-                # Find the human-readable name of the target
-                target_name = "Unknown ID"
-                target_z = ""
-                if c_data.target_uuid:
-                    for c_ref in self._components:
-                        if c_ref.uuid == c_data.target_uuid:
-                            target_name = c_ref.series
-                            target_z = f" (z={c_ref.z:.6f})"
-                            break
-                
-                # [FIX] Beautify the Expression
-                expr_display = c_data.expression if c_data.expression else "Direct Link"
-                
-                # Regex to replace p['UUID'] with SeriesName
-                import re
-                def replacer(match):
-                    uid = match.group(1)
-                    for c_ref in self._components:
-                        if c_ref.uuid == uid:
-                            return c_ref.series
-                    return "Unknown"
-                
-                # Matches p['...'] or p["..."]
-                expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
-                expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
-                
-                return (f"<b>Status:</b> Linked Parameter<br>"
-                        f"<b>Target:</b> {target_name}{target_z}<br>"
-                        f"<b>Formula:</b> <code>{expr_pretty}</code>")
-            
-            elif not is_free:
-                return "<b>Status:</b> Frozen<br>This parameter is fixed during fitting."
-            
-            else:
-                return "<b>Status:</b> Free<br>This parameter will vary during fitting."
+            tooltip_html = (f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
+                            f"<b>z:</b> {comp.z:.6f}<br>"
+                            f"<b>Chi2:</b> {c_chi2} | <b>Resol:</b> {c_resol}")
 
-        # 4. Standard Text Display
+            # Append Parameter Info if applicable
+            if is_constrained_col:
+                tooltip_html += "<hr>" # Divider
+                if is_linked:
+                    target_name = "Unknown"; target_z = ""
+                    if c_data.target_uuid:
+                        for c_ref in self._components:
+                            if c_ref.uuid == c_data.target_uuid:
+                                target_name = c_ref.series; target_z = f" (z={c_ref.z:.5f})"; break
+                    
+                    import re
+                    expr_display = c_data.expression if c_data.expression else "Direct Link"
+                    def replacer(match):
+                        uid = match.group(1)
+                        for c_ref in self._components:
+                            if c_ref.uuid == uid: return c_ref.series
+                        return "Unknown"
+                    expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
+                    expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
+                    
+                    tooltip_html += (f"<b>Status:</b> Linked<br>"
+                                     f"<b>Target:</b> {target_name}{target_z}<br>"
+                                     f"<b>Formula:</b> <code>{expr_pretty}</code>")
+                elif not is_free:
+                    tooltip_html += "<b>Status:</b> Frozen (Fixed)"
+                else:
+                    tooltip_html += "<b>Status:</b> Free"
+            
+            return tooltip_html
+
+        # 4. Text Display
         if role in (Qt.DisplayRole, Qt.EditRole):
             val = getattr(comp, attr, None)
             if role == Qt.DisplayRole and isinstance(val, float):
                 return f"{val:.6f}" if attr == 'z' else f"{val:.3f}" if attr in ['logN', 'dlogN'] else f"{val:.2f}"
             return str(val) if val is not None else ""
-        
-        if role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-            
+        if role == Qt.TextAlignmentRole: return Qt.AlignCenter
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
