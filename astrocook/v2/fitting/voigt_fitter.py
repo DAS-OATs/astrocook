@@ -447,16 +447,38 @@ class VoigtFitterV2:
 
         new_components = []
         old_components = self._system_list.components
+        active_uuids = self._constraints._active_uuids
+
         for i, old_comp in enumerate(old_components):
             idx = i * 4
+            
+            # 1. Update Parameters (always safe: fixed params just get their old value back)
             dz_new = p_full_errors[idx] if is_free_mask[idx] else old_comp.dz
             dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else old_comp.dlogN
             db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else old_comp.db
             
+            # 2. Determine Metadata (Chi2 / Resol)
+            # Only apply new stats if the component was part of the optimization group.
+            # If active_uuids is None, it means "Fit All", so everyone gets updated.
+            if active_uuids is None or old_comp.uuid in active_uuids:
+                comp_chi2 = red_chi2
+                comp_resol = fit_resol_val
+            else:
+                # Keep existing metadata for untouched components
+                comp_chi2 = old_comp.chi2
+                comp_resol = old_comp.resol
+
             new_comp = dataclasses.replace(old_comp,
-                z=p_fitted_full[idx], logN=p_fitted_full[idx+1], b=p_fitted_full[idx+2], btur=p_fitted_full[idx+3],
-                dz=dz_new, dlogN=dlogN_new, db=db_new,
-                chi2=red_chi2, resol=fit_resol_val)
+                z=p_fitted_full[idx], 
+                logN=p_fitted_full[idx+1], 
+                b=p_fitted_full[idx+2], 
+                btur=p_fitted_full[idx+3],
+                dz=dz_new, 
+                dlogN=dlogN_new, 
+                db=db_new,
+                chi2=comp_chi2,   # [FIX] Conditional Update
+                resol=comp_resol  # [FIX] Conditional Update
+            )
             new_components.append(new_comp)
             
         new_data_core = dataclasses.replace(self._system_list._data, components=new_components)
