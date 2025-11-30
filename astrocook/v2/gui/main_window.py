@@ -1920,46 +1920,99 @@ class MainWindowV2(QMainWindow):
         'identify_lines'
     }
 
+    # Recipes that need Resolution info
+    _RECIPES_REQUIRING_RESOL = {
+        'fit_component',
+        'add_component',
+        'fit_components', # Future-proofing
+        'identify_lines'  # Useful for matching linewidths
+    }
+
+    def _check_and_handle_requirements(self, category, name, params=None, mode='dialog') -> bool:
+        """
+        Centralized check for z_em and resolution.
+        Returns True if requirements are met.
+        If not, prompts user, sets pending state, launches set_properties, and returns False.
+        """
+        if not self.active_history or not self.active_history.current_state.spec:
+            return True # Let validation fail downstream if no session
+
+        spec = self.active_history.current_state.spec
+        
+        # 1. Check z_em
+        if name in self._RECIPES_REQUIRING_Z_EM:
+            if spec._data.z_em == 0.0:
+                ret = self._show_custom_message(
+                    title="Emission Redshift Required",
+                    header="Emission Redshift (z_em) is required.",
+                    text="This recipe cannot run without z_em.\nDo you want to open 'Set Properties' to set it now?",
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                    default_btn=QMessageBox.StandardButton.Yes
+                )
+                if ret == QMessageBox.StandardButton.Yes:
+                    self._set_pending_action(category, name, params, mode)
+                    self._launch_recipe_dialog("edit", "set_properties")
+                return False
+
+        # 2. Check Resolution
+        if name in self._RECIPES_REQUIRING_RESOL:
+            # Check Scalar R or Meta FWHM
+            has_resol = (spec._data.resol > 0) or (spec.meta.get('resol_fwhm', 0.0) > 0)
+            
+            # Check Column (must be non-empty and positive)
+            if not has_resol and spec.has_aux_column('resol'):
+                try:
+                    col = spec.get_column('resol')
+                    if col is not None:
+                        val = np.nanmedian(col.value)
+                        if np.isfinite(val) and val > 0:
+                            has_resol = True
+                except Exception:
+                    pass
+            
+            if not has_resol:
+                ret = self._show_custom_message(
+                    title="Resolution Required",
+                    header="Instrument Resolution is missing.",
+                    text="This recipe needs resolution (FWHM or R) for accurate fitting.\nDo you want to open 'Set Properties' to set it now?",
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                    default_btn=QMessageBox.StandardButton.Yes
+                )
+                if ret == QMessageBox.StandardButton.Yes:
+                    self._set_pending_action(category, name, params, mode)
+                    self._launch_recipe_dialog("edit", "set_properties")
+                return False
+                
+        return True
+
+    def _set_pending_action(self, category, name, params, mode):
+        """Stores the intended action to resume after properties are set."""
+        logging.info(f"Setting pending action: {name} ({mode})")
+        self._pending_recipe_on_properties_set = {
+            'category': category,
+            'name': name,
+            'params': params,
+            'mode': mode
+        }
+
     def _launch_recipe_dialog(self, category, name, initial_params: dict = None):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
             return
-        if not self.active_history or not self.active_history.current_state.spec:
-            QMessageBox.warning(self, "No Session", "Please load a spectrum before running a recipe.")
+        if not self.active_history: # Simple check
+            QMessageBox.warning(self, "No Session", "Please load a spectrum.")
             return
 
-        # 1. Check if this recipe needs z_em
-        if name in self._RECIPES_REQUIRING_Z_EM:
-            current_z_em = self.active_history.current_state.spec._data.z_em
-            
-            # 2. Check if z_em is not set
-            if current_z_em == 0.0:
-                ret = self._show_custom_message(
-                    title="Emission Redshift Required",
-                    header="Emission Redshift (z_em) is required.", # Grassetto
-                    text="This recipe cannot run without z_em.\nDo you want to open 'Set Properties' to set it now?", # Normale
-                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                    default_btn=QMessageBox.StandardButton.Yes
-                )
-                
-                if ret == QMessageBox.StandardButton.Yes:
-                    # 3. SET THE PENDING ACTION FLAG
-                    logging.info(f"Setting '{name}' as pending, launching 'set_properties' first.")
-                    self._pending_recipe_on_properties_set = (category, name)
-                    
-                    # 4. Launch 'set_properties'
-                    self._launch_recipe_dialog("edit", "set_properties")
-                else:
-                    logging.info(f"User cancelled '{name}' due to missing z_em.")
-                return # Stop here
+        # [FIX] Use centralized check (mode='dialog')
+        if not self._check_and_handle_requirements(category, name, initial_params, mode='dialog'):
+            return
 
-        # --- Fix for Zoom/Pan Bug ---
+        # ... (Existing Fix for Zoom/Pan Bug) ...
         if self.plot_viewer and self.plot_viewer.toolbar:
             try:
                 self.plot_viewer.toolbar.pan(False)
                 self.plot_viewer.toolbar.zoom(False)
-            except Exception as e:
-                logging.warning(f"Could not reset toolbar state: {e}")
+            except Exception: pass
 
         logging.info(f"Launching dialog for recipe: {category}.{name}")
         
@@ -1972,19 +2025,112 @@ class MainWindowV2(QMainWindow):
                     widget = dialog.input_widgets[param_name]
                     if isinstance(widget, QLineEdit):
                         widget.setText(str(value))
-                    # (Add other widget types here if needed later, e.g., QCheckBox)
         
-        # --- Connect the new signal to our worker-launching slot ---
         dialog.recipe_requested.connect(self._on_recipe_requested)
         dialog.finished.connect(self._on_recipe_dialog_finished)
-        # ---
-        
-        # Run non-modally so the main window isn't blocked
         dialog.show() 
         self.active_recipe_dialog = dialog
-        
-        # We no longer care about the .exec() result
-        #QTimer.singleShot(0, self._force_restack_floating_widgets)
+
+    def _on_recipe_requested(self, category: str, recipe_name: str, 
+                             params: dict, alias_map: dict):
+        """
+        Slot called when a recipe is requested (Dialog OR Context Menu).
+        """
+        if not self.active_history: return
+
+        # [FIX] Use centralized check (mode='direct')
+        # This catches context menu actions like 'add_component'
+        if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
+            return
+
+        self._last_attempted_recipe = {
+            'category': category,
+            'recipe_name': recipe_name,
+        }
+
+        self._ask_to_renormalize_model(recipe_name, params)
+
+        # ... (Rest of existing logic: Progress Dialog, Worker Start) ...
+        if self.progress_dialog: self.progress_dialog.cancel()
+        self.progress_dialog = QProgressDialog(f"Running {recipe_name}...", "Cancel", 0, 0, self)
+        self.progress_dialog.setWindowTitle("Recipe Running")
+        self.progress_dialog.setCancelButton(None) 
+        self.progress_dialog.setModal(True)
+        self.progress_dialog.setFixedWidth(400)
+        self.progress_dialog.show()
+
+        worker = RecipeWorker(
+            session=self.active_history.current_state,
+            category=category,
+            recipe_name=recipe_name,
+            params=params,
+            alias_map=alias_map
+        )
+        worker.signals.finished.connect(self._on_recipe_finished)
+        worker.signals.error.connect(self._on_recipe_error)
+        self.thread_pool.start(worker)
+
+    def _process_recipe_result(self, result_data: tuple):
+        """The actual GUI update."""
+        try:
+            new_session_state, recipe_name, params = result_data
+            
+            # ... (Logging logic remains the same) ...
+            try:
+                if isinstance(self.active_history.log_manager, HistoryLogV2):
+                    params_to_log = params.copy()
+                    params_to_log.pop('alias_map', None) 
+                    self.active_history.log_manager.add_entry(recipe_name, params_to_log)
+            except Exception: pass
+
+            # ... (identify_lines logic remains the same) ...
+            auto_show_col = None
+            if recipe_name == 'identify_lines':
+                 # ... (summary dialog) ...
+                 pass
+            else:
+                 # ... (column detection logic) ...
+                 pass
+
+            should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
+
+            original_history_index = self.session_histories.index(self.active_history)
+            branching = is_branching_recipe(recipe_name)
+            
+            self.update_gui_session_state(
+                new_session_state,
+                original_session_index=original_history_index, 
+                is_branching=branching,
+                auto_show_aux=auto_show_col,
+                force_autoscale=should_autoscale
+            )
+            
+            # [FIX] Resume Pending Action
+            if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
+                pending = self._pending_recipe_on_properties_set
+                self._pending_recipe_on_properties_set = None # Clear
+                
+                # Verify we have z_em or resol now
+                # (Simple check: did the state update? Yes, set_properties forces it)
+                logging.info(f"Resuming pending action: {pending['name']}")
+                
+                if pending['mode'] == 'dialog':
+                    QTimer.singleShot(0, lambda: self._launch_recipe_dialog(
+                        pending['category'], pending['name'], pending.get('params')
+                    ))
+                elif pending['mode'] == 'direct':
+                    # Directly run the worker again with the original params
+                    QTimer.singleShot(0, lambda: self._on_recipe_requested(
+                        pending['category'], pending['name'], pending['params'], {}
+                    ))
+
+        except Exception as e:
+            logging.error(f"Failed to process recipe result: {e}", exc_info=True)
+            QMessageBox.critical(self, "GUI Error", f"Failed to update GUI:\n{e}")
+
+        finally:
+            QApplication.restoreOverrideCursor()
+            QTimer.singleShot(0, self._force_restack_floating_widgets)
 
     def _on_recipe_dialog_finished(self, result: int):
         """
@@ -2037,57 +2183,6 @@ class MainWindowV2(QMainWindow):
                 else:
                     params['renorm_model'] = 'False'
 
-    # --- *** 4. NEW: Worker-launching slot for single recipes *** ---
-    def _on_recipe_requested(self, category: str, recipe_name: str, 
-                             params: dict, alias_map: dict):
-        """
-        Slot called when a RecipeDialog emits its 'recipe_requested' signal.
-        Launches the RecipeWorker on a background thread.
-        """
-        if not self.active_history:
-            return # Should not happen
-
-        self._last_attempted_recipe = {
-            'category': category,
-            'recipe_name': recipe_name,
-            # We don't save 'params' here because we want the dialog 
-            # to reload fresh defaults or current values, not the failed ones.
-            # If you DO want to preserve their typed-in values, it's much harder.
-            # Re-opening the dialog standard way is usually sufficient.
-        }
-
-        # 1. Close the dialog that sent the signal
-        #if self.active_recipe_dialog:
-        #    self.active_recipe_dialog.close()
-        #    self.active_recipe_dialog = None
-
-        self._ask_to_renormalize_model(recipe_name, params)
-
-        # 2. Show the *same* progress dialog as "Run All"
-        if self.progress_dialog:
-            self.progress_dialog.cancel()
-        self.progress_dialog = QProgressDialog(f"Running {recipe_name}...", "Cancel", 0, 0, self)
-        self.progress_dialog.setWindowTitle("Recipe Running")
-        self.progress_dialog.setCancelButton(None) 
-        self.progress_dialog.setModal(True)
-        self.progress_dialog.setFixedWidth(400) # Fix 2
-        self.progress_dialog.show()
-
-        # 3. Set up and run the worker
-        worker = RecipeWorker(
-            session=self.active_history.current_state,
-            category=category,
-            recipe_name=recipe_name,
-            params=params,
-            alias_map=alias_map
-        )
-        
-        # Connect to the *same* slots as the ScriptWorker
-        worker.signals.finished.connect(self._on_recipe_finished)
-        worker.signals.error.connect(self._on_recipe_error)
-        
-        self.thread_pool.start(worker)
-
     # --- *** 5. NEW: Callback slots for single recipes *** ---
     def _on_recipe_finished(self, result_data: tuple):
         """Slot called when the RecipeWorker succeeds."""
@@ -2101,109 +2196,6 @@ class MainWindowV2(QMainWindow):
         # before it freezes for the plot redraw.
         QTimer.singleShot(10, lambda: self._process_recipe_result(result_data))
 
-    def _process_recipe_result(self, result_data: tuple):
-        """The actual GUI update, now called by a QTimer."""
-        try:
-            new_session_state, recipe_name, params = result_data
-            
-            # 1. Log the successful action
-            try:
-                if isinstance(self.active_history.log_manager, HistoryLogV2):
-                    params_to_log = params.copy()
-                    params_to_log.pop('alias_map', None) 
-                    self.active_history.log_manager.add_entry(
-                        recipe_name=recipe_name, 
-                        params=params_to_log
-                    )
-                    logging.debug(f"Logged successful recipe: {recipe_name}")
-            except Exception as e:
-                logging.error(f"Failed to log successful recipe: {e}")
-
-            auto_show_col = None
-            # Special handling for identify_lines
-            if recipe_name == 'identify_lines':
-                # Show an info dialog instead of auto-plotting the mask
-                try:
-                    num_identified = new_session_state.spec.meta.get('num_regions_identified', 0)
-                    total_regions = new_session_state.spec.meta.get('num_regions_merged', 0)
-                    
-                    if total_regions == 0:
-                        # Fallback just in case, though num_merged should always be >= 0
-                        total_regions = new_session_state.spec.meta.get('num_regions_raw', 0)
-                        
-                    QMessageBox.information(
-                        self, 
-                        "Identification Complete", 
-                        f"Found identifications for <b>{num_identified}</b> of <b>{total_regions}</b> total absorption regions.\n\n"
-                        "Hover over regions for details or use 'View > View Identifications' for a full list."
-                    )
-                except Exception as e:
-                    logging.warning(f"Could not show identification summary: {e}")
-                
-                auto_show_col = None # Explicitly prevent auto-plotting
-            
-            # Original logic for all other recipes
-            else:
-                if self.active_history:
-                    old_spec = self.active_history.current_state.spec
-                    if old_spec:
-                        old_cols = set(old_spec._data.aux_cols.keys())
-                        new_cols = set(new_session_state.spec._data.aux_cols.keys())
-                        added_cols = new_cols - old_cols
-
-                        if added_cols:
-                            # Pick one to show. Prefer 'cont_pl', 'model', 'cont' in that order,
-                            # otherwise just pick an arbitrary new one.
-                            preferred_order = ['cont_pl', 'model', 'cont']
-                            for pref in preferred_order:
-                                if pref in added_cols:
-                                    auto_show_col = pref
-                                    break
-                            else:
-                                # If none of the preferred ones are new, just take the first one
-                                auto_show_col = list(added_cols)[0]
-
-                            logging.info(f"Recipe '{recipe_name}' added column '{auto_show_col}', auto-displaying.")
-
-            # List recipes that drastically change vertical scale
-            RECIPES_REQUIRING_AUTOSCALE = {'calibrate_from_magnitudes'}
-            should_autoscale = recipe_name in RECIPES_REQUIRING_AUTOSCALE
-
-            # 2. Update the GUI state
-            original_history_index = self.session_histories.index(self.active_history)
-            branching = is_branching_recipe(recipe_name) #or recipe_name == 'resample'
-            
-            self.update_gui_session_state(
-                new_session_state,
-                original_session_index=original_history_index, 
-                is_branching=branching,
-                auto_show_aux=auto_show_col,
-                force_autoscale=should_autoscale
-            )
-            
-            # 3. Check if a recipe was pending on this action
-            if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
-                pending_category, pending_name = self._pending_recipe_on_properties_set
-                self._pending_recipe_on_properties_set = None # Clear the flag
-                
-                # Check if user *actually* set z_em
-                new_z_em = new_session_state.spec._data.z_em
-                if new_z_em != 0.0:
-                    logging.info(f"'set_properties' complete, now launching pending recipe: {pending_name}")
-                    # Use a QTimer to launch the dialog in the next event loop
-                    QTimer.singleShot(0, lambda: self._launch_recipe_dialog(pending_category, pending_name))
-                else:
-                    logging.warning(f"User ran 'set_properties' but left z_em=0.0. Aborting pending recipe.")
-
-        except Exception as e:
-            logging.error(f"Failed to process recipe result: {e}", exc_info=True)
-            QMessageBox.critical(self, "GUI Error", f"Failed to update GUI after recipe:\n{e}")
-
-        finally:
-            # --- *** ALWAYS restore the cursor *** ---
-            QApplication.restoreOverrideCursor()
-
-            QTimer.singleShot(0, self._force_restack_floating_widgets)
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""

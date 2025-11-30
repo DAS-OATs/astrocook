@@ -16,7 +16,7 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).",
         "params": [
             {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
-            {"name": "resol_fwhm", "type": float, "default": "_current_", "doc": "Instrumental Resolution FWHM (km/s). Set to 0 if 'resol' column exists."}
+            {"name": "resol", "type": float, "default": "_current_", "doc": "Resolving Power R (e.g. 50000). Set to 0 if 'resol' column exists."}
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -182,27 +182,31 @@ class RecipeEditV2:
 
         return final_expression, extra_vars
     
-    def set_properties(self, z_em: str = '0.0', resol_fwhm: str = '0.0') -> Optional['SessionV2']:
+    def set_properties(self, z_em: str = '0.0', resol: str = '0.0') -> Optional['SessionV2']:
         """
-        API: Sets the core properties (z_em, z_rf) on the spectrum.
+        API: Sets the core properties (z_em, resol) on the spectrum.
         """
         try:
             z_em_f = float(z_em)
-            resol_fwhm_f = float(resol_fwhm)
+            resol_f = float(resol)
         except ValueError:
             logging.error(msg_param_fail)
             return 0
             
         try:
             # Check if values actually changed
-            if z_em_f == self._session.spec._data.z_em and self._session.spec._data.resol:
-                # Instead of returning 0 (generic fail), raise a specific, friendly error
+            # [FIX] Check against stored R
+            current_resol = self._session.spec._data.resol
+            if current_resol == 0.0:
+                 current_resol = self._session.spec.meta.get('resol', 0.0)
+
+            if z_em_f == self._session.spec._data.z_em and resol_f == current_resol:
                 raise ValueError("No changes were made to the properties.")
-                
-            new_spec = self._session.spec.with_properties(z_em=z_em_f, resol_fwhm=resol_fwhm_f)
+            
+            # [FIX] Pass 'resol' (R) to with_properties
+            new_spec = self._session.spec.with_properties(z_em=z_em_f, resol=resol_f)
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
-            # (Re-raising allows the worker to catch it and separate User vs System errors)
             raise e
 
     def x_convert(self, z_rf: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:

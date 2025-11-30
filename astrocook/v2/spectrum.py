@@ -331,19 +331,27 @@ class SpectrumV2:
             
         return v1_spec
     
-    def with_properties(self, z_em: float, resol_fwhm: float = 0.0) -> 'SpectrumV2':
+    def with_properties(self, z_em: float, resol: float = 0.0) -> 'SpectrumV2':
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
+        Args:
+            z_em: Emission Redshift
+            resol: Resolving Power R (lambda / d_lambda)
         """
         new_meta = deepcopy(self._data.meta)
         
-        # Store resolution in metadata
-        if resol_fwhm > 0:
-            new_meta['resol_fwhm'] = resol_fwhm
-            logging.info(f"Set global resolution FWHM: {resol_fwhm} km/s")
+        # [FIX] Store R directly
+        if resol > 0:
+            new_meta['resol'] = resol
+            # Optional: Calculate FWHM (km/s) for reference/compatibility
+            c_kms = 299792.458
+            new_meta['resol_fwhm'] = c_kms / resol
+            logging.info(f"Set global resolution R={resol:.0f} (FWHM ~ {new_meta['resol_fwhm']:.2f} km/s)")
 
-        new_data = dataclasses.replace(self._data, z_em=z_em)
-        new_history = self.history + [f"Set properties (z_em={z_em})"]
+        # [FIX] Update 'resol' field in dataclass with R
+        new_data = dataclasses.replace(self._data, z_em=z_em, resol=resol, meta=new_meta)
+        
+        new_history = self.history + [f"Set properties (z_em={z_em}, R={resol})"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):

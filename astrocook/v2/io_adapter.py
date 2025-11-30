@@ -180,8 +180,21 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
             col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
             aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
-    z_rf = float(meta.pop('Z_RF', 0.0)) # Pop z_rf from meta
-    z_em = float(meta.pop('Z_EM', 0.0)) # Pop z_em from meta
+    z_rf = float(meta.pop('Z_RF', 0.0))
+    z_em = float(meta.pop('Z_EM', 0.0))
+    
+    # [FIX] Extract Resolution info and hydrate the scalar 'resol' field
+    resol_val = 0.0
+    
+    # Check common keys for resolution
+    if 'resol_fwhm' in meta:
+        # If we have FWHM in km/s, calculate approx R
+        fwhm = float(meta['resol_fwhm'])
+        if fwhm > 0:
+            c_kms = 299792.458
+            resol_val = c_kms / fwhm
+    elif 'RESOL' in meta: # Scalar R
+        resol_val = float(meta['RESOL'])
 
     return SpectrumDataV2(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
@@ -189,7 +202,8 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
         aux_cols=aux_cols, 
         meta=meta,
         z_rf=z_rf,
-        z_em=z_em
+        z_em=z_em,
+        resol=resol_val # <--- Pass this to the constructor
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':
