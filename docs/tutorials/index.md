@@ -1,5 +1,9 @@
 # Tutorials
 
-Here you will find step-by-step guides on using Astrocook.
+Step-by-step guides to using Astrocook.
 
-* [Analysis Workflow](workflow.md)
+```{toctree}
+:maxdepth: 1
+
+getting_started
+```

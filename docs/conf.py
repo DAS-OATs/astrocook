@@ -36,8 +36,10 @@ html_static_path = ['_static']
 # -- MyST Parser Configuration -----------------------------------------------
 # This allows you to use colon fences for directives (like ::: note)
 myst_enable_extensions = [
-    "colon_fence",
-    "dollarmath",
+    "colon_fence",    # Allows ::: for directives
+    "dollarmath",     # Allows $$ math $$
+    "deflist",        # Definition lists
+    "html_image",     # Better image handling
 ]
 
 # -- PyData Theme Configuration ----------------------------------------------
