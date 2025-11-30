@@ -5,7 +5,7 @@ DOCS_DIR="docs"
 BUILD_OUTPUT="docs/_build/html"
 TARGET_BRANCH="gh-pages"
 TARGET_FOLDER="dev"
-SOURCE_PACKAGE="src/astrocook" 
+SOURCE_PACKAGE="astrocook" 
 
 # Stop the script if any command fails
 set -e
