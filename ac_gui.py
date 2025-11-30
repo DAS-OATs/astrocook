@@ -8,12 +8,21 @@ def main():
 
     # Must be extended path
     app = wx.App(False)
-    from astrocook.gui import GUI
     try:
         pw = np.where([a[0]!='-' for a in sys.argv[1:]])
         fw = np.where([a[0]=='-' for a in sys.argv[1:]])
         paths = list(np.array(sys.argv[1:])[pw])
         flags = list(np.array(sys.argv[1:])[fw])
+
+        import astrocook.settings as settings 
+        if '--legacy' in flags:
+            settings.MODE = 'V1'
+            logging.info("Astrocook starting in V1 LEGACY mode.")
+        else:
+            settings.MODE = 'V2'
+            logging.info("Astrocook starting in V2 ARCHITECTURE mode.")
+
+        from astrocook.v1.gui import GUI
         gui = GUI(paths, flags)
         tb = None
     except:
