@@ -70,7 +70,8 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
             if comp.uuid in self._highlighted_uuids:
-                return QColor("#FFF8DC") # Cornsilk
+                #return QColor("#FFF8DC") # Cornsilk
+                return QColor("deepskyblue")
             return None
 
         # --- CONSTRAINTS CHECK ---
@@ -415,7 +416,7 @@ class VelocityPlotWidget(QWidget):
         self.fig.clear()
         self.axes = []
         self._panel_map = {} 
-        self._tick_map_visuals = []
+        self._tick_map_visuals = [] # Store tick positions for tooltips
 
         if not self._all_transitions or not self._current_session:
             self.canvas.draw(); return
@@ -489,6 +490,8 @@ class VelocityPlotWidget(QWidget):
 
             if trans_name not in xem_d:
                 ax_main.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center'); continue
+            
+            # Panel Reference Physics
             lam_0 = xem_d[trans_name].to(session.spec.x.unit).value
             lam_obs = lam_0 * (1.0 + z_sys)
             v = c_kms * (x_full - lam_obs) / lam_obs
@@ -502,12 +505,12 @@ class VelocityPlotWidget(QWidget):
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
-            #ax_main.fill_between(v_p, y_p-dy_p, y_p+dy_p, step='mid', color='gray', alpha=0.15)
             
             if session.spec.model is not None:
                 mod_p = mod_norm[mask]
                 ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
+            # Selected Component Overlay
             if self._selected_components:
                 atom_info = ATOM_DATA.get(trans_name)
                 if atom_info:
@@ -522,25 +525,47 @@ class VelocityPlotWidget(QWidget):
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
+            # --- Ticks for ALL Components (Interlopers included) ---
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
+            
+            # We need the Panel's observed center wavelength (in Angstroms for safety with ATOM_DATA)
+            lam_rest_panel_ang = xem_d[trans_name].to(au.Angstrom).value
+            lam_obs_panel_center_ang = lam_rest_panel_ang * (1 + z_sys)
+
             for other_c in session.systs.components:
-                # Filter: Only show ticks if the component matches the panel's transition
-                is_relevant = (other_c.series == trans_name)
-                if not is_relevant and other_c.series in STANDARD_MULTIPLETS:
-                    if trans_name in STANDARD_MULTIPLETS[other_c.series]:
-                        is_relevant = True
+                # 1. Determine which lines this component has
+                comp_lines = []
+                if other_c.series in STANDARD_MULTIPLETS:
+                    comp_lines = STANDARD_MULTIPLETS[other_c.series]
+                elif other_c.series in xem_d:
+                    comp_lines = [other_c.series]
                 
-                if not is_relevant: continue
+                # 2. Check each line to see if it falls in this panel
+                for line_name in comp_lines:
+                    if line_name not in xem_d: continue
+                    
+                    # Calculate velocity shift relative to THIS panel's center
+                    if line_name == trans_name:
+                        # Optimization: Same transition -> simple redshift diff
+                        v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
+                    else:
+                        # Interloper: Calculate based on observed wavelength coincidence
+                        lam_rest_c = xem_d[line_name].to(au.Angstrom).value
+                        lam_obs_c = lam_rest_c * (1 + other_c.z)
+                        v_shift = c_kms * (lam_obs_c - lam_obs_panel_center_ang) / lam_obs_panel_center_ang
 
-                v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
-                if v_min <= v_shift <= v_max:
-                    self._tick_map_visuals.append((ax_main, v_shift, other_c))
+                    # 3. Draw tick if visible
+                    if v_min <= v_shift <= v_max:
+                        self._tick_map_visuals.append((ax_main, v_shift, other_c))
 
-                    is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
-                    col = 'red' if is_h else 'gray'
-                    ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
-                            transform=trans_axis, color=col, lw=1.5 if is_h else 1.0, alpha=0.8)
+                        is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
+                        col = 'red' if is_h else 'gray'
+                        
+                        # Optional: Use dashed line for interlopers (different transition)?
+                        # For now, keep solid to indicate "Real Component Here"
+                        ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
+                                transform=trans_axis, color=col, lw=1.5 if is_h else 1.0, alpha=0.8)
             
             ax_main.axvline(0, color='gray', ls=':', lw=0.8)
             ax_main.axhline(1.0, color='gray', ls=':', lw=0.8)
@@ -555,8 +580,6 @@ class VelocityPlotWidget(QWidget):
                 ax_resid.fill_between(v_p, - 1.0, 1.0, step='mid', color='#aaaaaa', alpha=0.15)
                 ax_resid.step(v_p, resid_p, where='mid', color='red', lw=0.8)
                 ax_resid.axhline(0, color=get_style_color('model', colors), lw=1.0, alpha=0.5)
-                #ax_resid.axhline(1, color='gray', lw=0.8)
-                #ax_resid.axhline(-1, color='gray', lw=0.8)
                 ax_resid.set_ylim(-5, 5)
                 ax_resid.set_ylabel(r"χ")
                 ax_main.tick_params(labelbottom=False)
@@ -665,42 +688,84 @@ class VelocityPlotWidget(QWidget):
         self.canvas.draw_idle()
 
     def on_press(self, event):
+        """
+        Handles mouse clicks on the velocity plot.
+        Right-Click (Button 3):
+        1. If clicked on a Tick -> Focus on that component (Group View).
+        2. If clicked on Background -> Add new component.
+        """
         if event.button == 3 and event.inaxes: 
-            ax_clicked = event.inaxes
+            menu = QMenu(self)
+            has_actions = False
             
+            # --- 1. Check for Component Tick Clicks (Focus) ---
+            found_comp = None
+            # Calculate view width for tolerance (e.g. 1.5%)
+            view_width = self._xlim[1] - self._xlim[0]
+            tol = view_width * 0.015
+
+            # Iterate through stored ticks
+            for ax, v_pos, comp in self._tick_map_visuals:
+                if ax == event.inaxes:
+                    dist = abs(event.xdata - v_pos)
+                    if dist < tol:
+                        found_comp = comp
+                        break
+
+            if found_comp:
+                # "Focus" triggers the Group View logic in the Inspector
+                act_focus = QAction(f"Focus on Component {found_comp.id}", menu)
+                act_focus.triggered.connect(
+                    lambda: self.inspector.focus_on_component(found_comp.uuid, force_group_view=False)
+                )
+                menu.addAction(act_focus)
+                menu.addSeparator()
+                has_actions = True
+
+            # --- 2. Background Click (Add Component) ---
+            ax_clicked = event.inaxes
             main_ax = None
+            
+            # Resolve the clicked panel
             if ax_clicked in self._panel_map:
                 main_ax = ax_clicked
             else:
+                # Reverse lookup (check if clicked on residual panel)
                 for ax_m, val in self._panel_map.items():
                     resid_line = val[2]
                     if resid_line is not None and resid_line.axes == ax_clicked:
                         main_ax = ax_m
                         break
             
-            if not main_ax: return
-
-            trans_name, _, _ = self._panel_map[main_ax]
-            
-            if self.inspector.main_window:
+            if main_ax:
+                trans_name, _, _ = self._panel_map[main_ax]
+                
+                # Calculate coordinates
                 v = event.xdata
                 c_kms = 299792.458
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
+                # Determine series name (e.g. CIV_1548 -> CIV)
                 series = trans_name
                 if series not in STANDARD_MULTIPLETS:
                      for g, l in STANDARD_MULTIPLETS.items():
                         if series in l: series = g; break
                 
-                menu = QMenu(self)
-                act = QAction(f"Add {series} at z={z_new:.5f}", menu)
-                act.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                # Add Action
+                act_add = QAction(f"Add {series} at z={z_new:.5f}", menu)
+                act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                     "absorbers", "add_component", {
                         'series': series, 'z': z_new,
                         'logN': self.cursor_logN, 'b': self.cursor_b
                     }, {}))
-                menu.addAction(act)
+                
+                menu.addAction(act_add)
+                has_actions = True
+
+            # --- Execute ---
+            if has_actions:
                 menu.exec(QCursor.pos())
+
 class SystemInspector(QWidget):
     def __init__(self, main_window):
         super().__init__()
@@ -972,6 +1037,58 @@ class SystemInspector(QWidget):
     def _forward(self, name, params):
         if self.main_window: self.main_window._on_recipe_requested("absorbers", name, params, {})
 
+    def focus_on_component(self, uuid: str, force_group_view: bool = False): # <--- Added Arg
+        """
+        Public API: Selects a component and scrolls to it.
+        Args:
+            force_group_view: If True, checks 'Group View' at the end (Main Window behavior).
+                              If False, restores previous state (Inspector Plot behavior).
+        """
+        # 1. Capture previous state
+        was_checked = self.group_cb.isChecked()
+        
+        # 2. Temporarily disable grouping to ensure row is found/selectable
+        if was_checked:
+            self.group_cb.setChecked(False) 
+        
+        # 3. Find row in Source Model
+        target_row = -1
+        for r in range(self.table_model.rowCount()):
+            c = self.table_model.get_component_at(r)
+            if c.uuid == uuid:
+                target_row = r
+                break
+        
+        if target_row == -1: 
+            if was_checked: self.group_cb.setChecked(True)
+            return
+
+        # 4. Map to Proxy Index
+        source_idx = self.table_model.index(target_row, 0)
+        proxy_idx = self.proxy_model.mapFromSource(source_idx)
+        
+        if not proxy_idx.isValid(): 
+            if was_checked: self.group_cb.setChecked(True)
+            return
+
+        # 5. Select Row
+        self.table_view.selectRow(proxy_idx.row())
+        self.table_view.scrollTo(proxy_idx)
+        
+        # 6. [FIX] Logic for Group View State
+        if force_group_view:
+            # Case 1: Main Window -> Always Enforce
+            self.group_cb.setChecked(True)
+        else:
+            # Case 2: Velocity Plot -> Restore User Preference
+            if was_checked:
+                self.group_cb.setChecked(True)
+        
+        # 7. Ensure window is active
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
     def _on_context_menu(self, pos):
         index = self.table_view.indexAt(pos)
         if not index.isValid(): return
@@ -1059,6 +1176,12 @@ class SystemInspector(QWidget):
                 m.addAction(act)
             
             m.addSeparator()
+
+        # Set Resolution Action
+        act_resol = QAction("Set Resolution...", m)
+        if self.main_window:
+            act_resol.triggered.connect(lambda: self.main_window._launch_recipe_dialog("edit", "set_properties"))
+        m.addAction(act_resol)
 
         m.addAction("Refit Selected", self._refit)
         m.addAction("Delete", self._delete)

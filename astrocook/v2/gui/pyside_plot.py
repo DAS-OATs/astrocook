@@ -362,6 +362,8 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # Optional: Clear coordinate display if outside axes or cursor off?
             # Toolbar should handle clearing coordinate display by default.
             # pass
+        self.plot_widget.on_mouse_move(event)
+
 
     def _on_hover_timeout(self):
         """Called when the mouse has stopped moving for a while."""
@@ -369,103 +371,14 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.plot_widget.show_data_tooltip(self._last_mouse_event)
 
     def on_press(self, event):
-        """
-        Handle mouse clicks. Right-click (Button 3) opens a context menu
-        with actions relevant to the clicked position.
-        """
-        if not self.plot_widget or not self.plot_widget.main_window: return
-        main_win = self.plot_widget.main_window
-
-        # 1. Region Selection (Left Click)
-        if (event.button == 1 and event.inaxes == self.axes and 
-            self.plot_widget._is_selecting_region):
-            
-            self.selection_start_x = event.xdata
-            # Create the visual artist (invisible at first, 0 width)
-            self.selection_artist = self.axes.axvspan(
-                event.xdata, event.xdata, color='orange', alpha=0.3
-            )
-            self.draw_idle() 
-            return 
-
-        # 2. Context Menu (Right Click)
-        if event.button == 3 and event.inaxes == self.axes:
-            
-            menu = QMenu(self)
-            
-            # Calculate Z from X (if possible)
-            # We use the helper logic to get z based on the current cursor series (if active)
-            # or raw wavelength if not.
-            
-            # A. Set Emission Redshift (Standard feature)
-            # For z_em, we usually assume the click is on Ly-alpha or H-alpha, 
-            # but for now let's just use the raw cursor Z if valid, 
-            # or perhaps just offer to set z_em based on Ly_a at this position?
-            # The previous logic relied on 'calculate_z_from_x' which uses the active cursor series.
-            
-            z_click = self.plot_widget.calculate_z_from_x(event.xdata)
-            
-            if z_click is not None and main_win.cursor_show_checkbox.isChecked():
-                
-                # --- OPTION 1: Add Component (The requested feature) ---
-                series_str = main_win.cursor_series_input.text()
-                
-                add_action = QAction(f"Add {series_str} at z={z_click:.5f}", menu)
-                # We need to capture values in default args to avoid lambda scope issues
-                add_action.triggered.connect(lambda checked=False, z=z_click, s=series_str: main_win._on_recipe_requested(
-                    category="absorbers",
-                    recipe_name="add_component",
-                    params={'series': s, 'z': z},
-                    alias_map={}
-                ))
-                menu.addAction(add_action)
-                
-                menu.addSeparator()
-
-                # --- OPTION 2: Set z_em ---
-                z_em_action = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
-                z_em_action.triggered.connect(lambda checked=False, z=z_click: main_win._on_recipe_requested(
-                    category="edit",
-                    recipe_name="set_properties",
-                    params={"z_em": str(z)},
-                    alias_map={}
-                ))
-                menu.addAction(z_em_action)
-
-            else:
-                # Fallback if cursor is NOT active:
-                # We can still calculate z assuming the click was on Ly_a (common use case)
-                # or just show a generic message.
-                menu.addAction("Enable 'Show Cursor Lines' to add components").setEnabled(False)
-
-            if not menu.isEmpty():
-                menu.exec(QCursor.pos())
+        """Delegate press to widget."""
+        if self.plot_widget:
+            self.plot_widget.on_press(event)
 
     def on_release(self, event):
-        """Handle mouse button release events."""
-        # Check if we were selecting a region
-        if self.selection_start_x is not None:
-            start = self.selection_start_x
-            end = event.xdata
-            
-            # 1. Cleanup the visual
-            self.cleanup_selection()
-            
-            # 2. Validate the selection
-            if start is None or end is None or start == end:
-                 return # Just a click, not a drag
-            
-            # Ensure min/max order
-            xmin, xmax = sorted([start, end])
-            
-            # 3. Trigger the action in the main window
-            if self.plot_widget and self.plot_widget.main_window:
-                logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
-                # Call a new helper in main_window to launch split
-                self.plot_widget.main_window.launch_split_from_region(xmin, xmax)
-                
-            # 4. Optional: Auto-exit select mode?
-            # self.plot_widget.toggle_region_selector() 
+        """Delegate release to widget."""
+        if self.plot_widget:
+            self.plot_widget.on_release(event)
 
     def cleanup_selection(self):
         """Helper to remove selection artist and reset state."""
@@ -528,7 +441,8 @@ class SpectrumPlotWidget(QWidget):
 
         # Selection Mode State
         self._is_selecting_region = False
-
+        self._selection_start_x = None
+        
         # Store the original Matplotlib coordinate formatter ONCE
         self._default_format_coord = self.canvas.axes.format_coord
 
@@ -666,6 +580,8 @@ class SpectrumPlotWidget(QWidget):
         self.canvas.background = None
         self.canvas.cursor_artists = []
         
+        self._tick_visuals = []
+
         plot_occurred = False
         if spec and len(spec.x) > 0:
             plot_occurred = True
@@ -1083,6 +999,8 @@ class SpectrumPlotWidget(QWidget):
                                     hi_lines_x.append(x_plot)
                                 else:
                                     metal_lines_x.append(x_plot)
+
+                                self._tick_visuals.append((ax, x_plot, comp))
                         else:
                             logging.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
 
@@ -1693,6 +1611,77 @@ class SpectrumPlotWidget(QWidget):
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
+
+    def on_mouse_move(self, event):
+        if not event.inaxes: 
+            QToolTip.hideText()
+            return
+        
+        # Check Ticks
+        found_comp = None
+        xlim = event.inaxes.get_xlim()
+        tol = (xlim[1] - xlim[0]) * 0.01 # 1% tolerance
+        
+        for ax, x_pos, comp in self._tick_visuals:
+            if ax == event.inaxes and abs(event.xdata - x_pos) < tol:
+                found_comp = comp
+                break
+        
+        if found_comp:
+            c_chi2 = f"{found_comp.chi2:.2f}" if found_comp.chi2 is not None else "N/A"
+            c_resol = f"{found_comp.resol:.0f}" if found_comp.resol is not None else "N/A"
+            text = (f"ID: {found_comp.id} | {found_comp.series}\n"
+                    f"z: {found_comp.z:.5f}\n"
+                    f"Chi2: {c_chi2} | R: {c_resol}")
+            # Use QCursor.pos() for correct HiDPI position
+            QToolTip.showText(QCursor.pos(), text, self.canvas)
+        else:
+            QToolTip.hideText()
+            
+    # Add on_press for Context Menu
+    def on_press(self, event):
+        if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
+            self._selection_start_x = event.xdata
+            self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
+            self.canvas.draw_idle() 
+            return True
+
+        if event.button == 3 and event.inaxes:
+            found_comp = None
+            xlim = event.inaxes.get_xlim(); tol = (xlim[1] - xlim[0]) * 0.015 
+            for ax, x_pos, comp in self._tick_visuals:
+                if ax == event.inaxes and abs(event.xdata - x_pos) < tol: found_comp = comp; break
+            
+            menu = QMenu(self)
+            if found_comp:
+                act_inspect = QAction(f"Inspect {found_comp.series} (Group View)", menu)
+                if self.main_window: act_inspect.triggered.connect(lambda checked=False, u=found_comp.uuid: self.main_window.open_inspector_on_component(u))
+                menu.addAction(act_inspect)
+                menu.addSeparator()
+
+            z_click = self.calculate_z_from_x(event.xdata)
+            if z_click is not None and self.main_window and self.main_window.cursor_show_checkbox.isChecked():
+                series_str = self.main_window.cursor_series_input.text()
+                act_add = QAction(f"Add {series_str} at z={z_click:.5f}", menu)
+                act_add.triggered.connect(lambda checked=False, z=z_click, s=series_str: self.main_window._on_recipe_requested("absorbers", "add_component", {'series': s, 'z': z}, {}))
+                menu.addAction(act_add)
+                
+                act_zem = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
+                act_zem.triggered.connect(lambda checked=False, z=z_click: self.main_window._on_recipe_requested("edit", "set_properties", {"z_em": str(z)}, {}))
+                menu.addAction(act_zem)
+
+            if not menu.isEmpty(): menu.exec(QCursor.pos()); return True
+        return False
+    
+    def on_release(self, event):
+        if self._selection_start_x is not None:
+            start = self._selection_start_x; end = event.xdata
+            self.canvas.cleanup_selection(); self._selection_start_x = None
+            if start is None or end is None or start == end: return
+            xmin, xmax = sorted([start, end])
+            if self.main_window:
+                logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
+                self.main_window.launch_split_from_region(xmin, xmax)
 
 # NOTE: The rest of the plotting logic (plot_spectrum content, resizeEvent, etc.) 
 # must be placed into this class, and the old SpectrumViewerPySide class should be deleted.

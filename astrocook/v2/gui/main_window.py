@@ -2607,3 +2607,14 @@ class MainWindowV2(QMainWindow):
             # Forza il focus sulla finestra (utile su macOS se l'app era in background)
             self.activateWindow()
             self.raise_()
+    
+    def open_inspector_on_component(self, uuid: str):
+        """
+        Opens the System Inspector and focuses on the specific component UUID.
+        """
+        # 1. Ensure Inspector is created and visible
+        self._on_view_system_inspector()
+        
+        # 2. Delegate focus logic to the inspector
+        if self.system_inspector:
+            self.system_inspector.focus_on_component(uuid, force_group_view=True)

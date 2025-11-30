@@ -278,10 +278,38 @@ class RecipeAbsorbersV2:
 
     def delete_component(self, uuid: str) -> 'SessionV2':
         try:
+            # 1. Delete from System List
             new_systs = self._session.systs.delete_component(uuid)
-            return self._session.with_new_system_list(new_systs)
+            
+            # 2. [FIX] Re-calculate Model
+            # We instantiate a temporary fitter with the NEW system list to get the updated flux
+            fitter = VoigtFitterV2(self._session.spec, new_systs)
+            _, model_flux = fitter.compute_model_flux()
+            
+            # 3. Update Spectrum with new model column
+            from ..structures import DataColumnV2
+            from copy import deepcopy
+            import dataclasses
+            
+            new_aux_cols = deepcopy(self._session.spec._data.aux_cols)
+            new_aux_cols['model'] = DataColumnV2(
+                values=model_flux,
+                unit=self._session.spec.y.unit,
+                description="Voigt Fit Model"
+            )
+            
+            new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
+            # Reconstruct SpectrumV2 wrapper (preserving history/meta logic is handled by data core)
+            # We reuse the class of the current spectrum to be safe
+            new_spec = self._session.spec.__class__(new_spec_data) 
+            
+            # 4. Return complete session
+            session_with_spec = self._session.with_new_spectrum(new_spec)
+            return session_with_spec.with_new_system_list(new_systs)
+
         except Exception as e:
-            logging.error(f"Failed delete_component: {e}"); return 0
+            logging.error(f"Failed delete_component: {e}", exc_info=True)
+            return 0
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0') -> 'SessionV2':
         try:
