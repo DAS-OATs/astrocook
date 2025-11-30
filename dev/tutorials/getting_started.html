@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook &#8212; Astrocook 2.0.0 documentation</title>
+    <title>Getting Started &#8212; Astrocook 2.0.0 documentation</title>
   
   
   
@@ -41,7 +41,7 @@
     <script src="../static/documentation_options.js?v=51b770b3"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/modules';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/getting_started';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
@@ -51,8 +51,8 @@
         </script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="astrocook package" href="astrocook.html" />
-    <link rel="prev" title="Getting Started" href="../tutorials/getting_started.html" />
+    <link rel="next" title="astrocook" href="../api/modules.html" />
+    <link rel="prev" title="Tutorials" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -138,15 +138,15 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
     astrocook
   </a>
 </li>
@@ -267,15 +267,15 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
     astrocook
   </a>
 </li>
@@ -343,8 +343,8 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="astrocook.html">astrocook package</a></li>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Getting Started</a></li>
 </ul>
 </div>
 </nav></div>
@@ -385,7 +385,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Getting Started</span></li>
   </ul>
 </nav>
 </div>
@@ -402,19 +405,88 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="astrocook">
-<h1>astrocook<a class="headerlink" href="#astrocook" title="Link to this heading">#</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="astrocook.html">astrocook package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook.run_astrocook">astrocook.run_astrocook module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook.settings">astrocook.settings module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook">Module contents</a></li>
-</ul>
-</li>
-</ul>
+  <section class="tex2jax_ignore mathjax_ignore" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
+<p>Welcome to <strong>Astrocook</strong>! This guide will walk you through the graphical interface, from loading your first spectrum to performing basic analysis.</p>
+<section id="launching-the-application">
+<h2>1. Launching the Application<a class="headerlink" href="#launching-the-application" title="Link to this heading">#</a></h2>
+<p>Start Astrocook from your terminal:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>astrocook
+</pre></div>
 </div>
+<p>The Main Window will appear, divided into three sections:</p>
+<ol class="arabic simple">
+<li><p><strong>Session List (Left):</strong> Tracks the history of your modifications (Undo/Redo steps).</p></li>
+<li><p><strong>Plot Area (Center):</strong> Interactive visualization of the spectrum.</p></li>
+<li><p><strong>Plot Controls (Right):</strong> Toggles for errors, continuum, models, and redshift cursors.</p></li>
+</ol>
+</section>
+<section id="loading-data">
+<h2>2. Loading Data<a class="headerlink" href="#loading-data" title="Link to this heading">#</a></h2>
+<p>To load a spectrum, go to <strong>File &gt; Open Spectrum…</strong> or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code>.
+Astrocook supports:</p>
+<ul class="simple">
+<li><p><strong>FITS files</strong> (<code class="docutils literal notranslate"><span class="pre">.fits</span></code>)</p></li>
+<li><p><strong>Astrocook Sessions</strong> (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When you load a file, Astrocook automatically creates a new <strong>Session</strong>. You can have multiple sessions open simultaneously (e.g., to compare different quasars).</p>
+</div>
+</section>
+<section id="the-plot-interface">
+<h2>3. The Plot Interface<a class="headerlink" href="#the-plot-interface" title="Link to this heading">#</a></h2>
+<p>Once data is loaded, the Right Sidebar becomes active. Here you can toggle visibility for different data components:</p>
+<ul class="simple">
+<li><p><strong>1-sigma error:</strong> Toggles the grey shading representing flux uncertainty.</p></li>
+<li><p><strong>Continuum:</strong> Toggles the dashed line for the fitted continuum.</p></li>
+<li><p><strong>Absorption model:</strong> Toggles the red line showing Voigt profile fits.</p></li>
+<li><p><strong>Systems:</strong> Toggles vertical markers for identified absorption systems.</p></li>
+</ul>
+<section id="navigation">
+<h3>Navigation<a class="headerlink" href="#navigation" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Pan:</strong> Click and drag with the <strong>Left Mouse Button</strong>.</p></li>
+<li><p><strong>Zoom:</strong> Right-click and drag to define a zoom rectangle.</p></li>
+<li><p><strong>Reset:</strong> Click the <strong>Home</strong> icon in the toolbar to reset the view.</p></li>
+</ul>
+</section>
+</section>
+<section id="basic-analysis-smoothing">
+<h2>4. Basic Analysis: Smoothing<a class="headerlink" href="#basic-analysis-smoothing" title="Link to this heading">#</a></h2>
+<p>Let’s improve the signal-to-noise ratio visually by smoothing the spectrum.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Flux &gt; Smooth Spectrum…</strong>.</p></li>
+<li><p>A dialog will appear asking for parameters.</p></li>
+<li><p><strong>Sigma (km/s):</strong> Enter <code class="docutils literal notranslate"><span class="pre">100.0</span></code>.</p></li>
+<li><p>Click <strong>Run</strong>.</p></li>
+</ol>
+<p>Astrocook processes this “Recipe” in the background. Notice that a new entry appears in the <strong>Session List</strong> on the left.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><strong>Undo/Redo:</strong>
+If you don’t like the result, simply press <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (Undo) or click the previous state in the Session List. Astrocook saves the full state of the spectrum at every step!</p>
+</div>
+</section>
+<section id="estimating-the-continuum">
+<h2>5. Estimating the Continuum<a class="headerlink" href="#estimating-the-continuum" title="Link to this heading">#</a></h2>
+<p>To analyze absorption lines, we need to normalize the spectrum.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Continuum &gt; Auto-estimate Continuum…</strong>.</p></li>
+<li><p>Leave the default parameters (e.g., Kappa=2.0) and click <strong>Run</strong>.</p></li>
+<li><p>The blue line (Flux) will now be overlaid with a black dashed line (Continuum).</p></li>
+</ol>
+<p>To view the normalized flux:</p>
+<ol class="arabic simple">
+<li><p>Look at the <strong>Plot Controls</strong> (Right Sidebar).</p></li>
+<li><p>Check the box <strong>Normalize F</strong>.</p></li>
+<li><p>The Y-axis changes to <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">/</span> <span class="pre">Continuum</span></code>.</p></li>
+</ol>
+</section>
+<section id="advanced-scripting-api">
+<h2>Advanced: Scripting API<a class="headerlink" href="#advanced-scripting-api" title="Link to this heading">#</a></h2>
+<p>Every action you take in the GUI corresponds to a command in the Astrocook API. You can automate your workflow using Python scripts.</p>
+</section>
 </section>
 
 
@@ -428,20 +500,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../tutorials/getting_started.html"
+       href="index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Getting Started</p>
+        <p class="prev-next-title">Tutorials</p>
       </div>
     </a>
     <a class="right-next"
-       href="astrocook.html"
+       href="../api/modules.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook package</p>
+        <p class="prev-next-title">astrocook</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -457,10 +529,30 @@
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#launching-the-application">1. Launching the Application</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-data">2. Loading Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-plot-interface">3. The Plot Interface</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#navigation">Navigation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-analysis-smoothing">4. Basic Analysis: Smoothing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#estimating-the-continuum">5. Estimating the Continuum</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-scripting-api">Advanced: Scripting API</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../sources/api/modules.rst.txt"
+      <li><a href="../sources/tutorials/getting_started.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
