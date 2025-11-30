@@ -45,4 +45,16 @@ html_theme_options = {
     "github_url": "https://github.com/das-oats/astrocook",
     "show_nav_level": 2,
     "navigation_depth": 4,
+    
+    # --- Add these lines ---
+    "navbar_align": "content", # Align navbar items to the content
+    "switcher": {
+        # This must be the absolute URL to the JSON file you just uploaded
+        "json_url": "https://das-oats.github.io/astrocook/switcher.json",
+        
+        # This tells the theme which version THIS build represents.
+        # When you merge to main/release, you will change this to '0.1'
+        "version_match": "dev",
+    },
+    "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
 }
