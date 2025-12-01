@@ -33,6 +33,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
 
+# Add the custom CSS file
+html_css_files = [
+    'css/custom.css',
+]
+
 # -- MyST Parser Configuration -----------------------------------------------
 # This allows you to use colon fences for directives (like ::: note)
 myst_enable_extensions = [
@@ -43,10 +48,21 @@ myst_enable_extensions = [
 ]
 
 # -- PyData Theme Configuration ----------------------------------------------
+# The path is relative to the configuration directory (docs/)
+html_logo = "_static/icon_3d_HR.png"
+
+# Optional: PyData Theme specific logo configuration
 html_theme_options = {
     "github_url": "https://github.com/das-oats/astrocook",
     "show_nav_level": 2,
     "navigation_depth": 4,
+
+    "logo": {
+        "text": "Astrocook",  # Text to show next to the logo
+        # You can specify different images for light/dark modes if you have them
+        # "image_light": "_static/logo_3d.png",
+        # "image_dark": "_static/logo_3d_dark.png",
+    },
     
     # --- Add these lines ---
     "navbar_align": "content", # Align navbar items to the content
