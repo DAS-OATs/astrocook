@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from .fitting.voigt_model import VoigtModelConstraintV2
 from .structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
 from .system_list_migration import migrate_component_v2_to_v1
-from ..v1.syst_list import SystList as SystListV1
+from ..legacy.syst_list import SystList as SystListV1
 from .atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 
 # --- 3. System List API Layer (The orchestrator) ---

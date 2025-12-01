@@ -165,7 +165,7 @@ STANDARD_MULTIPLETS = {
 }
 
 # Built from ATOM_DATA to be used by V2 functions.
-# This replaces the dependency on v1.vars.xem_d
+# This replaces the dependency on legacy.vars.xem_d
 xem_d = {
     key: data['wave'] * au.Angstrom
     for key, data in ATOM_DATA.items()

@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/astrocook/data', 'astrocook/data')]
 binaries = []
-hiddenimports = ['astrocook.v1.vars']
+hiddenimports = ['astrocook.legacy.vars']
 tmp_ret = collect_all('asdf')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('scienceplots')

@@ -13,7 +13,7 @@ from scipy.special import erf, erfinv
 from typing import Dict, List, Optional, Tuple
 
 from .atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
-from ..v1.functions import x_convert as x_convert_v1 
+from ..legacy.functions import x_convert as x_convert_v1 
 from ..v2.structures import DataColumnV2, SpectrumDataV2 
 from .gui.debug_utils import GLOBAL_PLOTTER
 
@@ -727,7 +727,7 @@ def compute_identification_signal(
         np.ndarray: The computed signal on the z_grid.
     """
     try:
-        from ..v1.functions import trans_parse
+        from ..legacy.functions import trans_parse
     except ImportError:
         logging.error("V1 'trans_parse' not available. Cannot compute signal.")
         return np.full_like(z_grid, np.nan)

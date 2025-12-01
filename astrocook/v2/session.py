@@ -8,9 +8,9 @@ import tarfile  # <<< Import
 import tempfile # <<< Import
 from typing import Any, Optional, Tuple, Union
 
-from ..v1.defaults import Defaults
-from ..v1.format import Format # Import the Format V1 class for I/O 
-from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
+from ..legacy.defaults import Defaults
+from ..legacy.format import Format # Import the Format V1 class for I/O 
+from ..legacy.gui_log import GUILog # Import the V1 logger for GUI compatibility
 from .io.adapter import load_and_migrate_structure, save_archive_v2
 from .io.loaders import get_loader
 from .io.v1_stubs import V1ArchiveManager, save_archive_v1

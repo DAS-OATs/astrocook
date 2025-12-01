@@ -12,8 +12,8 @@ from ..recipes.flux import FLUX_RECIPES_SCHEMAS
 from ..session import SessionV2
 from ..session_manager import SessionHistory
 from ..structures import HistoryLogV2
-from ...v1.gui_log import GUILog
-from ...v1.defaults import Defaults
+from ...legacy.gui_log import GUILog
+from ...legacy.defaults import Defaults
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2

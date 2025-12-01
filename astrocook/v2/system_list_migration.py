@@ -3,8 +3,8 @@ import logging
 from typing import Any, Dict, Optional, Tuple
 
 from .structures import ComponentDataV2, SystemListDataV2 
-from astrocook.v1.syst_list import Syst as SystV1
-from astrocook.v1.syst_list import SystList as SystListV1
+from astrocook.legacy.syst_list import Syst as SystV1
+from astrocook.legacy.syst_list import SystList as SystListV1
 
 def _get_float_value(param_object):
     """Safely extracts the numerical value from a Quantity or raw float."""

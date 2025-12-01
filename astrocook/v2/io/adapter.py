@@ -21,7 +21,7 @@ from ..structures import (
 from ..spectrum import SpectrumV2 
 from ..system_list import SystemListV2
 # --- V1 Imports ---
-from ...v1.gui_log import GUILog
+from ...legacy.gui_log import GUILog
 
 def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
     """

@@ -34,11 +34,11 @@ from ..session import SessionV2, load_session_from_file, LogManager
 from ..structures import HistoryLogV2, V1LogArtifact
 from .system_inspector import SystemInspector
 from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe, resource_path # Import recipe helpers
-from ...v1.gui_log import GUILog
-from ...v1.defaults import Defaults
+from ...legacy.gui_log import GUILog
+from ...legacy.defaults import Defaults
 try:
-    from ...v1.functions import trans_parse
-    from ...v1.vars import xem_d
+    from ...legacy.functions import trans_parse
+    from ...legacy.vars import xem_d
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     logging.error("Could not import V1 functions (trans_parse, xem_d) needed for redshift cursor.")

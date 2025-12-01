@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 from .session import SessionV2
 from .structures import HistoryLogV2, V1LogArtifact
 # --- V1 Imports (for type hinting only) ---
-from ..v1.gui_log import GUILog 
+from ..legacy.gui_log import GUILog 
 
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]

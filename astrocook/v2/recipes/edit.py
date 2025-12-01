@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
-from ...v1.message import msg_param_fail
+from ...legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
     from ..session import SessionV2

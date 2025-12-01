@@ -3,17 +3,17 @@ import json
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from ...v1.vars import xem_d
+from ...legacy.vars import xem_d
 from ..atomic_data import STANDARD_MULTIPLETS
 from ..fitting.voigt_fitter import VoigtFitterV2
 from ..spectrum import SpectrumV2
 from ..structures import HistoryLogV2
 try:
-    from ...v1.functions import trans_parse
+    from ...legacy.functions import trans_parse
 except ImportError:
     logging.error("V1 'trans_parse' not available. Identification recipe will fail.")
     trans_parse = lambda s: []
-from ...v1.message import msg_param_fail
+from ...legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
     from ..session import SessionV2

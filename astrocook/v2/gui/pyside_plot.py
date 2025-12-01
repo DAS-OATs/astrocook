@@ -27,14 +27,14 @@ if TYPE_CHECKING:
     from ..session import SessionV2 
 
 try:
-    from ...v1.functions import trans_parse, x_convert
+    from ...legacy.functions import trans_parse, x_convert
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
     trans_parse = lambda s: [s] # Dummy function
     logging.error("V1 'trans_parse' not found. Displaying V1-style systems may fail.")
 
-# Keys must match exactly what is in your v1.vars.xem_d dictionary
+# Keys must match exactly what is in your legacy.vars.xem_d dictionary
 STRONG_EMISSION_LINES = {
     'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 
     'CIII_1908', 'MgII_2796', 'H_b', 'OIII_5008', 'H_a'

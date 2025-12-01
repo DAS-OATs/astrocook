@@ -16,7 +16,7 @@ from ..recipes.flux import FLUX_RECIPES_SCHEMAS
 from ..structures import HistoryLogV2, V1LogArtifact
 from ..utils import get_recipe_schema # For inserting recipes
 # --- V1 Imports ---
-from ...v1.gui_log import GUILog
+from ...legacy.gui_log import GUILog
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing

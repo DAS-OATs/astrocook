@@ -18,8 +18,8 @@ from .spectrum_operations import (
     merge_regions_by_velocity, rate_doublet_candidate, smooth_spectrum, rebin_spectrum, running_std,
 )
 from .structures import SpectrumDataV2, DataColumnV2
-from ..v1.frame import Frame as FrameV1
-from ..v1.spectrum import Spectrum as SpectrumV1
+from ..legacy.frame import Frame as FrameV1
+from ..legacy.spectrum import Spectrum as SpectrumV1
 
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,

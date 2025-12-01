@@ -9,7 +9,7 @@ from ..photometry import calculate_synthetic_ab_mag, STANDARD_FILTERS
 from ..spectrum import DataColumnV2, SpectrumDataV2, SpectrumV2
 from ..spectrum_operations import rebin_spectrum
 from ..structures import HistoryLogV2
-from ...v1.message import msg_param_fail
+from ...legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
     from ..session import SessionV2 

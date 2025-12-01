@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 import astropy.units as au
 
 from ..structures import HistoryLogV2
-from ...v1.message import msg_param_fail
+from ...legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
     from ..session import SessionV2

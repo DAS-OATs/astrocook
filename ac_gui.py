@@ -22,7 +22,7 @@ def main():
             settings.MODE = 'V2'
             logging.info("Astrocook starting in V2 ARCHITECTURE mode.")
 
-        from astrocook.v1.gui import GUI
+        from astrocook.legacy.gui import GUI
         gui = GUI(paths, flags)
         tb = None
     except:

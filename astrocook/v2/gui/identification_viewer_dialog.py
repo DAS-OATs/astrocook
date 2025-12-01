@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from ..atomic_data import STANDARD_MULTIPLETS, xem_d
 try:
-    from ...v1.functions import trans_parse
+    from ...legacy.functions import trans_parse
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
