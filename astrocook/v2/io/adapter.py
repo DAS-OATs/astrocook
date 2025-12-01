@@ -10,18 +10,18 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # --- V2 Imports ---
-from .io_v1_stubs import load_v1_spec_object, load_v1_systs_object
+from .v1_stubs import load_v1_spec_object, load_v1_systs_object
 if TYPE_CHECKING:
-    from .session import SessionV2
-from .structures import (
+    from ..session import SessionV2
+from ..structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,
     HistoryLogV2, V1LogArtifact, LogEntryV2
 )
-from .spectrum import SpectrumV2 
-from .system_list import SystemListV2
+from ..spectrum import SpectrumV2 
+from ..system_list import SystemListV2
 # --- V1 Imports ---
-from ..v1.gui_log import GUILog
+from ...v1.gui_log import GUILog
 
 def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
     """
@@ -135,7 +135,7 @@ def load_and_migrate_structure(
             except Exception as e:
                 logging.error(f"V2 native systs loading failed: {e}. Falling back to V1 migration path.")
 
-        from .system_list_migration import migrate_system_list_v1_to_v2
+        from ..system_list_migration import migrate_system_list_v1_to_v2
         try:
             logging.debug(f"Attempting to load V1 system list object from: {path_to_load}")
             v1_systs, syst_header = load_v1_systs_object(path_to_load)
@@ -267,7 +267,7 @@ def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 
     Loads a V2-native system list by combining the _systs.fits FITS table
     and the _meta.json metadata dictionary.
     """
-    from .system_list import SystemListV2
+    from ..system_list import SystemListV2
 
     try:
         systs_table = Table.read(systs_fits_path)

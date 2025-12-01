@@ -11,8 +11,9 @@ from typing import Any, Optional, Tuple, Union
 from ..v1.defaults import Defaults
 from ..v1.format import Format # Import the Format V1 class for I/O 
 from ..v1.gui_log import GUILog # Import the V1 logger for GUI compatibility
-from .io_adapter import load_and_migrate_structure, save_archive_v2
-from .io_v1_stubs import V1ArchiveManager, save_archive_v1
+from .io.adapter import load_and_migrate_structure, save_archive_v2
+from .io.loaders import get_loader
+from .io.v1_stubs import V1ArchiveManager, save_archive_v1
 from .recipes.continuum import RecipeContinuumV2
 from .recipes.absorbers import RecipeAbsorbersV2
 from .recipes.edit import RecipeEditV2
@@ -94,6 +95,25 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                     logging.error(f"Failed to load _meta.json: {e}")
             else:
                 logging.debug("No _meta.json found (assuming V1 archive or single FITS).")
+
+        # 1. Check if a V2 Native Loader exists for this format
+        v2_loader = get_loader(format_name)
+    
+        if v2_loader:
+            logging.info(f"Using V2 Native Loader for format '{format_name}'")
+            try:
+                # Call the pure loader
+                spec_data = v2_loader(spec_file_path)
+
+                # Wrap in API object
+                spectrum_v2 = SpectrumV2(data=spec_data)
+
+                # Create session (SystemList will be empty initially for raw loads)
+                return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
+
+            except Exception as e:
+                logging.error(f"V2 Loader failed: {e}")
+                return 0
 
         # 1. Load Spectrum
         spectrum_v2 = load_and_migrate_structure(
