@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import astropy.units as au
-from scipy.special import wofz 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
@@ -13,6 +12,8 @@ from PySide6.QtWidgets import (
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
     QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip
 )
+from scipy.ndimage import gaussian_filter1d
+from scipy.special import wofz 
 from typing import List, Optional
 
 from astrocook.core.structures import ComponentDataV2
@@ -199,8 +200,10 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         except (ValueError, TypeError): return str(l_data) < str(r_data)
         
 # --- Helper for Voigt Profile ---
-def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms):
+def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
+    
+    # 1. Physics
     lambda_c = lambda_0 * (1.0 + z)
     c_kms = 2.99792458e5
     b_safe = max(b_kms, 0.1)
@@ -210,7 +213,24 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms):
     a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
     H_ax = wofz(x + 1j * a).real
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
-    return np.exp(-tau)
+    flux = np.exp(-tau)
+
+    # 2. Convolution (Instrumental Broadening)
+    if resol is not None and resol > 0:
+        # Calculate sigma in pixels
+        # FWHM_lambda = lambda / R  -> sigma_lambda = FWHM / 2.355
+        sigma_ang = (lambda_c / resol) / 2.35482
+        
+        # Determine average pixel spacing of the grid
+        if len(wave_grid_ang) > 1:
+            dx = np.nanmedian(np.diff(wave_grid_ang))
+            if dx > 0:
+                sigma_pix = sigma_ang / dx
+                # Only convolve if the broadening is significant (>0.1 pixel)
+                if sigma_pix > 0.1:
+                    flux = gaussian_filter1d(flux, sigma_pix)
+
+    return flux
 
 # --- 2. The Paged Plot Widget ---
 
@@ -412,6 +432,25 @@ class VelocityPlotWidget(QWidget):
             z_view_center = (1 + self._plot_center_z) * (1 + v_center / c_kms) - 1
             self.inspector.update_z_box(z_view_center)
 
+    def _get_resolution(self) -> float:
+        """Helper to get resolution (R) from the session robustly."""
+        if not self._current_session or not self._current_session.spec:
+            return 0.0
+        
+        # 1. Try Immutable Data Core
+        if hasattr(self._current_session.spec, '_data'):
+            r = getattr(self._current_session.spec._data, 'resol', 0.0)
+            if r > 0: return r
+            
+        # 2. Try Metadata
+        meta = self._current_session.spec.meta
+        if 'resol' in meta:
+            return float(meta['resol'])
+        if 'RESOL' in meta:
+            return float(meta['RESOL'])
+            
+        return 0.0
+
     def _update_plot(self):
         self.fig.clear()
         self.axes = []
@@ -446,6 +485,9 @@ class VelocityPlotWidget(QWidget):
         c_kms = 299792.458
         z_sys = self._plot_center_z
         
+        # Get Resolution for Convolution
+        resol_val = self._get_resolution()
+
         has_cont = session.spec.cont is not None
         y = session.spec.y.value
         dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(y)
@@ -521,7 +563,8 @@ class VelocityPlotWidget(QWidget):
                         if is_match:
                             prof = calc_voigt_profile(
                                 x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
-                                sel_c.z, 10**sel_c.logN, sel_c.b
+                                sel_c.z, 10**sel_c.logN, sel_c.b,
+                                resol=resol_val # <<< PASS RESOLUTION
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
@@ -596,10 +639,7 @@ class VelocityPlotWidget(QWidget):
         closest_dist = 10.0 # pixels tolerance
         tooltip_text = ""
 
-        # Convert mouse data coords to display coords for distance check?
-        # Simpler: check data coords width.
-        # 10 pixels in data coords depends on zoom. 
-        # Let's use a velocity threshold, e.g., 5 km/s or 1% of view.
+        # Calculate view width for tolerance (e.g. 1.5%)
         view_width = self._xlim[1] - self._xlim[0]
         tol_v = view_width * 0.015 
         
@@ -642,6 +682,9 @@ class VelocityPlotWidget(QWidget):
         
         session = self._current_session
         x_unit = session.spec.x.unit
+        
+        # Get Resolution for Cursor
+        resol_val = self._get_resolution()
 
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
@@ -659,7 +702,8 @@ class VelocityPlotWidget(QWidget):
             
             prof = calc_voigt_profile(
                 lam_grid_ang, lam_0_ang, atom_info['f'], atom_info['gamma'],
-                z_new, N, b
+                z_new, N, b,
+                resol=resol_val # <<< PASS RESOLUTION
             )
             
             line_main.set_data(v_grid, prof)
