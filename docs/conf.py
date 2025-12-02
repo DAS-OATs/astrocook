@@ -76,3 +76,16 @@ html_theme_options = {
     },
     "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
 }
+
+# -- Options for autodoc ----------------------------------------------------
+# This controls what appears in the API docs
+autodoc_default_options = {
+    'members': True,           # Document all members (functions/classes)
+    'undoc-members': True,     # Even those without docstrings
+    'show-inheritance': True,  # Show parent classes
+    'special-members': '__init__', # Document the __init__ method
+    # 'private-members': True, # Uncomment if you also want _functions
+}
+
+# Ensure order follows source code, not alphabetical
+autodoc_member_order = 'bysource'

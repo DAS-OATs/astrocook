@@ -25,11 +25,12 @@ It is designed to make spectral analysis—such as continuum fitting, absorption
 installation
 tutorials/index
 ```
+
 ```{toctree}
 :maxdepth: 2  
 :caption: API Reference
 
-api/modules
+reference
 ```
 
 ## Credits
