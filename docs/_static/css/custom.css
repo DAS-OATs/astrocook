@@ -41,7 +41,6 @@ a:hover {
     border-bottom: 1px solid #296bff !important; /* Force your blue border */
 }
 
-
 /* Previous / Next Buttons (Bottom of page) */
 .prev-next-area a p.prev-next-title {
     color: inherit !important; /* Ensure title text takes the blue color */
