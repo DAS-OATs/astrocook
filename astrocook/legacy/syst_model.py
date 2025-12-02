@@ -1,5 +1,5 @@
 from .functions import *
-from .spectrum import Spectrum
+from astrocook.legacy.spectrum import Spectrum
 from .vars import *
 from astropy import table as at
 from copy import deepcopy as dc
@@ -67,7 +67,7 @@ class SystModel(LMComposite):
             if plot_jac: plt.plot(self._xf, _jac(pars)[:,col], color='red')
 
             plt.plot(self._xf, self._yf)
-            from .utils import run_with_recursion_retry
+            from astrocook.core.utils import run_with_recursion_retry
             if use_jac:
                 fit_kws_c['jac'] = _jac
 
@@ -96,7 +96,7 @@ class SystModel(LMComposite):
                 if plot_jac: plt.plot(self._xf, fit.jac[:,col], color='blue')
             if plot_jac: plt.show()
             time_end = datetime.datetime.now()
-            from .utils import run_with_recursion_retry
+            from astrocook.core.utils import run_with_recursion_retry
             self._ys = run_with_recursion_retry(self.eval, x=self._xs, params=self._pars)
             #plt.plot(self._xs, self._ys)
             #plt.plot(self._xs[prova], self.eval(x=self._xs[prova], params=self._pars))

@@ -6,11 +6,11 @@ import numpy as np
 import ast
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from .fitting.voigt_model import VoigtModelConstraintV2
-from .structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
-from .system_list_migration import migrate_component_v2_to_v1
-from ..legacy.syst_list import SystList as SystListV1
-from .atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+from astrocook.fitting.voigt_model import VoigtModelConstraintV2
+from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
+from astrocook.core.system_list_migration import migrate_component_v2_to_v1
+from astrocook.legacy.syst_list import SystList as SystListV1
+from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 
 # --- 3. System List API Layer (The orchestrator) ---
 class SystemListV2:
@@ -334,7 +334,7 @@ class SystemListV2:
                  legacy_key = (comp.id, param)
                  existing = current_parsed.get(legacy_key)
         
-        from .structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraintV2
         
         # 2. Determine Base
         if existing:
@@ -383,7 +383,7 @@ class SystemListV2:
         
         # 2. [FIX] Clean up Hanging Links (Sanitize Constraints)
         # Scan all constraints. If any target the deleted UUID, reset them to Free.
-        from .structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraintV2
         
         current_v2_map = {k: v.copy() for k, v in self._data.v2_constraints_map.items()}
         current_parsed = dict(self._data.parsed_constraints)

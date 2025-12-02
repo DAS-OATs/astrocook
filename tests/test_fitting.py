@@ -4,13 +4,13 @@ import logging
 import matplotlib.pyplot as plt
 
 # Import V2 Core
-from astrocook.v2.structures import (
+from astrocook.core.structures import (
     SpectrumDataV2, DataColumnV2, ComponentDataV2, SystemListDataV2
 )
-from astrocook.v2.spectrum import SpectrumV2
-from astrocook.v2.system_list import SystemListV2
-from astrocook.v2.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.v2.atomic_data import ATOM_DATA
+from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.system_list import SystemListV2
+from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.atomic_data import ATOM_DATA
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)

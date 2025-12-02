@@ -4,10 +4,10 @@ import numpy as np
 import re
 from typing import List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
 
-from ..structures import ComponentDataV2, ParameterConstraintV2 
+from astrocook.core.structures import ComponentDataV2, ParameterConstraintV2 
 
 if TYPE_CHECKING:
-    from ..system_list import SystemListV2
+    from astrocook.core.system_list import SystemListV2
 
 class VoigtModelConstraintV2:
     """
@@ -124,7 +124,7 @@ class VoigtModelConstraintV2:
         num_params = len(self._initial_p_vector)
         is_free = np.ones(num_params, dtype=bool)
         
-        from ..structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraintV2
         import dataclasses
 
         for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):

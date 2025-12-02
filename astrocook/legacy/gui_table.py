@@ -16,7 +16,7 @@ import wx.lib.colourdb as cdb
 
 import astrocook.settings as settings
 # Import only the V2 class needed for type checking
-from astrocook.v2.spectrum import SpectrumV2 
+from astrocook.core.spectrum import SpectrumV2 
 
 """
 import scienceplots

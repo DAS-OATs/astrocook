@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from astropy import units as au
-from astrocook.v2.structures import SpectrumDataV2, DataColumnV2
-from astrocook.v2.spectrum_operations import rebin_spectrum
+from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.core.spectrum_operations import rebin_spectrum
 
 # --- GOLDEN STANDARD CASE 1: Weighted Average and Error Propagation ---
 

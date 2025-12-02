@@ -5,15 +5,15 @@ from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
 # --- Import all schemas and the map ---
-from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from ..recipes.edit import EDIT_RECIPES_SCHEMAS
-from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-from ..session import SessionV2
-from ..session_manager import SessionHistory
-from ..structures import HistoryLogV2
-from ...legacy.gui_log import GUILog
-from ...legacy.defaults import Defaults
+from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
+from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.core.session import SessionV2
+from astrocook.core.session_manager import SessionHistory
+from astrocook.core.structures import HistoryLogV2
+from astrocook.legacy.gui_log import GUILog
+from astrocook.legacy.defaults import Defaults
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2

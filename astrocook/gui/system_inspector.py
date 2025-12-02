@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (
 )
 from typing import List, Optional
 
-from ..structures import ComponentDataV2
-from ..atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from astrocook.core.structures import ComponentDataV2
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- 1. Table Configuration ---

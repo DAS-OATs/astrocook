@@ -8,23 +8,23 @@ import tarfile  # <<< Import
 import tempfile # <<< Import
 from typing import Any, Optional, Tuple, Union
 
-from ..legacy.defaults import Defaults
-from ..legacy.format import Format # Import the Format V1 class for I/O 
-from ..legacy.gui_log import GUILog # Import the V1 logger for GUI compatibility
-from .io.adapter import load_and_migrate_structure, save_archive_v2
-from .io.loaders import get_loader
-from .io.v1_stubs import V1ArchiveManager, save_archive_v1
-from .recipes.continuum import RecipeContinuumV2
-from .recipes.absorbers import RecipeAbsorbersV2
-from .recipes.edit import RecipeEditV2
-from .recipes.flux import RecipeFluxV2
-from .spectrum import SpectrumV2
-from .structures import (
+from astrocook.legacy.defaults import Defaults
+from astrocook.legacy.format import Format # Import the Format V1 class for I/O 
+from astrocook.legacy.gui_log import GUILog # Import the V1 logger for GUI compatibility
+from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
+from astrocook.io.loaders import get_loader
+from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
+from astrocook.recipes.continuum import RecipeContinuumV2
+from astrocook.recipes.absorbers import RecipeAbsorbersV2
+from astrocook.recipes.edit import RecipeEditV2
+from astrocook.recipes.flux import RecipeFluxV2
+from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.structures import (
     SystemListDataV2, HistoryLogV2, LogEntryV2, V1LogArtifact
 )
-from .system_list import SystemListV2
-from .system_list_migration import migrate_system_list_v1_to_v2
-from .utils import guarded_deepcopy_v1_state
+from astrocook.core.system_list import SystemListV2
+from astrocook.core.system_list_migration import migrate_system_list_v1_to_v2
+from astrocook.core.utils import guarded_deepcopy_v1_state
 
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]

@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
 from astropy.table import Table
-from astrocook.v2.fitting.voigt_model import VoigtModelConstraintV2
-from astrocook.v2.structures import SystemListDataV2
-from astrocook.v2.system_list import SystemListV2
-from astrocook.v2.structures import ComponentDataV2
+from astrocook.fitting.voigt_model import VoigtModelConstraintV2
+from astrocook.core.structures import SystemListDataV2
+from astrocook.core.system_list import SystemListV2
+from astrocook.core.structures import ComponentDataV2
 
 # --- Helper function to simulate a V2 System List with V1 Model Placeholder ---
 def create_v2_system_list_with_v1_models():

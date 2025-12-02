@@ -3,20 +3,20 @@ import json
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from ...legacy.vars import xem_d
-from ..atomic_data import STANDARD_MULTIPLETS
-from ..fitting.voigt_fitter import VoigtFitterV2
-from ..spectrum import SpectrumV2
-from ..structures import HistoryLogV2
+from astrocook.legacy.vars import xem_d
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.structures import HistoryLogV2
 try:
-    from ...legacy.functions import trans_parse
+    from astrocook.legacy.functions import trans_parse
 except ImportError:
     logging.error("V1 'trans_parse' not available. Identification recipe will fail.")
     trans_parse = lambda s: []
-from ...legacy.message import msg_param_fail
+from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
-    from ..session import SessionV2
+    from astrocook.core.session import SessionV2
 
 ABSORBERS_RECIPES_SCHEMAS = {
     "identify_lines": {
@@ -182,8 +182,8 @@ class RecipeAbsorbersV2:
             
             # Ensure systs is initialized
             if temp_session.systs is None:
-                from ..structures import SystemListDataV2
-                from ..system_list import SystemListV2
+                from astrocook.core.structures import SystemListDataV2
+                from astrocook.core.system_list import SystemListV2
                 temp_session = temp_session.with_new_system_list(SystemListV2(SystemListDataV2()))
 
             temp_recipe = RecipeAbsorbersV2(temp_session)
@@ -244,8 +244,8 @@ class RecipeAbsorbersV2:
         
         try:
             if self._session.systs is None:
-                from ..structures import SystemListDataV2
-                from ..system_list import SystemListV2
+                from astrocook.core.structures import SystemListDataV2
+                from astrocook.core.system_list import SystemListV2
                 empty_systs = SystemListV2(SystemListDataV2())
                 new_systs = empty_systs.add_component(series, z_f, logN_f, b_f, btur_f)
             else:
@@ -287,7 +287,7 @@ class RecipeAbsorbersV2:
             _, model_flux = fitter.compute_model_flux()
             
             # 3. Update Spectrum with new model column
-            from ..structures import DataColumnV2
+            from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
             
@@ -326,7 +326,7 @@ class RecipeAbsorbersV2:
             if not res or not res.success:
                 logging.warning(f"Fit failed: {res.message if res else 'No result'}")
             
-            from ..structures import DataColumnV2
+            from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
             

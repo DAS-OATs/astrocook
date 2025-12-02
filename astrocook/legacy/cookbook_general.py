@@ -98,7 +98,7 @@ class CookbookGeneral(object):
         struct_out['spec']._t.sort('x')
         if name_in[0] == '*':
             name += name_in[1:]
-        from .session import Session
+        from astrocook.core.session import Session
         sess = Session(gui=self.sess._gui, name=name, spec=struct_out['spec'],
                        nodes=struct_out['nodes'], lines=struct_out['lines'],
                        systs=struct_out['systs'])
@@ -399,7 +399,7 @@ class CookbookGeneral(object):
                     spec_out._t[c] = spec_out._t[c].astype(float)
                     spec_out._t[c][~mask] = np.nan #
             #spec_out._t = .spec._t[mask]
-            from .session import Session
+            from astrocook.core.session import Session
             new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,
                           spec=spec_out)
             return new
@@ -528,7 +528,7 @@ class CookbookGeneral(object):
                 spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
         # Create a new session
-        from .session import Session
+        from astrocook.core.session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned',
                       spec=spec_out)
         return new
@@ -575,7 +575,7 @@ class CookbookGeneral(object):
                     logging.debug(msg_attr_miss(s))
                     kwargs[s] = None
         if kwargs['spec'] != None:
-            from .session import Session
+            from astrocook.core.session import Session
             new = Session(**kwargs)
             new._gui = self.sess._gui
         else:

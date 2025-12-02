@@ -9,17 +9,17 @@ import numexpr as ne
 import numpy as np
 from typing import Any, Dict, List, Optional, Union
 
-from .atomic_data import STANDARD_MULTIPLETS, xem_d
-from .photometry import generate_calibration_curve
-from .spectrum_operations import (
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
+from astrocook.core.photometry import generate_calibration_curve
+from astrocook.core.spectrum_operations import (
     convert_axis_velocity, 
     convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, 
     _find_kinematic_doublet_candidates, fit_continuum_interp, fit_powerlaw_to_regions, 
     merge_regions_by_velocity, rate_doublet_candidate, smooth_spectrum, rebin_spectrum, running_std,
 )
-from .structures import SpectrumDataV2, DataColumnV2
-from ..legacy.frame import Frame as FrameV1
-from ..legacy.spectrum import Spectrum as SpectrumV1
+from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.legacy.frame import Frame as FrameV1
+from astrocook.legacy.spectrum import Spectrum as SpectrumV1
 
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,

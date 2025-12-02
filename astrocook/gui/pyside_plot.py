@@ -19,15 +19,15 @@ import qtawesome as qta
 import scienceplots
 from typing import Optional, TYPE_CHECKING
 
-from ..atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
-from ..photometry import STANDARD_FILTERS, get_filter_transmission
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
+from astrocook.core.photometry import STANDARD_FILTERS, get_filter_transmission
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
-    from ..session import SessionV2 
+    from astrocook.core.session import SessionV2 
 
 try:
-    from ...legacy.functions import trans_parse, x_convert
+    from astrocook.legacy.functions import trans_parse, x_convert
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False

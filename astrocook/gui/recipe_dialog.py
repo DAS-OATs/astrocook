@@ -7,9 +7,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIntValidator, QDoubleValidator, QFont
 from PySide6.QtCore import Qt, QLocale, Signal
 
-from ..session import SessionV2
-from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
-from ..utils import get_recipe_schema, is_branching_recipe
+from astrocook.core.session import SessionV2
+from astrocook.core.structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.utils import get_recipe_schema, is_branching_recipe
 from astrocook import settings
 
 class RecipeDialog(QDialog):

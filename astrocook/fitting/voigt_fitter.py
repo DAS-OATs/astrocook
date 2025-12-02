@@ -10,10 +10,10 @@ from scipy.special import wofz
 from scipy.linalg import pinv
 from typing import List, Tuple, Dict, Any, Optional
 
-from ..atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
-from ..spectrum import SpectrumV2
-from ..structures import ComponentDataV2, SystemListDataV2
-from ..system_list import SystemListV2
+from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+from astrocook.core.system_list import SystemListV2
 from .voigt_model import VoigtModelConstraintV2
 
 class VoigtFitterV2:

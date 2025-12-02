@@ -2,10 +2,10 @@ import logging
 from typing import List, Optional, Union
 
 # --- V2 Imports ---
-from .session import SessionV2
-from .structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.session import SessionV2
+from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 # --- V1 Imports (for type hinting only) ---
-from ..legacy.gui_log import GUILog 
+from astrocook.legacy.gui_log import GUILog 
 
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]

@@ -7,14 +7,14 @@ from PySide6.QtWidgets import (
 )
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from ..atomic_data import STANDARD_MULTIPLETS, xem_d
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
 try:
-    from ...legacy.functions import trans_parse
+    from astrocook.legacy.functions import trans_parse
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     V1_FUNCTIONS_AVAILABLE = False
 if TYPE_CHECKING:
-    from ..spectrum import SpectrumV2
+    from astrocook.core.spectrum import SpectrumV2
 
 
 class IdentificationViewerDialog(QDialog):

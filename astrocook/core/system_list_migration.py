@@ -2,7 +2,7 @@ import astropy.units as au
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from .structures import ComponentDataV2, SystemListDataV2 
+from astrocook.core.structures import ComponentDataV2, SystemListDataV2 
 from astrocook.legacy.syst_list import Syst as SystV1
 from astrocook.legacy.syst_list import SystList as SystListV1
 

@@ -5,7 +5,7 @@ import astropy.units as au
 from typing import Callable, Dict, Optional
 
 # Import your V2 structures
-from ..structures import SpectrumDataV2, DataColumnV2 # Adjust import path as needed
+from astrocook.core.structures import SpectrumDataV2, DataColumnV2 # Adjust import path as needed
 
 # --- The Registry ---
 _LOADER_REGISTRY: Dict[str, Callable] = {}

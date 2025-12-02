@@ -86,7 +86,7 @@ class CookbookFlux(CookbookFluxOld):
                 spec_out.t['cont'] = np.ones(len(spec_out.t)) * spec_out.y.unit
 
         # Create a new session
-        from .session import Session
+        from astrocook.core.session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_rebinned',
                       spec=spec_out)
         return new

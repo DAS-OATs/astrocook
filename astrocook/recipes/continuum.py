@@ -2,11 +2,11 @@ import logging
 from typing import TYPE_CHECKING, Optional
 import astropy.units as au
 
-from ..structures import HistoryLogV2
-from ...legacy.message import msg_param_fail
+from astrocook.core.structures import HistoryLogV2
+from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
-    from ..session import SessionV2
+    from astrocook.core.session import SessionV2
 
 # --- Schemas for the Continuum Menu ---
 CONTINUUM_RECIPES_SCHEMAS = {

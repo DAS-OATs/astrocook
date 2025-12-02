@@ -28,8 +28,8 @@ def get_recipe_schema(category: str, recipe_name: str) -> Dict[str, Any]:
     :param recipe_name: The name of the recipe method (e.g., 'x_convert').
     """
     try:
-        # Construct the full path to the module (e.g., 'astrocook.v2.recipes.edit')
-        module_path = f"astrocook.v2.recipes.{category}" 
+        # Construct the full path to the module (e.g., 'astrocook.recipes.edit')
+        module_path = f"astrocook.recipes.{category}" 
         recipe_module = importlib.import_module(module_path)
         
         # Get the global schemas dictionary from the module (e.g., EDIT_RECIPES_SCHEMAS)

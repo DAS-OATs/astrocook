@@ -4,11 +4,11 @@ import numpy as np
 import re
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
-from ..structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
-from ...legacy.message import msg_param_fail
+from astrocook.core.structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
-    from ..session import SessionV2
+    from astrocook.core.session import SessionV2
 
 EDIT_RECIPES_SCHEMAS = {
     "set_properties": {

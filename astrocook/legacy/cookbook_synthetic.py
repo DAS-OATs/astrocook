@@ -59,7 +59,7 @@ class CookbookSynthetic(object):
         y = y+dy*norm
 
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
-        from .session import Session
+        from astrocook.core.session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
                       spec=spec)
 
@@ -116,7 +116,7 @@ class CookbookSynthetic(object):
         #print(len(x), len(y), len(dy), len(xmin), len(xmax))
 
         spec = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
-        from .session import Session
+        from astrocook.core.session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
                       spec=spec)
 
@@ -229,7 +229,7 @@ class CookbookSynthetic(object):
         xunit = spec._t['x'].unit
         yunit = spec._t['y'].unit
         spec_new = Spectrum(x, xmin, xmax, y, dy, xunit, yunit)
-        from .session import Session
+        from astrocook.core.session import Session
         new = Session(gui=self.sess._gui, name=self.sess.name+'_synth',
                       spec=spec_new)
 

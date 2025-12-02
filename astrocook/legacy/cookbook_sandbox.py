@@ -488,7 +488,7 @@ class CookbookSandbox(object):
                 reg_xmax = np.interp(reg_x, spec.x.to(au.nm), spec.xmax.to(au.nm))
                 reg_y = np.interp(reg_x, spec.x.to(au.nm), spec.t['conv']-spec.t['cont'])
                 reg_dy = np.interp(reg_x, spec.x.to(au.nm), spec.dy)
-                from .spectrum import Spectrum
+                from astrocook.core.spectrum import Spectrum
                 reg = Spectrum(reg_x, reg_xmin, reg_xmax, reg_y, reg_dy)
                 peaks = reg._peaks_find(col='y')#, mode='wrap')
 

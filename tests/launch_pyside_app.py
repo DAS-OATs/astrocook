@@ -11,9 +11,9 @@ from PySide6.QtCore import Qt, QEvent, Signal
 
 # Astrocook Imports
 # Assuming your session and GUI modules are correctly set up on the path
-from astrocook.v2.session import SessionV2, load_session_from_file
-from astrocook.v2.gui.main_window import MainWindowV2 
-from astrocook.v2.utils import resource_path
+from astrocook.core.session import SessionV2, load_session_from_file
+from astrocook.gui.main_window import MainWindowV2 
+from astrocook.core.utils import resource_path
 
 
 # Minimal V1/V2 Context Mocks

@@ -25,30 +25,30 @@ from typing import Any, Dict, List, Optional
 from .debug_utils import GLOBAL_PLOTTER
 from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
-from ..photometry import STANDARD_FILTERS
+from astrocook.core.photometry import STANDARD_FILTERS
 from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
-from ..session_manager import SessionHistory
-from ..session import SessionV2, load_session_from_file, LogManager
-from ..structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.session_manager import SessionHistory
+from astrocook.core.session import SessionV2, load_session_from_file, LogManager
+from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 from .system_inspector import SystemInspector
-from ..utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe, resource_path # Import recipe helpers
-from ...legacy.gui_log import GUILog
-from ...legacy.defaults import Defaults
+from astrocook.core.utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe, resource_path # Import recipe helpers
+from astrocook.legacy.gui_log import GUILog
+from astrocook.legacy.defaults import Defaults
 try:
-    from ...legacy.functions import trans_parse
-    from ...legacy.vars import xem_d
+    from astrocook.legacy.functions import trans_parse
+    from astrocook.legacy.vars import xem_d
     V1_FUNCTIONS_AVAILABLE = True
 except ImportError:
     logging.error("Could not import V1 functions (trans_parse, xem_d) needed for redshift cursor.")
     V1_FUNCTIONS_AVAILABLE = False
 
 # --- *** RECIPE LOOKUP MAP *** ---
-from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from ..recipes.edit import EDIT_RECIPES_SCHEMAS
-from ..recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
+from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
 for name in ABSORBERS_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'absorbers'

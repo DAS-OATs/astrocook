@@ -6,9 +6,9 @@ import tarfile
 import tempfile
 from typing import Any, Optional
 
-from ...legacy.format import Format as FormatV1 
-from ...legacy.spectrum import Spectrum as SpectrumV1
-from ...legacy.syst_list import SystList as SystListV1
+from astrocook.legacy.format import Format as FormatV1 
+from astrocook.legacy.spectrum import Spectrum as SpectrumV1
+from astrocook.legacy.syst_list import SystList as SystListV1
 class V1ArchiveManager:
     """
     Handles unpacking and cleanup of the mutable V1 Astrocook session (.acs) archive.
@@ -58,7 +58,7 @@ class V1ArchiveManager:
 def create_mock_v1_spectrum(hdul):
     """Creates a mock V1 Spectrum object with the correct size from HDUL."""
     from astropy import units as au
-    from ...legacy.spectrum import Spectrum as SpectrumV1
+    from astrocook.legacy.spectrum import Spectrum as SpectrumV1
     
     # Assuming the HDU data is in hdu[1] or hdu[0]
     data_length = 500 # A reasonable mock length

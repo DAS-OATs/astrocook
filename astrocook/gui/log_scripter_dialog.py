@@ -9,14 +9,14 @@ from PySide6.QtGui import QColor, QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Union, Optional
 
 # --- V2 Imports ---
-from ..recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from ..recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from ..recipes.edit import EDIT_RECIPES_SCHEMAS
-from ..recipes.flux import FLUX_RECIPES_SCHEMAS
-from ..structures import HistoryLogV2, V1LogArtifact
-from ..utils import get_recipe_schema # For inserting recipes
+from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
+from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.core.structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.utils import get_recipe_schema # For inserting recipes
 # --- V1 Imports ---
-from ...legacy.gui_log import GUILog
+from astrocook.legacy.gui_log import GUILog
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing

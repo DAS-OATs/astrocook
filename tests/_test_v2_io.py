@@ -2,7 +2,7 @@
 
 import astropy.units as au
 import numpy as np 
-from astrocook.v2.session import load_spectrum_to_v2_format
+from astrocook.core.session import load_spectrum_to_v2_format
 
 def test_spectrum_data_integrity():
     """Verifies that the V2 Spectrum object contains correctly mapped real data."""

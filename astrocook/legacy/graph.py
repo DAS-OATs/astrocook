@@ -22,7 +22,7 @@ import matplotlib.style as mplstyle
 mplstyle.use('fast')
 
 import astrocook.settings as settings
-from astrocook.v2.spectrum import SpectrumV2 
+from astrocook.core.spectrum import SpectrumV2 
 
 """
 try:

@@ -12,10 +12,10 @@ from scipy.signal import find_peaks, savgol_filter
 from scipy.special import erf, erfinv
 from typing import Dict, List, Optional, Tuple
 
-from .atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
-from ..legacy.functions import x_convert as x_convert_v1 
-from ..v2.structures import DataColumnV2, SpectrumDataV2 
-from .gui.debug_utils import GLOBAL_PLOTTER
+from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
+from astrocook.legacy.functions import x_convert as x_convert_v1 
+from astrocook.core.structures import DataColumnV2, SpectrumDataV2 
+from astrocook.gui.debug_utils import GLOBAL_PLOTTER
 
 # We assume 'xem' (the Ly-alpha rest wavelength) is accessible here for the custom equivalency
 # You must ensure this global is either imported or defined here (Technical Debt).
@@ -727,7 +727,7 @@ def compute_identification_signal(
         np.ndarray: The computed signal on the z_grid.
     """
     try:
-        from ..legacy.functions import trans_parse
+        from astrocook.legacy.functions import trans_parse
     except ImportError:
         logging.error("V1 'trans_parse' not available. Cannot compute signal.")
         return np.full_like(z_grid, np.nan)

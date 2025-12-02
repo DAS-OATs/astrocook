@@ -16,11 +16,11 @@ import numpy as np
 import wx
 import wx.lib.mixins.listctrl as listmix
 
-from .session import Session as SessionV1
+from astrocook.core.session import Session as SessionV1
 
 # --- DYNAMIC IMPORT LOGIC ---
 import astrocook.settings as settings
-from astrocook.v2.session import SessionV2 
+from astrocook.core.session import SessionV2 
 # Note: Ensure V1 Session is importable via its V1 path for safety
 
 # Set the active Session class based on the global flag
