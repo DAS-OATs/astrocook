@@ -1,6 +1,8 @@
 import logging
 import numpy as np
 import astropy.units as au
+from scipy.special import wofz
+from scipy.ndimage import gaussian_filter1d
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
@@ -12,12 +14,10 @@ from PySide6.QtWidgets import (
     QPushButton, QHeaderView, QAbstractItemView, QMenu,
     QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip
 )
-from scipy.ndimage import gaussian_filter1d
-from scipy.special import wofz 
 from typing import List, Optional
 
-from astrocook.core.structures import ComponentDataV2
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from ..core.structures import ComponentDataV2
+from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- 1. Table Configuration ---
@@ -199,7 +199,7 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         try: return float(l_data) < float(r_data)
         except (ValueError, TypeError): return str(l_data) < str(r_data)
         
-# --- Helper for Voigt Profile ---
+# --- Helper for Voigt Profile (With Convolution) ---
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
@@ -317,28 +317,20 @@ class VelocityPlotWidget(QWidget):
 
     def toggle_region_selector(self): pass
 
-    # [FIX 2] Custom Home Logic
+    # Custom Home Logic
     def on_home(self):
         """Restores the view to the initial state for the current component."""
         if not self._current_component: return
-        
-        # 1. Reset Internal State
         self._xlim = self._home_xlim
         self._plot_center_z = self._current_component.z
-        
-        # 2. Update UI Boxes
         self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
         self.inspector.update_z_box(self._plot_center_z)
-        
-        # 3. Force Re-plot
         self._update_plot()
 
-    # [FIX 1] Smart Refetch on Pan Release
+    # Smart Refetch on Pan Release
     def on_mouse_release(self, event):
         """Triggers a data refresh when the mouse is released during Panning."""
-        # Check if the toolbar is in Pan or Zoom mode
         if self.toolbar.mode:
-            # We delay slightly or just call update to ensure limits are finalized
             self._update_plot()
 
     def resizeEvent(self, event):
@@ -383,13 +375,9 @@ class VelocityPlotWidget(QWidget):
         self._plot_center_z = component.z
 
         if is_new_component:
-            # Center on 0 km/s, preserving current width preference
             width = self._xlim[1] - self._xlim[0]
             self._xlim = (-width/2, width/2)
-            
-            # [FIX 2] Capture this as the "Home" state
             self._home_xlim = self._xlim
-            
             self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
 
         if not session or not component:
@@ -426,7 +414,6 @@ class VelocityPlotWidget(QWidget):
         if not np.allclose(xlim, self._xlim, atol=0.1):
             self._xlim = xlim
             self.inspector.update_limit_boxes(xlim[0], xlim[1])
-            # Back-calculate Z based on the center of the current view relative to _plot_center_z
             c_kms = 299792.458
             v_center = np.mean(xlim)
             z_view_center = (1 + self._plot_center_z) * (1 + v_center / c_kms) - 1
@@ -436,19 +423,12 @@ class VelocityPlotWidget(QWidget):
         """Helper to get resolution (R) from the session robustly."""
         if not self._current_session or not self._current_session.spec:
             return 0.0
-        
-        # 1. Try Immutable Data Core
         if hasattr(self._current_session.spec, '_data'):
             r = getattr(self._current_session.spec._data, 'resol', 0.0)
             if r > 0: return r
-            
-        # 2. Try Metadata
         meta = self._current_session.spec.meta
-        if 'resol' in meta:
-            return float(meta['resol'])
-        if 'RESOL' in meta:
-            return float(meta['RESOL'])
-            
+        if 'resol' in meta: return float(meta['resol'])
+        if 'RESOL' in meta: return float(meta['RESOL'])
         return 0.0
 
     def _update_plot(self):
@@ -485,7 +465,6 @@ class VelocityPlotWidget(QWidget):
         c_kms = 299792.458
         z_sys = self._plot_center_z
         
-        # Get Resolution for Convolution
         resol_val = self._get_resolution()
 
         has_cont = session.spec.cont is not None
@@ -533,7 +512,6 @@ class VelocityPlotWidget(QWidget):
             if trans_name not in xem_d:
                 ax_main.text(0.5, 0.5, f"Unknown: {trans_name}", ha='center'); continue
             
-            # Panel Reference Physics
             lam_0 = xem_d[trans_name].to(session.spec.x.unit).value
             lam_obs = lam_0 * (1.0 + z_sys)
             v = c_kms * (x_full - lam_obs) / lam_obs
@@ -552,7 +530,6 @@ class VelocityPlotWidget(QWidget):
                 mod_p = mod_norm[mask]
                 ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
-            # Selected Component Overlay
             if self._selected_components:
                 atom_info = ATOM_DATA.get(trans_name)
                 if atom_info:
@@ -568,45 +545,33 @@ class VelocityPlotWidget(QWidget):
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
-            # --- Ticks for ALL Components (Interlopers included) ---
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
             
-            # We need the Panel's observed center wavelength (in Angstroms for safety with ATOM_DATA)
             lam_rest_panel_ang = xem_d[trans_name].to(au.Angstrom).value
             lam_obs_panel_center_ang = lam_rest_panel_ang * (1 + z_sys)
 
             for other_c in session.systs.components:
-                # 1. Determine which lines this component has
                 comp_lines = []
                 if other_c.series in STANDARD_MULTIPLETS:
                     comp_lines = STANDARD_MULTIPLETS[other_c.series]
                 elif other_c.series in xem_d:
                     comp_lines = [other_c.series]
                 
-                # 2. Check each line to see if it falls in this panel
                 for line_name in comp_lines:
                     if line_name not in xem_d: continue
                     
-                    # Calculate velocity shift relative to THIS panel's center
                     if line_name == trans_name:
-                        # Optimization: Same transition -> simple redshift diff
                         v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                     else:
-                        # Interloper: Calculate based on observed wavelength coincidence
                         lam_rest_c = xem_d[line_name].to(au.Angstrom).value
                         lam_obs_c = lam_rest_c * (1 + other_c.z)
                         v_shift = c_kms * (lam_obs_c - lam_obs_panel_center_ang) / lam_obs_panel_center_ang
 
-                    # 3. Draw tick if visible
                     if v_min <= v_shift <= v_max:
                         self._tick_map_visuals.append((ax_main, v_shift, other_c))
-
                         is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
                         col = 'red' if is_h else 'gray'
-                        
-                        # Optional: Use dashed line for interlopers (different transition)?
-                        # For now, keep solid to indicate "Real Component Here"
                         ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
                                 transform=trans_axis, color=col, lw=1.5 if is_h else 1.0, alpha=0.8)
             
@@ -635,11 +600,8 @@ class VelocityPlotWidget(QWidget):
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return
         
-        # [NEW] Check for Tick Tooltips
-        closest_dist = 10.0 # pixels tolerance
+        closest_dist = 10.0 
         tooltip_text = ""
-
-        # Calculate view width for tolerance (e.g. 1.5%)
         view_width = self._xlim[1] - self._xlim[0]
         tol_v = view_width * 0.015 
         
@@ -656,13 +618,11 @@ class VelocityPlotWidget(QWidget):
                     break
         
         if tooltip_text:
-            # Use global mouse position directly to avoid HiDPI scaling issues
             QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
         else:
             QToolTip.hideText()
 
         main_ax = event.inaxes
-        
         if main_ax not in self._panel_map:
             found = False
             for k, val in self._panel_map.items():
@@ -682,31 +642,49 @@ class VelocityPlotWidget(QWidget):
         
         session = self._current_session
         x_unit = session.spec.x.unit
-        
-        # Get Resolution for Cursor
         resol_val = self._get_resolution()
 
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
             
+            # --- [NEW] Multiplet Handling for Cursor ---
+            # 1. Identify Siblings (Series Members)
+            siblings = [trans_name]
+            for series_key, members in STANDARD_MULTIPLETS.items():
+                if trans_name in members:
+                    siblings = members
+                    break
+            
+            # 2. Setup Grid
             atom_info = ATOM_DATA.get(trans_name)
             if not atom_info: continue
-
+            
             lam_0_ang = atom_info['wave']
             lam_obs_center_ang = lam_0_ang * (1 + self._plot_center_z)
-            
             v_min, v_max = ax.get_xlim()
             v_grid = np.linspace(v_min, v_max, 300)
-            
             lam_grid_ang = lam_obs_center_ang * (1 + v_grid / c_kms)
             
-            prof = calc_voigt_profile(
-                lam_grid_ang, lam_0_ang, atom_info['f'], atom_info['gamma'],
-                z_new, N, b,
-                resol=resol_val # <<< PASS RESOLUTION
-            )
+            # 3. Calculate Composite Profile (Multiply Fluxes)
+            total_prof = np.ones_like(v_grid)
             
-            line_main.set_data(v_grid, prof)
+            for sibling in siblings:
+                s_info = ATOM_DATA.get(sibling)
+                if not s_info: continue
+                
+                # Optimization: Skip if line is too far away
+                sib_lam_obs = s_info['wave'] * (1 + z_new)
+                if sib_lam_obs < lam_grid_ang[0] - 5.0 or sib_lam_obs > lam_grid_ang[-1] + 5.0:
+                    continue
+
+                prof = calc_voigt_profile(
+                    lam_grid_ang, s_info['wave'], s_info['f'], s_info['gamma'],
+                    z_new, N, b,
+                    resol=resol_val # <<< PASS RESOLUTION
+                )
+                total_prof *= prof
+            
+            line_main.set_data(v_grid, total_prof)
             
             if line_resid:
                 lam_0_spec = (lam_0_ang * au.Angstrom).to(x_unit).value
@@ -724,7 +702,7 @@ class VelocityPlotWidget(QWidget):
                 dy_interp = np.interp(v_grid, v_full, dy_norm, left=1.0, right=1.0)
                 
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    prof_sigma = np.divide(prof - 1.0, dy_interp, where=dy_interp>1e-9)
+                    prof_sigma = np.divide(total_prof - 1.0, dy_interp, where=dy_interp>1e-9)
                     prof_sigma[~np.isfinite(prof_sigma)] = 0.0
                 
                 line_resid.set_data(v_grid, prof_sigma)
