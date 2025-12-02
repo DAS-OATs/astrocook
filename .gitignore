@@ -23,8 +23,6 @@ dist/astrocook-1.9.0-py3-none-any.whl
 astrocook.egg-info/SOURCES.txt
 astrocook.egg-info/PKG-INFO
 tests/data/J0103-1305_metallines_lya_new.json
-Prompt to restart (30-10-2025).gdoc
-Prompts to restart.gdoc
 tests/data/*.acs2
 tests/data/*.acs
 astrocook.egg-info/requires.txt
@@ -39,3 +37,4 @@ containers/
 tests/J0103-1305_red-side_1CIV.acs2
 docs/_build/
 docs/api/
+*.gdoc
