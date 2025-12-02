@@ -5,67 +5,60 @@
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600; /* Semibold */
-    color: #296bff; /* Astrocook Blue */
+}
+
+/* Links */
+a {
+    font-family: 'Space Grotesk', sans-serif;
+    color: #296bff !important;
+    text-decoration: none !important; /* Ensure no underline */
+    border: none !important;          /* Ensure no border */
+    box-shadow: none !important;      /* Ensure no shadow */
+}
+a:hover {
+    color: #f5a100 !important;
 }
 
 /* Site title (logo text) in top-left */
-/* PyData Theme often wraps the text in a 'p' with class 'logo__title' */
-.navbar-brand, 
+
+/* Logo title */
 .navbar-brand .logo__title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
     color: #296bff !important; /* Force override theme default */
 }
 .navbar-brand .logo__title:hover {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
     color: #f5a100 !important; /* Force override theme default */
 }
 
+/* Navigation bar */
+.navbar-nav .nav-link::before,
+.navbar-nav .nav-link::after {
+    border-bottom: 0px solid rgba(0,0,0,0) !important;
+}
 
-/* 2. Active/Selected Nav Link (The "Green Bold Underline" culprit) */
-.navbar-nav .nav-item,
-.navbar-nav .nav-link {
-    color: #296bff !important; /* Darker blue for active */
+.navbar-nav > .nav-item.active > .nav-link,
+.navbar-nav > .nav-item > .nav-link.active {
+    color: #296bff !important;
+    border-bottom: 1px solid #296bff !important; /* Force your blue border */
+}
+
+
+/* Previous / Next Buttons (Bottom of page) */
+.prev-next-area a p.prev-next-title {
+    color: inherit !important; /* Ensure title text takes the blue color */
     text-decoration: none !important;
 }
 
-.navbar-nav .nav-item.active,
-.navbar-nav .nav-link:active {
-    border-bottom-color: #f5a100 !important; /* Darker blue for active */
-    box-shadow: none !important; /* Replace green border with blue */
+/* Sidebars (Left & Right) */
+.toc-entry a.nav-link:hover,
+.toc-entry a.nav-link.active:hover {
+    text-decoration: none !important;
 }
 
-
-
-/* Links */
-/* We target 'a.reference' (Sphinx standard) and '.bd-content a' (Theme content area) for higher specificity */
-a, 
-a.reference, 
-.bd-content a {
-    color: #296bff !important;
-    text-decoration: none;
+/* Back to Top Button */
+#pst-back-to-top {
+    background-color: #296bff !important; /* Your blue color */
+    text-decoration: none !important;
 }
-
-/* Optional: Darker shade on hover for better UX */
-a:hover, 
-a.reference:hover, 
-.bd-content a:hover {
-    color: #f5a100 !important;
-}
-
-/* --- Previous / Next Buttons (Bottom of page) --- */
-.prev-next-area a {
-    color: #296bff !important; /* Text color */
-    border-color: #296bff !important; /* Border color if they are outlined */
-}
-
-.prev-next-area a:hover {
-    color: #f5a100 !important;
-    border-color: #f5a100 !important;
-}
-
-/* Also target the icons inside specifically if needed */
-.prev-next-area a i {
-    color: inherit !important;
+#pst-back-to-top:hover {
+    background-color: #f5a100 !important; /* Your blue color */
 }
