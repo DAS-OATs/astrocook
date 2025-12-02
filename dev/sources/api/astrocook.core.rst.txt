@@ -1,0 +1,93 @@
+astrocook.core package
+======================
+
+Submodules
+----------
+
+astrocook.core.atomic\_data module
+----------------------------------
+
+.. automodule:: astrocook.core.atomic_data
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.photometry module
+--------------------------------
+
+.. automodule:: astrocook.core.photometry
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.session module
+-----------------------------
+
+.. automodule:: astrocook.core.session
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.session\_manager module
+--------------------------------------
+
+.. automodule:: astrocook.core.session_manager
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.spectrum module
+------------------------------
+
+.. automodule:: astrocook.core.spectrum
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.spectrum\_operations module
+------------------------------------------
+
+.. automodule:: astrocook.core.spectrum_operations
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.structures module
+--------------------------------
+
+.. automodule:: astrocook.core.structures
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.system\_list module
+----------------------------------
+
+.. automodule:: astrocook.core.system_list
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.system\_list\_migration module
+---------------------------------------------
+
+.. automodule:: astrocook.core.system_list_migration
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.core.utils module
+---------------------------
+
+.. automodule:: astrocook.core.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: astrocook.core
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,4 +1,8 @@
-# Astrocook
+<p align="lect">
+<img src="_static/icon_3d_HR.png" alt="Astrocook Logo" width="200">
+</p>
+
+# Welcome to Astrocook!
 
 **Astrocook** is a Python package and GUI for analyzing quasar spectra, built on the modern Scientific Python stack (**PySide6**, **Astropy**, **Matplotlib**).  
 It is designed to make spectral analysis—such as continuum fitting, absorption line identification, and Voigt profile modeling—interactive, reproducible, and easy.

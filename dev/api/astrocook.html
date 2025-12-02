@@ -31,6 +31,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
   <script src="../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -51,6 +52,7 @@
         </script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="astrocook.core package" href="astrocook.core.html" />
     <link rel="prev" title="astrocook" href="modules.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -115,8 +117,16 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
   
-    <p class="title logo__title">Astrocook 2.0.0 documentation</p>
+  
+    <p class="title logo__title">Astrocook</p>
   
 </a></div>
     
@@ -343,7 +353,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">astrocook package</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">astrocook package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a></li>
+</ul>
+</details></li>
 </ul>
 </div>
 </nav></div>
@@ -406,11 +419,233 @@
                   
   <section id="astrocook-package">
 <h1>astrocook package<a class="headerlink" href="#astrocook-package" title="Link to this heading">#</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.atomic_data">astrocook.core.atomic_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.atomic_data.get_multiplet_velocity_lags"><code class="docutils literal notranslate"><span class="pre">get_multiplet_velocity_lags()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.atomic_data.is_hydrogen_line"><code class="docutils literal notranslate"><span class="pre">is_hydrogen_line()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.photometry">astrocook.core.photometry module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.photometry.calculate_synthetic_ab_mag"><code class="docutils literal notranslate"><span class="pre">calculate_synthetic_ab_mag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.photometry.generate_calibration_curve"><code class="docutils literal notranslate"><span class="pre">generate_calibration_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.photometry.get_filter_transmission"><code class="docutils literal notranslate"><span class="pre">get_filter_transmission()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.session">astrocook.core.session module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2"><code class="docutils literal notranslate"><span class="pre">SessionV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.lines"><code class="docutils literal notranslate"><span class="pre">SessionV2.lines</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.open_new"><code class="docutils literal notranslate"><span class="pre">SessionV2.open_new()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.save"><code class="docutils literal notranslate"><span class="pre">SessionV2.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.spec"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_spectrum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.SessionV2.with_new_system_list"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_system_list()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.session.load_session_from_file"><code class="docutils literal notranslate"><span class="pre">load_session_from_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.session_manager">astrocook.core.session_manager module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory"><code class="docutils literal notranslate"><span class="pre">SessionHistory</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.add_state"><code class="docutils literal notranslate"><span class="pre">SessionHistory.add_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.can_redo"><code class="docutils literal notranslate"><span class="pre">SessionHistory.can_redo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.can_undo"><code class="docutils literal notranslate"><span class="pre">SessionHistory.can_undo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.current_state"><code class="docutils literal notranslate"><span class="pre">SessionHistory.current_state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.display_name"><code class="docutils literal notranslate"><span class="pre">SessionHistory.display_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.redo"><code class="docutils literal notranslate"><span class="pre">SessionHistory.redo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.session_manager.SessionHistory.undo"><code class="docutils literal notranslate"><span class="pre">SessionHistory.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.spectrum">astrocook.core.spectrum module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2"><code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.apply_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.apply_expression()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calculate_running_std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.calibrate"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calibrate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.cont"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.cont</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.detect_absorptions"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_absorptions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.dy"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.dy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.find_absorbed"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.find_absorbed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.fit_continuum"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_continuum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.fit_powerlaw"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_powerlaw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.get_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_column()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.get_resampled_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_resampled_column()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.has_aux_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.has_aux_column()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.identify_lines"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.identify_lines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.mask_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_expression()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.meta"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.meta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.model"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.rebin"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.rebin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resample_on_grid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.smooth"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.smooth_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth_column()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.split"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.t"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.to_v1_spectrum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.with_properties"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.with_properties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.x"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.x_convert"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.x_convert()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.xmax"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.xmax</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.xmin"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.xmin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.y"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.SpectrumV2.y_convert"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.y_convert()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum.TableAdapterV2"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.spectrum_operations">astrocook.core.spectrum_operations module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.compute_identification_signal"><code class="docutils literal notranslate"><span class="pre">compute_identification_signal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.convert_axis_velocity"><code class="docutils literal notranslate"><span class="pre">convert_axis_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.convert_x_axis"><code class="docutils literal notranslate"><span class="pre">convert_x_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.convert_y_axis"><code class="docutils literal notranslate"><span class="pre">convert_y_axis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.detect_regions"><code class="docutils literal notranslate"><span class="pre">detect_regions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.find_absorbed_regions"><code class="docutils literal notranslate"><span class="pre">find_absorbed_regions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.find_signal_peaks"><code class="docutils literal notranslate"><span class="pre">find_signal_peaks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.fit_continuum_interp"><code class="docutils literal notranslate"><span class="pre">fit_continuum_interp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.fit_powerlaw_to_regions"><code class="docutils literal notranslate"><span class="pre">fit_powerlaw_to_regions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.merge_regions_by_velocity"><code class="docutils literal notranslate"><span class="pre">merge_regions_by_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.rate_doublet_candidate"><code class="docutils literal notranslate"><span class="pre">rate_doublet_candidate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.rebin_spectrum"><code class="docutils literal notranslate"><span class="pre">rebin_spectrum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.running_mean"><code class="docutils literal notranslate"><span class="pre">running_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.running_std"><code class="docutils literal notranslate"><span class="pre">running_std()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.spectrum_operations.smooth_spectrum"><code class="docutils literal notranslate"><span class="pre">smooth_spectrum()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.structures">astrocook.core.structures module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.b"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.b</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.btur"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.btur</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.chi2"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.chi2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.db"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.db</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.dbtur"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.dbtur</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.dlogN"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.dlogN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.dz"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.dz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.func"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.func</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.id"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.logN"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.logN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.resol"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.resol</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.series"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.series</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.uuid"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.uuid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ComponentDataV2.z"><code class="docutils literal notranslate"><span class="pre">ComponentDataV2.z</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.DataColumnV2"><code class="docutils literal notranslate"><span class="pre">DataColumnV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.DataColumnV2.description"><code class="docutils literal notranslate"><span class="pre">DataColumnV2.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.DataColumnV2.quantity"><code class="docutils literal notranslate"><span class="pre">DataColumnV2.quantity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.DataColumnV2.unit"><code class="docutils literal notranslate"><span class="pre">DataColumnV2.unit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.DataColumnV2.values"><code class="docutils literal notranslate"><span class="pre">DataColumnV2.values</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.HistoryLogV2"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.HistoryLogV2.add_entry"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.add_entry()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.HistoryLogV2.is_v2_log"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.is_v2_log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.HistoryLogV2.redo"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.redo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.HistoryLogV2.undo"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.LogEntryV2"><code class="docutils literal notranslate"><span class="pre">LogEntryV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.LogEntryV2.params"><code class="docutils literal notranslate"><span class="pre">LogEntryV2.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.LogEntryV2.recipe_name"><code class="docutils literal notranslate"><span class="pre">LogEntryV2.recipe_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ParameterConstraintV2"><code class="docutils literal notranslate"><span class="pre">ParameterConstraintV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ParameterConstraintV2.expression"><code class="docutils literal notranslate"><span class="pre">ParameterConstraintV2.expression</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ParameterConstraintV2.is_free"><code class="docutils literal notranslate"><span class="pre">ParameterConstraintV2.is_free</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ParameterConstraintV2.target_uuid"><code class="docutils literal notranslate"><span class="pre">ParameterConstraintV2.target_uuid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.ParameterConstraintV2.v1_target_id"><code class="docutils literal notranslate"><span class="pre">ParameterConstraintV2.v1_target_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2.component_uuids"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2.component_uuids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2.constraints_by_uuid"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2.constraints_by_uuid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2.log_history_json"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2.log_history_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2.log_type"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2.log_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SessionMetadataV2.v1_reconstruction_data"><code class="docutils literal notranslate"><span class="pre">SessionMetadataV2.v1_reconstruction_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.aux_cols"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.aux_cols</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.dy"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.dy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.from_flat_data"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.from_flat_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.meta"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.meta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.resol"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.resol</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.x"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.xmax"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.xmax</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.xmin"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.xmin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.y"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.z_em"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.z_em</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SpectrumDataV2.z_rf"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.z_rf</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.components"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.components</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.meta"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.meta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.parsed_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.parsed_constraints</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.v1_header_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_header_constraints</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.v1_id_to_uuid_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_id_to_uuid_map</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.v1_models_t"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_models_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.SystemListDataV2.v2_constraints_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v2_constraints_map</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.V1LogArtifact"><code class="docutils literal notranslate"><span class="pre">V1LogArtifact</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.structures.V1LogArtifact.is_v2_log"><code class="docutils literal notranslate"><span class="pre">V1LogArtifact.is_v2_log</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.system_list">astrocook.core.system_list module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2"><code class="docutils literal notranslate"><span class="pre">SystemListV2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.add_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_component()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.add_components_from_regions"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_components_from_regions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.components"><code class="docutils literal notranslate"><span class="pre">SystemListV2.components</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.constraint_status"><code class="docutils literal notranslate"><span class="pre">SystemListV2.constraint_status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.delete_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.delete_component()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_component_by_uuid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.get_connected_group"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_connected_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.id"><code class="docutils literal notranslate"><span class="pre">SystemListV2.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.parsed_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListV2.parsed_constraints</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.series"><code class="docutils literal notranslate"><span class="pre">SystemListV2.series</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.t"><code class="docutils literal notranslate"><span class="pre">SystemListV2.t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.to_v1_systlist"><code class="docutils literal notranslate"><span class="pre">SystemListV2.to_v1_systlist()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.update_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_component()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_constraint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.v1_models_t"><code class="docutils literal notranslate"><span class="pre">SystemListV2.v1_models_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.v2_constraints_for_save"><code class="docutils literal notranslate"><span class="pre">SystemListV2.v2_constraints_for_save</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list.SystemListV2.z"><code class="docutils literal notranslate"><span class="pre">SystemListV2.z</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.system_list_migration">astrocook.core.system_list_migration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list_migration.migrate_component_v2_to_v1"><code class="docutils literal notranslate"><span class="pre">migrate_component_v2_to_v1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list_migration.migrate_system_list_v1_to_v2"><code class="docutils literal notranslate"><span class="pre">migrate_system_list_v1_to_v2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.system_list_migration.parse_v1_fits_constraints"><code class="docutils literal notranslate"><span class="pre">parse_v1_fits_constraints()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core.utils">astrocook.core.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.utils.get_recipe_schema"><code class="docutils literal notranslate"><span class="pre">get_recipe_schema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.utils.guarded_deepcopy_v1_state"><code class="docutils literal notranslate"><span class="pre">guarded_deepcopy_v1_state()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.utils.is_branching_recipe"><code class="docutils literal notranslate"><span class="pre">is_branching_recipe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.html#astrocook.core.utils.resource_path"><code class="docutils literal notranslate"><span class="pre">resource_path()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html#module-astrocook.core">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
 </section>
-<section id="module-astrocook.run_astrocook">
-<span id="astrocook-run-astrocook-module"></span><h2>astrocook.run_astrocook module<a class="headerlink" href="#module-astrocook.run_astrocook" title="Link to this heading">#</a></h2>
+<section id="astrocook-run-astrocook-module">
+<h2>astrocook.run_astrocook module<a class="headerlink" href="#astrocook-run-astrocook-module" title="Link to this heading">#</a></h2>
 </section>
 <section id="module-astrocook.settings">
 <span id="astrocook-settings-module"></span><h2>astrocook.settings module<a class="headerlink" href="#module-astrocook.settings" title="Link to this heading">#</a></h2>
@@ -439,6 +674,15 @@
         <p class="prev-next-title">astrocook</p>
       </div>
     </a>
+    <a class="right-next"
+       href="astrocook.core.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">astrocook.core package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               
@@ -458,8 +702,9 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subpackages">Subpackages</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.run_astrocook">astrocook.run_astrocook module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook-run-astrocook-module">astrocook.run_astrocook module</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.settings">astrocook.settings module</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook">Module contents</a></li>
 </ul>

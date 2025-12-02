@@ -1,6 +1,14 @@
 astrocook package
 =================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   astrocook.core
+
 Submodules
 ----------
 

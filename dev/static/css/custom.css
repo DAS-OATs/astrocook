@@ -1,0 +1,63 @@
+/* Import Space Grotesk from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap');
+
+/* Apply to all headers */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600; /* Semibold */
+}
+
+/* Links */
+a {
+    font-family: 'Space Grotesk', sans-serif;
+    color: #296bff !important;
+    text-decoration: none !important; /* Ensure no underline */
+    border: none !important;          /* Ensure no border */
+    box-shadow: none !important;      /* Ensure no shadow */
+}
+a:hover {
+    color: #f5a100 !important;
+}
+
+/* Site title (logo text) in top-left */
+
+/* Logo title */
+.navbar-brand .logo__title {
+    color: #296bff !important; /* Force override theme default */
+}
+.navbar-brand .logo__title:hover {
+    color: #f5a100 !important; /* Force override theme default */
+}
+
+/* Navigation bar */
+.navbar-nav .nav-link::before,
+.navbar-nav .nav-link::after {
+    border-bottom: 0px solid rgba(0,0,0,0) !important;
+}
+
+.navbar-nav > .nav-item.active > .nav-link,
+.navbar-nav > .nav-item > .nav-link.active {
+    color: #296bff !important;
+    border-bottom: 1px solid #296bff !important; /* Force your blue border */
+}
+
+/* Previous / Next Buttons (Bottom of page) */
+.prev-next-area a p.prev-next-title {
+    color: inherit !important; /* Ensure title text takes the blue color */
+    text-decoration: none !important;
+}
+
+/* Sidebars (Left & Right) */
+.toc-entry a.nav-link:hover,
+.toc-entry a.nav-link.active:hover {
+    text-decoration: none !important;
+}
+
+/* Back to Top Button */
+#pst-back-to-top {
+    background-color: #296bff !important; /* Your blue color */
+    text-decoration: none !important;
+}
+#pst-back-to-top:hover {
+    background-color: #f5a100 !important; /* Your blue color */
+}
