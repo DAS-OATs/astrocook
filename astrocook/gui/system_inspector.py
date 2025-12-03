@@ -1063,8 +1063,8 @@ class SystemInspector(QWidget):
         """
         Public API: Selects a component and scrolls to it.
         Args:
-            force_group_view: If True, checks 'Group View' at the end (Main Window behavior).
-                              If False, restores previous state (Inspector Plot behavior).
+        
+        force_group_view: If True, checks 'Group View' at the end (Main Window behavior). If False, restores previous state (Inspector Plot behavior).
         """
         # 1. Capture previous state
         was_checked = self.group_cb.isChecked()

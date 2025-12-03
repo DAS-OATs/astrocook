@@ -1,18 +1,22 @@
 # API Reference
 
-This section details the classes and functions available in **Astrocook**.
-
-The package is structured into the following modules:
-
-* **Session**: Core management of data and GUI state.
-* **Spectrum**: The main data container.
-* **Recipes**: High-level analysis workflows (Continuum, Flux, Absorbers).
-* **GUI**: The PySide6 graphical interface elements.
-
----
+Astrocook is organized into the following sub-packages:
 
 ```{toctree}
-:maxdepth: 4
+:maxdepth: 2
+:caption: Data structures and operations
 
-api/modules
+api/astrocook.core
+```
+```{toctree}
+:maxdepth: 2
+:caption: High-level analysis recipes available in the menus
+
+api/astrocook.recipes
+```
+```{toctree}
+:maxdepth: 2
+:caption: Modeling and fitting logic
+
+api/astrocook.fitting
 ```

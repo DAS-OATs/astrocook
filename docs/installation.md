@@ -2,7 +2,7 @@
 
 Astrocook is available as a standalone app for macOS or as a Python package for advanced users.
 
-##  Quick Start (macOS)
+## Quick Start ( macOS)
 
 If you are on a Mac and want to use the GUI immediately without managing Python environments:
 
