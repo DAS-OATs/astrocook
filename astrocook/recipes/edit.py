@@ -87,6 +87,10 @@ EDIT_RECIPES_SCHEMAS = {
 SESSION_VAR_REGEX = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
 
 class RecipeEditV2:
+    """
+    Recipes for general structure editing and arithmetic operations.
+    Accessed via ``session.edit``.
+    """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
@@ -95,8 +99,11 @@ class RecipeEditV2:
                                   alias_map: Dict[str, str], 
                                   extra_vars: Dict[str, np.ndarray]) -> str:
         """
-        This function is called by re.sub for every 's1.y' pattern found.
-        It performs the resampling and returns the safe variable name (e.g., 's1_y').
+        Internal helper for regex substitution in multi-session expressions.
+        
+        This function is called for every pattern match like 's1.y'. It finds
+        the referenced session, resamples its data onto the current session's
+        grid, adds the data to ``extra_vars``, and returns a safe variable name.
         """
         alias = match_obj.group(1)
         col_name = match_obj.group(2)
@@ -162,9 +169,24 @@ class RecipeEditV2:
     
     def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> (str, Dict[str, np.ndarray]):
         """
-        Parses an expression, finds multi-session variables (e.g., s1.y),
-        resamples them onto the current grid, and returns a sanitized
-        expression and a dict of the new data.
+        Parses an expression string to handle multi-session variable references.
+
+        It scans for patterns like ``s1.y``, resamples the data from session ``s1``
+        onto the current grid, and rewrites the expression to use local variable names.
+
+        Parameters
+        ----------
+        expression : str
+            The user-provided expression (e.g. ``"y - s1.y"``).
+        alias_map : dict
+            Mapping of aliases to full session names (e.g. ``{'s1': 'QSO_1423'}``).
+
+        Returns
+        -------
+        final_expression : str
+            Rewritten expression (e.g. ``"y - s1_y"``).
+        extra_vars : dict
+            Dictionary of resampled arrays to be passed to ``numexpr``.
         """
         if not alias_map:
             return expression, {} # No aliases, nothing to do
@@ -184,7 +206,20 @@ class RecipeEditV2:
     
     def set_properties(self, z_em: str = '0.0', resol: str = '0.0') -> Optional['SessionV2']:
         """
-        API: Sets the core properties (z_em, resol) on the spectrum.
+        Sets the core physical properties of the session.
+
+        Parameters
+        ----------
+        z_em : str (float)
+            Emission redshift of the source.
+        resol : str (float)
+            Resolving power :math:`R = \lambda / \Delta\lambda`.
+            If 0.0, the recipe will try to read it from metadata.
+
+        Returns
+        -------
+        SessionV2
+            A new session instance with updated metadata.
         """
         try:
             z_em_f = float(z_em)
@@ -211,7 +246,19 @@ class RecipeEditV2:
 
     def x_convert(self, z_rf: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
-        Intercepts the V1 x_convert call, performs validation, and returns a NEW SessionV2.
+        Converts the X-axis (wavelength/velocity) to a new unit.
+
+        Parameters
+        ----------
+        z_rf : str (float)
+            Rest-frame redshift used for velocity conversions.
+        xunit : str
+            Target unit (e.g. ``'nm'``, ``'Angstrom'``, ``'km/s'``).
+
+        Returns
+        -------
+        SessionV2
+            A new session with the converted X-axis.
         """
         # V1-style validation (simplified)
         try:
@@ -230,8 +277,17 @@ class RecipeEditV2:
     
     def y_convert(self, yunit: str = 'erg/(nm s cm^2)') -> Optional['SessionV2']:
         """
-        [V1-COMPATIBLE SIGNATURE]
-        Intercepts the V1 call, performs validation, and returns a NEW SessionV2.
+        Converts the Y-axis (flux) to a new unit.
+
+        Parameters
+        ----------
+        yunit : str
+            Target flux unit.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the converted Y-axis.
         """
         # C. Parameter Validation and Type Casting
         try:
@@ -248,7 +304,25 @@ class RecipeEditV2:
     
     def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Applies a numerical expression, handling multi-session variables.
+        Applies a numerical expression to columns (arithmetic).
+
+        Supports basic math (``+ - * /``) and NumPy functions (``log``, ``sqrt``, ``min``, etc.).
+        Also supports **multi-session operations** via aliases (e.g., ``y - s1.y``).
+
+        Parameters
+        ----------
+        target_col : str
+            The column to create or overwrite (e.g. ``'y'``, ``'ratio'``).
+        expression : str
+            The mathematical expression string (e.g. ``"y / cont"``).
+        alias_map : dict, optional
+            A mapping of aliases to session names for cross-session math.
+            (Provided automatically by the GUI dialog).
+
+        Returns
+        -------
+        SessionV2
+            A new session with the computed column.
         """
         expression = expression.strip()
         if not expression:
@@ -274,7 +348,21 @@ class RecipeEditV2:
             
     def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Masks a column, handling multi-session variables.
+        Masks a column (sets values to NaN) based on a boolean expression.
+
+        Parameters
+        ----------
+        target_col : str
+            The column to apply the mask to.
+        expression : str
+            A boolean expression (e.g. ``"x > 500"``). Where True, the data is masked.
+        alias_map : dict, optional
+            Mapping for multi-session variables.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the masked data.
         """
         expression = expression.strip()
         if not expression:
@@ -300,7 +388,21 @@ class RecipeEditV2:
 
     def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
         """
-        API: Applies Gaussian smoothing to a single column.
+        Applies Gaussian smoothing to a single column.
+
+        Parameters
+        ----------
+        target_col : str
+            The name of the column to smooth.
+        sigma_kms : str (float)
+            Standard deviation of the Gaussian kernel in km/s.
+        renorm_model : str (bool)
+            If 'True' and ``target_col`` is 'cont', re-normalize the 'model' column.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the smoothed column.
         """
         try:
             sigma_kms_f = float(sigma_kms)
@@ -328,7 +430,19 @@ class RecipeEditV2:
 
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        API: Splits the spectrum using a boolean expression.
+        Splits the spectrum, creating a new session with a subset of the data.
+
+        Parameters
+        ----------
+        expression : str
+            A boolean expression defining the rows to KEEP (e.g. ``"x > 121.6"``).
+        alias_map : dict, optional
+            Mapping for multi-session variables.
+
+        Returns
+        -------
+        SessionV2
+            A new session containing only the selected data points.
         """
         expression = expression.strip()
         if not expression:
@@ -349,7 +463,22 @@ class RecipeEditV2:
     
     def extract_preset(self, region: str = 'lya_forest') -> 'SessionV2':
         """
-        API: Extracts a region based on standard presets and z_em.
+        Extracts a standard spectral region based on emission redshift (z_em).
+
+        Useful for quickly isolating the Lyman-alpha forest.
+
+        Parameters
+        ----------
+        region : str
+            Preset identifier:
+            * ``'lya_forest'``: Between Ly-beta and Ly-alpha emission.
+            * ``'all_ly_forest'``: From Lyman limit to Ly-alpha emission.
+            * ``'red_side'``: Everything redward of Ly-alpha emission.
+
+        Returns
+        -------
+        SessionV2
+            A new session containing the extracted region.
         """
         z_em = self._session.spec._data.z_em
         if z_em == 0.0:

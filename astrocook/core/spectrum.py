@@ -1,4 +1,3 @@
-
 import astropy.constants as const
 import astropy.units as au
 from copy import deepcopy
@@ -91,33 +90,48 @@ class TableAdapterV2(object):
 
 class SpectrumV2:
     """
-    API pubblica e contenitore composito per l'analisi spettrale.
-    Tutti i metodi operativi (che trasformano i dati) restituiscono una NUOVA istanza SpectrumV2.
+    Composite container for spectral data and operations.
+    
+    This class wraps the raw data (flux, wavelength, error) and provides
+    immutable operations that return new SpectrumV2 instances. It serves as
+    the primary data structure passed between Recipes and the GUI.
+
+    Parameters
+    ----------
+    data : SpectrumDataV2
+        The core data container holding the Astropy Quantities.
+    history : list, optional
+        A list of strings describing the modification history of this spectrum.
     """
     
     def __init__(self, data: SpectrumDataV2, history: list = None):
         self._data = data
         self.history = history if history is not None else []
 
-    # Accessori (API pubblica: NESSUN setter per i dati)
+    # Accessors
     @property
     def x(self) -> au.Quantity:
+        """The wavelength (or velocity) array."""
         return self._data.x.quantity
 
     @property
     def xmin(self) -> au.Quantity:
+        """The lower bound of the wavelength bins."""
         return self._data.xmin.quantity
 
     @property
     def xmax(self) -> au.Quantity:
+        """The upper bound of the wavelength bins."""
         return self._data.xmax.quantity
 
     @property
     def y(self) -> au.Quantity:
+        """The flux density array."""
         return self._data.y.quantity
 
     @property
     def dy(self) -> au.Quantity:
+        """The flux error (1-sigma) array."""
         return self._data.dy.quantity
 
     @property
@@ -146,6 +160,7 @@ class SpectrumV2:
 
     @property
     def meta(self) -> Dict[str, Any]:
+        """A dictionary of metadata (header keywords, redshifts, etc.)."""
         return deepcopy(self._data.meta) # Restituisce una copia per prevenire modifiche esterne
 
     @property
@@ -334,9 +349,18 @@ class SpectrumV2:
     def with_properties(self, z_em: float, resol: float = 0.0) -> 'SpectrumV2':
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
-        Args:
-            z_em: Emission Redshift
-            resol: Resolving Power R (lambda / d_lambda)
+        
+        Parameters
+        ----------
+        z_em : float
+            Emission Redshift.
+        resol : float
+            Resolving Power R (lambda / d_lambda).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance containing the updated metadata.
         """
         new_meta = deepcopy(self._data.meta)
         
@@ -408,7 +432,21 @@ class SpectrumV2:
     def apply_expression(self, target_col: str, expression: str, 
                          extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
         """
-        API: Applies a numerical expression and returns a NEW SpectrumV2 instance.
+        Applies a numerical expression to columns and returns a new spectrum.
+
+        Parameters
+        ----------
+        target_col : str
+            The name of the column to create or overwrite.
+        expression : str
+            A NumExpr-compatible string (e.g. ``"y / cont"``).
+        extra_vars : dict, optional
+            Additional variables to pass to the evaluation context.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the computed column.
         """
         
         # 1. Get column data and the numexpr variable dict
@@ -475,7 +513,21 @@ class SpectrumV2:
     def mask_expression(self, target_col: str, expression: str, 
                         extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
         """
-        API: Masks a column based on a boolean expression and returns a NEW SpectrumV2 instance.
+        Masks a column based on a boolean expression (sets values to NaN).
+
+        Parameters
+        ----------
+        target_col : str
+            The name of the column to mask.
+        expression : str
+            A boolean expression (e.g. ``"x > 500"``). True values will be masked.
+        extra_vars : dict, optional
+            Additional context variables.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the masked column.
         """
         
         # 1. Get column data and the numexpr variable dict
@@ -536,9 +588,19 @@ class SpectrumV2:
 
     def split(self, expression: str, extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2':
         """
-        API: Splits the spectrum based on a boolean expression.
-        Returns a NEW SpectrumV2 instance containing only the rows where
-        the expression evaluates to True.
+        Splits the spectrum based on a boolean expression.
+
+        Parameters
+        ----------
+        expression : str
+            A boolean expression defining the rows to keep (e.g. ``"x > 121.6"``).
+        extra_vars : dict, optional
+            Additional context variables.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance containing only the rows where the expression evaluates to True.
         """
         # 1. Get contexts for numexpr
         all_cols, local_dict = self._get_ne_contexts()
@@ -589,8 +651,21 @@ class SpectrumV2:
                               output_col: str, 
                               window_pix: int) -> 'SpectrumV2':
         """
-        API: Calculates a running RMS on a column and saves it as a new column.
-        Returns a NEW SpectrumV2 instance.
+        Calculates a running RMS on a column and saves it as a new column.
+
+        Parameters
+        ----------
+        input_col : str
+            Name of the column to calculate statistics on (e.g. 'y').
+        output_col : str
+            Name of the output column (e.g. 'running_std').
+        window_pix : int
+            Width of the window in pixels.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the added RMS column.
         """
         
         all_cols = self.t._data_dict
@@ -630,8 +705,17 @@ class SpectrumV2:
 
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
-        API: Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).
-        Returns a NEW SpectrumV2 instance.
+        Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).
+
+        Parameters
+        ----------
+        sigma_kms : float
+            Standard deviation of the Gaussian kernel in km/s.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with smoothed columns.
         """
         
         # 1. Smooth the core y and dy columns
@@ -691,9 +775,21 @@ class SpectrumV2:
 
     def smooth_column(self, target_col: str, sigma_kms: float, renorm_model: bool = False) -> 'SpectrumV2':
         """
-        API: Applies Gaussian smoothing to a single target column.
-        If target_col is 'cont' and renorm_model is True, also updates 'model'.
-        Returns a NEW SpectrumV2 instance.
+        Applies Gaussian smoothing to a single target column.
+
+        Parameters
+        ----------
+        target_col : str
+            Name of the column to smooth.
+        sigma_kms : float
+            Standard deviation of the Gaussian kernel in km/s.
+        renorm_model : bool, optional
+            If True and ``target_col`` is 'cont', the 'model' column will be re-normalized.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the smoothed column.
         """
         all_cols = self.t._data_dict
         
@@ -767,8 +863,25 @@ class SpectrumV2:
               dx: au.Quantity, kappa: Optional[float], 
               filling: float) -> 'SpectrumV2':
         """
-        API: Rebins the spectrum to a new *uniform* grid.
-        This now correctly interpolates all auxiliary columns.
+        Rebins the spectrum to a new uniform grid.
+
+        Parameters
+        ----------
+        xstart : Quantity, optional
+            Start wavelength. If None, uses data minimum.
+        xend : Quantity, optional
+            End wavelength. If None, uses data maximum.
+        dx : Quantity
+            Step size (bin width). Can be wavelength or velocity.
+        kappa : float, optional
+            Sigma clipping threshold for rejecting outliers in bins.
+        filling : float
+            Value to fill gaps (default: NaN).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the rebinned data.
         """
         
         original_x_unit = self._data.x.unit 
@@ -847,7 +960,21 @@ class SpectrumV2:
 
     def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
                          fill_value: float = np.nan) -> 'SpectrumV2':
-        # ... (this method is unchanged, it correctly resamples *everything*) ...
+        """
+        Resamples this spectrum onto the exact wavelength grid of another spectrum.
+
+        Parameters
+        ----------
+        target_grid_spec : SpectrumV2
+            The spectrum whose grid defines the target wavelengths.
+        fill_value : float
+            Value to fill outside the interpolation range (default: NaN).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance interpolated to the target grid.
+        """
         x_old = self.x.to_value(au.nm)
         x_new = target_grid_spec.x.to_value(au.nm)
         all_cols_old = self.t._data_dict
@@ -890,7 +1017,18 @@ class SpectrumV2:
                              fill_value: float = np.nan) -> np.ndarray:
         """
         Lightweight API to interpolate a single column onto a new x-grid.
-        Assumes target_x_grid is already in 'nm'.
+        
+        Parameters
+        ----------
+        col_name : str
+            Name of the column to interpolate.
+        target_x_grid : ndarray
+            Target grid in nanometers.
+        
+        Returns
+        -------
+        ndarray
+            Interpolated values.
         """
         all_cols = self.t._data_dict
         
@@ -916,7 +1054,17 @@ class SpectrumV2:
     
     def calibrate(self, magnitudes: str) -> 'SpectrumV2':
         """
-        API: Calibrates (and warps) the flux to match target magnitudes.
+        Calibrates (and warps) the flux to match target photometric magnitudes.
+
+        Parameters
+        ----------
+        magnitudes : str
+            Comma-separated pairs of Filter=Mag (e.g. ``"SDSS_g=17.5, SDSS_r=17.0"``).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with calibrated flux.
         """
         # 1. Get the pure numerical correction curve
         try:
@@ -952,7 +1100,26 @@ class SpectrumV2:
     def find_absorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
                       kappa: float, template: bool) -> 'SpectrumV2':
         """
-        API: Finds unabsorbed regions and adds/updates the 'mask_unabs' column.
+        Finds unabsorbed regions and adds/updates the 'abs_mask' column.
+
+        This method uses an iterative sigma-clipping approach to identify regions
+        of the spectrum that are significantly below the estimated continuum level.
+
+        Parameters
+        ----------
+        smooth_len_lya : Quantity
+            Smoothing length for the Ly-alpha forest (e.g. 5000 km/s).
+        smooth_len_out : Quantity
+            Smoothing length outside the Ly-alpha forest (e.g. 400 km/s).
+        kappa : float
+            Sigma-clipping threshold.
+        template : bool
+            Whether to use a QSO template (not implemented).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance containing the 'abs_mask' column.
         """
         # 1. Call the pure function with the new signature
         mask = find_absorbed_regions(
@@ -983,7 +1150,26 @@ class SpectrumV2:
     def fit_continuum(self, fudge: float, smooth_std_kms: float, 
                       mask_col: str = 'abs_mask', renorm_model: bool = False) -> 'SpectrumV2':
         """
-        API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
+        Fits a continuum to the unabsorbed regions.
+
+        Uses a spline interpolation through the 'unabsorbed' pixels defined by
+        ``mask_col``, followed by Gaussian smoothing.
+
+        Parameters
+        ----------
+        fudge : float
+            Multiplicative factor applied to the continuum level.
+        smooth_std_kms : float
+            Standard deviation of the Gaussian smoothing kernel (km/s).
+        mask_col : str
+            Name of the mask column (True=Absorbed, False=Continuum).
+        renorm_model : bool, optional
+            If True, re-normalizes the 'model' column to match the new continuum.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance containing the 'cont' column.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
@@ -1031,8 +1217,19 @@ class SpectrumV2:
 
     def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> 'SpectrumV2':
         """
-        API: Fits a power-law to specified rest-frame regions and adds/updates
-        the 'cont_pl' column.
+        Fits a power-law continuum to specified rest-frame regions.
+
+        Parameters
+        ----------
+        regions_str : str
+            Comma-separated list of regions (e.g. ``'128.0-129.0, 131.5-132.5'``).
+        kappa : float
+            Sigma-clipping threshold for removing outliers within regions.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance containing the 'cont_pl' column.
         """
         
         # 1. Call the pure function
@@ -1061,8 +1258,21 @@ class SpectrumV2:
 
     def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> 'SpectrumV2':
         """
-        API: Detects absorption regions based on a continuum mask.
-        Creates/updates the 'region_id' auxiliary column.
+        Detects absorption regions based on a boolean mask.
+
+        Groups adjacent pixels marked as 'absorbed' into discrete regions.
+
+        Parameters
+        ----------
+        mask_col : str
+            Name of the mask column (True=Absorbed).
+        min_pix : int
+            Minimum number of pixels to form a valid region.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the 'region_id' column updated.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
@@ -1112,8 +1322,36 @@ class SpectrumV2:
                        bypass_scoring: bool = False,
                        debug_rating: bool = False) -> 'SpectrumV2':
         """
-        API: Orchestrator method to identify absorption lines.
-        (NEW ALGORITHM: Kinematic pre-filter + R^2 rating)
+        Identifies absorption lines by correlating regions with multiplet templates.
+
+        This method employs a multi-step algorithm:
+        1.  Detects and merges absorption regions in velocity space.
+        2.  Scans for kinematic doublets (e.g. CIV, SiIV) redward of Ly-alpha.
+        3.  Scans for Ly-alpha/Ly-beta pairs in the forest.
+        4.  Scores candidates using an R^2 correlation metric.
+        5.  Populates metadata with candidate identifications.
+
+        Parameters
+        ----------
+        multiplet_list : list of str
+            List of multiplets to search for (e.g. ``['CIV', 'SiIV']``).
+        mask_col : str
+            Name of the absorption mask column.
+        min_pix_region : int
+            Minimum pixels to consider a region.
+        merge_dv : float
+            Maximum velocity separation (km/s) to merge adjacent regions.
+        score_threshold : float
+            Minimum R^2 score (0-1) to accept a candidate.
+        bypass_scoring : bool
+            If True, accept all kinematic matches regardless of score.
+        debug_rating : bool
+            If True, produce debug plots for the rating process.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with 'abs_ids' column and identification metadata.
         """
         
         # This is the 'self' spectrum object

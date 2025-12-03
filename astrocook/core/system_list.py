@@ -14,7 +14,18 @@ from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 
 # --- 3. System List API Layer (The orchestrator) ---
 class SystemListV2:
-    """API layer for managing component lists, constraints, and fitting."""
+    """
+    API layer for managing component lists, constraints, and fitting.
+
+    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2` 
+    and provides methods to add, update, delete, and group components. It also 
+    initializes the constraint model used by the fitting engine.
+
+    Parameters
+    ----------
+    data : SystemListDataV2
+        The core data container holding the list of components and constraint maps.
+    """
     
     def __init__(self, data: SystemListDataV2):
         self._data = data
@@ -145,10 +156,15 @@ class SystemListV2:
 
     @property
     def components(self) -> List[ComponentDataV2]:
+        """List of all component data objects."""
         return self._data.components
 
     @property
     def t(self) -> Table:
+        """
+        Returns an Astropy Table representation of the system list.
+        Useful for quick inspection or V1 compatibility.
+        """
         z_list, dz_list, logN_list, dlogN_list, b_list, db_list = ([] for _ in range(6))
         btur_list, dbtur_list, func_list, series_list, id_list = ([] for _ in range(5))
         
@@ -181,14 +197,17 @@ class SystemListV2:
 
     @property
     def z(self) -> List[float]:
+        """List of redshifts for all components."""
         return [c.z for c in self._data.components]
 
     @property
     def series(self) -> List[str]:
+        """List of series names for all components."""
         return [c.series for c in self._data.components]
         
     @property
     def id(self) -> List[int]:
+        """List of integer IDs for all components."""
         return [c.id for c in self._data.components]
 
     @property
@@ -197,6 +216,7 @@ class SystemListV2:
 
     @property
     def constraint_status(self) -> Dict[str, np.ndarray]:
+        """Dictionary reflecting the free/fixed status of parameters."""
         return self.constraint_model._param_map
     
     @property
@@ -210,6 +230,7 @@ class SystemListV2:
         return {}
 
     def to_v1_systlist(self) -> Optional[Table]:
+        """Converts the V2 list to a simple V1-compatible table structure."""
         if not self.components: return None
         logging.warning("Simplified V2->V1 system list conversion. V1 constraints may be lost.")
         data_dict = {
@@ -229,6 +250,25 @@ class SystemListV2:
     
     def add_components_from_regions(self, spec: 'SpectrumV2', region_id_col: str,
                                   series_map: Dict[int, str], z_map: Dict[int, float]) -> 'SystemListV2':
+        """
+        Populate the list with initial components based on identified regions.
+
+        Parameters
+        ----------
+        spec : SpectrumV2
+            The spectrum containing the region definitions.
+        region_id_col : str
+            Name of the column containing region IDs (e.g., 'abs_ids').
+        series_map : dict
+            Mapping {region_id: series_name}.
+        z_map : dict
+            Mapping {region_id: redshift}.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance populated with the identified components.
+        """
         if not spec.has_aux_column(region_id_col):
             logging.warning(f"add_components: '{region_id_col}' not in spectrum. No components added.")
             return self
@@ -264,6 +304,27 @@ class SystemListV2:
     
     def add_component(self, series: str, z: float, logN: float = 13.5, 
                       b: float = 10.0, btur: float = 0.0) -> 'SystemListV2':
+        """
+        Manually add a single component to the list.
+
+        Parameters
+        ----------
+        series : str
+            Transition or Multiplet name (e.g. 'Ly_a', 'CIV').
+        z : float
+            Redshift.
+        logN : float, optional
+            Column density (log10), default 13.5.
+        b : float, optional
+            Doppler parameter (km/s), default 10.0.
+        btur : float, optional
+            Turbulent broadening (km/s), default 0.0.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance containing the added component.
+        """
         current_components = self._data.components
         next_id = 1
         if current_components:
@@ -290,11 +351,22 @@ class SystemListV2:
         return SystemListV2(new_data_core)
     
     def get_component_by_uuid(self, uuid: str) -> Optional[ComponentDataV2]:
+        """Retrieves a component object by its UUID."""
         for c in self.components:
             if c.uuid == uuid: return c
         return None
 
     def update_component(self, uuid: str, **changes) -> 'SystemListV2':
+        """
+        Returns a new SystemList with properties of a specific component updated.
+        
+        Parameters
+        ----------
+        uuid : str
+            The UUID of the component to update.
+        **changes : dict
+            Keyword arguments for the fields to change (e.g. z=2.5, logN=14.0).
+        """
         new_components = []
         found = False
         for c in self.components:
@@ -321,7 +393,25 @@ class SystemListV2:
                           expression: Optional[str] = None,
                           target_uuid: Optional[str] = None) -> 'SystemListV2':
         """
-        API: Updates the constraint for a specific component parameter.
+        Updates the constraint for a specific component parameter.
+
+        Parameters
+        ----------
+        uuid : str
+            The component UUID.
+        param : str
+            The parameter name (e.g., 'z', 'logN', 'b').
+        is_free : bool, optional
+            If True, parameter varies freely. If False, it is fixed or linked.
+        expression : str, optional
+            Mathematical string for linking (e.g. ``"p['target_uuid'].z"``).
+        target_uuid : str, optional
+            UUID of the component this parameter is linked to.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with the updated constraints.
         """
         current_parsed = dict(self._data.parsed_constraints)
         
@@ -378,6 +468,9 @@ class SystemListV2:
         return SystemListV2(new_data)
 
     def delete_component(self, uuid: str) -> 'SystemListV2':
+        """
+        Removes a component and cleans up any constraints linking to it.
+        """
         # 1. Remove the component
         new_components = [c for c in self.components if c.uuid != uuid]
         
@@ -420,8 +513,23 @@ class SystemListV2:
 
     def get_connected_group(self, seed_uuids: List[str]) -> Set[str]:
         """
-        Returns a set of UUIDs that are 'Fluid Neighbors' of the seed components.
-        Logic: Linkage -> Spectral Blends -> Kinematic Proximity (Same Species).
+        Finds a set of components that must be fitted together.
+
+        This method traverses relationships to find all "fluid neighbors" of
+        the seed components. Connections are formed by:
+        1.  **Parameter Linking:** If A is linked to B, they are grouped.
+        2.  **Spectral Overlap:** If A's lines overlap with B's lines within 4 sigma.
+        3.  **Kinematic Proximity:** If A and B are the same species and close in velocity.
+
+        Parameters
+        ----------
+        seed_uuids : list of str
+            The UUIDs of the components initially selected for fitting.
+
+        Returns
+        -------
+        set of str
+            The full set of UUIDs in the connected group.
         """
         if not seed_uuids:
             return set()

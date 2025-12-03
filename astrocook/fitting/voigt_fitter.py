@@ -17,6 +17,22 @@ from astrocook.core.system_list import SystemListV2
 from .voigt_model import VoigtModelConstraintV2
 
 class VoigtFitterV2:
+    """
+    Engine for fitting Voigt profiles to spectral data.
+
+    This class handles:
+    1.  Resolution logic (determining R/FWHM from metadata).
+    2.  Dynamic masking (fitting only relevant pixels).
+    3.  Optimization (using ``scipy.optimize.least_squares``).
+    4.  Error estimation (covariance matrix inversion).
+
+    Parameters
+    ----------
+    spectrum : SpectrumV2
+        The spectrum data to fit.
+    system_list : SystemListV2
+        The list of components to model.
+    """
     def __init__(self, spectrum: SpectrumV2, system_list: SystemListV2):
         self._spectrum = spectrum
         self._system_list = system_list
@@ -123,6 +139,7 @@ class VoigtFitterV2:
     def _voigt_optical_depth(self, wave_grid_ang: np.ndarray, 
                              lambda_0: float, f_val: float, gamma: float,
                              z: float, N_col: float, b_kms: float) -> np.ndarray:
+        """Computes the optical depth tau(lambda) for a single Voigt line."""
         lambda_c = lambda_0 * (1.0 + z)
         c_kms = 2.99792458e5
         b_safe = np.maximum(b_kms, 0.1) 
@@ -165,6 +182,10 @@ class VoigtFitterV2:
         return tau_comp
 
     def _compute_model(self, p_free: np.ndarray) -> np.ndarray:
+        """
+        Computes the normalized flux model for the current free parameters.
+        Includes convolution with resolution if applicable.
+        """
         p_full = self._constraints.map_p_free_to_full(p_free)
         
         if self._cached_tau_static is not None:
@@ -333,6 +354,37 @@ class VoigtFitterV2:
 
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 1) -> Tuple[SystemListV2, np.ndarray, Any]:
+        """
+        Executes the optimization using scipy.optimize.least_squares.
+
+        This method:
+        1.  Determines the **Fit Mask**: Only pixels within ``z_window_kms`` of the
+            target lines are used for chi-squared calculation.
+        2.  Refines the initial guess using ``_smart_guess``.
+        3.  Runs the optimizer.
+        4.  Computes parameter errors from the covariance matrix.
+        5.  Updates the components in the system list.
+
+        Parameters
+        ----------
+        max_nfev : int
+            Maximum number of function evaluations allowed.
+        method : str
+            Optimization algorithm ('trf', 'dogbox', 'lm').
+        z_window_kms : float
+            Velocity window (km/s) around line centers to include in the fit mask.
+        verbose : int
+            Verbosity level for the optimizer.
+
+        Returns
+        -------
+        new_system_list : SystemListV2
+            A new list containing the best-fit component parameters.
+        final_model_flux : np.ndarray
+            The flux array of the best-fit model (convolved and multiplied by continuum).
+        res : OptimizeResult
+            The raw result object from ``scipy.optimize``.
+        """
         logging.info(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
         
@@ -495,6 +547,16 @@ class VoigtFitterV2:
         return new_system_list, final_model_flux, res
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Computes the model flux for the *current* parameters without running a fit.
+
+        Returns
+        -------
+        x_ang : np.ndarray
+            The wavelength grid in Angstroms.
+        y_model : np.ndarray
+            The model flux (physical units) over the full spectral range.
+        """
         p_current_free = self._constraints.p_free_vector
         temp_x = self._x_calc
         self._x_calc = self._x_ang

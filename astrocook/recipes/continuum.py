@@ -59,6 +59,10 @@ CONTINUUM_RECIPES_SCHEMAS = {
 
 
 class RecipeContinuumV2:
+    """
+    Recipes for estimating and fitting the quasar continuum.
+    Accessed via ``session.continuum``.
+    """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cont' # V1 tag for this menu
@@ -66,7 +70,28 @@ class RecipeContinuumV2:
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
                         kappa: str = '2.0', template: str = 'False') -> 'SessionV2':
         """
-        API: Finds unabsorbed regions using V1 'clip_flux' logic.
+        Identify absorbed regions using an iterative sigma-clipping algorithm.
+
+        This recipe creates a boolean mask (``abs_mask``) where True indicates
+        pixels that are statistically likely to be absorption features rather
+        than continuum.
+
+        Parameters
+        ----------
+        smooth_len_lya : str (float)
+            Smoothing length (km/s) used for the initial continuum guess in the 
+            Lyman-alpha forest region (blue side of Ly-alpha emission).
+        smooth_len_out : str (float)
+            Smoothing length (km/s) used redward of the Ly-alpha emission.
+        kappa : str (float)
+            Sigma threshold. Flux below ``mean - kappa * sigma`` is considered absorbed.
+        template : str (bool)
+            If 'True', use a PCA template for the initial guess (Not Implemented).
+
+        Returns
+        -------
+        SessionV2
+            A new session with the ``abs_mask`` column added/updated.
         """
         try:
             smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
@@ -97,7 +122,28 @@ class RecipeContinuumV2:
     def fit_continuum(self, fudge: str = '1.0', smooth_std: str = '500.0', 
                       mask_col: str = 'abs_mask', renorm_model: str = 'True') -> 'SessionV2':
         """
-        API: Fits a continuum to a mask using V1 'interp-and-smooth' logic.
+        Fit a continuum to the unabsorbed regions of the spectrum.
+
+        This recipe interpolates across the regions identified by ``mask_col``
+        and applies a Gaussian smoothing to produce the final continuum.
+
+        Parameters
+        ----------
+        fudge : str (float)
+            A multiplicative factor to adjust the continuum level manually.
+        smooth_std : str (float)
+            Standard deviation (km/s) of the Gaussian kernel used to smooth 
+            the interpolated spline.
+        mask_col : str
+            Name of the mask column to use (default: ``'abs_mask'``).
+        renorm_model : str (bool)
+            If 'True', any existing absorption model (``model`` column) is 
+            re-normalized to match the new continuum level.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the ``cont`` column added/updated.
         """
         try:
             fudge_f = float(fudge)
@@ -125,7 +171,31 @@ class RecipeContinuumV2:
                       kappa: str = '2.0', fudge: str = '1.0', 
                       smooth_std: str = '500.0', template: str = 'False', renorm_model: str = 'True') -> 'SessionV2':
         """
-        API: Single-click recipe to estimate continuum.
+        Automatically estimate the continuum in a single step.
+
+        This recipe chains ``find_absorbed`` and ``fit_continuum`` together.
+
+        Parameters
+        ----------
+        smooth_len_lya : str (float)
+            Smoothing length (km/s) for initial guess (Ly-alpha forest).
+        smooth_len_out : str (float)
+            Smoothing length (km/s) for initial guess (redward).
+        kappa : str (float)
+            Sigma threshold for finding absorption.
+        fudge : str (float)
+            Manual adjustment factor for the final continuum.
+        smooth_std : str (float)
+            Final smoothing width (km/s).
+        template : str (bool)
+            Use PCA template (Not Implemented).
+        renorm_model : str (bool)
+            Re-normalize existing model?
+
+        Returns
+        -------
+        SessionV2
+            A new session with both ``abs_mask`` and ``cont`` columns updated.
         """
         try:
             smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
@@ -170,7 +240,23 @@ class RecipeContinuumV2:
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
                      kappa: str = '3.0') -> 'SessionV2':
         """
-        API: Fits a power-law continuum to specified rest-frame regions.
+        Fit a power-law continuum to specified rest-frame spectral windows.
+
+        This method fits a linear model in log-log space (flux vs wavelength)
+        to the data within the given regions, excluding outliers via sigma-clipping.
+
+        Parameters
+        ----------
+        regions : str
+            Comma-separated list of wavelength ranges in nm (rest-frame).
+            Example: ``'128.0-129.0, 131.5-132.5'``.
+        kappa : str (float)
+            Sigma threshold for clipping outliers within the fitting regions.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the ``cont_pl`` column added/updated.
         """
         if self._session.spec._data.z_em == 0.0:
             logging.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "

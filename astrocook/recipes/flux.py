@@ -79,6 +79,10 @@ FLUX_RECIPES_SCHEMAS = {
 
 
 class RecipeFluxV2:
+    """
+    Recipes for manipulating spectral flux and grid sampling.
+    Accessed via ``session.flux``.
+    """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
@@ -88,7 +92,23 @@ class RecipeFluxV2:
                               output_col: str = 'running_std', 
                               window_pix: str = '21') -> 'SessionV2':
         """
-        API: Calculates a running StdDev on a column.
+        Calculates a running standard deviation (RMS) on a column.
+
+        Useful for estimating local noise directly from the data.
+
+        Parameters
+        ----------
+        input_col : str
+            The column to analyze (default: ``'y'``).
+        output_col : str
+            The name of the new column to create.
+        window_pix : str (int)
+            The width of the running window in pixels (must be odd).
+
+        Returns
+        -------
+        SessionV2
+            A new session with the calculated column added.
         """
         try:
             window_pix_i = int(window_pix)
@@ -118,7 +138,17 @@ class RecipeFluxV2:
 
     def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
         """
-        API: Applies Gaussian smoothing to the spectrum.
+        Applies Gaussian smoothing to the spectrum.
+
+        Parameters
+        ----------
+        sigma_kms : str (float)
+            Standard deviation of the Gaussian kernel in km/s.
+
+        Returns
+        -------
+        SessionV2
+            A new session with smoothed flux, error, and auxiliary columns.
         """
         try:
             sigma_kms_f = float(sigma_kms)
@@ -138,7 +168,29 @@ class RecipeFluxV2:
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
               kappa: str = '5.0', filling: str = 'nan', norm: str = 'False') -> 'SessionV2':
         """
-        API: Rebins the spectrum, logs the action, and returns a NEW SpectrumV2 instance.
+        Rebins the spectrum to a uniform grid.
+
+        Parameters
+        ----------
+        xstart : str (float)
+            Start wavelength/velocity. 'None' uses data minimum.
+        xend : str (float)
+            End wavelength/velocity. 'None' uses data maximum.
+        dx : str (float)
+            Step size.
+        xunit : str
+            Unit for step size (e.g. ``'km/s'``, ``'nm'``).
+        kappa : str (float)
+            Sigma clipping threshold within bins. 'None' to disable.
+        filling : str (float)
+            Value to use for gaps (default: ``'nan'``).
+        norm : str (bool)
+            (Unused legacy flag, kept for compatibility).
+
+        Returns
+        -------
+        SessionV2
+            A new session with the rebinned spectrum.
         """
 
         # 4. Perform Type Casting
@@ -169,7 +221,20 @@ class RecipeFluxV2:
     
     def resample(self, target_session: str = 'None') -> 'SessionV2':
         """
-        API: Resamples the spectrum onto the grid of a target session.
+        Resamples the spectrum onto the grid of another open session.
+
+        This is a prerequisite for arithmetic operations between two spectra
+        (e.g. subtraction or ratio).
+
+        Parameters
+        ----------
+        target_session : str
+            The name of the session whose grid should be adopted.
+
+        Returns
+        -------
+        SessionV2
+            A new session interpolated to the target grid.
         """
         if target_session == 'None' or target_session == '':
             logging.error("No target session was selected for resampling.")
@@ -205,7 +270,19 @@ class RecipeFluxV2:
         
     def calibrate_from_magnitudes(self, magnitudes: str = "SDSS_r=17.0") -> 'SessionV2':
         """
-        API: Rescales (and warps) the spectrum to match target magnitudes.
+        Flux calibration using photometric magnitudes.
+
+        Warps the spectrum to match the observed magnitudes in specified bands.
+
+        Parameters
+        ----------
+        magnitudes : str
+            Comma-separated pairs of ``Filter=Mag`` (e.g. ``"SDSS_g=17.5, SDSS_r=17.0"``).
+
+        Returns
+        -------
+        SessionV2
+            A new session with calibrated flux.
         """
         try:
             # The API layer now handles all the complexity

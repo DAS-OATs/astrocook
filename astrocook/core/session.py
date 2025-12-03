@@ -4,13 +4,13 @@ import json
 import logging
 import numpy as np
 import os
-import tarfile  # <<< Import
-import tempfile # <<< Import
+import tarfile 
+import tempfile
 from typing import Any, Optional, Tuple, Union
 
 from astrocook.legacy.defaults import Defaults
-from astrocook.legacy.format import Format # Import the Format V1 class for I/O 
-from astrocook.legacy.gui_log import GUILog # Import the V1 logger for GUI compatibility
+from astrocook.legacy.format import Format 
+from astrocook.legacy.gui_log import GUILog 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.loaders import get_loader
 from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
@@ -31,16 +31,42 @@ LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
 
 def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
     """
-    Orchestrates the loading of a session from an archive (.acs or .acs2)
-    and handles the V1-to-V2 migration if necessary.
-    
-    Per Point 3, this function now *ignores* any saved log.
+    Orchestrates the loading of a session from a file or archive.
+
+    This function handles various input formats, including legacy Astrocook V1 archives (``.acs``),
+    modern V2 archives (``.acs2``), and raw FITS files. It automatically handles
+    V1-to-V2 migration of structures.
+
+    Parameters
+    ----------
+    archive_path : str
+        The full path to the file to load.
+    name : str
+        The display name to assign to the new session.
+    gui_context : Any
+        A reference to the main GUI window (for logging and dialog parenting),
+        or a mock object if running in a script.
+    format_name : str
+        A format identifier string (e.g., ``'generic_spectrum'``, ``'eso_midas'``)
+        used to select the appropriate loader for raw files.
+
+    Returns
+    -------
+    SessionV2 or int
+        The loaded :class:`SessionV2` object if successful.
+        Returns ``0`` (integer) if the loading process failed.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the archive path is invalid or internal files are missing.
+    RuntimeError
+        If the V1 archive unpacking fails.
     """
     archive_manager = None 
     temp_dir = None
     archive_root = ""
     v2_metadata = None
-    # log_object_to_return has been removed
     
     try:
         archive_path_lower = archive_path.lower()
@@ -131,12 +157,8 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if not spectrum_v2: 
             raise RuntimeError("Spectrum loading failed, aborting session creation.")
 
-        # --- *** (Point 3) *** ---
-        # 3. Load V2/V1 Log Object
-        #    This entire block is now REMOVED. We no longer parse the log.
         logging.debug("Ignoring saved log on load, as per new design.")
             
-        
         # Call the simplified constructor
         new_session = SessionV2(
             name=name, 
@@ -145,23 +167,52 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             systs=system_list_v2
         )
         
-        return new_session # <<< *** MODIFIED: Only return session
+        return new_session 
 
     except Exception as e: 
         logging.error(f"FATAL: load_session_from_file failed: {e}", exc_info=True)
-        return 0 # <<< *** MODIFIED: Return 0 on failure (V1 style)
+        return 0 
 
     finally: 
-        # ... (cleanup logic) ...
         if archive_manager:
             archive_manager.cleanup()
         elif temp_dir and os.path.exists(temp_dir):
             import shutil
             shutil.rmtree(temp_dir)
             
-# --- SessionV2 Class ---
-# (The class definition from the previous step is correct)
+
 class SessionV2:
+    """
+    The central coordinator for an Astrocook analysis session.
+
+    This class encapsulates the state of a single spectrum and its associated
+    models (systems, components). It serves as the primary entry point for
+    high-level analysis workflows ("Recipes").
+
+    .. note::
+       **Immutability Pattern**: In Astrocook V2, the ``SessionV2`` object is designed
+       to be treated as immutable within the undo/redo history stack. Operations that
+       modify data (like smoothing flux or fitting a continuum) do not modify the object
+       in-place; instead, they return a *new* ``SessionV2`` instance containing the
+       updated data structures.
+
+    Attributes
+    ----------
+    name : str
+        The display name of the session (e.g., filename without extension).
+    spec : astrocook.core.spectrum.SpectrumV2, optional
+        The main container for spectral data (flux, wavelength, error, etc.).
+    systs : astrocook.core.system_list.SystemListV2, optional
+        The container for identified absorption systems and Voigt profile components.
+    edit : RecipeEditV2
+        Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).
+    flux : RecipeFluxV2
+        Access to flux manipulation recipes (e.g., ``smooth``, ``rebin``).
+    continuum : RecipeContinuumV2
+        Access to continuum estimation and fitting recipes.
+    absorbers : RecipeAbsorbersV2
+        Access to line identification and fitting recipes.
+    """
     def __init__(self,
                  name: str,
                  gui: Any, 
@@ -202,6 +253,7 @@ class SessionV2:
 
     @property
     def spec(self) -> Optional[SpectrumV2]: 
+        """The current spectral data object."""
         return self._current_spectrum
     @property
     def lines(self):
@@ -209,6 +261,25 @@ class SessionV2:
 
     @classmethod
     def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':        
+        """
+        Factory method: Creates a new SessionV2 by loading data from a file.
+
+        Parameters
+        ----------
+        file_path : str
+            The system path to the file (FITS or ACS/ACS2 archive).
+        name : str
+            The name to give the new session.
+        gui_context : Any
+            The GUI parent object (used for logging/dialogs).
+        format_name : str
+            Hint for the file format loader (e.g. 'generic_spectrum').
+
+        Returns
+        -------
+        SessionV2 or int
+            A new SessionV2 instance, or 0 on failure.
+        """
         try:
             session = load_session_from_file(
                 archive_path=file_path,
@@ -222,6 +293,22 @@ class SessionV2:
             return 0
 
     def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
+        """
+        Returns a new SessionV2 instance with an updated spectrum.
+        
+        This is used by recipes that modify spectral data (e.g., smoothing,
+        continuum fitting) to ensure history preservation.
+        
+        Parameters
+        ----------
+        new_spectrum : SpectrumV2
+            The new spectral data object.
+            
+        Returns
+        -------
+        SessionV2
+            A shallow copy of the session pointing to the new spectrum.
+        """
         constructor_args = {
             'name': self.name,
             'gui': self._gui,
@@ -235,6 +322,19 @@ class SessionV2:
         return new_session
 
     def with_new_system_list(self, new_systs: SystemListV2) -> 'SessionV2':
+        """
+        Returns a new SessionV2 instance with an updated system list.
+        
+        Parameters
+        ----------
+        new_systs : SystemListV2
+            The new system list object.
+            
+        Returns
+        -------
+        SessionV2
+            A shallow copy of the session pointing to the new system list.
+        """
         constructor_args = {
             'name': self.name,
             'gui': self._gui,
@@ -251,13 +351,30 @@ class SessionV2:
              initial_session: Optional['SessionV2'] = None, 
              models: bool = False):
         """
-        Saves the session.
+        Saves the current session state to a file.
+
+        This method supports two formats:
         
-        Args:
-            file_path (str): The destination path.
-            initial_session (Optional[SessionV2]): The *initial* state of the
-                session, to be saved as "original data".
-            models (bool): V1 compatibility flag.
+        1. **.acs2 (Recommended)**: A zipped archive containing the full session state, 
+           metadata, and (optionally) the original data if ``initial_session`` is provided.
+        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with 
+           Astrocook V1.
+
+        Parameters
+        ----------
+        file_path : str
+            The destination path. The extension (``.acs`` vs ``.acs2``) determines the format.
+        initial_session : SessionV2, optional
+            The state of the session *before* any modifications. This is required 
+            when saving to ``.acs2`` format to ensure the archive contains the 
+            original raw data for reproducibility.
+        models : bool, optional
+            Flag for V1 backward compatibility (unused in V2 native saves).
+
+        Returns
+        -------
+        int
+            Returns 0 on success.
         """
         if file_path.lower().endswith('.acs2'):
             # Pass *both* the initial and final (self) session states

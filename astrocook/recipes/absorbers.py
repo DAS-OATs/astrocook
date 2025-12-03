@@ -109,6 +109,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
 }
 
 class RecipeAbsorbersV2:
+    """
+    Recipes for identification, fitting, and management of absorption lines.
+    Accessed via ``session.absorbers``.
+    """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'abs'
@@ -123,8 +127,38 @@ class RecipeAbsorbersV2:
                        debug_rating: str = 'False',
                        auto_populate: str = 'True') -> 'SessionV2':
         """
-        API: Orchestrator recipe to identify absorption lines.
-        (Thin wrapper for SpectrumV2.identify_lines)
+        Identify absorption lines by correlating spectral regions with templates.
+
+        This recipe orchestrates the full identification workflow:
+        1.  Detects absorption regions in the spectrum.
+        2.  Scans for kinematic candidates of specified multiplets (e.g. CIV doublet).
+        3.  Scores candidates based on profile similarity (R^2).
+        4.  Optionally populates the system list with the best candidates.
+
+        Parameters
+        ----------
+        multiplets : str
+            Comma-separated list of multiplets to search for.
+            Defaults: ``"CIV,SiIV,MgII,Ly_ab"``.
+        mask_col : str
+            Name of the boolean mask column where True indicates 'unabsorbed' (continuum).
+        min_pix_region : str (int)
+            Minimum number of pixels required to define an absorption region.
+        merge_dv : str (float)
+            Velocity threshold (km/s) for merging adjacent regions.
+        score_threshold : str (float)
+            Minimum R^2 correlation score (0.0 to 1.0) required to accept a candidate.
+        bypass_scoring : str (bool)
+            If 'True', accept all kinematic matches regardless of their score.
+        debug_rating : str (bool)
+            If 'True', displays debug plots during the scoring process.
+        auto_populate : str (bool)
+            If 'True', automatically adds the identified components to the system list.
+
+        Returns
+        -------
+        SessionV2
+            A new session with identified regions and (optionally) populated components.
         """
         try:
             min_pix_i = int(min_pix_region)
@@ -204,7 +238,19 @@ class RecipeAbsorbersV2:
                        series_map_json: str = None,
                        z_map_json: str = None) -> 'SessionV2':
         """
-        API: Populates the SystemList using results from identification.
+        Populate the system list using results from a previous identification step.
+
+        This is typically called automatically by ``identify_lines``, but can be 
+        invoked manually if identification was run without auto-populate.
+
+        Parameters
+        ----------
+        region_id_col : str
+            Name of the column in the spectrum containing region IDs.
+        series_map_json : str
+            JSON string mapping Region ID -> Series Name.
+        z_map_json : str
+            JSON string mapping Region ID -> Redshift.
         """
         if not series_map_json or not z_map_json:
             logging.error("populate_from_identification: Missing maps.")
@@ -237,6 +283,24 @@ class RecipeAbsorbersV2:
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
                       logN: str = '13.5', b: str = '10.0', btur: str = '0.0',
                       z_window_kms: str = '20.0') -> 'SessionV2':
+        """
+        Manually adds a component and immediately attempts a fit.
+
+        Parameters
+        ----------
+        series : str
+            Transition/Multiplet name (e.g. 'Ly_a').
+        z : str (float)
+            Initial redshift guess.
+        logN : str (float)
+            Initial column density guess.
+        b : str (float)
+            Initial doppler parameter guess.
+        btur : str (float)
+            Turbulent broadening.
+        z_window_kms : str (float)
+            Velocity window allowed for the initial fit.
+        """
         try:
             z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
             z_win_f = float(z_window_kms)
@@ -264,6 +328,18 @@ class RecipeAbsorbersV2:
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
                          b: str = 'None', series: str = 'None') -> 'SessionV2':
+        """
+        Updates the parameters of an existing component.
+
+        Parameters
+        ----------
+        uuid : str
+            Unique identifier of the component.
+        z, logN, b : str (float)
+            New values for parameters. Pass 'None' to keep unchanged.
+        series : str
+            New series name.
+        """
         try:
             changes = {}
             if z != 'None': changes['z'] = float(z)
@@ -277,6 +353,14 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed update_component: {e}"); return 0
 
     def delete_component(self, uuid: str) -> 'SessionV2':
+        """
+        Deletes a component and updates the model.
+
+        Parameters
+        ----------
+        uuid : str
+            Unique identifier of the component to remove.
+        """
         try:
             # 1. Delete from System List
             new_systs = self._session.systs.delete_component(uuid)
@@ -312,6 +396,21 @@ class RecipeAbsorbersV2:
             return 0
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0') -> 'SessionV2':
+        """
+        Fits a component (and its connected group) to the spectrum.
+
+        This uses the ``VoigtFitterV2`` engine. It automatically detects
+        which other components are linked or overlapping and fits them all simultaneously.
+
+        Parameters
+        ----------
+        uuid : str
+            The target component UUID.
+        max_nfev : str (int)
+            Maximum number of function evaluations for the optimizer.
+        z_window_kms : str (float)
+            Allowed velocity shift (km/s) from the starting position.
+        """
         try:
             max_nfev_i = int(max_nfev)
             z_win_f = float(z_window_kms)
@@ -349,6 +448,22 @@ class RecipeAbsorbersV2:
                           is_free: bool = None, 
                           expression: str = None, 
                           target_uuid: str = None) -> 'SessionV2':
+        """
+        Updates the constraints (fixing/freeing/linking) for a parameter.
+
+        Parameters
+        ----------
+        uuid : str
+            Component UUID.
+        param : str
+            Parameter name ('z', 'logN', 'b').
+        is_free : bool, optional
+            Set to True to unfreeze/unlink. Set to False to freeze/link.
+        expression : str, optional
+            Mathematical expression for linking (e.g. ``"p['uuid2'].z"``).
+        target_uuid : str, optional
+            The UUID of the component this parameter is linked to.
+        """
         try:
             # 1. Update the Constraint
             new_systs = self._session.systs.update_constraint(

@@ -11,7 +11,24 @@ import uuid
 class SessionMetadataV2:
     """
     Core immutable structure for holding constraints, configuration, and history.
-    This will be serialized to a JSON/YAML file within the .acs archive.
+    
+    This structure is designed to be serialized to a JSON or YAML file within
+    the .acs archive. It separates the lightweight metadata from the heavy
+    spectral arrays.
+
+    Parameters
+    ----------
+    constraints_by_uuid : dict
+        A mapping of Component UUIDs to constraint dictionaries.
+    v1_reconstruction_data : Any
+        Legacy data structure preserved for technical debt logging or V1 reconstruction.
+    log_history_json : Any
+        The serialized log object (either a V2 dict or V1 JSON format).
+    log_type : str
+        Type of log stored: ``'v2'``, ``'v1_artifact'``, or ``'v1_legacy'``.
+        Defaults to ``'v1_legacy'``.
+    component_uuids : list of str
+        An ordered list of all component UUIDs in the session.
     """
     
     # Stores constraints linked by Component UUID
@@ -31,18 +48,58 @@ class SessionMetadataV2:
 
 @dataclass(frozen=True)
 class DataColumnV2:
-    """Contenitore per una singola colonna di dati con unità."""
+    """
+    Immutable container for a single column of data with physical units.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        The numerical data array.
+    unit : astropy.units.Unit
+        The physical unit associated with the values.
+    description : str, optional
+        A short description of the column's content.
+    """
     values: np.ndarray
     unit: au.Unit
     description: str = ""
     
     @property
     def quantity(self) -> au.Quantity:
+        """Returns the data as an Astropy Quantity."""
         return au.Quantity(self.values, self.unit)
 
 @dataclass(frozen=True)
 class SpectrumDataV2:
-    """Contenitore immutabile per tutti i dati di uno Spettro (Core Logico)."""
+    """
+    Immutable core container for all spectral data.
+
+    This class holds the "heavy" numerical arrays (flux, wavelength, error)
+    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.SpectrumV2`.
+
+    Parameters
+    ----------
+    x : DataColumnV2
+        The independent variable (wavelength or velocity).
+    xmin : DataColumnV2
+        Lower bound of the x-bins.
+    xmax : DataColumnV2
+        Upper bound of the x-bins.
+    y : DataColumnV2
+        The dependent variable (flux density).
+    dy : DataColumnV2
+        The 1-sigma uncertainty on ``y``.
+    aux_cols : dict of DataColumnV2
+        Additional columns (e.g. ``'cont'``, ``'model'``, ``'abs_mask'``).
+    meta : dict
+        Header keywords and other metadata.
+    z_rf : float
+        Rest-frame redshift used for velocity conversions.
+    z_em : float
+        Emission redshift of the target object.
+    resol : float
+        Median resolving power :math:`R = \lambda / \Delta\lambda`.
+    """
     
     # Dati Spaziali (Assi X e Binning)
     x: DataColumnV2    # Lunghezza d'onda / Velocità
@@ -76,6 +133,29 @@ class SpectrumDataV2:
                        meta: Optional[Dict[str, Any]] = None,
                        z_rf: float = 0.0,
                        z_em: float = 0.0) -> 'SpectrumDataV2':
+        """
+        Factory method to create a SpectrumDataV2 from raw NumPy arrays.
+
+        Parameters
+        ----------
+        x_values, y_values, dy_values : np.ndarray
+            Raw data arrays.
+        x_unit, y_unit : astropy.units.Unit
+            Units for the spatial and flux axes.
+        xmin_values, xmax_values : np.ndarray, optional
+            Bin edges. If None, defaults to ``x_values``.
+        aux_data : dict, optional
+            Dictionary of auxiliary columns: ``{'name': (values, unit, description)}``.
+        meta : dict, optional
+            Metadata dictionary.
+        z_rf, z_em : float, optional
+            Redshift properties.
+
+        Returns
+        -------
+        SpectrumDataV2
+            The initialized data object.
+        """
 
         # Assicurare che xmin/xmax abbiano valori (es. copiando x se assenti)
         if xmin_values is None: xmin_values = x_values
@@ -103,7 +183,38 @@ class SpectrumDataV2:
     
 @dataclass(frozen=True)
 class ComponentDataV2:
-    """Immutable data structure for a single absorption component (Voigt profile)."""
+    """
+    Immutable data structure for a single absorption component (Voigt profile).
+
+    Attributes
+    ----------
+    id : int
+        Internal integer ID (from V1 legacy logic).
+    z : float
+        Redshift of the component center.
+    dz : float, optional
+        Uncertainty on redshift.
+    logN : float
+        Logarithmic column density (cm^-2).
+    dlogN : float, optional
+        Uncertainty on logN.
+    b : float
+        Doppler broadening parameter (km/s).
+    db : float, optional
+        Uncertainty on b.
+    btur : float
+        Turbulent broadening contribution (km/s).
+    func : str
+        Profile function name (default: ``'voigt'``).
+    series : str
+        Atomic series name (e.g., ``'Ly_a'``, ``'CIV'``).
+    chi2 : float, optional
+        Reduced Chi-Squared of the fit group this component belongs to.
+    resol : float, optional
+        Resolution used for the fit.
+    uuid : str
+        A globally unique, stable identifier for V2 constraints and linking.
+    """
     
     # ID is required
     id: int
@@ -134,7 +245,21 @@ class ComponentDataV2:
 @dataclass(frozen=True)
 class ParameterConstraintV2:
     """
-    Immutable data structure defining the constraint for a single parameter.
+    Immutable structure defining a constraint for a single parameter.
+
+    Used by the fitting engine to determine if a parameter is free, fixed,
+    or linked to another component.
+
+    Attributes
+    ----------
+    is_free : bool
+        If True, the parameter varies during minimization.
+    target_uuid : str, optional
+        If set, this parameter is linked to the component with this UUID.
+    expression : str, optional
+        A mathematical string expression for linking (e.g. ``"p['{uuid}'].z"``).
+    v1_target_id : int, optional
+        Legacy ID of the target component (for debugging/reconstruction only).
     """
     # True if the parameter should be varied during minimization.
     is_free: bool
@@ -150,7 +275,27 @@ class ParameterConstraintV2:
 
 @dataclass(frozen=True)
 class SystemListDataV2:
-    """Immutable container for system components (list of ComponentDataV2)."""
+    """
+    Immutable container for system components and constraints.
+
+    This class replaces the mutable tables used in V1. It holds the list
+    of components and the maps defining their relationships.
+
+    Attributes
+    ----------
+    components : list of ComponentDataV2
+        The list of absorption components.
+    v1_header_constraints : dict
+        Legacy constraints from V1 file headers.
+    parsed_constraints : dict
+        Map of (Component UUID, Parameter Name) -> ConstraintDataV2.
+    v2_constraints_map : dict
+        Nested map {UUID: {ParamName: Constraint}}.
+    v1_id_to_uuid_map : dict
+        Map of integer IDs to V2 UUIDs.
+    meta : dict
+        Metadata for the system list.
+    """
     
     components: List[ComponentDataV2] = field(default_factory=list)
     v1_header_constraints: Dict[str, Any] = field(default_factory=dict)
@@ -171,7 +316,11 @@ class SystemListDataV2:
 
 @dataclass
 class LogEntryV2:
-    """A V2-native log entry. 1-to-1 with a state change."""
+    """
+    A single entry in the V2 analysis log.
+    
+    Corresponds 1-to-1 with a state change in the Session history.
+    """
     recipe_name: str
     params: Dict[str, Any]
     # We can add more data later, like execution time, success, etc.
@@ -179,8 +328,18 @@ class LogEntryV2:
 @dataclass
 class HistoryLogV2:
     """
-    Manages the V2-native log. This is a 1-to-1 list of states
-    and supports truncation for Option 2.
+    Manages the linear history of operations (Log V2).
+
+    This class maintains a list of :class:`LogEntryV2` objects matching the
+    stack of immutable states in the session manager. It supports truncation
+    to handle branching history (undo/redo logic).
+
+    Attributes
+    ----------
+    entries : list of LogEntryV2
+        The list of operations performed.
+    current_index : int
+        Pointer to the currently active log entry (state).
     """
     def __init__(self):
         self.entries: List[LogEntryV2] = []
@@ -189,12 +348,19 @@ class HistoryLogV2:
 
     @property
     def is_v2_log(self) -> bool:
+        """Always True for this class."""
         return True
 
     def add_entry(self, recipe_name: str, params: Dict[str, Any]):
         """
-        Adds a new entry, truncating any "future" (undone) logs.
-        This implements Option 2's truncation.
+        Adds a new log entry, truncating any 'future' history (from Undo actions).
+
+        Parameters
+        ----------
+        recipe_name : str
+            The name of the recipe executed.
+        params : dict
+            The parameters used for the recipe.
         """
         # 1. Truncate stale future history
         if self.current_index < len(self.entries) - 1:
@@ -210,7 +376,14 @@ class HistoryLogV2:
         logging.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
 
     def undo(self) -> bool:
-        """Moves the index back one step. Does not delete."""
+        """
+        Moves the history pointer back one step.
+        
+        Returns
+        -------
+        bool
+            True if undo was successful, False if already at the beginning.
+        """
         if self.current_index > -1:
             self.current_index -= 1
             logging.debug(f"Log index undone to {self.current_index}")
@@ -218,7 +391,14 @@ class HistoryLogV2:
         return False
 
     def redo(self) -> bool:
-        """Moves the index forward one step."""
+        """
+        Moves the history pointer forward one step.
+
+        Returns
+        -------
+        bool
+            True if redo was successful, False if already at the latest entry.
+        """
         if self.current_index < len(self.entries) - 1:
             self.current_index += 1
             logging.debug(f"Log index redone to {self.current_index}")
@@ -229,9 +409,10 @@ class HistoryLogV2:
 
 class V1LogArtifact:
     """
-    A read-only wrapper for a V1 log string.
-    It mimics just enough of the HistoryLogV2 interface
-    for the LogViewerDialog.
+    A read-only wrapper for legacy V1 logs.
+
+    Used to display the history of a session loaded from a V1 archive
+    without converting it to the full V2 structure.
     """
     def __init__(self, v1_log_json: dict):
         self.v1_json = v1_log_json
