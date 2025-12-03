@@ -141,7 +141,9 @@ class MainWindowV2(QMainWindow):
         self._setup_collapse_buttons()
 
         # --- ** Central Stack Views ** ---
-        self._setup_plot_view(initial_session)
+        valid_session = initial_session if isinstance(initial_session, SessionV2) else None
+        
+        self._setup_plot_view(valid_session)
         self._setup_empty_view()
         
         # --- 3. Set Central Widget THIRD ---
@@ -259,6 +261,9 @@ class MainWindowV2(QMainWindow):
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
         font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
+        
+        # ENABLE MULTI-SELECTION
+        self.session_list_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         
         # 1. Set the context menu policy
         self.session_list_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1274,8 +1279,16 @@ class MainWindowV2(QMainWindow):
                                  force_autoscale: bool = False, auto_show_aux: Optional[str] = None):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
-        is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
-        
+        is_valid = False
+        if session_state_to_show and session_state_to_show.spec:
+             # Check if x exists and has data points
+             x_col = session_state_to_show.spec.x
+             if hasattr(x_col, 'values'):
+                 is_valid = len(x_col.values) > 0
+             else:
+                 # Fallback if it's a Quantity or Array directly (legacy safety)
+                 is_valid = len(x_col) > 0
+                 
         # Add refresh call for the single log viewer
         if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
             if session_state_to_show and self.active_history: # Check for active_history
@@ -1497,11 +1510,16 @@ class MainWindowV2(QMainWindow):
             self, 
             "Open Spectrum File", 
             os.getcwd(),
-            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;All Files (*)"
+            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;Text Files (*.txt);;All Files (*)"
         )
         
         if file_name:
-            format_name = 'generic_spectrum'
+            # [FIX] Auto-detect format based on extension
+            if file_name.lower().endswith('.txt') or file_name.lower().endswith('.dat'):
+                format_name = 'ascii_resvel_header'
+            else:
+                format_name = 'generic_spectrum'
+            
             session_name = os.path.splitext(os.path.basename(file_name))[0]
             gui_context = self.mock_gui_context
 
@@ -1527,28 +1545,46 @@ class MainWindowV2(QMainWindow):
     def _on_session_list_context_menu(self, pos: QPoint):
         """
         Handles the right-click on the session list.
+        Supports Multi-Selection for Stitching.
         """
-        index = self.session_list_view.indexAt(pos)
-        if not index.isValid():
-            return # Clicked on empty space
+        # 1. Get all selected indexes
+        indexes = self.session_list_view.selectionModel().selectedIndexes()
+        
+        if not indexes:
+            return
 
-        row = index.row()
-        if 0 <= row < len(self.session_histories):
-            # Get the *clicked* history item
-            """
-        Handles the right-click on the session list.
-        """
-        index = self.session_list_view.indexAt(pos)
-        if not index.isValid():
-            return 
+        menu = QMenu(self)
 
-        row = index.row()
+        # --- MULTI-SELECTION CASE (STITCHING) ---
+        if len(indexes) > 1:
+            # Sort rows to determine primary (the topmost selected)
+            selected_rows = sorted([i.row() for i in indexes])
+            
+            if not all(0 <= r < len(self.session_histories) for r in selected_rows):
+                return
+
+            primary_idx = selected_rows[0]
+            primary_history = self.session_histories[primary_idx]
+            
+            others_names = []
+            for r in selected_rows[1:]:
+                others_names.append(self.session_histories[r].display_name)
+            
+            stitch_action = QAction(f"Stitch {len(others_names)} sessions into '{primary_history.display_name}'", self)
+            stitch_action.triggered.connect(
+                lambda: self._on_stitch_requested(primary_history, others_names)
+            )
+            menu.addAction(stitch_action)
+            
+            menu.exec(self.session_list_view.mapToGlobal(pos))
+            return
+
+        # --- SINGLE SELECTION CASE (Existing Logic) ---
+        row = indexes[0].row()
         if not (0 <= row < len(self.session_histories)):
             return
             
         history_item = self.session_histories[row]
-        session_name = history_item.display_name
-        menu = QMenu(self)
 
         # --- *** NEW: Info action *** ---
         info_action = QAction(f"Info", self)
@@ -1593,6 +1629,22 @@ class MainWindowV2(QMainWindow):
         menu.addAction(close_action)
         
         menu.exec(self.session_list_view.mapToGlobal(pos))
+
+    def _on_stitch_requested(self, primary_history, others_names: List[str]):
+        """
+        Callback for the Stitch menu action.
+        Triggers the recipe on the primary session, passing names of others.
+        """
+        # We must switch active history to the primary one so the RecipeWorker works on the correct object
+        if self.active_history != primary_history:
+            self.active_history = primary_history
+            self._update_view_for_session(primary_history.current_state, set_current_list_item=True)
+
+        # Call the recipe via the standard pipeline
+        # We pass a list of STRINGS (names). The hybrid recipe will resolve them.
+        params = {'other_sessions': others_names}
+        
+        self._on_recipe_requested("edit", "stitch", params, {})
     
     def _on_session_info(self, history_item: SessionHistory):
         """ Displays an info box for the selected session. """

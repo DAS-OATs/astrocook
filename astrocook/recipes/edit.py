@@ -1,10 +1,11 @@
 from astropy import units as au
+from copy import deepcopy
 import logging
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union, List
 
-from astrocook.core.structures import HistoryLogV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -81,6 +82,11 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "region", "type": str, "default": "lya_forest", "doc": "Preset region ('lya_forest', 'all_ly_forest', 'red_side')"}
         ],
         "url": "edit_cb.html#extract_preset"
+    },
+    "stitch": {
+        "brief": "Merge multiple sessions.",
+        "params": [],
+        "gui_hidden": True  # Usually called via script
     }
 }
 
@@ -564,3 +570,139 @@ class RecipeEditV2:
         # 4. Re-use the existing split logic
         # We can call our own split method directly!
         return self.split(expression=expression)
+    
+    def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
+        """
+        Merges the current session with a list of other sessions.
+        Useful for simultaneous fitting of disjoint spectral regions (e.g. Lya + CIV).
+        
+        Logic:
+        1. Concatenates x, y, dy, and aux_cols.
+        2. Preserves 'resol' column if present (handling varying resolution).
+        3. Sorts by wavelength.
+
+        Parameters
+        ----------
+        other_sessions : List[Union[SessionV2, str]]
+            A list of SessionV2 objects OR strings (names of sessions loaded in the GUI).
+        sort : bool
+            Sort the final array by wavelength.
+        """
+        from astrocook.core.session import SessionV2 # Delayed import
+        from astrocook.core.spectrum import SpectrumV2
+
+        if not other_sessions:
+            logging.warning("No sessions provided to stitch.")
+            return self._session
+
+        resolved_sessions = []
+        
+        # --- 1. Resolve Strings to Objects ---
+        for item in other_sessions:
+            if isinstance(item, SessionV2):
+                resolved_sessions.append(item)
+            elif isinstance(item, str):
+                # We are in the GUI or Log Replay, looking up by name
+                found = None
+                # Check if we have access to the Session History list via the GUI context
+                if hasattr(self._session, '_gui') and hasattr(self._session._gui, 'session_histories'):
+                    # Look for a history wrapper with this display_name
+                    for hist in self._session._gui.session_histories:
+                        if hist.display_name == item:
+                            found = hist.current_state
+                            break
+                
+                if found:
+                    resolved_sessions.append(found)
+                else:
+                    logging.warning(f"Stitch: Could not find loaded session named '{item}'. Skipping.")
+            else:
+                logging.warning(f"Stitch: Invalid item type {type(item)}. Skipping.")
+
+        if not resolved_sessions:
+            logging.error("No valid sessions found to stitch.")
+            return self._session
+
+        # --- 2. Collect Data ---
+        # (This logic is mostly unchanged from before, but uses resolved_sessions)
+        all_sessions = [self._session] + resolved_sessions
+        
+        xs_list, y_list, dy_list = [], [], []
+        aux_data_map = {} 
+        
+        first_spec = self._session.spec
+        for col_name in first_spec._data.aux_cols:
+            aux_data_map[col_name] = []
+
+        # Units 
+        x_unit = first_spec.x.unit
+        y_unit = first_spec.y.unit
+
+        for s in all_sessions:
+            spec = s.spec
+            # Convert units to match the primary session
+            xs_list.append(spec.x.to(x_unit).value)
+            y_list.append(spec.y.to(y_unit).value)
+            dy_list.append(spec.dy.to(y_unit).value)
+            
+            for col_name in aux_data_map:
+                # [FIX] Use public API has_aux_column / get_column if possible, 
+                # but since we are iterating keys from _data, accessing _data is consistent.
+                if col_name in spec._data.aux_cols:
+                    target_aux_unit = first_spec._data.aux_cols[col_name].unit
+                    # Convert unit
+                    val = spec.get_column(col_name).to(target_aux_unit).value
+                    aux_data_map[col_name].append(val)
+                else:
+                    # If a column is missing in one chunk, pad with NaNs
+                    n_points = len(spec.x)
+                    aux_data_map[col_name].append(np.full(n_points, np.nan))
+        
+        # --- 3. Concatenate & Sort ---
+        x_final = np.concatenate(xs_list)
+        y_final = np.concatenate(y_list)
+        dy_final = np.concatenate(dy_list)
+        
+        if sort:
+            sort_idx = np.argsort(x_final)
+            x_final = x_final[sort_idx]
+            y_final = y_final[sort_idx]
+            dy_final = dy_final[sort_idx]
+        else:
+            sort_idx = np.arange(len(x_final))
+
+        # --- 4. Build Columns ---
+        from ..io.loaders import _auto_limits
+        xmin_col, xmax_col = _auto_limits(x_final, x_unit)
+        
+        new_aux = {}
+        for col_name, arrays in aux_data_map.items():
+            concat_arr = np.concatenate(arrays)
+            if sort:
+                concat_arr = concat_arr[sort_idx]
+            target_aux_unit = first_spec._data.aux_cols[col_name].unit
+            desc = first_spec._data.aux_cols[col_name].description
+            new_aux[col_name] = DataColumnV2(concat_arr, target_aux_unit, desc)
+
+        # --- 5. Finalize ---
+        new_meta = deepcopy(self._session.spec.meta)
+        new_meta['stitched'] = True
+        
+        new_spec_data = SpectrumDataV2(
+            x=DataColumnV2(x_final, x_unit),
+            xmin=xmin_col, xmax=xmax_col,
+            y=DataColumnV2(y_final, y_unit),
+            dy=DataColumnV2(dy_final, y_unit),
+            aux_cols=new_aux,
+            meta=new_meta,
+            z_em=first_spec.z_em,
+            z_rf=first_spec.z_rf,
+            resol=first_spec.resol
+        )
+        
+        logging.info(f"Stitched {len(resolved_sessions)} sessions into primary. Total: {len(x_final)} px.")
+        
+        # [CRITICAL FIX] Wrap the data core in the API object
+        new_spec_wrapper = SpectrumV2(data=new_spec_data) 
+        
+        return self._session.with_new_spectrum(new_spec_wrapper)

@@ -140,7 +140,15 @@ def main():
             app.processEvents()
         try:
             name = os.path.splitext(os.path.basename(file_to_load))[0]
-            initial_session = load_session_from_file(file_to_load, name, mock_gui, 'generic_spectrum')
+            
+            # [FIX] Auto-detect format based on extension for CLI loading
+            if file_to_load.lower().endswith(('.txt', '.dat')):
+                format_name = 'ascii_resvel_header'
+            else:
+                format_name = 'generic_spectrum'
+
+            # Pass the detected format_name instead of hardcoded 'generic_spectrum'
+            initial_session = load_session_from_file(file_to_load, name, mock_gui, format_name)
         except Exception as e:
             logging.error(f"Error loading {file_to_load}: {e}")
 
