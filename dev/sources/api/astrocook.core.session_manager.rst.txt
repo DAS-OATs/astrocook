@@ -1,0 +1,7 @@
+astrocook.core.session\_manager module
+======================================
+
+.. automodule:: astrocook.core.session_manager
+   :members:
+   :show-inheritance:
+   :undoc-members:

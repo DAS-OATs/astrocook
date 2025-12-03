@@ -1,0 +1,45 @@
+astrocook.recipes package
+=========================
+
+Submodules
+----------
+
+astrocook.recipes.absorbers module
+----------------------------------
+
+.. automodule:: astrocook.recipes.absorbers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.recipes.continuum module
+----------------------------------
+
+.. automodule:: astrocook.recipes.continuum
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.recipes.edit module
+-----------------------------
+
+.. automodule:: astrocook.recipes.edit
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.recipes.flux module
+-----------------------------
+
+.. automodule:: astrocook.recipes.flux
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: astrocook.recipes
+   :members:
+   :show-inheritance:
+   :undoc-members:

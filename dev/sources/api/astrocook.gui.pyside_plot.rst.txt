@@ -1,0 +1,7 @@
+astrocook.gui.pyside\_plot module
+=================================
+
+.. automodule:: astrocook.gui.pyside_plot
+   :members:
+   :show-inheritance:
+   :undoc-members:

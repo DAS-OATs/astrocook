@@ -30,6 +30,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
@@ -41,6 +42,7 @@
     <script src="../../../static/documentation_options.js?v=51b770b3"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/core/spectrum_operations';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -152,8 +154,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -279,8 +281,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -423,7 +425,7 @@
 <span class="n">XEM_LYA_KM_S_ZERO</span> <span class="o">=</span> <span class="p">(</span><span class="n">XEM_LYA</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.0</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">equivalencies</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">equivalencies</span><span class="o">.</span><span class="n">doppler_optical</span><span class="p">(</span><span class="n">XEM_LYA</span><span class="p">))</span><span class="o">.</span><span class="n">value</span>
 
 <div class="viewcode-block" id="convert_axis_velocity">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.convert_axis_velocity">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.convert_axis_velocity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_axis_velocity</span><span class="p">(</span>
     <span class="n">x_quantity</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> 
     <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="c1"># Renamed from zem</span>
@@ -458,7 +460,7 @@
 
 
 <div class="viewcode-block" id="convert_x_axis">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.convert_x_axis">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.convert_x_axis">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_x_axis</span><span class="p">(</span><span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs X-axis conversion based on V1 logic and returns new Quantity arrays.</span>
@@ -484,7 +486,7 @@
 
 
 <div class="viewcode-block" id="convert_y_axis">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.convert_y_axis">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.convert_y_axis">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_y_axis</span><span class="p">(</span><span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">yunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">DataColumnV2</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Y-axis unit conversion on flux and error data using native Astropy methods.</span>
@@ -528,7 +530,7 @@
 
 
 <div class="viewcode-block" id="smooth_spectrum">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.smooth_spectrum">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.smooth_spectrum">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">smooth_spectrum</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -563,7 +565,7 @@
 
 
 <div class="viewcode-block" id="rebin_spectrum">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.rebin_spectrum">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.rebin_spectrum">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rebin_spectrum</span><span class="p">(</span>
         <span class="n">x_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">xmin_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">xmax_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
         <span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="c1"># Still pass the full data for y/dy/aux_cols</span>
@@ -701,7 +703,7 @@
 
 
 <div class="viewcode-block" id="running_mean">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.running_mean">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.running_mean">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">running_mean</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes a running mean of an array.</span>
@@ -716,7 +718,7 @@
 
 
 <div class="viewcode-block" id="running_std">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.running_std">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.running_std">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">running_std</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes a running standard deviation (RMS with respect to the local mean).</span>
@@ -745,7 +747,7 @@
 
 
 <div class="viewcode-block" id="find_absorbed_regions">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.find_absorbed_regions">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.find_absorbed_regions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_absorbed_regions</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
@@ -856,7 +858,7 @@
 
 
 <div class="viewcode-block" id="fit_continuum_interp">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.fit_continuum_interp">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.fit_continuum_interp">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum_interp</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -902,7 +904,7 @@
 
 
 <div class="viewcode-block" id="fit_powerlaw_to_regions">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.fit_powerlaw_to_regions">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.fit_powerlaw_to_regions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fit_powerlaw_to_regions</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -986,7 +988,7 @@
 
 
 <div class="viewcode-block" id="detect_regions">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.detect_regions">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.detect_regions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">detect_regions</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">min_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
@@ -1023,7 +1025,7 @@
 
 
 <div class="viewcode-block" id="merge_regions_by_velocity">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.merge_regions_by_velocity">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.merge_regions_by_velocity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">merge_regions_by_velocity</span><span class="p">(</span>
     <span class="n">region_map</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
@@ -1144,7 +1146,7 @@
 
 
 <div class="viewcode-block" id="compute_identification_signal">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.compute_identification_signal">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.compute_identification_signal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_identification_signal</span><span class="p">(</span>
     <span class="n">spectrum</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span>
     <span class="n">series_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1309,7 +1311,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="rate_doublet_candidate">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.rate_doublet_candidate">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.rate_doublet_candidate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rate_doublet_candidate</span><span class="p">(</span>
     <span class="n">spectrum</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span>
     <span class="n">region_mask_1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -1430,7 +1432,7 @@
 
     
 <div class="viewcode-block" id="find_signal_peaks">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.spectrum_operations.find_signal_peaks">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.find_signal_peaks">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_signal_peaks</span><span class="p">(</span>
     <span class="n">signals_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">z_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>

@@ -1,0 +1,7 @@
+astrocook.gui.system\_inspector module
+======================================
+
+.. automodule:: astrocook.gui.system_inspector
+   :members:
+   :show-inheritance:
+   :undoc-members:

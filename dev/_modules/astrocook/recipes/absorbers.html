@@ -1,0 +1,1014 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../static/documentation_options.js?v=51b770b3"></script>
+    <script src="../../../static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/recipes/absorbers';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.absorbers</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.recipes.absorbers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">xem_d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">trans_parse</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;V1 &#39;trans_parse&#39; not available. Identification recipe will fail.&quot;</span><span class="p">)</span>
+    <span class="n">trans_parse</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">[]</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
+
+<span class="n">ABSORBERS_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;identify_lines&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Identify likely absorption systems.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;multiplets&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;CIV,SiIV,MgII,Ly_ab&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Multiplets to search for (comma-separated).&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mask_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;abs_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Mask column (True=Unabsorbed)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;min_pix_region&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Minimum width in pixels to count as a region&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;merge_dv&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max velocity (km/s) to merge adjacent regions.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;score_threshold&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Min R^2 score (0 to 1) to accept a doublet candidate.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;bypass_scoring&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Accept all kinematic candidates, ignoring R^2 score.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;debug_rating&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Show debug plots for R^2 ratings.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;auto_populate&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Automatically add identified components to the system list?&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#identify_lines&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;populate_from_identification&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Populate components from identification.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Populates the system list using the regions and candidates found by &#39;identify_lines&#39;.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region_id_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;abs_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Column containing region IDs.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;series_map_json&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;JSON mapping Region ID -&gt; Series.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_map_json&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;JSON mapping Region ID -&gt; Redshift.&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#populate_from_identification&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;add_component&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Add a single component.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Adds a new manual Voigt component at a specific redshift.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;series&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;Ly_a&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Transition or Multiplet name (e.g. &#39;CIV&#39;)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Redshift&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">13.5</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Column Density (log)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Doppler parameter (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;btur&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Turbulent broadening (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max shift for initial fit (km/s)&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="c1"># We hide this from the menu because it&#39;s usually triggered by mouse, </span>
+        <span class="c1"># but keeping it in the schema allows scripting/logging.</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#add_component&quot;</span> 
+    <span class="p">},</span>
+    <span class="s2">&quot;update_component&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Update component.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Modify parameters of an existing component.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Component UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Redshift&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;b (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;series&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Series&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#update_component&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span> <span class="c1"># Usually triggered by table edit</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;delete_component&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete component.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Remove a component from the list.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Component UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#delete_component&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;fit_component&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit component.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Fits the selected component (and its neighbors) using the Voigt engine.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target Component UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;max_nfev&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max iterations&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max velocity shift allowed (km/s)&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#fit_component&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;update_constraint&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Update constraint.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Freeze, unfreeze, or link component parameters.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Component UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;param&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Parameter name (z, logN, b)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;is_free&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Is the parameter free to vary?&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Math expression for linking&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;UUID of the source component (for linking)&quot;</span><span class="p">}</span> <span class="c1"># &lt;--- Added</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#update_constraint&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="RecipeAbsorbersV2">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecipeAbsorbersV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipes for identification, fitting, and management of absorption lines.</span>
+<span class="sd">    Accessed via ``session.absorbers``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RecipeAbsorbersV2.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session_v2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">&#39;abs&#39;</span></div>
+
+
+<div class="viewcode-block" id="RecipeAbsorbersV2.identify_lines">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">identify_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                       <span class="n">multiplets</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CIV,SiIV,MgII,Ly_ab&quot;</span><span class="p">,</span>
+                       <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> 
+                       <span class="n">min_pix_region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span>
+                       <span class="n">merge_dv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span>
+                       <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.5&#39;</span><span class="p">,</span>
+                       <span class="n">bypass_scoring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
+                       <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
+                       <span class="n">auto_populate</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Identify absorption lines by correlating spectral regions with templates.</span>
+
+<span class="sd">        This recipe orchestrates the full identification workflow:</span>
+<span class="sd">        1.  Detects absorption regions in the spectrum.</span>
+<span class="sd">        2.  Scans for kinematic candidates of specified multiplets (e.g. CIV doublet).</span>
+<span class="sd">        3.  Scores candidates based on profile similarity (R^2).</span>
+<span class="sd">        4.  Optionally populates the system list with the best candidates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        multiplets : str</span>
+<span class="sd">            Comma-separated list of multiplets to search for.</span>
+<span class="sd">            Defaults: ``&quot;CIV,SiIV,MgII,Ly_ab&quot;``.</span>
+<span class="sd">        mask_col : str</span>
+<span class="sd">            Name of the boolean mask column where True indicates &#39;unabsorbed&#39; (continuum).</span>
+<span class="sd">        min_pix_region : str (int)</span>
+<span class="sd">            Minimum number of pixels required to define an absorption region.</span>
+<span class="sd">        merge_dv : str (float)</span>
+<span class="sd">            Velocity threshold (km/s) for merging adjacent regions.</span>
+<span class="sd">        score_threshold : str (float)</span>
+<span class="sd">            Minimum R^2 correlation score (0.0 to 1.0) required to accept a candidate.</span>
+<span class="sd">        bypass_scoring : str (bool)</span>
+<span class="sd">            If &#39;True&#39;, accept all kinematic matches regardless of their score.</span>
+<span class="sd">        debug_rating : str (bool)</span>
+<span class="sd">            If &#39;True&#39;, displays debug plots during the scoring process.</span>
+<span class="sd">        auto_populate : str (bool)</span>
+<span class="sd">            If &#39;True&#39;, automatically adds the identified components to the system list.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new session with identified regions and (optionally) populated components.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">min_pix_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_pix_region</span><span class="p">)</span>
+            <span class="n">merge_dv_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">merge_dv</span><span class="p">)</span>
+            <span class="n">score_thresh_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score_threshold</span><span class="p">)</span>
+            <span class="n">bypass_scoring_b</span> <span class="o">=</span> <span class="n">bypass_scoring</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span>
+            <span class="n">debug_rating_b</span> <span class="o">=</span> <span class="n">debug_rating</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span>
+            <span class="n">auto_populate_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">auto_populate</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span>
+            <span class="n">multiplet_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">multiplets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Run the identification, which returns a new spectrum</span>
+            <span class="c1">#    with the identification maps in its metadata.</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;identify_lines recipe: Calling spec.identify_lines...&quot;</span><span class="p">)</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">identify_lines</span><span class="p">(</span>
+                <span class="n">multiplet_list</span><span class="o">=</span><span class="n">multiplet_list</span><span class="p">,</span>
+                <span class="n">mask_col</span><span class="o">=</span><span class="n">mask_col</span><span class="p">,</span>
+                <span class="n">min_pix_region</span><span class="o">=</span><span class="n">min_pix_i</span><span class="p">,</span>
+                <span class="n">merge_dv</span><span class="o">=</span><span class="n">merge_dv_f</span><span class="p">,</span>
+                <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_thresh_f</span><span class="p">,</span>
+                <span class="n">bypass_scoring</span><span class="o">=</span><span class="n">bypass_scoring_b</span><span class="p">,</span>
+                <span class="n">debug_rating</span><span class="o">=</span><span class="n">debug_rating_b</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># 2. Get the maps from the new spectrum&#39;s metadata</span>
+            <span class="n">series_map_json</span> <span class="o">=</span> <span class="n">new_spec_v2</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;series_map_json&#39;</span><span class="p">)</span>
+            <span class="n">z_map_json</span> <span class="o">=</span> <span class="n">new_spec_v2</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;z_map_json&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">z_map_json</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;identify_lines: Identification ran but produced no component maps. Only spectrum was updated.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;identify_lines recipe: Calling systs.add_components_from_regions...&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 3. Deserialize maps (they are JSON strings)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">series_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">series_map_json</span><span class="p">)</span>
+                <span class="n">z_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">z_map_json</span><span class="p">)</span>
+                <span class="c1"># Convert string keys back to int</span>
+                <span class="n">series_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">z_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;identify_lines: Failed to deserialize component maps: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># Return the spectrum-only update</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auto_populate_b</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;identify_lines: Auto-populate disabled. Returning spectrum with suggestions.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+
+            <span class="c1"># 3. LINKAGE: Call populate_from_identification</span>
+            <span class="n">temp_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+            
+            <span class="c1"># Ensure systs is initialized</span>
+            <span class="k">if</span> <span class="n">temp_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+                <span class="n">temp_session</span> <span class="o">=</span> <span class="n">temp_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">()))</span>
+
+            <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
+            
+            <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">populate_from_identification</span><span class="p">(</span>
+                <span class="n">region_id_col</span><span class="o">=</span><span class="s1">&#39;abs_ids&#39;</span><span class="p">,</span>
+                <span class="n">series_map_json</span><span class="o">=</span><span class="n">series_map_json</span><span class="p">,</span>
+                <span class="n">z_map_json</span><span class="o">=</span><span class="n">z_map_json</span>
+            <span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">final_session</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during identify_lines: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+    
+<div class="viewcode-block" id="RecipeAbsorbersV2.populate_from_identification">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">populate_from_identification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_ids&#39;</span><span class="p">,</span>
+                       <span class="n">series_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">z_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Populate the system list using results from a previous identification step.</span>
+
+<span class="sd">        This is typically called automatically by ``identify_lines``, but can be </span>
+<span class="sd">        invoked manually if identification was run without auto-populate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        region_id_col : str</span>
+<span class="sd">            Name of the column in the spectrum containing region IDs.</span>
+<span class="sd">        series_map_json : str</span>
+<span class="sd">            JSON string mapping Region ID -&gt; Series Name.</span>
+<span class="sd">        z_map_json : str</span>
+<span class="sd">            JSON string mapping Region ID -&gt; Redshift.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">z_map_json</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;populate_from_identification: Missing maps.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Deserialize the maps</span>
+            <span class="n">series_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">series_map_json</span><span class="p">)</span>
+            <span class="n">z_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">z_map_json</span><span class="p">)</span>
+            <span class="c1"># Convert string keys back to int</span>
+            <span class="n">series_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">z_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;populate_from_identification: Failed to deserialize maps: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_systs_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">add_components_from_regions</span><span class="p">(</span>
+                <span class="n">spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span>
+                <span class="n">region_id_col</span><span class="o">=</span><span class="n">region_id_col</span><span class="p">,</span>
+                <span class="n">series_map</span><span class="o">=</span><span class="n">series_map</span><span class="p">,</span>
+                <span class="n">z_map</span><span class="o">=</span><span class="n">z_map</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs_v2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during populate_from_identification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeAbsorbersV2.add_component">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Ly_a&#39;</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span> 
+                      <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;13.5&#39;</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span>
+                      <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually adds a component and immediately attempts a fit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        series : str</span>
+<span class="sd">            Transition/Multiplet name (e.g. &#39;Ly_a&#39;).</span>
+<span class="sd">        z : str (float)</span>
+<span class="sd">            Initial redshift guess.</span>
+<span class="sd">        logN : str (float)</span>
+<span class="sd">            Initial column density guess.</span>
+<span class="sd">        b : str (float)</span>
+<span class="sd">            Initial doppler parameter guess.</span>
+<span class="sd">        btur : str (float)</span>
+<span class="sd">            Turbulent broadening.</span>
+<span class="sd">        z_window_kms : str (float)</span>
+<span class="sd">            Velocity window allowed for the initial fit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">z_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">);</span> <span class="n">logN_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">);</span> <span class="n">b_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="n">btur_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">btur</span><span class="p">)</span>
+            <span class="n">z_win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+                <span class="n">empty_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
+                <span class="n">new_systs</span> <span class="o">=</span> <span class="n">empty_systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">z_f</span><span class="p">,</span> <span class="n">logN_f</span><span class="p">,</span> <span class="n">b_f</span><span class="p">,</span> <span class="n">btur_f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">z_f</span><span class="p">,</span> <span class="n">logN_f</span><span class="p">,</span> <span class="n">b_f</span><span class="p">,</span> <span class="n">btur_f</span><span class="p">)</span>
+            
+            <span class="n">added_comp</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">temp_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+            <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
+            
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-fitting new component </span><span class="si">{</span><span class="n">added_comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="c1"># Pass window</span>
+            <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">fit_component</span><span class="p">(</span><span class="n">added_comp</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">z_win_f</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">final_session</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed add_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeAbsorbersV2.update_component">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> 
+                         <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the parameters of an existing component.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            Unique identifier of the component.</span>
+<span class="sd">        z, logN, b : str (float)</span>
+<span class="sd">            New values for parameters. Pass &#39;None&#39; to keep unchanged.</span>
+<span class="sd">        series : str</span>
+<span class="sd">            New series name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">z</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">logN</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;logN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">series</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+            
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">update_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed update_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RecipeAbsorbersV2.delete_component">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a component and updates the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            Unique identifier of the component to remove.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Delete from System List</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+            
+            <span class="c1"># 2. [FIX] Re-calculate Model</span>
+            <span class="c1"># We instantiate a temporary fitter with the NEW system list to get the updated flux</span>
+            <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+            
+            <span class="c1"># 3. Update Spectrum with new model column</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+            
+            <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+            <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">model_flux</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Voigt Fit Model&quot;</span>
+            <span class="p">)</span>
+            
+            <span class="n">new_spec_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+            <span class="c1"># Reconstruct SpectrumV2 wrapper (preserving history/meta logic is handled by data core)</span>
+            <span class="c1"># We reuse the class of the current spectrum to be safe</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_spec_data</span><span class="p">)</span> 
+            
+            <span class="c1"># 4. Return complete session</span>
+            <span class="n">session_with_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">session_with_spec</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed delete_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RecipeAbsorbersV2.fit_component">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.fit_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2000&#39;</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fits a component (and its connected group) to the spectrum.</span>
+
+<span class="sd">        This uses the ``VoigtFitterV2`` engine. It automatically detects</span>
+<span class="sd">        which other components are linked or overlapping and fits them all simultaneously.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            The target component UUID.</span>
+<span class="sd">        max_nfev : str (int)</span>
+<span class="sd">            Maximum number of function evaluations for the optimizer.</span>
+<span class="sd">        z_window_kms : str (float)</span>
+<span class="sd">            Allowed velocity shift (km/s) from the starting position.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">max_nfev_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_nfev</span><span class="p">)</span>
+            <span class="n">z_win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">([</span><span class="n">uuid</span><span class="p">])</span>
+            <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+            
+            <span class="c1"># Pass window to fit</span>
+            <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fit failed: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">message</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No result&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+            
+            <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+            <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">model_flux</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Voigt Fit Model&quot;</span>
+            <span class="p">)</span>
+            <span class="n">new_spec_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_spec_data</span><span class="p">)</span> 
+            
+            <span class="n">session_with_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">session_with_spec</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed fit_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeAbsorbersV2.update_constraint">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                          <span class="n">is_free</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                          <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                          <span class="n">target_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the constraints (fixing/freeing/linking) for a parameter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            Component UUID.</span>
+<span class="sd">        param : str</span>
+<span class="sd">            Parameter name (&#39;z&#39;, &#39;logN&#39;, &#39;b&#39;).</span>
+<span class="sd">        is_free : bool, optional</span>
+<span class="sd">            Set to True to unfreeze/unlink. Set to False to freeze/link.</span>
+<span class="sd">        expression : str, optional</span>
+<span class="sd">            Mathematical expression for linking (e.g. ``&quot;p[&#39;uuid2&#39;].z&quot;``).</span>
+<span class="sd">        target_uuid : str, optional</span>
+<span class="sd">            The UUID of the component this parameter is linked to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Update the Constraint</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">update_constraint</span><span class="p">(</span>
+                <span class="n">uuid</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">is_free</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">target_uuid</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># 2. [FIX] Immediate Value Update</span>
+            <span class="c1"># If we just set a link (expression exists), calculate and apply the value now.</span>
+            <span class="k">if</span> <span class="n">expression</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_free</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+                
+                <span class="c1"># A. Build Evaluation Context</span>
+                <span class="c1"># We need a dict &#39;p&#39; where p[&#39;uuid&#39;].param works.</span>
+                <span class="k">class</span><span class="w"> </span><span class="nc">CompProxy</span><span class="p">:</span>
+                    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span>
+                    <span class="nd">@property</span>
+                    <span class="k">def</span><span class="w"> </span><span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">z</span>
+                    <span class="nd">@property</span>
+                    <span class="k">def</span><span class="w"> </span><span class="nf">logN</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span>
+                    <span class="nd">@property</span>
+                    <span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">b</span>
+                    <span class="nd">@property</span>
+                    <span class="k">def</span><span class="w"> </span><span class="nf">btur</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">btur</span>
+
+                <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">CompProxy</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+                <span class="n">eval_globals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">comp_map</span><span class="p">,</span> <span class="s1">&#39;np&#39;</span><span class="p">:</span> <span class="n">np</span><span class="p">,</span> <span class="s1">&#39;sqrt&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">}</span>
+                
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># B. Evaluate</span>
+                    <span class="n">new_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">eval_globals</span><span class="p">))</span>
+                    
+                    <span class="c1"># C. Update the component value</span>
+                    <span class="c1"># We reuse the update_component logic available in SystemListV2</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Link established. Auto-updating </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">new_systs</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">update_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">new_val</span><span class="p">})</span>
+                    
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not auto-update linked value: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># 3. Return a new Session State</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed update_constraint: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

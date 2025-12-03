@@ -1,0 +1,7 @@
+astrocook.core.system\_list\_migration module
+=============================================
+
+.. automodule:: astrocook.core.system_list_migration
+   :members:
+   :show-inheritance:
+   :undoc-members:

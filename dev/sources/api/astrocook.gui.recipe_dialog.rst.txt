@@ -1,0 +1,7 @@
+astrocook.gui.recipe\_dialog module
+===================================
+
+.. automodule:: astrocook.gui.recipe_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:

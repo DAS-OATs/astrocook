@@ -30,6 +30,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
@@ -41,6 +42,7 @@
     <script src="../../../static/documentation_options.js?v=51b770b3"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/core/structures';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -152,8 +154,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -279,8 +281,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -408,12 +410,29 @@
 
 
 <div class="viewcode-block" id="SessionMetadataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.SessionMetadataV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SessionMetadataV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SessionMetadataV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Core immutable structure for holding constraints, configuration, and history.</span>
-<span class="sd">    This will be serialized to a JSON/YAML file within the .acs archive.</span>
+<span class="sd">    </span>
+<span class="sd">    This structure is designed to be serialized to a JSON or YAML file within</span>
+<span class="sd">    the .acs archive. It separates the lightweight metadata from the heavy</span>
+<span class="sd">    spectral arrays.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    constraints_by_uuid : dict</span>
+<span class="sd">        A mapping of Component UUIDs to constraint dictionaries.</span>
+<span class="sd">    v1_reconstruction_data : Any</span>
+<span class="sd">        Legacy data structure preserved for technical debt logging or V1 reconstruction.</span>
+<span class="sd">    log_history_json : Any</span>
+<span class="sd">        The serialized log object (either a V2 dict or V1 JSON format).</span>
+<span class="sd">    log_type : str</span>
+<span class="sd">        Type of log stored: ``&#39;v2&#39;``, ``&#39;v1_artifact&#39;``, or ``&#39;v1_legacy&#39;``.</span>
+<span class="sd">        Defaults to ``&#39;v1_legacy&#39;``.</span>
+<span class="sd">    component_uuids : list of str</span>
+<span class="sd">        An ordered list of all component UUIDs in the session.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># Stores constraints linked by Component UUID</span>
@@ -433,24 +452,64 @@
 
 
 <div class="viewcode-block" id="DataColumnV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.DataColumnV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.DataColumnV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DataColumnV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Contenitore per una singola colonna di dati con unità.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable container for a single column of data with physical units.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    values : np.ndarray</span>
+<span class="sd">        The numerical data array.</span>
+<span class="sd">    unit : astropy.units.Unit</span>
+<span class="sd">        The physical unit associated with the values.</span>
+<span class="sd">    description : str, optional</span>
+<span class="sd">        A short description of the column&#39;s content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the data as an Astropy Quantity.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.SpectrumDataV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpectrumDataV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Contenitore immutabile per tutti i dati di uno Spettro (Core Logico).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable core container for all spectral data.</span>
+
+<span class="sd">    This class holds the &quot;heavy&quot; numerical arrays (flux, wavelength, error)</span>
+<span class="sd">    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : DataColumnV2</span>
+<span class="sd">        The independent variable (wavelength or velocity).</span>
+<span class="sd">    xmin : DataColumnV2</span>
+<span class="sd">        Lower bound of the x-bins.</span>
+<span class="sd">    xmax : DataColumnV2</span>
+<span class="sd">        Upper bound of the x-bins.</span>
+<span class="sd">    y : DataColumnV2</span>
+<span class="sd">        The dependent variable (flux density).</span>
+<span class="sd">    dy : DataColumnV2</span>
+<span class="sd">        The 1-sigma uncertainty on ``y``.</span>
+<span class="sd">    aux_cols : dict of DataColumnV2</span>
+<span class="sd">        Additional columns (e.g. ``&#39;cont&#39;``, ``&#39;model&#39;``, ``&#39;abs_mask&#39;``).</span>
+<span class="sd">    meta : dict</span>
+<span class="sd">        Header keywords and other metadata.</span>
+<span class="sd">    z_rf : float</span>
+<span class="sd">        Rest-frame redshift used for velocity conversions.</span>
+<span class="sd">    z_em : float</span>
+<span class="sd">        Emission redshift of the target object.</span>
+<span class="sd">    resol : float</span>
+<span class="sd">        Median resolving power :math:`R = \lambda / \Delta\lambda`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># Dati Spaziali (Assi X e Binning)</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">DataColumnV2</span>    <span class="c1"># Lunghezza d&#39;onda / Velocità</span>
@@ -474,7 +533,7 @@
     <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Median resolution</span>
 
 <div class="viewcode-block" id="SpectrumDataV2.from_flat_data">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.SpectrumDataV2.from_flat_data">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2.from_flat_data">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_flat_data</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> 
                        <span class="n">x_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
@@ -486,6 +545,29 @@
                        <span class="n">meta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                        <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
                        <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumDataV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Factory method to create a SpectrumDataV2 from raw NumPy arrays.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_values, y_values, dy_values : np.ndarray</span>
+<span class="sd">            Raw data arrays.</span>
+<span class="sd">        x_unit, y_unit : astropy.units.Unit</span>
+<span class="sd">            Units for the spatial and flux axes.</span>
+<span class="sd">        xmin_values, xmax_values : np.ndarray, optional</span>
+<span class="sd">            Bin edges. If None, defaults to ``x_values``.</span>
+<span class="sd">        aux_data : dict, optional</span>
+<span class="sd">            Dictionary of auxiliary columns: ``{&#39;name&#39;: (values, unit, description)}``.</span>
+<span class="sd">        meta : dict, optional</span>
+<span class="sd">            Metadata dictionary.</span>
+<span class="sd">        z_rf, z_em : float, optional</span>
+<span class="sd">            Redshift properties.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumDataV2</span>
+<span class="sd">            The initialized data object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Assicurare che xmin/xmax abbiano valori (es. copiando x se assenti)</span>
         <span class="k">if</span> <span class="n">xmin_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">xmin_values</span> <span class="o">=</span> <span class="n">x_values</span>
@@ -514,10 +596,41 @@
 
     
 <div class="viewcode-block" id="ComponentDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.ComponentDataV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ComponentDataV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Immutable data structure for a single absorption component (Voigt profile).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable data structure for a single absorption component (Voigt profile).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    id : int</span>
+<span class="sd">        Internal integer ID (from V1 legacy logic).</span>
+<span class="sd">    z : float</span>
+<span class="sd">        Redshift of the component center.</span>
+<span class="sd">    dz : float, optional</span>
+<span class="sd">        Uncertainty on redshift.</span>
+<span class="sd">    logN : float</span>
+<span class="sd">        Logarithmic column density (cm^-2).</span>
+<span class="sd">    dlogN : float, optional</span>
+<span class="sd">        Uncertainty on logN.</span>
+<span class="sd">    b : float</span>
+<span class="sd">        Doppler broadening parameter (km/s).</span>
+<span class="sd">    db : float, optional</span>
+<span class="sd">        Uncertainty on b.</span>
+<span class="sd">    btur : float</span>
+<span class="sd">        Turbulent broadening contribution (km/s).</span>
+<span class="sd">    func : str</span>
+<span class="sd">        Profile function name (default: ``&#39;voigt&#39;``).</span>
+<span class="sd">    series : str</span>
+<span class="sd">        Atomic series name (e.g., ``&#39;Ly_a&#39;``, ``&#39;CIV&#39;``).</span>
+<span class="sd">    chi2 : float, optional</span>
+<span class="sd">        Reduced Chi-Squared of the fit group this component belongs to.</span>
+<span class="sd">    resol : float, optional</span>
+<span class="sd">        Resolution used for the fit.</span>
+<span class="sd">    uuid : str</span>
+<span class="sd">        A globally unique, stable identifier for V2 constraints and linking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># ID is required</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
@@ -547,11 +660,25 @@
 
 
 <div class="viewcode-block" id="ParameterConstraintV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.ParameterConstraintV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParameterConstraintV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Immutable data structure defining the constraint for a single parameter.</span>
+<span class="sd">    Immutable structure defining a constraint for a single parameter.</span>
+
+<span class="sd">    Used by the fitting engine to determine if a parameter is free, fixed,</span>
+<span class="sd">    or linked to another component.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    is_free : bool</span>
+<span class="sd">        If True, the parameter varies during minimization.</span>
+<span class="sd">    target_uuid : str, optional</span>
+<span class="sd">        If set, this parameter is linked to the component with this UUID.</span>
+<span class="sd">    expression : str, optional</span>
+<span class="sd">        A mathematical string expression for linking (e.g. ``&quot;p[&#39;{uuid}&#39;].z&quot;``).</span>
+<span class="sd">    v1_target_id : int, optional</span>
+<span class="sd">        Legacy ID of the target component (for debugging/reconstruction only).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># True if the parameter should be varied during minimization.</span>
     <span class="n">is_free</span><span class="p">:</span> <span class="nb">bool</span>
@@ -567,10 +694,30 @@
 
 
 <div class="viewcode-block" id="SystemListDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.SystemListDataV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SystemListDataV2">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SystemListDataV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Immutable container for system components (list of ComponentDataV2).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable container for system components and constraints.</span>
+
+<span class="sd">    This class replaces the mutable tables used in V1. It holds the list</span>
+<span class="sd">    of components and the maps defining their relationships.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    components : list of ComponentDataV2</span>
+<span class="sd">        The list of absorption components.</span>
+<span class="sd">    v1_header_constraints : dict</span>
+<span class="sd">        Legacy constraints from V1 file headers.</span>
+<span class="sd">    parsed_constraints : dict</span>
+<span class="sd">        Map of (Component UUID, Parameter Name) -&gt; ConstraintDataV2.</span>
+<span class="sd">    v2_constraints_map : dict</span>
+<span class="sd">        Nested map {UUID: {ParamName: Constraint}}.</span>
+<span class="sd">    v1_id_to_uuid_map : dict</span>
+<span class="sd">        Map of integer IDs to V2 UUIDs.</span>
+<span class="sd">    meta : dict</span>
+<span class="sd">        Metadata for the system list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="n">components</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">v1_header_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
@@ -591,38 +738,62 @@
 
 
 <div class="viewcode-block" id="LogEntryV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.LogEntryV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogEntryV2">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LogEntryV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A V2-native log entry. 1-to-1 with a state change.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single entry in the V2 analysis log.</span>
+<span class="sd">    </span>
+<span class="sd">    Corresponds 1-to-1 with a state change in the Session history.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
 
     <span class="c1"># We can add more data later, like execution time, success, etc.</span>
 
 <div class="viewcode-block" id="HistoryLogV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.HistoryLogV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">HistoryLogV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Manages the V2-native log. This is a 1-to-1 list of states</span>
-<span class="sd">    and supports truncation for Option 2.</span>
+<span class="sd">    Manages the linear history of operations (Log V2).</span>
+
+<span class="sd">    This class maintains a list of :class:`LogEntryV2` objects matching the</span>
+<span class="sd">    stack of immutable states in the session manager. It supports truncation</span>
+<span class="sd">    to handle branching history (undo/redo logic).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    entries : list of LogEntryV2</span>
+<span class="sd">        The list of operations performed.</span>
+<span class="sd">    current_index : int</span>
+<span class="sd">        Pointer to the currently active log entry (state).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HistoryLogV2.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogEntryV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># current_index points to the *last valid entry*</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> </div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_v2_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Always True for this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="HistoryLogV2.add_entry">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.HistoryLogV2.add_entry">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_entry">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a new entry, truncating any &quot;future&quot; (undone) logs.</span>
-<span class="sd">        This implements Option 2&#39;s truncation.</span>
+<span class="sd">        Adds a new log entry, truncating any &#39;future&#39; history (from Undo actions).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        recipe_name : str</span>
+<span class="sd">            The name of the recipe executed.</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            The parameters used for the recipe.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Truncate stale future history</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
@@ -639,9 +810,16 @@
 
 
 <div class="viewcode-block" id="HistoryLogV2.undo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.HistoryLogV2.undo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Moves the index back one step. Does not delete.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Moves the history pointer back one step.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if undo was successful, False if already at the beginning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">-=</span> <span class="mi">1</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log index undone to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -650,9 +828,16 @@
 
 
 <div class="viewcode-block" id="HistoryLogV2.redo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.HistoryLogV2.redo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.redo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Moves the index forward one step.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Moves the history pointer forward one step.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if redo was successful, False if already at the latest entry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log index redone to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -664,15 +849,19 @@
 <span class="c1"># --- V1 Compatibility Wrapper ---</span>
 
 <div class="viewcode-block" id="V1LogArtifact">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.structures.V1LogArtifact">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.V1LogArtifact">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">V1LogArtifact</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A read-only wrapper for a V1 log string.</span>
-<span class="sd">    It mimics just enough of the HistoryLogV2 interface</span>
-<span class="sd">    for the LogViewerDialog.</span>
+<span class="sd">    A read-only wrapper for legacy V1 logs.</span>
+
+<span class="sd">    Used to display the history of a session loaded from a V1 archive</span>
+<span class="sd">    without converting it to the full V2 structure.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="V1LogArtifact.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.V1LogArtifact.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v1_log_json</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v1_json</span> <span class="o">=</span> <span class="n">v1_log_json</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v1_json</span> <span class="o">=</span> <span class="n">v1_log_json</span></div>
+
     
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_v2_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>

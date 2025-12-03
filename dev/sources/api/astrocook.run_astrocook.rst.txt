@@ -1,0 +1,7 @@
+astrocook.run\_astrocook module
+===============================
+
+.. automodule:: astrocook.run_astrocook
+   :members:
+   :show-inheritance:
+   :undoc-members:

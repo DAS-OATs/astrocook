@@ -1,0 +1,7 @@
+astrocook.core.spectrum\_operations module
+==========================================
+
+.. automodule:: astrocook.core.spectrum_operations
+   :members:
+   :show-inheritance:
+   :undoc-members:

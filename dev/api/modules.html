@@ -31,6 +31,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
@@ -42,6 +43,7 @@
     <script src="../static/documentation_options.js?v=51b770b3"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/modules';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -52,8 +54,6 @@
         </script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="astrocook package" href="astrocook.html" />
-    <link rel="prev" title="Getting Started" href="../tutorials/getting_started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -154,9 +154,9 @@
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
-    astrocook
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -253,8 +253,10 @@
       
       
       
+        
+      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
         
 
   
@@ -283,9 +285,9 @@
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
-    astrocook
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -346,21 +348,6 @@
       </div>
     
   </div>
-  
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.html">astrocook package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a></li>
-</ul>
-</details></li>
-</ul>
-</div>
-</nav></div>
-    </div>
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
@@ -435,10 +422,50 @@
 <li class="toctree-l4"><a class="reference internal" href="astrocook.core.html#module-astrocook.core">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.html">astrocook.fitting package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.fitting.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.fitting.html#module-astrocook.fitting.voigt_fitter">astrocook.fitting.voigt_fitter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.fitting.html#module-astrocook.fitting.voigt_model">astrocook.fitting.voigt_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.fitting.html#module-astrocook.fitting">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.gui.html">astrocook.gui package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.debug_utils">astrocook.gui.debug_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.identification_viewer_dialog">astrocook.gui.identification_viewer_dialog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.log_scripter_dialog">astrocook.gui.log_scripter_dialog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.main_window">astrocook.gui.main_window module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.pyside_plot">astrocook.gui.pyside_plot module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.qt_workers">astrocook.gui.qt_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.recipe_dialog">astrocook.gui.recipe_dialog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui.system_inspector">astrocook.gui.system_inspector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.gui.html#module-astrocook.gui">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.io.html">astrocook.io package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.io.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.io.html#module-astrocook.io.adapter">astrocook.io.adapter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.io.html#module-astrocook.io.loaders">astrocook.io.loaders module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.io.html#module-astrocook.io.v1_stubs">astrocook.io.v1_stubs module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.io.html#module-astrocook.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.html">astrocook.recipes package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#module-astrocook.recipes.absorbers">astrocook.recipes.absorbers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#module-astrocook.recipes.continuum">astrocook.recipes.continuum module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#module-astrocook.recipes.edit">astrocook.recipes.edit module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#module-astrocook.recipes.flux">astrocook.recipes.flux module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="astrocook.recipes.html#module-astrocook.recipes">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.html#astrocook-run-astrocook-module">astrocook.run_astrocook module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook.run_astrocook">astrocook.run_astrocook module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.html#astrocook.run_astrocook.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook.settings">astrocook.settings module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.html#module-astrocook">Module contents</a></li>
 </ul>
@@ -457,24 +484,6 @@
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="../tutorials/getting_started.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Getting Started</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="astrocook.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook package</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               

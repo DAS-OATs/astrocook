@@ -30,6 +30,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
@@ -41,6 +42,7 @@
     <script src="../../../static/documentation_options.js?v=51b770b3"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/core/photometry';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -152,8 +154,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -279,8 +281,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -423,7 +425,7 @@
 <span class="p">}</span>
 
 <div class="viewcode-block" id="get_filter_transmission">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.photometry.get_filter_transmission">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.photometry.html#astrocook.core.photometry.get_filter_transmission">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_filter_transmission</span><span class="p">(</span><span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_x_nm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a synthetic Gaussian transmission curve for a standard filter</span>
@@ -445,7 +447,7 @@
 
 
 <div class="viewcode-block" id="calculate_synthetic_ab_mag">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.photometry.calculate_synthetic_ab_mag">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.photometry.html#astrocook.core.photometry.calculate_synthetic_ab_mag">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_synthetic_ab_mag</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">filter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculates the synthetic AB magnitude of a spectrum through a filter.</span>
@@ -495,7 +497,7 @@
 
 
 <div class="viewcode-block" id="generate_calibration_curve">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.photometry.generate_calibration_curve">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.photometry.html#astrocook.core.photometry.generate_calibration_curve">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_calibration_curve</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> 
                                <span class="n">magnitudes_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

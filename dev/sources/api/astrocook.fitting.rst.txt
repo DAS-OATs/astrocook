@@ -1,0 +1,29 @@
+astrocook.fitting package
+=========================
+
+Submodules
+----------
+
+astrocook.fitting.voigt\_fitter module
+--------------------------------------
+
+.. automodule:: astrocook.fitting.voigt_fitter
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.fitting.voigt\_model module
+-------------------------------------
+
+.. automodule:: astrocook.fitting.voigt_model
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: astrocook.fitting
+   :members:
+   :show-inheritance:
+   :undoc-members:

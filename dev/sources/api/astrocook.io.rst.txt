@@ -1,0 +1,37 @@
+astrocook.io package
+====================
+
+Submodules
+----------
+
+astrocook.io.adapter module
+---------------------------
+
+.. automodule:: astrocook.io.adapter
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.io.loaders module
+---------------------------
+
+.. automodule:: astrocook.io.loaders
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.io.v1\_stubs module
+-----------------------------
+
+.. automodule:: astrocook.io.v1_stubs
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: astrocook.io
+   :members:
+   :show-inheritance:
+   :undoc-members:

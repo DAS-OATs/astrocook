@@ -30,6 +30,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
@@ -41,6 +42,7 @@
     <script src="../../../static/documentation_options.js?v=51b770b3"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/core/session_manager';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -152,8 +154,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -279,8 +281,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api/modules.html">
-    astrocook
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
   </a>
 </li>
 
@@ -411,10 +413,12 @@
 <span class="n">LogManager</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span><span class="p">,</span> <span class="n">GUILog</span><span class="p">]</span>
 
 <div class="viewcode-block" id="SessionHistory">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SessionHistory</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages the list of states and current index for one session lineage.&quot;&quot;&quot;</span>
     
+<div class="viewcode-block" id="SessionHistory.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">SessionV2</span><span class="p">,</span> <span class="n">log_object</span><span class="p">:</span> <span class="n">LogManager</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initial_state</span><span class="p">,</span> <span class="n">SessionV2</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;SessionHistory must be initialized with a SessionV2 object.&quot;</span><span class="p">)</span>
@@ -431,7 +435,8 @@
         <span class="n">initial_state</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span>
         <span class="c1"># Also set the old .log for V1 recipes if they&#39;re still used</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_object</span><span class="p">,</span> <span class="n">GUILog</span><span class="p">):</span>
-            <span class="n">initial_state</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log_object</span>
+            <span class="n">initial_state</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log_object</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">current_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SessionV2</span><span class="p">:</span>
@@ -454,7 +459,7 @@
         <span class="c1"># --- END FIX ---</span>
 
 <div class="viewcode-block" id="SessionHistory.add_state">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory.add_state">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.add_state">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">SessionV2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a new state, truncating redo history.</span>
@@ -486,19 +491,19 @@
         <span class="c1">#    add_entry call (which truncates the log)</span>
 
 <div class="viewcode-block" id="SessionHistory.can_undo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory.can_undo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.can_undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">can_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="SessionHistory.can_redo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory.can_redo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.can_redo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">can_redo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span></div>
 
 
 <div class="viewcode-block" id="SessionHistory.undo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory.undo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SessionV2</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Moves index back and returns the previous state.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_undo</span><span class="p">():</span>
@@ -514,7 +519,7 @@
 
 
 <div class="viewcode-block" id="SessionHistory.redo">
-<a class="viewcode-back" href="../../../api/astrocook.core.html#astrocook.core.session_manager.SessionHistory.redo">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session_manager.html#astrocook.core.session_manager.SessionHistory.redo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SessionV2</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Moves index forward and returns the next state.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_redo</span><span class="p">():</span>

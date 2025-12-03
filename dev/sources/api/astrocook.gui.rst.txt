@@ -1,0 +1,77 @@
+astrocook.gui package
+=====================
+
+Submodules
+----------
+
+astrocook.gui.debug\_utils module
+---------------------------------
+
+.. automodule:: astrocook.gui.debug_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.identification\_viewer\_dialog module
+---------------------------------------------------
+
+.. automodule:: astrocook.gui.identification_viewer_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.log\_scripter\_dialog module
+------------------------------------------
+
+.. automodule:: astrocook.gui.log_scripter_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.main\_window module
+---------------------------------
+
+.. automodule:: astrocook.gui.main_window
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.pyside\_plot module
+---------------------------------
+
+.. automodule:: astrocook.gui.pyside_plot
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.qt\_workers module
+--------------------------------
+
+.. automodule:: astrocook.gui.qt_workers
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.recipe\_dialog module
+-----------------------------------
+
+.. automodule:: astrocook.gui.recipe_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.system\_inspector module
+--------------------------------------
+
+.. automodule:: astrocook.gui.system_inspector
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: astrocook.gui
+   :members:
+   :show-inheritance:
+   :undoc-members:
