@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
         "brief": "Set session properties.",
-        "details": "Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).",
+        "details": "Set core session properties. For resolution, you can enter a value (R) or a pixel sampling (e.g. '3px').",
         "params": [
             {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
-            {"name": "resol", "type": float, "default": "_current_", "doc": "Resolving Power R (e.g. 50000). Set to 0 if 'resol' column exists."}
+            {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"} 
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -204,8 +204,59 @@ class RecipeEditV2:
 
         return final_expression, extra_vars
     
-    def set_properties(self, z_em: str = '0.0', resol: str = '0.0') -> Optional['SessionV2']:
+    def _parse_resolution_string(self, resol_str: str) -> float:
         """
+        Parses user input for resolution. 
+        Accepts: 
+          - Raw float (e.g. "50000") -> R
+          - "3px", "3.5 px", "3 pixels" -> Estimates R from pixel sampling.
+        """
+        clean_str = resol_str.strip().lower()
+        
+        # Check for pixel syntax
+        if 'px' in clean_str or 'pixel' in clean_str:
+            # Extract the number part
+            match = re.match(r"([\d\.]+)", clean_str)
+            if not match:
+                raise ValueError(f"Could not parse pixel width from '{resol_str}'")
+            
+            pix_fwhm = float(match.group(1))
+            logging.info(f"Estimating Resolution (R) assuming {pix_fwhm:.1f} pixel FWHM...")
+            
+            # 1. Get raw x array
+            x_vals = self._session.spec.x.value
+            
+            if len(x_vals) > 1:
+                # 2. Calculate Median Sampling (dx)
+                dx = np.nanmedian(np.diff(x_vals))
+                
+                # 3. Calculate Median Wavelength (lambda)
+                mid_x = np.nanmedian(x_vals)
+                
+                if dx > 0 and mid_x > 0:
+                    # 4. Calculate R = lambda / (N_pix * dx)
+                    fwhm_wave = pix_fwhm * dx
+                    estimated_R = mid_x / fwhm_wave
+                    
+                    logging.warning(f"  -> Estimated R ~ {estimated_R:.0f} (at {mid_x:.1f}). "
+                                    f"This is an approximation assuming constant sampling.")
+                    return estimated_R
+                else:
+                    logging.warning("Cannot estimate resolution: invalid grid spacing or wavelength.")
+                    return 0.0
+            else:
+                logging.warning("Cannot estimate resolution: spectrum too short.")
+                return 0.0
+                
+        # Fallback: Try standard float conversion
+        try:
+            return float(clean_str)
+        except ValueError:
+            raise ValueError(f"Invalid resolution format: '{resol_str}'. Use a number (R) or 'Npx'.")
+        
+
+    def set_properties(self, z_em: str = '0.0', resol: str = '0.0') -> Optional['SessionV2']:
+        r"""
         Sets the core physical properties of the session.
 
         Parameters
@@ -213,8 +264,10 @@ class RecipeEditV2:
         z_em : str (float)
             Emission redshift of the source.
         resol : str (float)
-            Resolving power :math:`R = \lambda / \Delta\lambda`.
-            If 0.0, the recipe will try to read it from metadata.
+            Resolving power :math:`R = \lambda / \Delta\lambda` (e.g. "50000").
+            Can also be a pixel FWHM proxy (e.g. "3px" or "3.5 pixel") to estimate R
+            from the median sampling.
+            If "0.0", the recipe will try to read it from metadata.
 
         Returns
         -------
@@ -223,7 +276,7 @@ class RecipeEditV2:
         """
         try:
             z_em_f = float(z_em)
-            resol_f = float(resol)
+            resol_f = self._parse_resolution_string(str(resol))
         except ValueError:
             logging.error(msg_param_fail)
             return 0
