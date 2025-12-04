@@ -1,17 +1,17 @@
 import astropy.units as au
 import json
 import logging
+import numpy as np
 from typing import TYPE_CHECKING, Optional
 
-from astrocook.legacy.vars import xem_d
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import HistoryLogV2
 try:
     from astrocook.legacy.functions import trans_parse
 except ImportError:
-    logging.error("V1 'trans_parse' not available. Identification recipe will fail.")
+    # logging.error("V1 'trans_parse' not available. Identification recipe will fail.")
     trans_parse = lambda s: []
 from astrocook.legacy.message import msg_param_fail
 
@@ -56,8 +56,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "btur", "type": float, "default": 0.0, "doc": "Turbulent broadening (km/s)"},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max shift for initial fit (km/s)"}
         ],
-        # We hide this from the menu because it's usually triggered by mouse, 
-        # but keeping it in the schema allows scripting/logging.
         "url": "absorbers_cb.html#add_component" 
     },
     "update_component": {
@@ -71,7 +69,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "series", "type": str, "default": None, "doc": "Series"}
         ],
         "url": "absorbers_cb.html#update_component",
-        "gui_hidden": True # Usually triggered by table edit
+        "gui_hidden": True
     },
     "delete_component": {
         "brief": "Delete component.",
@@ -101,10 +99,23 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b)"},
             {"name": "is_free", "type": bool, "default": None, "doc": "Is the parameter free to vary?"},
             {"name": "expression", "type": str, "default": None, "doc": "Math expression for linking"},
-            {"name": "target_uuid", "type": str, "default": None, "doc": "UUID of the source component (for linking)"} # <--- Added
+            {"name": "target_uuid", "type": str, "default": None, "doc": "UUID of the source component (for linking)"} 
         ],
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
+    },
+    # --- NEW SCHEMA ---
+    "optimize_system": {
+        "brief": "Optimize system (Iterative Fit).",
+        "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID (seed)", "gui_hidden": True},
+            {"name": "max_components", "type": int, "default": 3, "doc": "Maximum number of extra components to try adding."},
+            {"name": "threshold_sigma", "type": float, "default": 3.0, "doc": "Residual threshold (sigma) required to trigger a new component."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "Minimum AIC improvement required to accept a new component."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."}
+        ],
+        "url": "absorbers_cb.html#optimize_system"
     }
 }
 
@@ -126,40 +137,6 @@ class RecipeAbsorbersV2:
                        bypass_scoring: str = 'False',
                        debug_rating: str = 'False',
                        auto_populate: str = 'True') -> 'SessionV2':
-        """
-        Identify absorption lines by correlating spectral regions with templates.
-
-        This recipe orchestrates the full identification workflow:
-        1.  Detects absorption regions in the spectrum.
-        2.  Scans for kinematic candidates of specified multiplets (e.g. CIV doublet).
-        3.  Scores candidates based on profile similarity (R^2).
-        4.  Optionally populates the system list with the best candidates.
-
-        Parameters
-        ----------
-        multiplets : str
-            Comma-separated list of multiplets to search for.
-            Defaults: ``"CIV,SiIV,MgII,Ly_ab"``.
-        mask_col : str
-            Name of the boolean mask column where True indicates 'unabsorbed' (continuum).
-        min_pix_region : str (int)
-            Minimum number of pixels required to define an absorption region.
-        merge_dv : str (float)
-            Velocity threshold (km/s) for merging adjacent regions.
-        score_threshold : str (float)
-            Minimum R^2 correlation score (0.0 to 1.0) required to accept a candidate.
-        bypass_scoring : str (bool)
-            If 'True', accept all kinematic matches regardless of their score.
-        debug_rating : str (bool)
-            If 'True', displays debug plots during the scoring process.
-        auto_populate : str (bool)
-            If 'True', automatically adds the identified components to the system list.
-
-        Returns
-        -------
-        SessionV2
-            A new session with identified regions and (optionally) populated components.
-        """
         try:
             min_pix_i = int(min_pix_region)
             merge_dv_f = float(merge_dv)
@@ -172,8 +149,6 @@ class RecipeAbsorbersV2:
             logging.error(msg_param_fail); return 0
         
         try:
-            # 1. Run the identification, which returns a new spectrum
-            #    with the identification maps in its metadata.
             logging.debug("identify_lines recipe: Calling spec.identify_lines...")
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
@@ -185,43 +160,32 @@ class RecipeAbsorbersV2:
                 debug_rating=debug_rating_b
             )
             
-            # 2. Get the maps from the new spectrum's metadata
             series_map_json = new_spec_v2.meta.get('series_map_json')
             z_map_json = new_spec_v2.meta.get('z_map_json')
 
             if not series_map_json or not z_map_json:
-                logging.warning("identify_lines: Identification ran but produced no component maps. Only spectrum was updated.")
+                logging.warning("identify_lines: Identification ran but produced no component maps.")
                 return self._session.with_new_spectrum(new_spec_v2)
 
-            logging.debug("identify_lines recipe: Calling systs.add_components_from_regions...")
-            
-            # 3. Deserialize maps (they are JSON strings)
             try:
                 series_map = json.loads(series_map_json)
                 z_map = json.loads(z_map_json)
-                # Convert string keys back to int
                 series_map = {int(k): v for k, v in series_map.items()}
                 z_map = {int(k): v for k, v in z_map.items()}
             except Exception as e:
                 logging.error(f"identify_lines: Failed to deserialize component maps: {e}")
-                # Return the spectrum-only update
                 return self._session.with_new_spectrum(new_spec_v2)
 
             if not auto_populate_b:
-                logging.info("identify_lines: Auto-populate disabled. Returning spectrum with suggestions.")
                 return self._session.with_new_spectrum(new_spec_v2)
 
-            # 3. LINKAGE: Call populate_from_identification
             temp_session = self._session.with_new_spectrum(new_spec_v2)
-            
-            # Ensure systs is initialized
             if temp_session.systs is None:
                 from astrocook.core.structures import SystemListDataV2
                 from astrocook.core.system_list import SystemListV2
                 temp_session = temp_session.with_new_system_list(SystemListV2(SystemListDataV2()))
 
             temp_recipe = RecipeAbsorbersV2(temp_session)
-            
             final_session = temp_recipe.populate_from_identification(
                 region_id_col='abs_ids',
                 series_map_json=series_map_json,
@@ -233,37 +197,16 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
             return 0
     
-    def populate_from_identification(self,
-                       region_id_col: str = 'abs_ids',
-                       series_map_json: str = None,
-                       z_map_json: str = None) -> 'SessionV2':
-        """
-        Populate the system list using results from a previous identification step.
-
-        This is typically called automatically by ``identify_lines``, but can be 
-        invoked manually if identification was run without auto-populate.
-
-        Parameters
-        ----------
-        region_id_col : str
-            Name of the column in the spectrum containing region IDs.
-        series_map_json : str
-            JSON string mapping Region ID -> Series Name.
-        z_map_json : str
-            JSON string mapping Region ID -> Redshift.
-        """
+    def populate_from_identification(self, region_id_col: str = 'abs_ids',
+                       series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
         if not series_map_json or not z_map_json:
             logging.error("populate_from_identification: Missing maps.")
             return 0
-            
         try:
-            # Deserialize the maps
             series_map = json.loads(series_map_json)
             z_map = json.loads(z_map_json)
-            # Convert string keys back to int
             series_map = {int(k): v for k, v in series_map.items()}
             z_map = {int(k): v for k, v in z_map.items()}
-
         except Exception as e:
             logging.error(f"populate_from_identification: Failed to deserialize maps: {e}")
             return 0
@@ -283,24 +226,6 @@ class RecipeAbsorbersV2:
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
                       logN: str = '13.5', b: str = '10.0', btur: str = '0.0',
                       z_window_kms: str = '20.0') -> 'SessionV2':
-        """
-        Manually adds a component and immediately attempts a fit.
-
-        Parameters
-        ----------
-        series : str
-            Transition/Multiplet name (e.g. 'Ly_a').
-        z : str (float)
-            Initial redshift guess.
-        logN : str (float)
-            Initial column density guess.
-        b : str (float)
-            Initial doppler parameter guess.
-        btur : str (float)
-            Turbulent broadening.
-        z_window_kms : str (float)
-            Velocity window allowed for the initial fit.
-        """
         try:
             z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
             z_win_f = float(z_window_kms)
@@ -320,7 +245,6 @@ class RecipeAbsorbersV2:
             temp_recipe = RecipeAbsorbersV2(temp_session)
             
             logging.info(f"Auto-fitting new component {added_comp.series}...")
-            # Pass window
             final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=str(z_win_f))
             return final_session
         except Exception as e:
@@ -328,18 +252,6 @@ class RecipeAbsorbersV2:
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
                          b: str = 'None', series: str = 'None') -> 'SessionV2':
-        """
-        Updates the parameters of an existing component.
-
-        Parameters
-        ----------
-        uuid : str
-            Unique identifier of the component.
-        z, logN, b : str (float)
-            New values for parameters. Pass 'None' to keep unchanged.
-        series : str
-            New series name.
-        """
         try:
             changes = {}
             if z != 'None': changes['z'] = float(z)
@@ -353,24 +265,11 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed update_component: {e}"); return 0
 
     def delete_component(self, uuid: str) -> 'SessionV2':
-        """
-        Deletes a component and updates the model.
-
-        Parameters
-        ----------
-        uuid : str
-            Unique identifier of the component to remove.
-        """
         try:
-            # 1. Delete from System List
             new_systs = self._session.systs.delete_component(uuid)
-            
-            # 2. [FIX] Re-calculate Model
-            # We instantiate a temporary fitter with the NEW system list to get the updated flux
             fitter = VoigtFitterV2(self._session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            # 3. Update Spectrum with new model column
             from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
@@ -383,11 +282,7 @@ class RecipeAbsorbersV2:
             )
             
             new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
-            # Reconstruct SpectrumV2 wrapper (preserving history/meta logic is handled by data core)
-            # We reuse the class of the current spectrum to be safe
             new_spec = self._session.spec.__class__(new_spec_data) 
-            
-            # 4. Return complete session
             session_with_spec = self._session.with_new_spectrum(new_spec)
             return session_with_spec.with_new_system_list(new_systs)
 
@@ -396,21 +291,6 @@ class RecipeAbsorbersV2:
             return 0
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0') -> 'SessionV2':
-        """
-        Fits a component (and its connected group) to the spectrum.
-
-        This uses the ``VoigtFitterV2`` engine. It automatically detects
-        which other components are linked or overlapping and fits them all simultaneously.
-
-        Parameters
-        ----------
-        uuid : str
-            The target component UUID.
-        max_nfev : str (int)
-            Maximum number of function evaluations for the optimizer.
-        z_window_kms : str (float)
-            Allowed velocity shift (km/s) from the starting position.
-        """
         try:
             max_nfev_i = int(max_nfev)
             z_win_f = float(z_window_kms)
@@ -419,7 +299,6 @@ class RecipeAbsorbersV2:
             self._session.systs.constraint_model.set_active_components([uuid])
             fitter = VoigtFitterV2(self._session.spec, self._session.systs)
             
-            # Pass window to fit
             new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
             
             if not res or not res.success:
@@ -444,39 +323,15 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
         
-    def update_constraint(self, uuid: str, param: str, 
-                          is_free: bool = None, 
-                          expression: str = None, 
-                          target_uuid: str = None) -> 'SessionV2':
-        """
-        Updates the constraints (fixing/freeing/linking) for a parameter.
-
-        Parameters
-        ----------
-        uuid : str
-            Component UUID.
-        param : str
-            Parameter name ('z', 'logN', 'b').
-        is_free : bool, optional
-            Set to True to unfreeze/unlink. Set to False to freeze/link.
-        expression : str, optional
-            Mathematical expression for linking (e.g. ``"p['uuid2'].z"``).
-        target_uuid : str, optional
-            The UUID of the component this parameter is linked to.
-        """
+    def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
+                          expression: str = None, target_uuid: str = None) -> 'SessionV2':
         try:
-            # 1. Update the Constraint
             new_systs = self._session.systs.update_constraint(
                 uuid, param, is_free, expression, target_uuid
             )
             
-            # 2. [FIX] Immediate Value Update
-            # If we just set a link (expression exists), calculate and apply the value now.
             if expression and not is_free:
                 import numpy as np
-                
-                # A. Build Evaluation Context
-                # We need a dict 'p' where p['uuid'].param works.
                 class CompProxy:
                     def __init__(self, c): self.c = c
                     @property
@@ -492,20 +347,189 @@ class RecipeAbsorbersV2:
                 eval_globals = {'p': comp_map, 'np': np, 'sqrt': np.sqrt, 'log': np.log10}
                 
                 try:
-                    # B. Evaluate
                     new_val = float(eval(expression, eval_globals))
-                    
-                    # C. Update the component value
-                    # We reuse the update_component logic available in SystemListV2
                     logging.info(f"Link established. Auto-updating {param} to {new_val:.4f}")
                     new_systs = new_systs.update_component(uuid, **{param: new_val})
-                    
                 except Exception as e:
                     logging.warning(f"Could not auto-update linked value: {e}")
 
-            # 3. Return a new Session State
             return self._session.with_new_system_list(new_systs)
             
         except Exception as e:
             logging.error(f"Failed update_constraint: {e}", exc_info=True)
             return 0
+
+    # --- NEW METHOD ---
+    def optimize_system(self, uuid: str, max_components: str = '3', 
+                        threshold_sigma: str = '3.0', aic_penalty: str = '5.0',
+                        z_window_kms: str = '100.0') -> 'SessionV2':
+        """
+        Iteratively improves a fit by adding components where residuals are high (Negative Flux).
+        
+        Logic:
+        1. Performs an initial fit of the target system.
+        2. Computes residuals (Flux - Model).
+        3. Scans for the strongest absorption dip (negative residual) in the vicinity.
+        4. If a dip exceeds threshold_sigma, tentatively adds a new component there.
+        5. Re-fits and calculates the Akaike Information Criterion (AIC).
+        6. If AIC improves (decreases) by at least aic_penalty, keeps the new component.
+        7. Repeats until max_components is reached or no improvement is found.
+
+        Parameters
+        ----------
+        uuid : str
+            UUID of the seed component (defines the velocity window center and series).
+        max_components : str (int)
+            Maximum number of additional components to try adding.
+        threshold_sigma : str (float)
+            Significance level (e.g. 3.0 sigma) of the residual dip required to trigger an addition.
+        aic_penalty : str (float)
+            The AIC penalty term. A new model is accepted only if AIC_new < AIC_old - penalty.
+        z_window_kms : str (float)
+            The velocity window size (km/s) around the seed component to search for residuals.
+
+        Returns
+        -------
+        SessionV2
+            The optimized session (or the original if no improvement found).
+        """
+        try:
+            max_comp_i = int(max_components)
+            thresh_f = float(threshold_sigma)
+            aic_pen_f = float(aic_penalty)
+            z_win_f = float(z_window_kms)
+        except ValueError:
+            logging.error(msg_param_fail); return 0
+            
+        logging.info(f"Optimizing system (max {max_comp_i} extra comps)...")
+        
+        # Start with the current state as the best known state
+        current_session = self._session
+        
+        # 1. Baseline Fit
+        # Ensure we start with a fresh fit of the current model to get accurate Chi2/AIC baseline
+        # We use the large window to ensure the chi2 calculation covers the whole complex
+        current_session = current_session.absorbers.fit_component(uuid, z_window_kms=str(z_win_f))
+        if current_session == 0: return 0
+
+        # Retrieve the seed component to know series/redshift
+        target_comp = current_session.systs.get_component_by_uuid(uuid)
+        if not target_comp: 
+            logging.error(f"Optimize: Target component {uuid} not found.")
+            return 0
+        
+        # Calculate Baseline AIC
+        # We need to peek inside the last fit result. 
+        # fit_component doesn't return the 'res' object, only the session.
+        # So we must manually re-run the fitter class here to get metrics.
+        # This is cheap because the parameters are already optimized.
+        
+        # Optimization Loop
+        for i in range(max_comp_i):
+            # A. Metric Calculation (Manual Fitter Invocation)
+            active_uuids = [uuid] # The Fitter expands this group automatically
+            systs = current_session.systs
+            systs.constraint_model.set_active_components(active_uuids)
+            fitter = VoigtFitterV2(current_session.spec, systs)
+            
+            # Run a quick fit (should converge instantly) to get stats
+            _, model_flux, res = fitter.fit(max_nfev=100, z_window_kms=z_win_f, verbose=0)
+            
+            if not res or not res.success:
+                logging.warning("Optimization: Baseline fit check failed. Aborting.")
+                break
+
+            resid_vector = res.fun # Weighted residuals (y - model) / dy from fitter
+            chi2 = np.sum(resid_vector**2)
+            k = len(res.x) # Number of free parameters
+            aic_current = chi2 + 2 * k
+            
+            # B. Find Residual Peak
+            # We need physical residuals to find the dip location
+            # Mask out pixels far from target to avoid fitting noise elsewhere
+            x_full = current_session.spec.x.value
+            y_full = current_session.spec.y.value
+            dy_full = current_session.spec.dy.value
+            
+            # Recompute full model (physical)
+            _, model_full_phys = fitter.compute_model_flux()
+            
+            # Sigma Residuals (y - model) / err
+            # Absorption is y < model => residual is NEGATIVE
+            sigma_resid = (y_full - model_full_phys) / dy_full
+            sigma_resid[~np.isfinite(sigma_resid)] = 0.0
+            
+            # Create Window Mask
+            c_kms = 299792.458
+            lam_target = 0
+            if target_comp.series in ATOM_DATA:
+                lam_target = ATOM_DATA[target_comp.series]['wave'] * (1 + target_comp.z)
+            elif target_comp.series in STANDARD_MULTIPLETS:
+                # Use first line of multiplet as center reference
+                primary = STANDARD_MULTIPLETS[target_comp.series][0]
+                lam_target = ATOM_DATA[primary]['wave'] * (1 + target_comp.z)
+            
+            if lam_target == 0: break
+                
+            dv = c_kms * (x_full - lam_target) / lam_target
+            window_mask = np.abs(dv) < z_win_f
+            
+            masked_resid = sigma_resid.copy()
+            masked_resid[~window_mask] = 0.0
+            
+            # Find strongest absorption feature (minimum value)
+            min_idx = np.argmin(masked_resid)
+            min_val = masked_resid[min_idx]
+            
+            logging.info(f"Iter {i+1}: Current AIC={aic_current:.1f}. Max Resid Sigma={min_val:.1f} (at idx {min_idx})")
+            
+            # Threshold Check (Absorption dips are negative)
+            if min_val > -thresh_f:
+                logging.info("Residuals within threshold. Optimization complete.")
+                break
+                
+            # C. Trial: Add Component
+            z_new = x_full[min_idx] / (lam_target / (1 + target_comp.z)) - 1.0
+            
+            logging.info(f"Trial: Adding component at z={z_new:.5f} (series={target_comp.series})")
+            
+            # Create TRIAL session (branching)
+            # Default guesses: logN=13.0 (weak), b=15.0
+            trial_session = current_session.absorbers.add_component(
+                series=target_comp.series, z=z_new, logN=13.0, b=15.0, z_window_kms=str(z_win_f)
+            )
+            
+            if trial_session == 0: 
+                logging.warning("Failed to add trial component.")
+                break
+
+            # D. Evaluate Trial
+            # We must re-run the fitter manually on the trial session to get the exact AIC
+            # (add_component runs a fit, but we need the raw numbers to compare apples-to-apples)
+            trial_systs = trial_session.systs
+            trial_systs.constraint_model.set_active_components([uuid]) # The group includes the new one now
+            trial_fitter = VoigtFitterV2(trial_session.spec, trial_systs)
+            
+            _, _, res_trial = trial_fitter.fit(max_nfev=500, z_window_kms=z_win_f, verbose=0)
+            
+            if not res_trial or not res_trial.success:
+                logging.warning("Trial fit failed/diverged.")
+                break
+                
+            chi2_trial = np.sum(res_trial.fun**2)
+            k_trial = len(res_trial.x)
+            aic_trial = chi2_trial + 2 * k_trial
+            
+            logging.info(f"Trial AIC={aic_trial:.1f} vs Current {aic_current:.1f}")
+            
+            # E. Decision
+            if aic_trial < aic_current - aic_pen_f:
+                logging.info("Accepting new component.")
+                # Update current_session to the trial result
+                current_session = trial_session
+                # Update the seed uuid? No, keep the original anchor.
+            else:
+                logging.info("Rejecting new component (insufficient improvement).")
+                break
+                
+        return current_session
