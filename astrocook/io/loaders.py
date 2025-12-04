@@ -146,8 +146,17 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
         dy = data[:, 2]
 
         # 5. Units (Assumption: Angstrom for X, dimensionless for Y)
-        x_unit = au.Angstrom 
-        y_unit = au.dimensionless_unscaled 
+        # Heuristic: If median > 500, it's almost certainly Angstroms (UV/Optical)
+        # Lya is 1215 A (121.5 nm). 
+        if np.median(x) > 500:
+            logging.info("Detected Angstroms (median > 500). Converting to nm.")
+            x = x / 10.0
+            x_unit = au.nm
+        else:
+            logging.info("Assuming nm (median < 500).")
+            x_unit = au.nm
+
+        y_unit = au.dimensionless_unscaled
         
         # 6. Build Columns
         x_col = DataColumnV2(x, x_unit, "Wavelength")
