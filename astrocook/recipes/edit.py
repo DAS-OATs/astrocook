@@ -695,9 +695,9 @@ class RecipeEditV2:
             dy=DataColumnV2(dy_final, y_unit),
             aux_cols=new_aux,
             meta=new_meta,
-            z_em=first_spec.z_em,
-            z_rf=first_spec.z_rf,
-            resol=first_spec.resol
+            z_em=first_spec._data.z_em,
+            z_rf=first_spec._data.z_rf,
+            resol=first_spec._data.resol
         )
         
         logging.info(f"Stitched {len(resolved_sessions)} sessions into primary. Total: {len(x_final)} px.")

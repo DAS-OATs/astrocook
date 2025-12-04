@@ -1288,7 +1288,7 @@ class MainWindowV2(QMainWindow):
              else:
                  # Fallback if it's a Quantity or Array directly (legacy safety)
                  is_valid = len(x_col) > 0
-                 
+
         # Add refresh call for the single log viewer
         if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
             if session_state_to_show and self.active_history: # Check for active_history
@@ -1570,7 +1570,10 @@ class MainWindowV2(QMainWindow):
             for r in selected_rows[1:]:
                 others_names.append(self.session_histories[r].display_name)
             
-            stitch_action = QAction(f"Stitch {len(others_names)} sessions into '{primary_history.display_name}'", self)
+            action_text = f"Stitch {len(indexes)} sessions to new..."
+            stitch_action = QAction(action_text, self)
+            stitch_action.setToolTip("Combine selected sessions into a new, separate session entry.")
+            
             stitch_action.triggered.connect(
                 lambda: self._on_stitch_requested(primary_history, others_names)
             )

@@ -8,17 +8,10 @@ from typing import Any, List, Dict
 # These operations typically involve extraction, combination, or file export,
 # requiring the original session state to be preserved and a new entry to be created.
 BRANCHING_RECIPES: List[str] = [
-    'split',                # Split spectrum by range
+    'split',                
+    'stitch',
     'extract_preset',
     'identify_lines',
-    #'part_extract',         # Extracts a sub-part (e.g., specific order/slice)
-    'combine',              # Combines multiple sessions
-    #'equalize',             # Equalizes multiple sessions
-    #'struct_import',        # Imports a structure from another session
-    #'save',                 # File output (should always be a new operation)
-    #'save_pdf',             # PDF output
-    'group_extract',        # Extracts a group into a new structure
-    # You will need to add other recipes here as you migrate them (e.g., 'syst_new')
 ]
 
 def get_recipe_schema(category: str, recipe_name: str) -> Dict[str, Any]:
