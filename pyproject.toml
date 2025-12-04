@@ -41,7 +41,7 @@ classifiers = [
 dependencies = [
     # !! IMPORTANT: List ALL essential runtime dependencies here !!
     # Check your imports carefully. This is a starting guess:
-    "PySide6=6.10",
+    "PySide6>=6.10",
     "wxpython",
     "astropy>=6.1",      # Core astronomy data structures (Table, units)
     "tqdm>=4.66",
