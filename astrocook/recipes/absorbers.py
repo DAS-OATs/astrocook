@@ -8,6 +8,8 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import HistoryLogV2
+from astrocook.gui.debug_utils import GLOBAL_PLOTTER
+
 try:
     from astrocook.legacy.functions import trans_parse
 except ImportError:
@@ -86,7 +88,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
             {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max velocity shift allowed (km/s)"}
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max velocity shift allowed (km/s)"},
+            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"} 
         ],
         "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
@@ -104,7 +107,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
     },
-    # --- NEW SCHEMA ---
     "optimize_system": {
         "brief": "Optimize system (Iterative Fit).",
         "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
@@ -113,7 +115,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_components", "type": int, "default": 3, "doc": "Maximum number of extra components to try adding."},
             {"name": "threshold_sigma", "type": float, "default": 3.0, "doc": "Residual threshold (sigma) required to trigger a new component."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "Minimum AIC improvement required to accept a new component."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."}
+            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."},
+            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth for finding neighbors."},
+            {"name": "patience", "type": int, "default": 2, "doc": "Trials allowed without AIC improvement."}
         ],
         "url": "absorbers_cb.html#optimize_system"
     }
@@ -290,13 +294,14 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed delete_component: {e}", exc_info=True)
             return 0
 
-    def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0') -> 'SessionV2':
+    def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
         try:
             max_nfev_i = int(max_nfev)
             z_win_f = float(z_window_kms)
+            depth_i = int(group_depth)
             if not self._session.systs: return 0
             
-            self._session.systs.constraint_model.set_active_components([uuid])
+            self._session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
             fitter = VoigtFitterV2(self._session.spec, self._session.systs)
             
             new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
@@ -360,9 +365,10 @@ class RecipeAbsorbersV2:
             return 0
 
     # --- NEW METHOD ---
-    def optimize_system(self, uuid: str, max_components: str = '3', 
-                        threshold_sigma: str = '3.0', aic_penalty: str = '5.0',
-                        z_window_kms: str = '100.0') -> 'SessionV2':
+    def optimize_system(self, uuid: str, max_components: str = '10', 
+                        threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
+                        z_window_kms: str = '100.0', group_depth: str = '2',
+                        patience: str = '2') -> 'SessionV2':
         """
         Iteratively improves a fit by adding components where residuals are high (Negative Flux).
         
@@ -387,6 +393,11 @@ class RecipeAbsorbersV2:
             The AIC penalty term. A new model is accepted only if AIC_new < AIC_old - penalty.
         z_window_kms : str (float)
             The velocity window size (km/s) around the seed component to search for residuals.
+        group_depth : str (int)
+            Grouping depth for finding neighboring components to fit together.
+        patience : str (int)
+            Number of components to try adding *without* improvement before giving up 
+            and rolling back to the last best state.
 
         Returns
         -------
@@ -398,138 +409,166 @@ class RecipeAbsorbersV2:
             thresh_f = float(threshold_sigma)
             aic_pen_f = float(aic_penalty)
             z_win_f = float(z_window_kms)
+            depth_i = int(group_depth)
+            patience_i = int(patience)
         except ValueError:
             logging.error(msg_param_fail); return 0
             
-        logging.info(f"Optimizing system (max {max_comp_i} extra comps)...")
+        logging.info(f"Optimizing system (max {max_comp_i} comps, patience {patience_i})...")
         
-        # Start with the current state as the best known state
         current_session = self._session
         
         # 1. Baseline Fit
-        # Ensure we start with a fresh fit of the current model to get accurate Chi2/AIC baseline
-        # We use the large window to ensure the chi2 calculation covers the whole complex
-        current_session = current_session.absorbers.fit_component(uuid, z_window_kms=str(z_win_f))
-        if current_session == 0: return 0
+        # Ensure we start with a fresh fit of the current model
+        # [FIX] Force fitting of ALL components since we are in a trimmed session
+        all_uuids = [c.uuid for c in current_session.systs.components]
+        
+        systs = current_session.systs
+        systs.constraint_model.set_active_components(all_uuids)
+        fitter = VoigtFitterV2(current_session.spec, systs)
+        new_systs, model_flux, res = fitter.fit(max_nfev=500, z_window_kms=z_win_f)
+        
+        # Reconstruct session from baseline fit
+        from astrocook.core.structures import DataColumnV2
+        from copy import deepcopy
+        import dataclasses
+        new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
+        new_aux_cols['model'] = DataColumnV2(values=model_flux, unit=current_session.spec.y.unit, description="Voigt Fit Model")
+        new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
+        new_spec = current_session.spec.__class__(new_spec_data) 
+        current_session = current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
 
-        # Retrieve the seed component to know series/redshift
-        target_comp = current_session.systs.get_component_by_uuid(uuid)
-        if not target_comp: 
-            logging.error(f"Optimize: Target component {uuid} not found.")
+        if not res or not res.success: 
+            logging.warning("Baseline fit failed.")
             return 0
-        
-        # Calculate Baseline AIC
-        # We need to peek inside the last fit result. 
-        # fit_component doesn't return the 'res' object, only the session.
-        # So we must manually re-run the fitter class here to get metrics.
-        # This is cheap because the parameters are already optimized.
-        
-        # Optimization Loop
-        for i in range(max_comp_i):
-            # A. Metric Calculation (Manual Fitter Invocation)
-            active_uuids = [uuid] # The Fitter expands this group automatically
-            systs = current_session.systs
-            systs.constraint_model.set_active_components(active_uuids)
-            fitter = VoigtFitterV2(current_session.spec, systs)
-            
-            # Run a quick fit (should converge instantly) to get stats
-            _, model_flux, res = fitter.fit(max_nfev=100, z_window_kms=z_win_f, verbose=0)
-            
-            if not res or not res.success:
-                logging.warning("Optimization: Baseline fit check failed. Aborting.")
-                break
 
-            resid_vector = res.fun # Weighted residuals (y - model) / dy from fitter
-            chi2 = np.sum(resid_vector**2)
-            k = len(res.x) # Number of free parameters
-            aic_current = chi2 + 2 * k
+        target_comp = current_session.systs.get_component_by_uuid(uuid)
+        if not target_comp: return 0
+        
+        # Helper to get AIC
+        def get_aic(session):
+            # [FIX] Use ALL components for AIC calculation in Optimization
+            all_active = [c.uuid for c in session.systs.components]
+            systs = session.systs
+            systs.constraint_model.set_active_components(all_active)
+            fitter = VoigtFitterV2(session.spec, systs)
             
-            # B. Find Residual Peak
-            # We need physical residuals to find the dip location
-            # Mask out pixels far from target to avoid fitting noise elsewhere
+            # Quick eval
+            _, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win_f, verbose=0)
+            if not res or not res.success: return float('inf'), None
+            
+            chi2 = np.sum(res.fun**2)
+            k = len(res.x)
+            aic = chi2 + 2 * k
+            return aic, fitter, chi2, k
+
+        best_aic, best_fitter, best_chi2, best_k = get_aic(current_session)
+        best_session = current_session
+        logging.info(f"Baseline: AIC={best_aic:.1f}, Chi2={best_chi2:.1f}, k={best_k}")
+        
+        trials_without_improvement = 0
+        
+        for i in range(max_comp_i):
+            # Use CURRENT session state for finding residuals
+            current_aic, current_fitter, _, _ = get_aic(current_session)
+            
             x_full = current_session.spec.x.value
             y_full = current_session.spec.y.value
             dy_full = current_session.spec.dy.value
             
-            # Recompute full model (physical)
-            _, model_full_phys = fitter.compute_model_flux()
+            _, model_full_phys = current_fitter.compute_model_flux()
             
-            # Sigma Residuals (y - model) / err
-            # Absorption is y < model => residual is NEGATIVE
             sigma_resid = (y_full - model_full_phys) / dy_full
             sigma_resid[~np.isfinite(sigma_resid)] = 0.0
             
-            # Create Window Mask
             c_kms = 299792.458
             lam_target = 0
             if target_comp.series in ATOM_DATA:
-                lam_target = ATOM_DATA[target_comp.series]['wave'] * (1 + target_comp.z)
+                lam_target = ATOM_DATA[target_comp.series]['wave']
             elif target_comp.series in STANDARD_MULTIPLETS:
-                # Use first line of multiplet as center reference
                 primary = STANDARD_MULTIPLETS[target_comp.series][0]
-                lam_target = ATOM_DATA[primary]['wave'] * (1 + target_comp.z)
+                lam_target = ATOM_DATA[primary]['wave']
             
             if lam_target == 0: break
                 
-            dv = c_kms * (x_full - lam_target) / lam_target
+            # Convert Angstrom -> nm (since x_full is nm)
+            lam_target_nm = lam_target / 10.0
+            lam_obs_nm = lam_target_nm * (1 + target_comp.z)
+            
+            dv = c_kms * (x_full - lam_obs_nm) / lam_obs_nm
             window_mask = np.abs(dv) < z_win_f
             
             masked_resid = sigma_resid.copy()
-            masked_resid[~window_mask] = 0.0
+            masked_resid[~window_mask] = np.inf # Ignore outside
             
-            # Find strongest absorption feature (minimum value)
             min_idx = np.argmin(masked_resid)
             min_val = masked_resid[min_idx]
             
-            logging.info(f"Iter {i+1}: Current AIC={aic_current:.1f}. Max Resid Sigma={min_val:.1f} (at idx {min_idx})")
+            logging.info(f"Iter {i+1}: Max Resid Sigma={min_val:.1f}")
             
-            # Threshold Check (Absorption dips are negative)
-            if min_val > -thresh_f:
+            # --- DEBUG PLOT ---
+            if False:
+                plot_data = {
+                    'type': 'optimization_step',
+                    'title': f"Optimization Iter {i+1} (Patience {trials_without_improvement})",
+                    'x': x_full,
+                    'y': y_full,
+                    'model': model_full_phys,
+                    'resid': sigma_resid,
+                    'mask': window_mask,
+                    'candidate_x': x_full[min_idx]
+                }
+                GLOBAL_PLOTTER.plot_requested.emit(plot_data)
+
+            if min_val > -thresh_f and trials_without_improvement == 0:
                 logging.info("Residuals within threshold. Optimization complete.")
                 break
-                
-            # C. Trial: Add Component
-            z_new = x_full[min_idx] / (lam_target / (1 + target_comp.z)) - 1.0
+
+            # --- B. Add Candidate ---
+            z_new = x_full[min_idx] / lam_target_nm - 1.0
             
-            logging.info(f"Trial: Adding component at z={z_new:.5f} (series={target_comp.series})")
-            
-            # Create TRIAL session (branching)
-            # Default guesses: logN=13.0 (weak), b=15.0
             trial_session = current_session.absorbers.add_component(
                 series=target_comp.series, z=z_new, logN=13.0, b=15.0, z_window_kms=str(z_win_f)
             )
             
-            if trial_session == 0: 
-                logging.warning("Failed to add trial component.")
-                break
+            if trial_session == 0: break
 
-            # D. Evaluate Trial
-            # We must re-run the fitter manually on the trial session to get the exact AIC
-            # (add_component runs a fit, but we need the raw numbers to compare apples-to-apples)
+            # --- C. Fit Trial ---
+            # [FIX] Force fit of ALL components in the trial
+            all_uuids_trial = [c.uuid for c in trial_session.systs.components]
             trial_systs = trial_session.systs
-            trial_systs.constraint_model.set_active_components([uuid]) # The group includes the new one now
+            trial_systs.constraint_model.set_active_components(all_uuids_trial)
+            
             trial_fitter = VoigtFitterV2(trial_session.spec, trial_systs)
+            new_systs, model_flux, res_trial = trial_fitter.fit(max_nfev=500, z_window_kms=z_win_f, verbose=0)
             
-            _, _, res_trial = trial_fitter.fit(max_nfev=500, z_window_kms=z_win_f, verbose=0)
-            
-            if not res_trial or not res_trial.success:
-                logging.warning("Trial fit failed/diverged.")
-                break
-                
-            chi2_trial = np.sum(res_trial.fun**2)
-            k_trial = len(res_trial.x)
-            aic_trial = chi2_trial + 2 * k_trial
-            
-            logging.info(f"Trial AIC={aic_trial:.1f} vs Current {aic_current:.1f}")
-            
-            # E. Decision
-            if aic_trial < aic_current - aic_pen_f:
-                logging.info("Accepting new component.")
-                # Update current_session to the trial result
-                current_session = trial_session
-                # Update the seed uuid? No, keep the original anchor.
+            if not res_trial or not res_trial.success: break
+
+            # Reconstruct trial session fully
+            new_aux_cols = deepcopy(trial_session.spec._data.aux_cols)
+            new_aux_cols['model'] = DataColumnV2(values=model_flux, unit=trial_session.spec.y.unit, description="Voigt Fit Model")
+            new_spec_data = dataclasses.replace(trial_session.spec._data, aux_cols=new_aux_cols)
+            new_spec = trial_session.spec.__class__(new_spec_data) 
+            trial_session = trial_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+
+            # --- D. Evaluate ---
+            trial_aic, _, t_chi2, t_k = get_aic(trial_session)
+            logging.info(f"  -> Trial AIC: {trial_aic:.1f} (Chi2: {t_chi2:.1f}, k={t_k}) vs Best: {best_aic:.1f}")
+
+            # Update Current (Always move forward to explore)
+            current_session = trial_session
+
+            if trial_aic < best_aic - aic_pen_f:
+                logging.info("  -> New Best Found! Resetting patience.")
+                best_aic = trial_aic
+                best_session = trial_session
+                trials_without_improvement = 0
             else:
-                logging.info("Rejecting new component (insufficient improvement).")
+                trials_without_improvement += 1
+                logging.info(f"  -> No improvement. Patience: {trials_without_improvement}/{patience_i}")
+                
+            if trials_without_improvement >= patience_i:
+                logging.info("Patience exhausted. Rolling back to last best result.")
                 break
                 
-        return current_session
+        return best_session

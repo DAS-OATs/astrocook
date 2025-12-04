@@ -58,7 +58,7 @@ class VoigtModelConstraintV2:
         
         logging.info(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
-    def set_active_components(self, target_uuids: List[str] = None):
+    def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2):
         """
         Defines the set of components to be fit (the "Fluid Group").
 
@@ -74,6 +74,10 @@ class VoigtModelConstraintV2:
         target_uuids : list of str, optional
             The UUIDs of the components the user explicitly selected. 
             If None, ALL components are considered active.
+        group_depth : int, optional
+            How many degrees of separation to traverse when finding connected components.
+            1 = Direct neighbors only.
+            2 = Neighbors of neighbors (Friends of Friends).
         """
         if target_uuids is None:
             self._active_uuids = None

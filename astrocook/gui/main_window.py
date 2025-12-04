@@ -2596,29 +2596,64 @@ class MainWindowV2(QMainWindow):
         a new Matplotlib window. Runs on the main GUI thread.
         """
         try:
-            logging.info(f"Received debug plot request: {plot_data['title']}")
+            import matplotlib.pyplot as plt
             
-            # Create a new, separate figure
-            fig, ax = plt.subplots()
+            logging.info(f"Received debug plot request: {plot_data.get('title', 'Debug Plot')}")
             
-            # Plot the data
-            ax.plot(plot_data['v_compare'], plot_data['Y_data'], 
-                    label='Y_data (Blue Line AOD)', drawstyle='steps-mid')
-            ax.plot(plot_data['v_compare'], plot_data['Y_model'], 
-                    label='Y_model (Red Line AOD * f_ratio)', linestyle='--', drawstyle='steps-mid')
+            # --- OPTIMIZATION PLOT TYPE ---
+            if plot_data.get('type') == 'optimization_step':
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
+                
+                # Extract Data
+                x = plot_data['x']
+                mask = plot_data['mask']
+                
+                # Zoom view to the relevant window
+                x_view = x[mask]
+                if len(x_view) > 0:
+                    pad = (x_view[-1] - x_view[0]) * 0.2
+                    ax1.set_xlim(x_view[0] - pad, x_view[-1] + pad)
+                
+                # Plot Flux
+                ax1.step(x, plot_data['y'], color='black', label='Data', where='mid')
+                ax1.plot(x, plot_data['model'], color='red', label='Model')
+                ax1.axvline(plot_data['candidate_x'], color='green', linestyle='--', label='New Candidate')
+                
+                # Plot Residuals
+                ax2.step(x, plot_data['resid'], color='blue', where='mid')
+                ax2.axhline(0, color='gray', linestyle=':')
+                ax2.axhline(-3, color='orange', linestyle='--') # Typical threshold
+                
+                ax1.set_title(plot_data['title'])
+                ax2.set_xlabel("Wavelength")
+                ax2.set_ylabel("Resid (Sigma)")
+                ax1.legend()
+                
+                plt.show()
+                return
+        
+            else:
+                fig, ax = plt.subplots()
             
-            # Format the plot
-            ax.set_title(plot_data['title'])
-            ax.set_xlabel("Velocity (km/s) [relative to primary line]")
-            ax.set_ylabel("Mean-Subtracted AOD")
-            ax.legend()
-            ax.grid(True, linestyle=':')
-            
-            # Show the plot (non-blocking)
-            plt.show()
+                # Plot the data
+                ax.plot(plot_data['v_compare'], plot_data['Y_data'], 
+                        label='Y_data (Blue Line AOD)', drawstyle='steps-mid')
+                ax.plot(plot_data['v_compare'], plot_data['Y_model'], 
+                        label='Y_model (Red Line AOD * f_ratio)', linestyle='--', drawstyle='steps-mid')
 
+                # Format the plot
+                ax.set_title(plot_data['title'])
+                ax.set_xlabel("Velocity (km/s) [relative to primary line]")
+                ax.set_ylabel("Mean-Subtracted AOD")
+                ax.legend()
+                ax.grid(True, linestyle=':')
+
+                # Show the plot (non-blocking)
+                plt.show()
+            
         except Exception as e:
             logging.error(f"Failed to create debug plot: {e}", exc_info=True)
+        
 
     def open_session_from_path(self, file_path: str):
         """
