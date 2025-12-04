@@ -1,18 +1,17 @@
 import astropy.constants as const
 import astropy.units as au
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import argrelextrema
-import dataclasses
-import logging
-import numpy as np
 from scipy.optimize import least_squares
 from scipy.special import wofz
 from scipy.linalg import pinv
+import dataclasses
+import logging
+import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+from astrocook.core.structures import ComponentDataV2
 from astrocook.core.system_list import SystemListV2
 from .voigt_model import VoigtModelConstraintV2
 
@@ -38,10 +37,13 @@ class VoigtFitterV2:
         self._system_list = system_list
         self._constraints = system_list.constraint_model
         
+        # 1. Prepare Data Arrays
+        # Convert to Angstroms for internal Voigt calc
         self._x_ang = self._spectrum.x.to(au.Angstrom).value
         
         if self._spectrum.cont is not None:
             self._cont = self._spectrum.cont.value
+            # Avoid divide by zero
             self._cont[self._cont == 0] = np.nan 
         else:
             logging.warning("No continuum found. Assuming flux is already normalized.")
@@ -49,7 +51,7 @@ class VoigtFitterV2:
 
         self._y_norm = self._spectrum.y.value / self._cont
         
-        # Clip dy
+        # Clip dy to avoid singularities
         raw_dy = self._spectrum.dy.value
         min_err = 1e-9 * np.nanmedian(self._cont) 
         safe_dy = np.maximum(raw_dy, min_err)
@@ -57,40 +59,48 @@ class VoigtFitterV2:
         
         self._valid_mask = np.isfinite(self._y_norm) & np.isfinite(self._dy_norm) & (self._dy_norm > 0)
         
-        # Placeholders
+        # 2. Resolution Setup
+        # Check for the 'resol' column (created by the Loader/Stitcher)
+        self._resol_column = None
+        self._use_variable_resolution = False
+        
+        if self._spectrum.has_aux_column('resol'):
+            # Using .value (assuming the alias in structures.py is active)
+            self._resol_column = self._spectrum.get_column('resol').value
+            # Check if it actually contains data (not just NaNs)
+            if np.any(np.isfinite(self._resol_column)):
+                self._use_variable_resolution = True
+                logging.info("VoigtFitter: Detected 'resol' column. Using variable resolution.")
+
+        # Fallback to global metadata if no column
+        self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
+        
+        if not self._use_variable_resolution:
+            if self._global_sigma_pix:
+                logging.info(f"VoigtFitter: Global R={self._global_resol_val:.0f} (sigma_pix={self._global_sigma_pix:.3f})")
+            else:
+                logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
+
+        # Placeholders for fitting loop
         self._fit_mask = None
         self._sl = slice(None)
         self._x_calc = None
         self._y_norm_calc = None
         self._dy_norm_calc = None
         self._fit_mask_calc = None
+        self._resol_calc = None # For the slice
         self._cached_tau_static = None
 
-        # --- RESOLUTION LOGIC ---
-        # We determine R and sigma_pix here.
-        # This allows us to use the exact same logic for fitting and saving.
-        self._resol_val, self._resol_sigma_pix = self._determine_resolution()
-        
-        if self._resol_sigma_pix:
-            logging.info(f"VoigtFitter: Resolution R={self._resol_val:.0f} (sigma_pix={self._resol_sigma_pix:.3f})")
-        else:
-            logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
     def _determine_resolution(self) -> Tuple[float, Optional[float]]:
         """
         Robustly finds resolution from Columns, Attributes, or Metadata.
         Returns: (R_value, sigma_pix)
         """
-        # 1. Try Column ('resol')
-        if self._spectrum.has_aux_column('resol'):
-            col = self._spectrum.get_column('resol')
-            if col is not None:
-                val = np.nanmedian(col.value)
-                if np.isfinite(val) and val > 0:
-                    return val, self._calc_sigma_pix_from_R(val)
+        # 1. Try Column ('resol') - Handled in __init__, but fallback logic here
+        # (We already checked column in init, so here we check global props)
 
-        # 2. Try Attribute (spec.resol) - covers SpectrumDataV2 field
-        # Check wrapper property first, then data core
+        # 2. Try Attribute (spec.resol)
         val = getattr(self._spectrum, 'resol', 0.0)
         if (not np.isfinite(val) or val <= 0) and hasattr(self._spectrum, '_data'):
             val = getattr(self._spectrum._data, 'resol', 0.0)
@@ -111,8 +121,6 @@ class VoigtFitterV2:
         if 'resol_fwhm' in meta:
             val_kms = float(meta['resol_fwhm'])
             if np.isfinite(val_kms) and val_kms > 0:
-                # Convert FWHM km/s to R approx for return value
-                # R = c / FWHM
                 c_kms = 299792.458
                 r_approx = c_kms / val_kms
                 return r_approx, self._calc_sigma_pix_from_fwhm_kms(val_kms)
@@ -127,14 +135,28 @@ class VoigtFitterV2:
         dx_avg = np.mean(np.diff(self._x_ang))
         return sigma_ang / dx_avg
 
-    def _calc_sigma_pix_from_fwhm_kms(self, fwhm_kms: float) -> float:
-        """Helper: Convert FWHM (km/s) to Gaussian Sigma in pixels."""
-        mid_wave = np.median(self._x_ang)
+    def _calc_sigma_pix_from_fwhm_kms(self, fwhm_kms: float, local_wave: float = None) -> float:
+        """
+        Convert FWHM (km/s) to Gaussian Sigma in pixels.
+        If local_wave is provided, calculates for that specific wavelength.
+        """
+        wave = local_wave if local_wave is not None else np.median(self._x_ang)
         c_kms = 299792.458
-        fwhm_ang = (fwhm_kms / c_kms) * mid_wave
+        fwhm_ang = (fwhm_kms / c_kms) * wave
         sigma_ang = fwhm_ang / 2.35482
-        dx_avg = np.mean(np.diff(self._x_ang))
-        return sigma_ang / dx_avg
+        
+        # Estimate local sampling (dx)
+        if len(self._x_ang) > 1:
+            if local_wave is not None:
+                idx = np.searchsorted(self._x_ang, local_wave)
+                idx = np.clip(idx, 0, len(self._x_ang)-2)
+                dx = self._x_ang[idx+1] - self._x_ang[idx]
+            else:
+                dx = np.mean(np.diff(self._x_ang))
+        else:
+            dx = 1.0
+            
+        return sigma_ang / dx
 
     def _voigt_optical_depth(self, wave_grid_ang: np.ndarray, 
                              lambda_0: float, f_val: float, gamma: float,
@@ -188,6 +210,7 @@ class VoigtFitterV2:
         """
         p_full = self._constraints.map_p_free_to_full(p_free)
         
+        # 1. Calculate Total Optical Depth (High Res)
         if self._cached_tau_static is not None:
             tau_total = self._cached_tau_static.copy()
         else:
@@ -210,17 +233,56 @@ class VoigtFitterV2:
             
             tau_total += self._compute_tau_component(comp, z, logN, b_val, btur)
 
-        flux_model = np.exp(-tau_total)
-        if self._resol_sigma_pix:
-            flux_model = gaussian_filter1d(flux_model, self._resol_sigma_pix)
-        return flux_model
+        flux_model_high_res = np.exp(-tau_total)
+
+        # 2. Convolve (Handle Variable Resolution)
+        if self._use_variable_resolution and self._resol_calc is not None:
+            # Initialize final array
+            final_convolved = np.zeros_like(flux_model_high_res)
+            
+            # Identify unique resolution values in this slice
+            unique_resols = np.unique(np.round(self._resol_calc, 3))
+            
+            for res_val in unique_resols:
+                if res_val <= 0: continue
+                
+                mask_res = np.isclose(self._resol_calc, res_val, atol=1e-3)
+                if not np.any(mask_res): continue
+                
+                # Calculate sigma in pixels for this segment
+                local_wave = np.median(self._x_calc[mask_res])
+                sigma_pix = self._calc_sigma_pix_from_fwhm_kms(res_val, local_wave)
+                
+                # Convolve the ENTIRE array (to handle edges correctly)
+                temp_conv = gaussian_filter1d(flux_model_high_res, sigma_pix)
+                
+                # Insert into final array
+                final_convolved[mask_res] = temp_conv[mask_res]
+            
+            # Handle pixels with 0 resolution (no convolution)
+            mask_no_res = (self._resol_calc <= 0)
+            if np.any(mask_no_res):
+                final_convolved[mask_no_res] = flux_model_high_res[mask_no_res]
+                
+            return final_convolved
+
+        elif self._global_sigma_pix:
+            # Standard global convolution
+            return gaussian_filter1d(flux_model_high_res, self._global_sigma_pix)
+        else:
+            # No convolution
+            return flux_model_high_res
 
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
         model = self._compute_model(p_free)
         resid = (self._y_norm_calc - model) / self._dy_norm_calc
+        
+        # Handle NaNs/Infs
         resid[~np.isfinite(resid)] = 0.0
+        
         final_resid = resid[self._fit_mask_calc]
         
+        # Optional: Soft penalty for b > 50 km/s to prevent runaways
         p_full = self._constraints.map_p_free_to_full(p_free)
         is_free_mask = self._constraints._param_map['is_free']
         num_params = 4
@@ -240,7 +302,7 @@ class VoigtFitterV2:
             final_resid = np.concatenate((final_resid, penalty_list))
 
         return final_resid
-
+    
     def _find_feature_limits(self, z_center: float, trans_name: str, z_window_kms: float = 150.0) -> Tuple[Optional[float], Optional[float]]:
         atom = ATOM_DATA.get(trans_name)
         if not atom: return None, None
@@ -417,17 +479,26 @@ class VoigtFitterV2:
                             self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
             self._fit_mask &= self._valid_mask
         
+        # Optimization: Slice the arrays to only the relevant fitting regions
         if np.any(self._fit_mask):
             indices = np.where(self._fit_mask)[0]
             self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
         else:
             self._sl = slice(None)
 
+        # Slice Data
         self._x_calc = self._x_ang[self._sl]
         self._y_norm_calc = self._y_norm[self._sl]
         self._dy_norm_calc = self._dy_norm[self._sl]
         self._fit_mask_calc = self._fit_mask[self._sl]
-        logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}).")
+        
+        # Slice Resolution (Crucial for Stitching)
+        if self._use_variable_resolution and self._resol_column is not None:
+            self._resol_calc = self._resol_column[self._sl]
+        else:
+            self._resol_calc = None
+
+        logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
 
         # 2. PRE-CALCULATE BACKGROUND
         if active_uuids is not None:
@@ -495,7 +566,7 @@ class VoigtFitterV2:
         
         # [FIX] Use the exact resolution calculated in __init__
         # This ensures the metadata saved matches the fit physics.
-        fit_resol_val = self._resol_val
+        fit_resol_val = self._global_resol_val
 
         new_components = []
         old_components = self._system_list.components
@@ -504,14 +575,12 @@ class VoigtFitterV2:
         for i, old_comp in enumerate(old_components):
             idx = i * 4
             
-            # 1. Update Parameters (always safe: fixed params just get their old value back)
+            # 1. Update Parameters
             dz_new = p_full_errors[idx] if is_free_mask[idx] else old_comp.dz
             dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else old_comp.dlogN
             db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else old_comp.db
             
             # 2. Determine Metadata (Chi2 / Resol)
-            # Only apply new stats if the component was part of the optimization group.
-            # If active_uuids is None, it means "Fit All", so everyone gets updated.
             if active_uuids is None or old_comp.uuid in active_uuids:
                 comp_chi2 = red_chi2
                 comp_resol = fit_resol_val
@@ -528,19 +597,31 @@ class VoigtFitterV2:
                 dz=dz_new, 
                 dlogN=dlogN_new, 
                 db=db_new,
-                chi2=comp_chi2,   # [FIX] Conditional Update
-                resol=comp_resol  # [FIX] Conditional Update
+                chi2=comp_chi2,
+                resol=comp_resol
             )
             new_components.append(new_comp)
             
         new_data_core = dataclasses.replace(self._system_list._data, components=new_components)
         new_system_list = SystemListV2(new_data_core)
         
+        # 4. Final Flux Model (Un-sliced)
         self._cached_tau_static = None
+        # Temporarily restore full arrays to compute full model
         temp_x = self._x_calc
+        temp_resol = self._resol_calc
         self._x_calc = self._x_ang
+        if self._use_variable_resolution:
+             self._resol_calc = self._resol_column
+        else:
+             self._resol_calc = None
+             
         final_model_norm = self._compute_model(res.x)
+        
+        # Restore slice state
         self._x_calc = temp_x
+        self._resol_calc = temp_resol
+        
         final_model_flux = final_model_norm * self._cont
 
         logging.info(f"Fit complete. Chi2: {chi2:.2f} (Red: {red_chi2:.2f}) over {n_data} pixels.")
@@ -559,9 +640,19 @@ class VoigtFitterV2:
         """
         p_current_free = self._constraints.p_free_vector
         temp_x = self._x_calc
+        temp_resol = self._resol_calc
+        
         self._x_calc = self._x_ang
+        if self._use_variable_resolution:
+             self._resol_calc = self._resol_column
+        else:
+             self._resol_calc = None
+
         self._cached_tau_static = None
         y_model_norm = self._compute_model(p_current_free)
+        
         self._x_calc = temp_x 
+        self._resol_calc = temp_resol
+        
         y_model_phys = y_model_norm * self._cont
         return self._x_ang, y_model_phys
