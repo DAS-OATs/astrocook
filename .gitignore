@@ -40,3 +40,4 @@ docs/api/
 *.gdoc
 dev/
 astrocook_output/
+output/
