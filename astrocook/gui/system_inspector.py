@@ -200,35 +200,85 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         except (ValueError, TypeError): return str(l_data) < str(r_data)
         
 # --- Helper for Voigt Profile (With Convolution) ---
-def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None):
+def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R'):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
-    # 1. Physics
+    # 1. Physics (Unconvolved Flux)
     lambda_c = lambda_0 * (1.0 + z)
     c_kms = 2.99792458e5
     b_safe = max(b_kms, 0.1)
     dop_width_ang = (b_safe / c_kms) * lambda_c
+    
+    if dop_width_ang <= 0: dop_width_ang = 1e-5
+        
     x = (wave_grid_ang - lambda_c) / dop_width_ang
     c_ang_s = 2.99792458e18
     a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
+    
+    # Voigt Calculation
     H_ax = wofz(x + 1j * a).real
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
     flux = np.exp(-tau)
 
     # 2. Convolution (Instrumental Broadening)
-    if resol is not None and resol > 0:
-        # Calculate sigma in pixels
-        # FWHM_lambda = lambda / R  -> sigma_lambda = FWHM / 2.355
-        sigma_ang = (lambda_c / resol) / 2.35482
-        
-        # Determine average pixel spacing of the grid
-        if len(wave_grid_ang) > 1:
-            dx = np.nanmedian(np.diff(wave_grid_ang))
-            if dx > 0:
+    if resol is not None:
+        # CASE A: Variable Resolution (Array passed)
+        if isinstance(resol, (np.ndarray, list)) and len(resol) == len(wave_grid_ang):
+            resol_arr = np.asarray(resol)
+            final_convolved = np.zeros_like(flux)
+            
+            # Optimization: Group by unique resolution values (rounded) to avoid N_pix convolutions
+            # This logic mirrors VoigtFitterV2 exactly
+            unique_resols = np.unique(np.round(resol_arr, 3))
+            
+            dx = np.nanmedian(np.diff(wave_grid_ang)) if len(wave_grid_ang) > 1 else 1.0
+
+            for r_val in unique_resols:
+                if r_val <= 0: continue
+                
+                # Create mask for this resolution value
+                mask_r = np.isclose(resol_arr, r_val, atol=1e-3)
+                
+                # Calculate Sigma
+                if resol_unit == 'km/s':
+                    # resol is FWHM in km/s
+                    fwhm_ang = (r_val / c_kms) * lambda_c
+                    sigma_ang = fwhm_ang / 2.35482
+                else: 
+                    # resol is R
+                    sigma_ang = (lambda_c / r_val) / 2.35482
+
                 sigma_pix = sigma_ang / dx
-                # Only convolve if the broadening is significant (>0.1 pixel)
+                
                 if sigma_pix > 0.1:
-                    flux = gaussian_filter1d(flux, sigma_pix)
+                    # Convolve full array to handle edges, then mask
+                    temp_conv = gaussian_filter1d(flux, sigma_pix)
+                    final_convolved[mask_r] = temp_conv[mask_r]
+                else:
+                    final_convolved[mask_r] = flux[mask_r]
+
+            # Fill in any gaps (where resol <= 0) with unconvolved flux
+            mask_no_res = (resol_arr <= 0)
+            if np.any(mask_no_res):
+                final_convolved[mask_no_res] = flux[mask_no_res]
+            
+            return final_convolved
+
+        # CASE B: Constant Resolution (Scalar passed)
+        elif isinstance(resol, (int, float)) and resol > 0:
+            sigma_ang = 0.0
+            if resol_unit == 'km/s':
+                fwhm_ang = (resol / c_kms) * lambda_c
+                sigma_ang = fwhm_ang / 2.35482
+            else: 
+                sigma_ang = (lambda_c / resol) / 2.35482
+            
+            if len(wave_grid_ang) > 1:
+                dx = np.nanmedian(np.diff(wave_grid_ang))
+                if dx > 0:
+                    sigma_pix = sigma_ang / dx
+                    if sigma_pix > 0.1:
+                        flux = gaussian_filter1d(flux, sigma_pix)
 
     return flux
 
@@ -298,6 +348,7 @@ class VelocityPlotWidget(QWidget):
         self._all_transitions = [] 
         self._panel_map = {} 
         self.axes = [] 
+        self._tick_map_visuals = []
         
         self._current_session = None
         self._current_component = None
@@ -419,17 +470,41 @@ class VelocityPlotWidget(QWidget):
             z_view_center = (1 + self._plot_center_z) * (1 + v_center / c_kms) - 1
             self.inspector.update_z_box(z_view_center)
 
-    def _get_resolution(self) -> float:
-        """Helper to get resolution (R) from the session robustly."""
-        if not self._current_session or not self._current_session.spec:
-            return 0.0
-        if hasattr(self._current_session.spec, '_data'):
-            r = getattr(self._current_session.spec._data, 'resol', 0.0)
-            if r > 0: return r
-        meta = self._current_session.spec.meta
-        if 'resol' in meta: return float(meta['resol'])
-        if 'RESOL' in meta: return float(meta['RESOL'])
-        return 0.0
+    def _get_resolution_at(self, target_wavelength_nm: float) -> tuple[float, str]:
+        """
+        Robustly determines resolution for a specific wavelength.
+        Returns: (Value, Unit) -> (float, 'R' or 'km/s')
+        """
+        sess = self._current_session
+        if not sess or not sess.spec: return 0.0, 'R'
+
+        # 1. Check for 'resol' Column (Variable Resolution)
+        # This contains FWHM in km/s
+        if sess.spec.has_aux_column('resol'):
+            try:
+                resol_col = sess.spec.get_column('resol').value
+                x_arr = sess.spec.x.value # Assumed sorted
+                
+                # Find nearest pixel
+                idx = np.searchsorted(x_arr, target_wavelength_nm)
+                idx = np.clip(idx, 0, len(x_arr)-1)
+                
+                val = resol_col[idx]
+                if np.isfinite(val) and val > 0:
+                    return val, 'km/s'
+            except Exception:
+                pass
+
+        # 2. Fallback to Global Metadata (Usually 'R')
+        if hasattr(sess.spec, '_data'):
+            r = getattr(sess.spec._data, 'resol', 0.0)
+            if r > 0: return r, 'R'
+            
+        meta = sess.spec.meta
+        if 'resol' in meta: return float(meta['resol']), 'R'
+        if 'RESOL' in meta: return float(meta['RESOL']), 'R'
+        
+        return 0.0, 'R'
 
     def _update_plot(self):
         self.fig.clear()
@@ -464,8 +539,11 @@ class VelocityPlotWidget(QWidget):
         x_full = session.spec.x.value
         c_kms = 299792.458
         z_sys = self._plot_center_z
-        
-        resol_val = self._get_resolution()
+
+        # Check for Variable Resolution Column
+        resol_col = None
+        if session.spec.has_aux_column('resol'):
+            resol_col = session.spec.get_column('resol').value
 
         has_cont = session.spec.cont is not None
         y = session.spec.y.value
@@ -521,6 +599,20 @@ class VelocityPlotWidget(QWidget):
             v_p = v[mask]; y_p = y_norm[mask]; dy_p = dy_norm[mask]
             
             if len(v_p) == 0: continue
+            
+            # Try to get pixel-by-pixel resolution slice
+            res_arg = None
+            res_unit = 'R'
+            
+            if resol_col is not None:
+                # Extract the slice matching the velocity mask
+                res_arg = resol_col[mask]
+                res_unit = 'km/s' # resol column is FWHM km/s
+                res_display_val = np.nanmedian(res_arg)
+            else:
+                # Fallback to scalar
+                res_arg, res_unit = self._get_resolution_at(lam_obs)
+                res_display_val = res_arg
 
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
@@ -541,7 +633,7 @@ class VelocityPlotWidget(QWidget):
                             prof = calc_voigt_profile(
                                 x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
                                 sel_c.z, 10**sel_c.logN, sel_c.b,
-                                resol=resol_val # <<< PASS RESOLUTION
+                                resol=res_arg, resol_unit=res_unit # PASSING ARRAY OR SCALAR
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
@@ -578,6 +670,11 @@ class VelocityPlotWidget(QWidget):
             ax_main.axvline(0, color='gray', ls=':', lw=0.8)
             ax_main.axhline(1.0, color='gray', ls=':', lw=0.8)
             ax_main.axhline(0.0, color='gray', ls=':', lw=0.8)
+
+            # Show Resolution Info in Corner
+            res_label = f"R~{res_display_val:.0f}" if res_unit == 'R' else f"FWHM~{res_display_val:.1f}k"
+            ax_main.text(0.02, 0.95, res_label, transform=ax_main.transAxes, ha='left', va='top', fontsize=8, color='#555')
+
             ax_main.text(0.98, 0.85, trans_name, transform=ax_main.transAxes, ha='right', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax_main.set_xlim(self._xlim)
@@ -641,13 +738,14 @@ class VelocityPlotWidget(QWidget):
         b = self.cursor_b
         
         session = self._current_session
-        x_unit = session.spec.x.unit
-        resol_val = self._get_resolution()
+        x_full = session.spec.x.value # Assuming sorted
+        resol_col = None
+        if session.spec.has_aux_column('resol'):
+             resol_col = session.spec.get_column('resol').value
 
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
             
-            # --- [NEW] Multiplet Handling for Cursor ---
             # 1. Identify Siblings (Series Members)
             siblings = [trans_name]
             for series_key, members in STANDARD_MULTIPLETS.items():
@@ -665,7 +763,22 @@ class VelocityPlotWidget(QWidget):
             v_grid = np.linspace(v_min, v_max, 300)
             lam_grid_ang = lam_obs_center_ang * (1 + v_grid / c_kms)
             
-            # 3. Calculate Composite Profile (Multiply Fluxes)
+            # --- PREPARE RESOLUTION FOR CURSOR GRID ---
+            res_arg = None
+            res_unit = 'R'
+            
+            if resol_col is not None:
+                # Interpolate resolution onto the display grid
+                # Convert grid to nm for interpolation
+                lam_grid_nm = lam_grid_ang / 10.0 
+                res_arg = np.interp(lam_grid_nm, x_full, resol_col)
+                res_unit = 'km/s'
+            else:
+                 # Fallback scalar
+                 lam_cursor_obs_nm = (lam_0_ang * (1+z_new)) / 10.0
+                 res_arg, res_unit = self._get_resolution_at(lam_cursor_obs_nm)
+
+            # --- CALCULATE ---
             total_prof = np.ones_like(v_grid)
             
             for sibling in siblings:
@@ -680,7 +793,7 @@ class VelocityPlotWidget(QWidget):
                 prof = calc_voigt_profile(
                     lam_grid_ang, s_info['wave'], s_info['f'], s_info['gamma'],
                     z_new, N, b,
-                    resol=resol_val # <<< PASS RESOLUTION
+                    resol=res_arg, resol_unit=res_unit # PASSING ARRAY
                 )
                 total_prof *= prof
             
