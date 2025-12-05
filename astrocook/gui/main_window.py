@@ -141,7 +141,9 @@ class MainWindowV2(QMainWindow):
         self._setup_collapse_buttons()
 
         # --- ** Central Stack Views ** ---
-        self._setup_plot_view(initial_session)
+        valid_session = initial_session if isinstance(initial_session, SessionV2) else None
+        
+        self._setup_plot_view(valid_session)
         self._setup_empty_view()
         
         # --- 3. Set Central Widget THIRD ---
@@ -259,6 +261,9 @@ class MainWindowV2(QMainWindow):
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
         font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
+        
+        # ENABLE MULTI-SELECTION
+        self.session_list_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         
         # 1. Set the context menu policy
         self.session_list_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1274,8 +1279,16 @@ class MainWindowV2(QMainWindow):
                                  force_autoscale: bool = False, auto_show_aux: Optional[str] = None):
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
-        is_valid = bool(session_state_to_show and session_state_to_show.spec and len(session_state_to_show.spec.x) > 0)
-        
+        is_valid = False
+        if session_state_to_show and session_state_to_show.spec:
+             # Check if x exists and has data points
+             x_col = session_state_to_show.spec.x
+             if hasattr(x_col, 'values'):
+                 is_valid = len(x_col.values) > 0
+             else:
+                 # Fallback if it's a Quantity or Array directly (legacy safety)
+                 is_valid = len(x_col) > 0
+
         # Add refresh call for the single log viewer
         if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
             if session_state_to_show and self.active_history: # Check for active_history
@@ -1497,11 +1510,16 @@ class MainWindowV2(QMainWindow):
             self, 
             "Open Spectrum File", 
             os.getcwd(),
-            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;All Files (*)"
+            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;Text Files (*.txt);;All Files (*)"
         )
         
         if file_name:
-            format_name = 'generic_spectrum'
+            # [FIX] Auto-detect format based on extension
+            if file_name.lower().endswith('.txt') or file_name.lower().endswith('.dat'):
+                format_name = 'ascii_resvel_header'
+            else:
+                format_name = 'generic_spectrum'
+            
             session_name = os.path.splitext(os.path.basename(file_name))[0]
             gui_context = self.mock_gui_context
 
@@ -1527,28 +1545,49 @@ class MainWindowV2(QMainWindow):
     def _on_session_list_context_menu(self, pos: QPoint):
         """
         Handles the right-click on the session list.
+        Supports Multi-Selection for Stitching.
         """
-        index = self.session_list_view.indexAt(pos)
-        if not index.isValid():
-            return # Clicked on empty space
+        # 1. Get all selected indexes
+        indexes = self.session_list_view.selectionModel().selectedIndexes()
+        
+        if not indexes:
+            return
 
-        row = index.row()
-        if 0 <= row < len(self.session_histories):
-            # Get the *clicked* history item
-            """
-        Handles the right-click on the session list.
-        """
-        index = self.session_list_view.indexAt(pos)
-        if not index.isValid():
-            return 
+        menu = QMenu(self)
 
-        row = index.row()
+        # --- MULTI-SELECTION CASE (STITCHING) ---
+        if len(indexes) > 1:
+            # Sort rows to determine primary (the topmost selected)
+            selected_rows = sorted([i.row() for i in indexes])
+            
+            if not all(0 <= r < len(self.session_histories) for r in selected_rows):
+                return
+
+            primary_idx = selected_rows[0]
+            primary_history = self.session_histories[primary_idx]
+            
+            others_names = []
+            for r in selected_rows[1:]:
+                others_names.append(self.session_histories[r].display_name)
+            
+            action_text = f"Stitch {len(indexes)} sessions to new..."
+            stitch_action = QAction(action_text, self)
+            stitch_action.setToolTip("Combine selected sessions into a new, separate session entry.")
+            
+            stitch_action.triggered.connect(
+                lambda: self._on_stitch_requested(primary_history, others_names)
+            )
+            menu.addAction(stitch_action)
+            
+            menu.exec(self.session_list_view.mapToGlobal(pos))
+            return
+
+        # --- SINGLE SELECTION CASE (Existing Logic) ---
+        row = indexes[0].row()
         if not (0 <= row < len(self.session_histories)):
             return
             
         history_item = self.session_histories[row]
-        session_name = history_item.display_name
-        menu = QMenu(self)
 
         # --- *** NEW: Info action *** ---
         info_action = QAction(f"Info", self)
@@ -1593,6 +1632,22 @@ class MainWindowV2(QMainWindow):
         menu.addAction(close_action)
         
         menu.exec(self.session_list_view.mapToGlobal(pos))
+
+    def _on_stitch_requested(self, primary_history, others_names: List[str]):
+        """
+        Callback for the Stitch menu action.
+        Triggers the recipe on the primary session, passing names of others.
+        """
+        # We must switch active history to the primary one so the RecipeWorker works on the correct object
+        if self.active_history != primary_history:
+            self.active_history = primary_history
+            self._update_view_for_session(primary_history.current_state, set_current_list_item=True)
+
+        # Call the recipe via the standard pipeline
+        # We pass a list of STRINGS (names). The hybrid recipe will resolve them.
+        params = {'other_sessions': others_names}
+        
+        self._on_recipe_requested("edit", "stitch", params, {})
     
     def _on_session_info(self, history_item: SessionHistory):
         """ Displays an info box for the selected session. """
@@ -2541,29 +2596,64 @@ class MainWindowV2(QMainWindow):
         a new Matplotlib window. Runs on the main GUI thread.
         """
         try:
-            logging.info(f"Received debug plot request: {plot_data['title']}")
+            import matplotlib.pyplot as plt
             
-            # Create a new, separate figure
-            fig, ax = plt.subplots()
+            logging.info(f"Received debug plot request: {plot_data.get('title', 'Debug Plot')}")
             
-            # Plot the data
-            ax.plot(plot_data['v_compare'], plot_data['Y_data'], 
-                    label='Y_data (Blue Line AOD)', drawstyle='steps-mid')
-            ax.plot(plot_data['v_compare'], plot_data['Y_model'], 
-                    label='Y_model (Red Line AOD * f_ratio)', linestyle='--', drawstyle='steps-mid')
+            # --- OPTIMIZATION PLOT TYPE ---
+            if plot_data.get('type') == 'optimization_step':
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
+                
+                # Extract Data
+                x = plot_data['x']
+                mask = plot_data['mask']
+                
+                # Zoom view to the relevant window
+                x_view = x[mask]
+                if len(x_view) > 0:
+                    pad = (x_view[-1] - x_view[0]) * 0.2
+                    ax1.set_xlim(x_view[0] - pad, x_view[-1] + pad)
+                
+                # Plot Flux
+                ax1.step(x, plot_data['y'], color='black', label='Data', where='mid')
+                ax1.plot(x, plot_data['model'], color='red', label='Model')
+                ax1.axvline(plot_data['candidate_x'], color='green', linestyle='--', label='New Candidate')
+                
+                # Plot Residuals
+                ax2.step(x, plot_data['resid'], color='blue', where='mid')
+                ax2.axhline(0, color='gray', linestyle=':')
+                ax2.axhline(-3, color='orange', linestyle='--') # Typical threshold
+                
+                ax1.set_title(plot_data['title'])
+                ax2.set_xlabel("Wavelength")
+                ax2.set_ylabel("Resid (Sigma)")
+                ax1.legend()
+                
+                plt.show()
+                return
+        
+            else:
+                fig, ax = plt.subplots()
             
-            # Format the plot
-            ax.set_title(plot_data['title'])
-            ax.set_xlabel("Velocity (km/s) [relative to primary line]")
-            ax.set_ylabel("Mean-Subtracted AOD")
-            ax.legend()
-            ax.grid(True, linestyle=':')
-            
-            # Show the plot (non-blocking)
-            plt.show()
+                # Plot the data
+                ax.plot(plot_data['v_compare'], plot_data['Y_data'], 
+                        label='Y_data (Blue Line AOD)', drawstyle='steps-mid')
+                ax.plot(plot_data['v_compare'], plot_data['Y_model'], 
+                        label='Y_model (Red Line AOD * f_ratio)', linestyle='--', drawstyle='steps-mid')
 
+                # Format the plot
+                ax.set_title(plot_data['title'])
+                ax.set_xlabel("Velocity (km/s) [relative to primary line]")
+                ax.set_ylabel("Mean-Subtracted AOD")
+                ax.legend()
+                ax.grid(True, linestyle=':')
+
+                # Show the plot (non-blocking)
+                plt.show()
+            
         except Exception as e:
             logging.error(f"Failed to create debug plot: {e}", exc_info=True)
+        
 
     def open_session_from_path(self, file_path: str):
         """

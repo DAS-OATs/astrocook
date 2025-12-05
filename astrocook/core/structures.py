@@ -69,6 +69,20 @@ class DataColumnV2:
         """Returns the data as an Astropy Quantity."""
         return au.Quantity(self.values, self.unit)
 
+    # --- [FIX] Compatibility Aliases ---
+    @property
+    def value(self) -> np.ndarray:
+        """Alias for .values to support legacy/Astropy-style access."""
+        return self.values
+
+    def __len__(self):
+        """Allows len(column) to work."""
+        return len(self.values)
+    
+    def __array__(self):
+        """Allows np.array(column) to work."""
+        return self.values
+
 @dataclass(frozen=True)
 class SpectrumDataV2:
     """

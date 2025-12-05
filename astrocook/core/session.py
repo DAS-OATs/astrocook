@@ -68,11 +68,34 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
     archive_root = ""
     v2_metadata = None
     
+    # --- 1. CHECK V2 NATIVE LOADERS FIRST ---
+    # Import the getter from the new module
+    from astrocook.io.loaders import get_loader
+    
+    v2_loader = get_loader(format_name)
+    if v2_loader:
+        logging.info(f"Using V2 Native Loader for format '{format_name}' on {archive_path}")
+        try:
+            # Call the pure loader (returns SpectrumDataV2)
+            spec_data = v2_loader(archive_path)
+
+            # Wrap in API object
+            spectrum_v2 = SpectrumV2(data=spec_data)
+
+            # Create session (SystemList empty for raw loads)
+            return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
+
+        except Exception as e:
+            logging.error(f"V2 Loader '{format_name}' failed: {e}")
+            # If specific loader fails, do NOT fall back to generic FITS. Fail hard.
+            return 0
+
+    # --- 2. EXISTING LEGACY LOGIC (ACS/FITS) ---
     try:
         archive_path_lower = archive_path.lower()
         
         if archive_path_lower.endswith('.acs2') or archive_path_lower.endswith('.tar.gz'):
-            # ... (unpacking logic) ...
+            # ... (unpacking logic unchanged) ...
             logging.debug(f"Unpacking V2 archive: {archive_path}")
             temp_dir = tempfile.mkdtemp()
             with tarfile.open(archive_path, 'r:gz') as tar:
@@ -89,7 +112,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         elif archive_path_lower.endswith('.acs'):
-            # ... (unpacking logic) ...
+            # ... (unpacking logic unchanged) ...
             logging.debug(f"Unpacking V1 archive: {archive_path}")
             archive_manager = V1ArchiveManager(archive_path)
             temp_dir = archive_manager.unpack()
@@ -102,13 +125,13 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         else:
-            # ... (single FITS logic) ...
-            logging.debug("Loading single FITS file.")
+            # Standard FITS fallback
+            logging.debug("Loading single FITS file (Legacy Path).")
             temp_dir = None
             archive_root = os.path.splitext(archive_path)[0]
             spec_file_path = archive_path
         
-        # --- V2 METADATA LOADING (Still needed for constraints) ---
+        # --- V2 METADATA ---
         if temp_dir:
             meta_fname = f"{os.path.basename(archive_root)}_meta.json"
             meta_file_path = os.path.join(temp_dir, meta_fname)
@@ -119,47 +142,22 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                     logging.info("Loaded V2 metadata from _meta.json.")
                 except Exception as e:
                     logging.error(f"Failed to load _meta.json: {e}")
-            else:
-                logging.debug("No _meta.json found (assuming V1 archive or single FITS).")
 
-        # 1. Check if a V2 Native Loader exists for this format
-        v2_loader = get_loader(format_name)
-    
-        if v2_loader:
-            logging.info(f"Using V2 Native Loader for format '{format_name}'")
-            try:
-                # Call the pure loader
-                spec_data = v2_loader(spec_file_path)
-
-                # Wrap in API object
-                spectrum_v2 = SpectrumV2(data=spec_data)
-
-                # Create session (SystemList will be empty initially for raw loads)
-                return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
-
-            except Exception as e:
-                logging.error(f"V2 Loader failed: {e}")
-                return 0
-
-        # 1. Load Spectrum
+        # --- LEGACY LOAD ---
         spectrum_v2 = load_and_migrate_structure(
             archive_root, 'spec', gui_context, format_name, 
             spec_file_path=spec_file_path,
             v2_metadata=v2_metadata 
         )
 
-        # 2. Load System List
         system_list_v2 = load_and_migrate_structure(
             archive_root, 'systs', gui_context, format_name,
             v2_metadata=v2_metadata
         )
 
         if not spectrum_v2: 
-            raise RuntimeError("Spectrum loading failed, aborting session creation.")
+            raise RuntimeError(f"Legacy Spectrum loading failed for {archive_path}")
 
-        logging.debug("Ignoring saved log on load, as per new design.")
-            
-        # Call the simplified constructor
         new_session = SessionV2(
             name=name, 
             gui=gui_context, 

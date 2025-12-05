@@ -511,7 +511,7 @@ class SystemListV2:
                                        v2_constraints_map=current_v2_map)
         return SystemListV2(new_data)
 
-    def get_connected_group(self, seed_uuids: List[str]) -> Set[str]:
+    def get_connected_group(self, seed_uuids: List[str], max_depth: int = 2) -> Set[str]:
         """
         Finds a set of components that must be fitted together.
 
@@ -525,100 +525,88 @@ class SystemListV2:
         ----------
         seed_uuids : list of str
             The UUIDs of the components initially selected for fitting.
+        max_depth : int, optional
+            How many degrees of separation to traverse.
+            1 = Direct neighbors only.
+            2 = Neighbors of neighbors (Friends of Friends).
 
         Returns
         -------
         set of str
             The full set of UUIDs in the connected group.
         """
-        if not seed_uuids:
-            return set()
+        if not seed_uuids: return set()
         
         c_kms = 299792.458
-        seeds = []
         comp_map = {c.uuid: c for c in self.components}
-        
-        for uuid in seed_uuids:
-            if uuid in comp_map:
-                seeds.append(comp_map[uuid])
-        
-        group_uuids = set(seed_uuids)
+        constraints_map = self._data.v2_constraints_map
 
+        # Helper: Get rest wavelengths
         def get_all_w_rest(series_name: str) -> List[float]:
-            if series_name in ATOM_DATA:
-                return [ATOM_DATA[series_name]['wave']]
+            if series_name in ATOM_DATA: return [ATOM_DATA[series_name]['wave']]
             if series_name in STANDARD_MULTIPLETS:
                 waves = []
                 for line_name in STANDARD_MULTIPLETS[series_name]:
-                    if line_name in ATOM_DATA:
-                        waves.append(ATOM_DATA[line_name]['wave'])
+                    if line_name in ATOM_DATA: waves.append(ATOM_DATA[line_name]['wave'])
                 if waves: return waves
             return []
 
-        def are_same_species(s1: str, s2: str) -> bool:
-            if s1 == s2: return True
-            parent1, parent2 = None, None
-            for k, members in STANDARD_MULTIPLETS.items():
-                if s1 in members: parent1 = k
-                if s2 in members: parent2 = k
-            if parent1 and parent2 and parent1 == parent2: return True
-            if s1 in STANDARD_MULTIPLETS and s2 in STANDARD_MULTIPLETS[s1]: return True
-            if s2 in STANDARD_MULTIPLETS and s1 in STANDARD_MULTIPLETS[s2]: return True
+        # Helper: Check overlap
+        def are_overlapping(c1, c2):
+            threshold_kms = max(4.0 * max(c1.b, c2.b), 30.0)
+            
+            # 1. Constraints
+            if c1.uuid in constraints_map:
+                for constr in constraints_map[c1.uuid].values():
+                    if constr.target_uuid == c2.uuid: return True
+            if c2.uuid in constraints_map:
+                for constr in constraints_map[c2.uuid].values():
+                    if constr.target_uuid == c1.uuid: return True
+
+            # 2. Spectral Overlap
+            waves1 = get_all_w_rest(c1.series)
+            waves2 = get_all_w_rest(c2.series)
+            if not waves1 or not waves2: return False
+            
+            obs1 = [w * (1 + c1.z) for w in waves1]
+            obs2 = [w * (1 + c2.z) for w in waves2]
+            
+            for w1 in obs1:
+                for w2 in obs2:
+                    lam_avg = (w1 + w2) / 2.0
+                    dv = c_kms * abs(w1 - w2) / lam_avg
+                    if dv < threshold_kms: return True
+            
+            # 3. Kinematic (Same Series/Species)
+            if c1.series == c2.series:
+                dz = abs(c1.z - c2.z)
+                dv_kin = c_kms * dz / (1 + c1.z)
+                if dv_kin < threshold_kms: return True
+                
             return False
 
-        constraints_map = self._data.v2_constraints_map
-
-        for seed in seeds:
-            seed_waves_rest = get_all_w_rest(seed.series)
-            seed_z = seed.z
-            seed_b = seed.b
-            seed_waves_obs = [w * (1 + seed_z) for w in seed_waves_rest]
-
+        # --- Limited Transitive Closure Loop ---
+        group_uuids = set(seed_uuids)
+        
+        for _ in range(max_depth):
+            added_count = 0
+            current_members = [comp_map[u] for u in group_uuids if u in comp_map]
+            
             for other in self.components:
-                if other.uuid in group_uuids: continue 
+                if other.uuid in group_uuids: continue
                 
+                # Check against ALL current group members
                 is_connected = False
-                
-                # 1. Parameter Links
-                if seed.uuid in constraints_map:
-                    for constr in constraints_map[seed.uuid].values():
-                        if constr.target_uuid == other.uuid:
-                            is_connected = True; break
-                
-                if not is_connected and other.uuid in constraints_map:
-                    for constr in constraints_map[other.uuid].values():
-                        if constr.target_uuid == seed.uuid:
-                            is_connected = True; break
-                
-                if is_connected:
-                    group_uuids.add(other.uuid); continue
-
-                threshold_kms = max(4.0 * max(seed_b, other.b), 30.0)
-
-                # 2. Spectral Overlap
-                if seed_waves_obs:
-                    other_waves_rest = get_all_w_rest(other.series)
-                    other_waves_obs = [w * (1 + other.z) for w in other_waves_rest]
-                    
-                    for w1_obs in seed_waves_obs:
-                        for w2_obs in other_waves_obs:
-                            lam_avg = (w1_obs + w2_obs) / 2.0
-                            dv = c_kms * abs(w1_obs - w2_obs) / lam_avg
-                            if dv < threshold_kms:
-                                is_connected = True; break
-                        if is_connected: break
-                
-                if is_connected:
-                    group_uuids.add(other.uuid); continue
-
-                # 3. Kinematic Proximity (Same Species)
-                if are_same_species(seed.series, other.series):
-                    dz = abs(seed_z - other.z)
-                    dv_kin = c_kms * dz / (1 + seed_z)
-                    if dv_kin < threshold_kms:
+                for member in current_members:
+                    if are_overlapping(member, other):
                         is_connected = True
-                        
+                        break
+                
                 if is_connected:
                     group_uuids.add(other.uuid)
-                    
+                    added_count += 1
+            
+            if added_count == 0:
+                break
+        
         return group_uuids
