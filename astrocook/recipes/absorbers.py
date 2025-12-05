@@ -299,16 +299,37 @@ class RecipeAbsorbersV2:
             max_nfev_i = int(max_nfev)
             z_win_f = float(z_window_kms)
             depth_i = int(group_depth)
+            
             if not self._session.systs: return 0
             
-            self._session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
-            fitter = VoigtFitterV2(self._session.spec, self._session.systs)
+            # [CRITICAL] 1. Capture Original State
+            # We must restore the input session's state later to avoid side effects in the GUI or subsequent scripts.
+            original_active = self._session.systs.constraint_model._active_uuids
             
-            new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
-            
-            if not res or not res.success:
-                logging.warning(f"Fit failed: {res.message if res else 'No result'}")
-            
+            try:
+                # 2. Apply Transient Fit Mask
+                # This restricts the fit to the specific group, but DOES NOT change the permanent 'is_free' flags in the data.
+                self._session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
+                
+                # 3. Run Fit
+                fitter = VoigtFitterV2(self._session.spec, self._session.systs)
+                new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
+                
+                if not res or not res.success:
+                    logging.warning(f"Fit failed: {res.message if res else 'No result'}")
+
+            finally:
+                # [CRITICAL] 4. Restore Input Session State
+                # Whether the fit succeeds or fails, we unmask the input session.
+                self._session.systs.constraint_model.set_active_components(original_active)
+
+            # 5. sanitize Output Session
+            # The new system list is created fresh from data, so it should be clean.
+            # But we explicitly force it to None to be 100% sure it doesn't carry over internal state.
+            if new_systs.constraint_model:
+                new_systs.constraint_model.set_active_components(None)
+
+            # 6. Construct Result
             from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
@@ -370,39 +391,7 @@ class RecipeAbsorbersV2:
                         z_window_kms: str = '100.0', group_depth: str = '2',
                         patience: str = '2') -> 'SessionV2':
         """
-        Iteratively improves a fit by adding components where residuals are high (Negative Flux).
-        
-        Logic:
-        1. Performs an initial fit of the target system.
-        2. Computes residuals (Flux - Model).
-        3. Scans for the strongest absorption dip (negative residual) in the vicinity.
-        4. If a dip exceeds threshold_sigma, tentatively adds a new component there.
-        5. Re-fits and calculates the Akaike Information Criterion (AIC).
-        6. If AIC improves (decreases) by at least aic_penalty, keeps the new component.
-        7. Repeats until max_components is reached or no improvement is found.
-
-        Parameters
-        ----------
-        uuid : str
-            UUID of the seed component (defines the velocity window center and series).
-        max_components : str (int)
-            Maximum number of additional components to try adding.
-        threshold_sigma : str (float)
-            Significance level (e.g. 3.0 sigma) of the residual dip required to trigger an addition.
-        aic_penalty : str (float)
-            The AIC penalty term. A new model is accepted only if AIC_new < AIC_old - penalty.
-        z_window_kms : str (float)
-            The velocity window size (km/s) around the seed component to search for residuals.
-        group_depth : str (int)
-            Grouping depth for finding neighboring components to fit together.
-        patience : str (int)
-            Number of components to try adding *without* improvement before giving up 
-            and rolling back to the last best state.
-
-        Returns
-        -------
-        SessionV2
-            The optimized session (or the original if no improvement found).
+        Full implementation of the iterative optimization logic.
         """
         try:
             max_comp_i = int(max_components)
@@ -417,38 +406,41 @@ class RecipeAbsorbersV2:
         logging.info(f"Optimizing system (max {max_comp_i} comps, patience {patience_i})...")
         
         # 1. Initial Baseline Fit
-        current_session = self._session.absorbers.fit_component(
-            uuid, z_window_kms=str(z_win_f), group_depth=str(depth_i)
+        # fit_component now handles the cleanup, so 'current_session' is clean.
+        current_session = self.fit_component(
+            uuid, max_nfev='2000', z_window_kms=str(z_win_f), group_depth=str(depth_i)
         )
         if current_session == 0: return 0
 
         target_comp = current_session.systs.get_component_by_uuid(uuid)
         if not target_comp: return 0
         
-        # Helper to get AIC
+        # Helper: Calculate AIC for the CURRENT state
         def get_aic(session):
-            active_uuids = [uuid] 
-            systs = session.systs
-            systs.constraint_model.set_active_components(active_uuids, group_depth=depth_i)
-            fitter = VoigtFitterV2(session.spec, systs)
-            
-            # Quick eval
-            _, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win_f, verbose=0)
-            
-            # [FIX] Ensure consistent return tuple (4 items) even on failure
-            if not res or not res.success: 
-                return float('inf'), None, 0.0, 0
-            
-            chi2 = np.sum(res.fun**2)
-            k = len(res.x)
-            aic = chi2 + 2 * k
-            return aic, fitter, chi2, k
+            # We must apply the mask to calculate Chi2/AIC correctly for the group
+            original_active = session.systs.constraint_model._active_uuids
+            try:
+                session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
+                fitter = VoigtFitterV2(session.spec, session.systs)
+                
+                # Quick fit (0 iters if just evaluating, or small # to refine)
+                # Here we just want the Chi2 of the CURRENT parameters
+                _, _, res = fitter.fit(max_nfev=10, z_window_kms=z_win_f, verbose=0)
+                
+                if not res: return float('inf'), None, 0.0, 0
+                
+                chi2 = np.sum(res.fun**2)
+                k = len(res.x) # Number of free parameters
+                aic = chi2 + 2 * k
+                return aic, fitter, chi2, k
+            finally:
+                # Always clean up
+                session.systs.constraint_model.set_active_components(original_active)
 
         best_aic, best_fitter, best_chi2, best_k = get_aic(current_session)
         
-        # Check if baseline failed
         if best_fitter is None:
-            logging.warning("Optimization: Baseline fit failed. Returning initial state.")
+            logging.warning("Baseline AIC check failed.")
             return current_session
 
         best_session = current_session
@@ -457,106 +449,72 @@ class RecipeAbsorbersV2:
         trials_without_improvement = 0
         
         for i in range(max_comp_i):
-            # Use CURRENT session state for finding residuals
+            # Recalculate AIC/Model for current session to find residuals
             current_aic, current_fitter, _, _ = get_aic(current_session)
-            
-            if current_fitter is None: break # Safety check
+            if current_fitter is None: break 
 
             x_full = current_session.spec.x.value
             y_full = current_session.spec.y.value
             dy_full = current_session.spec.dy.value
             
+            # Compute full model to find residuals
             _, model_full_phys = current_fitter.compute_model_flux()
             
-            # Sigma Residuals
             sigma_resid = (y_full - model_full_phys) / dy_full
             sigma_resid[~np.isfinite(sigma_resid)] = 0.0
             
+            # Define Search Window
             c_kms = 299792.458
-            lam_target = 0
-            if target_comp.series in ATOM_DATA:
-                lam_target_ang = ATOM_DATA[target_comp.series]['wave']
-            elif target_comp.series in STANDARD_MULTIPLETS:
-                primary = STANDARD_MULTIPLETS[target_comp.series][0]
+            series_name = target_comp.series
+            if series_name in ATOM_DATA:
+                lam_target_ang = ATOM_DATA[series_name]['wave']
+            elif series_name in STANDARD_MULTIPLETS:
+                primary = STANDARD_MULTIPLETS[series_name][0]
                 lam_target_ang = ATOM_DATA[primary]['wave']
             else:
+                logging.warning(f"Unknown series {series_name}, stopping.")
                 break
                 
-            # Convert Angstrom -> nm (since x_full is nm)
             lam_target_nm = lam_target_ang / 10.0
             lam_obs_nm = lam_target_nm * (1 + target_comp.z)
             
             dv = c_kms * (x_full - lam_obs_nm) / lam_obs_nm
             window_mask = np.abs(dv) < z_win_f
             
+            # Mask residuals outside window
             masked_resid = sigma_resid.copy()
-            # Mask outside area with Infinity so argmin ignores it
             masked_resid[~window_mask] = np.inf 
             
+            # Find deepest dip
             min_idx = np.argmin(masked_resid)
             min_val = masked_resid[min_idx]
             
             logging.info(f"Iter {i+1}: Max Resid Sigma={min_val:.1f}")
-            
-            # --- DEBUG PLOT ---
-            if True:
-                plot_data = {
-                    'type': 'optimization_step',
-                    'title': f"Optimization Iter {i+1} (Patience {trials_without_improvement})",
-                    'x': x_full,
-                    'y': y_full,
-                    'model': model_full_phys,
-                    'resid': sigma_resid,
-                    'mask': window_mask,
-                    'candidate_x': x_full[min_idx]
-                }
-                GLOBAL_PLOTTER.plot_requested.emit(plot_data)
 
-            # Threshold Check (only stop if we also have no patience left)
+            # Threshold Check
             if min_val > -thresh_f and trials_without_improvement == 0:
-                logging.info("Residuals within threshold. Optimization complete.")
+                logging.info("Residuals within threshold.")
                 break
 
-            # --- B. Add Candidate ---
+            # Add Candidate Component
             z_new = x_full[min_idx] / lam_target_nm - 1.0
             
+            # add_component automatically runs fit_component on the new UUID
+            # This returns a clean session with the new component optimized
             trial_session = current_session.absorbers.add_component(
                 series=target_comp.series, z=z_new, logN=13.0, b=15.0, z_window_kms=str(z_win_f)
             )
             
             if trial_session == 0: break
 
-            # --- C. Fit Trial ---
-            # [FIX] Force fit of ALL components in the trial
-            all_uuids_trial = [c.uuid for c in trial_session.systs.components]
-            trial_systs = trial_session.systs
-            trial_systs.constraint_model.set_active_components(all_uuids_trial)
-            
-            trial_fitter = VoigtFitterV2(trial_session.spec, trial_systs)
-            new_systs, model_flux, res_trial = trial_fitter.fit(max_nfev=500, z_window_kms=z_win_f, verbose=0)
-            
-            if not res_trial or not res_trial.success: 
-                 logging.warning("Trial fit failed.")
-                 break
-
-            # Reconstruct trial session fully
-            from astrocook.core.structures import DataColumnV2
-            from copy import deepcopy
-            import dataclasses
-            
-            new_aux_cols = deepcopy(trial_session.spec._data.aux_cols)
-            new_aux_cols['model'] = DataColumnV2(values=model_flux, unit=trial_session.spec.y.unit, description="Voigt Fit Model")
-            new_spec_data = dataclasses.replace(trial_session.spec._data, aux_cols=new_aux_cols)
-            new_spec = trial_session.spec.__class__(new_spec_data) 
-            trial_session = trial_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
-
-            # --- D. Evaluate ---
+            # Evaluate Trial
             trial_aic, _, t_chi2, t_k = get_aic(trial_session)
             logging.info(f"  -> Trial AIC: {trial_aic:.1f} (Chi2: {t_chi2:.1f}, k={t_k}) vs Best: {best_aic:.1f}")
 
-            # Update Current (Always move forward to explore)
+            # Always update current to explore further
             current_session = trial_session
 
+            # Decision
             if trial_aic < best_aic - aic_pen_f:
                 logging.info("  -> New Best Found! Resetting patience.")
                 best_aic = trial_aic
@@ -567,7 +525,7 @@ class RecipeAbsorbersV2:
                 logging.info(f"  -> No improvement. Patience: {trials_without_improvement}/{patience_i}")
                 
             if trials_without_improvement >= patience_i:
-                logging.info("Patience exhausted. Rolling back to last best result.")
+                logging.info("Patience exhausted. Rolling back.")
                 break
                 
         return best_session

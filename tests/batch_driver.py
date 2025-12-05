@@ -31,55 +31,85 @@ def get_auto_redshift(session: SessionV2, series: str = 'Ly_a') -> float:
     x = session.spec.x.value
     y = session.spec.y.value
     
-    if len(x) == 0:
-        return 0.0
+    if len(x) == 0: return 0.0
 
-    # Smooth to ignore noise spikes
     y_smooth = gaussian_filter1d(y, 2.0)
     
-    # Avoid edges if possible
     if len(y_smooth) > 20:
         valid_slice = slice(10, -10)
-        # Find index relative to the slice
         min_idx_rel = np.argmin(y_smooth[valid_slice]) 
-        # Convert to absolute index
         min_idx = min_idx_rel + 10
     else:
         min_idx = np.argmin(y_smooth)
         
     lam_obs = x[min_idx]
-    flux_min = y_smooth[min_idx]
     
     # Determine Rest Wavelength
-    key = series
-    
-    if key in ATOM_DATA:
-        lam_rest_ang = ATOM_DATA[key]['wave']
-        # Loader converts Angstrom -> nm, so we must do the same
-        lam_rest_nm = lam_rest_ang / 10.0
+    if series in ATOM_DATA:
+        lam_rest_nm = ATOM_DATA[series]['wave'] / 10.0
     else:
         lam_rest_nm = 121.567
 
     z_found = lam_obs / lam_rest_nm - 1.0
-    
-    logging.info(f"Auto-Detection ({series}): Deepest at {lam_obs:.2f} nm (Flux={flux_min:.2f}).")
-    logging.info(f"  -> Inferred z = {z_found:.5f}")
-    
     return z_found
 
-def trim_to_velocity_window(session: SessionV2, transition: str, z_target: float, dv_kms: float = 500.0) -> SessionV2:
+def get_doublet_redshift(sess1: SessionV2, trans1: str, sess2: SessionV2, trans2: str) -> float:
     """
-    Uses the 'split' recipe to crop a session.
+    Finds the redshift where BOTH transitions show simultaneous absorption.
+    Calculates the 'Correlation Score' = Depth1 * Depth2.
     """
-    key = transition
+    # 1. Get Data
+    x1, y1 = sess1.spec.x.value, sess1.spec.y.value
+    x2, y2 = sess2.spec.x.value, sess2.spec.y.value
     
-    if key not in ATOM_DATA:
-        logging.warning(f"Trim: Unknown transition '{key}'. Skipping trim.")
-        return session
+    if len(x1) == 0 or len(x2) == 0:
+        raise ValueError("One of the doublet spectra is empty.")
 
-    lam_rest_ang = ATOM_DATA[key]['wave']
-    lam_rest_nm = lam_rest_ang / 10.0
+    # 2. Get Rest Wavelengths (nm)
+    lam1 = ATOM_DATA[trans1]['wave'] / 10.0
+    lam2 = ATOM_DATA[trans2]['wave'] / 10.0
+
+    # 3. Convert both to Redshift Space
+    z1 = x1 / lam1 - 1.0
+    z2 = x2 / lam2 - 1.0
+
+    # 4. Create Common Grid (Overlap Region)
+    z_min = max(z1.min(), z2.min())
+    z_max = min(z1.max(), z2.max())
     
+    if z_max <= z_min:
+        raise ValueError(f"No spectral overlap between {trans1} and {trans2}.")
+
+    # Use resolution of first spectrum
+    dz = np.median(np.diff(z1))
+    z_grid = np.arange(z_min, z_max, dz)
+    
+    # 5. Interpolate Fluxes
+    y1_int = np.interp(z_grid, z1, y1)
+    y2_int = np.interp(z_grid, z2, y2)
+    
+    # Smooth to suppress noise
+    y1_s = gaussian_filter1d(y1_int, 2.0)
+    y2_s = gaussian_filter1d(y2_int, 2.0)
+
+    # 6. Compute Joint Signal (Product of Depths)
+    # Depth = 1 - Flux. We clip at 0 (ignore emission)
+    depth1 = np.maximum(0.0, 1.0 - y1_s)
+    depth2 = np.maximum(0.0, 1.0 - y2_s)
+    
+    score = depth1 * depth2
+    
+    best_idx = np.argmax(score)
+    z_best = z_grid[best_idx]
+    
+    logging.info(f"Doublet Scan: Max Coincidence at z={z_best:.5f} (Score={score[best_idx]:.3f})")
+    return z_best
+
+def trim_to_velocity_window(session: SessionV2, transition: str, z_target: float, dv_kms: float = 500.0) -> SessionV2:
+    key = transition
+    if key not in ATOM_DATA: return session
+
+    lam_rest_nm = ATOM_DATA[key]['wave'] / 10.0
     lam_obs = lam_rest_nm * (1 + z_target)
     c_kms = 299792.458
     d_lam = (dv_kms / c_kms) * lam_obs
@@ -87,7 +117,6 @@ def trim_to_velocity_window(session: SessionV2, transition: str, z_target: float
     lam_min = lam_obs - d_lam
     lam_max = lam_obs + d_lam
     
-    logging.info(f"Trimming {transition} to {lam_min:.2f}-{lam_max:.2f} nm (z={z_target:.4f})")
     return session.edit.split(f"(x > {lam_min:.4f}) & (x < {lam_max:.4f})")
 
 def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str):
@@ -112,33 +141,34 @@ def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str):
         if sess == 0: raise RuntimeError(f"Failed to load {fname}")
         sessions[key] = sess
 
-    # --- 2. HIERARCHICAL DISCOVERY ---
-    logging.info("--- Auto-Detecting Redshifts ---")
+    # --- 2. HIERARCHICAL DISCOVERY (NEW STRATEGY) ---
+    # A. Anchor: Detect OVI Redshift first (Doublet Coincidence)
+    logging.info("--- Auto-Detecting OVI Doublet ---")
+    try:
+        z_ovi = get_doublet_redshift(sessions['OVI_1'], 'OVI_1031',
+                                     sessions['OVI_2'], 'OVI_1037')
+    except Exception as e:
+        logging.error(f"Failed to detect doublet: {e}")
+        return None
     
-    # A. Anchor: Detect HI Redshift first
-    z_hi = get_auto_redshift(sessions['HI'], 'Ly_a')
-    
-    # --- 3. TRIM SEGMENTS (Conditioned on z_hi) ---
+    # --- 3. TRIM SEGMENTS (Conditioned on z_ovi) ---
     logging.info("--- Trimming ---")
     trim_window = 500.0 
     
-    # Trim HI around its detected center
-    s_hi_trim = trim_to_velocity_window(sessions['HI'], 'Ly_a', z_hi, trim_window)
-    
-    # Trim OVI segments around the HI center (This limits the search space!)
-    s_ovi1_trim = trim_to_velocity_window(sessions['OVI_1'], 'OVI_1031', z_hi, trim_window)
-    s_ovi2_trim = trim_to_velocity_window(sessions['OVI_2'], 'OVI_1037', z_hi, trim_window)
+    # Trim EVERYTHING based on OVI redshift
+    s_ovi1_trim = trim_to_velocity_window(sessions['OVI_1'], 'OVI_1031', z_ovi, trim_window)
+    s_ovi2_trim = trim_to_velocity_window(sessions['OVI_2'], 'OVI_1037', z_ovi, trim_window)
+    s_hi_trim   = trim_to_velocity_window(sessions['HI'],    'Ly_a',     z_ovi, trim_window)
 
-    # B. Refinement: Detect OVI Redshift inside the trimmed window
-    # If the trim was empty (e.g. chunk didn't cover z_hi), fallback to z_hi
-    if len(s_ovi1_trim.spec.x.value) > 0:
-        z_ovi = get_auto_redshift(s_ovi1_trim, 'OVI_1031')
+    # B. Refinement: Detect HI Redshift inside the trimmed window
+    # We look for the strongest Ly_a line that is CLOSE to the OVI system
+    if len(s_hi_trim.spec.x.value) > 0:
+        z_hi = get_auto_redshift(s_hi_trim, 'Ly_a')
+        dz_kms = 299792.458 * (z_hi - z_ovi) / (1 + z_ovi)
+        logging.info(f"Refined HI z={z_hi:.5f} (Offset from OVI: {dz_kms:.1f} km/s)")
     else:
-        logging.warning("OVI chunk seems empty after trimming. Falling back to z_hi.")
-        z_ovi = z_hi
-        
-    dz_kms = 299792.458 * (z_ovi - z_hi) / (1 + z_hi)
-    logging.info(f"Refined OVI z={z_ovi:.5f} (Offset from HI: {dz_kms:.1f} km/s)")
+        logging.warning("HI chunk seems empty after trimming. Falling back to z_ovi.")
+        z_hi = z_ovi
 
     # --- 4. STITCHING ---
     logging.info("--- Stitching Sessions ---")
@@ -146,21 +176,34 @@ def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str):
 
     # --- 5. MODELING ---
     logging.info("--- Modeling ---")
-    # Place Ly-a at its detected z
-    s_full = s_full.absorbers.add_component(series='Ly_a', z=z_hi, logN=14.0, b=25.0)
-    uuid_lya = s_full.systs.components[-1].uuid
     
-    # Place OVI at its REFINED z
+    # 1. Place OVI (The Anchor)
     s_full = s_full.absorbers.add_component(series='OVI', z=z_ovi, logN=13.5, b=15.0)
     uuid_ovi = s_full.systs.components[-1].uuid
 
-    #logging.info(f"Linking OVI b-parameter...")
-    #s_full = s_full.absorbers.update_constraint(
-    #    uuid=uuid_ovi, param='b', is_free=False, expression=f"p['{uuid_lya}'].b * 0.25"
-    #)
+    # 2. Place Ly-a (The Target)
+    s_full = s_full.absorbers.add_component(series='Ly_a', z=z_hi, logN=14.0, b=25.0)
+    uuid_lya = s_full.systs.components[-1].uuid
 
     # --- 6. OPTIMIZATION ---
     logging.info("--- Optimization ---")
+    
+    # [STEP A] Optimize OVI Anchor
+    # We now use optimize_system instead of just fit_component. 
+    # This allows it to add components if the metal system is complex/clumpy.
+    logging.info("Optimizing OVI Anchor...")
+    s_full = s_full.absorbers.optimize_system(
+        uuid=uuid_ovi,
+        max_components=3,      # OVI is usually simpler, keep low
+        threshold_sigma=2.5,
+        z_window_kms=str(trim_window),
+        patience=1
+    )
+
+    # [STEP B] Optimize Ly_a Structure
+    # OVI is now optimized (and unfrozen, thanks to absorbers.py fix).
+    # Since they are not grouped, OVI parameters will stay fixed during Ly_a fit.
+    logging.info("Optimizing Ly_a Structure...")
     s_final = s_full.absorbers.optimize_system(
         uuid=uuid_lya,          
         max_components=5,       
@@ -186,10 +229,7 @@ def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str):
     s_final.save(session_path, initial_session=s_full)
     
     print(f"\nDone! Saved to: {output_dir}")
-    print(f"z_HI: {z_hi:.5f}, z_OVI: {z_ovi:.5f}")
-    print("Fitted Components:")
-    t_results.pprint_all()
-    print("="*40)
+    print(f"z_OVI (Anchor): {z_ovi:.5f}, z_HI: {z_hi:.5f}")
     
     return session_path
 
