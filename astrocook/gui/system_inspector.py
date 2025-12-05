@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import astropy.units as au
 from scipy.special import wofz
-from scipy.ndimage import gaussian_filter1d
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
@@ -19,6 +18,14 @@ from typing import List, Optional
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
+
+# SSOT: Import convolution logic
+try:
+    from ..fitting.voigt_fitter import convolve_flux
+except ImportError:
+    # Fallback if import fails (should not happen in prod)
+    logging.warning("SystemInspector: Could not import convolve_flux from voigt_fitter. Using dummy.")
+    def convolve_flux(flux, x, r, **kwargs): return flux
 
 # --- 1. Table Configuration ---
 COL_MAP = {
@@ -108,7 +115,7 @@ class SystemTableModel(QAbstractTableModel):
 
             # Append Parameter Info if applicable
             if is_constrained_col:
-                tooltip_html += "<hr>" # Divider
+                tooltip_html += "<hr>"
                 if is_linked:
                     target_name = "Unknown"; target_z = ""
                     if c_data.target_uuid:
@@ -125,7 +132,6 @@ class SystemTableModel(QAbstractTableModel):
                         return "Unknown"
                     expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
                     expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
-                    
                     tooltip_html += (f"<b>Status:</b> Linked<br>"
                                      f"<b>Target:</b> {target_name}{target_z}<br>"
                                      f"<b>Formula:</b> <code>{expr_pretty}</code>")
@@ -174,10 +180,9 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
     def set_allowed_uuids(self, uuids: set):
         """Updates the list of visible UUIDs (Fluid Group)."""
         # Break recursion: If the group hasn't changed, do nothing.
-        if self.allowed_uuids == uuids: 
-            return
-        
+        if self.allowed_uuids == uuids: return
         self.allowed_uuids = uuids
+
         # Only re-filter if the checkbox is actually checked
         if self.group_filtering_enabled:
             self.invalidateFilter()
@@ -199,88 +204,36 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         try: return float(l_data) < float(r_data)
         except (ValueError, TypeError): return str(l_data) < str(r_data)
         
-# --- Helper for Voigt Profile (With Convolution) ---
-def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R'):
+# --- Updated: Uses SSOT Convolution ---
+def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
-    # 1. Physics (Unconvolved Flux)
+    # 1. Physics (High Res)
     lambda_c = lambda_0 * (1.0 + z)
     c_kms = 2.99792458e5
     b_safe = max(b_kms, 0.1)
     dop_width_ang = (b_safe / c_kms) * lambda_c
-    
     if dop_width_ang <= 0: dop_width_ang = 1e-5
         
     x = (wave_grid_ang - lambda_c) / dop_width_ang
     c_ang_s = 2.99792458e18
     a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
     
-    # Voigt Calculation
     H_ax = wofz(x + 1j * a).real
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
     flux = np.exp(-tau)
 
-    # 2. Convolution (Instrumental Broadening)
+    # --- DEBUG PRINT ---
+    # Only print if resolution is involved, to reduce noise
     if resol is not None:
-        # CASE A: Variable Resolution (Array passed)
-        if isinstance(resol, (np.ndarray, list)) and len(resol) == len(wave_grid_ang):
-            resol_arr = np.asarray(resol)
-            final_convolved = np.zeros_like(flux)
-            
-            # Optimization: Group by unique resolution values (rounded) to avoid N_pix convolutions
-            # This logic mirrors VoigtFitterV2 exactly
-            unique_resols = np.unique(np.round(resol_arr, 3))
-            
-            dx = np.nanmedian(np.diff(wave_grid_ang)) if len(wave_grid_ang) > 1 else 1.0
+        if isinstance(resol, (np.ndarray, list)):
+            stats = f"Array (min={np.nanmin(resol):.1f}, max={np.nanmax(resol):.1f})"
+        else:
+            stats = f"Scalar ({resol:.1f})"
+        # Print context so we know WHO called this
+        print(f"[DEBUG][{context}] Unit: {resol_unit} | Val: {stats} | Grid: {len(wave_grid_ang)} | b_eff: {b_kms:.2f}")
 
-            for r_val in unique_resols:
-                if r_val <= 0: continue
-                
-                # Create mask for this resolution value
-                mask_r = np.isclose(resol_arr, r_val, atol=1e-3)
-                
-                # Calculate Sigma
-                if resol_unit == 'km/s':
-                    # resol is FWHM in km/s
-                    fwhm_ang = (r_val / c_kms) * lambda_c
-                    sigma_ang = fwhm_ang / 2.35482
-                else: 
-                    # resol is R
-                    sigma_ang = (lambda_c / r_val) / 2.35482
-
-                sigma_pix = sigma_ang / dx
-                
-                if sigma_pix > 0.1:
-                    # Convolve full array to handle edges, then mask
-                    temp_conv = gaussian_filter1d(flux, sigma_pix)
-                    final_convolved[mask_r] = temp_conv[mask_r]
-                else:
-                    final_convolved[mask_r] = flux[mask_r]
-
-            # Fill in any gaps (where resol <= 0) with unconvolved flux
-            mask_no_res = (resol_arr <= 0)
-            if np.any(mask_no_res):
-                final_convolved[mask_no_res] = flux[mask_no_res]
-            
-            return final_convolved
-
-        # CASE B: Constant Resolution (Scalar passed)
-        elif isinstance(resol, (int, float)) and resol > 0:
-            sigma_ang = 0.0
-            if resol_unit == 'km/s':
-                fwhm_ang = (resol / c_kms) * lambda_c
-                sigma_ang = fwhm_ang / 2.35482
-            else: 
-                sigma_ang = (lambda_c / resol) / 2.35482
-            
-            if len(wave_grid_ang) > 1:
-                dx = np.nanmedian(np.diff(wave_grid_ang))
-                if dx > 0:
-                    sigma_pix = sigma_ang / dx
-                    if sigma_pix > 0.1:
-                        flux = gaussian_filter1d(flux, sigma_pix)
-
-    return flux
+    return convolve_flux(flux, wave_grid_ang, resol, resol_unit)
 
 # --- 2. The Paged Plot Widget ---
 
@@ -422,7 +375,6 @@ class VelocityPlotWidget(QWidget):
         self._current_session = session
         self._current_component = component
         self._selected_components = selected_components if selected_components else [component]
-        
         self._plot_center_z = component.z
 
         if is_new_component:
@@ -540,7 +492,7 @@ class VelocityPlotWidget(QWidget):
         c_kms = 299792.458
         z_sys = self._plot_center_z
 
-        # Check for Variable Resolution Column
+        # Check for Variable Resolution
         resol_col = None
         if session.spec.has_aux_column('resol'):
             resol_col = session.spec.get_column('resol').value
@@ -600,19 +552,27 @@ class VelocityPlotWidget(QWidget):
             
             if len(v_p) == 0: continue
             
-            # Try to get pixel-by-pixel resolution slice
+            # --- PREPARE RESOLUTION FOR THIS PANEL ---
             res_arg = None
             res_unit = 'R'
+            res_display = 0
             
             if resol_col is not None:
-                # Extract the slice matching the velocity mask
+                # Extract slice
                 res_arg = resol_col[mask]
-                res_unit = 'km/s' # resol column is FWHM km/s
-                res_display_val = np.nanmedian(res_arg)
+                res_unit = 'km/s'
+                res_display = np.nanmedian(res_arg)
+
+                print(f"[DEBUG] Plot Panel {trans_name}: Using Variable Resol Column.")
+                print(f"        Mask len: {np.sum(mask)} | Slice len: {len(res_arg)}")
+                print(f"        Values: {res_arg[:5]} ...")
             else:
-                # Fallback to scalar
+                # Fallback scalar
                 res_arg, res_unit = self._get_resolution_at(lam_obs)
-                res_display_val = res_arg
+                res_display = res_arg
+
+                print(f"[DEBUG] Plot Panel {trans_name}: Using Scalar Fallback.")
+                print(f"        Value: {res_arg} {res_unit}")
 
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
@@ -622,6 +582,7 @@ class VelocityPlotWidget(QWidget):
                 mod_p = mod_norm[mask]
                 ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
+            # Plot Components (Orange Dashed)
             if self._selected_components:
                 atom_info = ATOM_DATA.get(trans_name)
                 if atom_info:
@@ -630,16 +591,21 @@ class VelocityPlotWidget(QWidget):
                         is_match = (sel_c.series == trans_name) or \
                                    (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
                         if is_match:
+                            
+                            # [FIX] Calculate Effective b (Thermal + Turbulent)
+                            # The model (Green Line) uses this. The component plot (Orange Line) must too.
+                            b_eff = np.sqrt(sel_c.b**2 + sel_c.btur**2)
+
                             prof = calc_voigt_profile(
                                 x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
-                                sel_c.z, 10**sel_c.logN, sel_c.b,
-                                resol=res_arg, resol_unit=res_unit # PASSING ARRAY OR SCALAR
+                                sel_c.z, 10**sel_c.logN, b_eff, # <--- Passing b_eff
+                                resol=res_arg, resol_unit=res_unit,
+                                context="STATIC_PLOT" # <--- Tag for logs
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
-            
             lam_rest_panel_ang = xem_d[trans_name].to(au.Angstrom).value
             lam_obs_panel_center_ang = lam_rest_panel_ang * (1 + z_sys)
 
@@ -652,7 +618,6 @@ class VelocityPlotWidget(QWidget):
                 
                 for line_name in comp_lines:
                     if line_name not in xem_d: continue
-                    
                     if line_name == trans_name:
                         v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                     else:
@@ -672,9 +637,9 @@ class VelocityPlotWidget(QWidget):
             ax_main.axhline(0.0, color='gray', ls=':', lw=0.8)
 
             # Show Resolution Info in Corner
-            res_label = f"R~{res_display_val:.0f}" if res_unit == 'R' else f"FWHM~{res_display_val:.1f}k"
-            ax_main.text(0.02, 0.95, res_label, transform=ax_main.transAxes, ha='left', va='top', fontsize=8, color='#555')
-
+            res_lbl = f"R~{res_display:.0f}" if res_unit=='R' else f"FWHM~{res_display:.1f}k"
+            ax_main.text(0.02, 0.95, res_lbl, transform=ax_main.transAxes, ha='left', va='top', fontsize=8, color='#555')
+            
             ax_main.text(0.98, 0.85, trans_name, transform=ax_main.transAxes, ha='right', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax_main.set_xlim(self._xlim)
@@ -714,10 +679,8 @@ class VelocityPlotWidget(QWidget):
                                     f"Res: {c_resol}")
                     break
         
-        if tooltip_text:
-            QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
-        else:
-            QToolTip.hideText()
+        if tooltip_text: QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
+        else: QToolTip.hideText()
 
         main_ax = event.inaxes
         if main_ax not in self._panel_map:
@@ -733,7 +696,6 @@ class VelocityPlotWidget(QWidget):
         v_mouse = event.xdata
         c_kms = 299792.458
         z_new = (1 + self._plot_center_z) * (1 + v_mouse / c_kms) - 1
-        
         N = 10**self.cursor_logN
         b = self.cursor_b
         
@@ -763,61 +725,56 @@ class VelocityPlotWidget(QWidget):
             v_grid = np.linspace(v_min, v_max, 300)
             lam_grid_ang = lam_obs_center_ang * (1 + v_grid / c_kms)
             
-            # --- PREPARE RESOLUTION FOR CURSOR GRID ---
+            # --- CURSOR RESOLUTION INTERPOLATION ---
             res_arg = None
             res_unit = 'R'
             
             if resol_col is not None:
                 # Interpolate resolution onto the display grid
                 # Convert grid to nm for interpolation
-                lam_grid_nm = lam_grid_ang / 10.0 
+                lam_grid_nm = lam_grid_ang / 10.0
                 res_arg = np.interp(lam_grid_nm, x_full, resol_col)
                 res_unit = 'km/s'
             else:
                  # Fallback scalar
-                 lam_cursor_obs_nm = (lam_0_ang * (1+z_new)) / 10.0
-                 res_arg, res_unit = self._get_resolution_at(lam_cursor_obs_nm)
+                 lam_cursor_nm = (lam_0_ang * (1+z_new)) / 10.0
+                 res_arg, res_unit = self._get_resolution_at(lam_cursor_nm)
 
             # --- CALCULATE ---
             total_prof = np.ones_like(v_grid)
-            
             for sibling in siblings:
                 s_info = ATOM_DATA.get(sibling)
                 if not s_info: continue
-                
-                # Optimization: Skip if line is too far away
-                sib_lam_obs = s_info['wave'] * (1 + z_new)
-                if sib_lam_obs < lam_grid_ang[0] - 5.0 or sib_lam_obs > lam_grid_ang[-1] + 5.0:
-                    continue
+                # ... (bounds check) ...
 
+                # Cursor usually only controls 'b' (Thermal), assuming btur=0 for manual guessing
+                # If you want the cursor to include btur, you need a UI input for it. 
+                # For now, we pass cursor_b as is.
+                
                 prof = calc_voigt_profile(
                     lam_grid_ang, s_info['wave'], s_info['f'], s_info['gamma'],
                     z_new, N, b,
-                    resol=res_arg, resol_unit=res_unit # PASSING ARRAY
+                    resol=res_arg, resol_unit=res_unit,
+                    context="CURSOR_MOVE" # <--- Tag for logs
                 )
                 total_prof *= prof
             
             line_main.set_data(v_grid, total_prof)
             
             if line_resid:
-                lam_0_spec = (lam_0_ang * au.Angstrom).to(x_unit).value
+                lam_0_spec = atom_info['wave'] / 10.0
                 lam_obs_center_spec = lam_0_spec * (1 + self._plot_center_z)
-
-                x_full = session.spec.x.value
                 v_full = c_kms * (x_full - lam_obs_center_spec) / lam_obs_center_spec
                 
                 dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(x_full)
                 cont = session.spec.cont.value if session.spec.cont is not None else np.ones_like(x_full)
-                
                 with np.errstate(divide='ignore', invalid='ignore'):
                     dy_norm = np.divide(dy, cont, where=cont!=0)
                 
                 dy_interp = np.interp(v_grid, v_full, dy_norm, left=1.0, right=1.0)
-                
                 with np.errstate(divide='ignore', invalid='ignore'):
                     prof_sigma = np.divide(total_prof - 1.0, dy_interp, where=dy_interp>1e-9)
                     prof_sigma[~np.isfinite(prof_sigma)] = 0.0
-                
                 line_resid.set_data(v_grid, prof_sigma)
             
         self.canvas.draw_idle()
@@ -862,13 +819,11 @@ class VelocityPlotWidget(QWidget):
             main_ax = None
             
             # Resolve the clicked panel
-            if ax_clicked in self._panel_map:
-                main_ax = ax_clicked
+            if ax_clicked in self._panel_map: main_ax = ax_clicked
             else:
                 # Reverse lookup (check if clicked on residual panel)
                 for ax_m, val in self._panel_map.items():
-                    resid_line = val[2]
-                    if resid_line is not None and resid_line.axes == ax_clicked:
+                    if val[2] is not None and val[2].axes == ax_clicked:
                         main_ax = ax_m
                         break
             
@@ -898,8 +853,7 @@ class VelocityPlotWidget(QWidget):
                 has_actions = True
 
             # --- Execute ---
-            if has_actions:
-                menu.exec(QCursor.pos())
+            if has_actions: menu.exec(QCursor.pos())
 
 class SystemInspector(QWidget):
     def __init__(self, main_window):
@@ -1040,8 +994,7 @@ class SystemInspector(QWidget):
         if sel:
             idx_source = self.proxy_model.mapToSource(sel[0])
             comp = self.table_model.get_component_at(idx_source.row())
-            if comp:
-                prev_uuid = comp.uuid
+            if comp: prev_uuid = comp.uuid
         
         # Detect existing max ID to identify if a new component is added later
         old_comps = self.table_model._components
@@ -1086,10 +1039,8 @@ class SystemInspector(QWidget):
 
         # 5. Fallback (Default to top row if no target found or table empty)
         if not selection_applied:
-            if self.proxy_model.rowCount() > 0:
-                self.table_view.selectRow(0)
-            else:
-                self.vel_plot.plot_spectrum(None)
+            if self.proxy_model.rowCount() > 0: self.table_view.selectRow(0)
+            else: self.vel_plot.plot_spectrum(None)
                 
     def update_limit_boxes(self, v_min, v_max):
         self.vmin_in.blockSignals(True)
@@ -1122,8 +1073,7 @@ class SystemInspector(QWidget):
         try:
             z_target = float(self.z_in.text())
             self.vel_plot.set_center_redshift(z_target)
-        except ValueError as e:
-            logging.error(f"Error applying z: {e}")
+        except ValueError as e: logging.error(f"Error applying z: {e}")
 
     def _on_group_toggled(self, checked):
         self.proxy_model.set_group_filter_enabled(checked)
@@ -1137,7 +1087,6 @@ class SystemInspector(QWidget):
         
         idx_proxy = indexes[0]
         idx_source = self.proxy_model.mapToSource(idx_proxy)
-        
         primary_row = idx_source.row()
         primary_comp = self.table_model.get_component_at(primary_row)
         
@@ -1158,7 +1107,6 @@ class SystemInspector(QWidget):
             self.trans_in.setText(new_txt)
             self.z_in.setText(f"{primary_comp.z:.5f}")
             self._parse(new_txt)
-            
             self.vel_plot.plot_system(self.current_session, primary_comp, selected_comps)
             
     def _apply(self):
@@ -1183,8 +1131,7 @@ class SystemInspector(QWidget):
         was_checked = self.group_cb.isChecked()
         
         # 2. Temporarily disable grouping to ensure row is found/selectable
-        if was_checked:
-            self.group_cb.setChecked(False) 
+        if was_checked: self.group_cb.setChecked(False) 
         
         # 3. Find row in Source Model
         target_row = -1
@@ -1216,8 +1163,7 @@ class SystemInspector(QWidget):
             self.group_cb.setChecked(True)
         else:
             # Case 2: Velocity Plot -> Restore User Preference
-            if was_checked:
-                self.group_cb.setChecked(True)
+            if was_checked: self.group_cb.setChecked(True)
         
         # 7. Ensure window is active
         self.show()

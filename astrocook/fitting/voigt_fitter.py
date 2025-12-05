@@ -15,6 +15,92 @@ from astrocook.core.structures import ComponentDataV2
 from astrocook.core.system_list import SystemListV2
 from .voigt_model import VoigtModelConstraintV2
 
+def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
+    """
+    Convolves a flux array with a Gaussian kernel defined by resolution.
+    
+    Parameters
+    ----------
+    flux : np.ndarray
+        The flux array (0 to 1 normalized, or physical).
+    x_ang : np.ndarray
+        The wavelength grid in Angstroms (must match flux length).
+    resol : Any
+        Resolution value. Can be:
+        - Scalar (float): Constant resolution (R or km/s).
+        - Array (np.ndarray): Pixel-by-pixel resolution (must match flux length).
+    resol_unit : str
+        'R' for Resolving Power (lambda / d_lambda).
+        'km/s' for FWHM velocity.
+        
+    Returns
+    -------
+    np.ndarray
+        The convolved flux.
+    """
+    if len(flux) == 0: return flux
+    if len(flux) != len(x_ang):
+        raise ValueError(f"Shape mismatch: flux {len(flux)} vs wave {len(x_ang)}")
+
+    # Estimate sampling (dx)
+    if len(x_ang) > 1:
+        dx = np.nanmedian(np.diff(x_ang))
+    else:
+        dx = 1.0
+    
+    if dx <= 0: return flux
+
+    c_kms = 299792.458
+
+    def get_sigma_pix(res_val, wav):
+        if resol_unit == 'km/s':
+            # FWHM_lambda = (v / c) * lambda
+            # Sigma = FWHM / 2.355
+            sigma_ang = (res_val / c_kms) * wav / 2.35482
+        else:
+            # FWHM_lambda = lambda / R
+            sigma_ang = (wav / res_val) / 2.35482
+        return sigma_ang / dx
+
+    # 1. Variable Resolution (Array)
+    if isinstance(resol, (np.ndarray, list)) and len(resol) == len(flux):
+        resol_arr = np.asarray(resol)
+        final_convolved = np.zeros_like(flux)
+        
+        # Optimization: Group by unique resolution values (rounded)
+        unique_resols = np.unique(np.round(resol_arr, 3))
+        
+        for r_val in unique_resols:
+            if r_val <= 0: continue
+            
+            mask_r = np.isclose(resol_arr, r_val, atol=1e-3)
+            
+            # Use median wavelength of the masked region for kernel width approximation
+            local_wave = np.median(x_ang[mask_r])
+            sigma_pix = get_sigma_pix(r_val, local_wave)
+            
+            if sigma_pix > 0.1:
+                # Convolve full array to handle edges, then apply mask
+                temp_conv = gaussian_filter1d(flux, sigma_pix)
+                final_convolved[mask_r] = temp_conv[mask_r]
+            else:
+                final_convolved[mask_r] = flux[mask_r]
+
+        # Fill gaps (where resol <= 0)
+        mask_no_res = (resol_arr <= 0)
+        if np.any(mask_no_res):
+            final_convolved[mask_no_res] = flux[mask_no_res]
+            
+        return final_convolved
+
+    # 2. Constant Resolution (Scalar)
+    elif isinstance(resol, (int, float)) and resol > 0:
+        local_wave = np.median(x_ang)
+        sigma_pix = get_sigma_pix(resol, local_wave)
+        if sigma_pix > 0.1:
+            return gaussian_filter1d(flux, sigma_pix)
+            
+    return flux
 class VoigtFitterV2:
     """
     Engine for fitting Voigt profiles to spectral data.
@@ -43,7 +129,6 @@ class VoigtFitterV2:
         
         if self._spectrum.cont is not None:
             self._cont = self._spectrum.cont.value
-            # Avoid divide by zero
             self._cont[self._cont == 0] = np.nan 
         else:
             logging.warning("No continuum found. Assuming flux is already normalized.")
@@ -51,7 +136,6 @@ class VoigtFitterV2:
 
         self._y_norm = self._spectrum.y.value / self._cont
         
-        # Clip dy to avoid singularities
         raw_dy = self._spectrum.dy.value
         min_err = 1e-9 * np.nanmedian(self._cont) 
         safe_dy = np.maximum(raw_dy, min_err)
@@ -60,19 +144,16 @@ class VoigtFitterV2:
         self._valid_mask = np.isfinite(self._y_norm) & np.isfinite(self._dy_norm) & (self._dy_norm > 0)
         
         # 2. Resolution Setup
-        # Check for the 'resol' column (created by the Loader/Stitcher)
         self._resol_column = None
         self._use_variable_resolution = False
         
         if self._spectrum.has_aux_column('resol'):
-            # Using .value (assuming the alias in structures.py is active)
             self._resol_column = self._spectrum.get_column('resol').value
-            # Check if it actually contains data (not just NaNs)
             if np.any(np.isfinite(self._resol_column)):
                 self._use_variable_resolution = True
                 logging.info("VoigtFitter: Detected 'resol' column. Using variable resolution.")
 
-        # Fallback to global metadata if no column
+        # Fallback to global metadata
         self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
         
         if not self._use_variable_resolution:
@@ -81,14 +162,14 @@ class VoigtFitterV2:
             else:
                 logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
-        # Placeholders for fitting loop
+        # Placeholders
         self._fit_mask = None
         self._sl = slice(None)
         self._x_calc = None
         self._y_norm_calc = None
         self._dy_norm_calc = None
         self._fit_mask_calc = None
-        self._resol_calc = None # For the slice
+        self._resol_calc = None
         self._cached_tau_static = None
 
 
@@ -235,42 +316,16 @@ class VoigtFitterV2:
 
         flux_model_high_res = np.exp(-tau_total)
 
-        # 2. Convolve (Handle Variable Resolution)
+        # 2. Convolve (Using SSOT function)
         if self._use_variable_resolution and self._resol_calc is not None:
-            # Initialize final array
-            final_convolved = np.zeros_like(flux_model_high_res)
-            
-            # Identify unique resolution values in this slice
-            unique_resols = np.unique(np.round(self._resol_calc, 3))
-            
-            for res_val in unique_resols:
-                if res_val <= 0: continue
-                
-                mask_res = np.isclose(self._resol_calc, res_val, atol=1e-3)
-                if not np.any(mask_res): continue
-                
-                # Calculate sigma in pixels for this segment
-                local_wave = np.median(self._x_calc[mask_res])
-                sigma_pix = self._calc_sigma_pix_from_fwhm_kms(res_val, local_wave)
-                
-                # Convolve the ENTIRE array (to handle edges correctly)
-                temp_conv = gaussian_filter1d(flux_model_high_res, sigma_pix)
-                
-                # Insert into final array
-                final_convolved[mask_res] = temp_conv[mask_res]
-            
-            # Handle pixels with 0 resolution (no convolution)
-            mask_no_res = (self._resol_calc <= 0)
-            if np.any(mask_no_res):
-                final_convolved[mask_no_res] = flux_model_high_res[mask_no_res]
-                
-            return final_convolved
+            return convolve_flux(flux_model_high_res, self._x_calc, self._resol_calc, resol_unit='km/s')
 
         elif self._global_sigma_pix:
-            # Standard global convolution
-            return gaussian_filter1d(flux_model_high_res, self._global_sigma_pix)
+            # Fallback for constant global R
+            # We can still use convolve_flux with a scalar
+            return convolve_flux(flux_model_high_res, self._x_calc, self._global_resol_val, resol_unit='R')
+            
         else:
-            # No convolution
             return flux_model_high_res
 
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
