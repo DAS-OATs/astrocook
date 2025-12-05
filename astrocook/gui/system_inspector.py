@@ -223,16 +223,6 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
     flux = np.exp(-tau)
 
-    # --- DEBUG PRINT ---
-    # Only print if resolution is involved, to reduce noise
-    if resol is not None:
-        if isinstance(resol, (np.ndarray, list)):
-            stats = f"Array (min={np.nanmin(resol):.1f}, max={np.nanmax(resol):.1f})"
-        else:
-            stats = f"Scalar ({resol:.1f})"
-        # Print context so we know WHO called this
-        print(f"[DEBUG][{context}] Unit: {resol_unit} | Val: {stats} | Grid: {len(wave_grid_ang)} | b_eff: {b_kms:.2f}")
-
     return convolve_flux(flux, wave_grid_ang, resol, resol_unit)
 
 # --- 2. The Paged Plot Widget ---
@@ -563,16 +553,10 @@ class VelocityPlotWidget(QWidget):
                 res_unit = 'km/s'
                 res_display = np.nanmedian(res_arg)
 
-                print(f"[DEBUG] Plot Panel {trans_name}: Using Variable Resol Column.")
-                print(f"        Mask len: {np.sum(mask)} | Slice len: {len(res_arg)}")
-                print(f"        Values: {res_arg[:5]} ...")
             else:
                 # Fallback scalar
                 res_arg, res_unit = self._get_resolution_at(lam_obs)
                 res_display = res_arg
-
-                print(f"[DEBUG] Plot Panel {trans_name}: Using Scalar Fallback.")
-                print(f"        Value: {res_arg} {res_unit}")
 
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
