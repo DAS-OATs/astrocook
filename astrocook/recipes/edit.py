@@ -571,6 +571,59 @@ class RecipeEditV2:
         # We can call our own split method directly!
         return self.split(expression=expression)
     
+    def trim_common(self, others: List['SessionV2'], z_target: float, 
+                    trans_self: str, trans_others: List[str], 
+                    window_kms: float = 500.0) -> 'SessionV2':
+        """
+        Trims the current session to the velocity intersection shared by itself and 'others'.
+        """
+        # 1. Helper to get range
+        def get_v_range(sess, trans, z):
+            if trans not in ATOM_DATA: return -np.inf, np.inf
+            x = sess.spec.x.value
+            if len(x) == 0: return 0.0, 0.0
+            lam_rest = ATOM_DATA[trans]['wave'] / 10.0
+            lam_obs = lam_rest * (1 + z)
+            c_kms = 299792.458
+            v = c_kms * (x - lam_obs) / lam_obs
+            return np.min(v), np.max(v)
+
+        # 2. Get All Ranges
+        v_mins = []
+        v_maxs = []
+        
+        # Self
+        v_min, v_max = get_v_range(self._session, trans_self, z_target)
+        v_mins.append(v_min); v_maxs.append(v_max)
+        
+        # Others
+        for sess, trans in zip(others, trans_others):
+            v_min, v_max = get_v_range(sess, trans, z_target)
+            v_mins.append(v_min); v_maxs.append(v_max)
+            
+        # 3. Intersection
+        common_min = max(v_mins)
+        common_max = min(v_maxs)
+        
+        # 4. User Window
+        final_min = max(common_min, -window_kms)
+        final_max = min(common_max, window_kms)
+        
+        if final_max <= final_min:
+            logging.warning("trim_common: No overlap found.")
+            return self._session
+
+        # 5. Apply Split
+        # Convert back to Wavelength for SELF
+        lam_rest_self = ATOM_DATA[trans_self]['wave'] / 10.0
+        lam_obs_self = lam_rest_self * (1 + z_target)
+        c_kms = 299792.458
+        
+        lam_lower = lam_obs_self * (1 + final_min / c_kms)
+        lam_upper = lam_obs_self * (1 + final_max / c_kms)
+        
+        return self.split(f"(x > {lam_lower:.4f}) & (x < {lam_upper:.4f})")
+
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
         """
         Merges the current session with a list of other sessions.
