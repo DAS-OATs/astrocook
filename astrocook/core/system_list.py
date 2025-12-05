@@ -1,5 +1,6 @@
 from astropy.table import Table, Column
 import astropy.units as au
+import contextlib
 import dataclasses
 import logging
 import numpy as np
@@ -228,6 +229,28 @@ class SystemListV2:
         if self.constraint_model:
             return self.constraint_model.v2_constraints_by_uuid
         return {}
+    
+    # --- Context Manager for Safe Fitting ---
+    @contextlib.contextmanager
+    def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2):
+        """
+        Context manager that temporarily masks the system list for fitting specific components.
+        Ensures the mask is ALWAYS removed (set to None) when exiting, even if errors occur.
+        """
+        if not self.constraint_model:
+            yield
+            return
+
+        # 1. Capture original state (usually None)
+        original_active = self.constraint_model._active_uuids
+        
+        try:
+            # 2. Apply Mask
+            self.constraint_model.set_active_components(active_uuids, group_depth=group_depth)
+            yield
+        finally:
+            # 3. Restore State (Guaranteed)
+            self.constraint_model.set_active_components(original_active)
 
     def to_v1_systlist(self) -> Optional[Table]:
         """Converts the V2 list to a simple V1-compatible table structure."""

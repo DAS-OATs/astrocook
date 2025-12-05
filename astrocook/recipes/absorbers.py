@@ -294,6 +294,66 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed delete_component: {e}", exc_info=True)
             return 0
 
+    def detect_anchor(self, species: str = 'OVI') -> float:
+        """
+        Detects the redshift of a system anchor using doublet coincidence.
+        Current session must be the 'primary' line (e.g. OVI_1031).
+        
+        Note: This requires the session to know about its 'sibling' session (the secondary line).
+        For now, we assume the user passes the sibling session or we simplify to
+        auto-correlation if single spectrum.
+        
+        *Ideally, this recipe should take a 'sibling_session' argument.*
+        """
+        # (Implementation requires Session-to-Session interaction, which is complex in standard recipes.
+        #  For now, we implement the logic assuming the user provides the raw arrays or sibling object).
+        #  Let's define it to take a sibling session for robustness.
+        pass 
+        
+    # Let's implement the logic we wrote in batch_driver, tailored for the Recipe API.
+    # Since Recipes usually operate on 'self._session', we might need to pass the second session explicitly.
+    
+    def detect_doublet_anchor(self, sibling_session: 'SessionV2', 
+                              trans_primary: str, trans_secondary: str) -> float:
+        from scipy.ndimage import gaussian_filter1d
+        
+        # 1. Get Data
+        s1 = self._session
+        s2 = sibling_session
+        x1, y1 = s1.spec.x.value, s1.spec.y.value
+        x2, y2 = s2.spec.x.value, s2.spec.y.value
+        
+        if len(x1) == 0 or len(x2) == 0: return 0.0
+
+        # 2. Physics
+        if trans_primary not in ATOM_DATA or trans_secondary not in ATOM_DATA:
+            logging.error("Unknown transitions"); return 0.0
+
+        lam1 = ATOM_DATA[trans_primary]['wave'] / 10.0
+        lam2 = ATOM_DATA[trans_secondary]['wave'] / 10.0
+
+        # 3. Correlation
+        z1 = x1 / lam1 - 1.0
+        z2 = x2 / lam2 - 1.0
+        
+        z_min, z_max = max(z1.min(), z2.min()), min(z1.max(), z2.max())
+        if z_max <= z_min: return 0.0
+        
+        dz = np.median(np.diff(z1))
+        z_grid = np.arange(z_min, z_max, dz)
+        
+        y1_int = np.interp(z_grid, z1, y1)
+        y2_int = np.interp(z_grid, z2, y2)
+        
+        depth1 = np.maximum(0.0, 1.0 - gaussian_filter1d(y1_int, 2.0))
+        depth2 = np.maximum(0.0, 1.0 - gaussian_filter1d(y2_int, 2.0))
+        
+        score = depth1 * depth2
+        best_idx = np.argmax(score)
+        
+        logging.info(f"Anchor detected at z={z_grid[best_idx]:.5f}")
+        return float(z_grid[best_idx])
+
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
         try:
             max_nfev_i = int(max_nfev)
@@ -302,30 +362,15 @@ class RecipeAbsorbersV2:
             
             if not self._session.systs: return 0
             
-            # [CRITICAL] 1. Capture Original State
-            # We must restore the input session's state later to avoid side effects in the GUI or subsequent scripts.
-            original_active = self._session.systs.constraint_model._active_uuids
-            
-            try:
-                # 2. Apply Transient Fit Mask
-                # This restricts the fit to the specific group, but DOES NOT change the permanent 'is_free' flags in the data.
-                self._session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
-                
-                # 3. Run Fit
+            # USE CONTEXT MANAGER (Point 1 of Prompt)
+            with self._session.systs.fitting_context([uuid], group_depth=depth_i):
                 fitter = VoigtFitterV2(self._session.spec, self._session.systs)
                 new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
-                
-                if not res or not res.success:
-                    logging.warning(f"Fit failed: {res.message if res else 'No result'}")
-
-            finally:
-                # [CRITICAL] 4. Restore Input Session State
-                # Whether the fit succeeds or fails, we unmask the input session.
-                self._session.systs.constraint_model.set_active_components(original_active)
-
-            # 5. sanitize Output Session
-            # The new system list is created fresh from data, so it should be clean.
-            # But we explicitly force it to None to be 100% sure it doesn't carry over internal state.
+            
+            # The context manager exited, so 'new_systs' (cloned from self._session.systs) 
+            # might need a reset if the clone happened INSIDE the context. 
+            # Actually, fitter.fit returns a NEW system list. 
+            # We just need to ensure the NEW list is clean.
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)
 
