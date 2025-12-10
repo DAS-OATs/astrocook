@@ -628,7 +628,24 @@ class VoigtFitterV2:
         
         # [FIX] Use the exact resolution calculated in __init__
         # This ensures the metadata saved matches the fit physics.
-        fit_resol_val = self._global_resol_val
+        fit_resol_val = 0.0
+        c_kms = 299792.458
+
+        if self._use_variable_resolution and self._resol_calc is not None:
+            # Get the median of the resolution chunks used in the fit
+            raw_val = np.nanmedian(self._resol_calc)
+            
+            if np.isfinite(raw_val) and raw_val > 0:
+                # If the column was determined to be velocity (e.g. 17.0 km/s), 
+                # convert to R (e.g. 17600)
+                if self._variable_resol_unit == 'km/s':
+                    fit_resol_val = c_kms / raw_val
+                else:
+                    # It is already R
+                    fit_resol_val = raw_val
+                    
+        elif self._global_resol_val:
+            fit_resol_val = self._global_resol_val
 
         new_components = []
         old_components = self._system_list.components

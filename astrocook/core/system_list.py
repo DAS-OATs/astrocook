@@ -168,6 +168,7 @@ class SystemListV2:
         """
         z_list, dz_list, logN_list, dlogN_list, b_list, db_list = ([] for _ in range(6))
         btur_list, dbtur_list, func_list, series_list, id_list = ([] for _ in range(5))
+        chi2_list, resol_list = ([] for _ in range(2))
         
         for c in self._data.components: 
             z_list.append(c.z)
@@ -181,6 +182,8 @@ class SystemListV2:
             func_list.append(c.func)
             series_list.append(c.series)
             id_list.append(c.id)
+            chi2_list.append(c.chi2 if c.chi2 is not None else np.nan)
+            resol_list.append(c.resol if c.resol is not None else np.nan)
 
         t = Table()
         t['z'] = Column(z_list, unit=au.dimensionless_unscaled)
@@ -194,6 +197,11 @@ class SystemListV2:
         t['func'] = Column(func_list)
         t['series'] = Column(series_list)
         t['id'] = Column(id_list)
+        t['chi2'] = Column(chi2_list, unit=au.dimensionless_unscaled)
+        t['resol'] = Column(resol_list, unit=au.dimensionless_unscaled)
+        t['chi2'] = Column(chi2_list, unit=au.dimensionless_unscaled)
+        t['resol'] = Column(resol_list, unit=au.dimensionless_unscaled)
+
         return t
 
     @property
@@ -263,6 +271,8 @@ class SystemListV2:
             'dbtur': [c.dbtur if c.dbtur is not None else 0.0 for c in self.components],
             'func': [c.func for c in self.components],
             'series': [c.series for c in self.components],
+            'chi2': [c.chi2 if c.chi2 is not None else np.nan for c in self.components],
+            'resol': [c.resol if c.resol is not None else np.nan for c in self.components]
         }
         return Table(data_dict)
     
