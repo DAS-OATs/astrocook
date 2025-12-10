@@ -17,7 +17,7 @@ from astrocook.core.atomic_data import ATOM_DATA
 # Keep logs quiet so we can see the report
 logging.basicConfig(level=logging.WARNING, format='[%(levelname)s] %(message)s')
 
-snr = 60.0
+snr = 200.0
 
 def make_stress_spectrum():
     print("--- GENERATING 'TRAIN WRECK' SYNTHETIC DATA ---")
