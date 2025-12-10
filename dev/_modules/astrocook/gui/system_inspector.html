@@ -404,7 +404,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">wofz</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backends.backend_qtagg</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureCanvasQTAgg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.gridspec</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gridspec</span>
@@ -421,6 +420,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">xem_d</span><span class="p">,</span> <span class="n">ATOM_DATA</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pyside_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">AstrocookToolbar</span><span class="p">,</span> <span class="n">get_color_cycle</span><span class="p">,</span> <span class="n">PLOT_STYLE</span><span class="p">,</span> <span class="n">get_style_color</span>
+
+<span class="c1"># SSOT: Import convolution logic</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">convolve_flux</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Fallback if import fails (should not happen in prod)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;SystemInspector: Could not import convolve_flux from voigt_fitter. Using dummy.&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convolve_flux</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="k">return</span> <span class="n">flux</span>
 
 <span class="c1"># --- 1. Table Configuration ---</span>
 <span class="n">COL_MAP</span> <span class="o">=</span> <span class="p">{</span>
@@ -532,7 +539,7 @@
 
             <span class="c1"># Append Parameter Info if applicable</span>
             <span class="k">if</span> <span class="n">is_constrained_col</span><span class="p">:</span>
-                <span class="n">tooltip_html</span> <span class="o">+=</span> <span class="s2">&quot;&lt;hr&gt;&quot;</span> <span class="c1"># Divider</span>
+                <span class="n">tooltip_html</span> <span class="o">+=</span> <span class="s2">&quot;&lt;hr&gt;&quot;</span>
                 <span class="k">if</span> <span class="n">is_linked</span><span class="p">:</span>
                     <span class="n">target_name</span> <span class="o">=</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">;</span> <span class="n">target_z</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                     <span class="k">if</span> <span class="n">c_data</span><span class="o">.</span><span class="n">target_uuid</span><span class="p">:</span>
@@ -549,7 +556,6 @@
                         <span class="k">return</span> <span class="s2">&quot;Unknown&quot;</span>
                     <span class="n">expr_pretty</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;p\[&#39;([^&#39;]+)&#39;\]&quot;</span><span class="p">,</span> <span class="n">replacer</span><span class="p">,</span> <span class="n">expr_display</span><span class="p">)</span>
                     <span class="n">expr_pretty</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;p\[&quot;([^&quot;]+)&quot;\]&#39;</span><span class="p">,</span> <span class="n">replacer</span><span class="p">,</span> <span class="n">expr_pretty</span><span class="p">)</span>
-                    
                     <span class="n">tooltip_html</span> <span class="o">+=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;b&gt;Status:&lt;/b&gt; Linked&lt;br&gt;&quot;</span>
                                      <span class="sa">f</span><span class="s2">&quot;&lt;b&gt;Target:&lt;/b&gt; </span><span class="si">{</span><span class="n">target_name</span><span class="si">}{</span><span class="n">target_z</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
                                      <span class="sa">f</span><span class="s2">&quot;&lt;b&gt;Formula:&lt;/b&gt; &lt;code&gt;</span><span class="si">{</span><span class="n">expr_pretty</span><span class="si">}</span><span class="s2">&lt;/code&gt;&quot;</span><span class="p">)</span>
@@ -619,10 +625,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">set_allowed_uuids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">set</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the list of visible UUIDs (Fluid Group).&quot;&quot;&quot;</span>
         <span class="c1"># Break recursion: If the group hasn&#39;t changed, do nothing.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_uuids</span> <span class="o">==</span> <span class="n">uuids</span><span class="p">:</span> 
-            <span class="k">return</span>
-        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_uuids</span> <span class="o">==</span> <span class="n">uuids</span><span class="p">:</span> <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allowed_uuids</span> <span class="o">=</span> <span class="n">uuids</span>
+
         <span class="c1"># Only re-filter if the checkbox is actually checked</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_filtering_enabled</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">invalidateFilter</span><span class="p">()</span></div>
@@ -652,10 +657,10 @@
 </div>
 
         
-<span class="c1"># --- Helper for Voigt Profile (With Convolution) ---</span>
+<span class="c1"># --- Updated: Uses SSOT Convolution ---</span>
 <div class="viewcode-block" id="calc_voigt_profile">
 <a class="viewcode-back" href="../../../api/astrocook.gui.system_inspector.html#astrocook.gui.system_inspector.calc_voigt_profile">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">calc_voigt_profile</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_0</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_voigt_profile</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_0</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resol_unit</span><span class="o">=</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="s2">&quot;Unknown&quot;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">wave_grid_ang</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
     
     <span class="c1"># 1. Physics</span>
@@ -663,29 +668,22 @@
     <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
     <span class="n">b_safe</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
     <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span>
+    <span class="k">if</span> <span class="n">dop_width_ang</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="mf">1e-5</span>
+        
     <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">)</span> <span class="o">/</span> <span class="n">dop_width_ang</span>
     <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
     <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">)</span>
+    
     <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
     <span class="n">tau</span> <span class="o">=</span> <span class="mf">1.4974e-15</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span> <span class="o">*</span> <span class="n">H_ax</span>
     <span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau</span><span class="p">)</span>
 
-    <span class="c1"># 2. Convolution (Instrumental Broadening)</span>
-    <span class="k">if</span> <span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># Calculate sigma in pixels</span>
-        <span class="c1"># FWHM_lambda = lambda / R  -&gt; sigma_lambda = FWHM / 2.355</span>
-        <span class="n">sigma_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">lambda_c</span> <span class="o">/</span> <span class="n">resol</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        
-        <span class="c1"># Determine average pixel spacing of the grid</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx</span>
-                <span class="c1"># Only convolve if the broadening is significant (&gt;0.1 pixel)</span>
-                <span class="k">if</span> <span class="n">sigma_pix</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
-                    <span class="n">flux</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">flux</span></div>
+    <span class="c1"># 2. Convolution (SSOT)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">convolve_flux</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">resol</span><span class="p">,</span> <span class="n">resol_unit</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+        <span class="c1"># Fallback if import failed</span>
+        <span class="k">return</span> <span class="n">flux</span></div>
 
 
 <span class="c1"># --- 2. The Paged Plot Widget ---</span>
@@ -758,6 +756,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_all_transitions</span> <span class="o">=</span> <span class="p">[]</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span> <span class="o">=</span> <span class="p">{}</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_map_visuals</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_component</span> <span class="o">=</span> <span class="kc">None</span>
@@ -858,7 +857,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span> <span class="o">=</span> <span class="n">session</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_component</span> <span class="o">=</span> <span class="n">component</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_selected_components</span> <span class="o">=</span> <span class="n">selected_components</span> <span class="k">if</span> <span class="n">selected_components</span> <span class="k">else</span> <span class="p">[</span><span class="n">component</span><span class="p">]</span>
-        
         <span class="bp">self</span><span class="o">.</span><span class="n">_plot_center_z</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">z</span>
 
         <span class="k">if</span> <span class="n">is_new_component</span><span class="p">:</span>
@@ -910,17 +908,41 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">inspector</span><span class="o">.</span><span class="n">update_z_box</span><span class="p">(</span><span class="n">z_view_center</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper to get resolution (R) from the session robustly.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mf">0.0</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;_data&#39;</span><span class="p">):</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">&#39;resol&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">r</span>
-        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
-        <span class="k">if</span> <span class="s1">&#39;resol&#39;</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span> <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="s1">&#39;RESOL&#39;</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span> <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;RESOL&#39;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resolution_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_wavelength_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Robustly determines resolution for a specific wavelength.</span>
+<span class="sd">        Returns: (Value, Unit) -&gt; (float, &#39;R&#39; or &#39;km/s&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sess</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span>
+
+        <span class="c1"># 1. Check for &#39;resol&#39; Column (Variable Resolution)</span>
+        <span class="c1"># This contains FWHM in km/s</span>
+        <span class="k">if</span> <span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resol_col</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">x_arr</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="c1"># Assumed sorted</span>
+                
+                <span class="c1"># Find nearest pixel</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x_arr</span><span class="p">,</span> <span class="n">target_wavelength_nm</span><span class="p">)</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_arr</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                
+                <span class="n">val</span> <span class="o">=</span> <span class="n">resol_col</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="s1">&#39;km/s&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># 2. Fallback to Global Metadata (Usually &#39;R&#39;)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;_data&#39;</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">&#39;resol&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span>
+            
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
+        <span class="k">if</span> <span class="s1">&#39;resol&#39;</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span> <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]),</span> <span class="s1">&#39;R&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;RESOL&#39;</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span> <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;RESOL&#39;</span><span class="p">]),</span> <span class="s1">&#39;R&#39;</span>
+        
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
@@ -955,8 +977,11 @@
         <span class="n">x_full</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
         <span class="n">z_sys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_center_z</span>
-        
-        <span class="n">resol_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_resolution</span><span class="p">()</span>
+
+        <span class="c1"># Check for Variable Resolution</span>
+        <span class="n">resol_col</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">):</span>
+            <span class="n">resol_col</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 
         <span class="n">has_cont</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">cont</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
@@ -1012,6 +1037,19 @@
             <span class="n">v_p</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">mask</span><span class="p">];</span> <span class="n">y_p</span> <span class="o">=</span> <span class="n">y_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">];</span> <span class="n">dy_p</span> <span class="o">=</span> <span class="n">dy_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>
+            
+            <span class="c1"># --- PREPARE RESOLUTION FOR THIS PANEL ---</span>
+            <span class="n">res_arg</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;R&#39;</span>
+            
+            <span class="k">if</span> <span class="n">resol_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Extract slice</span>
+                <span class="n">res_arg</span> <span class="o">=</span> <span class="n">resol_col</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback scalar</span>
+                <span class="n">res_arg</span><span class="p">,</span> <span class="n">res_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_resolution_at</span><span class="p">(</span><span class="n">lam_obs</span><span class="p">)</span>
 
             <span class="n">ax_main</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">v_p</span><span class="p">,</span> <span class="n">y_p</span><span class="o">-</span><span class="n">dy_p</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#aaaaaa&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
             <span class="n">ax_main</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">v_p</span><span class="p">,</span> <span class="n">y_p</span><span class="o">+</span><span class="n">dy_p</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="s1">&#39;mid&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#aaaaaa&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
@@ -1021,6 +1059,7 @@
                 <span class="n">mod_p</span> <span class="o">=</span> <span class="n">mod_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
                 <span class="n">ax_main</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">v_p</span><span class="p">,</span> <span class="n">mod_p</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">get_style_color</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="n">colors</span><span class="p">),</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
+            <span class="c1"># Plot Components (Orange Dashed)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected_components</span><span class="p">:</span>
                 <span class="n">atom_info</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">trans_name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">atom_info</span><span class="p">:</span>
@@ -1029,16 +1068,21 @@
                         <span class="n">is_match</span> <span class="o">=</span> <span class="p">(</span><span class="n">sel_c</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="n">trans_name</span><span class="p">)</span> <span class="ow">or</span> \
                                    <span class="p">(</span><span class="n">sel_c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span> <span class="ow">and</span> <span class="n">trans_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">sel_c</span><span class="o">.</span><span class="n">series</span><span class="p">])</span>
                         <span class="k">if</span> <span class="n">is_match</span><span class="p">:</span>
+                            
+                            <span class="c1"># [FIX] Calculate Effective b (Thermal + Turbulent)</span>
+                            <span class="c1"># The model (Green Line) uses this. The component plot (Orange Line) must too.</span>
+                            <span class="n">b_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sel_c</span><span class="o">.</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sel_c</span><span class="o">.</span><span class="n">btur</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
                             <span class="n">prof</span> <span class="o">=</span> <span class="n">calc_voigt_profile</span><span class="p">(</span>
                                 <span class="n">x_ang_p</span><span class="p">,</span> <span class="n">atom_info</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">],</span> <span class="n">atom_info</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">atom_info</span><span class="p">[</span><span class="s1">&#39;gamma&#39;</span><span class="p">],</span>
-                                <span class="n">sel_c</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="n">sel_c</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">sel_c</span><span class="o">.</span><span class="n">b</span><span class="p">,</span>
-                                <span class="n">resol</span><span class="o">=</span><span class="n">resol_val</span> <span class="c1"># &lt;&lt;&lt; PASS RESOLUTION</span>
+                                <span class="n">sel_c</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="n">sel_c</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">b_eff</span><span class="p">,</span> <span class="c1"># &lt;--- Passing b_eff</span>
+                                <span class="n">resol</span><span class="o">=</span><span class="n">res_arg</span><span class="p">,</span> <span class="n">resol_unit</span><span class="o">=</span><span class="n">res_unit</span><span class="p">,</span>
+                                <span class="n">context</span><span class="o">=</span><span class="s2">&quot;STATIC_PLOT&quot;</span> <span class="c1"># &lt;--- Tag for logs</span>
                             <span class="p">)</span>
                             <span class="n">ax_main</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">v_p</span><span class="p">,</span> <span class="n">prof</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
 
             <span class="n">tick_ymin</span><span class="p">,</span> <span class="n">tick_ymax</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.08</span> 
             <span class="n">trans_axis</span> <span class="o">=</span> <span class="n">ax_main</span><span class="o">.</span><span class="n">get_xaxis_transform</span><span class="p">()</span>
-            
             <span class="n">lam_rest_panel_ang</span> <span class="o">=</span> <span class="n">xem_d</span><span class="p">[</span><span class="n">trans_name</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             <span class="n">lam_obs_panel_center_ang</span> <span class="o">=</span> <span class="n">lam_rest_panel_ang</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_sys</span><span class="p">)</span>
 
@@ -1051,7 +1095,6 @@
                 
                 <span class="k">for</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">comp_lines</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">line_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span> <span class="k">continue</span>
-                    
                     <span class="k">if</span> <span class="n">line_name</span> <span class="o">==</span> <span class="n">trans_name</span><span class="p">:</span>
                         <span class="n">v_shift</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">other_c</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">z_sys</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z_sys</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -1069,6 +1112,7 @@
             <span class="n">ax_main</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
             <span class="n">ax_main</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
             <span class="n">ax_main</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
             <span class="n">ax_main</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.98</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="n">trans_name</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax_main</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> 
                     <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">))</span>
             <span class="n">ax_main</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xlim</span><span class="p">)</span>
@@ -1099,21 +1143,14 @@
         <span class="n">tol_v</span> <span class="o">=</span> <span class="n">view_width</span> <span class="o">*</span> <span class="mf">0.015</span> 
         
         <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">v_pos</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tick_map_visuals</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">inaxes</span> <span class="o">==</span> <span class="n">ax</span><span class="p">:</span>
-                <span class="n">dist</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">xdata</span> <span class="o">-</span> <span class="n">v_pos</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">tol_v</span><span class="p">:</span>
-                    <span class="n">c_chi2</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
-                    <span class="n">c_resol</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
-                    <span class="n">tooltip_text</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                                    <span class="sa">f</span><span class="s2">&quot;z: </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                                    <span class="sa">f</span><span class="s2">&quot;Chi2: </span><span class="si">{</span><span class="n">c_chi2</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                                    <span class="sa">f</span><span class="s2">&quot;Res: </span><span class="si">{</span><span class="n">c_resol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">inaxes</span> <span class="o">==</span> <span class="n">ax</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">xdata</span> <span class="o">-</span> <span class="n">v_pos</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol_v</span><span class="p">:</span>
+                <span class="n">c_chi2</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+                <span class="n">c_resol</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+                <span class="n">tooltip_text</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="se">\n</span><span class="s2">z: </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="se">\n</span><span class="s2">Chi2: </span><span class="si">{</span><span class="n">c_chi2</span><span class="si">}</span><span class="se">\n</span><span class="s2">Res: </span><span class="si">{</span><span class="n">c_resol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
         
-        <span class="k">if</span> <span class="n">tooltip_text</span><span class="p">:</span>
-            <span class="n">QToolTip</span><span class="o">.</span><span class="n">showText</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="n">tooltip_text</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">QToolTip</span><span class="o">.</span><span class="n">hideText</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">tooltip_text</span><span class="p">:</span> <span class="n">QToolTip</span><span class="o">.</span><span class="n">showText</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="n">tooltip_text</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="n">QToolTip</span><span class="o">.</span><span class="n">hideText</span><span class="p">()</span>
 
         <span class="n">main_ax</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">inaxes</span>
         <span class="k">if</span> <span class="n">main_ax</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="p">:</span>
@@ -1129,18 +1166,18 @@
         <span class="n">v_mouse</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">xdata</span>
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
         <span class="n">z_new</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_center_z</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">v_mouse</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        
         <span class="n">N</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">cursor_logN</span>
         <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor_b</span>
         
         <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_session</span>
-        <span class="n">x_unit</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
-        <span class="n">resol_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_resolution</span><span class="p">()</span>
+        <span class="n">x_full</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="c1"># Assuming sorted</span>
+        <span class="n">resol_col</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">):</span>
+            <span class="n">resol_col</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 
         <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="p">:</span>
             <span class="n">trans_name</span><span class="p">,</span> <span class="n">line_main</span><span class="p">,</span> <span class="n">line_resid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
             
-            <span class="c1"># --- [NEW] Multiplet Handling for Cursor ---</span>
             <span class="c1"># 1. Identify Siblings (Series Members)</span>
             <span class="n">siblings</span> <span class="o">=</span> <span class="p">[</span><span class="n">trans_name</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">series_key</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1158,46 +1195,57 @@
             <span class="n">v_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">v_min</span><span class="p">,</span> <span class="n">v_max</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
             <span class="n">lam_grid_ang</span> <span class="o">=</span> <span class="n">lam_obs_center_ang</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">v_grid</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span>
             
-            <span class="c1"># 3. Calculate Composite Profile (Multiply Fluxes)</span>
-            <span class="n">total_prof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">v_grid</span><span class="p">)</span>
+            <span class="c1"># --- CURSOR RESOLUTION INTERPOLATION ---</span>
+            <span class="n">res_arg</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;R&#39;</span>
             
+            <span class="k">if</span> <span class="n">resol_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Interpolate resolution onto the display grid</span>
+                <span class="c1"># Convert grid to nm for interpolation</span>
+                <span class="n">lam_grid_nm</span> <span class="o">=</span> <span class="n">lam_grid_ang</span> <span class="o">/</span> <span class="mf">10.0</span>
+                <span class="n">res_arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">lam_grid_nm</span><span class="p">,</span> <span class="n">x_full</span><span class="p">,</span> <span class="n">resol_col</span><span class="p">)</span>
+                <span class="n">res_arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">res_arg</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+                <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                 <span class="c1"># Fallback scalar</span>
+                 <span class="n">lam_cursor_nm</span> <span class="o">=</span> <span class="p">(</span><span class="n">lam_0_ang</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z_new</span><span class="p">))</span> <span class="o">/</span> <span class="mf">10.0</span>
+                 <span class="n">res_arg</span><span class="p">,</span> <span class="n">res_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_resolution_at</span><span class="p">(</span><span class="n">lam_cursor_nm</span><span class="p">)</span>
+
+            <span class="c1"># --- CALCULATE ---</span>
+            <span class="n">total_prof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">v_grid</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">sibling</span> <span class="ow">in</span> <span class="n">siblings</span><span class="p">:</span>
                 <span class="n">s_info</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sibling</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">s_info</span><span class="p">:</span> <span class="k">continue</span>
-                
-                <span class="c1"># Optimization: Skip if line is too far away</span>
-                <span class="n">sib_lam_obs</span> <span class="o">=</span> <span class="n">s_info</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_new</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">sib_lam_obs</span> <span class="o">&lt;</span> <span class="n">lam_grid_ang</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">5.0</span> <span class="ow">or</span> <span class="n">sib_lam_obs</span> <span class="o">&gt;</span> <span class="n">lam_grid_ang</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">5.0</span><span class="p">:</span>
-                    <span class="k">continue</span>
+                <span class="c1"># ... (bounds check) ...</span>
 
+                <span class="c1"># Cursor usually only controls &#39;b&#39; (Thermal), assuming btur=0 for manual guessing</span>
+                <span class="c1"># If you want the cursor to include btur, you need a UI input for it. </span>
+                <span class="c1"># For now, we pass cursor_b as is.</span>
+                
                 <span class="n">prof</span> <span class="o">=</span> <span class="n">calc_voigt_profile</span><span class="p">(</span>
                     <span class="n">lam_grid_ang</span><span class="p">,</span> <span class="n">s_info</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">],</span> <span class="n">s_info</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span> <span class="n">s_info</span><span class="p">[</span><span class="s1">&#39;gamma&#39;</span><span class="p">],</span>
                     <span class="n">z_new</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span>
-                    <span class="n">resol</span><span class="o">=</span><span class="n">resol_val</span> <span class="c1"># &lt;&lt;&lt; PASS RESOLUTION</span>
+                    <span class="n">resol</span><span class="o">=</span><span class="n">res_arg</span><span class="p">,</span> <span class="n">resol_unit</span><span class="o">=</span><span class="n">res_unit</span><span class="p">,</span>
+                    <span class="n">context</span><span class="o">=</span><span class="s2">&quot;CURSOR&quot;</span> <span class="c1"># &lt;--- Tag for logs</span>
                 <span class="p">)</span>
                 <span class="n">total_prof</span> <span class="o">*=</span> <span class="n">prof</span>
             
             <span class="n">line_main</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">v_grid</span><span class="p">,</span> <span class="n">total_prof</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">line_resid</span><span class="p">:</span>
-                <span class="n">lam_0_spec</span> <span class="o">=</span> <span class="p">(</span><span class="n">lam_0_ang</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">x_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">lam_0_spec</span> <span class="o">=</span> <span class="n">atom_info</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
                 <span class="n">lam_obs_center_spec</span> <span class="o">=</span> <span class="n">lam_0_spec</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_center_z</span><span class="p">)</span>
-
-                <span class="n">x_full</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
                 <span class="n">v_full</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_full</span> <span class="o">-</span> <span class="n">lam_obs_center_spec</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_obs_center_spec</span>
                 
                 <span class="n">dy</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x_full</span><span class="p">)</span>
                 <span class="n">cont</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">cont</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">cont</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x_full</span><span class="p">)</span>
-                
                 <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
                     <span class="n">dy_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">cont</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">cont</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
                 
                 <span class="n">dy_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">v_grid</span><span class="p">,</span> <span class="n">v_full</span><span class="p">,</span> <span class="n">dy_norm</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-                
                 <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
                     <span class="n">prof_sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">total_prof</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">dy_interp</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">dy_interp</span><span class="o">&gt;</span><span class="mf">1e-9</span><span class="p">)</span>
                     <span class="n">prof_sigma</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">prof_sigma</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
-                
                 <span class="n">line_resid</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">v_grid</span><span class="p">,</span> <span class="n">prof_sigma</span><span class="p">)</span>
             
         <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw_idle</span><span class="p">()</span></div>
@@ -1245,13 +1293,11 @@
             <span class="n">main_ax</span> <span class="o">=</span> <span class="kc">None</span>
             
             <span class="c1"># Resolve the clicked panel</span>
-            <span class="k">if</span> <span class="n">ax_clicked</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="p">:</span>
-                <span class="n">main_ax</span> <span class="o">=</span> <span class="n">ax_clicked</span>
+            <span class="k">if</span> <span class="n">ax_clicked</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="p">:</span> <span class="n">main_ax</span> <span class="o">=</span> <span class="n">ax_clicked</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Reverse lookup (check if clicked on residual panel)</span>
                 <span class="k">for</span> <span class="n">ax_m</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panel_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="n">resid_line</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">resid_line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">resid_line</span><span class="o">.</span><span class="n">axes</span> <span class="o">==</span> <span class="n">ax_clicked</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">val</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">val</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axes</span> <span class="o">==</span> <span class="n">ax_clicked</span><span class="p">:</span>
                         <span class="n">main_ax</span> <span class="o">=</span> <span class="n">ax_m</span>
                         <span class="k">break</span>
             
@@ -1281,8 +1327,7 @@
                 <span class="n">has_actions</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># --- Execute ---</span>
-            <span class="k">if</span> <span class="n">has_actions</span><span class="p">:</span>
-                <span class="n">menu</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span></div>
+            <span class="k">if</span> <span class="n">has_actions</span><span class="p">:</span> <span class="n">menu</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span></div>
 </div>
 
 
@@ -1432,8 +1477,7 @@
         <span class="k">if</span> <span class="n">sel</span><span class="p">:</span>
             <span class="n">idx_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy_model</span><span class="o">.</span><span class="n">mapToSource</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model</span><span class="o">.</span><span class="n">get_component_at</span><span class="p">(</span><span class="n">idx_source</span><span class="o">.</span><span class="n">row</span><span class="p">())</span>
-            <span class="k">if</span> <span class="n">comp</span><span class="p">:</span>
-                <span class="n">prev_uuid</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">uuid</span>
+            <span class="k">if</span> <span class="n">comp</span><span class="p">:</span> <span class="n">prev_uuid</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">uuid</span>
         
         <span class="c1"># Detect existing max ID to identify if a new component is added later</span>
         <span class="n">old_comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model</span><span class="o">.</span><span class="n">_components</span>
@@ -1478,10 +1522,8 @@
 
         <span class="c1"># 5. Fallback (Default to top row if no target found or table empty)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">selection_applied</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy_model</span><span class="o">.</span><span class="n">rowCount</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">table_view</span><span class="o">.</span><span class="n">selectRow</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">vel_plot</span><span class="o">.</span><span class="n">plot_spectrum</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span></div>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy_model</span><span class="o">.</span><span class="n">rowCount</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_view</span><span class="o">.</span><span class="n">selectRow</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vel_plot</span><span class="o">.</span><span class="n">plot_spectrum</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span></div>
 
                 
 <div class="viewcode-block" id="SystemInspector.update_limit_boxes">
@@ -1521,8 +1563,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">z_target</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z_in</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vel_plot</span><span class="o">.</span><span class="n">set_center_redshift</span><span class="p">(</span><span class="n">z_target</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error applying z: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error applying z: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_group_toggled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checked</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proxy_model</span><span class="o">.</span><span class="n">set_group_filter_enabled</span><span class="p">(</span><span class="n">checked</span><span class="p">)</span>
@@ -1536,7 +1577,6 @@
         
         <span class="n">idx_proxy</span> <span class="o">=</span> <span class="n">indexes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">idx_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy_model</span><span class="o">.</span><span class="n">mapToSource</span><span class="p">(</span><span class="n">idx_proxy</span><span class="p">)</span>
-        
         <span class="n">primary_row</span> <span class="o">=</span> <span class="n">idx_source</span><span class="o">.</span><span class="n">row</span><span class="p">()</span>
         <span class="n">primary_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model</span><span class="o">.</span><span class="n">get_component_at</span><span class="p">(</span><span class="n">primary_row</span><span class="p">)</span>
         
@@ -1557,7 +1597,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">trans_in</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">new_txt</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">z_in</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">primary_comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">new_txt</span><span class="p">)</span>
-            
             <span class="bp">self</span><span class="o">.</span><span class="n">vel_plot</span><span class="o">.</span><span class="n">plot_system</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_session</span><span class="p">,</span> <span class="n">primary_comp</span><span class="p">,</span> <span class="n">selected_comps</span><span class="p">)</span>
             
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1584,8 +1623,7 @@
         <span class="n">was_checked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
         
         <span class="c1"># 2. Temporarily disable grouping to ensure row is found/selectable</span>
-        <span class="k">if</span> <span class="n">was_checked</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span> 
+        <span class="k">if</span> <span class="n">was_checked</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span> 
         
         <span class="c1"># 3. Find row in Source Model</span>
         <span class="n">target_row</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -1617,8 +1655,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Case 2: Velocity Plot -&gt; Restore User Preference</span>
-            <span class="k">if</span> <span class="n">was_checked</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">was_checked</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_cb</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         
         <span class="c1"># 7. Ensure window is active</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>

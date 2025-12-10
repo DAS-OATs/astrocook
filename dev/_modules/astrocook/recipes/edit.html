@@ -401,12 +401,13 @@
                   
   <h1>Source code for astrocook.recipes.edit</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>  <span class="c1"># &lt;&lt;&lt; *** ADD THIS IMPORT ***</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">SpectrumDataV2</span>  <span class="c1"># &lt;&lt;&lt; *** ADD THIS IMPORT ***</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -415,10 +416,10 @@
 <span class="n">EDIT_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;set_properties&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Set session properties.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Set core session properties like emission redshift (z_em) and rest-frame redshift (z_rf).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Set core session properties. For resolution, you can enter a value (R) or a pixel sampling (e.g. &#39;3px&#39;).&quot;</span><span class="p">,</span>
         <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_em&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Emission Redshift (z_em)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;resol&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Resolving Power R (e.g. 50000). Set to 0 if &#39;resol&#39; column exists.&quot;</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;resol&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. &#39;3px&#39;)&quot;</span><span class="p">}</span> 
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#set_properties&quot;</span>
     <span class="p">},</span>
@@ -483,6 +484,23 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;lya_forest&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Preset region (&#39;lya_forest&#39;, &#39;all_ly_forest&#39;, &#39;red_side&#39;)&quot;</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#extract_preset&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;trim_common&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Trim to common velocity coverage.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Trims the current session to the velocity range shared by a list of other sessions (intersection).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;others_names&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated names of other sessions.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_target&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target redshift.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_self&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;Ly_a&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Transition for current session.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_others&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated transitions for other sessions.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Symmetric window width (km/s).&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#trim_common&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;stitch&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Merge multiple sessions.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Usually called via script</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -611,10 +629,61 @@
 
         <span class="k">return</span> <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span>
     
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_resolution_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resol_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses user input for resolution. </span>
+<span class="sd">        Accepts: </span>
+<span class="sd">          - Raw float (e.g. &quot;50000&quot;) -&gt; R</span>
+<span class="sd">          - &quot;3px&quot;, &quot;3.5 px&quot;, &quot;3 pixels&quot; -&gt; Estimates R from pixel sampling.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">clean_str</span> <span class="o">=</span> <span class="n">resol_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="c1"># Check for pixel syntax</span>
+        <span class="k">if</span> <span class="s1">&#39;px&#39;</span> <span class="ow">in</span> <span class="n">clean_str</span> <span class="ow">or</span> <span class="s1">&#39;pixel&#39;</span> <span class="ow">in</span> <span class="n">clean_str</span><span class="p">:</span>
+            <span class="c1"># Extract the number part</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([\d\.]+)&quot;</span><span class="p">,</span> <span class="n">clean_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not parse pixel width from &#39;</span><span class="si">{</span><span class="n">resol_str</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            
+            <span class="n">pix_fwhm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimating Resolution (R) assuming </span><span class="si">{</span><span class="n">pix_fwhm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> pixel FWHM...&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 1. Get raw x array</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># 2. Calculate Median Sampling (dx)</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">x_vals</span><span class="p">))</span>
+                
+                <span class="c1"># 3. Calculate Median Wavelength (lambda)</span>
+                <span class="n">mid_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">mid_x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># 4. Calculate R = lambda / (N_pix * dx)</span>
+                    <span class="n">fwhm_wave</span> <span class="o">=</span> <span class="n">pix_fwhm</span> <span class="o">*</span> <span class="n">dx</span>
+                    <span class="n">estimated_R</span> <span class="o">=</span> <span class="n">mid_x</span> <span class="o">/</span> <span class="n">fwhm_wave</span>
+                    
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Estimated R ~ </span><span class="si">{</span><span class="n">estimated_R</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (at </span><span class="si">{</span><span class="n">mid_x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">). &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;This is an approximation assuming constant sampling.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">estimated_R</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Cannot estimate resolution: invalid grid spacing or wavelength.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Cannot estimate resolution: spectrum too short.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mf">0.0</span>
+                
+        <span class="c1"># Fallback: Try standard float conversion</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">clean_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid resolution format: &#39;</span><span class="si">{</span><span class="n">resol_str</span><span class="si">}</span><span class="s2">&#39;. Use a number (R) or &#39;Npx&#39;.&quot;</span><span class="p">)</span>
+        
+
 <div class="viewcode-block" id="RecipeEditV2.set_properties">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.set_properties">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_em</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sets the core physical properties of the session.</span>
 
 <span class="sd">        Parameters</span>
@@ -622,8 +691,10 @@
 <span class="sd">        z_em : str (float)</span>
 <span class="sd">            Emission redshift of the source.</span>
 <span class="sd">        resol : str (float)</span>
-<span class="sd">            Resolving power :math:`R = \lambda / \Delta\lambda`.</span>
-<span class="sd">            If 0.0, the recipe will try to read it from metadata.</span>
+<span class="sd">            Resolving power :math:`R = \lambda / \Delta\lambda` (e.g. &quot;50000&quot;).</span>
+<span class="sd">            Can also be a pixel FWHM proxy (e.g. &quot;3px&quot; or &quot;3.5 pixel&quot;) to estimate R</span>
+<span class="sd">            from the median sampling.</span>
+<span class="sd">            If &quot;0.0&quot;, the recipe will try to read it from metadata.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -632,7 +703,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span>
-            <span class="n">resol_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span>
+            <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_resolution_string</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
@@ -941,6 +1012,141 @@
         <span class="c1"># 4. Re-use the existing split logic</span>
         <span class="c1"># We can call our own split method directly!</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expression</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.trim_common">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.trim_common">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trim_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">others_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z_target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                    <span class="n">trans_others</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;500.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trims the current session to the velocity intersection shared by itself and &#39;others&#39;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        others_names : str</span>
+<span class="sd">            Comma-separated names of other sessions loaded in the GUI (e.g., &quot;QSO_OVI, QSO_CIV&quot;).</span>
+<span class="sd">        z_target : str (float)</span>
+<span class="sd">            Target redshift for velocity conversion.</span>
+<span class="sd">        trans_self : str</span>
+<span class="sd">            Transition name for the current session (e.g., &quot;Ly_a&quot;).</span>
+<span class="sd">        trans_others : str</span>
+<span class="sd">            Comma-separated transition names for the other sessions (e.g., &quot;OVI_1031, CIV_1548&quot;).</span>
+<span class="sd">        window_kms : str (float)</span>
+<span class="sd">            Maximum half-width of the velocity window in km/s.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new session trimmed to the common coverage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Parse Inputs</span>
+            <span class="n">z_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_target</span><span class="p">)</span>
+            <span class="n">win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window_kms</span><span class="p">)</span>
+            <span class="n">others_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">others_names</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            <span class="n">trans_list_others</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trans_others</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            
+            <span class="c1"># 2. Resolve Session Objects (GUI Logic)</span>
+            <span class="n">resolved_others_specs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">others_list</span><span class="p">:</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                            <span class="n">resolved_others_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                            <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trim_common: Session &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found in GUI history.&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mismatch: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">)</span><span class="si">}</span><span class="s2"> transitions provided.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
+                
+            <span class="c1"># 3. Delegate Calculation to Core (SSOT)</span>
+            <span class="c1"># The core calculates the physics and returns the boolean expression string</span>
+            <span class="n">split_expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calc_intersection_expression</span><span class="p">(</span>
+                <span class="n">others_specs</span><span class="o">=</span><span class="n">resolved_others_specs</span><span class="p">,</span>
+                <span class="n">z_target</span><span class="o">=</span><span class="n">z_f</span><span class="p">,</span>
+                <span class="n">trans_self</span><span class="o">=</span><span class="n">trans_self</span><span class="p">,</span>
+                <span class="n">trans_others</span><span class="o">=</span><span class="n">trans_list_others</span><span class="p">,</span>
+                <span class="n">window_kms</span><span class="o">=</span><span class="n">win_f</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">split_expression</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;trim_common: No overlap found or invalid inputs.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applying intersection trim: </span><span class="si">{</span><span class="n">split_expression</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 4. Execute Split</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_expression</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trim_common failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.stitch">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.stitch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_sessions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">sort</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merges the current session with a list of other sessions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_sessions : List[Union[SessionV2, str]]</span>
+<span class="sd">            A list of SessionV2 objects OR strings (names of sessions loaded in the GUI).</span>
+<span class="sd">        sort : bool</span>
+<span class="sd">            If True, sorts the final spectrum by wavelength.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new session containing the merged data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Delayed import to avoid circular dependency</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">other_sessions</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No sessions provided to stitch.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># 1. Resolve Inputs (GUI/Script Logic)</span>
+        <span class="n">resolved_specs</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">other_sessions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">SessionV2</span><span class="p">):</span>
+                <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># GUI Lookup</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="p">,</span> <span class="s1">&#39;session_histories&#39;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">item</span><span class="p">:</span>
+                            <span class="n">found</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span>
+                            <span class="k">break</span>
+                <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch: Could not find loaded session named &#39;</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&#39;. Skipping.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch: Invalid item type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No valid sessions found to stitch.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 2. Delegate Data Manipulation to Core</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="n">sort</span><span class="p">)</span>
+            
+            <span class="c1"># 3. Return New Session</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 
 </pre></div>

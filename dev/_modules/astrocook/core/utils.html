@@ -410,17 +410,10 @@
 <span class="c1"># These operations typically involve extraction, combination, or file export,</span>
 <span class="c1"># requiring the original session state to be preserved and a new entry to be created.</span>
 <span class="n">BRANCHING_RECIPES</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;split&#39;</span><span class="p">,</span>                <span class="c1"># Split spectrum by range</span>
+    <span class="s1">&#39;split&#39;</span><span class="p">,</span>                
+    <span class="s1">&#39;stitch&#39;</span><span class="p">,</span>
     <span class="s1">&#39;extract_preset&#39;</span><span class="p">,</span>
     <span class="s1">&#39;identify_lines&#39;</span><span class="p">,</span>
-    <span class="c1">#&#39;part_extract&#39;,         # Extracts a sub-part (e.g., specific order/slice)</span>
-    <span class="s1">&#39;combine&#39;</span><span class="p">,</span>              <span class="c1"># Combines multiple sessions</span>
-    <span class="c1">#&#39;equalize&#39;,             # Equalizes multiple sessions</span>
-    <span class="c1">#&#39;struct_import&#39;,        # Imports a structure from another session</span>
-    <span class="c1">#&#39;save&#39;,                 # File output (should always be a new operation)</span>
-    <span class="c1">#&#39;save_pdf&#39;,             # PDF output</span>
-    <span class="s1">&#39;group_extract&#39;</span><span class="p">,</span>        <span class="c1"># Extracts a group into a new structure</span>
-    <span class="c1"># You will need to add other recipes here as you migrate them (e.g., &#39;syst_new&#39;)</span>
 <span class="p">]</span>
 
 <div class="viewcode-block" id="get_recipe_schema">

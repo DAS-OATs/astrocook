@@ -402,6 +402,7 @@
   <h1>Source code for astrocook.core.system_list</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -574,6 +575,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">z_list</span><span class="p">,</span> <span class="n">dz_list</span><span class="p">,</span> <span class="n">logN_list</span><span class="p">,</span> <span class="n">dlogN_list</span><span class="p">,</span> <span class="n">b_list</span><span class="p">,</span> <span class="n">db_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
         <span class="n">btur_list</span><span class="p">,</span> <span class="n">dbtur_list</span><span class="p">,</span> <span class="n">func_list</span><span class="p">,</span> <span class="n">series_list</span><span class="p">,</span> <span class="n">id_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+        <span class="n">chi2_list</span><span class="p">,</span> <span class="n">resol_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
         
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">:</span> 
             <span class="n">z_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
@@ -587,6 +589,8 @@
             <span class="n">func_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
             <span class="n">series_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
             <span class="n">id_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="n">chi2_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">resol_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">()</span>
         <span class="n">t</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">z_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
@@ -600,6 +604,11 @@
         <span class="n">t</span><span class="p">[</span><span class="s1">&#39;func&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">func_list</span><span class="p">)</span>
         <span class="n">t</span><span class="p">[</span><span class="s1">&#39;series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">series_list</span><span class="p">)</span>
         <span class="n">t</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">id_list</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="nd">@property</span>
@@ -635,6 +644,26 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">v2_constraints_by_uuid</span>
         <span class="k">return</span> <span class="p">{}</span>
+    
+    <span class="c1"># --- Context Manager for Safe Fitting ---</span>
+<div class="viewcode-block" id="SystemListV2.fitting_context">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.fitting_context">[docs]</a>
+    <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fitting_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Safely sets the active fitting mask and guarantees cleanup.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
+            <span class="k">yield</span>
+            <span class="k">return</span>
+
+        <span class="n">original_active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">active_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">)</span>
+            <span class="k">yield</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="SystemListV2.to_v1_systlist">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.to_v1_systlist">[docs]</a>
@@ -654,6 +683,8 @@
             <span class="s1">&#39;dbtur&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
             <span class="s1">&#39;func&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">func</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
             <span class="s1">&#39;series&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">&#39;chi2&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">&#39;resol&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">Table</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span></div>
 
@@ -941,7 +972,7 @@
 
 <div class="viewcode-block" id="SystemListV2.get_connected_group">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds a set of components that must be fitted together.</span>
 
@@ -955,103 +986,314 @@
 <span class="sd">        ----------</span>
 <span class="sd">        seed_uuids : list of str</span>
 <span class="sd">            The UUIDs of the components initially selected for fitting.</span>
+<span class="sd">        max_depth : int, optional</span>
+<span class="sd">            How many degrees of separation to traverse.</span>
+<span class="sd">            1 = Direct neighbors only.</span>
+<span class="sd">            2 = Neighbors of neighbors (Friends of Friends).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        set of str</span>
 <span class="sd">            The full set of UUIDs in the connected group.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">seed_uuids</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
         
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-        <span class="n">seeds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
-        
-        <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">seed_uuids</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">comp_map</span><span class="p">:</span>
-                <span class="n">seeds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_map</span><span class="p">[</span><span class="n">uuid</span><span class="p">])</span>
-        
-        <span class="n">group_uuids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">seed_uuids</span><span class="p">)</span>
+        <span class="c1"># Access constraints if available, else empty</span>
+        <span class="n">constraints_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v2_constraints_map</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">&#39;v2_constraints_map&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
 
+        <span class="c1"># Helper: Get rest wavelengths</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">get_all_w_rest</span><span class="p">(</span><span class="n">series_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]]</span>
             <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
                 <span class="n">waves</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">]:</span>
-                    <span class="k">if</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                        <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">line_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">line_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">])</span>
                 <span class="k">if</span> <span class="n">waves</span><span class="p">:</span> <span class="k">return</span> <span class="n">waves</span>
             <span class="k">return</span> <span class="p">[]</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">are_same_species</span><span class="p">(</span><span class="n">s1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">s2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">s1</span> <span class="o">==</span> <span class="n">s2</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
-            <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">s1</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span> <span class="n">parent1</span> <span class="o">=</span> <span class="n">k</span>
-                <span class="k">if</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span> <span class="n">parent2</span> <span class="o">=</span> <span class="n">k</span>
-            <span class="k">if</span> <span class="n">parent1</span> <span class="ow">and</span> <span class="n">parent2</span> <span class="ow">and</span> <span class="n">parent1</span> <span class="o">==</span> <span class="n">parent2</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
-            <span class="k">if</span> <span class="n">s1</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span> <span class="ow">and</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">s1</span><span class="p">]:</span> <span class="k">return</span> <span class="kc">True</span>
-            <span class="k">if</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span> <span class="ow">and</span> <span class="n">s1</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">s2</span><span class="p">]:</span> <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># Helper: Check overlap</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">are_overlapping</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">):</span>
+            <span class="c1"># Threshold: 4 sigma (thermal) or fixed 30 km/s buffer</span>
+            <span class="n">threshold_kms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">c2</span><span class="o">.</span><span class="n">b</span><span class="p">),</span> <span class="mf">30.0</span><span class="p">)</span>
+            
+            <span class="c1"># 1. Constraints (Linked parameters imply grouping)</span>
+            <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">c1</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">c2</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">c2</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">c1</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="c1"># 2. Spectral Overlap (Do the lines touch?)</span>
+            <span class="n">waves1</span> <span class="o">=</span> <span class="n">get_all_w_rest</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+            <span class="n">waves2</span> <span class="o">=</span> <span class="n">get_all_w_rest</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">waves1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">waves2</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="c1"># Use z from object</span>
+            <span class="n">obs1</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c1</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">waves1</span><span class="p">]</span>
+            <span class="n">obs2</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c2</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">waves2</span><span class="p">]</span>
+            
+            <span class="k">for</span> <span class="n">w1</span> <span class="ow">in</span> <span class="n">obs1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">w2</span> <span class="ow">in</span> <span class="n">obs2</span><span class="p">:</span>
+                    <span class="n">lam_avg</span> <span class="o">=</span> <span class="p">(</span><span class="n">w1</span> <span class="o">+</span> <span class="n">w2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+                    <span class="n">dv</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">w1</span> <span class="o">-</span> <span class="n">w2</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_avg</span>
+                    <span class="k">if</span> <span class="n">dv</span> <span class="o">&lt;</span> <span class="n">threshold_kms</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
+            
+            <span class="c1"># 3. Kinematic Proximity (Same Series)</span>
+            <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="n">c2</span><span class="o">.</span><span class="n">series</span><span class="p">:</span>
+                <span class="n">dz</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">c2</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">dv_kin</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c1</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dv_kin</span> <span class="o">&lt;</span> <span class="n">threshold_kms</span><span class="p">:</span> <span class="k">return</span> <span class="kc">True</span>
+                
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">constraints_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v2_constraints_map</span>
-
-        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">seeds</span><span class="p">:</span>
-            <span class="n">seed_waves_rest</span> <span class="o">=</span> <span class="n">get_all_w_rest</span><span class="p">(</span><span class="n">seed</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
-            <span class="n">seed_z</span> <span class="o">=</span> <span class="n">seed</span><span class="o">.</span><span class="n">z</span>
-            <span class="n">seed_b</span> <span class="o">=</span> <span class="n">seed</span><span class="o">.</span><span class="n">b</span>
-            <span class="n">seed_waves_obs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">seed_z</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">seed_waves_rest</span><span class="p">]</span>
-
+        <span class="c1"># --- Transitive Closure Loop (Friends-of-Friends) ---</span>
+        <span class="n">group_uuids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">seed_uuids</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_depth</span><span class="p">):</span>
+            <span class="n">added_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Get current member objects</span>
+            <span class="n">current_members</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">group_uuids</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">comp_map</span><span class="p">]</span>
+            
             <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">group_uuids</span><span class="p">:</span> <span class="k">continue</span> 
+                <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">group_uuids</span><span class="p">:</span> <span class="k">continue</span>
                 
+                <span class="c1"># Check against ALL current group members</span>
                 <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">False</span>
-                
-                <span class="c1"># 1. Parameter Links</span>
-                <span class="k">if</span> <span class="n">seed</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">seed</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span>
-                            <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
-                
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_connected</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">other</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">seed</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span>
-                            <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
-                
-                <span class="k">if</span> <span class="n">is_connected</span><span class="p">:</span>
-                    <span class="n">group_uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">uuid</span><span class="p">);</span> <span class="k">continue</span>
-
-                <span class="n">threshold_kms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">seed_b</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">b</span><span class="p">),</span> <span class="mf">30.0</span><span class="p">)</span>
-
-                <span class="c1"># 2. Spectral Overlap</span>
-                <span class="k">if</span> <span class="n">seed_waves_obs</span><span class="p">:</span>
-                    <span class="n">other_waves_rest</span> <span class="o">=</span> <span class="n">get_all_w_rest</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
-                    <span class="n">other_waves_obs</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">other_waves_rest</span><span class="p">]</span>
-                    
-                    <span class="k">for</span> <span class="n">w1_obs</span> <span class="ow">in</span> <span class="n">seed_waves_obs</span><span class="p">:</span>
-                        <span class="k">for</span> <span class="n">w2_obs</span> <span class="ow">in</span> <span class="n">other_waves_obs</span><span class="p">:</span>
-                            <span class="n">lam_avg</span> <span class="o">=</span> <span class="p">(</span><span class="n">w1_obs</span> <span class="o">+</span> <span class="n">w2_obs</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
-                            <span class="n">dv</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">w1_obs</span> <span class="o">-</span> <span class="n">w2_obs</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_avg</span>
-                            <span class="k">if</span> <span class="n">dv</span> <span class="o">&lt;</span> <span class="n">threshold_kms</span><span class="p">:</span>
-                                <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
-                        <span class="k">if</span> <span class="n">is_connected</span><span class="p">:</span> <span class="k">break</span>
-                
-                <span class="k">if</span> <span class="n">is_connected</span><span class="p">:</span>
-                    <span class="n">group_uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">uuid</span><span class="p">);</span> <span class="k">continue</span>
-
-                <span class="c1"># 3. Kinematic Proximity (Same Species)</span>
-                <span class="k">if</span> <span class="n">are_same_species</span><span class="p">(</span><span class="n">seed</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
-                    <span class="n">dz</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">seed_z</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-                    <span class="n">dv_kin</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">seed_z</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">dv_kin</span> <span class="o">&lt;</span> <span class="n">threshold_kms</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">current_members</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">are_overlapping</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
                         <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">True</span>
-                        
+                        <span class="k">break</span>
+                
                 <span class="k">if</span> <span class="n">is_connected</span><span class="p">:</span>
                     <span class="n">group_uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
-                    
+                    <span class="n">added_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="k">if</span> <span class="n">added_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seed_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">group_uuids</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_after_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes the &#39;active_components&#39; mask from a system list.</span>
+<span class="sd">        This ensures that when we generate models from it, ALL components are included.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
+            <span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">systs</span>
+
+    <span class="c1"># --- HELPER 3: Compute Fixed AIC ---</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_fixed_aic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">,</span> 
+                           <span class="n">static_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k_free</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates AIC on a FIXED set of pixels (static_mask).</span>
+<span class="sd">        </span>
+<span class="sd">        AIC = Chi2 + 2*k</span>
+<span class="sd">        Chi2 = Sum( (Flux - Model)^2 / Error^2 ) masked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+        
+        <span class="c1"># 1. Generate Full Model (No masking allowed here!)</span>
+        <span class="n">eval_fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">systs</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">eval_fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+        
+        <span class="c1"># 2. Calculate Chi2 on the static mask</span>
+        <span class="n">y_win</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+        <span class="n">mod_win</span> <span class="o">=</span> <span class="n">model_flux</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+        <span class="n">dy_win</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+        
+        <span class="n">chi2static</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">y_win</span> <span class="o">-</span> <span class="n">mod_win</span><span class="p">)</span> <span class="o">/</span> <span class="n">dy_win</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        
+        <span class="c1"># 3. Calculate AIC</span>
+        <span class="n">aic</span> <span class="o">=</span> <span class="n">chi2static</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k_free</span>
+        <span class="k">return</span> <span class="n">aic</span>
+    
+<div class="viewcode-block" id="SystemListV2.optimize_hierarchy">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.optimize_hierarchy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">uuid_seed</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                           <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span>
+                           <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+                           <span class="n">min_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># &lt;--- NEW PARAMETER</span>
+                           <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iteratively adds components to a system to minimize residuals using the</span>
+<span class="sd">        Akaike Information Criterion (AIC).</span>
+
+<span class="sd">        This method performs the following steps:</span>
+<span class="sd">        1.  **Baseline Fit:** Fits the seed component (and its connected group) to establish a baseline AIC.</span>
+<span class="sd">        2.  **Residual Scan:** Calculates the residuals (Flux - Model) over the specified velocity window.</span>
+<span class="sd">        3.  **Candidate Detection:** Identifies the strongest un-modeled absorption feature (negative residual).</span>
+<span class="sd">        4.  **Trial:** If the feature exceeds ``threshold_sigma``, adds a new component at that position.</span>
+<span class="sd">        5.  **Evaluation:** Fits the new configuration. If AIC improves (decreases) by ``aic_penalty``, </span>
+<span class="sd">            the new component is kept.</span>
+<span class="sd">        6.  **Termination:** Repeats until ``max_components`` is reached or ``patience`` is exhausted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        spec : SpectrumV2</span>
+<span class="sd">            The spectrum data used for fitting and residual calculation.</span>
+<span class="sd">        uuid_seed : str</span>
+<span class="sd">            UUID of the seed component. This defines the series (e.g. CIV) and the center of the </span>
+<span class="sd">            velocity search window.</span>
+<span class="sd">        max_components : int, optional</span>
+<span class="sd">            Maximum number of additional components to attempt adding (default: 5).</span>
+<span class="sd">        threshold_sigma : float, optional</span>
+<span class="sd">            Significance level (in standard deviations) of the residual dip required to trigger </span>
+<span class="sd">            a new component trial (default: 2.5).</span>
+<span class="sd">        aic_penalty : float, optional</span>
+<span class="sd">            Minimum AIC improvement required to accept a new component (default: 0.0).</span>
+<span class="sd">            Higher values favor simpler models (Occam&#39;s razor).</span>
+<span class="sd">        z_window_kms : float, optional</span>
+<span class="sd">            The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</span>
+<span class="sd">        min_dv : float, optional</span>
+<span class="sd">            Minimum velocity separation (km/s) required between a candidate and </span>
+<span class="sd">            existing components. Lower this to de-blend close doublets (default: 10.0).</span>
+<span class="sd">        group_depth : int, optional</span>
+<span class="sd">            Depth for finding connected neighbors during the fit (default: 2).</span>
+<span class="sd">        patience : int, optional</span>
+<span class="sd">            Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new system list containing the optimized components.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+
+        <span class="c1"># 1. Setup Static Window</span>
+        <span class="n">current_systs</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">target_comp</span> <span class="o">=</span> <span class="n">current_systs</span><span class="o">.</span><span class="n">get_component_by_uuid</span><span class="p">(</span><span class="n">uuid_seed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_comp</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="n">series_name</span> <span class="o">=</span> <span class="n">target_comp</span><span class="o">.</span><span class="n">series</span>
+        <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="mf">1215.67</span>
+        <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+        
+        <span class="n">lam_target_nm</span> <span class="o">=</span> <span class="n">lam_target_ang</span> <span class="o">/</span> <span class="mf">10.0</span>
+        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+
+        <span class="c1"># Define STATIC MASK for AIC comparison</span>
+        <span class="n">lam_obs_center</span> <span class="o">=</span> <span class="n">lam_target_nm</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">target_comp</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">dv_arr</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">lam_obs_center</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_obs_center</span>
+        <span class="n">static_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dv_arr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">z_window_kms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">static_mask</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;optimize_hierarchy: Window contains no valid data.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># [FIX] Initialize Taboo Mask (Rejected Pixels)</span>
+        <span class="n">rejected_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="c1"># 2. Local Fit Orchestrator</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">fit_and_evaluate</span><span class="p">(</span><span class="n">systs_obj</span><span class="p">,</span> <span class="n">target_uuids</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">systs_obj</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">):</span>
+                <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">systs_obj</span><span class="p">)</span>
+                <span class="n">new_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                
+                <span class="c1"># Cleanup</span>
+                <span class="k">if</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
+                    <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span> <span class="n">systs_obj</span> 
+
+                <span class="c1"># Fixed AIC</span>
+                <span class="n">eval_fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">)</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">eval_fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+                
+                <span class="n">y_win</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+                <span class="n">mod_win</span> <span class="o">=</span> <span class="n">model_flux</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+                <span class="n">dy_win</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">static_mask</span><span class="p">]</span>
+                
+                <span class="n">chi2static</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">y_win</span> <span class="o">-</span> <span class="n">mod_win</span><span class="p">)</span> <span class="o">/</span> <span class="n">dy_win</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">aic</span> <span class="o">=</span> <span class="n">chi2static</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span>
+                
+                <span class="k">return</span> <span class="n">aic</span><span class="p">,</span> <span class="n">new_systs</span>
+
+        <span class="c1"># 3. Baseline Fit</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optimizing </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2"> hierarchy...&quot;</span><span class="p">)</span>
+        <span class="n">best_aic</span><span class="p">,</span> <span class="n">best_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">current_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">])</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Baseline AIC: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">current_systs</span> <span class="o">=</span> <span class="n">best_systs</span>
+        <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># 4. Iteration Loop</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_components</span><span class="p">):</span>
+            <span class="c1"># A. Calculate Residuals</span>
+            <span class="n">eval_fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">best_systs</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">model_phys</span> <span class="o">=</span> <span class="n">eval_fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+            
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                <span class="n">sigma_resid</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">model_phys</span><span class="p">)</span> <span class="o">/</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span>
+            
+            <span class="c1"># Apply Masks (Window + Taboo)</span>
+            <span class="n">sigma_resid</span><span class="p">[</span><span class="o">~</span><span class="n">static_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">sigma_resid</span><span class="p">[</span><span class="n">rejected_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Ignore previously failed spots!</span>
+            
+            <span class="c1"># B. Find Dip</span>
+            <span class="n">min_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">sigma_resid</span><span class="p">)</span>
+            <span class="n">min_val</span> <span class="o">=</span> <span class="n">sigma_resid</span><span class="p">[</span><span class="n">min_idx</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="n">min_val</span> <span class="o">&gt;</span> <span class="o">-</span><span class="n">threshold_sigma</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converged. Max resid </span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s &gt; </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+                
+            <span class="c1"># C. Create Candidate</span>
+            <span class="n">z_new</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">min_idx</span><span class="p">]</span> <span class="o">/</span> <span class="n">lam_target_nm</span> <span class="o">-</span> <span class="mf">1.0</span>
+            
+            <span class="c1"># D. Proximity Check</span>
+            <span class="n">too_close</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">best_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="n">series_name</span><span class="p">:</span>
+                    <span class="n">dz</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">z_new</span><span class="p">)</span>
+                    <span class="n">dv_sep</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z_new</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">dv_sep</span> <span class="o">&lt;</span> <span class="n">min_dv</span><span class="p">:</span> 
+                        <span class="n">too_close</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
+            
+            <span class="k">if</span> <span class="n">too_close</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate too close (</span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2"> km/s). Masking and retrying.&quot;</span><span class="p">)</span>
+                <span class="c1"># [FIX] Mask this spot and CONTINUE (Do not Break!)</span>
+                <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">6</span><span class="p">))</span>
+                <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span> 
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate at </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> (Sigma=</span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># E. Add &amp; Fit</span>
+            <span class="n">cand_systs</span> <span class="o">=</span> <span class="n">best_systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series_name</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z_new</span><span class="p">,</span> <span class="n">logN</span><span class="o">=</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">15.0</span><span class="p">)</span>
+            <span class="n">new_uuid</span> <span class="o">=</span> <span class="n">cand_systs</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">uuid</span>
+            
+            <span class="n">trial_aic</span><span class="p">,</span> <span class="n">trial_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">cand_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">,</span> <span class="n">new_uuid</span><span class="p">])</span>
+            
+            <span class="c1"># F. Compare</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">trial_aic</span> <span class="o">-</span> <span class="n">best_aic</span>
+            <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">aic_penalty</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Accepted. AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (Delta: </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="n">best_aic</span> <span class="o">=</span> <span class="n">trial_aic</span>
+                <span class="n">best_systs</span> <span class="o">=</span> <span class="n">trial_systs</span>
+                <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Rejected. AIC Delta </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">trials_without_imp</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+                <span class="c1"># [FIX] Mask this spot so we don&#39;t loop forever</span>
+                <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">10</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">11</span><span class="p">))</span>
+                <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="k">if</span> <span class="n">trials_without_imp</span> <span class="o">&gt;=</span> <span class="n">patience</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patience exhausted.&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+        
+        <span class="k">return</span> <span class="n">best_systs</span></div>
 </div>
 
 </pre></div>

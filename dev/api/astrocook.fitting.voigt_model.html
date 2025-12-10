@@ -456,7 +456,7 @@ flat parameter arrays required by numerical optimizers (like <code class="docuti
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components">
-<span class="sig-name descname"><span class="pre">set_active_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_model.html#VoigtModelConstraintV2.set_active_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">set_active_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_model.html#VoigtModelConstraintV2.set_active_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components" title="Link to this definition">#</a></dt>
 <dd><p>Defines the set of components to be fit (the “Fluid Group”).</p>
 <p>When fitting a specific line, we must also fit any lines that are:
 1.  Physically linked (via parameter constraints).
@@ -465,8 +465,13 @@ flat parameter arrays required by numerical optimizers (like <code class="docuti
 (fixed parameters) for the upcoming fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – The UUIDs of the components the user explicitly selected.
-If None, ALL components are considered active.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – The UUIDs of the components the user explicitly selected.
+If None, ALL components are considered active.</p></li>
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse when finding connected components.
+1 = Direct neighbors only.
+2 = Neighbors of neighbors (Friends of Friends).</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

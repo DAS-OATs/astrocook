@@ -453,7 +453,8 @@
         <span class="s1">&#39;dbtur&#39;</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">safe_value</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">dbtur</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">),</span>
         
         <span class="c1"># NOTE: V1 Syst requires these additional parameters in _pars for initialization</span>
-        <span class="s1">&#39;resol&#39;</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> 
+        <span class="s1">&#39;resol&#39;</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">safe_value</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">resol</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">),</span>
+        <span class="s1">&#39;chi2&#39;</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">safe_value</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">chi2</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
     <span class="p">}</span>
     
     <span class="c1"># 2. Instantiate the V1 Syst object </span>
@@ -489,45 +490,75 @@
     <span class="n">components_v2</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">id_to_uuid_map</span> <span class="o">=</span> <span class="p">{}</span>
     
+    <span class="n">raw_table</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v1_systs</span><span class="p">,</span> <span class="s1">&#39;_t&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">meta_lookup</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># {id: {&#39;chi2&#39;: val, &#39;resol&#39;: val}}</span>
+    
+    <span class="k">if</span> <span class="n">raw_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Check which columns survived in the table</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="n">raw_table</span><span class="o">.</span><span class="n">colnames</span>
+            <span class="n">has_chi2</span> <span class="o">=</span> <span class="s1">&#39;chi2&#39;</span> <span class="ow">in</span> <span class="n">cols</span>
+            <span class="n">has_resol</span> <span class="o">=</span> <span class="s1">&#39;resol&#39;</span> <span class="ow">in</span> <span class="n">cols</span>
+            
+            <span class="k">if</span> <span class="n">has_chi2</span> <span class="ow">or</span> <span class="n">has_resol</span><span class="p">:</span>
+                <span class="n">ids</span> <span class="o">=</span> <span class="n">raw_table</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                <span class="c1"># Access data safely</span>
+                <span class="n">chi2s</span> <span class="o">=</span> <span class="n">raw_table</span><span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_chi2</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">resols</span> <span class="o">=</span> <span class="n">raw_table</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_resol</span> <span class="k">else</span> <span class="kc">None</span>
+                
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">curr_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ids</span><span class="p">):</span>
+                    <span class="n">meta_lookup</span><span class="p">[</span><span class="n">curr_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">if</span> <span class="n">chi2s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> 
+                        <span class="n">meta_lookup</span><span class="p">[</span><span class="n">curr_id</span><span class="p">][</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chi2s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">resols</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> 
+                        <span class="n">meta_lookup</span><span class="p">[</span><span class="n">curr_id</span><span class="p">][</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">resols</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migration: Failed to read raw table metadata: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="c1"># Iterate through the V1 system components (stored in v1_systs._d)</span>
     <span class="k">for</span> <span class="n">v1_id</span><span class="p">,</span> <span class="n">v1_syst</span> <span class="ow">in</span> <span class="n">v1_systs</span><span class="o">.</span><span class="n">_d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="c1"># NOTE: v1_syst is an instance of the V1 Syst class, which stores parameters in _pars</span>
         <span class="n">v1_pars</span> <span class="o">=</span> <span class="n">v1_syst</span><span class="o">.</span><span class="n">_pars</span>
 
-        <span class="c1"># 1. Create the immutable ComponentV2 object</span>
+        <span class="n">c_chi2</span> <span class="o">=</span> <span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">c_resol</span> <span class="o">=</span> <span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;resol&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Fallback to lookup</span>
+        <span class="k">if</span> <span class="n">c_chi2</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">v1_id</span> <span class="ow">in</span> <span class="n">meta_lookup</span><span class="p">:</span>
+             <span class="n">val</span> <span class="o">=</span> <span class="n">meta_lookup</span><span class="p">[</span><span class="n">v1_id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;chi2&#39;</span><span class="p">)</span>
+             <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">c_chi2</span> <span class="o">=</span> <span class="n">_get_float_value</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">c_resol</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">v1_id</span> <span class="ow">in</span> <span class="n">meta_lookup</span><span class="p">:</span>
+             <span class="n">val</span> <span class="o">=</span> <span class="n">meta_lookup</span><span class="p">[</span><span class="n">v1_id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;resol&#39;</span><span class="p">)</span>
+             <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">c_resol</span> <span class="o">=</span> <span class="n">_get_float_value</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
         <span class="n">component_v2_data</span> <span class="o">=</span> <span class="n">ComponentDataV2</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="n">v1_id</span><span class="p">,</span>
-
-            <span class="c1"># Apply the guard for every parameter extraction</span>
             <span class="n">z</span><span class="o">=</span><span class="n">_get_float_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]),</span>             
             <span class="n">logN</span><span class="o">=</span><span class="n">_get_float_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">[</span><span class="s1">&#39;logN&#39;</span><span class="p">]),</span>
             <span class="n">b</span><span class="o">=</span><span class="n">_get_float_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]),</span>
-            
-            <span class="c1"># Safe extraction for ALL error terms (dz, dlogN, db) ---</span>
             <span class="n">dz</span><span class="o">=</span><span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;dz&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>           
             <span class="n">dlogN</span><span class="o">=</span><span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;dlogN&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
             <span class="n">db</span><span class="o">=</span><span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;db&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-
-            <span class="c1"># Safe extraction of btur/dbtur ---</span>
             <span class="n">btur</span><span class="o">=</span><span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;btur&#39;</span><span class="p">),</span>
             <span class="n">dbtur</span><span class="o">=</span><span class="n">_get_safe_param_value</span><span class="p">(</span><span class="n">v1_pars</span><span class="p">,</span> <span class="s1">&#39;dbtur&#39;</span><span class="p">,</span> <span class="n">is_error</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            
+            <span class="c1"># Populated values</span>
+            <span class="n">chi2</span><span class="o">=</span><span class="n">c_chi2</span><span class="p">,</span>
+            <span class="n">resol</span><span class="o">=</span><span class="n">c_resol</span><span class="p">,</span>
 
             <span class="n">func</span><span class="o">=</span><span class="n">v1_syst</span><span class="o">.</span><span class="n">_func</span><span class="p">,</span>
             <span class="n">series</span><span class="o">=</span><span class="n">v1_syst</span><span class="o">.</span><span class="n">_series</span>
         <span class="p">)</span>
 
         <span class="n">id_to_uuid_map</span><span class="p">[</span><span class="n">v1_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">component_v2_data</span><span class="o">.</span><span class="n">uuid</span>
-
         <span class="n">components_v2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">component_v2_data</span><span class="p">)</span>
         
     <span class="n">parsed_constraints_v1_keyed</span> <span class="o">=</span> <span class="n">parse_v1_fits_constraints</span><span class="p">(</span><span class="n">syst_header</span><span class="p">)</span>
     
-    <span class="c1"># 2. Create the V2 container</span>
-    <span class="c1"># CRITICAL: We pass the mutable V1 lmfit models (v1_systs._mods_t) as a placeholder </span>
-    <span class="c1"># until the V2 ConstraintModelV2 is implemented.</span>
     <span class="n">systlist_v2</span> <span class="o">=</span> <span class="n">SystemListDataV2</span><span class="p">(</span>
         <span class="n">components</span><span class="o">=</span><span class="n">components_v2</span><span class="p">,</span>
-        <span class="n">v1_models_t</span><span class="o">=</span><span class="n">v1_systs</span><span class="o">.</span><span class="n">_mods_t</span><span class="p">,</span> <span class="c1"># Placeholder for V1 lmfit models</span>
+        <span class="n">v1_models_t</span><span class="o">=</span><span class="n">v1_systs</span><span class="o">.</span><span class="n">_mods_t</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="n">v1_systs</span><span class="o">.</span><span class="n">_meta</span><span class="p">,</span>
         <span class="n">v1_header_constraints</span><span class="o">=</span><span class="n">syst_header</span><span class="p">,</span>
         <span class="n">parsed_constraints</span><span class="o">=</span><span class="n">parsed_constraints_v1_keyed</span><span class="p">,</span>

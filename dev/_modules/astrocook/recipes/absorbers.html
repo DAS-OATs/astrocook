@@ -403,17 +403,18 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">xem_d</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">ATOM_DATA</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.gui.debug_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">GLOBAL_PLOTTER</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">trans_parse</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;V1 &#39;trans_parse&#39; not available. Identification recipe will fail.&quot;</span><span class="p">)</span>
+    <span class="c1"># logging.error(&quot;V1 &#39;trans_parse&#39; not available. Identification recipe will fail.&quot;)</span>
     <span class="n">trans_parse</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">[]</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
 
@@ -458,8 +459,6 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;btur&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Turbulent broadening (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max shift for initial fit (km/s)&quot;</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="c1"># We hide this from the menu because it&#39;s usually triggered by mouse, </span>
-        <span class="c1"># but keeping it in the schema allows scripting/logging.</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#add_component&quot;</span> 
     <span class="p">},</span>
     <span class="s2">&quot;update_component&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -473,7 +472,7 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;series&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Series&quot;</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#update_component&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span> <span class="c1"># Usually triggered by table edit</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">&quot;delete_component&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete component.&quot;</span><span class="p">,</span>
@@ -484,13 +483,24 @@
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#delete_component&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
+    <span class="s2">&quot;detect_anchor&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Detect doublet anchor redshift.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Finds the redshift of maximum overlap between this session and a sibling session (doublet).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sibling_name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the sibling session.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_self&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;OVI_1031&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Transition in this session.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_sibling&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;OVI_1037&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Transition in sibling session.&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#detect_anchor&quot;</span>
+    <span class="p">},</span>
     <span class="s2">&quot;fit_component&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit component.&quot;</span><span class="p">,</span>
         <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Fits the selected component (and its neighbors) using the Voigt engine.&quot;</span><span class="p">,</span>
         <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target Component UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;max_nfev&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max iterations&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max velocity shift allowed (km/s)&quot;</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max velocity shift allowed (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;group_depth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Grouping depth (1=Neighbors, 2=FoF)&quot;</span><span class="p">}</span> 
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#fit_component&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
@@ -503,10 +513,25 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;param&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Parameter name (z, logN, b)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;is_free&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Is the parameter free to vary?&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Math expression for linking&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;UUID of the source component (for linking)&quot;</span><span class="p">}</span> <span class="c1"># &lt;--- Added</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;UUID of the source component (for linking)&quot;</span><span class="p">}</span> 
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#update_constraint&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;optimize_system&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Optimize system (Iterative Fit).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target Component UUID (seed)&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;max_components&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Maximum number of extra components to try adding.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;threshold_sigma&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Residual threshold (sigma) required to trigger a new component.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;aic_penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Minimum AIC improvement required to accept a new component.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Velocity window (km/s) around the system to analyze.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;min_dv&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Min separation (km/s). Lower for de-blending.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;group_depth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Grouping depth for finding neighbors.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;patience&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Trials allowed without AIC improvement.&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#optimize_system&quot;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -535,40 +560,6 @@
                        <span class="n">bypass_scoring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
                        <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
                        <span class="n">auto_populate</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Identify absorption lines by correlating spectral regions with templates.</span>
-
-<span class="sd">        This recipe orchestrates the full identification workflow:</span>
-<span class="sd">        1.  Detects absorption regions in the spectrum.</span>
-<span class="sd">        2.  Scans for kinematic candidates of specified multiplets (e.g. CIV doublet).</span>
-<span class="sd">        3.  Scores candidates based on profile similarity (R^2).</span>
-<span class="sd">        4.  Optionally populates the system list with the best candidates.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        multiplets : str</span>
-<span class="sd">            Comma-separated list of multiplets to search for.</span>
-<span class="sd">            Defaults: ``&quot;CIV,SiIV,MgII,Ly_ab&quot;``.</span>
-<span class="sd">        mask_col : str</span>
-<span class="sd">            Name of the boolean mask column where True indicates &#39;unabsorbed&#39; (continuum).</span>
-<span class="sd">        min_pix_region : str (int)</span>
-<span class="sd">            Minimum number of pixels required to define an absorption region.</span>
-<span class="sd">        merge_dv : str (float)</span>
-<span class="sd">            Velocity threshold (km/s) for merging adjacent regions.</span>
-<span class="sd">        score_threshold : str (float)</span>
-<span class="sd">            Minimum R^2 correlation score (0.0 to 1.0) required to accept a candidate.</span>
-<span class="sd">        bypass_scoring : str (bool)</span>
-<span class="sd">            If &#39;True&#39;, accept all kinematic matches regardless of their score.</span>
-<span class="sd">        debug_rating : str (bool)</span>
-<span class="sd">            If &#39;True&#39;, displays debug plots during the scoring process.</span>
-<span class="sd">        auto_populate : str (bool)</span>
-<span class="sd">            If &#39;True&#39;, automatically adds the identified components to the system list.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session with identified regions and (optionally) populated components.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">min_pix_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_pix_region</span><span class="p">)</span>
             <span class="n">merge_dv_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">merge_dv</span><span class="p">)</span>
@@ -581,8 +572,6 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Run the identification, which returns a new spectrum</span>
-            <span class="c1">#    with the identification maps in its metadata.</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;identify_lines recipe: Calling spec.identify_lines...&quot;</span><span class="p">)</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">identify_lines</span><span class="p">(</span>
                 <span class="n">multiplet_list</span><span class="o">=</span><span class="n">multiplet_list</span><span class="p">,</span>
@@ -594,43 +583,32 @@
                 <span class="n">debug_rating</span><span class="o">=</span><span class="n">debug_rating_b</span>
             <span class="p">)</span>
             
-            <span class="c1"># 2. Get the maps from the new spectrum&#39;s metadata</span>
             <span class="n">series_map_json</span> <span class="o">=</span> <span class="n">new_spec_v2</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;series_map_json&#39;</span><span class="p">)</span>
             <span class="n">z_map_json</span> <span class="o">=</span> <span class="n">new_spec_v2</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;z_map_json&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">z_map_json</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;identify_lines: Identification ran but produced no component maps. Only spectrum was updated.&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;identify_lines: Identification ran but produced no component maps.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;identify_lines recipe: Calling systs.add_components_from_regions...&quot;</span><span class="p">)</span>
-            
-            <span class="c1"># 3. Deserialize maps (they are JSON strings)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">series_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">series_map_json</span><span class="p">)</span>
                 <span class="n">z_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">z_map_json</span><span class="p">)</span>
-                <span class="c1"># Convert string keys back to int</span>
                 <span class="n">series_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
                 <span class="n">z_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;identify_lines: Failed to deserialize component maps: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="c1"># Return the spectrum-only update</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">auto_populate_b</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;identify_lines: Auto-populate disabled. Returning spectrum with suggestions.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
 
-            <span class="c1"># 3. LINKAGE: Call populate_from_identification</span>
             <span class="n">temp_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
-            
-            <span class="c1"># Ensure systs is initialized</span>
             <span class="k">if</span> <span class="n">temp_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
                 <span class="n">temp_session</span> <span class="o">=</span> <span class="n">temp_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">()))</span>
 
             <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
-            
             <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">populate_from_identification</span><span class="p">(</span>
                 <span class="n">region_id_col</span><span class="o">=</span><span class="s1">&#39;abs_ids&#39;</span><span class="p">,</span>
                 <span class="n">series_map_json</span><span class="o">=</span><span class="n">series_map_json</span><span class="p">,</span>
@@ -645,37 +623,16 @@
     
 <div class="viewcode-block" id="RecipeAbsorbersV2.populate_from_identification">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">populate_from_identification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                       <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_ids&#39;</span><span class="p">,</span>
-                       <span class="n">series_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                       <span class="n">z_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Populate the system list using results from a previous identification step.</span>
-
-<span class="sd">        This is typically called automatically by ``identify_lines``, but can be </span>
-<span class="sd">        invoked manually if identification was run without auto-populate.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        region_id_col : str</span>
-<span class="sd">            Name of the column in the spectrum containing region IDs.</span>
-<span class="sd">        series_map_json : str</span>
-<span class="sd">            JSON string mapping Region ID -&gt; Series Name.</span>
-<span class="sd">        z_map_json : str</span>
-<span class="sd">            JSON string mapping Region ID -&gt; Redshift.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">populate_from_identification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_ids&#39;</span><span class="p">,</span>
+                       <span class="n">series_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">z_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">z_map_json</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;populate_from_identification: Missing maps.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
-            
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Deserialize the maps</span>
             <span class="n">series_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">series_map_json</span><span class="p">)</span>
             <span class="n">z_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">z_map_json</span><span class="p">)</span>
-            <span class="c1"># Convert string keys back to int</span>
             <span class="n">series_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
             <span class="n">z_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;populate_from_identification: Failed to deserialize maps: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
@@ -698,24 +655,6 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Ly_a&#39;</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span> 
                       <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;13.5&#39;</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Manually adds a component and immediately attempts a fit.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        series : str</span>
-<span class="sd">            Transition/Multiplet name (e.g. &#39;Ly_a&#39;).</span>
-<span class="sd">        z : str (float)</span>
-<span class="sd">            Initial redshift guess.</span>
-<span class="sd">        logN : str (float)</span>
-<span class="sd">            Initial column density guess.</span>
-<span class="sd">        b : str (float)</span>
-<span class="sd">            Initial doppler parameter guess.</span>
-<span class="sd">        btur : str (float)</span>
-<span class="sd">            Turbulent broadening.</span>
-<span class="sd">        z_window_kms : str (float)</span>
-<span class="sd">            Velocity window allowed for the initial fit.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">z_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">);</span> <span class="n">logN_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">);</span> <span class="n">b_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="n">btur_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">btur</span><span class="p">)</span>
             <span class="n">z_win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
@@ -735,7 +674,6 @@
             <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
             
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-fitting new component </span><span class="si">{</span><span class="n">added_comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="c1"># Pass window</span>
             <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">fit_component</span><span class="p">(</span><span class="n">added_comp</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">z_win_f</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">final_session</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -746,18 +684,6 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> 
                          <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the parameters of an existing component.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        uuid : str</span>
-<span class="sd">            Unique identifier of the component.</span>
-<span class="sd">        z, logN, b : str (float)</span>
-<span class="sd">            New values for parameters. Pass &#39;None&#39; to keep unchanged.</span>
-<span class="sd">        series : str</span>
-<span class="sd">            New series name.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">changes</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="n">z</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
@@ -774,24 +700,11 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.delete_component">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a component and updates the model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        uuid : str</span>
-<span class="sd">            Unique identifier of the component to remove.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Delete from System List</span>
             <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
-            
-            <span class="c1"># 2. [FIX] Re-calculate Model</span>
-            <span class="c1"># We instantiate a temporary fitter with the NEW system list to get the updated flux</span>
             <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">)</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
             
-            <span class="c1"># 3. Update Spectrum with new model column</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
@@ -804,11 +717,7 @@
             <span class="p">)</span>
             
             <span class="n">new_spec_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
-            <span class="c1"># Reconstruct SpectrumV2 wrapper (preserving history/meta logic is handled by data core)</span>
-            <span class="c1"># We reuse the class of the current spectrum to be safe</span>
             <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_spec_data</span><span class="p">)</span> 
-            
-            <span class="c1"># 4. Return complete session</span>
             <span class="n">session_with_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">session_with_spec</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
 
@@ -817,38 +726,103 @@
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
+<div class="viewcode-block" id="RecipeAbsorbersV2.detect_anchor">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_anchor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_anchor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sibling_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_sibling</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sibling_session</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">sibling_name</span><span class="p">:</span>
+                        <span class="n">sibling_session</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span>
+                        <span class="k">break</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sibling_session</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sibling session &#39;</span><span class="si">{</span><span class="n">sibling_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mf">0.0</span>
+            
+            <span class="c1"># --- CALL CORE LOGIC ---</span>
+            <span class="n">z_found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">detect_doublet_z</span><span class="p">(</span>
+                <span class="n">sibling_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">,</span> <span class="n">trans_sibling</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected anchor at z=</span><span class="si">{</span><span class="n">z_found</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">z_found</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;detect_anchor failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mf">0.0</span></div>
+
+        
+    <span class="c1"># Let&#39;s implement the logic we wrote in batch_driver, tailored for the Recipe API.</span>
+    <span class="c1"># Since Recipes usually operate on &#39;self._session&#39;, we might need to pass the second session explicitly.</span>
+    
+<div class="viewcode-block" id="RecipeAbsorbersV2.detect_doublet_anchor">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_doublet_anchor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_doublet_anchor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sibling_session</span><span class="p">:</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">,</span> 
+                              <span class="n">trans_primary</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_secondary</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+        
+        <span class="c1"># 1. Get Data</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="n">sibling_session</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">s1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">s2</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">s2</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="c1"># 2. Physics</span>
+        <span class="k">if</span> <span class="n">trans_primary</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span> <span class="ow">or</span> <span class="n">trans_secondary</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Unknown transitions&quot;</span><span class="p">);</span> <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">lam1</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">trans_primary</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
+        <span class="n">lam2</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">trans_secondary</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
+
+        <span class="c1"># 3. Correlation</span>
+        <span class="n">z1</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">/</span> <span class="n">lam1</span> <span class="o">-</span> <span class="mf">1.0</span>
+        <span class="n">z2</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">/</span> <span class="n">lam2</span> <span class="o">-</span> <span class="mf">1.0</span>
+        
+        <span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">z1</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">z2</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">min</span><span class="p">(</span><span class="n">z1</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">z2</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">z_max</span> <span class="o">&lt;=</span> <span class="n">z_min</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+        
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">z1</span><span class="p">))</span>
+        <span class="n">z_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span><span class="p">,</span> <span class="n">dz</span><span class="p">)</span>
+        
+        <span class="n">y1_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">z_grid</span><span class="p">,</span> <span class="n">z1</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
+        <span class="n">y2_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">z_grid</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span>
+        
+        <span class="n">depth1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y1_int</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">))</span>
+        <span class="n">depth2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y2_int</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">))</span>
+        
+        <span class="n">score</span> <span class="o">=</span> <span class="n">depth1</span> <span class="o">*</span> <span class="n">depth2</span>
+        <span class="n">best_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Anchor detected at z=</span><span class="si">{</span><span class="n">z_grid</span><span class="p">[</span><span class="n">best_idx</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_grid</span><span class="p">[</span><span class="n">best_idx</span><span class="p">])</span></div>
+
+
 <div class="viewcode-block" id="RecipeAbsorbersV2.fit_component">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.fit_component">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2000&#39;</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fits a component (and its connected group) to the spectrum.</span>
-
-<span class="sd">        This uses the ``VoigtFitterV2`` engine. It automatically detects</span>
-<span class="sd">        which other components are linked or overlapping and fits them all simultaneously.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        uuid : str</span>
-<span class="sd">            The target component UUID.</span>
-<span class="sd">        max_nfev : str (int)</span>
-<span class="sd">            Maximum number of function evaluations for the optimizer.</span>
-<span class="sd">        z_window_kms : str (float)</span>
-<span class="sd">            Allowed velocity shift (km/s) from the starting position.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2000&#39;</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20.0&#39;</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">max_nfev_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_nfev</span><span class="p">)</span>
             <span class="n">z_win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
+            <span class="n">depth_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group_depth</span><span class="p">)</span>
+            
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
             
-            <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">([</span><span class="n">uuid</span><span class="p">])</span>
-            <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+            <span class="c1"># USE CONTEXT MANAGER (Point 1 of Prompt)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">):</span>
+                <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+                <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
             
-            <span class="c1"># Pass window to fit</span>
-            <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fit failed: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">message</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No result&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            
+            <span class="c1"># The context manager exited, so &#39;new_systs&#39; (cloned from self._session.systs) </span>
+            <span class="c1"># might need a reset if the clone happened INSIDE the context. </span>
+            <span class="c1"># Actually, fitter.fit returns a NEW system list. </span>
+            <span class="c1"># We just need to ensure the NEW list is clean.</span>
+            <span class="k">if</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
+                <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># 6. Construct Result</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
@@ -871,39 +845,15 @@
         
 <div class="viewcode-block" id="RecipeAbsorbersV2.update_constraint">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraint">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-                          <span class="n">is_free</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
-                          <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
-                          <span class="n">target_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the constraints (fixing/freeing/linking) for a parameter.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        uuid : str</span>
-<span class="sd">            Component UUID.</span>
-<span class="sd">        param : str</span>
-<span class="sd">            Parameter name (&#39;z&#39;, &#39;logN&#39;, &#39;b&#39;).</span>
-<span class="sd">        is_free : bool, optional</span>
-<span class="sd">            Set to True to unfreeze/unlink. Set to False to freeze/link.</span>
-<span class="sd">        expression : str, optional</span>
-<span class="sd">            Mathematical expression for linking (e.g. ``&quot;p[&#39;uuid2&#39;].z&quot;``).</span>
-<span class="sd">        target_uuid : str, optional</span>
-<span class="sd">            The UUID of the component this parameter is linked to.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_free</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                          <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">target_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Update the Constraint</span>
             <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">update_constraint</span><span class="p">(</span>
                 <span class="n">uuid</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">is_free</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">target_uuid</span>
             <span class="p">)</span>
             
-            <span class="c1"># 2. [FIX] Immediate Value Update</span>
-            <span class="c1"># If we just set a link (expression exists), calculate and apply the value now.</span>
             <span class="k">if</span> <span class="n">expression</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_free</span><span class="p">:</span>
                 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-                
-                <span class="c1"># A. Build Evaluation Context</span>
-                <span class="c1"># We need a dict &#39;p&#39; where p[&#39;uuid&#39;].param works.</span>
                 <span class="k">class</span><span class="w"> </span><span class="nc">CompProxy</span><span class="p">:</span>
                     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span>
                     <span class="nd">@property</span>
@@ -919,23 +869,77 @@
                 <span class="n">eval_globals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="n">comp_map</span><span class="p">,</span> <span class="s1">&#39;np&#39;</span><span class="p">:</span> <span class="n">np</span><span class="p">,</span> <span class="s1">&#39;sqrt&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">}</span>
                 
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="c1"># B. Evaluate</span>
                     <span class="n">new_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">eval_globals</span><span class="p">))</span>
-                    
-                    <span class="c1"># C. Update the component value</span>
-                    <span class="c1"># We reuse the update_component logic available in SystemListV2</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Link established. Auto-updating </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="n">new_systs</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">update_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">new_val</span><span class="p">})</span>
-                    
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not auto-update linked value: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="c1"># 3. Return a new Session State</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed update_constraint: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RecipeAbsorbersV2.optimize_system">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_components</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> 
+                        <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2.5&#39;</span><span class="p">,</span> <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span>
+                        <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100.0&#39;</span><span class="p">,</span> <span class="n">min_dv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span>
+                        <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Parse Args</span>
+            <span class="n">max_c</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_components</span><span class="p">);</span> <span class="n">thresh</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold_sigma</span><span class="p">)</span>
+            <span class="n">aic_p</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">aic_penalty</span><span class="p">);</span> <span class="n">z_win</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
+            <span class="n">min_dv_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_dv</span><span class="p">)</span>
+            <span class="n">depth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group_depth</span><span class="p">);</span> <span class="n">pat</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">patience</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
+
+            <span class="c1"># 2. Call Core Logic (The Brain)</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">optimize_hierarchy</span><span class="p">(</span>
+                <span class="n">spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span>
+                <span class="n">uuid_seed</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span>
+                <span class="n">max_components</span><span class="o">=</span><span class="n">max_c</span><span class="p">,</span>
+                <span class="n">threshold_sigma</span><span class="o">=</span><span class="n">thresh</span><span class="p">,</span>
+                <span class="n">aic_penalty</span><span class="o">=</span><span class="n">aic_p</span><span class="p">,</span>
+                <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win</span><span class="p">,</span>
+                <span class="n">min_dv</span><span class="o">=</span><span class="n">min_dv_f</span><span class="p">,</span>
+                <span class="n">group_depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+                <span class="n">patience</span><span class="o">=</span><span class="n">pat</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># 3. [CRITICAL FIX] Ensure Mask is OFF before Final Model Calc</span>
+            <span class="c1"># Even if SystemList cleaned it, we double-check here to guarantee</span>
+            <span class="c1"># the visual model (Green Line) represents the WHOLE system.</span>
+            <span class="k">if</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
+                <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># 4. Compute Final Model (Green Line)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+            <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+            
+            <span class="c1"># 5. Update Session</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+            
+            <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+            <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">model_flux</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Voigt Fit Model&quot;</span>
+            <span class="p">)</span>
+            <span class="n">new_spec_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_spec_data</span><span class="p">)</span> 
+            
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;optimize_system failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+             <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 
 </pre></div>

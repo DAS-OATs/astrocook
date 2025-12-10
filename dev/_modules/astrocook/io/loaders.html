@@ -400,11 +400,12 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.io.loaders</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">fits</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="c1"># Import V2 structures from the core</span>
@@ -492,6 +493,112 @@
         
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load CSV: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="load_ascii_with_resvel_header">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_ascii_with_resvel_header">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;ascii_resvel_header&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_ascii_with_resvel_header</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Robust loader for ASCII files with &#39;RESVEL&#39; headers and inline source tags.</span>
+<span class="sd">    Handles files where data rows might be split across lines or mixed with tags.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">:</span> <span class="s1">&#39;ascii_resvel_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;FILE&#39;</span><span class="p">:</span> <span class="n">file_path</span><span class="p">}</span>
+        <span class="n">resol_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Use utf-8-sig to handle potential Byte Order Marks (BOM)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8-sig&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;replace&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
+
+                <span class="c1"># 1. Extract RESVEL metadata (and skip line if it&#39;s purely metadata)</span>
+                <span class="k">if</span> <span class="s1">&#39;RESVEL&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;RESVEL\s*[:=]?\s*([0-9\.]+)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                        <span class="n">resol_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+                    <span class="c1"># We assume lines with RESVEL don&#39;t contain spectral data points</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># 2. Remove tags which might appear mid-stream</span>
+                <span class="c1"># Regex removes &quot;&quot; but leaves the numbers around it</span>
+                <span class="n">line_clean</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+
+                <span class="c1"># 3. Extract numbers</span>
+                <span class="c1"># This handles cases where X is on one line and Y DY are on the next</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Split by whitespace and convert to float</span>
+                    <span class="c1"># We iterate so we can catch non-numeric garbage without losing the whole line</span>
+                    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">line_clean</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">all_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="k">pass</span> <span class="c1"># Ignore non-numeric tokens</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+        <span class="c1"># 4. Reshape Data</span>
+        <span class="c1"># We expect a multiple of 3 (Wave, Flux, Err)</span>
+        <span class="n">total_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">total_points</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No numeric data found in </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">total_points</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data length (</span><span class="si">{</span><span class="n">total_points</span><span class="si">}</span><span class="s2">) is not divisible by 3. Truncating excess.&quot;</span><span class="p">)</span>
+            <span class="n">valid_len</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_points</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+            <span class="n">all_values</span> <span class="o">=</span> <span class="n">all_values</span><span class="p">[:</span><span class="n">valid_len</span><span class="p">]</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="c1"># 5. Units (Assumption: Angstrom for X, dimensionless for Y)</span>
+        <span class="c1"># Heuristic: If median &gt; 500, it&#39;s almost certainly Angstroms (UV/Optical)</span>
+        <span class="c1"># Lya is 1215 A (121.5 nm). </span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Detected Angstroms (median &gt; 500). Converting to nm.&quot;</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="mf">10.0</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Assuming nm (median &lt; 500).&quot;</span><span class="p">)</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+
+        <span class="n">y_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
+        
+        <span class="c1"># 6. Build Columns</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">,</span> <span class="s2">&quot;Wavelength&quot;</span><span class="p">)</span>
+        <span class="n">y_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">,</span> <span class="s2">&quot;Flux&quot;</span><span class="p">)</span>
+        <span class="n">dy_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">)</span>
+        <span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+
+        <span class="c1"># 7. Handle Resolution</span>
+        <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">resol_values</span><span class="p">:</span>
+            <span class="c1"># Use the median if multiple RESVELs found (e.g. multiple sources stitched in file)</span>
+            <span class="n">final_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">resol_values</span><span class="p">)</span>
+            <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;resol_fwhm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_resol</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">/</span> <span class="n">final_resol</span>
+            
+            <span class="n">resol_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">final_resol</span><span class="p">)</span>
+            <span class="n">aux_cols</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">resol_arr</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="s2">&quot;Resolution (FWHM km/s)&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2"> points. Resolution FWHM: </span><span class="si">{</span><span class="n">final_resol</span><span class="si">}</span><span class="s2"> km/s (R~</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dy_col</span><span class="p">,</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">meta</span>
+        <span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load ASCII Resvel file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">raise</span></div>
 
 

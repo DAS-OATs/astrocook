@@ -474,6 +474,12 @@ Useful for quick inspection or V1 compatibility.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.fitting_context">
+<span class="sig-name descname"><span class="pre">fitting_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.fitting_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.fitting_context" title="Link to this definition">#</a></dt>
+<dd><p>Safely sets the active fitting mask and guarantees cleanup.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.to_v1_systlist">
 <span class="sig-name descname"><span class="pre">to_v1_systlist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.to_v1_systlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.to_v1_systlist" title="Link to this definition">#</a></dt>
 <dd><p>Converts the V2 list to a simple V1-compatible table structure.</p>
@@ -575,7 +581,7 @@ Useful for quick inspection or V1 compatibility.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.get_connected_group">
-<span class="sig-name descname"><span class="pre">get_connected_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.get_connected_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_connected_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.get_connected_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="Link to this definition">#</a></dt>
 <dd><p>Finds a set of components that must be fitted together.</p>
 <p>This method traverses relationships to find all “fluid neighbors” of
 the seed components. Connections are formed by:
@@ -584,13 +590,62 @@ the seed components. Connections are formed by:
 3.  <strong>Kinematic Proximity:</strong> If A and B are the same species and close in velocity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>seed_uuids</strong> (<em>list</em><em> of </em><em>str</em>) – The UUIDs of the components initially selected for fitting.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed_uuids</strong> (<em>list</em><em> of </em><em>str</em>) – The UUIDs of the components initially selected for fitting.</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse.
+1 = Direct neighbors only.
+2 = Neighbors of neighbors (Friends of Friends).</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The full set of UUIDs in the connected group.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>set of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.optimize_hierarchy">
+<span class="sig-name descname"><span class="pre">optimize_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aic_penalty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.optimize_hierarchy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.optimize_hierarchy" title="Link to this definition">#</a></dt>
+<dd><p>Iteratively adds components to a system to minimize residuals using the
+Akaike Information Criterion (AIC).</p>
+<p>This method performs the following steps:
+1.  <strong>Baseline Fit:</strong> Fits the seed component (and its connected group) to establish a baseline AIC.
+2.  <strong>Residual Scan:</strong> Calculates the residuals (Flux - Model) over the specified velocity window.
+3.  <strong>Candidate Detection:</strong> Identifies the strongest un-modeled absorption feature (negative residual).
+4.  <strong>Trial:</strong> If the feature exceeds <code class="docutils literal notranslate"><span class="pre">threshold_sigma</span></code>, adds a new component at that position.
+5.  <strong>Evaluation:</strong> Fits the new configuration. If AIC improves (decreases) by <code class="docutils literal notranslate"><span class="pre">aic_penalty</span></code>,</p>
+<blockquote>
+<div><p>the new component is kept.</p>
+</div></blockquote>
+<ol class="arabic simple" start="6">
+<li><p><strong>Termination:</strong> Repeats until <code class="docutils literal notranslate"><span class="pre">max_components</span></code> is reached or <code class="docutils literal notranslate"><span class="pre">patience</span></code> is exhausted.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectrum data used for fitting and residual calculation.</p></li>
+<li><p><strong>uuid_seed</strong> (<em>str</em>) – UUID of the seed component. This defines the series (e.g. CIV) and the center of the
+velocity search window.</p></li>
+<li><p><strong>max_components</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of additional components to attempt adding (default: 5).</p></li>
+<li><p><strong>threshold_sigma</strong> (<em>float</em><em>, </em><em>optional</em>) – Significance level (in standard deviations) of the residual dip required to trigger
+a new component trial (default: 2.5).</p></li>
+<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum AIC improvement required to accept a new component (default: 0.0).
+Higher values favor simpler models (Occam’s razor).</p></li>
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</p></li>
+<li><p><strong>min_dv</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum velocity separation (km/s) required between a candidate and
+existing components. Lower this to de-blend close doublets (default: 10.0).</p></li>
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Depth for finding connected neighbors during the fit (default: 2).</p></li>
+<li><p><strong>patience</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new system list containing the optimized components.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -639,6 +694,7 @@ the seed components. Connections are formed by:
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.constraint_status"><code class="docutils literal notranslate"><span class="pre">SystemListV2.constraint_status</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.parsed_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListV2.parsed_constraints</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.v2_constraints_for_save"><code class="docutils literal notranslate"><span class="pre">SystemListV2.v2_constraints_for_save</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.fitting_context"><code class="docutils literal notranslate"><span class="pre">SystemListV2.fitting_context()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.to_v1_systlist"><code class="docutils literal notranslate"><span class="pre">SystemListV2.to_v1_systlist()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.add_components_from_regions"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_components_from_regions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.add_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_component()</span></code></a></li>
@@ -647,6 +703,7 @@ the seed components. Connections are formed by:
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_constraint()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.delete_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.delete_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.get_connected_group"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_connected_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.optimize_hierarchy"><code class="docutils literal notranslate"><span class="pre">SystemListV2.optimize_hierarchy()</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -472,11 +472,34 @@
     <span class="n">archive_root</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="n">v2_metadata</span> <span class="o">=</span> <span class="kc">None</span>
     
+    <span class="c1"># --- 1. CHECK V2 NATIVE LOADERS FIRST ---</span>
+    <span class="c1"># Import the getter from the new module</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span>
+    
+    <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using V2 Native Loader for format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Call the pure loader (returns SpectrumDataV2)</span>
+            <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
+
+            <span class="c1"># Wrap in API object</span>
+            <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">)</span>
+
+            <span class="c1"># Create session (SystemList empty for raw loads)</span>
+            <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V2 Loader &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># If specific loader fails, do NOT fall back to generic FITS. Fail hard.</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c1"># --- 2. EXISTING LEGACY LOGIC (ACS/FITS) ---</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">archive_path_lower</span> <span class="o">=</span> <span class="n">archive_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         
         <span class="k">if</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs2&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.tar.gz&#39;</span><span class="p">):</span>
-            <span class="c1"># ... (unpacking logic) ...</span>
+            <span class="c1"># ... (unpacking logic unchanged) ...</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unpacking V2 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
             <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="s1">&#39;r:gz&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
@@ -493,7 +516,7 @@
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">spec_file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs&#39;</span><span class="p">):</span>
-            <span class="c1"># ... (unpacking logic) ...</span>
+            <span class="c1"># ... (unpacking logic unchanged) ...</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unpacking V1 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">archive_manager</span> <span class="o">=</span> <span class="n">V1ArchiveManager</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">archive_manager</span><span class="o">.</span><span class="n">unpack</span><span class="p">()</span>
@@ -506,13 +529,13 @@
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">spec_file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># ... (single FITS logic) ...</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading single FITS file.&quot;</span><span class="p">)</span>
+            <span class="c1"># Standard FITS fallback</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading single FITS file (Legacy Path).&quot;</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">spec_file_path</span> <span class="o">=</span> <span class="n">archive_path</span>
         
-        <span class="c1"># --- V2 METADATA LOADING (Still needed for constraints) ---</span>
+        <span class="c1"># --- V2 METADATA ---</span>
         <span class="k">if</span> <span class="n">temp_dir</span><span class="p">:</span>
             <span class="n">meta_fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_root</span><span class="p">)</span><span class="si">}</span><span class="s2">_meta.json&quot;</span>
             <span class="n">meta_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">meta_fname</span><span class="p">)</span>
@@ -523,47 +546,22 @@
                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded V2 metadata from _meta.json.&quot;</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load _meta.json: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No _meta.json found (assuming V1 archive or single FITS).&quot;</span><span class="p">)</span>
 
-        <span class="c1"># 1. Check if a V2 Native Loader exists for this format</span>
-        <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
-    
-        <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using V2 Native Loader for format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Call the pure loader</span>
-                <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">spec_file_path</span><span class="p">)</span>
-
-                <span class="c1"># Wrap in API object</span>
-                <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">)</span>
-
-                <span class="c1"># Create session (SystemList will be empty initially for raw loads)</span>
-                <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">)</span>
-
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V2 Loader failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="mi">0</span>
-
-        <span class="c1"># 1. Load Spectrum</span>
+        <span class="c1"># --- LEGACY LOAD ---</span>
         <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">load_and_migrate_structure</span><span class="p">(</span>
             <span class="n">archive_root</span><span class="p">,</span> <span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">,</span> <span class="n">format_name</span><span class="p">,</span> 
             <span class="n">spec_file_path</span><span class="o">=</span><span class="n">spec_file_path</span><span class="p">,</span>
             <span class="n">v2_metadata</span><span class="o">=</span><span class="n">v2_metadata</span> 
         <span class="p">)</span>
 
-        <span class="c1"># 2. Load System List</span>
         <span class="n">system_list_v2</span> <span class="o">=</span> <span class="n">load_and_migrate_structure</span><span class="p">(</span>
             <span class="n">archive_root</span><span class="p">,</span> <span class="s1">&#39;systs&#39;</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">,</span> <span class="n">format_name</span><span class="p">,</span>
             <span class="n">v2_metadata</span><span class="o">=</span><span class="n">v2_metadata</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spectrum_v2</span><span class="p">:</span> 
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Spectrum loading failed, aborting session creation.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Legacy Spectrum loading failed for </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ignoring saved log on load, as per new design.&quot;</span><span class="p">)</span>
-            
-        <span class="c1"># Call the simplified constructor</span>
         <span class="n">new_session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> 
             <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> 
