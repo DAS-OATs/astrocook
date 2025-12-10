@@ -168,6 +168,7 @@ class SystemListV2:
         """
         z_list, dz_list, logN_list, dlogN_list, b_list, db_list = ([] for _ in range(6))
         btur_list, dbtur_list, func_list, series_list, id_list = ([] for _ in range(5))
+        chi2_list, resol_list = ([] for _ in range(2))
         
         for c in self._data.components: 
             z_list.append(c.z)
@@ -181,6 +182,8 @@ class SystemListV2:
             func_list.append(c.func)
             series_list.append(c.series)
             id_list.append(c.id)
+            chi2_list.append(c.chi2 if c.chi2 is not None else np.nan)
+            resol_list.append(c.resol if c.resol is not None else np.nan)
 
         t = Table()
         t['z'] = Column(z_list, unit=au.dimensionless_unscaled)
@@ -194,6 +197,11 @@ class SystemListV2:
         t['func'] = Column(func_list)
         t['series'] = Column(series_list)
         t['id'] = Column(id_list)
+        t['chi2'] = Column(chi2_list, unit=au.dimensionless_unscaled)
+        t['resol'] = Column(resol_list, unit=au.dimensionless_unscaled)
+        t['chi2'] = Column(chi2_list, unit=au.dimensionless_unscaled)
+        t['resol'] = Column(resol_list, unit=au.dimensionless_unscaled)
+
         return t
 
     @property
@@ -234,22 +242,17 @@ class SystemListV2:
     @contextlib.contextmanager
     def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2):
         """
-        Context manager that temporarily masks the system list for fitting specific components.
-        Ensures the mask is ALWAYS removed (set to None) when exiting, even if errors occur.
+        Safely sets the active fitting mask and guarantees cleanup.
         """
         if not self.constraint_model:
             yield
             return
 
-        # 1. Capture original state (usually None)
         original_active = self.constraint_model._active_uuids
-        
         try:
-            # 2. Apply Mask
             self.constraint_model.set_active_components(active_uuids, group_depth=group_depth)
             yield
         finally:
-            # 3. Restore State (Guaranteed)
             self.constraint_model.set_active_components(original_active)
 
     def to_v1_systlist(self) -> Optional[Table]:
@@ -268,6 +271,8 @@ class SystemListV2:
             'dbtur': [c.dbtur if c.dbtur is not None else 0.0 for c in self.components],
             'func': [c.func for c in self.components],
             'series': [c.series for c in self.components],
+            'chi2': [c.chi2 if c.chi2 is not None else np.nan for c in self.components],
+            'resol': [c.resol if c.resol is not None else np.nan for c in self.components]
         }
         return Table(data_dict)
     
@@ -562,7 +567,8 @@ class SystemListV2:
         
         c_kms = 299792.458
         comp_map = {c.uuid: c for c in self.components}
-        constraints_map = self._data.v2_constraints_map
+        # Access constraints if available, else empty
+        constraints_map = self._data.v2_constraints_map if hasattr(self._data, 'v2_constraints_map') else {}
 
         # Helper: Get rest wavelengths
         def get_all_w_rest(series_name: str) -> List[float]:
@@ -576,21 +582,23 @@ class SystemListV2:
 
         # Helper: Check overlap
         def are_overlapping(c1, c2):
+            # Threshold: 4 sigma (thermal) or fixed 30 km/s buffer
             threshold_kms = max(4.0 * max(c1.b, c2.b), 30.0)
             
-            # 1. Constraints
+            # 1. Constraints (Linked parameters imply grouping)
             if c1.uuid in constraints_map:
                 for constr in constraints_map[c1.uuid].values():
-                    if constr.target_uuid == c2.uuid: return True
+                    if hasattr(constr, 'target_uuid') and constr.target_uuid == c2.uuid: return True
             if c2.uuid in constraints_map:
                 for constr in constraints_map[c2.uuid].values():
-                    if constr.target_uuid == c1.uuid: return True
+                    if hasattr(constr, 'target_uuid') and constr.target_uuid == c1.uuid: return True
 
-            # 2. Spectral Overlap
+            # 2. Spectral Overlap (Do the lines touch?)
             waves1 = get_all_w_rest(c1.series)
             waves2 = get_all_w_rest(c2.series)
             if not waves1 or not waves2: return False
             
+            # Use z from object
             obs1 = [w * (1 + c1.z) for w in waves1]
             obs2 = [w * (1 + c2.z) for w in waves2]
             
@@ -600,7 +608,7 @@ class SystemListV2:
                     dv = c_kms * abs(w1 - w2) / lam_avg
                     if dv < threshold_kms: return True
             
-            # 3. Kinematic (Same Series/Species)
+            # 3. Kinematic Proximity (Same Series)
             if c1.series == c2.series:
                 dz = abs(c1.z - c2.z)
                 dv_kin = c_kms * dz / (1 + c1.z)
@@ -608,11 +616,12 @@ class SystemListV2:
                 
             return False
 
-        # --- Limited Transitive Closure Loop ---
+        # --- Transitive Closure Loop (Friends-of-Friends) ---
         group_uuids = set(seed_uuids)
         
         for _ in range(max_depth):
             added_count = 0
+            # Get current member objects
             current_members = [comp_map[u] for u in group_uuids if u in comp_map]
             
             for other in self.components:
@@ -632,4 +641,220 @@ class SystemListV2:
             if added_count == 0:
                 break
         
+        logging.info(f"Fluid Group: {len(seed_uuids)} targets -> {len(group_uuids)} active components.")
         return group_uuids
+
+    def _sanitize_after_fit(self, systs: 'SystemListV2') -> 'SystemListV2':
+        """
+        Removes the 'active_components' mask from a system list.
+        This ensures that when we generate models from it, ALL components are included.
+        """
+        if systs.constraint_model:
+            systs.constraint_model.set_active_components(None)
+        return systs
+
+    # --- HELPER 3: Compute Fixed AIC ---
+    def _compute_fixed_aic(self, spec: 'SpectrumV2', systs: 'SystemListV2', 
+                           static_mask: np.ndarray, k_free: int) -> float:
+        """
+        Calculates AIC on a FIXED set of pixels (static_mask).
+        
+        AIC = Chi2 + 2*k
+        Chi2 = Sum( (Flux - Model)^2 / Error^2 ) masked
+        """
+        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        
+        # 1. Generate Full Model (No masking allowed here!)
+        eval_fitter = VoigtFitterV2(spec, systs)
+        _, model_flux = eval_fitter.compute_model_flux()
+        
+        # 2. Calculate Chi2 on the static mask
+        y_win = spec.y.value[static_mask]
+        mod_win = model_flux[static_mask]
+        dy_win = spec.dy.value[static_mask]
+        
+        chi2_static = np.sum(((y_win - mod_win) / dy_win)**2)
+        
+        # 3. Calculate AIC
+        aic = chi2_static + 2 * k_free
+        return aic
+    
+    def optimize_hierarchy(self, spec: 'SpectrumV2', uuid_seed: str, 
+                           max_components: int = 5, threshold_sigma: float = 2.5,
+                           aic_penalty: float = 0.0, z_window_kms: float = 100.0,
+                           min_dv: float = 10.0,  # <--- NEW PARAMETER
+                           group_depth: int = 2, patience: int = 2) -> 'SystemListV2':
+        """
+        Iteratively adds components to a system to minimize residuals using the
+        Akaike Information Criterion (AIC).
+
+        This method performs the following steps:
+        1.  **Baseline Fit:** Fits the seed component (and its connected group) to establish a baseline AIC.
+        2.  **Residual Scan:** Calculates the residuals (Flux - Model) over the specified velocity window.
+        3.  **Candidate Detection:** Identifies the strongest un-modeled absorption feature (negative residual).
+        4.  **Trial:** If the feature exceeds ``threshold_sigma``, adds a new component at that position.
+        5.  **Evaluation:** Fits the new configuration. If AIC improves (decreases) by ``aic_penalty``, 
+            the new component is kept.
+        6.  **Termination:** Repeats until ``max_components`` is reached or ``patience`` is exhausted.
+
+        Parameters
+        ----------
+        spec : SpectrumV2
+            The spectrum data used for fitting and residual calculation.
+        uuid_seed : str
+            UUID of the seed component. This defines the series (e.g. CIV) and the center of the 
+            velocity search window.
+        max_components : int, optional
+            Maximum number of additional components to attempt adding (default: 5).
+        threshold_sigma : float, optional
+            Significance level (in standard deviations) of the residual dip required to trigger 
+            a new component trial (default: 2.5).
+        aic_penalty : float, optional
+            Minimum AIC improvement required to accept a new component (default: 0.0).
+            Higher values favor simpler models (Occam's razor).
+        z_window_kms : float, optional
+            The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).
+        min_dv : float, optional
+            Minimum velocity separation (km/s) required between a candidate and 
+            existing components. Lower this to de-blend close doublets (default: 10.0).
+        group_depth : int, optional
+            Depth for finding connected neighbors during the fit (default: 2).
+        patience : int, optional
+            Number of consecutive trials allowed without AIC improvement before stopping (default: 2).
+
+        Returns
+        -------
+        SystemListV2
+            A new system list containing the optimized components.
+        """
+        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+
+        # 1. Setup Static Window
+        current_systs = self
+        target_comp = current_systs.get_component_by_uuid(uuid_seed)
+        if not target_comp: return self
+
+        series_name = target_comp.series
+        lam_target_ang = 1215.67
+        if series_name in ATOM_DATA: lam_target_ang = ATOM_DATA[series_name]['wave']
+        elif series_name in STANDARD_MULTIPLETS: lam_target_ang = ATOM_DATA[STANDARD_MULTIPLETS[series_name][0]]['wave']
+        
+        lam_target_nm = lam_target_ang / 10.0
+        c_kms = 299792.458
+
+        # Define STATIC MASK for AIC comparison
+        lam_obs_center = lam_target_nm * (1 + target_comp.z)
+        dv_arr = c_kms * (spec.x.value - lam_obs_center) / lam_obs_center
+        static_mask = (np.abs(dv_arr) < z_window_kms) & np.isfinite(spec.y.value) & (spec.dy.value > 0)
+        
+        if np.sum(static_mask) == 0:
+            logging.warning("optimize_hierarchy: Window contains no valid data.")
+            return self
+
+        # [FIX] Initialize Taboo Mask (Rejected Pixels)
+        rejected_mask = np.zeros_like(spec.x.value, dtype=bool)
+
+        # 2. Local Fit Orchestrator
+        def fit_and_evaluate(systs_obj, target_uuids):
+            with systs_obj.fitting_context(target_uuids, group_depth=group_depth):
+                fitter = VoigtFitterV2(spec, systs_obj)
+                new_systs, _, res = fitter.fit(max_nfev=1000, z_window_kms=z_window_kms, verbose=0)
+                
+                # Cleanup
+                if new_systs.constraint_model:
+                    new_systs.constraint_model.set_active_components(None)
+                
+                if not res or not res.success:
+                    return float('inf'), systs_obj 
+
+                # Fixed AIC
+                eval_fitter = VoigtFitterV2(spec, new_systs)
+                _, model_flux = eval_fitter.compute_model_flux()
+                
+                y_win = spec.y.value[static_mask]
+                mod_win = model_flux[static_mask]
+                dy_win = spec.dy.value[static_mask]
+                
+                chi2_static = np.sum(((y_win - mod_win) / dy_win)**2)
+                k = len(res.x)
+                aic = chi2_static + 2 * k
+                
+                return aic, new_systs
+
+        # 3. Baseline Fit
+        logging.info(f"Optimizing {series_name} hierarchy...")
+        best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
+        logging.info(f"Baseline AIC: {best_aic:.1f}")
+        
+        current_systs = best_systs
+        trials_without_imp = 0
+        
+        # 4. Iteration Loop
+        for i in range(max_components):
+            # A. Calculate Residuals
+            eval_fitter = VoigtFitterV2(spec, best_systs)
+            _, model_phys = eval_fitter.compute_model_flux()
+            
+            with np.errstate(divide='ignore', invalid='ignore'):
+                sigma_resid = (spec.y.value - model_phys) / spec.dy.value
+            
+            # Apply Masks (Window + Taboo)
+            sigma_resid[~static_mask] = 0.0
+            sigma_resid[rejected_mask] = 0.0 # Ignore previously failed spots!
+            
+            # B. Find Dip
+            min_idx = np.argmin(sigma_resid)
+            min_val = sigma_resid[min_idx]
+            
+            if min_val > -threshold_sigma:
+                logging.info(f"Converged. Max resid {min_val:.1f}s > {threshold_sigma}")
+                break
+                
+            # C. Create Candidate
+            z_new = spec.x.value[min_idx] / lam_target_nm - 1.0
+            
+            # D. Proximity Check
+            too_close = False
+            for c in best_systs.components:
+                if c.series == series_name:
+                    dz = abs(c.z - z_new)
+                    dv_sep = c_kms * dz / (1+z_new)
+                    if dv_sep < min_dv: 
+                        too_close = True; break
+            
+            if too_close:
+                logging.warning(f"Iter {i+1}: Candidate too close ({dv_sep:.1f} < {min_dv} km/s). Masking and retrying.")
+                # [FIX] Mask this spot and CONTINUE (Do not Break!)
+                sl = slice(max(0, min_idx-5), min(len(spec.x.value), min_idx+6))
+                rejected_mask[sl] = True
+                continue 
+
+            logging.info(f"Iter {i+1}: Candidate at {z_new:.5f} (Sigma={min_val:.1f})")
+            
+            # E. Add & Fit
+            cand_systs = best_systs.add_component(series=series_name, z=z_new, logN=13.0, b=15.0)
+            new_uuid = cand_systs.components[-1].uuid
+            
+            trial_aic, trial_systs = fit_and_evaluate(cand_systs, [uuid_seed, new_uuid])
+            
+            # F. Compare
+            delta = trial_aic - best_aic
+            if delta < -aic_penalty:
+                logging.info(f"  -> Accepted. AIC {best_aic:.1f} -> {trial_aic:.1f} (Delta: {delta:.1f})")
+                best_aic = trial_aic
+                best_systs = trial_systs
+                trials_without_imp = 0
+            else:
+                logging.info(f"  -> Rejected. AIC Delta {delta:.1f}")
+                trials_without_imp += 1
+                
+                # [FIX] Mask this spot so we don't loop forever
+                sl = slice(max(0, min_idx-10), min(len(spec.x.value), min_idx+11))
+                rejected_mask[sl] = True
+            
+            if trials_without_imp >= patience:
+                logging.info("Patience exhausted.")
+                break
+        
+        return best_systs

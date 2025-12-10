@@ -6,6 +6,7 @@ import json
 import logging
 import numexpr as ne
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Union
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
@@ -16,6 +17,7 @@ from astrocook.core.spectrum_operations import (
     _find_kinematic_doublet_candidates, fit_continuum_interp, fit_powerlaw_to_regions, 
     merge_regions_by_velocity, rate_doublet_candidate, smooth_spectrum, rebin_spectrum, running_std,
 )
+from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
 from astrocook.legacy.frame import Frame as FrameV1
 from astrocook.legacy.spectrum import Spectrum as SpectrumV1
@@ -585,6 +587,135 @@ class SpectrumV2:
         # 8. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Mask: {target_col} where {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
+    
+    def calc_intersection_expression(self, others_specs: List['SpectrumV2'], 
+                                     z_target: float, trans_self: str, 
+                                     trans_others: List[str], window_kms: float) -> Optional[str]:
+        """
+        Calculates the wavelength range corresponding to the velocity intersection 
+        of this spectrum and a list of others.
+
+        Returns a string expression suitable for `edit.split`, e.g., "(x > 400) & (x < 500)".
+        """
+        
+        # Helper logic (previously in batch_driver)
+        def get_bounds(spec, trans, z):
+            if trans not in ATOM_DATA: return -np.inf, np.inf
+            x_vals = spec.x.value
+            if len(x_vals) == 0: return 0.0, 0.0
+            
+            lam_rest = ATOM_DATA[trans]['wave'] / 10.0 # nm
+            lam_obs = lam_rest * (1 + z)
+            c_kms = 299792.458
+            
+            v = c_kms * (x_vals - lam_obs) / lam_obs
+            return np.min(v), np.max(v)
+
+        v_mins, v_maxs = [], []
+        
+        # 1. Self
+        v1, v2 = get_bounds(self, trans_self, z_target)
+        v_mins.append(v1); v_maxs.append(v2)
+        
+        # 2. Others
+        for spec, trans in zip(others_specs, trans_others):
+            v1, v2 = get_bounds(spec, trans, z_target)
+            v_mins.append(v1); v_maxs.append(v2)
+            
+        # 3. Intersection
+        common_min = max(v_mins)
+        common_max = min(v_maxs)
+        
+        # 4. Windowing
+        final_min = max(common_min, -window_kms)
+        final_max = min(common_max, window_kms)
+        
+        if final_max <= final_min: return None
+        
+        # 5. Convert back to Wavelength (Self)
+        lam_rest_self = ATOM_DATA[trans_self]['wave'] / 10.0
+        lam_obs_self = lam_rest_self * (1 + z_target)
+        c_kms = 299792.458
+        
+        l1 = lam_obs_self * (1 + final_min/c_kms)
+        l2 = lam_obs_self * (1 + final_max/c_kms)
+        
+        return f"(x > {l1:.5f}) & (x < {l2:.5f})"
+
+    def stitch(self, other_specs: List['SpectrumV2'], sort: bool = True) -> 'SpectrumV2':
+        """
+        Merges this spectrum with a list of other spectra.
+        Concatenates x, y, dy, and all auxiliary columns.
+        """
+        from copy import deepcopy
+        
+        all_specs = [self] + other_specs
+        
+        xs, ys, dys = [], [], []
+        aux_map = {k: [] for k in self._data.aux_cols.keys()}
+        
+        # Target Units
+        x_u = self.x.unit
+        y_u = self.y.unit
+
+        for s in all_specs:
+            # Core Units
+            xs.append(s.x.to(x_u).value)
+            ys.append(s.y.to(y_u).value)
+            dys.append(s.dy.to(y_u).value)
+            
+            # Aux Columns
+            for col_name in aux_map:
+                if col_name in s._data.aux_cols:
+                    t_unit = self._data.aux_cols[col_name].unit
+                    val = s.get_column(col_name).to(t_unit).value
+                    aux_map[col_name].append(val)
+                else:
+                    # Pad missing columns with NaN
+                    aux_map[col_name].append(np.full(len(s.x), np.nan))
+
+        # Concatenate
+        x_final = np.concatenate(xs)
+        y_final = np.concatenate(ys)
+        dy_final = np.concatenate(dys)
+        
+        if sort:
+            idx = np.argsort(x_final)
+            x_final = x_final[idx]
+            y_final = y_final[idx]
+            dy_final = dy_final[idx]
+        else:
+            idx = np.arange(len(x_final))
+
+        # Build Aux Columns
+        from astrocook.core.structures import DataColumnV2
+        new_aux = {}
+        for col_name, arrays in aux_map.items():
+            arr = np.concatenate(arrays)
+            if sort: arr = arr[idx]
+            # Copy metadata from self
+            orig_col = self._data.aux_cols[col_name]
+            new_aux[col_name] = DataColumnV2(arr, orig_col.unit, orig_col.description)
+
+        # Build New Object
+        from ..io.loaders import _auto_limits
+        xmin, xmax = _auto_limits(x_final, x_u)
+        new_meta = deepcopy(self.meta)
+        new_meta['stitched'] = True
+        
+        new_data = SpectrumDataV2(
+            x=DataColumnV2(x_final, x_u),
+            xmin=xmin, xmax=xmax,
+            y=DataColumnV2(y_final, y_u),
+            dy=DataColumnV2(dy_final, y_u),
+            aux_cols=new_aux,
+            meta=new_meta,
+            z_em=self._data.z_em,
+            z_rf=self._data.z_rf,
+            resol=self._data.resol
+        )
+        
+        return SpectrumV2(new_data)
 
     def split(self, expression: str, extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2':
         """
@@ -1600,7 +1731,61 @@ class SpectrumV2:
         # 9. Return new SpectrumV2
         new_history = self.history + [f"Identified {len(reliable_ids)} regions"]
         return SpectrumV2(data=final_data_core, history=new_history)
+    
+    def get_velocity_bounds(self, z_target: float, trans: str) -> tuple:
+        """
+        Calculates the min/max velocity coverage of this spectrum relative to a target.
+        """
+        if trans not in ATOM_DATA: return -np.inf, np.inf
+        
+        x = self.x.value # Assuming nm or Angstrom based on loader
+        if len(x) == 0: return 0.0, 0.0
+        
+        # Determine rest wavelength in same unit as x (assuming nm for internal)
+        lam_rest = ATOM_DATA[trans]['wave'] / 10.0 
+        lam_obs = lam_rest * (1 + z_target)
+        c_kms = 299792.458
+        
+        v = c_kms * (x - lam_obs) / lam_obs
+        return np.min(v), np.max(v)
 
+    def detect_doublet_z(self, other_spec: 'SpectrumV2', 
+                         trans_self: str, trans_other: str) -> float:
+        """
+        Finds the redshift of maximum coincidence (product of absorption depths)
+        between this spectrum and another.
+        """
+        x1, y1 = self.x.value, self.y.value
+        x2, y2 = other_spec.x.value, other_spec.y.value
+        
+        if len(x1) == 0 or len(x2) == 0: return 0.0
+
+        lam1 = ATOM_DATA[trans_self]['wave'] / 10.0
+        lam2 = ATOM_DATA[trans_other]['wave'] / 10.0
+
+        z1 = x1 / lam1 - 1.0
+        z2 = x2 / lam2 - 1.0
+        
+        z_min, z_max = max(z1.min(), z2.min()), min(z1.max(), z2.max())
+        if z_max <= z_min: return 0.0
+        
+        # Grid based on self resolution
+        dz = np.nanmedian(np.diff(z1))
+        if dz <= 0: dz = 1e-5
+        z_grid = np.arange(z_min, z_max, dz)
+        
+        y1_int = np.interp(z_grid, z1, y1)
+        y2_int = np.interp(z_grid, z2, y2)
+        
+        # Product of Depths
+        depth1 = np.maximum(0.0, 1.0 - gaussian_filter1d(y1_int, 2.0))
+        depth2 = np.maximum(0.0, 1.0 - gaussian_filter1d(y2_int, 2.0))
+        
+        score = depth1 * depth2
+        best_idx = np.argmax(score)
+        
+        return float(z_grid[best_idx])
+    
     def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
         """
         API: Converts the X-axis units and returns a NEW SpectrumV2 instance.

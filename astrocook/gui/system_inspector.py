@@ -208,7 +208,7 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
-    # 1. Physics (High Res)
+    # 1. Physics
     lambda_c = lambda_0 * (1.0 + z)
     c_kms = 2.99792458e5
     b_safe = max(b_kms, 0.1)
@@ -223,7 +223,12 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
     flux = np.exp(-tau)
 
-    return convolve_flux(flux, wave_grid_ang, resol, resol_unit)
+    # 2. Convolution (SSOT)
+    try:
+        return convolve_flux(flux, wave_grid_ang, resol, resol_unit)
+    except NameError:
+        # Fallback if import failed
+        return flux
 
 # --- 2. The Paged Plot Widget ---
 
@@ -545,18 +550,15 @@ class VelocityPlotWidget(QWidget):
             # --- PREPARE RESOLUTION FOR THIS PANEL ---
             res_arg = None
             res_unit = 'R'
-            res_display = 0
             
             if resol_col is not None:
                 # Extract slice
                 res_arg = resol_col[mask]
                 res_unit = 'km/s'
-                res_display = np.nanmedian(res_arg)
 
             else:
                 # Fallback scalar
                 res_arg, res_unit = self._get_resolution_at(lam_obs)
-                res_display = res_arg
 
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
@@ -620,10 +622,6 @@ class VelocityPlotWidget(QWidget):
             ax_main.axhline(1.0, color='gray', ls=':', lw=0.8)
             ax_main.axhline(0.0, color='gray', ls=':', lw=0.8)
 
-            # Show Resolution Info in Corner
-            res_lbl = f"R~{res_display:.0f}" if res_unit=='R' else f"FWHM~{res_display:.1f}k"
-            ax_main.text(0.02, 0.95, res_lbl, transform=ax_main.transAxes, ha='left', va='top', fontsize=8, color='#555')
-            
             ax_main.text(0.98, 0.85, trans_name, transform=ax_main.transAxes, ha='right', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
             ax_main.set_xlim(self._xlim)
@@ -652,16 +650,11 @@ class VelocityPlotWidget(QWidget):
         tol_v = view_width * 0.015 
         
         for ax, v_pos, comp in self._tick_map_visuals:
-            if event.inaxes == ax:
-                dist = abs(event.xdata - v_pos)
-                if dist < tol_v:
-                    c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-                    c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
-                    tooltip_text = (f"ID: {comp.id} | {comp.series}\n"
-                                    f"z: {comp.z:.5f}\n"
-                                    f"Chi2: {c_chi2}\n"
-                                    f"Res: {c_resol}")
-                    break
+            if event.inaxes == ax and abs(event.xdata - v_pos) < tol_v:
+                c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+                c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+                tooltip_text = (f"ID: {comp.id} | {comp.series}\nz: {comp.z:.5f}\nChi2: {c_chi2}\nRes: {c_resol}")
+                break
         
         if tooltip_text: QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
         else: QToolTip.hideText()
@@ -687,7 +680,7 @@ class VelocityPlotWidget(QWidget):
         x_full = session.spec.x.value # Assuming sorted
         resol_col = None
         if session.spec.has_aux_column('resol'):
-             resol_col = session.spec.get_column('resol').value
+            resol_col = session.spec.get_column('resol').value
 
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
@@ -718,6 +711,7 @@ class VelocityPlotWidget(QWidget):
                 # Convert grid to nm for interpolation
                 lam_grid_nm = lam_grid_ang / 10.0
                 res_arg = np.interp(lam_grid_nm, x_full, resol_col)
+                res_arg = np.nan_to_num(res_arg, nan=0.0)
                 res_unit = 'km/s'
             else:
                  # Fallback scalar
@@ -739,7 +733,7 @@ class VelocityPlotWidget(QWidget):
                     lam_grid_ang, s_info['wave'], s_info['f'], s_info['gamma'],
                     z_new, N, b,
                     resol=res_arg, resol_unit=res_unit,
-                    context="CURSOR_MOVE" # <--- Tag for logs
+                    context="CURSOR" # <--- Tag for logs
                 )
                 total_prof *= prof
             

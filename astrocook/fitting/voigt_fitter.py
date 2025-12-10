@@ -151,7 +151,14 @@ class VoigtFitterV2:
             self._resol_column = self._spectrum.get_column('resol').value
             if np.any(np.isfinite(self._resol_column)):
                 self._use_variable_resolution = True
-                logging.info("VoigtFitter: Detected 'resol' column. Using variable resolution.")
+
+                med_res = np.nanmedian(self._resol_column)
+                if med_res > 500.0:
+                    self._variable_resol_unit = 'R'
+                    logging.info(f"VoigtFitter: Variable resolution detected. Median={med_res:.0f} -> Assuming 'R'.")
+                else:
+                    self._variable_resol_unit = 'km/s'
+                    logging.info(f"VoigtFitter: Variable resolution detected. Median={med_res:.1f} -> Assuming 'km/s'.")
 
         # Fallback to global metadata
         self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
@@ -318,7 +325,7 @@ class VoigtFitterV2:
 
         # 2. Convolve (Using SSOT function)
         if self._use_variable_resolution and self._resol_calc is not None:
-            return convolve_flux(flux_model_high_res, self._x_calc, self._resol_calc, resol_unit='km/s')
+            return convolve_flux(flux_model_high_res, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
 
         elif self._global_sigma_pix:
             # Fallback for constant global R
@@ -621,7 +628,24 @@ class VoigtFitterV2:
         
         # [FIX] Use the exact resolution calculated in __init__
         # This ensures the metadata saved matches the fit physics.
-        fit_resol_val = self._global_resol_val
+        fit_resol_val = 0.0
+        c_kms = 299792.458
+
+        if self._use_variable_resolution and self._resol_calc is not None:
+            # Get the median of the resolution chunks used in the fit
+            raw_val = np.nanmedian(self._resol_calc)
+            
+            if np.isfinite(raw_val) and raw_val > 0:
+                # If the column was determined to be velocity (e.g. 17.0 km/s), 
+                # convert to R (e.g. 17600)
+                if self._variable_resol_unit == 'km/s':
+                    fit_resol_val = c_kms / raw_val
+                else:
+                    # It is already R
+                    fit_resol_val = raw_val
+                    
+        elif self._global_resol_val:
+            fit_resol_val = self._global_resol_val
 
         new_components = []
         old_components = self._system_list.components

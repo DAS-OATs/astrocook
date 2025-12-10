@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import HistoryLogV2
 from astrocook.gui.debug_utils import GLOBAL_PLOTTER
 
@@ -82,6 +81,16 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#delete_component",
         "gui_hidden": True
     },
+    "detect_anchor": {
+        "brief": "Detect doublet anchor redshift.",
+        "details": "Finds the redshift of maximum overlap between this session and a sibling session (doublet).",
+        "params": [
+            {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session."},
+            {"name": "trans_self", "type": str, "default": "OVI_1031", "doc": "Transition in this session."},
+            {"name": "trans_sibling", "type": str, "default": "OVI_1037", "doc": "Transition in sibling session."}
+        ],
+        "url": "absorbers_cb.html#detect_anchor"
+    },
     "fit_component": {
         "brief": "Fit component.",
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
@@ -116,6 +125,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "threshold_sigma", "type": float, "default": 3.0, "doc": "Residual threshold (sigma) required to trigger a new component."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "Minimum AIC improvement required to accept a new component."},
             {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."},
+            {"name": "min_dv", "type": float, "default": 10.0, "doc": "Min separation (km/s). Lower for de-blending."},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth for finding neighbors."},
             {"name": "patience", "type": int, "default": 2, "doc": "Trials allowed without AIC improvement."}
         ],
@@ -294,21 +304,29 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed delete_component: {e}", exc_info=True)
             return 0
 
-    def detect_anchor(self, species: str = 'OVI') -> float:
-        """
-        Detects the redshift of a system anchor using doublet coincidence.
-        Current session must be the 'primary' line (e.g. OVI_1031).
-        
-        Note: This requires the session to know about its 'sibling' session (the secondary line).
-        For now, we assume the user passes the sibling session or we simplify to
-        auto-correlation if single spectrum.
-        
-        *Ideally, this recipe should take a 'sibling_session' argument.*
-        """
-        # (Implementation requires Session-to-Session interaction, which is complex in standard recipes.
-        #  For now, we implement the logic assuming the user provides the raw arrays or sibling object).
-        #  Let's define it to take a sibling session for robustness.
-        pass 
+    def detect_anchor(self, sibling_name: str, trans_self: str, trans_sibling: str) -> float:
+        try:
+            sibling_session = None
+            if hasattr(self._session, '_gui'):
+                for hist in self._session._gui.session_histories:
+                    if hist.display_name == sibling_name:
+                        sibling_session = hist.current_state
+                        break
+            
+            if not sibling_session:
+                logging.error(f"Sibling session '{sibling_name}' not found.")
+                return 0.0
+            
+            # --- CALL CORE LOGIC ---
+            z_found = self._session.spec.detect_doublet_z(
+                sibling_session.spec, trans_self, trans_sibling
+            )
+            logging.info(f"Detected anchor at z={z_found:.5f}")
+            return z_found
+            
+        except Exception as e:
+            logging.error(f"detect_anchor failed: {e}")
+            return 0.0
         
     # Let's implement the logic we wrote in batch_driver, tailored for the Recipe API.
     # Since Recipes usually operate on 'self._session', we might need to pass the second session explicitly.
@@ -430,147 +448,59 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed update_constraint: {e}", exc_info=True)
             return 0
 
-    # --- NEW METHOD ---
-    def optimize_system(self, uuid: str, max_components: str = '10', 
+    def optimize_system(self, uuid: str, max_components: str = '5', 
                         threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
-                        z_window_kms: str = '100.0', group_depth: str = '2',
-                        patience: str = '2') -> 'SessionV2':
-        """
-        Full implementation of the iterative optimization logic.
-        """
+                        z_window_kms: str = '100.0', min_dv: str = '10.0',
+                        group_depth: str = '2', patience: str = '2') -> 'SessionV2':
         try:
-            max_comp_i = int(max_components)
-            thresh_f = float(threshold_sigma)
-            aic_pen_f = float(aic_penalty)
-            z_win_f = float(z_window_kms)
-            depth_i = int(group_depth)
-            patience_i = int(patience)
-        except ValueError:
-            logging.error(msg_param_fail); return 0
-            
-        logging.info(f"Optimizing system (max {max_comp_i} comps, patience {patience_i})...")
-        
-        # 1. Initial Baseline Fit
-        # fit_component now handles the cleanup, so 'current_session' is clean.
-        current_session = self.fit_component(
-            uuid, max_nfev='2000', z_window_kms=str(z_win_f), group_depth=str(depth_i)
-        )
-        if current_session == 0: return 0
+            # 1. Parse Args
+            max_c = int(max_components); thresh = float(threshold_sigma)
+            aic_p = float(aic_penalty); z_win = float(z_window_kms)
+            min_dv_f = float(min_dv)
+            depth = int(group_depth); pat = int(patience)
 
-        target_comp = current_session.systs.get_component_by_uuid(uuid)
-        if not target_comp: return 0
-        
-        # Helper: Calculate AIC for the CURRENT state
-        def get_aic(session):
-            # We must apply the mask to calculate Chi2/AIC correctly for the group
-            original_active = session.systs.constraint_model._active_uuids
-            try:
-                session.systs.constraint_model.set_active_components([uuid], group_depth=depth_i)
-                fitter = VoigtFitterV2(session.spec, session.systs)
-                
-                # Quick fit (0 iters if just evaluating, or small # to refine)
-                # Here we just want the Chi2 of the CURRENT parameters
-                _, _, res = fitter.fit(max_nfev=10, z_window_kms=z_win_f, verbose=0)
-                
-                if not res: return float('inf'), None, 0.0, 0
-                
-                chi2 = np.sum(res.fun**2)
-                k = len(res.x) # Number of free parameters
-                aic = chi2 + 2 * k
-                return aic, fitter, chi2, k
-            finally:
-                # Always clean up
-                session.systs.constraint_model.set_active_components(original_active)
+            if not self._session.systs: return 0
 
-        best_aic, best_fitter, best_chi2, best_k = get_aic(current_session)
-        
-        if best_fitter is None:
-            logging.warning("Baseline AIC check failed.")
-            return current_session
-
-        best_session = current_session
-        logging.info(f"Baseline: AIC={best_aic:.1f}, Chi2={best_chi2:.1f}, k={best_k}")
-        
-        trials_without_improvement = 0
-        
-        for i in range(max_comp_i):
-            # Recalculate AIC/Model for current session to find residuals
-            current_aic, current_fitter, _, _ = get_aic(current_session)
-            if current_fitter is None: break 
-
-            x_full = current_session.spec.x.value
-            y_full = current_session.spec.y.value
-            dy_full = current_session.spec.dy.value
-            
-            # Compute full model to find residuals
-            _, model_full_phys = current_fitter.compute_model_flux()
-            
-            sigma_resid = (y_full - model_full_phys) / dy_full
-            sigma_resid[~np.isfinite(sigma_resid)] = 0.0
-            
-            # Define Search Window
-            c_kms = 299792.458
-            series_name = target_comp.series
-            if series_name in ATOM_DATA:
-                lam_target_ang = ATOM_DATA[series_name]['wave']
-            elif series_name in STANDARD_MULTIPLETS:
-                primary = STANDARD_MULTIPLETS[series_name][0]
-                lam_target_ang = ATOM_DATA[primary]['wave']
-            else:
-                logging.warning(f"Unknown series {series_name}, stopping.")
-                break
-                
-            lam_target_nm = lam_target_ang / 10.0
-            lam_obs_nm = lam_target_nm * (1 + target_comp.z)
-            
-            dv = c_kms * (x_full - lam_obs_nm) / lam_obs_nm
-            window_mask = np.abs(dv) < z_win_f
-            
-            # Mask residuals outside window
-            masked_resid = sigma_resid.copy()
-            masked_resid[~window_mask] = np.inf 
-            
-            # Find deepest dip
-            min_idx = np.argmin(masked_resid)
-            min_val = masked_resid[min_idx]
-            
-            logging.info(f"Iter {i+1}: Max Resid Sigma={min_val:.1f}")
-
-            # Threshold Check
-            if min_val > -thresh_f and trials_without_improvement == 0:
-                logging.info("Residuals within threshold.")
-                break
-
-            # Add Candidate Component
-            z_new = x_full[min_idx] / lam_target_nm - 1.0
-            
-            # add_component automatically runs fit_component on the new UUID
-            # This returns a clean session with the new component optimized
-            trial_session = current_session.absorbers.add_component(
-                series=target_comp.series, z=z_new, logN=13.0, b=15.0, z_window_kms=str(z_win_f)
+            # 2. Call Core Logic (The Brain)
+            new_systs = self._session.systs.optimize_hierarchy(
+                spec=self._session.spec,
+                uuid_seed=uuid,
+                max_components=max_c,
+                threshold_sigma=thresh,
+                aic_penalty=aic_p,
+                z_window_kms=z_win,
+                min_dv=min_dv_f,
+                group_depth=depth,
+                patience=pat
             )
             
-            if trial_session == 0: break
+            # 3. [CRITICAL FIX] Ensure Mask is OFF before Final Model Calc
+            # Even if SystemList cleaned it, we double-check here to guarantee
+            # the visual model (Green Line) represents the WHOLE system.
+            if new_systs.constraint_model:
+                new_systs.constraint_model.set_active_components(None)
 
-            # Evaluate Trial
-            trial_aic, _, t_chi2, t_k = get_aic(trial_session)
-            logging.info(f"  -> Trial AIC: {trial_aic:.1f} (Chi2: {t_chi2:.1f}, k={t_k}) vs Best: {best_aic:.1f}")
-
-            # Always update current to explore further
-            current_session = trial_session
-
-            # Decision
-            if trial_aic < best_aic - aic_pen_f:
-                logging.info("  -> New Best Found! Resetting patience.")
-                best_aic = trial_aic
-                best_session = trial_session
-                trials_without_improvement = 0
-            else:
-                trials_without_improvement += 1
-                logging.info(f"  -> No improvement. Patience: {trials_without_improvement}/{patience_i}")
-                
-            if trials_without_improvement >= patience_i:
-                logging.info("Patience exhausted. Rolling back.")
-                break
-                
-        return best_session
+            # 4. Compute Final Model (Green Line)
+            from astrocook.fitting.voigt_fitter import VoigtFitterV2
+            fitter = VoigtFitterV2(self._session.spec, new_systs)
+            _, model_flux = fitter.compute_model_flux()
+            
+            # 5. Update Session
+            from astrocook.core.structures import DataColumnV2
+            from copy import deepcopy
+            import dataclasses
+            
+            new_aux_cols = deepcopy(self._session.spec._data.aux_cols)
+            new_aux_cols['model'] = DataColumnV2(
+                values=model_flux,
+                unit=self._session.spec.y.unit,
+                description="Voigt Fit Model"
+            )
+            new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
+            new_spec = self._session.spec.__class__(new_spec_data) 
+            
+            return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+            
+        except Exception as e:
+             logging.error(f"optimize_system failed: {e}", exc_info=True)
+             return 0

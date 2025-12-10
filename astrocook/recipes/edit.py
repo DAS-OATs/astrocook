@@ -83,6 +83,18 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#extract_preset"
     },
+    "trim_common": {
+        "brief": "Trim to common velocity coverage.",
+        "details": "Trims the current session to the velocity range shared by a list of other sessions (intersection).",
+        "params": [
+            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of other sessions."},
+            {"name": "z_target", "type": float, "default": "_current_", "doc": "Target redshift."},
+            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition for current session."},
+            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions for other sessions."},
+            {"name": "window_kms", "type": float, "default": 500.0, "doc": "Symmetric window width (km/s)."}
+        ],
+        "url": "edit_cb.html#trim_common"
+    },
     "stitch": {
         "brief": "Merge multiple sessions.",
         "params": [],
@@ -571,191 +583,131 @@ class RecipeEditV2:
         # We can call our own split method directly!
         return self.split(expression=expression)
     
-    def trim_common(self, others: List['SessionV2'], z_target: float, 
-                    trans_self: str, trans_others: List[str], 
-                    window_kms: float = 500.0) -> 'SessionV2':
+    def trim_common(self, others_names: str, z_target: str, trans_self: str, 
+                    trans_others: str, window_kms: str = '500.0') -> 'SessionV2':
         """
         Trims the current session to the velocity intersection shared by itself and 'others'.
+
+        Parameters
+        ----------
+        others_names : str
+            Comma-separated names of other sessions loaded in the GUI (e.g., "QSO_OVI, QSO_CIV").
+        z_target : str (float)
+            Target redshift for velocity conversion.
+        trans_self : str
+            Transition name for the current session (e.g., "Ly_a").
+        trans_others : str
+            Comma-separated transition names for the other sessions (e.g., "OVI_1031, CIV_1548").
+        window_kms : str (float)
+            Maximum half-width of the velocity window in km/s.
+
+        Returns
+        -------
+        SessionV2
+            A new session trimmed to the common coverage.
         """
-        # 1. Helper to get range
-        def get_v_range(sess, trans, z):
-            if trans not in ATOM_DATA: return -np.inf, np.inf
-            x = sess.spec.x.value
-            if len(x) == 0: return 0.0, 0.0
-            lam_rest = ATOM_DATA[trans]['wave'] / 10.0
-            lam_obs = lam_rest * (1 + z)
-            c_kms = 299792.458
-            v = c_kms * (x - lam_obs) / lam_obs
-            return np.min(v), np.max(v)
-
-        # 2. Get All Ranges
-        v_mins = []
-        v_maxs = []
-        
-        # Self
-        v_min, v_max = get_v_range(self._session, trans_self, z_target)
-        v_mins.append(v_min); v_maxs.append(v_max)
-        
-        # Others
-        for sess, trans in zip(others, trans_others):
-            v_min, v_max = get_v_range(sess, trans, z_target)
-            v_mins.append(v_min); v_maxs.append(v_max)
+        try:
+            # 1. Parse Inputs
+            z_f = float(z_target)
+            win_f = float(window_kms)
+            others_list = [n.strip() for n in others_names.split(',') if n.strip()]
+            trans_list_others = [t.strip() for t in trans_others.split(',') if t.strip()]
             
-        # 3. Intersection
-        common_min = max(v_mins)
-        common_max = min(v_maxs)
-        
-        # 4. User Window
-        final_min = max(common_min, -window_kms)
-        final_max = min(common_max, window_kms)
-        
-        if final_max <= final_min:
-            logging.warning("trim_common: No overlap found.")
-            return self._session
+            # 2. Resolve Session Objects (GUI Logic)
+            resolved_others_specs = []
+            if hasattr(self._session, '_gui'):
+                for name in others_list:
+                    found = False
+                    for hist in self._session._gui.session_histories:
+                        if hist.display_name == name:
+                            resolved_others_specs.append(hist.current_state.spec)
+                            found = True
+                            break
+                    if not found:
+                        logging.warning(f"trim_common: Session '{name}' not found in GUI history.")
+            
+            if len(resolved_others_specs) != len(trans_list_others):
+                logging.error(f"Mismatch: Found {len(resolved_others_specs)} sessions but {len(trans_list_others)} transitions provided.")
+                return 0
+                
+            # 3. Delegate Calculation to Core (SSOT)
+            # The core calculates the physics and returns the boolean expression string
+            split_expression = self._session.spec.calc_intersection_expression(
+                others_specs=resolved_others_specs,
+                z_target=z_f,
+                trans_self=trans_self,
+                trans_others=trans_list_others,
+                window_kms=win_f
+            )
+            
+            if not split_expression:
+                logging.warning("trim_common: No overlap found or invalid inputs.")
+                return self._session
 
-        # 5. Apply Split
-        # Convert back to Wavelength for SELF
-        lam_rest_self = ATOM_DATA[trans_self]['wave'] / 10.0
-        lam_obs_self = lam_rest_self * (1 + z_target)
-        c_kms = 299792.458
-        
-        lam_lower = lam_obs_self * (1 + final_min / c_kms)
-        lam_upper = lam_obs_self * (1 + final_max / c_kms)
-        
-        return self.split(f"(x > {lam_lower:.4f}) & (x < {lam_upper:.4f})")
+            logging.info(f"Applying intersection trim: {split_expression}")
+            
+            # 4. Execute Split
+            return self.split(split_expression)
 
+        except Exception as e:
+            logging.error(f"trim_common failed: {e}", exc_info=True)
+            return 0
+    
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
         """
         Merges the current session with a list of other sessions.
-        Useful for simultaneous fitting of disjoint spectral regions (e.g. Lya + CIV).
-        
-        Logic:
-        1. Concatenates x, y, dy, and aux_cols.
-        2. Preserves 'resol' column if present (handling varying resolution).
-        3. Sorts by wavelength.
 
         Parameters
         ----------
         other_sessions : List[Union[SessionV2, str]]
             A list of SessionV2 objects OR strings (names of sessions loaded in the GUI).
         sort : bool
-            Sort the final array by wavelength.
+            If True, sorts the final spectrum by wavelength.
+
+        Returns
+        -------
+        SessionV2
+            A new session containing the merged data.
         """
-        from astrocook.core.session import SessionV2 # Delayed import
-        from astrocook.core.spectrum import SpectrumV2
+        # Delayed import to avoid circular dependency
+        from astrocook.core.session import SessionV2 
 
         if not other_sessions:
             logging.warning("No sessions provided to stitch.")
             return self._session
 
-        resolved_sessions = []
+        # 1. Resolve Inputs (GUI/Script Logic)
+        resolved_specs = []
         
-        # --- 1. Resolve Strings to Objects ---
         for item in other_sessions:
             if isinstance(item, SessionV2):
-                resolved_sessions.append(item)
+                resolved_specs.append(item.spec)
             elif isinstance(item, str):
-                # We are in the GUI or Log Replay, looking up by name
+                # GUI Lookup
                 found = None
-                # Check if we have access to the Session History list via the GUI context
                 if hasattr(self._session, '_gui') and hasattr(self._session._gui, 'session_histories'):
-                    # Look for a history wrapper with this display_name
                     for hist in self._session._gui.session_histories:
                         if hist.display_name == item:
                             found = hist.current_state
                             break
-                
                 if found:
-                    resolved_sessions.append(found)
+                    resolved_specs.append(found.spec)
                 else:
                     logging.warning(f"Stitch: Could not find loaded session named '{item}'. Skipping.")
             else:
                 logging.warning(f"Stitch: Invalid item type {type(item)}. Skipping.")
 
-        if not resolved_sessions:
+        if not resolved_specs:
             logging.error("No valid sessions found to stitch.")
             return self._session
 
-        # --- 2. Collect Data ---
-        # (This logic is mostly unchanged from before, but uses resolved_sessions)
-        all_sessions = [self._session] + resolved_sessions
-        
-        xs_list, y_list, dy_list = [], [], []
-        aux_data_map = {} 
-        
-        first_spec = self._session.spec
-        for col_name in first_spec._data.aux_cols:
-            aux_data_map[col_name] = []
-
-        # Units 
-        x_unit = first_spec.x.unit
-        y_unit = first_spec.y.unit
-
-        for s in all_sessions:
-            spec = s.spec
-            # Convert units to match the primary session
-            xs_list.append(spec.x.to(x_unit).value)
-            y_list.append(spec.y.to(y_unit).value)
-            dy_list.append(spec.dy.to(y_unit).value)
+        try:
+            # 2. Delegate Data Manipulation to Core
+            new_spec = self._session.spec.stitch(resolved_specs, sort=sort)
             
-            for col_name in aux_data_map:
-                # [FIX] Use public API has_aux_column / get_column if possible, 
-                # but since we are iterating keys from _data, accessing _data is consistent.
-                if col_name in spec._data.aux_cols:
-                    target_aux_unit = first_spec._data.aux_cols[col_name].unit
-                    # Convert unit
-                    val = spec.get_column(col_name).to(target_aux_unit).value
-                    aux_data_map[col_name].append(val)
-                else:
-                    # If a column is missing in one chunk, pad with NaNs
-                    n_points = len(spec.x)
-                    aux_data_map[col_name].append(np.full(n_points, np.nan))
-        
-        # --- 3. Concatenate & Sort ---
-        x_final = np.concatenate(xs_list)
-        y_final = np.concatenate(y_list)
-        dy_final = np.concatenate(dy_list)
-        
-        if sort:
-            sort_idx = np.argsort(x_final)
-            x_final = x_final[sort_idx]
-            y_final = y_final[sort_idx]
-            dy_final = dy_final[sort_idx]
-        else:
-            sort_idx = np.arange(len(x_final))
-
-        # --- 4. Build Columns ---
-        from ..io.loaders import _auto_limits
-        xmin_col, xmax_col = _auto_limits(x_final, x_unit)
-        
-        new_aux = {}
-        for col_name, arrays in aux_data_map.items():
-            concat_arr = np.concatenate(arrays)
-            if sort:
-                concat_arr = concat_arr[sort_idx]
-            target_aux_unit = first_spec._data.aux_cols[col_name].unit
-            desc = first_spec._data.aux_cols[col_name].description
-            new_aux[col_name] = DataColumnV2(concat_arr, target_aux_unit, desc)
-
-        # --- 5. Finalize ---
-        new_meta = deepcopy(self._session.spec.meta)
-        new_meta['stitched'] = True
-        
-        new_spec_data = SpectrumDataV2(
-            x=DataColumnV2(x_final, x_unit),
-            xmin=xmin_col, xmax=xmax_col,
-            y=DataColumnV2(y_final, y_unit),
-            dy=DataColumnV2(dy_final, y_unit),
-            aux_cols=new_aux,
-            meta=new_meta,
-            z_em=first_spec._data.z_em,
-            z_rf=first_spec._data.z_rf,
-            resol=first_spec._data.resol
-        )
-        
-        logging.info(f"Stitched {len(resolved_sessions)} sessions into primary. Total: {len(x_final)} px.")
-        
-        # [CRITICAL FIX] Wrap the data core in the API object
-        new_spec_wrapper = SpectrumV2(data=new_spec_data) 
-        
-        return self._session.with_new_spectrum(new_spec_wrapper)
+            # 3. Return New Session
+            return self._session.with_new_spectrum(new_spec)
+            
+        except Exception as e:
+            logging.error(f"Stitch failed: {e}", exc_info=True)
+            return 0
