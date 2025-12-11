@@ -7,22 +7,14 @@ import time
 
 # PySide6 Imports
 from PySide6.QtWidgets import QApplication, QSplashScreen
-from PySide6.QtGui import QPixmap, QColor, QPainter
+from PySide6.QtGui import QPixmap, QColor, QPainter, QIcon
 from PySide6.QtCore import Qt, QEvent, Signal
-
-# Astrocook Imports
-# Assuming your session and GUI modules are correctly set up on the path
-#from astrocook.core.session import SessionV2, load_session_from_file
-#from astrocook.gui.main_window import MainWindowV2 
-#from astrocook.core.utils import resource_path
 
 def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base_path = Path(sys._MEIPASS)
     else:
-        # Adatta questo path in base a dove si trova launch_pyside_app.py
-        # Se è nella root del progetto:
-        base_path = Path(__file__).resolve().parent.parent
+        base_path = Path(__file__).resolve().parent
     return str(base_path / relative_path)
 
 # Minimal V1/V2 Context Mocks
@@ -37,23 +29,23 @@ class MockGUI:
 
 # Class to handle macOS file open events
 class AstroCookApp(QApplication):
-    # Segnale emesso quando macOS chiede di aprire un file a runtime
+    # Signal emitted when macOS asks to open a file at runtime
     file_open_requested = Signal(str)
 
     def __init__(self, argv):
         super().__init__(argv)
-        self.startup_file = None # Per salvare il file se arriva durante l'avvio
+        self.startup_file = None # To save the file if it arrives during startup
 
     def event(self, event):
-        # Intercettiamo l'evento specifico di macOS
+        # Intercept the specific macOS event
         if event.type() == QEvent.FileOpen:
             file_path = event.file()
             logging.info(f"MacOS FileOpen Event received: {file_path}")
             
-            # Se la main window non è ancora pronta, salviamo il path per dopo
+            # If the main window is not ready yet, save the path for later
             self.startup_file = file_path
             
-            # Emettiamo comunque il segnale (utile se l'app è già aperta)
+            # Emit the signal anyway (useful if the app is already open)
             self.file_open_requested.emit(file_path)
             return True
             
@@ -73,47 +65,75 @@ def main():
     if not app:
         app = AstroCookApp(sys.argv)
 
-    # --- 3. SPLASH SCREEN SETUP ---
+    is_frozen = getattr(sys, 'frozen', False)
+
+    if is_frozen:
+        # App mode
+        # Use the official (square) icon for windows
+        icon_name = "icon_3d_HR.png"
+    else:
+        # Script mode (Development)
+        # Use the round icon to distinguish it immediately
+        icon_name = "icon_3d_HR_round.png"
+
+    try:
+        app_icon_path = resource_path(os.path.join("assets", icon_name))
+        app_icon = QIcon(app_icon_path)
+        app.setWindowIcon(app_icon)
+        
+        if sys.platform == 'darwin' and not is_frozen:
+            try:
+                from AppKit import NSApplication, NSImage
+                
+                # Calcoliamo il percorso assoluto per Cocoa
+                abs_path = os.path.abspath(app_icon_path)
+                image = NSImage.alloc().initWithContentsOfFile_(abs_path)
+                
+                if image:
+                    NSApplication.sharedApplication().setApplicationIconImage_(image)
+                    logging.info(f"Dev Dock Icon set to: {icon_name}")
+            except ImportError:
+                pass
+            except Exception as e:
+                logging.warning(f"Failed to set Dock icon: {e}")
+
+    except Exception as e:
+        logging.warning(f"Could not set app icon: {e}")
+
+    import time
+    min_splash_duration = 1.0  # Durata minima in secondi
+    start_time = time.time()
+
+    # 3. Setup Splash Screen
     splash = None
     try:
-        # Percorso del logo originale
         logo_path = resource_path(os.path.join("assets", "logo_3d_LR.png"))
         logo_pixmap = QPixmap(logo_path)
 
         if not logo_pixmap.isNull():
-            # CONFIGURAZIONE MARGINI
             hpadding = 80
             vpadding = 40
             
-            # Calcoliamo le nuove dimensioni totali
             new_width = logo_pixmap.width() + (hpadding * 2)
             new_height = logo_pixmap.height() + (vpadding * 2)
             
-            # A. Creiamo una "tela" più grande
             splash_pixmap = QPixmap(new_width, new_height)
             splash_pixmap.fill(Qt.transparent) 
 
-            # B. Iniziamo a dipingere
             painter = QPainter(splash_pixmap)
             painter.setRenderHint(QPainter.Antialiasing)
 
-            # Sfondo semitrasparente (Alpha 100 come richiesto)
             bg_color = QColor(255, 255, 255, 150) 
             
             painter.setBrush(bg_color)
             painter.setPen(Qt.NoPen) 
 
-            # Disegniamo lo sfondo su tutta la nuova area estesa
-            # rect() restituisce il rettangolo 0,0,new_width,new_height
             painter.drawRoundedRect(splash_pixmap.rect(), 15, 15)
 
-            # --- DISEGNO LOGO CENTRATO ---
-            # Disegniamo il logo spostato di (padding, padding)
             painter.drawPixmap(hpadding, vpadding, logo_pixmap)
             
             painter.end() 
 
-            # C. Creiamo lo Splash Screen
             splash = QSplashScreen(splash_pixmap)
             splash.setAttribute(Qt.WA_TranslucentBackground)
             splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
@@ -129,30 +149,33 @@ def main():
 
     logging.info("Importing heavy modules...")
     
-    # --- SPOSTA GLI IMPORT QUI ---
     from astrocook.core.session import SessionV2, load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
-    # -----------------------------
+    
+    elapsed = time.time() - start_time
+    if elapsed < min_splash_duration:
+        # If it was too fast, let's wait
+        time.sleep(min_splash_duration - elapsed)
 
-    # Parsing Argomenti
+    # 4. Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('session_file', nargs='?', default=None)
     args = parser.parse_args()
 
-    # --- 4. Load Session Logic ---
+    # 5. Load Session Logic
     mock_gui = MockGUI()
     initial_session = None # Default is None (triggers Empty View in MainWindow)
     file_to_load = None
 
-    # A. Priorità: Argomento da riga di comando (Windows/Linux/Debug)
+    # A. Priority: Command line argument (Windows/Linux/Debug)
     if args.session_file:
         file_to_load = os.path.realpath(args.session_file)
     
-    # B. Se vuoto, controlliamo se macOS ha inviato un evento durante lo splash
+    # B. If empty, check if macOS sent an event during the splash
     elif hasattr(app, 'startup_file') and app.startup_file:
         file_to_load = app.startup_file
 
-    # Caricamento effettivo
+    # C. Actual loading
     if file_to_load and os.path.exists(file_to_load):
         if splash:
             splash.showMessage(f"Loading {os.path.basename(file_to_load)}...", 
@@ -161,18 +184,16 @@ def main():
         try:
             name = os.path.splitext(os.path.basename(file_to_load))[0]
             
-            # [FIX] Auto-detect format based on extension for CLI loading
             if file_to_load.lower().endswith(('.txt', '.dat')):
                 format_name = 'ascii_resvel_header'
             else:
                 format_name = 'generic_spectrum'
 
-            # Pass the detected format_name instead of hardcoded 'generic_spectrum'
             initial_session = load_session_from_file(file_to_load, name, mock_gui, format_name)
         except Exception as e:
             logging.error(f"Error loading {file_to_load}: {e}")
 
-    # 3. AVVIO GUI
+    # 6. GUI Startup
     if splash:
         splash.showMessage("Initializing Interface...", Qt.AlignBottom | Qt.AlignCenter, Qt.black)
         app.processEvents()
@@ -187,12 +208,12 @@ def main():
 
     main_window.show()
 
-    # 6. Close Splash Screen
+    # 7. Close Splash Screen
     if splash:
-        # finish() chiude lo splash solo quando main_window è visibile
+        # finish() closes the splash only when main_window is visible
         splash.finish(main_window)
 
-    # 7. Start the PySide Event Loop
+    # 8. Start the PySide Event Loop
     sys.exit(app.exec())
 
 

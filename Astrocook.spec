@@ -1,7 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/astrocook/data', 'astrocook/data')]
+datas = [
+    ('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/astrocook/data', 'astrocook/data'),
+    ('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/assets', 'assets'),
+    ]
 binaries = []
 hiddenimports = ['astrocook.legacy.vars']
 tmp_ret = collect_all('asdf')
@@ -11,7 +14,7 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['tests/launch_pyside_app.py'],
+    ['run_astrocook.py'],
     pathex=['.'],
     binaries=binaries,
     datas=datas,
@@ -61,7 +64,7 @@ app = BUNDLE(
         'CFBundleDocumentTypes': [
             {
                 'CFBundleTypeName': 'Astrocook Session',
-                'CFBundleTypeIconFile': 'assets/icon_file_3d_HR.icns', # Usa la stessa icona dell'app per i file
+                'CFBundleTypeIconFile': 'assets/icon_file_3d_HR.icns', 
                 'LSItemContentTypes': ['com.astrocook.acs2'],
                 'CFBundleTypeRole': 'Editor',
                 'LSHandlerRank': 'Owner',
