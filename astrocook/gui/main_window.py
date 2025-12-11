@@ -29,6 +29,7 @@ from astrocook.core.photometry import STANDARD_FILTERS
 from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
+from .script_dialog import ScriptDialog
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
@@ -88,6 +89,7 @@ class MainWindowV2(QMainWindow):
         self.log_scripter_dialog: Optional[LogScripterDialog] = None
         self.identification_viewer_dialog: Optional[IdentificationViewerDialog] = None # <<< *** ADD ***
         self.active_recipe_dialog: Optional[QDialog] = None
+        self.script_dialog: Optional[ScriptDialog] = None
 
         self.recipe_category_map = RECIPE_CATEGORY_MAP
 
@@ -583,6 +585,11 @@ class MainWindowV2(QMainWindow):
         self.view_log_action.triggered.connect(self._on_view_log)
         self.view_log_action.setEnabled(False) # Disabled by default
         view_menu.addAction(self.view_log_action)
+
+        self.view_script_console_action = QAction("View Script &Console", self)
+        self.view_script_console_action.triggered.connect(self._on_view_script_console)
+        self.view_script_console_action.setEnabled(False) # Disabled until session loaded
+        view_menu.addAction(self.view_script_console_action)
 
         self.view_identifications_action = QAction("View &Identifications", self)
         self.view_identifications_action.triggered.connect(self._on_view_identifications)
@@ -1784,6 +1791,15 @@ class MainWindowV2(QMainWindow):
         else:
             logging.warning("View Log called with no active history.")
     
+    def _on_view_script_console(self):
+        """Launches the Script Console dialog."""
+        if not self.script_dialog:
+            self.script_dialog = ScriptDialog(self)
+        
+        self.script_dialog.show()
+        self.script_dialog.raise_()
+        self.script_dialog.activateWindow()
+
     def _on_view_identifications(self):
         """
         Handles the "View > View Identifications" menu action.
@@ -2490,6 +2506,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'toggle_right_action'): self.toggle_right_action.setEnabled(is_valid_session)
         if hasattr(self, 'view_system_inspector_action'): self.view_system_inspector_action.setEnabled(is_valid_session)
         if hasattr(self, 'view_log_action'): self.view_log_action.setEnabled(is_valid_session)
+        if hasattr(self, 'view_script_console_action'): self.view_script_console_action.setEnabled(is_valid_session)
         has_ids = False
         if is_valid_session and self.active_history.current_state.spec:
             # Check if the key exists AND is not None
