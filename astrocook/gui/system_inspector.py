@@ -385,8 +385,13 @@ class VelocityPlotWidget(QWidget):
 
         expanded = []
         for item in self.inspector.active_transitions:
-            if item in STANDARD_MULTIPLETS: expanded.extend(STANDARD_MULTIPLETS[item])
-            elif item in xem_d: expanded.append(item)
+            # Check for exact transition matches (xem_d) FIRST.
+            # This prevents specific transitions (e.g. CII_1334) from expanding into multiplets
+            # if they are ambiguously defined as group keys in ATOM_DATA.
+            if item in xem_d: 
+                expanded.append(item)
+            elif item in STANDARD_MULTIPLETS: 
+                expanded.extend(STANDARD_MULTIPLETS[item])
         
         seen = set()
         self._all_transitions = [x for x in expanded if not (x in seen or seen.add(x))]
@@ -689,7 +694,9 @@ class VelocityPlotWidget(QWidget):
             siblings = [trans_name]
             for series_key, members in STANDARD_MULTIPLETS.items():
                 if trans_name in members:
-                    siblings = members
+                    # Only include siblings that are currently being plotted.
+                    # This ensures consistency: if plot_system filtered it out, the cursor won't show it.
+                    siblings = [m for m in members if m in self._all_transitions]
                     break
             
             # 2. Setup Grid
@@ -712,7 +719,14 @@ class VelocityPlotWidget(QWidget):
                 lam_grid_nm = lam_grid_ang / 10.0
                 res_arg = np.interp(lam_grid_nm, x_full, resol_col)
                 res_arg = np.nan_to_num(res_arg, nan=0.0)
-                res_unit = 'km/s'
+                # [FIX] Smart Detection: R vs km/s
+                # If values are large (>500), assume Resolving Power R.
+                # Otherwise, assume FWHM in km/s.
+                median_res = np.nanmedian(res_arg)
+                if median_res > 500.0:
+                    res_unit = 'R'
+                else:
+                    res_unit = 'km/s'
             else:
                  # Fallback scalar
                  lam_cursor_nm = (lam_0_ang * (1+z_new)) / 10.0
@@ -815,9 +829,21 @@ class VelocityPlotWidget(QWidget):
 
                 # Determine series name (e.g. CIV_1548 -> CIV)
                 series = trans_name
+                
+                # Check if this transition belongs to a multiplet group
+                found_group = None
                 if series not in STANDARD_MULTIPLETS:
-                     for g, l in STANDARD_MULTIPLETS.items():
-                        if series in l: series = g; break
+                    for g, members in STANDARD_MULTIPLETS.items():
+                        if series in members:
+                            found_group = g
+                            break
+                
+                # [FIX] Only promote to Group Name if siblings are actually visible.
+                # If I only see CII_1334, I want to add CII_1334, not the whole CII group.
+                if found_group:
+                    siblings_visible = any(m in self._all_transitions for m in STANDARD_MULTIPLETS[found_group] if m != trans_name)
+                    if siblings_visible:
+                        series = found_group
                 
                 # Add Action
                 act_add = QAction(f"Add {series} at z={z_new:.5f}", menu)
