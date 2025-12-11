@@ -26,16 +26,18 @@ Astrocook requires Python 3.9 or later and the following libraries:
 
 ### Installing from Source
 
-1. Clone the repository:
+1. Clone the repository and move to the `develop` branch:
 ```
-git clone [https://github.com/das-oats/astrocook.git](https://github.com/das-oats/astrocook.git)
+git clone https://github.com/das-oats/astrocook.git
+git checkout develop
+git pull
 cd astrocook
 ```
 
 2. Create a virtual environment (Recommended):
 ```
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv ac2
+source ac2/bin/activate  # On Windows: ac2\Scripts\activate
 ```
 
 3. Install dependencies:
@@ -45,7 +47,7 @@ pip install -e .
 
 ### Running the App
 
-To launch the GUI from the source code, run the launcher script from the root directory:
+To launch the GUI from the source code, run this from the root directory:
 ```
-python tests/launch_pyside_app.py
+python -m astrocook
 ```
