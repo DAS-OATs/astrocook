@@ -9,9 +9,10 @@ import numpy as np
 import astropy.units as au
 from scipy.ndimage import gaussian_filter1d
 
-# Boilerplate to find astrocook
+# Boilerplate to ensure we can import astrocook from parent directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import astrocook # Import package to locate run_astrocook.py
 from astrocook.core.session import SessionV2
 from astrocook.core.structures import DataColumnV2
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
@@ -135,6 +136,75 @@ def patched_optimize_hierarchy(self, spec, uuid_seed,
 
 SystemListV2.optimize_hierarchy = patched_optimize_hierarchy
 
+# --- PATCH 3: FIX VOIGT FITTER EDGE CRASH ---
+def patched_find_feature_limits(self, z_center: float, trans_name: str, z_window_kms: float = 150.0):
+    """
+    Patched version of _find_feature_limits that clamps indices to array bounds.
+    """
+    atom = ATOM_DATA.get(trans_name)
+    if not atom: return None, None
+    
+    lambda_obs = atom['wave'] * (1 + z_center)
+    c_kms = 299792.458
+    
+    dx_search = (z_window_kms / c_kms) * lambda_obs
+    
+    idx_center = np.searchsorted(self._x_ang, lambda_obs)
+    # Safety: Ensure idx_center is within valid range
+    idx_center = max(0, min(len(self._x_ang)-1, idx_center))
+
+    if len(self._x_ang) > 10:
+            sample_dx = np.mean(np.diff(self._x_ang[max(0, idx_center-10):min(len(self._x_ang), idx_center+10)]))
+    else: sample_dx = 1.0
+    
+    px_width = int(dx_search / sample_dx) if sample_dx > 0 else 50
+    
+    start_idx = max(0, idx_center - px_width)
+    end_idx = min(len(self._x_ang), idx_center + px_width)
+    
+    if end_idx - start_idx < 5: return None, None
+    
+    y_window = self._y_norm[start_idx:end_idx]
+    dy_window = self._dy_norm[start_idx:end_idx]
+    y_smooth = gaussian_filter1d(y_window, sigma=2.0)
+    
+    center_rel = idx_center - start_idx
+    center_rel = max(0, min(len(y_window)-1, center_rel))
+
+    # Scan Left
+    left_boundary = 0
+    lowest_point = y_smooth[center_rel]
+    for i in range(center_rel, -1, -1):
+        val = y_smooth[i]
+        err = dy_window[i]
+        if val < lowest_point: lowest_point = val
+        is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == 0)
+        if val > 0.9: left_boundary = i; break
+        if is_local_max:
+            if (val - lowest_point) > 4.0 * err: left_boundary = i; break
+            
+    # Scan Right
+    right_boundary = len(y_window) - 1
+    lowest_point = y_smooth[center_rel]
+    for i in range(center_rel, len(y_window)):
+        val = y_smooth[i]
+        err = dy_window[i]
+        if val < lowest_point: lowest_point = val
+        is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == len(y_window)-1)
+        if val > 0.9: right_boundary = i; break
+        if is_local_max:
+            if (val - lowest_point) > 4.0 * err: right_boundary = i; break
+
+    # [FIX]: Clamp indices to valid array range
+    idx_min = max(0, start_idx + left_boundary - 1)
+    idx_max = min(len(self._x_ang) - 1, start_idx + right_boundary + 1) 
+    
+    if idx_max <= idx_min: return None, None
+    return self._x_ang[idx_min], self._x_ang[idx_max]
+
+# Apply the patch
+VoigtFitterV2._find_feature_limits = patched_find_feature_limits
+
 # --- HELPER FUNCTIONS ---
 class HeadlessContext:
     def __init__(self): self._flags = []
@@ -207,31 +277,19 @@ def merge_nearby_components(systs, velocity_threshold=50.0):
     return SystemListV2(dataclasses.replace(systs._data, components=new_components))
 
 def simulate_observation(session, snr, fwhm_kms, z_em_val):
-    """
-    Transforms a raw spectrum into a mock observation.
-    1. Convolve with Gaussian LSF (FWHM).
-    2. Add Gaussian Noise (1/SNR).
-    3. Inject Resolution metadata.
-    """
     logging.info(f"Simulating Observation: SNR={snr}, FWHM={fwhm_kms} km/s")
     
     # 1. CONVOLUTION
-    # Convert FWHM to Sigma: FWHM = 2.355 * sigma
     sigma_kms = fwhm_kms / 2.35482
     sess = session.spec.smooth(sigma_kms=sigma_kms)
-    # Wrap back in Session
     session = session.with_new_spectrum(sess)
 
     # 2. NOISE GENERATION
     sigma_noise = 1.0 / snr
-    
     flux = session.spec.y.value
     noise_vector = np.random.normal(loc=0.0, scale=sigma_noise, size=len(flux))
     
-    # Add noise to Flux: y_new = y_old + noise
     new_spec = session.spec.apply_expression('y', 'y + noise', {'noise': noise_vector})
-    
-    # Set the Error Column (dy)
     new_spec = new_spec.apply_expression('dy', f'{sigma_noise}')
     
     # 3. INJECT RESOLUTION METADATA
@@ -249,11 +307,9 @@ def simulate_observation(session, snr, fwhm_kms, z_em_val):
     final_spec = new_spec.__class__(new_spec_data).with_properties(z_em=z_em_val, resol=resol_R)
     final_spec._data.meta['RESOL'] = resol_R
     
-    logging.info(f"Observation generated. R={resol_R:.0f}, Sigma_Noise={sigma_noise:.4f}")
-    
     return session.with_new_spectrum(final_spec)
 
-def process_mock(file_path, output_dir, snr, fwhm_kms):
+def process_mock(file_path, output_dir, snr, fwhm_kms, do_merge):
     filename = os.path.basename(file_path)
     los_id = os.path.splitext(filename)[0]
     
@@ -265,42 +321,38 @@ def process_mock(file_path, output_dir, snr, fwhm_kms):
     if sess is None: return None
 
     # --- DYNAMIC Z_SEED ---
-    # Calculate redshift based on median wavelength of the spectrum
     x_ang = sess.spec.x.to(au.Angstrom).value
     median_wave = np.nanmedian(x_ang)
     rest_wave = ATOM_DATA[TARGET_ION]['wave']
     z_seed_dynamic = (median_wave / rest_wave) - 1.0
     logging.info(f"Dynamic Z guess: {z_seed_dynamic:.4f} (Median wave: {median_wave:.1f} A)")
 
-    # --- SIMULATION STEP ---
-    # Pass dynamic z_em to simulation
+    # --- SIMULATION & FITTING ---
     sess = simulate_observation(sess, snr, fwhm_kms, z_em_val=z_seed_dynamic)
 
-    # --- FITTING STEP ---
-    # 1. Refine Seed
     z_best = refine_z_seed(sess, z_seed_dynamic, window_kms=600.0)
     logging.info(f"Seeding {TARGET_ION} at z={z_best:.5f}")
     sess = sess.absorbers.add_component(series=TARGET_ION, z=z_best, logN=13.5, b=10.0)
     seed_uuid = sess.systs.components[-1].uuid
 
-    # 2. Optimization
     logging.info("Running AIC Optimization...")
     sess = sess.absorbers.optimize_system(
         uuid=seed_uuid,
-        max_components=30,      
-        threshold_sigma=1.0,    
-        aic_penalty=0.0,        
+        max_components=10,      
+        threshold_sigma=2.0,    
+        aic_penalty=1.0,        
         z_window_kms=2000.0,    
         min_dv=5.0,             
-        patience=10              
+        patience=5              
     )
 
-    # 3. Merge
-    #logging.info("Merging components < 50 km/s...")
-    #new_systs = merge_nearby_components(sess.systs, velocity_threshold=50.0)
-    #sess = sess.with_new_system_list(new_systs)
+    if do_merge:
+        logging.info("Merging components < 50 km/s...")
+        new_systs = merge_nearby_components(sess.systs, velocity_threshold=50.0)
+        sess = sess.with_new_system_list(new_systs)
+    else:
+        logging.info("Skipping merge (Raw Fit).")
 
-    # 4. Export
     if not os.path.exists(output_dir): os.makedirs(output_dir)
     save_path = os.path.join(output_dir, f"{los_id}_snr{snr}.acs2")
     sess.save(save_path)
@@ -316,6 +368,7 @@ if __name__ == "__main__":
     parser.add_argument('--out', type=str, default="output_cii")
     parser.add_argument('--snr', type=float, default=20.0, help="Target SNR")
     parser.add_argument('--fwhm', type=float, default=30.0, help="Target FWHM (km/s)")
+    parser.add_argument('--merge', action='store_true', help="Merge components < 50 km/s")
     parser.add_argument('--inspect', action='store_true')
     args = parser.parse_args()
 
@@ -324,8 +377,19 @@ if __name__ == "__main__":
     files = glob.glob(os.path.join(args.input, "*.dat"))
     for f in files:
         try:
-            saved = process_mock(f, args.out, args.snr, args.fwhm)
+            saved = process_mock(f, args.out, args.snr, args.fwhm, args.merge)
+            
+            # --- INSPECT LOGIC ---
             if args.inspect and saved:
-                subprocess.run([sys.executable, "launch_pyside_app.py", saved])
+                abs_saved_path = os.path.abspath(saved)
+                # Look for run_astrocook.py in the repository root
+                launcher_path = os.path.join(os.path.dirname(os.path.dirname(astrocook.__file__)), "run_astrocook.py")
+                
+                if not os.path.exists(launcher_path):
+                    logging.warning(f"Could not find run_astrocook.py at {launcher_path}. Check installation.")
+                else:
+                    logging.info(f"Launching Inspector: {launcher_path}")
+                    subprocess.run([sys.executable, launcher_path, abs_saved_path])
+                
         except Exception as e:
             logging.error(f"Error on {f}: {e}")
