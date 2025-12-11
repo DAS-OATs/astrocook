@@ -431,6 +431,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pyside_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumPlotWidget</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.qt_workers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeWorker</span><span class="p">,</span> <span class="n">ScriptWorker</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.recipe_dialog</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeDialog</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.script_dialog</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScriptDialog</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionHistory</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span><span class="p">,</span> <span class="n">load_session_from_file</span><span class="p">,</span> <span class="n">LogManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
@@ -500,6 +501,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log_scripter_dialog</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LogScripterDialog</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">identification_viewer_dialog</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdentificationViewerDialog</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># &lt;&lt;&lt; *** ADD ***</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active_recipe_dialog</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QDialog</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScriptDialog</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">recipe_category_map</span> <span class="o">=</span> <span class="n">RECIPE_CATEGORY_MAP</span>
 
@@ -999,6 +1001,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">view_log_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_view_log</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">view_log_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Disabled by default</span>
         <span class="n">view_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view_log_action</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">view_script_console_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;View Script &amp;Console&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view_script_console_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_view_script_console</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view_script_console_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Disabled until session loaded</span>
+        <span class="n">view_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view_script_console_action</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">view_identifications_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;View &amp;Identifications&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">view_identifications_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_view_identifications</span><span class="p">)</span>
@@ -2206,6 +2213,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;View Log called with no active history.&quot;</span><span class="p">)</span>
     
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_view_script_console</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Launches the Script Console dialog.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span> <span class="o">=</span> <span class="n">ScriptDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span><span class="o">.</span><span class="n">raise_</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">script_dialog</span><span class="o">.</span><span class="n">activateWindow</span><span class="p">()</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_view_identifications</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Handles the &quot;View &gt; View Identifications&quot; menu action.</span>
@@ -2918,6 +2934,7 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;toggle_right_action&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_right_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">is_valid_session</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;view_system_inspector_action&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_system_inspector_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">is_valid_session</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;view_log_action&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_log_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">is_valid_session</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;view_script_console_action&#39;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_script_console_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">is_valid_session</span><span class="p">)</span>
         <span class="n">has_ids</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">is_valid_session</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_history</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
             <span class="c1"># Check if the key exists AND is not None</span>

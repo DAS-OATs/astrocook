@@ -885,6 +885,91 @@ Does NOT run the recipe.</p>
 </dd></dl>
 
 </section>
+<section id="module-astrocook.gui.script_dialog">
+<span id="astrocook-gui-script-dialog-module"></span><h2>astrocook.gui.script_dialog module<a class="headerlink" href="#module-astrocook.gui.script_dialog" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.gui.script_dialog.ScriptDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.gui.script_dialog.</span></span><span class="sig-name descname"><span class="pre">ScriptDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/script_dialog.html#ScriptDialog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.script_dialog.ScriptDialog" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.script_dialog.ScriptDialog.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/script_dialog.html#ScriptDialog.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.script_dialog.ScriptDialog.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.script_dialog.ScriptDialog.append_log">
+<span class="sig-name descname"><span class="pre">append_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/script_dialog.html#ScriptDialog.append_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.script_dialog.ScriptDialog.append_log" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.script_dialog.ScriptDialog.run_script">
+<span class="sig-name descname"><span class="pre">run_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/script_dialog.html#ScriptDialog.run_script"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.script_dialog.ScriptDialog.run_script" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.gui.script_dialog.ScriptDialog.staticMetaObject">
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;ScriptDialog&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QDialog&quot;:</span> <span class="pre">)</span></em><a class="headerlink" href="#astrocook.gui.script_dialog.ScriptDialog.staticMetaObject" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-astrocook.gui.scripting">
+<span id="astrocook-gui-scripting-module"></span><h2>astrocook.gui.scripting module<a class="headerlink" href="#module-astrocook.gui.scripting" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.gui.scripting.</span></span><span class="sig-name descname"><span class="pre">AppController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<p>The Public API exposed to In-App Scripts.
+This acts as the ‘app’ object in the script context.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.log_message">
+<span class="sig-name descname"><span class="pre">log_message</span></span><a class="headerlink" href="#astrocook.gui.scripting.AppController.log_message" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.refresh_request">
+<span class="sig-name descname"><span class="pre">refresh_request</span></span><a class="headerlink" href="#astrocook.gui.scripting.AppController.refresh_request" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.get_session">
+<span class="sig-name descname"><span class="pre">get_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController.get_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController.get_session" title="Link to this definition">#</a></dt>
+<dd><p>Retrieves a loaded session by its tab name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.get_active_session">
+<span class="sig-name descname"><span class="pre">get_active_session</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController.get_active_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController.get_active_session" title="Link to this definition">#</a></dt>
+<dd><p>Returns the currently visible session.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.run_recipe">
+<span class="sig-name descname"><span class="pre">run_recipe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController.run_recipe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController.run_recipe" title="Link to this definition">#</a></dt>
+<dd><p>Executes a recipe on a session.
+Example: app.run_recipe(s, ‘absorbers’, ‘optimize_system’, uuid=…, max_components=5)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.create_tab">
+<span class="sig-name descname"><span class="pre">create_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/scripting.html#AppController.create_tab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.scripting.AppController.create_tab" title="Link to this definition">#</a></dt>
+<dd><p>Adds a result session back to the GUI as a new tab.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.gui.scripting.AppController.staticMetaObject">
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;AppController&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=log_message(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=refresh_request()</span> <span class="pre">)</span></em><a class="headerlink" href="#astrocook.gui.scripting.AppController.staticMetaObject" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-astrocook.gui.system_inspector">
 <span id="astrocook-gui-system-inspector-module"></span><h2>astrocook.gui.system_inspector module<a class="headerlink" href="#module-astrocook.gui.system_inspector" title="Link to this heading">#</a></h2>
 <dl class="py class">
@@ -1275,6 +1360,30 @@ Args:</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.recipe_dialog.RecipeDialog.accept"><code class="docutils literal notranslate"><span class="pre">RecipeDialog.accept()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.recipe_dialog.RecipeDialog.reject"><code class="docutils literal notranslate"><span class="pre">RecipeDialog.reject()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.recipe_dialog.RecipeDialog.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">RecipeDialog.staticMetaObject</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.gui.script_dialog">astrocook.gui.script_dialog module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.script_dialog.ScriptDialog"><code class="docutils literal notranslate"><span class="pre">ScriptDialog</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.script_dialog.ScriptDialog.__init__"><code class="docutils literal notranslate"><span class="pre">ScriptDialog.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.script_dialog.ScriptDialog.append_log"><code class="docutils literal notranslate"><span class="pre">ScriptDialog.append_log()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.script_dialog.ScriptDialog.run_script"><code class="docutils literal notranslate"><span class="pre">ScriptDialog.run_script()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.script_dialog.ScriptDialog.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">ScriptDialog.staticMetaObject</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.gui.scripting">astrocook.gui.scripting module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController"><code class="docutils literal notranslate"><span class="pre">AppController</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.log_message"><code class="docutils literal notranslate"><span class="pre">AppController.log_message</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.refresh_request"><code class="docutils literal notranslate"><span class="pre">AppController.refresh_request</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.__init__"><code class="docutils literal notranslate"><span class="pre">AppController.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.get_session"><code class="docutils literal notranslate"><span class="pre">AppController.get_session()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.get_active_session"><code class="docutils literal notranslate"><span class="pre">AppController.get_active_session()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.run_recipe"><code class="docutils literal notranslate"><span class="pre">AppController.run_recipe()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.create_tab"><code class="docutils literal notranslate"><span class="pre">AppController.create_tab()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.scripting.AppController.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">AppController.staticMetaObject</span></code></a></li>
 </ul>
 </li>
 </ul>

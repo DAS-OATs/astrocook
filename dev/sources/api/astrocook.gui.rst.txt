@@ -60,6 +60,22 @@ astrocook.gui.recipe\_dialog module
    :show-inheritance:
    :undoc-members:
 
+astrocook.gui.script\_dialog module
+-----------------------------------
+
+.. automodule:: astrocook.gui.script_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+astrocook.gui.scripting module
+------------------------------
+
+.. automodule:: astrocook.gui.scripting
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 astrocook.gui.system\_inspector module
 --------------------------------------
 
