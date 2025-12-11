@@ -195,7 +195,7 @@ def main():
 
     # 6. GUI Startup
     if splash:
-        splash.showMessage("Initializing Interface...", Qt.AlignBottom | Qt.AlignCenter, Qt.black)
+        splash.showMessage("Initializing Interface...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
         app.processEvents()
 
     main_window = MainWindowV2(initial_session, None)

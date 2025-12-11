@@ -9,6 +9,7 @@ import numpy as np
 import astropy.units as au
 from scipy.ndimage import gaussian_filter1d
 
+# Boilerplate to find astrocook
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from astrocook.core.session import SessionV2
@@ -18,15 +19,13 @@ from astrocook.fitting.voigt_fitter import VoigtFitterV2
 from astrocook.core.system_list import SystemListV2
 
 # --- CONFIGURATION ---
-TARGET_ION = 'CII_1334'  
-DEFAULT_Z = 6.01         
-RESOLUTION = 7000.0     
+TARGET_ION = 'CII_1334'
 
 # --- PATCH 1: ATOMIC DATA ---
 if 'CII' in STANDARD_MULTIPLETS:
     del STANDARD_MULTIPLETS['CII']
 
-# --- PATCH 2: OPTIMIZE HIERARCHY ---
+# --- PATCH 2: OPTIMIZE HIERARCHY (Robust Version) ---
 def patched_optimize_hierarchy(self, spec, uuid_seed, 
                                max_components=5, threshold_sigma=2.5,
                                aic_penalty=0.0, z_window_kms=100.0,
@@ -144,6 +143,7 @@ class HeadlessContext:
     def _launch_recipe_dialog(self, *args): pass
 
 def refine_z_seed(session, z_guess, window_kms):
+    """Refines seed based on smoothed depth (robust peak finding)."""
     spec = session.spec
     x_ang = spec.x.to(au.Angstrom).value
     y = spec.y.value
@@ -154,107 +154,168 @@ def refine_z_seed(session, z_guess, window_kms):
     mask = (np.abs(dv) < window_kms)
     if np.sum(mask) < 5: return z_guess 
     
-    y_smooth = gaussian_filter1d(y[mask], sigma=2.0)
-    min_idx = np.argmin(y_smooth)
-    lam_min = x_ang[mask][min_idx]
+    depth = 1.0 - y[mask]
+    depth_smoothed = gaussian_filter1d(depth, sigma=2.0)
     
-    return (lam_min / lam_rest) - 1.0
+    peak_idx = np.argmax(depth_smoothed)
+    lam_peak = x_ang[mask][peak_idx]
+    
+    return (lam_peak / lam_rest) - 1.0
 
-def process_mock(file_path, output_dir, z_seed=DEFAULT_Z, scale_err=1.0):
+def merge_nearby_components(systs, velocity_threshold=50.0):
+    """Merges components closer than velocity_threshold (km/s)."""
+    from astrocook.core.system_list import SystemListV2
+    components = systs.components
+    if not components: return systs
+
+    c_kms = 299792.458
+    by_series = {}
+    for c in components:
+        if c.series not in by_series: by_series[c.series] = []
+        by_series[c.series].append(c)
+        
+    new_components = []
+    for series, comps in by_series.items():
+        comps.sort(key=lambda x: x.z)
+        merged = []
+        if not comps: continue
+        current = comps[0]
+        
+        for next_comp in comps[1:]:
+            dz = next_comp.z - current.z
+            dv = c_kms * dz / (1 + current.z)
+            
+            if dv < velocity_threshold:
+                N1, N2 = 10**current.logN, 10**next_comp.logN
+                N_tot = N1 + N2
+                w1, w2 = N1/N_tot, N2/N_tot
+                
+                new_z = current.z * w1 + next_comp.z * w2
+                new_b = current.b * w1 + next_comp.b * w2
+                new_btur = current.btur * w1 + next_comp.btur * w2
+                
+                current = dataclasses.replace(current, z=new_z, logN=np.log10(N_tot), b=new_b, btur=new_btur)
+            else:
+                merged.append(current)
+                current = next_comp
+        merged.append(current)
+        new_components.extend(merged)
+            
+    for i, c in enumerate(new_components):
+        object.__setattr__(c, 'id', i+1)
+            
+    return SystemListV2(dataclasses.replace(systs._data, components=new_components))
+
+def simulate_observation(session, snr, fwhm_kms, z_em_val):
+    """
+    Transforms a raw spectrum into a mock observation.
+    1. Convolve with Gaussian LSF (FWHM).
+    2. Add Gaussian Noise (1/SNR).
+    3. Inject Resolution metadata.
+    """
+    logging.info(f"Simulating Observation: SNR={snr}, FWHM={fwhm_kms} km/s")
+    
+    # 1. CONVOLUTION
+    # Convert FWHM to Sigma: FWHM = 2.355 * sigma
+    sigma_kms = fwhm_kms / 2.35482
+    sess = session.spec.smooth(sigma_kms=sigma_kms)
+    # Wrap back in Session
+    session = session.with_new_spectrum(sess)
+
+    # 2. NOISE GENERATION
+    sigma_noise = 1.0 / snr
+    
+    flux = session.spec.y.value
+    noise_vector = np.random.normal(loc=0.0, scale=sigma_noise, size=len(flux))
+    
+    # Add noise to Flux: y_new = y_old + noise
+    new_spec = session.spec.apply_expression('y', 'y + noise', {'noise': noise_vector})
+    
+    # Set the Error Column (dy)
+    new_spec = new_spec.apply_expression('dy', f'{sigma_noise}')
+    
+    # 3. INJECT RESOLUTION METADATA
+    c_kms = 299792.458
+    resol_R = c_kms / fwhm_kms
+    
+    resol_array = np.full(len(flux), resol_R)
+    col_resol = DataColumnV2(resol_array, au.dimensionless_unscaled, description="Resolving Power R")
+    
+    new_aux = new_spec._data.aux_cols.copy()
+    new_aux['resol'] = col_resol
+    new_spec_data = dataclasses.replace(new_spec._data, aux_cols=new_aux)
+    
+    # Update properties (z_em, resol)
+    final_spec = new_spec.__class__(new_spec_data).with_properties(z_em=z_em_val, resol=resol_R)
+    final_spec._data.meta['RESOL'] = resol_R
+    
+    logging.info(f"Observation generated. R={resol_R:.0f}, Sigma_Noise={sigma_noise:.4f}")
+    
+    return session.with_new_spectrum(final_spec)
+
+def process_mock(file_path, output_dir, snr, fwhm_kms):
     filename = os.path.basename(file_path)
     los_id = os.path.splitext(filename)[0]
+    
     logging.info(f"--- Processing {los_id} ---")
 
     context = HeadlessContext()
+    # Load raw file
     sess = SessionV2.open_new(file_path, "spec", context, "ascii_resvel_header")
     if sess is None: return None
 
-    # 1. SCALING ERRORS (Crucial Step)
-    if scale_err != 1.0:
-        logging.info(f"Rescaling errors by factor {scale_err}")
-        # Apply expression returns a new SpectrumV2
-        new_spec_scaled = sess.spec.apply_expression('dy', f'dy * {scale_err}')
-        sess = sess.with_new_spectrum(new_spec_scaled)
+    # --- DYNAMIC Z_SEED ---
+    # Calculate redshift based on median wavelength of the spectrum
+    x_ang = sess.spec.x.to(au.Angstrom).value
+    median_wave = np.nanmedian(x_ang)
+    rest_wave = ATOM_DATA[TARGET_ION]['wave']
+    z_seed_dynamic = (median_wave / rest_wave) - 1.0
+    logging.info(f"Dynamic Z guess: {z_seed_dynamic:.4f} (Median wave: {median_wave:.1f} A)")
 
-    # 2. Inject Resolution
-    logging.info(f"Injecting Resolution R={RESOLUTION}")
-    new_aux = sess.spec._data.aux_cols.copy()
-    new_aux['resol'] = DataColumnV2(np.full(len(sess.spec.x), RESOLUTION), au.dimensionless_unscaled)
-    new_spec = sess.spec.__class__(dataclasses.replace(sess.spec._data, aux_cols=new_aux)).with_properties(z_em=z_seed, resol=RESOLUTION)
-    new_spec._data.meta['RESOL'] = RESOLUTION
-    sess = sess.with_new_spectrum(new_spec)
+    # --- SIMULATION STEP ---
+    # Pass dynamic z_em to simulation
+    sess = simulate_observation(sess, snr, fwhm_kms, z_em_val=z_seed_dynamic)
 
-    z_best = refine_z_seed(sess, z_seed, window_kms=600.0)
+    # --- FITTING STEP ---
+    # 1. Refine Seed
+    z_best = refine_z_seed(sess, z_seed_dynamic, window_kms=600.0)
+    logging.info(f"Seeding {TARGET_ION} at z={z_best:.5f}")
     sess = sess.absorbers.add_component(series=TARGET_ION, z=z_best, logN=13.5, b=10.0)
     seed_uuid = sess.systs.components[-1].uuid
 
+    # 2. Optimization
     logging.info("Running AIC Optimization...")
-    # Restored to reasonable scientific defaults
     sess = sess.absorbers.optimize_system(
         uuid=seed_uuid,
-        max_components=10,      
+        max_components=30,      
         threshold_sigma=1.0,    
         aic_penalty=0.0,        
-        z_window_kms=1200.0,    
+        z_window_kms=2000.0,    
         min_dv=5.0,             
-        patience=5              
+        patience=10              
     )
 
-    logging.info("Merging components < 50 km/s...")
-    # NOTE: merge_nearby_components must be defined in your script (as in previous versions)
-    # I am re-including it here for completeness
-    
-    # Re-inserting function for standalone safety:
-    def merge_nearby_components_local(systs, velocity_threshold=50.0):
-        from astrocook.core.system_list import SystemListV2
-        components = systs.components
-        if not components: return systs
-        c_kms = 299792.458
-        by_series = {}
-        for c in components:
-            if c.series not in by_series: by_series[c.series] = []
-            by_series[c.series].append(c)
-        new_components = []
-        for series, comps in by_series.items():
-            comps.sort(key=lambda x: x.z)
-            merged = []
-            if not comps: continue
-            current = comps[0]
-            for next_comp in comps[1:]:
-                dz = next_comp.z - current.z
-                dv = c_kms * dz / (1 + current.z)
-                if dv < velocity_threshold:
-                    N1, N2 = 10**current.logN, 10**next_comp.logN
-                    N_tot = N1 + N2
-                    w1, w2 = N1/N_tot, N2/N_tot
-                    new_z = current.z * w1 + next_comp.z * w2
-                    new_b = current.b * w1 + next_comp.b * w2
-                    new_btur = current.btur * w1 + next_comp.btur * w2
-                    current = dataclasses.replace(current, z=new_z, logN=np.log10(N_tot), b=new_b, btur=new_btur)
-                else:
-                    merged.append(current)
-                    current = next_comp
-            merged.append(current)
-            new_components.extend(merged)
-        for i, c in enumerate(new_components): object.__setattr__(c, 'id', i+1)
-        return SystemListV2(dataclasses.replace(systs._data, components=new_components))
+    # 3. Merge
+    #logging.info("Merging components < 50 km/s...")
+    #new_systs = merge_nearby_components(sess.systs, velocity_threshold=50.0)
+    #sess = sess.with_new_system_list(new_systs)
 
-    new_systs = merge_nearby_components_local(sess.systs, velocity_threshold=50.0)
-    sess = sess.with_new_system_list(new_systs)
-
+    # 4. Export
     if not os.path.exists(output_dir): os.makedirs(output_dir)
-    save_path = os.path.join(output_dir, f"{los_id}.acs2")
+    save_path = os.path.join(output_dir, f"{los_id}_snr{snr}.acs2")
     sess.save(save_path)
-    csv_path = os.path.join(output_dir, f"{los_id}_components.csv")
+    
+    csv_path = os.path.join(output_dir, f"{los_id}_snr{snr}_components.csv")
     sess.systs.t.write(csv_path, format='ascii.csv', overwrite=True)
     
     return save_path
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, required=True)
+    parser = argparse.ArgumentParser(description="Simulate and Fit CII Mocks")
+    parser.add_argument('--input', type=str, required=True, help="Folder with raw mocks")
     parser.add_argument('--out', type=str, default="output_cii")
-    parser.add_argument('--scale_err', type=float, default=1.0, help="Scale factor for error column")
+    parser.add_argument('--snr', type=float, default=20.0, help="Target SNR")
+    parser.add_argument('--fwhm', type=float, default=30.0, help="Target FWHM (km/s)")
     parser.add_argument('--inspect', action='store_true')
     args = parser.parse_args()
 
@@ -263,7 +324,7 @@ if __name__ == "__main__":
     files = glob.glob(os.path.join(args.input, "*.dat"))
     for f in files:
         try:
-            saved = process_mock(f, args.out, scale_err=args.scale_err)
+            saved = process_mock(f, args.out, args.snr, args.fwhm)
             if args.inspect and saved:
                 subprocess.run([sys.executable, "launch_pyside_app.py", saved])
         except Exception as e:
