@@ -70,7 +70,7 @@ def main():
     if is_frozen:
         # App mode
         # Use the official (square) icon for windows
-        icon_name = "icon_3d_HR.png"
+        icon_name = "icon_3d_HR.icns"
     else:
         # Script mode (Development)
         # Use the round icon to distinguish it immediately
