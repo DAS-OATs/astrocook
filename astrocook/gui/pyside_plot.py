@@ -590,6 +590,7 @@ class SpectrumPlotWidget(QWidget):
             # Get full data arrays
             full_x_data = spec.x.value
             full_y_data = spec.y.value
+            full_dx_data = spec.xmax.value-spec.xmin.value if (spec.xmin, spec.xmax) is not (None, None) else np.zeros_like(full_x_data)
             full_dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(full_y_data)
             full_cont_data = spec.cont.value if hasattr(spec.cont, 'value') else spec.cont
             full_model_data = spec.model.value if hasattr(spec.model, 'value') else spec.model
@@ -628,6 +629,7 @@ class SpectrumPlotWidget(QWidget):
                     logging.debug("Using cached NORMALIZED plot data.")
                     x_data = self._cached_x_plot_raw
                     y_data = self._cached_y_plot_norm
+                    dx_data = self._cached_dx_plot_norm
                     dy_data = self._cached_dy_plot_norm
                     cont_data = self._cached_cont_plot_norm
                     model_data = self._cached_model_plot_norm
@@ -639,6 +641,7 @@ class SpectrumPlotWidget(QWidget):
                         logging.debug("...using cached RAW plot data.")
                         x_data_raw = self._cached_x_plot_raw
                         y_data_raw = self._cached_y_plot_raw
+                        dx_data_raw = self._cached_dx_plot_raw
                         dy_data_raw = self._cached_dy_plot_raw
                         cont_data_raw = self._cached_cont_plot_raw
                         model_data_raw = self._cached_model_plot_raw
@@ -648,12 +651,14 @@ class SpectrumPlotWidget(QWidget):
                         if use_decimation:
                             x_data_raw = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
                             y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                            dx_data_raw = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                             dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
                             cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
                             model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
                         else: # We are zoomed, forcing home, or data is small
                             x_data_raw = full_x_data
                             y_data_raw = full_y_data
+                            dx_data_raw = full_dx_data
                             dy_data_raw = full_dy_data
                             cont_data_raw = full_cont_data
                             model_data_raw = full_model_data
@@ -661,6 +666,7 @@ class SpectrumPlotWidget(QWidget):
                         # Save to RAW cache
                         self._cached_x_plot_raw = x_data_raw
                         self._cached_y_plot_raw = y_data_raw
+                        self._cached_dx_plot_raw = dx_data_raw
                         self._cached_dy_plot_raw = dy_data_raw
                         self._cached_cont_plot_raw = cont_data_raw
                         self._cached_model_plot_raw = model_data_raw
@@ -670,6 +676,7 @@ class SpectrumPlotWidget(QWidget):
                         x_data = x_data_raw
                         cont_val = cont_data_raw
                         y_data = np.divide(y_data_raw, cont_val, out=np.full_like(y_data_raw, np.nan), where=cont_val!=0)
+                        dx_data = np.divide(dx_data_raw, cont_val, out=np.full_like(dx_data_raw, np.nan), where=cont_val!=0)
                         dy_data = np.divide(dy_data_raw, cont_val, out=np.full_like(dy_data_raw, np.nan), where=cont_val!=0)
                         model_data = None
                         if model_data_raw is not None:
@@ -679,13 +686,14 @@ class SpectrumPlotWidget(QWidget):
                         # Save to NORMALIZED cache
                         self._cached_x_plot_norm = x_data
                         self._cached_y_plot_norm = y_data
+                        self._cached_dx_plot_norm = dx_data
                         self._cached_dy_plot_norm = dy_data
                         self._cached_cont_plot_norm = cont_data
                         self._cached_model_plot_norm = model_data
                     else:
                         logging.warning("Normalize checked, but continuum data is missing.")
-                        x_data, y_data, dy_data, cont_data, model_data = \
-                            x_data_raw, y_data_raw, dy_data_raw, cont_data_raw, model_data_raw
+                        x_data, y_data, dx_data, dy_data, cont_data, model_data = \
+                            x_data_raw, y_data_raw, dx_data_raw, dy_data_raw, cont_data_raw, model_data_raw
 
             elif is_snr:
                 # --- *** NEW BLOCK FOR SNR *** ---
@@ -693,6 +701,7 @@ class SpectrumPlotWidget(QWidget):
                     logging.debug("Using cached SNR plot data.")
                     x_data = self._cached_x_plot_raw
                     y_data = self._cached_y_plot_snr
+                    dx_data = self._cached_dx_plot_snr
                     dy_data = self._cached_dy_plot_snr
                     cont_data = self._cached_cont_plot_snr
                     model_data = self._cached_model_plot_snr
@@ -704,6 +713,7 @@ class SpectrumPlotWidget(QWidget):
                         # ... (read from _cached_x_plot_raw, etc.) ...
                         x_data_raw = self._cached_x_plot_raw
                         y_data_raw = self._cached_y_plot_raw
+                        dx_data_raw = self._cached_dx_plot_raw
                         dy_data_raw = self._cached_dy_plot_raw
                         cont_data_raw = self._cached_cont_plot_raw
                         model_data_raw = self._cached_model_plot_raw
@@ -713,6 +723,7 @@ class SpectrumPlotWidget(QWidget):
                             # ... (decimate_x_for_min_max, decimate_y_min_max) ...
                             x_data_raw = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
                             y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                            dx_data_raw = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                             dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
                             cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
                             model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
@@ -720,6 +731,7 @@ class SpectrumPlotWidget(QWidget):
                             # ... (get from data_slice) ...
                             x_data_raw = full_x_data[data_slice]
                             y_data_raw = full_y_data[data_slice]
+                            dx_data_raw = full_dx_data[data_slice]
                             dy_data_raw = full_dy_data[data_slice]
                             cont_data_raw = full_cont_data[data_slice] if full_cont_data is not None else None
                             model_data_raw = full_model_data[data_slice] if full_model_data is not None else None
@@ -727,6 +739,7 @@ class SpectrumPlotWidget(QWidget):
                         # Save to RAW cache
                         self._cached_x_plot_raw = x_data_raw
                         self._cached_y_plot_raw = y_data_raw
+                        self._cached_dx_plot_raw = dx_data_raw
                         self._cached_dy_plot_raw = dy_data_raw
                         self._cached_cont_plot_raw = cont_data_raw
                         self._cached_model_plot_raw = model_data_raw
@@ -766,6 +779,7 @@ class SpectrumPlotWidget(QWidget):
                     # Save to SNR cache
                     x_data = x_data_raw # X is always the same
                     self._cached_y_plot_snr = y_data
+                    self._cached_dx_plot_snr = dx_data
                     self._cached_dy_plot_snr = dy_data
                     self._cached_cont_plot_snr = cont_data
                     self._cached_model_plot_snr = model_data
@@ -777,6 +791,7 @@ class SpectrumPlotWidget(QWidget):
                     logging.debug("Using cached RAW plot data.")
                     x_data = self._cached_x_plot_raw
                     y_data = self._cached_y_plot_raw
+                    dx_data = self._cached_dx_plot_raw
                     dy_data = self._cached_dy_plot_raw
                     cont_data = self._cached_cont_plot_raw
                     model_data = self._cached_model_plot_raw
@@ -787,12 +802,14 @@ class SpectrumPlotWidget(QWidget):
                     if use_decimation:
                         x_data = decimate_x_for_min_max(full_x_data, DECIMATION_FACTOR)
                         y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
+                        dx_data = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                         dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
                         cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
                         model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
                     else: # We are zoomed, forcing home, or data is small
                         x_data = full_x_data
                         y_data = full_y_data
+                        dx_data = full_dx_data
                         dy_data = full_dy_data
                         cont_data = full_cont_data
                         model_data = full_model_data
@@ -800,6 +817,7 @@ class SpectrumPlotWidget(QWidget):
                     # Save to RAW cache
                     self._cached_x_plot_raw = x_data
                     self._cached_y_plot_raw = y_data
+                    self._cached_dx_plot_raw = dx_data
                     self._cached_dy_plot_raw = dy_data
                     self._cached_cont_plot_raw = cont_data
                     self._cached_model_plot_raw = model_data
@@ -830,6 +848,7 @@ class SpectrumPlotWidget(QWidget):
                         # Apply the slice to all arrays
                         x_data = x_data[final_slice]
                         y_data = y_data[final_slice]
+                        dx_data = dx_data[final_slice]
                         dy_data = dy_data[final_slice]
                         if cont_data is not None:
                             cont_data = cont_data[final_slice]
@@ -844,6 +863,20 @@ class SpectrumPlotWidget(QWidget):
                     
             colors = get_color_cycle(5, cmap='tab20') # Get colors
 
+            plot_style = spec.meta.get('plot_style', 'step')
+            
+            is_scatter = False
+            n_points = len(x_data)
+            if n_points < 20000:
+                is_scatter = (plot_style == 'scatter')
+                scatter_ms = 4.0
+                if n_points < 600:
+                    scatter_ms = 10.0
+                elif n_points < 2000:
+                    scatter_ms = 8.0
+                elif n_points < 6000:
+                    scatter_ms = 6.0
+
             # --- Check state from main_window reference ---
             # 2. Plot Error Shading (Conditional)
             if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
@@ -852,9 +885,17 @@ class SpectrumPlotWidget(QWidget):
                 #    step='mid', color='#aaaaaa', alpha=0.5,
                 #    label='1-sigma error', rasterized=True
                 #)
-                if dy_data is not None:
+                if dx_data is not None and dy_data is not None:
                     label = '1-sigma error'
-                    if use_decimation:
+                    if is_scatter:
+                        # fmt='none' ensures no connecting lines or extra markers
+                        ax.errorbar(x_data, y_data, xerr=dx_data, 
+                                    fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
+                                    alpha=0.5, rasterized=True, zorder=0.9, label=label)
+                        ax.errorbar(x_data, y_data, yerr=dy_data, 
+                                    fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
+                                    alpha=0.5, rasterized=True, zorder=0.9, label=label)
+                    elif use_decimation:
                         # Use plot() for decimated data (fast)
                         ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
                         ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
@@ -866,7 +907,14 @@ class SpectrumPlotWidget(QWidget):
                     logging.warning("Skipping error plot because dy_data is None (this may be a cache bug).")
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
-            if use_decimation:
+            if is_scatter:
+                # Use a fast marker plot for echelle data
+                # 'ls="None"' ensures no connecting lines (sawtooth removal)
+                # 'marker="."' is a pixel-like dot
+                ax.plot(x_data, y_data, label="Spectrum", 
+                        linestyle='None', marker='.', markersize=scatter_ms, markeredgewidth=0,
+                        color=colors[0], alpha=0.7, rasterized=True)
+            elif use_decimation:
                 ax.plot(x_data, y_data, label="Spectrum (decimated)", lw=0.5, color=colors[0], rasterized=True)
             else:
                 ax.step(x_data, y_data, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
@@ -925,7 +973,11 @@ class SpectrumPlotWidget(QWidget):
 
                     # Plot based on data type
                     elif aux_data.dtype.kind in 'fiu': # Float or Int
-                        if use_decimation:
+                        if is_scatter:
+                             ax.plot(x_data, aux_data, label=aux_col_to_plot, 
+                                     linestyle='None', marker=scatter_ms, markersize=1, 
+                                     color='purple', rasterized=True)
+                        elif use_decimation:
                             ax.plot(x_data, aux_data, label=aux_col_to_plot, 
                                     linestyle=':', lw=1.2, color='purple', 
                                     rasterized=True)

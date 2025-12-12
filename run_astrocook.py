@@ -186,6 +186,8 @@ def main():
             
             if file_to_load.lower().endswith(('.txt', '.dat')):
                 format_name = 'ascii_resvel_header'
+            elif 'S2D' in file_to_load.upper():
+                format_name = 'espresso_s2d_fits'
             else:
                 format_name = 'generic_spectrum'
 
