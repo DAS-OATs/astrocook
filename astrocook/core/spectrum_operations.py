@@ -150,6 +150,94 @@ def smooth_spectrum(
         
     return y_final
 
+def compute_flux_scaling(
+    x_ref: np.ndarray, 
+    y_ref: np.ndarray, 
+    x_in: np.ndarray, 
+    y_in: np.ndarray, 
+    order: int = 0,
+    smooth_sigma_pix: float = 50.0
+) -> np.ndarray:
+    """
+    Computes a scaling array to align y_in to y_ref within their overlap.
+    Returns an array of the same shape as x_in containing the multiplicative correction.
+    
+    Strategy:
+    1. Identify spectral overlap.
+    2. Smooth both spectra to remove narrow features (lines/noise).
+    3. Interpolate Reference onto Input grid.
+    4. Compute Ratio (Ref/In).
+    5. Fit Polynomial to Ratio.
+    """
+    # 0. Default: No correction (array of 1s)
+    correction = np.ones_like(y_in)
+    
+    # 1. Identify Overlap
+    x_min_ov = max(x_ref.min(), x_in.min())
+    x_max_ov = min(x_ref.max(), x_in.max())
+    
+    # If no significant overlap, return 1.0
+    if x_max_ov <= x_min_ov:
+        return correction
+
+    # 2. Smooth spectra to isolate continuum levels (ignore narrow lines)
+    # We use a broad Gaussian kernel
+    y_ref_smooth = gaussian_filter1d(y_ref, smooth_sigma_pix)
+    y_in_smooth = gaussian_filter1d(y_in, smooth_sigma_pix)
+    
+    # 3. Select points strictly inside the overlap
+    # We add a small buffer to avoid edge artifacts from smoothing
+    margin = (x_max_ov - x_min_ov) * 0.05
+    mask_in = (x_in >= (x_min_ov + margin)) & (x_in <= (x_max_ov - margin))
+    
+    # Ensure we have enough points for the fit
+    if np.sum(mask_in) < (order + 2) * 10:
+        return correction
+
+    x_in_ov = x_in[mask_in]
+    y_in_ov = y_in_smooth[mask_in]
+    
+    # 4. Interpolate Smoothed Reference onto Smoothed Input Grid
+    try:
+        interpolator = interp1d(x_ref, y_ref_smooth, kind='linear', fill_value="extrapolate")
+        y_ref_interp = interpolator(x_in_ov)
+        
+        # 5. Calculate Ratio
+        # Avoid division by zero
+        valid_ratio = (y_in_ov > 0) & (y_ref_interp > 0)
+        
+        if np.sum(valid_ratio) < 10:
+            return correction
+            
+        x_fit = x_in_ov[valid_ratio]
+        ratio = y_ref_interp[valid_ratio] / y_in_ov[valid_ratio]
+        
+        # 6. Sigma Clip the ratio to remove outliers (e.g. bad pixels, cosmic rays)
+        # (Using a simple percentile clip here for robustness)
+        # Keep inner 80% to avoid extreme outliers
+        p10 = np.percentile(ratio, 10)
+        p90 = np.percentile(ratio, 90)
+        mask_clip = (ratio > p10) & (ratio < p90)
+        
+        if np.sum(mask_clip) < order + 2:
+            return correction
+            
+        # 7. Polynomial Fit
+        # Fit: Ratio vs Wavelength
+        coeffs = polyfit(x_fit[mask_clip], ratio[mask_clip], order)
+        
+        # 8. Generate Correction Model for the FULL input x-axis
+        correction_model = polyval(x_in, coeffs)
+        
+        # Safety: Don't allow negative or zero scaling factors
+        correction_model = np.maximum(correction_model, 0.01)
+        
+        return correction_model
+
+    except Exception as e:
+        logging.warning(f"Flux scaling failed: {e}. Using unscaled data.")
+        return correction
+
 def rebin_spectrum(
         x_in: au.Quantity, xmin_in: au.Quantity, xmax_in: au.Quantity,
         spec_data: SpectrumDataV2, # Still pass the full data for y/dy/aux_cols
@@ -255,14 +343,17 @@ def rebin_spectrum(
             if np.any(safe_error_w):
                 # Weighted average using variance (1/dy^2) and fractional overlap
                 weights = frac[safe_error_w] / dysel[safe_error_w]**2
-                y_out_value[i] = np.average(ysel[safe_error_w], weights=weights)
+                sum_weights = np.sum(weights)
                 
-                # Propagate error (weighted variance calculation - V1 logic simplified)
-                # V1 used a simplified error propagation that summed weights:
-                sum_weights = np.nansum(weights)
                 if sum_weights > 0:
-                    dy_out_value[i] = np.sqrt(np.nansum(weights**2 * dysel[safe_error_w]**2)) / sum_weights
+                    y_out_value[i] = np.average(ysel[safe_error_w], weights=weights)
+                    
+                    # Propagate error (weighted variance calculation)
+                    # For weighted mean where w = 1/sigma^2: sigma_mean = 1 / sqrt(sum(w))
+                    dy_out_value[i] = 1.0 / np.sqrt(sum_weights)
                 else:
+                    # Weights sum to zero (likely infinite errors or full mask)
+                    y_out_value[i] = filling
                     dy_out_value[i] = filling
             else:
                 # Simple average weighted by fractional overlap
@@ -1056,3 +1147,4 @@ def find_signal_peaks(
     all_peaks_list.sort(key=lambda x: x[1])
     
     return all_peaks_list
+

@@ -11,6 +11,7 @@ BRANCHING_RECIPES: List[str] = [
     'split',                
     'stitch',
     'extract_preset',
+    'coadd',
     'identify_lines',
 ]
 

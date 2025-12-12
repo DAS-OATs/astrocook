@@ -658,6 +658,18 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(extract_preset_action)
         self.extract_preset_action = extract_preset_action; self.extract_preset_action.setEnabled(False)
 
+        edit_menu.addSeparator()
+
+        # coadd Action
+        coadd_action = QAction("Co-&add Spectra...", self)
+        coadd_action.setToolTip("Combine multiple sessions and rebin to a single grid")
+        coadd_action.triggered.connect(lambda: self._launch_recipe_dialog(
+            "edit", "coadd",
+            initial_params={'session_names': self.active_history.display_name if self.active_history else ""}
+        ))
+        edit_menu.addAction(coadd_action)
+        self.coadd_action = coadd_action; self.coadd_action.setEnabled(False)
+
         # RECIPES FOR 'FLUX' MENU
         
         std_action = QAction("Calculate Running &StdDev...", self)
@@ -1577,7 +1589,7 @@ class MainWindowV2(QMainWindow):
             for r in selected_rows[1:]:
                 others_names.append(self.session_histories[r].display_name)
             
-            action_text = f"Stitch {len(indexes)} sessions to new..."
+            action_text = f"Stitch {len(indexes)} sessions..."
             stitch_action = QAction(action_text, self)
             stitch_action.setToolTip("Combine selected sessions into a new, separate session entry.")
             
@@ -1585,6 +1597,16 @@ class MainWindowV2(QMainWindow):
                 lambda: self._on_stitch_requested(primary_history, others_names)
             )
             menu.addAction(stitch_action)
+
+            coadd_action = QAction(f"Co-add {len(indexes)} sessions...", self)
+            coadd_action.setToolTip("Combine and rebin selected sessions into a new, separate session entry.")
+            coadd_action.triggered.connect(
+                lambda: self._on_coadd_requested(primary_history, others_names)
+            )
+            menu.addAction(coadd_action)
+            
+            menu.exec(self.session_list_view.mapToGlobal(pos))
+            return
             
             menu.exec(self.session_list_view.mapToGlobal(pos))
             return
@@ -1655,6 +1677,26 @@ class MainWindowV2(QMainWindow):
         params = {'other_sessions': others_names}
         
         self._on_recipe_requested("edit", "stitch", params, {})
+
+    def _on_coadd_requested(self, primary_history, others_names: List[str]):
+        """
+        Callback for the Co-add context menu action.
+        Pre-fills the 'others_names' in the dialog so the user can adjust grid parameters.
+        """
+        if self.active_history != primary_history:
+            self.active_history = primary_history
+            self._update_view_for_session(primary_history.current_state, set_current_list_item=True)
+
+        # 1. Combine primary + others into a full list
+        all_names = [primary_history.display_name] + others_names
+        
+        # 2. Join into a single string for the text input
+        all_names_str = ", ".join(all_names)
+        
+        # 3. Launch dialog with correct parameter key 'session_names'
+        self._launch_recipe_dialog(
+            "edit", "coadd", initial_params={'session_names': all_names_str}
+        )
     
     def _on_session_info(self, history_item: SessionHistory):
         """ Displays an info box for the selected session. """
@@ -2523,6 +2565,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)
+        if hasattr(self, 'coadd_action'): self.coadd_action.setEnabled(enable_recipes)
         
         if hasattr(self, 'calculate_running_std_action'): self.calculate_running_std_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)

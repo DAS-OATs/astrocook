@@ -777,6 +777,48 @@ class SpectrumV2:
         new_history = self.history + [f"Split with expression: {expression}"]
         return SpectrumV2(data=new_data_core, history=new_history)
     
+    def scale_flux(self, scale_factor: Union[float, np.ndarray]) -> 'SpectrumV2':
+        """
+        Scales the flux (y, dy) and relevant auxiliary columns (cont, model) 
+        by a multiplicative factor. Returns a new SpectrumV2 instance.
+        """
+        # 1. Scale core columns
+        # Handle cases where scale_factor is scalar or array
+        new_y = DataColumnV2(self.y.value * scale_factor, self.y.unit)
+        new_dy = DataColumnV2(self.dy.value * scale_factor, self.dy.unit)
+
+        # 2. Scale flux-like auxiliary columns
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        cols_to_scale = ['cont', 'model']
+        
+        for name in cols_to_scale:
+            if name in new_aux_cols:
+                col = new_aux_cols[name]
+                # Ensure we propagate description and unit
+                new_aux_cols[name] = DataColumnV2(
+                    col.values * scale_factor, 
+                    col.unit, 
+                    col.description
+                )
+        
+        # 3. Create new immutable data core
+        new_data = dataclasses.replace(
+            self._data,
+            y=new_y,
+            dy=new_dy,
+            aux_cols=new_aux_cols
+        )
+        
+        # 4. Return new SpectrumV2
+        # (Optional: summarize scalar or mean of array for history)
+        if np.size(scale_factor) == 1:
+            info = f"{scale_factor:.3f}"
+        else:
+            info = f"array(mean={np.mean(scale_factor):.3f})"
+            
+        new_history = self.history + [f"Scaled flux by {info}"]
+        return SpectrumV2(data=new_data, history=new_history)
+
     def calculate_running_std(self, 
                               input_col: str, 
                               output_col: str, 

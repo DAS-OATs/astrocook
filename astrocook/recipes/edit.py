@@ -3,9 +3,10 @@ from copy import deepcopy
 import logging
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Dict, Optional, Union, List
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List
 
 from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.spectrum_operations import compute_flux_scaling
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -87,18 +88,32 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Trim to common velocity coverage.",
         "details": "Trims the current session to the velocity range shared by a list of other sessions (intersection).",
         "params": [
-            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of other sessions."},
-            {"name": "z_target", "type": float, "default": "_current_", "doc": "Target redshift."},
-            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition for current session."},
-            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions for other sessions."},
-            {"name": "window_kms", "type": float, "default": 500.0, "doc": "Symmetric window width (km/s)."}
+            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of other sessions"},
+            {"name": "z_target", "type": float, "default": "_current_", "doc": "Target redshift"},
+            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition for current session"},
+            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions for other sessions"},
+            {"name": "window_kms", "type": float, "default": 500.0, "doc": "Symmetric window width (km/s)"}
         ],
         "url": "edit_cb.html#trim_common"
     },
     "stitch": {
-        "brief": "Merge multiple sessions.",
+        "brief": "Merge multiple sessions",
         "params": [],
         "gui_hidden": True  # Usually called via script
+    },
+    "coadd": {
+        "brief": "Co-add multiple sessions.",
+        "details": "Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).",
+        "params": [
+            {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of sessions to co-add"},
+            {"name": "xstart", "type": str, "default": "None", "doc": "Start wavelength (nm, None for auto)"},
+            {"name": "xend", "type": str, "default": "None", "doc": "End wavelength (nm, None for auto)"},
+            {"name": "dx", "type": float, "default": 10.0, "doc": "Step size for the final grid"},
+            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit for step size (km/s or nm)"},
+            {"name": "kappa", "type": str, "default": "5.0", "doc": "Sigma clipping threshold (None for off)"},
+            {"name": "equalize_order", "type": int, "default": -1, "doc": "Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)"},
+        ],
+        "url": "edit_cb.html#coadd"
     }
 }
 
@@ -710,4 +725,103 @@ class RecipeEditV2:
             
         except Exception as e:
             logging.error(f"Stitch failed: {e}", exc_info=True)
+            return 0
+        
+    def coadd(self, session_names: str, xstart: str = 'None', xend: str = 'None', 
+              dx: str = '0.01', xunit: str = 'nm', kappa: str = '5.0', 
+              equalize_order: str = '-1') -> Dict[str, Any]: # <--- Add arg
+        """
+        Co-adds multiple sessions.
+        """
+        
+        names_list = [n.strip() for n in session_names.split(',') if n.strip()]
+        
+        if not names_list:
+            logging.warning("Coadd: No sessions selected.")
+            return 0
+
+        # 1. Resolve Session Objects
+        resolved_specs = []
+        if hasattr(self._session, '_gui'):
+            for name in names_list:
+                found = False
+                for hist in self._session._gui.session_histories:
+                    if hist.display_name == name:
+                        resolved_specs.append(hist.current_state.spec)
+                        found = True
+                        break
+                if not found:
+                    logging.warning(f"Coadd: Session '{name}' not found. Skipping.")
+        
+        if not resolved_specs:
+            logging.error("Coadd: No valid sessions found to merge.")
+            return 0
+
+        try:
+            try:
+                eq_order = int(equalize_order)
+            except (ValueError, TypeError):
+                logging.warning(f"Invalid equalize_order '{equalize_order}', defaulting to -1 (Off).")
+                eq_order = -1
+
+            # 2. Prepare Base (Reference)
+            # Use the first session as the Flux Reference
+            base_spec = deepcopy(resolved_specs[0])
+            
+            specs_to_stitch = []
+
+            # 3. Handle Equalization
+            # We iterate over the *rest* of the spectra
+            if len(resolved_specs) > 1:
+                
+                ref_x = base_spec.x.value
+                ref_y = base_spec.y.value
+
+                for i, spec in enumerate(resolved_specs[1:]):
+                    # Always deepcopy before modifying
+                    spec_to_process = spec
+                    
+                    if eq_order >= 0:
+                        logging.info(f"Equalizing '{names_list[i+1]}' to match '{names_list[0]}' (Order {equalize_order})...")
+                        
+                        scale_model = compute_flux_scaling(
+                            ref_x, ref_y, 
+                            spec_to_process.x.value, spec_to_process.y.value, 
+                            order=eq_order
+                        )
+                        
+                        spec_to_process = spec_to_process.scale_flux(scale_model)
+                        
+                    specs_to_stitch.append(spec_to_process)
+                
+                # 4. Stitch
+                # stitch returns a NEW spectrum object
+                stitched_spec = base_spec.stitch(specs_to_stitch, sort=True)
+            else:
+                stitched_spec = base_spec
+
+            # 5. Define Grid Parameters
+            try:
+                xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None
+                xend_q = au.Quantity(float(xend), au.nm) if xend != 'None' else None
+                dx_unit = au.Unit(xunit) 
+                dx_q = au.Quantity(float(dx), dx_unit) 
+                kappa_f = float(kappa) if kappa != 'None' else None
+            except ValueError:
+                logging.error(msg_param_fail)
+                return 0
+
+            # 6. Rebin
+            logging.info(f"Coadd: Rebinning {len(stitched_spec.x)} combined pixels...")
+            final_spec = stitched_spec.rebin(
+                xstart=xstart_q, xend=xend_q, dx=dx_q, kappa=kappa_f, filling=np.nan
+            )
+            
+            new_name = f"Coadd_{len(resolved_specs)}_sessions"
+            new_session = self._session.with_new_spectrum(final_spec)
+            
+            return new_session
+
+        except Exception as e:
+            logging.error(f"Coadd failed: {e}", exc_info=True)
             return 0
