@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from .debug_utils import GLOBAL_PLOTTER
 from .identification_viewer_dialog import IdentificationViewerDialog
@@ -80,7 +80,7 @@ class MockV1GUIContext:
         # V2 GUI doesn't use these flags, so return None
         return None
 class MainWindowV2(QMainWindow):
-    def __init__(self, initial_session: SessionV2, initial_log_object: Optional[LogManager]):
+    def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
@@ -143,6 +143,7 @@ class MainWindowV2(QMainWindow):
         self._setup_collapse_buttons()
 
         # --- ** Central Stack Views ** ---
+        initial_session = initial_sessions[0] if isinstance(initial_sessions, List) and len(initial_sessions) > 0 else initial_sessions
         valid_session = initial_session if isinstance(initial_session, SessionV2) else None
         
         self._setup_plot_view(valid_session)
@@ -163,33 +164,43 @@ class MainWindowV2(QMainWindow):
         self._apply_styles()
 
         # --- Initial State ---
-        is_initial_session_valid = bool(initial_session and initial_session.spec and len(initial_session.spec.x) > 0)
+        # Normalize input to a list
+        if isinstance(initial_sessions, SessionV2):
+            init_list = [initial_sessions]
+        elif isinstance(initial_sessions, list):
+            init_list = initial_sessions
+        else:
+            init_list = []
         
         # ** Create the Mock GUI context once for all loggers **
         self.mock_gui_context = MockV1GUIContext()
 
-        if is_initial_session_valid:
-            log_object = HistoryLogV2() # <<< ALWAYS create a new, empty log
-            
-            initial_history = SessionHistory(initial_session, log_object)
-            
-            # Link the *real* GUI (self) to the session for recipes
-            initial_session._gui = self
-            
-            initial_session.log = GUILog(self.mock_gui_context)
-            initial_session.defs = Defaults(self.mock_gui_context)
-            # We no longer check for V1LogArtifact here, it's always new
+        # Iterate and add all passed sessions
+        for i, session in enumerate(init_list):
+            if isinstance(session, SessionV2) and session.spec and len(session.spec.x) > 0:
+                
+                # Per previous logic: Always create new history/log for new sessions
+                log_object = HistoryLogV2()
+                new_history = SessionHistory(session, log_object)
+                
+                # Link real GUI
+                session._gui = self
+                session.log = GUILog(self.mock_gui_context)
+                session.defs = Defaults(self.mock_gui_context)
+                
+                self.session_histories.append(new_history)
 
-            self.session_histories.append(initial_history)
-            self.active_history = initial_history
+        # Set active history (default to the last one loaded, or the first?)
+        # Usually user wants to see the first one, or the last one. Let's pick the first.
+        if self.session_histories:
+            self.active_history = self.session_histories[0]
             self.session_model.setStringList([h.display_name for h in self.session_histories])
-            self._update_view_for_session(initial_history.current_state, set_current_list_item=True, is_startup=True)
+            self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, is_startup=True)
         else:
             self.active_history = None
             self._update_view_for_session(None, set_current_list_item=False, is_startup=True)
 
-        self._update_undo_redo_actions() # Set initial state
-
+        self._update_undo_redo_actions()
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
 
     def resizeEvent(self, event):
@@ -1525,36 +1536,43 @@ class MainWindowV2(QMainWindow):
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
-        file_name, _ = QFileDialog.getOpenFileName(
+        file_names, _ = QFileDialog.getOpenFileNames(
             self, 
-            "Open Spectrum File", 
+            "Open Spectrum File(s)", 
             os.getcwd(),
-            "Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;Text Files (*.txt);;All Files (*)"
+            "All Supported (*.acs *.acs2 *.fits *.txt *.dat);;Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;Text Files (*.txt *.dat);;All Files (*)"
         )
         
-        if file_name:
-            
-            session_name = os.path.splitext(os.path.basename(file_name))[0]
-            gui_context = self.mock_gui_context
-
+        if file_names:
+            # Show a wait cursor if loading multiple files
+            QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
-                # load_session_from_file now only returns the session (Point 3)
-                new_session = load_session_from_file(
-                    archive_path=file_name, 
-                    name=session_name, 
-                    format_name='auto',  # <--- Let the loader decide
-                    gui_context=gui_context
-                )
+                for file_name in file_names:
+                    logging.info(f"Opening: {file_name}")
+                    
+                    # 'auto' format detection is now standard
+                    session_name = os.path.splitext(os.path.basename(file_name))[0]
+                    gui_context = self.mock_gui_context
 
-                if new_session == 0:
-                    raise RuntimeError("load_session_from_file returned failure code 0.")
+                    try:
+                        new_session = load_session_from_file(
+                            archive_path=file_name, 
+                            name=session_name, 
+                            format_name='auto', # Use auto detection
+                            gui_context=gui_context
+                        )
 
-                # add_session no longer takes a log_object (Point 3)
-                self.add_session(new_session)
+                        if new_session == 0:
+                            logging.error(f"Failed to load {file_name}")
+                            continue
 
-            except Exception as e:
-                logging.error(f"Failed to load file via V2 adapter: {e}")
-                QMessageBox.critical(self, "Error Loading File", f"Could not load {file_name}:\n{e}")
+                        self.add_session(new_session)
+
+                    except Exception as e:
+                        logging.error(f"Failed to load file {file_name}: {e}")
+                        # Don't show a popup for every single failure in a batch, just log it.
+            finally:
+                QApplication.restoreOverrideCursor()
 
     def _on_session_list_context_menu(self, pos: QPoint):
         """

@@ -1,6 +1,7 @@
 import argparse
-import os
+import glob
 import logging
+import os
 from pathlib import Path
 import sys
 import time
@@ -56,8 +57,8 @@ def main():
     
     # 1. Set up Argument Parser
     parser = argparse.ArgumentParser(description="Launch Astrocook V2 PySide GUI.")
-    parser.add_argument('session_file', nargs='?', default=None,
-                        help="Optional path to a .acs or .acs2 session file to load.")
+    parser.add_argument('session_files', nargs='*', default=[],
+                        help="Optional paths to .acs, .acs2, or FITS files.")
     args = parser.parse_args()
 
     # 2. Initialize PySide Application (Must be first for Splash Screen)
@@ -157,54 +158,60 @@ def main():
         # If it was too fast, let's wait
         time.sleep(min_splash_duration - elapsed)
 
-    # 4. Argument parsing
-    parser = argparse.ArgumentParser()
-    parser.add_argument('session_file', nargs='?', default=None)
-    args = parser.parse_args()
-
     # 5. Load Session Logic
     mock_gui = MockGUI()
-    initial_session = None # Default is None (triggers Empty View in MainWindow)
-    file_to_load = None
+    loaded_sessions = [] # List to hold all loaded sessions
 
-    # A. Priority: Command line argument (Windows/Linux/Debug)
-    if args.session_file:
-        file_to_load = os.path.realpath(args.session_file)
+    # A. Gather file paths from CLI (handling wildcards explicitly for Windows)
+    files_to_load = []
+
+    if args.session_files:
+        for pattern in args.session_files:
+            # Glob expands wildcards (e.g. *.fits) if the shell didn't already
+            matched = glob.glob(os.path.expanduser(pattern))
+            if not matched:
+                # If no match (maybe it's a specific file that doesn't exist yet?), keep literal
+                files_to_load.append(pattern)
+            else:
+                files_to_load.extend(matched)
     
-    # B. If empty, check if macOS sent an event during the splash
+    # B. Check for macOS startup event
     elif hasattr(app, 'startup_file') and app.startup_file:
-        file_to_load = app.startup_file
+        files_to_load.append(app.startup_file)
 
-    # C. Actual loading
-    if file_to_load and os.path.exists(file_to_load):
-        if splash:
-            splash.showMessage(f"Loading {os.path.basename(file_to_load)}...", 
-                               Qt.AlignBottom | Qt.AlignCenter, Qt.white)
-            app.processEvents()
-        try:
-            name = os.path.splitext(os.path.basename(file_to_load))[0]
-            
-            initial_session = load_session_from_file(
-                file_to_load, 
-                name, 
-                mock_gui, 
-                format_name='auto' 
-            )
-        except Exception as e:
-            logging.error(f"Error loading {file_to_load}: {e}")
+    # C. Load loop
+    for file_path in files_to_load:
+        real_path = os.path.realpath(file_path)
+        if os.path.exists(real_path):
+            if splash:
+                splash.showMessage(f"Loading {os.path.basename(real_path)}...", 
+                                   Qt.AlignBottom | Qt.AlignCenter, Qt.white)
+                app.processEvents()
+            try:
+                name = os.path.splitext(os.path.basename(real_path))[0]
+                
+                # Note: We now use 'auto' as the standard thanks to your previous fix
+                new_sess = load_session_from_file(real_path, name, mock_gui, format_name='auto')
+                
+                if new_sess and new_sess != 0:
+                    loaded_sessions.append(new_sess)
+                    logging.info(f"Successfully loaded: {name}")
+                else:
+                    logging.error(f"Failed to load: {real_path}")
+
+            except Exception as e:
+                logging.error(f"Error loading {real_path}: {e}")
 
     # 6. GUI Startup
     if splash:
         splash.showMessage("Initializing Interface...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
         app.processEvents()
 
-    main_window = MainWindowV2(initial_session, None)
+    # Pass the LIST of sessions to the main window
+    main_window = MainWindowV2(loaded_sessions, None)
 
     # Connecting the signal to open files when requested by macOS
     app.file_open_requested.connect(lambda path: main_window.open_session_from_path(path))
-
-    if splash: 
-        splash.finish(main_window)
 
     main_window.show()
 
