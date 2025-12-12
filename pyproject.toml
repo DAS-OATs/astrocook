@@ -57,8 +57,6 @@ dependencies = [
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
-legacy = ["wxPython"]
-
 # --- Optional Dependencies ---
 [project.optional-dependencies]
 test = [
@@ -67,6 +65,8 @@ test = [
     "pytest-mock",
 ]
 # You could add other groups like 'docs' or 'bayesian' later
+
+legacy = ["wxPython"]
 
 # --- Entry Points (e.g., for command-line scripts) ---
 [project.scripts]
