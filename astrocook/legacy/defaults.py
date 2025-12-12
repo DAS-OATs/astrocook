@@ -2,7 +2,11 @@ import json
 import numpy as np
 import os
 import pathlib
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
+
 import sys  # <--- AGGIUNTO: Necessario per PyInstaller
 
 class Defaults(object):

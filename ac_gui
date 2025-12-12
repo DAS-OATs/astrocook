@@ -4,9 +4,14 @@ import logging
 import numpy as np
 import sys
 import traceback
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
 
 def main():
+    if wx is None:
+        raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
 
     # Must be extended path
     app = wx.App(False)

@@ -16,7 +16,10 @@ import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
 import time
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
 
 import matplotlib.style as mplstyle
 mplstyle.use('fast')
@@ -95,7 +98,12 @@ class Graph(object):
         y = float(event.ydata)
         sess = self._gui._sess_sel
         x = x/(1+sess.spec._rfz)
-        from .gui_table import GUITablePopup
+        #from .gui_table import GUITablePopup
+        try:
+            from .gui_table import GUITablePopup
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         if self._panel is self._gui._graph_main._panel:
             focus = self._gui._graph_main
         if hasattr(self._gui, '_graph_det'):

@@ -10,7 +10,6 @@ import json
 import numpy as np
 import datetime as dt
 import wx
-import os
 
 from astrocook.recipes.edit import RecipeEditV2
 from astrocook.recipes.flux import RecipeFluxV2

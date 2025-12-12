@@ -1,6 +1,6 @@
 from . import *
 from .vars import *
-from .gui_dialog import *
+#from .gui_dialog import *
 #from astrocook.core.session import Session
 #from .model import Model
 from .model_list import ModelList
@@ -10,7 +10,10 @@ import datetime
 import logging
 import os
 import sys
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
 
 show_all = False
 
@@ -29,6 +32,8 @@ class GUIMenu(object):
         """
 
     def bar(self):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         bar = wx.MenuBar()
 
         self._file = GUIMenuFile(self._gui)
@@ -48,6 +53,8 @@ class GUIMenu(object):
         return bar
 
     def _create(self, menu, rec, cb, start_id):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         subtitle = ''
         for i, r in enumerate(rec):
             id = start_id+i
@@ -106,6 +113,8 @@ class GUIMenu(object):
 
 
     def _item(self, menu, id, append, title, event, key=None, enable=True):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         if key is not None:
             item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
             #item.Check(False)
@@ -128,6 +137,8 @@ class GUIMenu(object):
 
     def _item_graph(self, menu, id, append, title, key=None, enable=False,
                     dlg_mini=None, targ=None, alt_title=None):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")a
         if alt_title == None: alt_title = title
         item = wx.MenuItem(menu, id, title, kind=wx.ITEM_CHECK)
         item.key = key
@@ -152,6 +163,8 @@ class GUIMenu(object):
 
     def _item_method(self, menu, id, append, title, targ, enable=False,
                      obj=None):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         item = wx.MenuItem(menu, id, title+'...')
         self._gui._panel_sess.Bind(
             wx.EVT_MENU,
@@ -168,6 +181,11 @@ class GUIMenu(object):
             item.Enable(enable)
 
     def _on_dialog(self, event, title, attr, obj=None):
+        try:
+            from .gui_dialog import GUIDialogMethods, GUIDialogMethod
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         if isinstance(attr, list):
             dlg = GUIDialogMethods(self._gui, title, attr, obj,
                                    params_last=self._params_last)
@@ -184,10 +202,20 @@ class GUIMenu(object):
         if hasattr(self._gui, '_dlg_mini_graph') and hasattr(self._gui, '_dlg_mini_defs'):
             self._gui._dlg_mini_defs._refresh()
         else:
+            try:
+                from .gui_dialog import GUIDialogMiniDefaults
+            except ImportError:
+                print("Legacy features are unavailable because wxPython is missing.")
+                return
             dlg = GUIDialogMiniDefaults(self._gui, title)
 
 
     def _on_dialog_mini_graph(self, event, title, targ, log=True):
+        try:
+            from .gui_dialog import GUIDialogMiniGraph 
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         if log:
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_graph',
@@ -201,6 +229,11 @@ class GUIMenu(object):
             dlg = GUIDialogMiniGraph(self._gui, title)
 
     def _on_dialog_mini_log(self, event, title, targ):
+        try:
+            from .gui_dialog import GUIDialogMiniLog
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         dlg = GUIDialogMiniLog(self._gui, title)
 
 
@@ -209,10 +242,20 @@ class GUIMenu(object):
             sess = self._gui._sess_sel
             sess.log.append_full('_menu', '_on_dialog_mini_meta',
                                  {'event': None, 'title': title, 'targ': targ})
+        try:
+            from .gui_dialog import GUIDialogMiniMeta
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         dlg = GUIDialogMiniMeta(self._gui, title)
 
 
     def _on_dialog_mini_systems(self, event, title, targ):
+        try:
+            from .gui_dialog import GUIDialogMiniSystems
+        except ImportError:
+            print("Legacy features are unavailable because wxPython is missing.")
+            return
         dlg = GUIDialogMiniSystems(self._gui, title, targ)
 
 
@@ -256,6 +299,8 @@ class GUIMenu(object):
     def _on_open(self, event, path=None, wildcard=None,
                  action='_on_open_session'):
         """ Behaviour for Session > Open """
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
 
         if path is None:
             if hasattr(self._gui, '_path'):
@@ -349,6 +394,8 @@ class GUIMenuCook(GUIMenu):
                  start_id=11000,
                  **kwargs):
         super(GUIMenuCook, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -372,6 +419,8 @@ class GUIMenuAbsorbers(GUIMenu):
                  start_id=7000,
                  **kwargs):
         super(GUIMenuAbsorbers, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -422,6 +471,8 @@ class GUIMenuContinuum(GUIMenu):
                  start_id=6000,
                  **kwargs):
         super(GUIMenuContinuum, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -460,6 +511,8 @@ class GUIMenuEdit(GUIMenu):
                  start_id=2000,
                  **kwargs):
         super(GUIMenuEdit, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -505,6 +558,8 @@ class GUIMenuFile(GUIMenu):
                  start_id=1000,
                  **kwargs):
         super(GUIMenuFile, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
         self._gui._menu_file = self
@@ -532,6 +587,8 @@ class GUIMenuFile(GUIMenu):
     def _on_save(self, event, path=None, models=False):
         """ Behaviour for Session > Save """
 
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         if path is None:
             if hasattr(self._gui, '_path'):
                 path=os.path.basename(self._gui._path)
@@ -551,6 +608,8 @@ class GUIMenuFile(GUIMenu):
             self._gui._sess_sel.save(path, models)
 
     def _on_save_pdf(self, event, path=None):
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         if path is None:
             if hasattr(self._gui, '_path'):
                 path=os.path.basename(self._gui._path)
@@ -579,6 +638,8 @@ class GUIMenuFlux(GUIMenu):
                  start_id=5100,
                  **kwargs):
         super(GUIMenuFlux, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -619,6 +680,8 @@ class GUIMenuGeneral(GUIMenu):
                  start_id=4000,
                  **kwargs):
         super(GUIMenuGeneral, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -660,6 +723,8 @@ class GUIMenuSynthetic(GUIMenu):
                  start_id=8000,
                  **kwargs):
         super(GUIMenuSynthetic, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -681,6 +746,8 @@ class GUIMenuTemplates(GUIMenu):
                  start_id=9000,
                  **kwargs):
         super(GUIMenuTemplates, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
 
@@ -701,6 +768,8 @@ class GUIMenuView(GUIMenu):
                  start_id=3000,
                  **kwargs):
         super(GUIMenuView, self).__init__(gui)
+        if wx is None:
+            raise ImportError("You are trying to run a legacy feature! Please install wxPython first.")
         self._gui = gui
         self._menu = wx.Menu()
         self._menu_view = self

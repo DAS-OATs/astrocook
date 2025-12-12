@@ -1,5 +1,5 @@
 from .graph import GraphCursorZSeries
-from .gui_dialog import GUIDialogMiniSystems
+#from .gui_dialog import GUIDialogMiniSystems
 from matplotlib import pyplot as plt
 
 class CookbookGraph(object):
@@ -32,6 +32,11 @@ class CookbookGraph(object):
         menu._on_graph(None, "Redshift cursor", key, gui._cursor,
                        'systems', GraphCursorZSeries)
         if not hasattr(gui, '_dlg_mini_systems'):
+            try:
+                from .gui_dialog import GUIDialogMiniSystems 
+            except ImportError:
+                print("Legacy features are unavailable because wxPython is missing.")
+                return
             GUIDialogMiniSystems(gui, "System controls", series=series,
                                  z=float(z))
         gui._dlg_mini_systems._ctrl_z.SetValue(str(z))

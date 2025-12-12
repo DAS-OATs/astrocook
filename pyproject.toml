@@ -42,7 +42,6 @@ dependencies = [
     # !! IMPORTANT: List ALL essential runtime dependencies here !!
     # Check your imports carefully. This is a starting guess:
     "PySide6>=6.10",
-    "wxpython",
     "astropy>=6.1",      # Core astronomy data structures (Table, units)
     "tqdm>=4.66",
     "matplotlib>=3.9",
@@ -55,9 +54,10 @@ dependencies = [
     "statsmodels>=0.10.1",   # Plotting library
     "numexpr",
     "qtawesome",
-    "pyobjc-framework-Cocoa; sys_platform == 'darwin'",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
+
+legacy = ["wxPython"]
 
 # --- Optional Dependencies ---
 [project.optional-dependencies]
