@@ -872,8 +872,13 @@
 
         <span class="n">expanded</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inspector</span><span class="o">.</span><span class="n">active_transitions</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">expanded</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">item</span><span class="p">])</span>
-            <span class="k">elif</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span> <span class="n">expanded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="c1"># Check for exact transition matches (xem_d) FIRST.</span>
+            <span class="c1"># This prevents specific transitions (e.g. CII_1334) from expanding into multiplets</span>
+            <span class="c1"># if they are ambiguously defined as group keys in ATOM_DATA.</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span> 
+                <span class="n">expanded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> 
+                <span class="n">expanded</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">item</span><span class="p">])</span>
         
         <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_all_transitions</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">expanded</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">))]</span>
@@ -1182,7 +1187,9 @@
             <span class="n">siblings</span> <span class="o">=</span> <span class="p">[</span><span class="n">trans_name</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">series_key</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">trans_name</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
-                    <span class="n">siblings</span> <span class="o">=</span> <span class="n">members</span>
+                    <span class="c1"># Only include siblings that are currently being plotted.</span>
+                    <span class="c1"># This ensures consistency: if plot_system filtered it out, the cursor won&#39;t show it.</span>
+                    <span class="n">siblings</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_transitions</span><span class="p">]</span>
                     <span class="k">break</span>
             
             <span class="c1"># 2. Setup Grid</span>
@@ -1205,7 +1212,14 @@
                 <span class="n">lam_grid_nm</span> <span class="o">=</span> <span class="n">lam_grid_ang</span> <span class="o">/</span> <span class="mf">10.0</span>
                 <span class="n">res_arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">lam_grid_nm</span><span class="p">,</span> <span class="n">x_full</span><span class="p">,</span> <span class="n">resol_col</span><span class="p">)</span>
                 <span class="n">res_arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">res_arg</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-                <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span>
+                <span class="c1"># [FIX] Smart Detection: R vs km/s</span>
+                <span class="c1"># If values are large (&gt;500), assume Resolving Power R.</span>
+                <span class="c1"># Otherwise, assume FWHM in km/s.</span>
+                <span class="n">median_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">res_arg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">median_res</span> <span class="o">&gt;</span> <span class="mf">500.0</span><span class="p">:</span>
+                    <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;R&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res_unit</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span>
             <span class="k">else</span><span class="p">:</span>
                  <span class="c1"># Fallback scalar</span>
                  <span class="n">lam_cursor_nm</span> <span class="o">=</span> <span class="p">(</span><span class="n">lam_0_ang</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z_new</span><span class="p">))</span> <span class="o">/</span> <span class="mf">10.0</span>
@@ -1311,9 +1325,21 @@
 
                 <span class="c1"># Determine series name (e.g. CIV_1548 -&gt; CIV)</span>
                 <span class="n">series</span> <span class="o">=</span> <span class="n">trans_name</span>
+                
+                <span class="c1"># Check if this transition belongs to a multiplet group</span>
+                <span class="n">found_group</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">if</span> <span class="n">series</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
-                     <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span> <span class="n">series</span> <span class="o">=</span> <span class="n">g</span><span class="p">;</span> <span class="k">break</span>
+                    <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+                            <span class="n">found_group</span> <span class="o">=</span> <span class="n">g</span>
+                            <span class="k">break</span>
+                
+                <span class="c1"># [FIX] Only promote to Group Name if siblings are actually visible.</span>
+                <span class="c1"># If I only see CII_1334, I want to add CII_1334, not the whole CII group.</span>
+                <span class="k">if</span> <span class="n">found_group</span><span class="p">:</span>
+                    <span class="n">siblings_visible</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_transitions</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">found_group</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span> <span class="o">!=</span> <span class="n">trans_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">siblings_visible</span><span class="p">:</span>
+                        <span class="n">series</span> <span class="o">=</span> <span class="n">found_group</span>
                 
                 <span class="c1"># Add Action</span>
                 <span class="n">act_add</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Add </span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z=</span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="p">)</span>
