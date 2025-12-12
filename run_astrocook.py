@@ -184,14 +184,12 @@ def main():
         try:
             name = os.path.splitext(os.path.basename(file_to_load))[0]
             
-            if file_to_load.lower().endswith(('.txt', '.dat')):
-                format_name = 'ascii_resvel_header'
-            elif 'S2D' in file_to_load.upper():
-                format_name = 'espresso_s2d_fits'
-            else:
-                format_name = 'generic_spectrum'
-
-            initial_session = load_session_from_file(file_to_load, name, mock_gui, format_name)
+            initial_session = load_session_from_file(
+                file_to_load, 
+                name, 
+                mock_gui, 
+                format_name='auto' 
+            )
         except Exception as e:
             logging.error(f"Error loading {file_to_load}: {e}")
 

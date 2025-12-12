@@ -1533,11 +1533,6 @@ class MainWindowV2(QMainWindow):
         )
         
         if file_name:
-            # [FIX] Auto-detect format based on extension
-            if file_name.lower().endswith('.txt') or file_name.lower().endswith('.dat'):
-                format_name = 'ascii_resvel_header'
-            else:
-                format_name = 'generic_spectrum'
             
             session_name = os.path.splitext(os.path.basename(file_name))[0]
             gui_context = self.mock_gui_context
@@ -1547,7 +1542,7 @@ class MainWindowV2(QMainWindow):
                 new_session = load_session_from_file(
                     archive_path=file_name, 
                     name=session_name, 
-                    format_name=format_name,
+                    format_name='auto',  # <--- Let the loader decide
                     gui_context=gui_context
                 )
 
@@ -2726,18 +2721,14 @@ class MainWindowV2(QMainWindow):
 
         logging.info(f"Direct load requested for: {file_path}")
         
-        format_name = 'generic_spectrum'
         session_name = os.path.splitext(os.path.basename(file_path))[0]
         gui_context = self.mock_gui_context
 
         try:
-            # Mostra cursore di attesa
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            
             new_session = load_session_from_file(
-                archive_path=file_path, 
+                archive_path=file_name, 
                 name=session_name, 
-                format_name=format_name,
+                format_name='auto',  # <--- Let the loader decide
                 gui_context=gui_context
             )
 

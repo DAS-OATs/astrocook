@@ -68,10 +68,19 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
     archive_root = ""
     v2_metadata = None
     
-    # --- 1. CHECK V2 NATIVE LOADERS FIRST ---
+    # --- CHECK V2 NATIVE LOADERS FIRST ---
     # Import the getter from the new module
-    from astrocook.io.loaders import get_loader
-    
+    from astrocook.io.loaders import get_loader, detect_file_format
+
+    # --- AUTO-DETECT FORMAT ---
+    if format_name == 'auto' or format_name is None:
+        try:
+            format_name = detect_file_format(archive_path)
+            logging.info(f"Auto-detected format '{format_name}' for {os.path.basename(archive_path)}")
+        except Exception as e:
+            logging.warning(f"Format detection failed ({e}), defaulting to 'generic_spectrum'.")
+            format_name = 'generic_spectrum'
+
     v2_loader = get_loader(format_name)
     if v2_loader:
         logging.info(f"Using V2 Native Loader for format '{format_name}' on {archive_path}")

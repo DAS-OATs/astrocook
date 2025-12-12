@@ -891,7 +891,7 @@ class SpectrumPlotWidget(QWidget):
                         # fmt='none' ensures no connecting lines or extra markers
                         ax.errorbar(x_data, y_data, xerr=dx_data, 
                                     fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
-                                    alpha=0.5, rasterized=True, zorder=0.9, label=label)
+                                    alpha=0.5, rasterized=True, zorder=0.9, label='bin size')
                         ax.errorbar(x_data, y_data, yerr=dy_data, 
                                     fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
                                     alpha=0.5, rasterized=True, zorder=0.9, label=label)

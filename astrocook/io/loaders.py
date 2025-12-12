@@ -43,6 +43,62 @@ def _auto_limits(x_arr: np.ndarray, x_unit: au.Unit) -> Tuple[DataColumnV2, Data
     
     return DataColumnV2(xmin, x_unit), DataColumnV2(xmax, x_unit)
 
+def detect_file_format(file_path: str) -> str:
+    """
+    Inspects the file content to determine the correct loader format string.
+    """
+    path_lower = file_path.lower()
+
+    # 1. Archives (Pass-through to legacy logic in session.py)
+    if path_lower.endswith(('.acs', '.acs2')):
+        return "archive"
+
+    # 2. FITS Files Sniffing
+    # We check for signature extensions or header keywords
+    try:
+        # Open in read-only, memory-mapped mode for speed
+        with fits.open(file_path, mode='readonly', memmap=True) as hdul:
+            ext_names = [h.name.upper() for h in hdul]
+            primary_header = hdul[0].header
+            instrume = primary_header.get('INSTRUME', '').upper()
+
+            # --- ESPRESSO S2D Check ---
+            # Unmistakable signature: SCIDATA table + WAVEDATA image
+            if 'SCIDATA' in ext_names and \
+               any(w in ext_names for w in ['WAVEDATA_VAC_BARY', 'WAVEDATA_AIR']):
+                return "espresso_s2d_fits"
+
+            # --- X-SHOOTER Check ---
+            # Standard binary table with specific columns
+            if 'XSHOOTER' in instrume or 'X-SHOOTER' in instrume:
+                return "xshooter_fits"
+
+            # --- Fallback FITS ---
+            return "generic_spectrum"
+
+    except (OSError, fits.VerifyError):
+        # Not a valid FITS file, proceed to ASCII check
+        pass
+
+    # 3. ASCII Sniffing
+    try:
+        # Read first few lines to check for headers
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            head = [next(f) for _ in range(10)]
+        head_str = "".join(head).upper()
+
+        if "RESVEL" in head_str:
+            return "ascii_resvel_header"
+        
+        if path_lower.endswith('.csv'):
+            return "simple_csv"
+            
+    except Exception:
+        pass
+
+    # 4. Final Fallback
+    return "generic_spectrum"
+
 # --- Loader Implementations ---
 
 @register_loader("simple_csv")
