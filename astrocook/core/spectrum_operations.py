@@ -10,6 +10,7 @@ from scipy.ndimage import gaussian_filter1d, label
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks, savgol_filter
 from scipy.special import erf, erfinv
+from scipy.stats import binned_statistic
 from typing import Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
@@ -156,87 +157,100 @@ def compute_flux_scaling(
     x_in: np.ndarray, 
     y_in: np.ndarray, 
     order: int = 0,
-    smooth_sigma_pix: float = 50.0
+    smooth_window_kms: float = 1000.0  # The "Heavy" Smoothing Kernel
 ) -> np.ndarray:
     """
-    Computes a scaling array to align y_in to y_ref within their overlap.
-    Returns an array of the same shape as x_in containing the multiplicative correction.
+    Computes a flux scaling factor by comparing heavily smoothed versions of the spectra.
     
     Strategy:
-    1. Identify spectral overlap.
-    2. Smooth both spectra to remove narrow features (lines/noise).
-    3. Interpolate Reference onto Input grid.
-    4. Compute Ratio (Ref/In).
-    5. Fit Polynomial to Ratio.
+    1. Resample both spectra onto a coarse velocity grid (~50 km/s).
+    2. Apply a large Gaussian smooth (smooth_window_kms) to wash out local features.
+    3. Compute the ratio of the smoothed profiles.
+    4. Fit a polynomial (if order >= 0) or return the spline (if order < 0).
     """
-    # 0. Default: No correction (array of 1s)
     correction = np.ones_like(y_in)
+
+    # 1. Identify Global Overlap
+    x_min_ov = max(np.nanmin(x_ref), np.nanmin(x_in))
+    x_max_ov = min(np.nanmax(x_ref), np.nanmax(x_in))
     
-    # 1. Identify Overlap
-    x_min_ov = max(x_ref.min(), x_in.min())
-    x_max_ov = min(x_ref.max(), x_in.max())
-    
-    # If no significant overlap, return 1.0
     if x_max_ov <= x_min_ov:
         return correction
 
-    # 2. Smooth spectra to isolate continuum levels (ignore narrow lines)
-    # We use a broad Gaussian kernel
-    y_ref_smooth = gaussian_filter1d(y_ref, smooth_sigma_pix)
-    y_in_smooth = gaussian_filter1d(y_in, smooth_sigma_pix)
+    # 2. Define a Coarse Calculation Grid (Linear in Velocity / Log Lambda)
+    # We use ~50 km/s pixels. This is high enough to trace the continuum 
+    # but low enough to make smoothing instant.
+    # c_kms = 299792.458
+    # d_log_lam = 50.0 / c_kms
+    # num_bins = int(np.log(x_max_ov / x_min_ov) / d_log_lam)
     
-    # 3. Select points strictly inside the overlap
-    # We add a small buffer to avoid edge artifacts from smoothing
-    margin = (x_max_ov - x_min_ov) * 0.05
-    mask_in = (x_in >= (x_min_ov + margin)) & (x_in <= (x_max_ov - margin))
+    # Simple Linear Approximation (sufficient for scaling)
+    # Average x ~ 500nm -> 50km/s is ~0.08 nm.
+    step_nm = (x_min_ov + x_max_ov) / 2.0 * (50.0 / 300000.0)
+    num_bins = int((x_max_ov - x_min_ov) / step_nm)
+    num_bins = max(num_bins, 10) # Safety floor
+
+    bin_edges = np.linspace(x_min_ov, x_max_ov, num_bins + 1)
+    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+    # 3. Bin the Spectra (Handling "Shredded" Pixels naturally)
+    # We ignore NaNs and negative fluxes to get a clean continuum estimate.
+    mask_ref = (x_ref >= x_min_ov) & (x_ref <= x_max_ov) & (y_ref > 0) & np.isfinite(y_ref)
+    mask_in = (x_in >= x_min_ov) & (x_in <= x_max_ov) & (y_in > 0) & np.isfinite(y_in)
     
-    # Ensure we have enough points for the fit
-    if np.sum(mask_in) < (order + 2) * 10:
+    if np.sum(mask_ref) < 10 or np.sum(mask_in) < 10:
         return correction
 
-    x_in_ov = x_in[mask_in]
-    y_in_ov = y_in_smooth[mask_in]
-    
-    # 4. Interpolate Smoothed Reference onto Smoothed Input Grid
-    try:
-        interpolator = interp1d(x_ref, y_ref_smooth, kind='linear', fill_value="extrapolate")
-        y_ref_interp = interpolator(x_in_ov)
-        
-        # 5. Calculate Ratio
-        # Avoid division by zero
-        valid_ratio = (y_in_ov > 0) & (y_ref_interp > 0)
-        
-        if np.sum(valid_ratio) < 10:
-            return correction
-            
-        x_fit = x_in_ov[valid_ratio]
-        ratio = y_ref_interp[valid_ratio] / y_in_ov[valid_ratio]
-        
-        # 6. Sigma Clip the ratio to remove outliers (e.g. bad pixels, cosmic rays)
-        # (Using a simple percentile clip here for robustness)
-        # Keep inner 80% to avoid extreme outliers
-        p10 = np.percentile(ratio, 10)
-        p90 = np.percentile(ratio, 90)
-        mask_clip = (ratio > p10) & (ratio < p90)
-        
-        if np.sum(mask_clip) < order + 2:
-            return correction
-            
-        # 7. Polynomial Fit
-        # Fit: Ratio vs Wavelength
-        coeffs = polyfit(x_fit[mask_clip], ratio[mask_clip], order)
-        
-        # 8. Generate Correction Model for the FULL input x-axis
-        correction_model = polyval(x_in, coeffs)
-        
-        # Safety: Don't allow negative or zero scaling factors
-        correction_model = np.maximum(correction_model, 0.01)
-        
-        return correction_model
+    # binned_statistic handles unsorted/overlapped arrays automatically
+    ref_binned, _, _ = binned_statistic(x_ref[mask_ref], y_ref[mask_ref], statistic='median', bins=bin_edges)
+    in_binned, _, _ = binned_statistic(x_in[mask_in], y_in[mask_in], statistic='median', bins=bin_edges)
 
-    except Exception as e:
-        logging.warning(f"Flux scaling failed: {e}. Using unscaled data.")
+    # 4. Handle Gaps (Interpolate over empty bins)
+    def fill_nans(arr):
+        mask = np.isfinite(arr)
+        if not np.any(mask): return arr
+        return np.interp(np.arange(len(arr)), np.arange(len(arr))[mask], arr[mask])
+
+    ref_filled = fill_nans(ref_binned)
+    in_filled = fill_nans(in_binned)
+
+    # 5. Heavy Gaussian Smoothing
+    # Convert window (km/s) to bin pixels.
+    # We used 50 km/s bins, so sigma ~ window / 50.
+    sigma_pix = smooth_window_kms / 50.0
+    
+    ref_smooth = gaussian_filter1d(ref_filled, sigma_pix)
+    in_smooth = gaussian_filter1d(in_filled, sigma_pix)
+
+    # 6. Compute Ratio of Smoothed Profiles
+    # Avoid div by zero
+    valid = (in_smooth > 0)
+    if np.sum(valid) < 5:
         return correction
+
+    ratio_grid = np.ones_like(ref_smooth)
+    ratio_grid[valid] = ref_smooth[valid] / in_smooth[valid]
+    
+    # 7. Generate Correction Model
+    if order < 0:
+        # Spline Interpolation (Follows the smooth ratio exactly)
+        interp = interp1d(bin_centers, ratio_grid, kind='linear', fill_value='extrapolate')
+        return interp(x_in)
+        
+    elif order == 0:
+        # Robust Scalar (Median of the smooth ratio)
+        scalar = np.nanmedian(ratio_grid)
+        return np.full_like(y_in, scalar)
+        
+    else:
+        # Polynomial Fit to the smooth ratio
+        coeffs = np.polyfit(bin_centers[valid], ratio_grid[valid], order)
+        from numpy.polynomial.polynomial import polyval
+        # Note: np.polyfit returns coeffs highest-to-lowest. 
+        # numpy.polynomial.polynomial.polyval expects lowest-to-highest.
+        # We use np.polyval (standard) for consistency with polyfit.
+        return np.polyval(coeffs, x_in)
+    
 
 def rebin_spectrum(
         x_in: au.Quantity, xmin_in: au.Quantity, xmax_in: au.Quantity,
@@ -246,131 +260,129 @@ def rebin_spectrum(
         kappa: Optional[float], filling: float
     ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity]:
     """
-    High-performance vectorized rebinning (Inverse/Drizzle method).
-    Maps input pixels to output bins, handling unsorted/stitched data correctly.
+    High-performance vectorized rebinning (Inverse/Drizzle method)
+    with Iterative Local Sigma Clipping.
     """
-    # 1. Prepare Units and Arrays (Strip Units for Speed)
+    # 1. Prepare Units and Arrays
     xunit_target = dx.unit
-    
-    # Output Grid Definition
-    if xstart is None:
-        xstart_val = np.nanmin(x_in.to_value(xunit_target))
-    else:
-        xstart_val = xstart.to_value(xunit_target)
+    z_rf = spec_data.meta.get('z_em', 0.0) if spec_data.meta else 0.0
 
-    if xend is None:
-        xend_val = np.nanmax(x_in.to_value(xunit_target))
-    else:
-        xend_val = xend.to_value(xunit_target)
+    def _to_target_val(q: au.Quantity):
+        if q is None: return None
+        return convert_axis_velocity(q, z_rf, xunit_target).value
+
+    # Output Grid
+    if xstart is None: xstart_val = np.nanmin(_to_target_val(x_in))
+    else: xstart_val = _to_target_val(xstart)
+
+    if xend is None: xend_val = np.nanmax(_to_target_val(x_in))
+    else: xend_val = _to_target_val(xend)
         
     dx_val = dx.to_value(xunit_target)
-    
-    # Create Output Grid Edges
     edges_out = np.arange(xstart_val, xend_val + dx_val, dx_val)
-    # Centers
     x_out_val = 0.5 * (edges_out[:-1] + edges_out[1:])
     N_out = len(x_out_val)
     
-    # Input Arrays (Value Extraction)
-    xmin_in_val = xmin_in.to_value(xunit_target)
-    xmax_in_val = xmax_in.to_value(xunit_target)
+    # Input Arrays
+    xmin_in_val = _to_target_val(xmin_in)
+    xmax_in_val = _to_target_val(xmax_in)
+    x_in_val = 0.5 * (xmin_in_val + xmax_in_val) # Center for interpolation
     
-    # Handle Data Masking (NaNs)
     y_val = spec_data.y.quantity.to_value(spec_data.y.unit)
     dy_val = spec_data.dy.quantity.to_value(spec_data.y.unit)
     
-    valid_mask = np.isfinite(y_val) & (xmax_in_val > xmin_in_val)
-    if kappa is not None:
-        # Simple pre-clipping if requested (global sigma clip)
-        # Note: Local clipping during rebinning is complex in vectorized form; 
-        # usually pre-clipping the inputs is sufficient for co-addition.
-        clipped = sigma_clip(y_val, sigma=kappa, masked=True)
-        valid_mask &= ~clipped.mask
-
-    xmin_in_val = xmin_in_val[valid_mask]
-    xmax_in_val = xmax_in_val[valid_mask]
-    y_val = y_val[valid_mask]
-    dy_val = dy_val[valid_mask]
-
-    # 2. Map Inputs to Outputs (The "Inverse" Step)
-    # Find which output bin index corresponds to the start and end of each input pixel
-    # We use searchsorted on the edges.
-    # idx_start: The index of the bin containing xmin_in
-    # idx_end: The index of the bin containing xmax_in
-    idx_start = np.searchsorted(edges_out, xmin_in_val, side='right') - 1
-    idx_end = np.searchsorted(edges_out, xmax_in_val, side='left') - 1
+    # Initial Mask (NaNs and bad pixels)
+    valid_mask = np.isfinite(y_val) & (xmax_in_val > xmin_in_val) & (dy_val > 0)
     
-    # 3. Accumulators
-    # Weighted Sum of Flux: sum(y * weight)
-    # Sum of Weights: sum(weight)
-    # Weight = frac_overlap / sigma^2
-    numerator = np.zeros(N_out)
-    denominator = np.zeros(N_out)
-    
-    # 4. Vectorized Overlap Loop
-    # We loop over the "width" of the overlap. 
-    # Usually input_dx ~ output_dx, so this loop runs 2 or 3 times max.
-    max_span = np.max(idx_end - idx_start)
-    
-    for k in range(int(max_span) + 1):
-        # Select pixels that span at least k bins
-        # The current bin index for these pixels is (idx_start + k)
-        target_bin_indices = idx_start + k
+    # --- HELPER: Core Drizzle Logic ---
+    def _drizzle_pass(mask_in):
+        # Filter inputs
+        xmin_v = xmin_in_val[mask_in]
+        xmax_v = xmax_in_val[mask_in]
+        y_v = y_val[mask_in]
+        dy_v = dy_val[mask_in]
         
-        # Filter: Only consider if this specific offset (k) is within the pixel's range
-        # AND if the target bin is actually inside the valid output grid
-        active_mask = (target_bin_indices <= idx_end) & \
-                      (target_bin_indices >= 0) & \
-                      (target_bin_indices < N_out)
+        # Map Inputs to Outputs
+        idx_start = np.searchsorted(edges_out, xmin_v, side='right') - 1
+        idx_end = np.searchsorted(edges_out, xmax_v, side='left') - 1
         
-        if not np.any(active_mask):
-            continue
+        num = np.zeros(N_out)
+        den = np.zeros(N_out)
+        
+        max_span = np.max(idx_end - idx_start) if len(idx_start) > 0 else 0
+        
+        for k in range(int(max_span) + 1):
+            target_bin_indices = idx_start + k
+            active = (target_bin_indices <= idx_end) & \
+                     (target_bin_indices >= 0) & \
+                     (target_bin_indices < N_out)
             
-        # Get the subset of valid inputs
-        valid_idx = np.where(active_mask)[0]
-        bin_idx = target_bin_indices[valid_idx]
-        
-        # Calculate Overlap
-        # overlap_start = max(pixel_start, bin_start)
-        # overlap_end = min(pixel_end, bin_end)
-        bin_edge_left = edges_out[bin_idx]
-        bin_edge_right = edges_out[bin_idx+1]
-        
-        ov_min = np.maximum(xmin_in_val[valid_idx], bin_edge_left)
-        ov_max = np.minimum(xmax_in_val[valid_idx], bin_edge_right)
-        
-        overlap_width = np.maximum(0.0, ov_max - ov_min)
-        frac = overlap_width / dx_val
-        
-        # Calculate Weight (V1 Logic: w = frac / sigma^2)
-        # Avoid division by zero
-        sigma_sq = dy_val[valid_idx]**2
-        sigma_sq[sigma_sq <= 0] = np.inf
-        
-        weights = frac / sigma_sq
-        
-        # Accumulate (Fast unbuffered add)
-        np.add.at(numerator, bin_idx, y_val[valid_idx] * weights)
-        np.add.at(denominator, bin_idx, weights)
+            if not np.any(active): continue
+            
+            valid_sub = np.where(active)[0]
+            bin_idx = target_bin_indices[valid_sub]
+            
+            bin_edge_left = edges_out[bin_idx]
+            bin_edge_right = edges_out[bin_idx+1]
+            
+            ov_min = np.maximum(xmin_v[valid_sub], bin_edge_left)
+            ov_max = np.minimum(xmax_v[valid_sub], bin_edge_right)
+            
+            overlap_width = np.maximum(0.0, ov_max - ov_min)
+            frac = overlap_width / dx_val
+            
+            sigma_sq = dy_v[valid_sub]**2
+            weights = frac / sigma_sq
+            
+            np.add.at(num, bin_idx, y_v[valid_sub] * weights)
+            np.add.at(den, bin_idx, weights)
+            
+        return num, den
 
-    # 5. Finalize Output
-    # Avoid division by zero
-    valid_out = denominator > 0
+    # --- PASS 1: Consensus ---
+    num1, den1 = _drizzle_pass(valid_mask)
     
+    # --- ITERATIVE LOCAL CLIPPING ---
+    if kappa is not None:
+        # 1. Compute Model (Pass 1 Result)
+        valid_bins = den1 > 0
+        y_model_grid = np.zeros(N_out)
+        y_model_grid[valid_bins] = num1[valid_bins] / den1[valid_bins]
+        
+        # 2. Interpolate Model to Input Coordinates
+        # Use nearest neighbor or linear to map output bin value to input pixel
+        # (Linear is safer for sub-pixel accuracy)
+        model_interp = interp1d(x_out_val, y_model_grid, kind='linear', 
+                                bounds_error=False, fill_value=0.0)
+        
+        y_predicted = model_interp(x_in_val)
+        
+        # 3. Compute Residuals (Local deviation)
+        residuals = np.abs(y_val - y_predicted)
+        
+        # 4. Clip
+        # We assume 'dy_val' is the sigma. 
+        # Points > kappa * sigma away from the consensus are rejected.
+        is_outlier = residuals > (kappa * dy_val)
+        
+        # Update Mask (Keep original valid points that are NOT outliers)
+        valid_mask &= ~is_outlier
+
+    # --- PASS 2: Final Rebinning ---
+    num_final, den_final = _drizzle_pass(valid_mask)
+
+    # Finalize Output
+    valid_out = den_final > 0
     y_out_val = np.full(N_out, filling)
     dy_out_val = np.full(N_out, filling)
     
-    # Weighted Mean
-    y_out_val[valid_out] = numerator[valid_out] / denominator[valid_out]
+    y_out_val[valid_out] = num_final[valid_out] / den_final[valid_out]
+    dy_out_val[valid_out] = 1.0 / np.sqrt(den_final[valid_out])
     
-    # Standard Error of Weighted Mean: 1 / sqrt(sum(weights))
-    dy_out_val[valid_out] = 1.0 / np.sqrt(denominator[valid_out])
-    
-    # 6. Reconstruct Quantities
+    # Reconstruct Quantities
     x_out = au.Quantity(x_out_val, xunit_target)
     xmin_out = au.Quantity(edges_out[:-1], xunit_target)
     xmax_out = au.Quantity(edges_out[1:], xunit_target)
-    
     y_out = au.Quantity(y_out_val, spec_data.y.unit)
     dy_out = au.Quantity(dy_out_val, spec_data.y.unit)
     

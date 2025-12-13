@@ -1138,22 +1138,27 @@ class SpectrumV2:
         """
         Co-adds this spectrum with a list of other spectra onto a new common grid.
         
-        Handles scaling, unit conversion, and "drizzle" rebinning internally 
-        to preserve pixel geometry (xmin/xmax) of overlapping orders.
+        Handles scaling, unit conversion, "drizzle" rebinning, and 
+        converts the result back to the original wavelength unit.
         """
-        from astrocook.core.spectrum_operations import compute_flux_scaling, rebin_spectrum, convert_axis_velocity
+        from astrocook.core.spectrum_operations import (
+            compute_flux_scaling, 
+            rebin_spectrum, 
+            convert_axis_velocity
+        )
         from astrocook.core.structures import SpectrumDataV2, DataColumnV2
 
         # 1. Setup Reference and List
-        # We process [self, *others] together
         all_specs = [self] + others
         
-        ref_spec = self # Use self as the reference for metadata and scaling
+        # Use self as the reference for units, metadata, and scaling baseline
+        ref_spec = self 
         ref_x = ref_spec.x.value
         ref_y = ref_spec.y.value
+        original_x_unit = ref_spec.x.unit
         
-        # Target Unit comes from dx
-        dx_unit = dx.unit
+        # Calculation Unit (Target) comes from dx (usually km/s)
+        calc_unit = dx.unit
         z_em = ref_spec.meta.get('z_em', 0.0)
 
         # 2. Accumulators
@@ -1164,10 +1169,10 @@ class SpectrumV2:
         big_dy_list = []
 
         for i, spec in enumerate(all_specs):
-            # A. Scaling (Skip for self/index 0 if equal_order >= 0)
+            # A. Flux Scaling (Skip for self/index 0)
             if i > 0 and equalize_order >= 0:
                 logging.info(f"  Scaling spectrum {i} to reference...")
-                # Note: Compute scaling in the original frame before conversion
+                # Compute scaling in original frame
                 scale_model = compute_flux_scaling(
                     ref_x, ref_y, 
                     spec.x.value, spec.y.value, 
@@ -1179,14 +1184,12 @@ class SpectrumV2:
                 y_val = spec.y.value
                 dy_val = spec.dy.value
 
-            # B. Unit Conversion (The safe "Pre-Convert" step)
-            # We convert to the target unit (e.g. km/s) NOW.
-            logging.debug(f"  Converting spectrum {i} to {dx_unit}...")
-            
-            # Convert X vectors
-            x_conv = convert_axis_velocity(spec.x, z_em, dx_unit).value
-            xmin_conv = convert_axis_velocity(spec.xmin, z_em, dx_unit).value
-            xmax_conv = convert_axis_velocity(spec.xmax, z_em, dx_unit).value
+            # B. Pre-Convert to Calculation Unit (e.g. km/s)
+            # This handles the "negative pixel" issue for overlapping orders
+            # by converting safely before stitching.
+            x_conv = convert_axis_velocity(spec.x, z_em, calc_unit).value
+            xmin_conv = convert_axis_velocity(spec.xmin, z_em, calc_unit).value
+            xmax_conv = convert_axis_velocity(spec.xmax, z_em, calc_unit).value
             
             # C. Append
             big_x_list.append(x_conv)
@@ -1202,44 +1205,66 @@ class SpectrumV2:
         flat_y = np.concatenate(big_y_list)
         flat_dy = np.concatenate(big_dy_list)
 
-        # 4. Convert Bounds
+        # 4. Convert Bounds to Calculation Unit
         if xstart is not None:
-            xstart_conv = convert_axis_velocity(xstart, z_em, dx_unit)
+            xstart_conv = convert_axis_velocity(xstart, z_em, calc_unit)
         else:
             xstart_conv = None
 
         if xend is not None:
-            xend_conv = convert_axis_velocity(xend, z_em, dx_unit)
+            xend_conv = convert_axis_velocity(xend, z_em, calc_unit)
         else:
             xend_conv = None
 
-        # 5. Create Temp Data Container (in Target Units)
-        # We pass this to rebin_spectrum. The units on y/dy come from self.
+        # 5. Create Temp Data Container (in Calculation Units)
         temp_data = SpectrumDataV2(
-            x=DataColumnV2(flat_x, dx_unit),
-            xmin=DataColumnV2(flat_xmin, dx_unit),
-            xmax=DataColumnV2(flat_xmax, dx_unit),
+            x=DataColumnV2(flat_x, calc_unit),
+            xmin=DataColumnV2(flat_xmin, calc_unit),
+            xmax=DataColumnV2(flat_xmax, calc_unit),
             y=DataColumnV2(flat_y, self.y.unit),
             dy=DataColumnV2(flat_dy, self.dy.unit),
             meta=self.meta
         )
 
         # 6. Rebin (Vectorized Drizzle)
-        new_x, new_xmin, new_xmax, new_y, new_dy = rebin_spectrum(
+        # Returns new arrays in `calc_unit` (km/s)
+        reb_x, reb_xmin, reb_xmax, reb_y, reb_dy = rebin_spectrum(
             temp_data.x.quantity, temp_data.xmin.quantity, temp_data.xmax.quantity,
             temp_data,
             xstart_conv, xend_conv,
-            dx, dx_unit,
+            dx, calc_unit,
             kappa, filling=np.nan
         )
 
-        # 7. Wrap in Logic Class
+        # 7. Convert Back to Original Unit (e.g. nm)
+        # We transform the result back to the domain of the input data
+        if not reb_x.unit.is_equivalent(original_x_unit):
+            logging.info(f"  Converting result back to {original_x_unit}...")
+            final_x = convert_axis_velocity(reb_x, z_em, original_x_unit)
+            final_xmin = convert_axis_velocity(reb_xmin, z_em, original_x_unit)
+            final_xmax = convert_axis_velocity(reb_xmax, z_em, original_x_unit)
+        else:
+            final_x = reb_x
+            final_xmin = reb_xmin
+            final_xmax = reb_xmax
+
+        # Create a copy of the metadata to avoid modifying the original session
+        new_meta = self.meta.copy()
+        
+        # Remove the 'plot_style' tag so the GUI reverts to the default (Line)
+        if 'plot_style' in new_meta:
+            del new_meta['plot_style']
+            
+        # Optional: Add a note about the co-add origin
+        new_meta['ORIGIN'] = 'coadd'
+
+        # 8. Wrap in Logic Class
         final_spec_data = SpectrumDataV2(
-            x=DataColumnV2(new_x.value, new_x.unit), 
-            xmin=DataColumnV2(new_xmin.value, new_xmin.unit), 
-            xmax=DataColumnV2(new_xmax.value, new_xmax.unit),
-            y=DataColumnV2(new_y.value, new_y.unit), 
-            dy=DataColumnV2(new_dy.value, new_dy.unit),
+            x=DataColumnV2(final_x.value, final_x.unit), 
+            xmin=DataColumnV2(final_xmin.value, final_xmin.unit), 
+            xmax=DataColumnV2(final_xmax.value, final_xmax.unit),
+            y=DataColumnV2(reb_y.value, reb_y.unit), 
+            dy=DataColumnV2(reb_dy.value, reb_dy.unit),
             meta=self.meta 
         )
         
