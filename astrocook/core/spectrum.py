@@ -1130,6 +1130,120 @@ class SpectrumV2:
         # 5. Return a NEW SpectrumV2 instance
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return SpectrumV2(data=new_data, history=new_history)
+    
+    def coadd(self, others: List['SpectrumV2'], 
+              xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
+              dx: au.Quantity, kappa: Optional[float] = 5.0, 
+              equalize_order: int = 0) -> 'SpectrumV2':
+        """
+        Co-adds this spectrum with a list of other spectra onto a new common grid.
+        
+        Handles scaling, unit conversion, and "drizzle" rebinning internally 
+        to preserve pixel geometry (xmin/xmax) of overlapping orders.
+        """
+        from astrocook.core.spectrum_operations import compute_flux_scaling, rebin_spectrum, convert_axis_velocity
+        from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+
+        # 1. Setup Reference and List
+        # We process [self, *others] together
+        all_specs = [self] + others
+        
+        ref_spec = self # Use self as the reference for metadata and scaling
+        ref_x = ref_spec.x.value
+        ref_y = ref_spec.y.value
+        
+        # Target Unit comes from dx
+        dx_unit = dx.unit
+        z_em = ref_spec.meta.get('z_em', 0.0)
+
+        # 2. Accumulators
+        big_x_list = []
+        big_xmin_list = []
+        big_xmax_list = []
+        big_y_list = []
+        big_dy_list = []
+
+        for i, spec in enumerate(all_specs):
+            # A. Scaling (Skip for self/index 0 if equal_order >= 0)
+            if i > 0 and equalize_order >= 0:
+                logging.info(f"  Scaling spectrum {i} to reference...")
+                # Note: Compute scaling in the original frame before conversion
+                scale_model = compute_flux_scaling(
+                    ref_x, ref_y, 
+                    spec.x.value, spec.y.value, 
+                    order=equalize_order
+                )
+                y_val = spec.y.value * scale_model
+                dy_val = spec.dy.value * scale_model
+            else:
+                y_val = spec.y.value
+                dy_val = spec.dy.value
+
+            # B. Unit Conversion (The safe "Pre-Convert" step)
+            # We convert to the target unit (e.g. km/s) NOW.
+            logging.debug(f"  Converting spectrum {i} to {dx_unit}...")
+            
+            # Convert X vectors
+            x_conv = convert_axis_velocity(spec.x, z_em, dx_unit).value
+            xmin_conv = convert_axis_velocity(spec.xmin, z_em, dx_unit).value
+            xmax_conv = convert_axis_velocity(spec.xmax, z_em, dx_unit).value
+            
+            # C. Append
+            big_x_list.append(x_conv)
+            big_xmin_list.append(xmin_conv)
+            big_xmax_list.append(xmax_conv)
+            big_y_list.append(y_val)
+            big_dy_list.append(dy_val)
+
+        # 3. Concatenate (The "Manual Stitch")
+        flat_x = np.concatenate(big_x_list)
+        flat_xmin = np.concatenate(big_xmin_list)
+        flat_xmax = np.concatenate(big_xmax_list)
+        flat_y = np.concatenate(big_y_list)
+        flat_dy = np.concatenate(big_dy_list)
+
+        # 4. Convert Bounds
+        if xstart is not None:
+            xstart_conv = convert_axis_velocity(xstart, z_em, dx_unit)
+        else:
+            xstart_conv = None
+
+        if xend is not None:
+            xend_conv = convert_axis_velocity(xend, z_em, dx_unit)
+        else:
+            xend_conv = None
+
+        # 5. Create Temp Data Container (in Target Units)
+        # We pass this to rebin_spectrum. The units on y/dy come from self.
+        temp_data = SpectrumDataV2(
+            x=DataColumnV2(flat_x, dx_unit),
+            xmin=DataColumnV2(flat_xmin, dx_unit),
+            xmax=DataColumnV2(flat_xmax, dx_unit),
+            y=DataColumnV2(flat_y, self.y.unit),
+            dy=DataColumnV2(flat_dy, self.dy.unit),
+            meta=self.meta
+        )
+
+        # 6. Rebin (Vectorized Drizzle)
+        new_x, new_xmin, new_xmax, new_y, new_dy = rebin_spectrum(
+            temp_data.x.quantity, temp_data.xmin.quantity, temp_data.xmax.quantity,
+            temp_data,
+            xstart_conv, xend_conv,
+            dx, dx_unit,
+            kappa, filling=np.nan
+        )
+
+        # 7. Wrap in Logic Class
+        final_spec_data = SpectrumDataV2(
+            x=DataColumnV2(new_x.value, new_x.unit), 
+            xmin=DataColumnV2(new_xmin.value, new_xmin.unit), 
+            xmax=DataColumnV2(new_xmax.value, new_xmax.unit),
+            y=DataColumnV2(new_y.value, new_y.unit), 
+            dy=DataColumnV2(new_dy.value, new_dy.unit),
+            meta=self.meta 
+        )
+        
+        return self.__class__(final_spec_data)
 
     def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
                          fill_value: float = np.nan) -> 'SpectrumV2':
