@@ -248,7 +248,7 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
 def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumDataV2:
     """
     Loader for ESPRESSO S2D (Order-by-Order) FITS files.
-    Ported from V1 `espresso_s2d_spectrum`.
+    Correctly handles pixel widths by computing them in 2D before flattening.
     """
     try:
         with fits.open(file_path) as hdul:
@@ -265,65 +265,76 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             sci_data = get_data('SCIDATA')
             err_data = get_data('ERRDATA')
             qual_data = get_data('QUALDATA')
-            # Telluric might be optional
             tell_data = get_data('TELLURIC_CORRECTION') 
 
             if wave_data is None or sci_data is None:
                 raise ValueError("Essential extensions (WAVEDATA, SCIDATA) missing.")
 
+            # --- CRITICAL FIX START ---
+            # 1. Compute pixel widths and limits in 2D (per order)
+            # This preserves the physical dispersion of the instrument.
             pixel_widths = np.gradient(wave_data, axis=1)
             
             # Divide Flux and Error by dlambda to get Flux Density
-            # (Avoid division by zero if dlambda is 0, though unlikely in valid data)
             with np.errstate(divide='ignore', invalid='ignore'):
                 sci_data = sci_data / pixel_widths
                 if err_data is not None:
                     err_data = err_data / pixel_widths
+            
+            # Calculate physical edges (2D)
+            half_widths = np.abs(pixel_widths) / 2.0
+            xmin_data = wave_data - half_widths
+            xmax_data = wave_data + half_widths
+            # --- CRITICAL FIX END ---
 
-            # 1. Create 'Order' Index Array (Before flattening)
+            # 2. Create 'Order' Index Array
             n_orders, n_pixels = wave_data.shape
-            # Create an array like [[0,0...], [1,1...], ...]
             order_idx = np.repeat(np.arange(n_orders), n_pixels).reshape(n_orders, n_pixels)
 
-            # 2. Flatten (Ravel) 2D arrays into 1D
-            # We trim 40 pixels from edges as per V1 'span' logic if needed, 
-            # but V1 code provided had `span=0` active. We'll stick to full arrays.
+            # 3. Flatten (Ravel) 2D arrays into 1D
             x = np.ravel(wave_data)/10
             y = np.ravel(sci_data)
             dy = np.ravel(err_data) if err_data is not None else np.zeros_like(y)
             q = np.ravel(qual_data) if qual_data is not None else np.zeros_like(y, dtype=int)
             o = np.ravel(order_idx)
             t = np.ravel(tell_data) if tell_data is not None else None
+            
+            # Flatten the pre-computed limits (convert to nm)
+            xmin = np.ravel(xmin_data)/10
+            xmax = np.ravel(xmax_data)/10
 
-            # 3. Filter Valid Wavelengths (V1 logic)
-            # Create xmin/xmax roughly
+            # 4. Filter Valid Wavelengths
             valid_wave = (x > 0)
             x, y, dy, q, o = x[valid_wave], y[valid_wave], dy[valid_wave], q[valid_wave], o[valid_wave]
+            xmin, xmax = xmin[valid_wave], xmax[valid_wave]
             if t is not None: t = t[valid_wave]
 
-            # 4. Sort by Wavelength (Crucial for Astrocook algorithms)
+            # 5. Sort by Wavelength
+            # We sort everything to keep V2 algorithms happy, but we carry 
+            # the physically correct xmin/xmax with us.
             sort_idx = np.argsort(x)
             x = x[sort_idx]
             y = y[sort_idx]
             dy = dy[sort_idx]
             q = q[sort_idx]
             o = o[sort_idx]
+            xmin = xmin[sort_idx]
+            xmax = xmax[sort_idx]
             if t is not None: t = t[sort_idx]
 
-            # 5. Apply Quality Cut (V1 logic: q < 1)
-            # You might want to relax this for V2 and just keep the 'quality' column
+            # 6. Apply Quality Cut
             good_quality = (q < 1)
             x, y, dy, q, o = x[good_quality], y[good_quality], dy[good_quality], q[good_quality], o[good_quality]
+            xmin, xmax = xmin[good_quality], xmax[good_quality]
             if t is not None: t = t[good_quality]
 
-            # 6. Units and Columns
-            # ESPRESSO S2D is usually Angstrom, Flux per Angstrom
+            # 7. Units and Columns
             x_unit = au.nm
-            # Check BUNIT in header if possible, else assume standard
             y_unit = au.dimensionless_unscaled
 
-            # Auto-calculate pixel edges
-            xmin_col, xmax_col = _auto_limits(x, x_unit)
+            # DO NOT call _auto_limits(x). Use our pre-computed columns.
+            xmin_col = DataColumnV2(xmin, x_unit)
+            xmax_col = DataColumnV2(xmax, x_unit)
 
             aux_cols = {
                 'quality': DataColumnV2(q, au.dimensionless_unscaled, "Quality Flag"),
@@ -334,7 +345,6 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumDataV2:
 
             meta = dict(header)
             meta['ORIGIN'] = 'espresso_s2d_loader'
-            # --- SIGNAL FOR THE PLOTTER ---
             meta['plot_style'] = 'scatter' 
 
             return SpectrumDataV2(

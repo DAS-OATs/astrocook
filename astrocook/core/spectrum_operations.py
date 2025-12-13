@@ -240,140 +240,140 @@ def compute_flux_scaling(
 
 def rebin_spectrum(
         x_in: au.Quantity, xmin_in: au.Quantity, xmax_in: au.Quantity,
-        spec_data: SpectrumDataV2, # Still pass the full data for y/dy/aux_cols
+        spec_data: SpectrumDataV2,
         xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
-        dx: au.Quantity, calc_unit: au.Unit, # Pass the unit used for calculation
+        dx: au.Quantity, calc_unit: au.Unit,
         kappa: Optional[float], filling: float
     ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity]:
     """
-    Pure function to rebin spectrum data. MUST contain the logic from Spectrum._rebin (V1).
-    Returns new arrays for x, xmin, xmax, y, dy.
+    High-performance vectorized rebinning (Inverse/Drizzle method).
+    Maps input pixels to output bins, handling unsorted/stitched data correctly.
     """
-    # --- V1 Pre-Processing and Initialization ---
+    # 1. Prepare Units and Arrays (Strip Units for Speed)
+    xunit_target = dx.unit
     
-    # NOTE: In V1, the spectrum was converted in-place before rebinning. 
-    # In V2, we work with the current units but create the output in the target dx unit.
-    
-    # Target unit is derived from dx, assuming its value represents the intended unit (e.g., km/s)
-    xunit_target = dx.unit 
-        
-    # X-axis inputs (Already converted to calc_unit by SpectrumV2.rebin)
-    x_value = x_in.value
-    xmin_value = xmin_in.value
-    xmax_value = xmax_in.value
-
-    # Y-axis inputs (Extracted from the V2 Data Core)
-    y_value = spec_data.y.quantity.value
-    dy_value = spec_data.dy.quantity.value
-    y_unit = spec_data.y.quantity.unit
-    
-    # Calculation unit is derived from the dx input
-    dx_value = dx.value 
-
-    # 1. Handling xstart
+    # Output Grid Definition
     if xstart is None:
-        # Use the minimum of the input data (which is already in x_value, the calculation space)
-        xstart_value = np.nanmin(x_value) 
+        xstart_val = np.nanmin(x_in.to_value(xunit_target))
     else:
-        # If provided, convert the input Quantity (xstart) to the NumPy value in the calculation unit.
-        # Note: We rely on the upstream call ensuring xstart is convertible to calc_unit.
-        xstart_value = xstart.to(xunit_target, equivalencies=au.equivalencies.spectral()).value
+        xstart_val = xstart.to_value(xunit_target)
 
-    # 2. Handling xend
     if xend is None:
-        # Use the maximum of the input data
-        xend_value = np.nanmax(x_value)
+        xend_val = np.nanmax(x_in.to_value(xunit_target))
     else:
-        # Convert the input Quantity (xend) to the NumPy value in the calculation unit.
-        xend_value = xend.to(xunit_target, equivalencies=au.equivalencies.spectral()).value
+        xend_val = xend.to_value(xunit_target)
+        
+    dx_val = dx.to_value(xunit_target)
+    
+    # Create Output Grid Edges
+    edges_out = np.arange(xstart_val, xend_val + dx_val, dx_val)
+    # Centers
+    x_out_val = 0.5 * (edges_out[:-1] + edges_out[1:])
+    N_out = len(x_out_val)
+    
+    # Input Arrays (Value Extraction)
+    xmin_in_val = xmin_in.to_value(xunit_target)
+    xmax_in_val = xmax_in.to_value(xunit_target)
+    
+    # Handle Data Masking (NaNs)
+    y_val = spec_data.y.quantity.to_value(spec_data.y.unit)
+    dy_val = spec_data.dy.quantity.to_value(spec_data.y.unit)
+    
+    valid_mask = np.isfinite(y_val) & (xmax_in_val > xmin_in_val)
+    if kappa is not None:
+        # Simple pre-clipping if requested (global sigma clip)
+        # Note: Local clipping during rebinning is complex in vectorized form; 
+        # usually pre-clipping the inputs is sufficient for co-addition.
+        clipped = sigma_clip(y_val, sigma=kappa, masked=True)
+        valid_mask &= ~clipped.mask
 
-    # Create new bin centers (x_out) and boundaries
-    x_out_value = np.arange(xstart_value, xend_value, dx_value)
-    
-    # Helper to create xmin/xmax for the new array (V1 logic simplified)
-    mean_val = 0.5 * (x_out_value[1:] + x_out_value[:-1])
-    xmin_out_value = np.append(x_out_value[0] - dx_value / 2, mean_val)
-    xmax_out_value = np.append(mean_val, x_out_value[-1] + dx_value / 2)
-    x_out_value = 0.5 * (xmin_out_value + xmax_out_value)
+    xmin_in_val = xmin_in_val[valid_mask]
+    xmax_in_val = xmax_in_val[valid_mask]
+    y_val = y_val[valid_mask]
+    dy_val = dy_val[valid_mask]
 
-    # Initialize output arrays
-    y_out_value = np.empty_like(x_out_value)
-    dy_out_value = np.empty_like(x_out_value)
+    # 2. Map Inputs to Outputs (The "Inverse" Step)
+    # Find which output bin index corresponds to the start and end of each input pixel
+    # We use searchsorted on the edges.
+    # idx_start: The index of the bin containing xmin_in
+    # idx_end: The index of the bin containing xmax_in
+    idx_start = np.searchsorted(edges_out, xmin_in_val, side='right') - 1
+    idx_end = np.searchsorted(edges_out, xmax_in_val, side='left') - 1
     
-    # --- V1 Core Rebinning Loop (Weighted Average) ---
+    # 3. Accumulators
+    # Weighted Sum of Flux: sum(y * weight)
+    # Sum of Weights: sum(weight)
+    # Weight = frac_overlap / sigma^2
+    numerator = np.zeros(N_out)
+    denominator = np.zeros(N_out)
     
-    for i, (m, M) in enumerate(zip(xmin_out_value, xmax_out_value)):
-        # Find all input bins that overlap with the new output bin [m, M]
-        im = bisect.bisect_left(xmax_value, m)
-        iM = bisect.bisect_right(xmin_value, M)
+    # 4. Vectorized Overlap Loop
+    # We loop over the "width" of the overlap. 
+    # Usually input_dx ~ output_dx, so this loop runs 2 or 3 times max.
+    max_span = np.max(idx_end - idx_start)
+    
+    for k in range(int(max_span) + 1):
+        # Select pixels that span at least k bins
+        # The current bin index for these pixels is (idx_start + k)
+        target_bin_indices = idx_start + k
         
-        # Calculate the fractional overlap for each input bin
-        frac = (np.minimum(M, xmax_value[im:iM]) - 
-                np.maximum(m, xmin_value[im:iM])) / dx_value
+        # Filter: Only consider if this specific offset (k) is within the pixel's range
+        # AND if the target bin is actually inside the valid output grid
+        active_mask = (target_bin_indices <= idx_end) & \
+                      (target_bin_indices >= 0) & \
+                      (target_bin_indices < N_out)
         
-        # Select data and error arrays for the overlapping region
-        ysel = y_value[im:iM]
-        dysel = dy_value[im:iM]
-        
-        # Filter for non-NaN input flux data
-        not_nan_w = ~np.isnan(ysel)
-        ysel = ysel[not_nan_w]
-        dysel = dysel[not_nan_w]
-        frac = frac[not_nan_w]
-        
-        # Optional Kappa-Sigma Clipping (V1 logic)
-        if kappa is not None and len(ysel) > 0:
-            clipped = sigma_clip(ysel, sigma=kappa, masked=True)
-            # Find indices where data was not masked
-            not_masked_w = ~clipped.mask
+        if not np.any(active_mask):
+            continue
             
-            if np.sum(not_masked_w) > 0:
-                ysel = ysel[not_masked_w]
-                dysel = dysel[not_masked_w]
-                frac = frac[not_masked_w]
+        # Get the subset of valid inputs
+        valid_idx = np.where(active_mask)[0]
+        bin_idx = target_bin_indices[valid_idx]
+        
+        # Calculate Overlap
+        # overlap_start = max(pixel_start, bin_start)
+        # overlap_end = min(pixel_end, bin_end)
+        bin_edge_left = edges_out[bin_idx]
+        bin_edge_right = edges_out[bin_idx+1]
+        
+        ov_min = np.maximum(xmin_in_val[valid_idx], bin_edge_left)
+        ov_max = np.minimum(xmax_in_val[valid_idx], bin_edge_right)
+        
+        overlap_width = np.maximum(0.0, ov_max - ov_min)
+        frac = overlap_width / dx_val
+        
+        # Calculate Weight (V1 Logic: w = frac / sigma^2)
+        # Avoid division by zero
+        sigma_sq = dy_val[valid_idx]**2
+        sigma_sq[sigma_sq <= 0] = np.inf
+        
+        weights = frac / sigma_sq
+        
+        # Accumulate (Fast unbuffered add)
+        np.add.at(numerator, bin_idx, y_val[valid_idx] * weights)
+        np.add.at(denominator, bin_idx, weights)
 
-        # Final weighted average calculation
-        if len(frac) > 0:
-            # V1 logic: If dy=0 or is missing, use frac as weight (simple average)
-            # If dy exists, use 1/dy^2 * frac as weight (weighted average)
-            
-            # Filter out zero errors (which lead to infinite weights)
-            safe_error_w = (dysel != 0.0) & (~np.isnan(dysel))
-            
-            if np.any(safe_error_w):
-                # Weighted average using variance (1/dy^2) and fractional overlap
-                weights = frac[safe_error_w] / dysel[safe_error_w]**2
-                sum_weights = np.sum(weights)
-                
-                if sum_weights > 0:
-                    y_out_value[i] = np.average(ysel[safe_error_w], weights=weights)
-                    
-                    # Propagate error (weighted variance calculation)
-                    # For weighted mean where w = 1/sigma^2: sigma_mean = 1 / sqrt(sum(w))
-                    dy_out_value[i] = 1.0 / np.sqrt(sum_weights)
-                else:
-                    # Weights sum to zero (likely infinite errors or full mask)
-                    y_out_value[i] = filling
-                    dy_out_value[i] = filling
-            else:
-                # Simple average weighted by fractional overlap
-                y_out_value[i] = np.average(ysel, weights=frac)
-                dy_out_value[i] = filling # Cannot calculate error without dy_in
-        else:
-            # No data in this bin
-            y_out_value[i] = filling
-            dy_out_value[i] = filling
-            
-    # --- Final V2 Output ---
+    # 5. Finalize Output
+    # Avoid division by zero
+    valid_out = denominator > 0
     
-    # Convert final NumPy arrays back to Quantities
-    x_out = au.Quantity(x_out_value, xunit_target)
-    xmin_out = au.Quantity(xmin_out_value, xunit_target)
-    xmax_out = au.Quantity(xmax_out_value, xunit_target)
-    y_out = au.Quantity(y_out_value, y_unit)
-    dy_out = au.Quantity(dy_out_value, y_unit)
+    y_out_val = np.full(N_out, filling)
+    dy_out_val = np.full(N_out, filling)
     
-    # Return the new immutable data required by SpectrumV2
+    # Weighted Mean
+    y_out_val[valid_out] = numerator[valid_out] / denominator[valid_out]
+    
+    # Standard Error of Weighted Mean: 1 / sqrt(sum(weights))
+    dy_out_val[valid_out] = 1.0 / np.sqrt(denominator[valid_out])
+    
+    # 6. Reconstruct Quantities
+    x_out = au.Quantity(x_out_val, xunit_target)
+    xmin_out = au.Quantity(edges_out[:-1], xunit_target)
+    xmax_out = au.Quantity(edges_out[1:], xunit_target)
+    
+    y_out = au.Quantity(y_out_val, spec_data.y.unit)
+    dy_out = au.Quantity(dy_out_val, spec_data.y.unit)
+    
     return x_out, xmin_out, xmax_out, y_out, dy_out
 
 def running_mean(y: np.ndarray, h: int) -> np.ndarray:

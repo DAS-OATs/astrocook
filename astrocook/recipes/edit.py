@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List
 
 from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2  # <<< *** ADD THIS IMPORT ***
-from astrocook.core.spectrum_operations import compute_flux_scaling
+from astrocook.core.spectrum_operations import convert_axis_velocity, rebin_spectrum, compute_flux_scaling
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -729,13 +729,14 @@ class RecipeEditV2:
         
     def coadd(self, session_names: str, xstart: str = 'None', xend: str = 'None', 
               dx: str = '0.01', xunit: str = 'nm', kappa: str = '5.0', 
-              equalize_order: str = '-1') -> Dict[str, Any]: # <--- Add arg
+              equalize_order: str = '0') -> Dict[str, Any]:
         """
-        Co-adds multiple sessions.
+        Co-adds multiple sessions. 
+        Bypasses Spectrum.stitch to preserve original pixel geometry.
+        Performs unit conversion (e.g. nm -> km/s) upfront to prevent errors in rebinning.
         """
         
         names_list = [n.strip() for n in session_names.split(',') if n.strip()]
-        
         if not names_list:
             logging.warning("Coadd: No sessions selected.")
             return 0
@@ -744,82 +745,138 @@ class RecipeEditV2:
         resolved_specs = []
         if hasattr(self._session, '_gui'):
             for name in names_list:
-                found = False
                 for hist in self._session._gui.session_histories:
                     if hist.display_name == name:
                         resolved_specs.append(hist.current_state.spec)
-                        found = True
                         break
-                if not found:
-                    logging.warning(f"Coadd: Session '{name}' not found. Skipping.")
         
         if not resolved_specs:
-            logging.error("Coadd: No valid sessions found to merge.")
+            logging.error("Coadd: No valid sessions found.")
             return 0
 
         try:
+            # Parse parameters
             try:
                 eq_order = int(equalize_order)
             except (ValueError, TypeError):
-                logging.warning(f"Invalid equalize_order '{equalize_order}', defaulting to -1 (Off).")
                 eq_order = -1
 
-            # 2. Prepare Base (Reference)
-            # Use the first session as the Flux Reference
-            base_spec = deepcopy(resolved_specs[0])
+            xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None
+            xend_q = au.Quantity(float(xend), au.nm) if xend != 'None' else None
+            dx_unit = au.Unit(xunit) 
+            dx_q = au.Quantity(float(dx), dx_unit) 
+            kappa_f = float(kappa) if kappa != 'None' else None
+
+            # 2. Collect Data Arrays (Manual Stitch)
+            ref_spec = resolved_specs[0]
+            ref_x = ref_spec.x.value
+            ref_y = ref_spec.y.value
             
-            specs_to_stitch = []
+            # Extract z_em for velocity conversion
+            z_em = ref_spec.meta.get('z_em', 0.0)
 
-            # 3. Handle Equalization
-            # We iterate over the *rest* of the spectra
-            if len(resolved_specs) > 1:
-                
-                ref_x = base_spec.x.value
-                ref_y = base_spec.y.value
+            all_x = []
+            all_xmin = []
+            all_xmax = []
+            all_y = []
+            all_dy = []
+            
+            for i, spec in enumerate(resolved_specs):
+                # 3. Handle Scaling
+                if i > 0 and eq_order >= 0:
+                    logging.info(f"  Scaling '{names_list[i]}' to reference...")
+                    scale_model = compute_flux_scaling(
+                        ref_x, ref_y, 
+                        spec.x.value, spec.y.value, 
+                        order=eq_order
+                    )
+                    y_scaled = spec.y.value * scale_model
+                    dy_scaled = spec.dy.value * scale_model
+                else:
+                    y_scaled = spec.y.value
+                    dy_scaled = spec.dy.value
 
-                for i, spec in enumerate(resolved_specs[1:]):
-                    # Always deepcopy before modifying
-                    spec_to_process = spec
-                    
-                    if eq_order >= 0:
-                        logging.info(f"Equalizing '{names_list[i+1]}' to match '{names_list[0]}' (Order {equalize_order})...")
-                        
-                        scale_model = compute_flux_scaling(
-                            ref_x, ref_y, 
-                            spec_to_process.x.value, spec_to_process.y.value, 
-                            order=eq_order
-                        )
-                        
-                        spec_to_process = spec_to_process.scale_flux(scale_model)
-                        
-                    specs_to_stitch.append(spec_to_process)
-                
-                # 4. Stitch
-                # stitch returns a NEW spectrum object
-                stitched_spec = base_spec.stitch(specs_to_stitch, sort=True)
+                # 4. Append Raw Data (in nm)
+                all_x.append(spec.x.to_value(au.nm))
+                all_xmin.append(spec.xmin.to_value(au.nm))
+                all_xmax.append(spec.xmax.to_value(au.nm))
+                all_y.append(y_scaled)
+                all_dy.append(dy_scaled)
+
+            # 5. Concatenate
+            logging.info(f"  Concatenating {len(resolved_specs)} spectra...")
+            big_x = np.concatenate(all_x)
+            big_xmin = np.concatenate(all_xmin)
+            big_xmax = np.concatenate(all_xmax)
+            big_y = np.concatenate(all_y)
+            big_dy = np.concatenate(all_dy)
+            
+            # --- NEW STEP: Convert to Calculation Unit (Target) ---
+            # We convert everything to dx_unit (e.g. km/s) NOW, so rebin_spectrum
+            # receives consistent units and doesn't crash.
+            
+            # Wrap in Quantity for conversion
+            big_x_q = au.Quantity(big_x, au.nm)
+            big_xmin_q = au.Quantity(big_xmin, au.nm)
+            big_xmax_q = au.Quantity(big_xmax, au.nm)
+            
+            logging.info(f"  Converting inputs to {dx_unit}...")
+            
+            # Convert Arrays
+            big_x_conv = convert_axis_velocity(big_x_q, z_em, dx_unit)
+            big_xmin_conv = convert_axis_velocity(big_xmin_q, z_em, dx_unit)
+            big_xmax_conv = convert_axis_velocity(big_xmax_q, z_em, dx_unit)
+            
+            # Convert Bounds (xstart/xend)
+            if xstart_q is not None:
+                xstart_conv = convert_axis_velocity(xstart_q, z_em, dx_unit)
             else:
-                stitched_spec = base_spec
+                xstart_conv = None
 
-            # 5. Define Grid Parameters
-            try:
-                xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None
-                xend_q = au.Quantity(float(xend), au.nm) if xend != 'None' else None
-                dx_unit = au.Unit(xunit) 
-                dx_q = au.Quantity(float(dx), dx_unit) 
-                kappa_f = float(kappa) if kappa != 'None' else None
-            except ValueError:
-                logging.error(msg_param_fail)
-                return 0
+            if xend_q is not None:
+                xend_conv = convert_axis_velocity(xend_q, z_em, dx_unit)
+            else:
+                xend_conv = None
 
-            # 6. Rebin
-            logging.info(f"Coadd: Rebinning {len(stitched_spec.x)} combined pixels...")
-            final_spec = stitched_spec.rebin(
-                xstart=xstart_q, xend=xend_q, dx=dx_q, kappa=kappa_f, filling=np.nan
+            # 6. Create Temporary Container (in Target Units)
+            temp_x_col = DataColumnV2(big_x_conv.value, dx_unit)
+            temp_xmin_col = DataColumnV2(big_xmin_conv.value, dx_unit)
+            temp_xmax_col = DataColumnV2(big_xmax_conv.value, dx_unit)
+            temp_y_col = DataColumnV2(big_y, ref_spec.y.unit)
+            temp_dy_col = DataColumnV2(big_dy, ref_spec.dy.unit)
+            
+            temp_data = SpectrumDataV2(
+                x=temp_x_col, xmin=temp_xmin_col, xmax=temp_xmax_col,
+                y=temp_y_col, dy=temp_dy_col,
+                meta=ref_spec.meta # Pass meta containing z_em
+            )
+
+            # 7. Call Rebinning
+            logging.info(f"  Rebinning {len(big_x)} input pixels...")
+            
+            # Now inputs and dx are in the same unit, so no conversion error occurs inside rebin_spectrum
+            new_x, new_xmin, new_xmax, new_y, new_dy = rebin_spectrum(
+                temp_data.x.quantity, temp_data.xmin.quantity, temp_data.xmax.quantity,
+                temp_data, 
+                xstart_conv, xend_conv, # Passed in correct unit
+                dx_q, dx_unit,
+                kappa_f, filling=np.nan
             )
             
-            new_name = f"Coadd_{len(resolved_specs)}_sessions"
-            new_session = self._session.with_new_spectrum(final_spec)
+            # 8. Construct Final Session
+            final_spec_data = SpectrumDataV2(
+                x=DataColumnV2(new_x.value, new_x.unit), 
+                xmin=DataColumnV2(new_xmin.value, new_xmin.unit), 
+                xmax=DataColumnV2(new_xmax.value, new_xmax.unit),
+                y=DataColumnV2(new_y.value, new_y.unit), 
+                dy=DataColumnV2(new_dy.value, new_dy.unit),
+                meta=ref_spec.meta 
+            )
             
+            final_spec = ref_spec.__class__(final_spec_data)
+            
+            new_session = self._session.with_new_spectrum(final_spec)
+            logging.info(f"Coadd complete: {len(new_x)} bins.")
             return new_session
 
         except Exception as e:

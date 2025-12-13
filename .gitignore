@@ -44,3 +44,4 @@ output/
 final_results/
 tests/output_cii/
 output_cii/
+current_prompt.md
